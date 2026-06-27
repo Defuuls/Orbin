@@ -39,6 +39,8 @@ class SettingsViewModel
 
         fun setHttpsOnly(enabled: Boolean) = update { repository.setHttpsOnly(enabled) }
 
+        fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
+
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }
         }

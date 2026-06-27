@@ -64,6 +64,7 @@ fun SettingsScreen(
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
 
             SectionHeader("Network & privacy")
+            SwitchRow("Lock with biometrics", settings.biometricLockEnabled, viewModel::setBiometricLock)
             SwitchRow("HTTPS only", settings.httpsOnly, viewModel::setHttpsOnly)
             SwitchRow("DNS over HTTPS", settings.dohEnabled, viewModel::setDoh)
 

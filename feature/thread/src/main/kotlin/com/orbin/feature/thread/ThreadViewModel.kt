@@ -13,6 +13,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ class ThreadViewModel
         savedStateHandle: SavedStateHandle,
         observeThread: ObserveThreadUseCase,
         private val bookmarkRepository: BookmarkRepository,
+        private val downloadRepository: DownloadRepository,
         private val historyRepository: HistoryRepository,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
@@ -69,6 +71,20 @@ class ThreadViewModel
             }
         }
 
+        fun downloadAllMedia() {
+            val thread = loadedThread ?: return
+            viewModelScope.launch {
+                thread.allPosts
+                    .flatMap { it.attachments }
+                    .forEach { attachment ->
+                        downloadRepository.enqueue(
+                            url = attachment.sourceUrl,
+                            fileName = attachment.downloadFileName(),
+                        )
+                    }
+            }
+        }
+
         private fun onThreadLoaded(thread: Thread) {
             loadedThread = thread
             viewModelScope.launch {
@@ -102,6 +118,14 @@ class ThreadViewModel
                 lastSeenReplyCount = thread?.stats?.replyCount ?: 0,
                 latestReplyCount = thread?.stats?.replyCount ?: 0,
             )
+        }
+
+        private fun com.orbin.core.model.MediaAttachment.downloadFileName(): String {
+            val cleanName =
+                originalFileName
+                    .ifBlank { id }
+                    .replace(Regex("""[\\/:*?"<>|]"""), "_")
+            return "${board.value}_${threadId.value}_${id}_$cleanName"
         }
 
         private companion object {

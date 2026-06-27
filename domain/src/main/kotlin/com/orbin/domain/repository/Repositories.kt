@@ -38,10 +38,18 @@ interface BoardRepository {
 interface BoardPreferencesRepository {
     fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>>
 
+    fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>>
+
     suspend fun setFavoriteBoard(
         provider: ProviderId,
         board: BoardId,
         favorite: Boolean,
+    )
+
+    suspend fun setSubscribedBoard(
+        provider: ProviderId,
+        board: BoardId,
+        subscribed: Boolean,
     )
 }
 

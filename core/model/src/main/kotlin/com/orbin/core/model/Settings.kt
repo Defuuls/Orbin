@@ -23,6 +23,7 @@ data class AppSettings(
     val userAgent: String = "",
     val dohEnabled: Boolean = false,
     val httpsOnly: Boolean = true,
+    val biometricLockEnabled: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()

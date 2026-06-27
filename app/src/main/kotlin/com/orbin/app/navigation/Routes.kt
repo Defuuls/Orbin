@@ -12,6 +12,9 @@ sealed interface Route {
     data object Home : Route
 
     @Serializable
+    data object BoardSetup : Route
+
+    @Serializable
     data object Search : Route
 
     @Serializable

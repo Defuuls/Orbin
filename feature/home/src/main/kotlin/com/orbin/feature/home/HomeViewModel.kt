@@ -45,6 +45,12 @@ class HomeViewModel
                 .map { boards -> boards.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
+        val subscribedBoardIds: StateFlow<Set<String>> =
+            boardPreferencesRepository
+                .observeSubscribedBoards(provider.metadata.id)
+                .map { boards -> boards.map { it.value }.toSet() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+
         init {
             load()
         }
@@ -70,6 +76,19 @@ class HomeViewModel
                     provider = ProviderId(providerId),
                     board = BoardId(boardId),
                     favorite = favorite,
+                )
+            }
+        }
+
+        fun setSubscribed(
+            boardId: String,
+            subscribed: Boolean,
+        ) {
+            viewModelScope.launch {
+                boardPreferencesRepository.setSubscribedBoard(
+                    provider = ProviderId(providerId),
+                    board = BoardId(boardId),
+                    subscribed = subscribed,
                 )
             }
         }

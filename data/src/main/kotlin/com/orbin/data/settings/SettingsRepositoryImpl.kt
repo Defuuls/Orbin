@@ -63,6 +63,8 @@ class SettingsRepositoryImpl
 
         override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = enabled }
 
+        override suspend fun setBiometricLockEnabled(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
+
         override suspend fun setUserAgent(userAgent: String) = edit { it[Keys.userAgent] = userAgent }
 
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
@@ -70,20 +72,32 @@ class SettingsRepositoryImpl
                 preferences[Keys.favoriteBoards(provider)].orEmpty().map(::BoardId).toSet()
             }
 
+        override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> =
+            dataStore.data.map { preferences ->
+                preferences[Keys.subscribedBoards(provider)].orEmpty().map(::BoardId).toSet()
+            }
+
         override suspend fun setFavoriteBoard(
             provider: ProviderId,
             board: BoardId,
             favorite: Boolean,
+        ) = setBoardFlag(Keys.favoriteBoards(provider), board, favorite)
+
+        override suspend fun setSubscribedBoard(
+            provider: ProviderId,
+            board: BoardId,
+            subscribed: Boolean,
+        ) = setBoardFlag(Keys.subscribedBoards(provider), board, subscribed)
+
+        private suspend fun setBoardFlag(
+            key: Preferences.Key<Set<String>>,
+            board: BoardId,
+            enabled: Boolean,
         ) {
             edit { preferences ->
-                val key = Keys.favoriteBoards(provider)
                 val current = preferences[key].orEmpty()
                 preferences[key] =
-                    if (favorite) {
-                        current + board.value
-                    } else {
-                        current - board.value
-                    }
+                    if (enabled) current + board.value else current - board.value
             }
         }
 
@@ -105,6 +119,7 @@ class SettingsRepositoryImpl
                 userAgent = this[Keys.userAgent] ?: "",
                 dohEnabled = this[Keys.doh] ?: false,
                 httpsOnly = this[Keys.httpsOnly] ?: true,
+                biometricLockEnabled = this[Keys.biometricLock] ?: false,
             )
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
@@ -125,7 +140,10 @@ class SettingsRepositoryImpl
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")
             val httpsOnly = booleanPreferencesKey("https_only")
+            val biometricLock = booleanPreferencesKey("biometric_lock")
 
             fun favoriteBoards(provider: ProviderId) = stringSetPreferencesKey("favorite_boards_${provider.value}")
+
+            fun subscribedBoards(provider: ProviderId) = stringSetPreferencesKey("subscribed_boards_${provider.value}")
         }
     }
