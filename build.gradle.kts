@@ -1,0 +1,15 @@
+// Top-level build file. Convention plugins live in `build-logic` and are applied per-module.
+// Plugins are declared here with `apply false` so their classpath is available to subprojects.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.room) apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ktlint) apply false
+}
