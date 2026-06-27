@@ -346,7 +346,11 @@ private fun ThreadTitle(
     modifier: Modifier = Modifier,
     maxLines: Int = 1,
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (thread.stats.isSticky) {
             Icon(
                 imageVector = Icons.Filled.PushPin,
@@ -370,7 +374,10 @@ private fun MetadataRow(
     thread: CatalogThread,
     compact: Boolean,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         StatChip("${thread.stats.replyCount} replies")
         StatChip("${thread.stats.imageCount} media")
         if (!compact && thread.stats.uniquePosterCount > 0) {
@@ -426,7 +433,10 @@ private fun PreviewReplyStrip(thread: CatalogThread) {
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(6.dp),
             ) {
-                Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text = "No.${reply.id.value}",
                         style = MaterialTheme.typography.labelSmall,
