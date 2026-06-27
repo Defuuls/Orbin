@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.orbin.feature.settings"
 }
+
+dependencies {
+    implementation(project(":provider:api"))
+}

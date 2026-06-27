@@ -1,6 +1,5 @@
 package com.orbin.feature.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -18,13 +17,10 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -127,27 +123,6 @@ fun BoardSetupContent(
                         },
                     )
                 }
-            }
-        }
-
-        Column {
-            Text("Subscribe", fontWeight = FontWeight.Bold)
-            boards.forEach { board ->
-                val isSubscribed = board.id.value in subscribedBoardIds
-                ListItem(
-                    modifier = Modifier.clickable { onSubscriptionChange(board.id.value, !isSubscribed) },
-                    headlineContent = { Text("/${board.id.value}/ - ${board.title}") },
-                    supportingContent = {
-                        if (board.description.isNotBlank()) Text(board.description)
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = isSubscribed,
-                            onCheckedChange = { onSubscriptionChange(board.id.value, it) },
-                        )
-                    },
-                )
-                HorizontalDivider()
             }
         }
     }

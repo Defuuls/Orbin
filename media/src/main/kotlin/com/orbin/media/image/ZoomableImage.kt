@@ -1,5 +1,6 @@
 package com.orbin.media.image
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ private const val MAX_SCALE = 5f
  * A pinch-to-zoom, pan-able image for the gallery. Scale is clamped to [MIN_SCALE]..[MAX_SCALE];
  * panning is only meaningful while zoomed in. Pure Compose gestures — no extra dependencies.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ZoomableImage(
     url: String?,
@@ -46,6 +48,11 @@ fun ZoomableImage(
                     scaleY = scale
                     translationX = offset.x
                     translationY = offset.y
-                }.transformable(transformableState),
+                }.transformable(
+                    state = transformableState,
+                    // Only claim pan gestures while zoomed in; otherwise let single-finger
+                    // swipes reach the enclosing pager so the gallery can be scrolled.
+                    canPan = { scale > MIN_SCALE },
+                ),
     )
 }

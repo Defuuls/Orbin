@@ -17,6 +17,7 @@ import com.orbin.feature.home.BoardSetupScreen
 import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsScreen
+import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
 
 private const val TRANSITION_MS = 300
@@ -103,7 +104,12 @@ fun OrbinNavHost(
             SettingsScreen(
                 onBack = navController::navigateUp,
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
             )
+        }
+
+        composable<Route.Subscriptions> {
+            SubscriptionsScreen(onBack = navController::navigateUp)
         }
     }
 }
