@@ -1,25 +1,18 @@
 package com.orbin.feature.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,18 +21,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,70 +42,49 @@ import com.orbin.core.ui.state.LoadingView
 fun HomeScreen(
     onOpenBoard: (provider: String, board: String, title: String) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenBoardSetup: () -> Unit,
+    onOpenBoardGallery: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val favoriteBoardIds by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-    var showBoardSetup by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(viewModel.providerId, board.id.value, board.title)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                TopAppBar(
-                    title = { Text("Orbin") },
-                    actions = {
-                        IconButton(onClick = { showBoardSetup = true }) {
-                            Icon(Icons.Filled.Tune, contentDescription = "Board setup")
-                        }
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                when (val state = uiState) {
-                    HomeUiState.Loading -> LoadingView()
-                    is HomeUiState.Error -> ErrorView(state.message, onRetry = viewModel::load)
-                    is HomeUiState.Success ->
-                        BoardList(
-                            boards = state.boards,
-                            favoriteBoardIds = favoriteBoardIds,
-                            subscribedBoardIds = subscribedBoardIds,
-                            onBoardClick = openBoard,
-                            onFavoriteChange = viewModel::setFavorite,
-                            onSubscriptionChange = viewModel::setSubscribed,
-                        )
-                }
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("Orbin") },
+                actions = {
+                    IconButton(onClick = onOpenBoardGallery) {
+                        Icon(Icons.Filled.GridView, contentDescription = "Board gallery")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            when (val state = uiState) {
+                HomeUiState.Loading -> LoadingView()
+                is HomeUiState.Error -> ErrorView(state.message, onRetry = viewModel::load)
+                is HomeUiState.Success ->
+                    BoardList(
+                        boards = state.boards,
+                        favoriteBoardIds = favoriteBoardIds,
+                        subscribedBoardIds = subscribedBoardIds,
+                        onBoardClick = openBoard,
+                        onFavoriteChange = viewModel::setFavorite,
+                        onSubscriptionChange = viewModel::setSubscribed,
+                    )
             }
         }
-
-        BoardSetupOverlay(
-            visible = showBoardSetup,
-            uiState = uiState,
-            favoriteBoardIds = favoriteBoardIds,
-            subscribedBoardIds = subscribedBoardIds,
-            onFavoriteChange = viewModel::setFavorite,
-            onSubscriptionChange = viewModel::setSubscribed,
-            onOpenBoard = { board ->
-                showBoardSetup = false
-                openBoard(board)
-            },
-            onOpenFullSetup = {
-                showBoardSetup = false
-                onOpenBoardSetup()
-            },
-            onClose = { showBoardSetup = false },
-        )
     }
 }
 
@@ -179,59 +146,6 @@ private fun BoardList(
                 },
             )
             HorizontalDivider()
-        }
-    }
-}
-
-@Composable
-private fun BoardSetupOverlay(
-    visible: Boolean,
-    uiState: HomeUiState,
-    favoriteBoardIds: Set<String>,
-    subscribedBoardIds: Set<String>,
-    onFavoriteChange: (board: String, favorite: Boolean) -> Unit,
-    onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
-    onOpenBoard: (Board) -> Unit,
-    onOpenFullSetup: () -> Unit,
-    onClose: () -> Unit,
-) {
-    if (visible) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.32f))
-                    .clickable(onClick = onClose),
-        )
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        modifier = Modifier.fillMaxSize(),
-        enter = slideInHorizontally(initialOffsetX = { it }),
-        exit = slideOutHorizontally(targetOffsetX = { it }),
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterEnd) {
-            Surface(
-                modifier = Modifier.fillMaxHeight().widthIn(min = 280.dp, max = 420.dp).fillMaxWidth(),
-                tonalElevation = 6.dp,
-                shadowElevation = 12.dp,
-            ) {
-                if (uiState is HomeUiState.Success) {
-                    BoardSetupContent(
-                        providerName = uiState.providerName,
-                        boards = uiState.boards,
-                        favoriteBoardIds = favoriteBoardIds,
-                        subscribedBoardIds = subscribedBoardIds,
-                        onFavoriteChange = onFavoriteChange,
-                        onSubscriptionChange = onSubscriptionChange,
-                        onOpenBoard = onOpenBoard,
-                        onOpenFullSetup = onOpenFullSetup,
-                        onClose = onClose,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-            }
         }
     }
 }

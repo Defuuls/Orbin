@@ -12,7 +12,7 @@ sealed interface Route {
     data object Home : Route
 
     @Serializable
-    data object BoardSetup : Route
+    data object BoardGallery : Route
 
     @Serializable
     data object Search : Route
