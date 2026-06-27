@@ -174,8 +174,10 @@ private fun BoardTile(
     }
 }
 
+private const val HUE_DEGREES = 360
+
 /** Stable per-board accent colour derived from the board id, so tiles look varied but consistent. */
 private fun boardColor(id: String): Color {
-    val hue = (((id.hashCode() % 360) + 360) % 360).toFloat()
+    val hue = (((id.hashCode() % HUE_DEGREES) + HUE_DEGREES) % HUE_DEGREES).toFloat()
     return Color.hsv(hue, saturation = 0.45f, value = 0.55f)
 }
