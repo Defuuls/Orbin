@@ -12,6 +12,15 @@ sealed interface Route {
     data object Home : Route
 
     @Serializable
+    data object Search : Route
+
+    @Serializable
+    data object Bookmarks : Route
+
+    @Serializable
+    data object History : Route
+
+    @Serializable
     data class Board(
         val provider: String,
         val board: String,

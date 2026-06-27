@@ -48,9 +48,10 @@ include(":provider:api")
 include(":provider:vichan")
 
 // Feature modules.
-// Additional features (search, bookmarks, history, gallery, downloads) are part of the target
-// architecture and are added incrementally; their repository contracts already live in :domain.
 include(":feature:home")
 include(":feature:board")
 include(":feature:thread")
 include(":feature:settings")
+include(":feature:bookmarks")
+include(":feature:history")
+include(":feature:search")

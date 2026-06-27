@@ -12,8 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
-import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppThemeMode
 import dagger.hilt.android.AndroidEntryPoint
@@ -43,8 +41,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    val navController = rememberNavController()
-                    OrbinNavHost(navController = navController)
+                    OrbinApp()
                 }
             }
         }
