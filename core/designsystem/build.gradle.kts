@@ -12,6 +12,14 @@ android {
     }
 }
 
+// Roborazzi only configures the debug unit-test variant, so screenshot tests must not run under
+// `testReleaseUnitTest` (which the aggregate `test` task also invokes).
+tasks.withType<Test>().configureEach {
+    if (name.contains("Release")) {
+        filter { excludeTestsMatching("*ScreenshotTest") }
+    }
+}
+
 dependencies {
     api(libs.compose.material3)
     api(libs.compose.material3.window.size)
