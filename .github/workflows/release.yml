@@ -65,9 +65,14 @@ jobs:
         id: notes
         run: |
           set -euo pipefail
+          RELEASE_NAME=$(git for-each-ref "refs/tags/${GITHUB_REF_NAME}" --format='%(contents:subject)')
+          if [ -z "$RELEASE_NAME" ]; then
+            RELEASE_NAME="${GITHUB_REF_NAME}"
+          fi
           PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {
-            echo "## Orbin ${GITHUB_REF_NAME}"
+            echo "## Orbin ${GITHUB_REF_NAME} - ${RELEASE_NAME}"
             echo
             if [ -n "$PREV_TAG" ]; then
               echo "### Changes since ${PREV_TAG}"
@@ -87,6 +92,7 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.notes.outputs.release_name }}
           body_path: release-notes.md
           files: |
             release-staging/*.apk
