@@ -46,6 +46,11 @@ fun ZoomableImage(
                     scaleY = scale
                     translationX = offset.x
                     translationY = offset.y
-                }.transformable(transformableState),
+                }.transformable(
+                    state = transformableState,
+                    // Only claim pan gestures while zoomed in; otherwise let single-finger
+                    // swipes reach the enclosing pager so the gallery can be scrolled.
+                    canPan = { scale > MIN_SCALE },
+                ),
     )
 }

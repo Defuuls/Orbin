@@ -34,6 +34,7 @@ import com.orbin.core.model.AppThemeMode
 fun SettingsScreen(
     onBack: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenSubscriptions: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -53,6 +54,13 @@ fun SettingsScreen(
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
         ) {
+            SectionHeader("Content")
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenSubscriptions),
+                headlineContent = { Text("Subscriptions") },
+                supportingContent = { Text("Manage subscribed boards") },
+            )
+
             SectionHeader("Appearance")
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
