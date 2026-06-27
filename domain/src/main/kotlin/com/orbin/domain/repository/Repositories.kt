@@ -74,6 +74,16 @@ interface BookmarkRepository {
 
     /** Marks a thread read up to its current reply count. */
     suspend fun markRead(key: ThreadKey)
+
+    /** All bookmarks the user is watching (for the background update worker). */
+    suspend fun watchedBookmarks(): List<Bookmark>
+
+    /** Updates the latest known reply count and dead flag from a background refresh. */
+    suspend fun updateLatest(
+        key: ThreadKey,
+        latestReplyCount: Int,
+        isThreadDead: Boolean,
+    )
 }
 
 interface HistoryRepository {

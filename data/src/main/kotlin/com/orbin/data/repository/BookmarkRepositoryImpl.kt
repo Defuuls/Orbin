@@ -40,4 +40,18 @@ class BookmarkRepositoryImpl
 
         override suspend fun markRead(key: ThreadKey) =
             dao.markRead(key.provider.value, key.board.value, key.thread.value)
+
+        override suspend fun watchedBookmarks(): List<Bookmark> = dao.watchedBookmarks().map { it.toDomain() }
+
+        override suspend fun updateLatest(
+            key: ThreadKey,
+            latestReplyCount: Int,
+            isThreadDead: Boolean,
+        ) = dao.updateLatest(
+            key.provider.value,
+            key.board.value,
+            key.thread.value,
+            latestReplyCount,
+            isThreadDead,
+        )
     }

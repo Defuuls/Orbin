@@ -1,5 +1,6 @@
 package com.orbin.data.di
 
+import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
 import com.orbin.data.repository.BookmarkRepositoryImpl
@@ -9,6 +10,7 @@ import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.settings.SettingsRepositoryImpl
+import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
@@ -60,6 +62,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsDownloadRepository(impl: DownloadRepositoryImpl): DownloadRepository
+
+    @Binds
+    @Singleton
+    fun bindsThreadNotifier(impl: AndroidThreadNotifier): ThreadNotifier
 
     @Binds
     @Singleton
