@@ -16,7 +16,11 @@ android {
 // `testReleaseUnitTest` (which the aggregate `test` task also invokes).
 tasks.withType<Test>().configureEach {
     if (name.contains("Release")) {
-        filter { excludeTestsMatching("*ScreenshotTest") }
+        filter {
+            excludeTestsMatching("*ScreenshotTest")
+            // Screenshot tests are the only tests here, so release ends up empty — allow it.
+            isFailOnNoMatchingTests = false
+        }
     }
 }
 
