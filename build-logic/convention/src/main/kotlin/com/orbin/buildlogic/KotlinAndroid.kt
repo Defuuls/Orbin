@@ -44,10 +44,7 @@ internal fun Project.configureKotlin() {
             allWarningsAsErrors.set(
                 providers.gradleProperty("orbin.warningsAsErrors").map { it.toBoolean() }.orElse(false),
             )
-            freeCompilerArgs.addAll(
-                "-opt-in=kotlin.RequiresOptIn",
-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            )
+            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
         }
     }
 }

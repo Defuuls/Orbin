@@ -20,7 +20,9 @@ kotlin {
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.room.gradlePlugin)
 }
 
 // Register convention plugins so modules can apply them by id, e.g. `orbin.android.library`.
