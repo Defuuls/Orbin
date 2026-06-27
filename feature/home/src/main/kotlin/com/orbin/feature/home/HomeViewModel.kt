@@ -3,13 +3,19 @@ package com.orbin.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.BoardId
+import com.orbin.core.model.ProviderId
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,6 +29,7 @@ class HomeViewModel
     constructor(
         private val registry: ProviderRegistry,
         private val boardRepository: BoardRepository,
+        private val boardPreferencesRepository: BoardPreferencesRepository,
     ) : ViewModel() {
         private val provider = registry.default()
 
@@ -31,6 +38,12 @@ class HomeViewModel
 
         private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
         val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+        val favoriteBoardIds: StateFlow<Set<String>> =
+            boardPreferencesRepository
+                .observeFavoriteBoards(provider.metadata.id)
+                .map { boards -> boards.map { it.value }.toSet() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         init {
             load()
@@ -46,5 +59,22 @@ class HomeViewModel
                         is OrbinResult.Failure -> HomeUiState.Error(result.error.message)
                     }
             }
+        }
+
+        fun setFavorite(
+            boardId: String,
+            favorite: Boolean,
+        ) {
+            viewModelScope.launch {
+                boardPreferencesRepository.setFavoriteBoard(
+                    provider = ProviderId(providerId),
+                    board = BoardId(boardId),
+                    favorite = favorite,
+                )
+            }
+        }
+
+        private companion object {
+            const val STOP_TIMEOUT_MS = 5_000L
         }
     }

@@ -11,6 +11,7 @@ import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.domain.notification.ThreadNotifier
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
@@ -70,6 +71,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds
+    @Singleton
+    fun bindsBoardPreferencesRepository(impl: SettingsRepositoryImpl): BoardPreferencesRepository
 
     @Binds
     @Singleton

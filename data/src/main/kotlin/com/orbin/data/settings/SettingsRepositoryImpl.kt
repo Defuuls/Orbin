@@ -7,9 +7,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.BoardId
+import com.orbin.core.model.ProviderId
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfig
@@ -35,6 +39,7 @@ class SettingsRepositoryImpl
         private val dataStore: DataStore<Preferences>,
         @ApplicationScope scope: CoroutineScope,
     ) : SettingsRepository,
+        BoardPreferencesRepository,
         NetworkConfigProvider {
         override val settings: Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
 
@@ -59,6 +64,28 @@ class SettingsRepositoryImpl
         override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = enabled }
 
         override suspend fun setUserAgent(userAgent: String) = edit { it[Keys.userAgent] = userAgent }
+
+        override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
+            dataStore.data.map { preferences ->
+                preferences[Keys.favoriteBoards(provider)].orEmpty().map(::BoardId).toSet()
+            }
+
+        override suspend fun setFavoriteBoard(
+            provider: ProviderId,
+            board: BoardId,
+            favorite: Boolean,
+        ) {
+            edit { preferences ->
+                val key = Keys.favoriteBoards(provider)
+                val current = preferences[key].orEmpty()
+                preferences[key] =
+                    if (favorite) {
+                        current + board.value
+                    } else {
+                        current - board.value
+                    }
+            }
+        }
 
         override fun current(): NetworkConfig = cached.value.toNetworkConfig()
 
@@ -98,5 +125,7 @@ class SettingsRepositoryImpl
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")
             val httpsOnly = booleanPreferencesKey("https_only")
+
+            fun favoriteBoards(provider: ProviderId) = stringSetPreferencesKey("favorite_boards_${provider.value}")
         }
     }
