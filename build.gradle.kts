@@ -12,6 +12,7 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.roborazzi) apply false
 }
 
 // Apply code-quality tooling uniformly. Centralizing it here keeps per-module build files thin
