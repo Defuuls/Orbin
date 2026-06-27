@@ -65,6 +65,11 @@ jobs:
         id: notes
         run: |
           set -euo pipefail
+          # actions/checkout materializes the tag as a lightweight ref, so the
+          # annotated tag object (whose message carries the release name) may be
+          # absent. Force-fetch it so %(contents:subject) reads the tag message
+          # rather than falling through to the underlying commit subject.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           RELEASE_NAME=$(git for-each-ref "refs/tags/${GITHUB_REF_NAME}" --format='%(contents:subject)')
           if [ -z "$RELEASE_NAME" ]; then
             RELEASE_NAME="${GITHUB_REF_NAME}"
