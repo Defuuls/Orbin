@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.popUpTo
 import androidx.navigation.toRoute
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.bookmarks.BookmarksScreen
@@ -119,7 +118,8 @@ fun OrbinNavHost(
             OnboardingScreen(
                 onFinish = {
                     navController.navigate(Route.Home) {
-                        popUpTo<Route.Onboarding> { inclusive = true }
+                        // Clear onboarding from the back stack so Back from Home exits the app.
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
             )
