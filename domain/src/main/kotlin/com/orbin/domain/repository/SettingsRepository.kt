@@ -26,5 +26,7 @@ interface SettingsRepository {
 
     suspend fun setHttpsOnly(enabled: Boolean)
 
+    suspend fun setBiometricLockEnabled(enabled: Boolean)
+
     suspend fun setUserAgent(userAgent: String)
 }

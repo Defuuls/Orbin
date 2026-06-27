@@ -13,6 +13,7 @@ import com.orbin.feature.bookmarks.BookmarksScreen
 import com.orbin.feature.downloads.DownloadsScreen
 import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.history.HistoryScreen
+import com.orbin.feature.home.BoardSetupScreen
 import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsScreen
@@ -57,6 +58,16 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenBoardSetup = { navController.navigate(Route.BoardSetup) },
+            )
+        }
+
+        composable<Route.BoardSetup> {
+            BoardSetupScreen(
+                onBack = navController::navigateUp,
+                onOpenBoard = { provider, board, title ->
+                    navController.navigate(Route.Board(provider, board, title))
+                },
             )
         }
 

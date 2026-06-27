@@ -6,6 +6,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,11 +26,13 @@ import com.orbin.app.navigation.TopLevelDestination
 fun OrbinApp(navController: NavHostController = rememberNavController()) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    val snackbarHostState = LocalOrbinSnackbarHostState.current
 
     val topLevel = TopLevelDestination.entries
     val showBottomBar = topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {

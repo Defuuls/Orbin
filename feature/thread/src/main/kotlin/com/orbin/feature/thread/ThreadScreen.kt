@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +70,9 @@ fun ThreadScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = viewModel::downloadAllMedia) {
+                        Icon(Icons.Filled.Download, contentDescription = "Download all media")
+                    }
                     IconButton(onClick = viewModel::toggleBookmark) {
                         Icon(
                             imageVector =

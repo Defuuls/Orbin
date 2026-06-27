@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -29,8 +29,8 @@ import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
 
 /**
- * Full-screen, swipeable media gallery for a thread. Images support pinch-zoom; videos play with
- * Media3. The download action is provided by the host (wired to the download manager).
+ * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
+ * play with Media3. The download action is provided by the host (wired to the download manager).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +76,7 @@ fun GalleryScreen(
             )
         },
     ) { padding ->
-        HorizontalPager(
+        VerticalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) { page ->
