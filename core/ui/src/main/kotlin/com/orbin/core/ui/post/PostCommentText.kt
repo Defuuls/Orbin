@@ -79,7 +79,9 @@ private fun AnnotatedString.Builder.appendNode(node: PostNode) {
 }
 
 private fun AnnotatedString.Builder.appendQuoteLink(node: PostNode.QuoteLink) {
-    val prefix = if (node.board != null) ">>>/${node.board.value}/" else ">>"
+    // Local val: smart-casting a public property from another module isn't allowed.
+    val board = node.board
+    val prefix = if (board != null) ">>>/${board.value}/" else ">>"
     if (node.isDead) {
         withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.LineThrough)) {
             append("$prefix${node.target.value}")
