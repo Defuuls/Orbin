@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. Compose draws the UI; this only needs to be a no-action-bar
+         theme. enableEdgeToEdge() handles system-bar appearance at runtime. -->
+    <style name="Theme.Orbin" parent="android:Theme.Material.NoActionBar" />
+
+    <!-- Splash screen theme (androidx.core:core-splashscreen). Hands off to Theme.Orbin once the
+         first frame is ready. -->
+    <style name="Theme.Orbin.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Orbin</item>
+    </style>
+
+</resources>

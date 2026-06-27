@@ -18,4 +18,5 @@ interface ProviderRegistry {
 }
 
 /** Convenience that throws a clear error instead of returning null for a required provider. */
-fun ProviderRegistry.require(id: ProviderId): ImageBoardProvider = get(id) ?: error("No provider registered for id '${id.value}'")
+fun ProviderRegistry.require(id: ProviderId): ImageBoardProvider =
+    get(id) ?: error("No provider registered for id '${id.value}'")

@@ -41,6 +41,9 @@ naming:
     ignoreAnnotated: ['Composable']
   TopLevelPropertyNaming:
     active: true
+  MatchingDeclarationName:
+    # We deliberately group small related declarations per file (sealed UI states, theme tokens).
+    active: false
 
 style:
   active: true
