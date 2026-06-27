@@ -1,7 +1,36 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.orbin.android.application)
     alias(libs.plugins.orbin.android.hilt)
     alias(libs.plugins.kotlin.serialization)
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.exists()) {
+            keystorePropertiesFile.inputStream().use(::load)
+        }
+    }
+
+fun signingValue(name: String): String? =
+    System.getenv("ORBIN_$name")
+        ?: keystoreProperties.getProperty(name.lowercase().replace("_", "."))
+
+val releaseStoreFile = signingValue("KEYSTORE_FILE")
+val hasReleaseSigning =
+    !releaseStoreFile.isNullOrBlank() &&
+        !signingValue("KEYSTORE_PASSWORD").isNullOrBlank() &&
+        !signingValue("KEY_ALIAS").isNullOrBlank() &&
+        !signingValue("KEY_PASSWORD").isNullOrBlank()
+
+if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
+    check(hasReleaseSigning) {
+        "Release signing is not configured. Set ORBIN_KEYSTORE_FILE, " +
+            "ORBIN_KEYSTORE_PASSWORD, ORBIN_KEY_ALIAS, and ORBIN_KEY_PASSWORD, " +
+            "or create an ignored keystore.properties file."
+    }
 }
 
 android {
@@ -15,14 +44,11 @@ android {
 
     signingConfigs {
         create("release") {
-            // Read from environment (CI secrets) when present; otherwise the release build falls
-            // back to debug signing below so local `assembleRelease` works without a keystore.
-            val storePath = System.getenv("ORBIN_KEYSTORE_FILE")
-            if (storePath != null) {
-                storeFile = file(storePath)
-                storePassword = System.getenv("ORBIN_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("ORBIN_KEY_ALIAS")
-                keyPassword = System.getenv("ORBIN_KEY_PASSWORD")
+            if (hasReleaseSigning) {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = signingValue("KEYSTORE_PASSWORD")
+                keyAlias = signingValue("KEY_ALIAS")
+                keyPassword = signingValue("KEY_PASSWORD")
             }
         }
     }
@@ -39,12 +65,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig =
-                if (System.getenv("ORBIN_KEYSTORE_FILE") != null) {
-                    signingConfigs.getByName("release")
-                } else {
-                    signingConfigs.getByName("debug")
-                }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
