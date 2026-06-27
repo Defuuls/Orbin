@@ -1,0 +1,82 @@
+# Detekt configuration for Orbin.
+# Tuned for a Compose + Clean Architecture codebase: Composables legitimately exceed some
+# default complexity thresholds, and constructor injection produces long parameter lists.
+
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  active: true
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable', 'Inject']
+  LongMethod:
+    active: true
+    threshold: 80
+    ignoreAnnotated: ['Composable', 'Preview']
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 25
+    thresholdInClasses: 25
+    thresholdInObjects: 20
+    ignoreAnnotatedFunctions: ['Composable']
+  CyclomaticComplexMethod:
+    active: true
+    # Tag-dispatch `when` blocks (parsers, mappers) are naturally branchy yet readable.
+    threshold: 25
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    # Composable functions are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    active: true
+  MatchingDeclarationName:
+    # We deliberately group small related declarations per file (sealed UI states, theme tokens).
+    active: false
+
+style:
+  active: true
+  # Line length is owned by ktlint (single source of truth) to avoid conflicting auto-fixes.
+  MaxLineLength:
+    active: false
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2', '100', '1000']
+    ignoreAnnotated: ['Composable', 'Preview']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  ReturnCount:
+    active: true
+    max: 4
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated: ['Preview']
+  ForbiddenComment:
+    active: false
+  LoopWithTooManyJumpStatements:
+    active: false
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+  SuspendFunWithFlowReturnType:
+    active: true
+
+comments:
+  active: true
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false

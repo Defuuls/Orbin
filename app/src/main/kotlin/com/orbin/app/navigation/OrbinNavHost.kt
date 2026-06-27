@@ -1,0 +1,65 @@
+package com.orbin.app.navigation
+
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.orbin.feature.board.BoardScreen
+import com.orbin.feature.home.HomeScreen
+import com.orbin.feature.settings.SettingsScreen
+import com.orbin.feature.thread.ThreadScreen
+
+private const val TRANSITION_MS = 300
+
+/**
+ * The single navigation graph for the app. Slide + fade transitions give a smooth, native feel;
+ * predictive back is enabled at the manifest level so the system back gesture animates these
+ * destinations.
+ */
+@Composable
+fun OrbinNavHost(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = Route.Home,
+        enterTransition = {
+            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+        },
+        exitTransition = {
+            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+        },
+        popEnterTransition = {
+            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+        },
+        popExitTransition = {
+            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+        },
+    ) {
+        composable<Route.Home> {
+            HomeScreen(
+                onOpenBoard = { provider, board, title ->
+                    navController.navigate(Route.Board(provider, board, title))
+                },
+                onOpenSettings = { navController.navigate(Route.Settings) },
+            )
+        }
+
+        composable<Route.Board> {
+            BoardScreen(
+                onOpenThread = { provider, board, thread, title ->
+                    navController.navigate(Route.Thread(provider, board, thread, title))
+                },
+                onBack = navController::navigateUp,
+            )
+        }
+
+        composable<Route.Thread> {
+            ThreadScreen(onBack = navController::navigateUp)
+        }
+
+        composable<Route.Settings> {
+            SettingsScreen(onBack = navController::navigateUp)
+        }
+    }
+}
