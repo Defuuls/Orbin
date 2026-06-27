@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ThreadScreen(
     onBack: () -> Unit,
+    onOpenMedia: (Int) -> Unit,
     viewModel: ThreadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,6 +90,7 @@ fun ThreadScreen(
             is ThreadUiState.Success ->
                 ThreadContent(
                     thread = state.thread,
+                    onOpenMedia = onOpenMedia,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -98,12 +100,18 @@ fun ThreadScreen(
 @Composable
 private fun ThreadContent(
     thread: Thread,
+    onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread) { thread.allPosts }
     val indexById =
         remember(posts) {
             posts.withIndex().associate { (index, post) -> post.id to index + 1 } // +1 for the header item
+        }
+    // Flattened media index across the whole thread, so a tapped attachment opens at the right page.
+    val mediaIndexById =
+        remember(posts) {
+            posts.flatMap { it.attachments }.withIndex().associate { (index, media) -> media.id to index }
         }
     val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
     val listState = rememberLazyListState()
@@ -130,6 +138,7 @@ private fun ThreadContent(
                 isCollapsed = collapsed[post.id] == true,
                 onToggleCollapse = { collapsed[post.id] = !(collapsed[post.id] ?: false) },
                 onQuoteClick = onQuoteClick,
+                onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
             )
         }
     }
@@ -159,6 +168,7 @@ private fun PostCard(
     isCollapsed: Boolean,
     onToggleCollapse: () -> Unit,
     onQuoteClick: (PostId) -> Unit,
+    onMediaClick: (String) -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -167,7 +177,7 @@ private fun PostCard(
             if (!isCollapsed) {
                 post.attachments.firstOrNull()?.let { media ->
                     Spacer(Modifier.padding(top = 8.dp))
-                    MediaThumbnail(attachment = media)
+                    MediaThumbnail(attachment = media, onClick = { onMediaClick(media.id) })
                 }
                 if (post.comment.nodes.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))

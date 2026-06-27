@@ -4,6 +4,7 @@ import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
 import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.CatalogRepositoryImpl
+import com.orbin.data.repository.DownloadRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
@@ -11,6 +12,7 @@ import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
+import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -54,6 +56,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsSearchRepository(impl: SearchRepositoryImpl): SearchRepository
+
+    @Binds
+    @Singleton
+    fun bindsDownloadRepository(impl: DownloadRepositoryImpl): DownloadRepository
 
     @Binds
     @Singleton

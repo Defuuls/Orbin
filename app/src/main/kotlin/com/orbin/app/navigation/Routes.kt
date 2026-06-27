@@ -36,5 +36,16 @@ sealed interface Route {
     ) : Route
 
     @Serializable
+    data class Gallery(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val startIndex: Int,
+    ) : Route
+
+    @Serializable
+    data object Downloads : Route
+
+    @Serializable
     data object Settings : Route
 }

@@ -1,5 +1,6 @@
 package com.orbin.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +33,7 @@ import com.orbin.core.model.AppThemeMode
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenDownloads: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -64,6 +66,13 @@ fun SettingsScreen(
             SectionHeader("Network & privacy")
             SwitchRow("HTTPS only", settings.httpsOnly, viewModel::setHttpsOnly)
             SwitchRow("DNS over HTTPS", settings.dohEnabled, viewModel::setDoh)
+
+            SectionHeader("Storage")
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenDownloads),
+                headlineContent = { Text("Downloads") },
+                supportingContent = { Text("View download history") },
+            )
         }
     }
 }

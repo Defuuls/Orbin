@@ -75,6 +75,8 @@ dependencies {
     implementation(project(":feature:bookmarks"))
     implementation(project(":feature:history"))
     implementation(project(":feature:search"))
+    implementation(project(":feature:gallery"))
+    implementation(project(":feature:downloads"))
 
     // Compose + framework
     implementation(libs.androidx.core.ktx)

@@ -39,3 +39,14 @@ data class RecentSearchEntity(
     val query: String,
     val lastUsedMillis: Long,
 )
+
+@Entity(tableName = "downloads", primaryKeys = ["id"])
+data class DownloadEntity(
+    /** Platform download manager id. */
+    val id: Long,
+    val url: String,
+    val fileName: String,
+    /** [com.orbin.core.model.DownloadStatus] name. */
+    val status: String,
+    val createdAtMillis: Long,
+)

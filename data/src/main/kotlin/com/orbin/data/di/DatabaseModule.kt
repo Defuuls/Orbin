@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.dao.BookmarkDao
+import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.dao.RecentSearchDao
 import dagger.Module
@@ -36,4 +37,7 @@ object DatabaseModule {
 
     @Provides
     fun providesRecentSearchDao(database: OrbinDatabase): RecentSearchDao = database.recentSearchDao()
+
+    @Provides
+    fun providesDownloadDao(database: OrbinDatabase): DownloadDao = database.downloadDao()
 }
