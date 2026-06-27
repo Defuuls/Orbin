@@ -111,7 +111,9 @@ private fun BoardTile(
     board: Board,
     onClick: () -> Unit,
 ) {
-    val base = boardColor(board.id.value)
+    val boardId = board.id.value
+    val base = boardColor(boardId)
+    val letter = boardId.take(1).uppercase()
     Card(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.aspectRatio(1f).clickable(onClick = onClick),
@@ -119,7 +121,7 @@ private fun BoardTile(
         Box(modifier = Modifier.fillMaxSize().background(base)) {
             // Large letter "avatar" stands in for board artwork.
             Text(
-                text = board.id.value.take(1).uppercase(),
+                text = letter,
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = 56.sp,
                 fontWeight = FontWeight.Bold,
@@ -155,7 +157,7 @@ private fun BoardTile(
                         ).padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Text(
-                    text = "/${board.id.value}/",
+                    text = "/$boardId/",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
