@@ -6,11 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- **Boards:** replaced the board-setup slide-in panel with a full-screen board gallery of
-  large, tappable tiles (the Tune action is now a grid icon). Favorites stay on the home
-  list and subscriptions are managed under Settings, so the old setup panel was redundant.
-
 ### Added
 - **Build system:** multi-module Gradle setup with a version catalog and `build-logic`
   convention plugins (application/library/feature/compose/hilt/room/jvm-library).
@@ -43,6 +38,13 @@ All notable changes to Orbin are documented here. The format is based on
 - **Docs:** README, contributing guide, architecture overview, and the "add a provider" guide.
 - **CI:** GitHub Actions workflows for build/test/lint and tag-driven signed releases.
 
+## [5.0] - 2026-06-27
+
+### Changed
+- **Boards:** replaced the board-setup slide-in panel with a full-screen board gallery of
+  large, tappable tiles (the Tune action is now a grid icon). Favorites stay on the home
+  list and subscriptions are managed under Settings, so the old setup panel was redundant.
+
 ## [4.0] - 2026-06-27
 
 ### Changed
@@ -53,5 +55,6 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v4.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v5.0...HEAD
+[5.0]: https://github.com/Defuuls/Orbin/releases/tag/v5.0
 [4.0]: https://github.com/Defuuls/Orbin/releases/tag/v4.0
