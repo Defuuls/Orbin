@@ -1,6 +1,7 @@
 package com.orbin.core.testing
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -13,6 +14,7 @@ import org.junit.runner.Description
  * launch on the main dispatcher can be tested deterministically. Defaults to an unconfined
  * dispatcher for eager execution.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(
     val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
 ) : TestWatcher() {

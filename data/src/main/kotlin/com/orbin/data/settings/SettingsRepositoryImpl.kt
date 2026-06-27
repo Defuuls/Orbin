@@ -1,6 +1,7 @@
 package com.orbin.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -61,7 +62,7 @@ class SettingsRepositoryImpl
 
         override fun current(): NetworkConfig = cached.value.toNetworkConfig()
 
-        private suspend fun edit(block: (Preferences) -> Unit) {
+        private suspend fun edit(block: (MutablePreferences) -> Unit) {
             dataStore.edit { block(it) }
         }
 

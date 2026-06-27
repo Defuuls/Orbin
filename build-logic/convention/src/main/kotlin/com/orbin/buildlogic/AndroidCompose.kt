@@ -29,11 +29,6 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*,
     }
 
     extensions.configure(ComposeCompilerGradlePluginExtension::class.java) {
-        // A stability config file lets us mark third-party types as stable to minimize recompositions.
-        val stabilityFile = rootProject.layout.projectDirectory.file("compose_compiler_config.conf")
-        if (stabilityFile.asFile.exists()) {
-            stabilityConfigurationFile.set(stabilityFile)
-        }
         // Strong skipping is enabled by default in Kotlin 2.0.20+. We emit compiler metrics and
         // reports so recomposition regressions can be tracked in CI.
         metricsDestination.set(layout.buildDirectory.dir("compose_compiler"))
