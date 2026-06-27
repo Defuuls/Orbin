@@ -28,7 +28,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object VichanProviderModule {
-
     @Provides
     @IntoSet
     @Singleton
@@ -38,11 +37,13 @@ object VichanProviderModule {
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
     ): ImageBoardProvider {
         val site = VichanSite.Example
-        val retrofit = Retrofit.Builder()
-            .baseUrl(site.apiBaseUrl)
-            .client(client)
-            .addConverterFactory(json.asConverterFactory(JSON_MEDIA_TYPE))
-            .build()
+        val retrofit =
+            Retrofit
+                .Builder()
+                .baseUrl(site.apiBaseUrl)
+                .client(client)
+                .addConverterFactory(json.asConverterFactory(JSON_MEDIA_TYPE))
+                .build()
         return VichanProvider(
             site = site,
             api = retrofit.create(VichanApi::class.java),

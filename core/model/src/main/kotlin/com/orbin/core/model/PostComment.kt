@@ -23,7 +23,10 @@ data class PostComment(
     companion object {
         val Empty = PostComment(raw = "", nodes = persistentListOf())
 
-        private fun collectQuotes(nodes: List<PostNode>, out: MutableList<PostId>) {
+        private fun collectQuotes(
+            nodes: List<PostNode>,
+            out: MutableList<PostId>,
+        ) {
             nodes.forEach { node ->
                 when (node) {
                     is PostNode.QuoteLink -> out.add(node.target)
@@ -51,15 +54,19 @@ enum class InlineStyle {
 
 /** A node in a parsed post comment. The tree is intentionally shallow and cheap to render. */
 sealed interface PostNode {
-
     /** Plain text run. */
-    data class Text(val text: String) : PostNode
+    data class Text(
+        val text: String,
+    ) : PostNode
 
     /** Hard line break. */
     data object LineBreak : PostNode
 
     /** A run of [children] rendered with [style]. Styles may nest (e.g. bold inside greentext). */
-    data class Styled(val style: InlineStyle, val children: ImmutableList<PostNode>) : PostNode
+    data class Styled(
+        val style: InlineStyle,
+        val children: ImmutableList<PostNode>,
+    ) : PostNode
 
     /**
      * A cross-reference to another post (`>>123` / `>>>/b/123`). [isDead] marks references to
@@ -73,5 +80,8 @@ sealed interface PostNode {
     ) : PostNode
 
     /** An external hyperlink. */
-    data class Link(val url: String, val children: ImmutableList<PostNode>) : PostNode
+    data class Link(
+        val url: String,
+        val children: ImmutableList<PostNode>,
+    ) : PostNode
 }

@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class OrbinResultTest {
-
     @Test
     fun `map transforms success value`() {
         val result = 21.asSuccess().map { it * 2 }
@@ -32,7 +31,8 @@ class OrbinResultTest {
         var successHits = 0
         var failureHits = 0
 
-        5.asSuccess()
+        5
+            .asSuccess()
             .onSuccess { successHits++ }
             .onFailure { failureHits++ }
 

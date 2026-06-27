@@ -26,10 +26,11 @@ data class Thread(
     val stats: ThreadStats = ThreadStats(),
 ) {
     /** OP followed by replies, the natural reading order. */
-    val allPosts: List<Post> get() = buildList(replies.size + 1) {
-        add(originalPost)
-        addAll(replies)
-    }
+    val allPosts: List<Post> get() =
+        buildList(replies.size + 1) {
+            add(originalPost)
+            addAll(replies)
+        }
 
     val subject: String? get() = originalPost.subject
 }

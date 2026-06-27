@@ -6,7 +6,6 @@ import com.orbin.core.model.PostNode
 import org.junit.Test
 
 class VichanCommentParserTest {
-
     @Test
     fun `plain text and entities decode`() {
         val result = VichanCommentParser.parse("Tom &amp; Jerry &gt;&gt; 5 &#039;quoted&#039;")
@@ -71,8 +70,9 @@ class VichanCommentParserTest {
 
     @Test
     fun `quotedPosts aggregates all quote links`() {
-        val html = """<a href="#p1" class="quotelink">&gt;&gt;1</a> and """ +
-            """<a href="#p2" class="quotelink">&gt;&gt;2</a>"""
+        val html =
+            """<a href="#p1" class="quotelink">&gt;&gt;1</a> and """ +
+                """<a href="#p2" class="quotelink">&gt;&gt;2</a>"""
         val quoted = VichanCommentParser.parse(html).quotedPosts.map { it.value }
         assertThat(quoted).containsExactly(1L, 2L)
     }

@@ -26,7 +26,6 @@ import com.orbin.core.model.ThreadId
  *   cross-cutting enrichment such as backlinks.
  */
 interface ImageBoardProvider {
-
     val metadata: ProviderMetadata
 
     val capabilities: ProviderCapabilities
@@ -38,12 +37,14 @@ interface ImageBoardProvider {
     suspend fun getCatalog(request: CatalogRequest): List<CatalogThread>
 
     /** Loads a full thread (OP + all replies). */
-    suspend fun getThread(board: BoardId, thread: ThreadId): Thread
+    suspend fun getThread(
+        board: BoardId,
+        thread: ThreadId,
+    ): Thread
 
     /**
      * Server-side search. Only called when [capabilities] reports `supportsSearch`; the default
      * implementation rejects the call so providers without search need not override it.
      */
-    suspend fun search(query: SearchQuery): List<SearchResult> =
-        throw ProviderException.Unsupported("search")
+    suspend fun search(query: SearchQuery): List<SearchResult> = throw ProviderException.Unsupported("search")
 }

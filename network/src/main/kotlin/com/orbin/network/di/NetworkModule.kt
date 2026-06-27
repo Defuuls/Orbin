@@ -36,15 +36,15 @@ annotation class BaseOkHttp
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     @Provides
     @Singleton
-    fun providesJson(): Json = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-        isLenient = true
-        explicitNulls = false
-    }
+    fun providesJson(): Json =
+        Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+            isLenient = true
+            explicitNulls = false
+        }
 
     @Provides
     @Singleton
@@ -53,11 +53,14 @@ object NetworkModule {
         val config = configProvider.current()
 
         // Bootstrap client used only to resolve the DoH endpoint itself.
-        val bootstrap = OkHttpClient.Builder()
-            .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
-            .build()
+        val bootstrap =
+            OkHttpClient
+                .Builder()
+                .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
+                .build()
 
-        return OkHttpClient.Builder()
+        return OkHttpClient
+            .Builder()
             .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
@@ -78,21 +81,24 @@ object NetworkModule {
                         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC },
                     )
                 }
-            }
-            .build()
+            }.build()
     }
 
-    private fun dnsFor(config: NetworkConfig, bootstrap: OkHttpClient): Dns? =
+    private fun dnsFor(
+        config: NetworkConfig,
+        bootstrap: OkHttpClient,
+    ): Dns? =
         when (val doh = config.dnsOverHttps) {
             DohConfig.Disabled -> null
-            is DohConfig.Enabled -> DnsOverHttps.Builder()
-                .client(bootstrap)
-                .url(doh.resolverUrl.toHttpUrl())
-                .apply {
-                    if (doh.bootstrapIps.isNotEmpty()) {
-                        bootstrapDnsHosts(doh.bootstrapIps.map { InetAddress.getByName(it) })
-                    }
-                }
-                .build()
+            is DohConfig.Enabled ->
+                DnsOverHttps
+                    .Builder()
+                    .client(bootstrap)
+                    .url(doh.resolverUrl.toHttpUrl())
+                    .apply {
+                        if (doh.bootstrapIps.isNotEmpty()) {
+                            bootstrapDnsHosts(doh.bootstrapIps.map { InetAddress.getByName(it) })
+                        }
+                    }.build()
         }
 }

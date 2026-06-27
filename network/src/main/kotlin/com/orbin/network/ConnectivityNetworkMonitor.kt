@@ -20,45 +20,53 @@ import javax.inject.Singleton
  * updates as networks come and go. Uses callbackFlow so there are no leaked listeners.
  */
 @Singleton
-class ConnectivityNetworkMonitor @Inject constructor(
-    @ApplicationContext private val context: Context,
-) : NetworkMonitor {
+class ConnectivityNetworkMonitor
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) : NetworkMonitor {
+        override val isOnline: Flow<Boolean> =
+            callbackFlow {
+                val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+                if (connectivityManager == null) {
+                    channel.trySend(false)
+                    channel.close()
+                    return@callbackFlow
+                }
 
-    override val isOnline: Flow<Boolean> = callbackFlow {
-        val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
-        if (connectivityManager == null) {
-            channel.trySend(false)
-            channel.close()
-            return@callbackFlow
-        }
+                // Track validated networks; online == at least one network has INTERNET + VALIDATED.
+                val networks = mutableSetOf<Network>()
 
-        // Track validated networks; online == at least one network has INTERNET + VALIDATED.
-        val networks = mutableSetOf<Network>()
+                val callback =
+                    object : ConnectivityManager.NetworkCallback() {
+                        override fun onCapabilitiesChanged(
+                            network: Network,
+                            caps: NetworkCapabilities,
+                        ) {
+                            val validated =
+                                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) &&
+                                    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                            if (validated) networks.add(network) else networks.remove(network)
+                            channel.trySend(networks.isNotEmpty())
+                        }
 
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                val validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) &&
-                    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                if (validated) networks.add(network) else networks.remove(network)
-                channel.trySend(networks.isNotEmpty())
-            }
+                        override fun onLost(network: Network) {
+                            networks.remove(network)
+                            channel.trySend(networks.isNotEmpty())
+                        }
+                    }
 
-            override fun onLost(network: Network) {
-                networks.remove(network)
-                channel.trySend(networks.isNotEmpty())
-            }
-        }
+                val request =
+                    NetworkRequest
+                        .Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build()
+                connectivityManager.registerNetworkCallback(request, callback)
 
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        connectivityManager.registerNetworkCallback(request, callback)
+                // Seed with the current state.
+                channel.trySend(connectivityManager.activeNetwork != null)
 
-        // Seed with the current state.
-        channel.trySend(connectivityManager.activeNetwork != null)
-
-        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
+                awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
+            }.conflate()
+                .distinctUntilChanged()
     }
-        .conflate()
-        .distinctUntilChanged()
-}

@@ -9,7 +9,9 @@ import javax.inject.Qualifier
  */
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Dispatcher(val type: OrbinDispatcher)
+annotation class Dispatcher(
+    val type: OrbinDispatcher,
+)
 
 enum class OrbinDispatcher { Default, IO }
 

@@ -29,7 +29,10 @@ interface BoardRepository {
 
     suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>>
 
-    suspend fun getBoard(provider: ProviderId, board: BoardId): OrbinResult<Board>
+    suspend fun getBoard(
+        provider: ProviderId,
+        board: BoardId,
+    ): OrbinResult<Board>
 }
 
 interface CatalogRepository {
@@ -48,29 +51,50 @@ interface ThreadRepository {
      */
     fun observeThread(key: ThreadKey): Flow<OrbinResult<Thread>>
 
-    suspend fun refreshThread(provider: ProviderId, board: BoardId, thread: ThreadId): OrbinResult<Thread>
+    suspend fun refreshThread(
+        provider: ProviderId,
+        board: BoardId,
+        thread: ThreadId,
+    ): OrbinResult<Thread>
 }
 
 interface BookmarkRepository {
     fun observeBookmarks(): Flow<List<Bookmark>>
+
     fun observeBookmark(key: ThreadKey): Flow<Bookmark?>
+
     suspend fun addBookmark(bookmark: Bookmark)
+
     suspend fun removeBookmark(key: ThreadKey)
-    suspend fun setWatched(key: ThreadKey, watched: Boolean)
+
+    suspend fun setWatched(
+        key: ThreadKey,
+        watched: Boolean,
+    )
+
     /** Marks a thread read up to its current reply count. */
     suspend fun markRead(key: ThreadKey)
 }
 
 interface HistoryRepository {
     fun observeHistory(): Flow<List<HistoryEntry>>
+
     suspend fun record(entry: HistoryEntry)
-    suspend fun updateLastRead(key: ThreadKey, postId: PostId)
+
+    suspend fun updateLastRead(
+        key: ThreadKey,
+        postId: PostId,
+    )
+
     suspend fun clear()
 }
 
 interface SearchRepository {
     suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>>
+
     fun observeRecentQueries(): Flow<List<String>>
+
     suspend fun recordQuery(text: String)
+
     suspend fun clearRecentQueries()
 }

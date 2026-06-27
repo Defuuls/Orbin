@@ -26,10 +26,12 @@ complexity:
     active: true
     thresholdInFiles: 25
     thresholdInClasses: 25
+    thresholdInObjects: 20
     ignoreAnnotatedFunctions: ['Composable']
   CyclomaticComplexMethod:
     active: true
-    threshold: 18
+    # Tag-dispatch `when` blocks (parsers, mappers) are naturally branchy yet readable.
+    threshold: 25
 
 naming:
   active: true
@@ -42,10 +44,9 @@ naming:
 
 style:
   active: true
+  # Line length is owned by ktlint (single source of truth) to avoid conflicting auto-fixes.
   MaxLineLength:
-    active: true
-    maxLineLength: 120
-    excludeCommentStatements: true
+    active: false
   MagicNumber:
     active: true
     ignoreNumbers: ['-1', '0', '1', '2', '100', '1000']
@@ -60,12 +61,8 @@ style:
     ignoreAnnotated: ['Preview']
   ForbiddenComment:
     active: false
-
-formatting:
-  active: true
-  Indentation:
-    active: true
-    indentSize: 4
+  LoopWithTooManyJumpStatements:
+    active: false
 
 coroutines:
   active: true

@@ -25,7 +25,6 @@ import kotlinx.collections.immutable.toImmutableList
  * Unknown tags are transparent: their text content is preserved.
  */
 object VichanCommentParser {
-
     fun parse(html: String?): PostComment {
         if (html.isNullOrEmpty()) return PostComment.Empty
         val tokens = tokenize(html)
@@ -36,10 +35,23 @@ object VichanCommentParser {
     // region tokenizer
 
     private sealed interface Token {
-        data class Text(val value: String) : Token
-        data class Open(val name: String, val cssClass: String?, val href: String?) : Token
-        data class Close(val name: String) : Token
-        data class Void(val name: String) : Token
+        data class Text(
+            val value: String,
+        ) : Token
+
+        data class Open(
+            val name: String,
+            val cssClass: String?,
+            val href: String?,
+        ) : Token
+
+        data class Close(
+            val name: String,
+        ) : Token
+
+        data class Void(
+            val name: String,
+        ) : Token
     }
 
     private val voidTags = setOf("br", "wbr", "hr")
@@ -67,7 +79,10 @@ object VichanCommentParser {
         return tokens
     }
 
-    private fun appendText(tokens: MutableList<Token>, raw: String) {
+    private fun appendText(
+        tokens: MutableList<Token>,
+        raw: String,
+    ) {
         if (raw.isEmpty()) return
         tokens.add(Token.Text(decodeEntities(raw)))
     }
@@ -81,7 +96,10 @@ object VichanCommentParser {
         return Token.Open(name, cssClass = attr(body, "class"), href = attr(body, "href"))
     }
 
-    private fun attr(tagBody: String, attr: String): String? {
+    private fun attr(
+        tagBody: String,
+        attr: String,
+    ): String? {
         val key = "$attr="
         val idx = tagBody.indexOf(key)
         if (idx < 0) return null
@@ -107,8 +125,14 @@ object VichanCommentParser {
         var i = start
         while (i < tokens.size) {
             when (val token = tokens[i]) {
-                is Token.Text -> { out.add(PostNode.Text(token.value)); i++ }
-                is Token.Void -> { if (token.name == "br") out.add(PostNode.LineBreak); i++ }
+                is Token.Text -> {
+                    out.add(PostNode.Text(token.value))
+                    i++
+                }
+                is Token.Void -> {
+                    if (token.name == "br") out.add(PostNode.LineBreak)
+                    i++
+                }
                 is Token.Close -> {
                     // Matching close ends this context; a stray close is ignored (lenient parsing).
                     if (token.name == stopTag) return out.toImmutableList() to (i + 1)
@@ -127,7 +151,10 @@ object VichanCommentParser {
     }
 
     /** Builds a node for a known tag, or returns null to signal "transparent / unknown tag". */
-    private fun buildNode(open: Token.Open, children: ImmutableList<PostNode>): PostNode? {
+    private fun buildNode(
+        open: Token.Open,
+        children: ImmutableList<PostNode>,
+    ): PostNode? {
         val cls = open.cssClass?.lowercase().orEmpty()
         return when {
             open.name == "a" && cls.contains("quotelink") -> quoteLink(open.href, children, dead = false)
@@ -145,15 +172,28 @@ object VichanCommentParser {
         }
     }
 
-    private fun styled(style: InlineStyle, children: ImmutableList<PostNode>): PostNode =
-        PostNode.Styled(style, children)
+    private fun styled(
+        style: InlineStyle,
+        children: ImmutableList<PostNode>,
+    ): PostNode = PostNode.Styled(style, children)
 
-    private fun quoteLink(href: String?, children: List<PostNode>, dead: Boolean): PostNode {
+    private fun quoteLink(
+        href: String?,
+        children: List<PostNode>,
+        dead: Boolean,
+    ): PostNode {
         val text = children.joinToString("") { (it as? PostNode.Text)?.text ?: "" }
         val board = href?.let { BOARD_IN_PATH.find(it)?.groupValues?.get(1) }?.let(::BoardId)
-        val target = href?.let { POST_IN_HREF.find(it)?.groupValues?.get(1)?.toLongOrNull() }
-            ?: NUMBER.find(text)?.value?.toLongOrNull()
-            ?: 0L
+        val target =
+            href?.let {
+                POST_IN_HREF
+                    .find(it)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toLongOrNull()
+            }
+                ?: NUMBER.find(text)?.value?.toLongOrNull()
+                ?: 0L
         return PostNode.QuoteLink(
             target = PostId(target),
             board = board,
@@ -168,10 +208,17 @@ object VichanCommentParser {
     private val BOARD_IN_PATH = Regex("""/([a-z0-9]+)/(?:res|thread)/""")
     private val NUMBER = Regex("""\d+""")
 
-    private val entityMap = mapOf(
-        "amp" to "&", "lt" to "<", "gt" to ">", "quot" to "\"", "apos" to "'",
-        "nbsp" to " ", "#039" to "'", "#39" to "'",
-    )
+    private val entityMap =
+        mapOf(
+            "amp" to "&",
+            "lt" to "<",
+            "gt" to ">",
+            "quot" to "\"",
+            "apos" to "'",
+            "nbsp" to " ",
+            "#039" to "'",
+            "#39" to "'",
+        )
 
     private fun decodeEntities(input: String): String {
         if ('&' !in input) return input
@@ -181,10 +228,14 @@ object VichanCommentParser {
                 val c = input[i]
                 if (c == '&') {
                     val semi = input.indexOf(';', i)
-                    if (semi in (i + 1)..(i + 10)) {
+                    if (semi in (i + 1)..(i + MAX_ENTITY_LENGTH)) {
                         val entity = input.substring(i + 1, semi)
                         val decoded = entityMap[entity] ?: decodeNumeric(entity)
-                        if (decoded != null) { append(decoded); i = semi + 1; continue }
+                        if (decoded != null) {
+                            append(decoded)
+                            i = semi + 1
+                            continue
+                        }
                     }
                 }
                 append(c)
@@ -195,11 +246,16 @@ object VichanCommentParser {
 
     private fun decodeNumeric(entity: String): String? {
         if (!entity.startsWith("#")) return null
-        val code = if (entity.startsWith("#x") || entity.startsWith("#X")) {
-            entity.drop(2).toIntOrNull(16)
-        } else {
-            entity.drop(1).toIntOrNull()
-        } ?: return null
+        val code =
+            if (entity.startsWith("#x") || entity.startsWith("#X")) {
+                entity.drop(HEX_PREFIX_LENGTH).toIntOrNull(RADIX_HEX)
+            } else {
+                entity.drop(1).toIntOrNull()
+            } ?: return null
         return code.toChar().toString()
     }
+
+    private const val MAX_ENTITY_LENGTH = 10
+    private const val HEX_PREFIX_LENGTH = 2
+    private const val RADIX_HEX = 16
 }

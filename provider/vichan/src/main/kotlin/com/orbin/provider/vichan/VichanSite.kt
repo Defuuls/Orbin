@@ -28,17 +28,18 @@ data class VichanSite(
          * public, read-only API which makes it ideal for demonstrating the provider end to end.
          * Replace or add [VichanSite]s to target any other instance.
          */
-        val Example = VichanSite(
-            providerId = ProviderId("fourchan"),
-            displayName = "4chan (read-only example)",
-            siteUrl = "https://boards.4chan.org",
-            apiBaseUrl = "https://a.4cdn.org/",
-            mediaBaseUrl = "https://i.4cdn.org",
-            thumbBaseUrl = "https://i.4cdn.org",
-            mediaUrlStyle = MediaUrlStyle.FOURCHAN,
-            nsfwByDefault = false,
-            supportsBoardList = true,
-        )
+        val Example =
+            VichanSite(
+                providerId = ProviderId("fourchan"),
+                displayName = "4chan (read-only example)",
+                siteUrl = "https://boards.4chan.org",
+                apiBaseUrl = "https://a.4cdn.org/",
+                mediaBaseUrl = "https://i.4cdn.org",
+                thumbBaseUrl = "https://i.4cdn.org",
+                mediaUrlStyle = MediaUrlStyle.FOURCHAN,
+                nsfwByDefault = false,
+                supportsBoardList = true,
+            )
     }
 }
 

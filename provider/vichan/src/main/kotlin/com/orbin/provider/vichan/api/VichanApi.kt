@@ -8,14 +8,15 @@ import retrofit2.http.Path
  * (see [com.orbin.provider.vichan.VichanSite]); paths here are relative to it.
  */
 interface VichanApi {
-
     /** Site-wide board list. Not all engines expose this; callers handle a 404 gracefully. */
     @GET("boards.json")
     suspend fun boards(): VichanBoardsResponse
 
     /** Full catalog (all pages) for a board. */
     @GET("{board}/catalog.json")
-    suspend fun catalog(@Path("board") board: String): List<VichanCatalogPage>
+    suspend fun catalog(
+        @Path("board") board: String,
+    ): List<VichanCatalogPage>
 
     /** A single thread by its OP number. */
     @GET("{board}/thread/{no}.json")

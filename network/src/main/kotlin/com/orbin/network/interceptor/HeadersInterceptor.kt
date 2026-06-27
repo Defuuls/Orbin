@@ -12,10 +12,13 @@ class HeadersInterceptor(
     private val configProvider: NetworkConfigProvider,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request().newBuilder()
-            .header("User-Agent", configProvider.current().userAgent)
-            .header("Accept", "application/json, image/*, */*")
-            .build()
+        val request =
+            chain
+                .request()
+                .newBuilder()
+                .header("User-Agent", configProvider.current().userAgent)
+                .header("Accept", "application/json, image/*, */*")
+                .build()
         return chain.proceed(request)
     }
 }

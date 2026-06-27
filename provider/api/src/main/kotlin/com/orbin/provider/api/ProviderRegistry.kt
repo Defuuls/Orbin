@@ -7,7 +7,6 @@ import com.orbin.core.model.ProviderId
  * populated via DI (Hilt multibinding), so adding a provider module is wiring-only.
  */
 interface ProviderRegistry {
-
     /** All registered providers, in display order. */
     fun all(): List<ImageBoardProvider>
 
@@ -19,5 +18,4 @@ interface ProviderRegistry {
 }
 
 /** Convenience that throws a clear error instead of returning null for a required provider. */
-fun ProviderRegistry.require(id: ProviderId): ImageBoardProvider =
-    get(id) ?: error("No provider registered for id '${id.value}'")
+fun ProviderRegistry.require(id: ProviderId): ImageBoardProvider = get(id) ?: error("No provider registered for id '${id.value}'")

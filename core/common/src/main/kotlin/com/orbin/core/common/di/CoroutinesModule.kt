@@ -17,7 +17,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object CoroutinesModule {
-
     @Provides
     @Dispatcher(OrbinDispatcher.IO)
     fun providesIoDispatcher(): CoroutineDispatcher = Dispatchers.IO

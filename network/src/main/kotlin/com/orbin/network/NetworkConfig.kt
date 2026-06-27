@@ -26,21 +26,30 @@ sealed interface DohConfig {
     data object Disabled : DohConfig
 
     /** Use a well-known resolver, or a custom DoH endpoint URL. */
-    data class Enabled(val resolverUrl: String, val bootstrapIps: List<String> = emptyList()) : DohConfig
+    data class Enabled(
+        val resolverUrl: String,
+        val bootstrapIps: List<String> = emptyList(),
+    ) : DohConfig
 
     companion object {
-        val Cloudflare = Enabled(
-            resolverUrl = "https://cloudflare-dns.com/dns-query",
-            bootstrapIps = listOf("1.1.1.1", "1.0.0.1"),
-        )
-        val Google = Enabled(
-            resolverUrl = "https://dns.google/dns-query",
-            bootstrapIps = listOf("8.8.8.8", "8.8.4.4"),
-        )
+        val Cloudflare =
+            Enabled(
+                resolverUrl = "https://cloudflare-dns.com/dns-query",
+                bootstrapIps = listOf("1.1.1.1", "1.0.0.1"),
+            )
+        val Google =
+            Enabled(
+                resolverUrl = "https://dns.google/dns-query",
+                bootstrapIps = listOf("8.8.8.8", "8.8.4.4"),
+            )
     }
 }
 
-data class ProxyConfig(val host: String, val port: Int, val type: ProxyType = ProxyType.HTTP)
+data class ProxyConfig(
+    val host: String,
+    val port: Int,
+    val type: ProxyType = ProxyType.HTTP,
+)
 
 enum class ProxyType { HTTP, SOCKS }
 

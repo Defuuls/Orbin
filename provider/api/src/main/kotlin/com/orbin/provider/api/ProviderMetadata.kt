@@ -40,7 +40,8 @@ data class ProviderCapabilities(
     val supportsArchive: Boolean = false,
     /** Catalog pagination beyond a single page. */
     val supportsCatalogPaging: Boolean = true,
-    val supportedSortOptions: Set<com.orbin.core.model.CatalogSort> = setOf(
-        com.orbin.core.model.CatalogSort.BUMP_ORDER,
-    ),
+    val supportedSortOptions: Set<com.orbin.core.model.CatalogSort> =
+        setOf(
+            com.orbin.core.model.CatalogSort.BUMP_ORDER,
+        ),
 )

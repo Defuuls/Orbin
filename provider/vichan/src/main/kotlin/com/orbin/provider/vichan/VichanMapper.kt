@@ -6,8 +6,8 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
-import com.orbin.core.model.PosterInfo
 import com.orbin.core.model.PostId
+import com.orbin.core.model.PosterInfo
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -25,23 +25,27 @@ import kotlinx.collections.immutable.toImmutableList
  * Maps vichan/4chan wire DTOs to Orbin domain models for a specific [site]. All URL construction
  * and engine-specific quirks live here, so the rest of the app stays engine-agnostic.
  */
-class VichanMapper(private val site: VichanSite) {
+class VichanMapper(
+    private val site: VichanSite,
+) {
+    fun mapBoards(response: VichanBoardsResponse): List<Board> = response.boards.map(::mapBoard)
 
-    fun mapBoards(response: VichanBoardsResponse): List<Board> =
-        response.boards.map(::mapBoard)
+    private fun mapBoard(dto: VichanBoard): Board =
+        Board(
+            id = BoardId(dto.board),
+            title = dto.title,
+            description = dto.metaDescription,
+            isNsfw = dto.workSafe == 0,
+            pageCount = dto.pages,
+            bumpLimit = dto.bumpLimit,
+            imageLimit = dto.imageLimit,
+            maxCommentChars = dto.maxCommentChars,
+        )
 
-    private fun mapBoard(dto: VichanBoard): Board = Board(
-        id = BoardId(dto.board),
-        title = dto.title,
-        description = dto.metaDescription,
-        isNsfw = dto.workSafe == 0,
-        pageCount = dto.pages,
-        bumpLimit = dto.bumpLimit,
-        imageLimit = dto.imageLimit,
-        maxCommentChars = dto.maxCommentChars,
-    )
-
-    fun mapCatalog(board: BoardId, pages: List<VichanCatalogPage>): List<CatalogThread> =
+    fun mapCatalog(
+        board: BoardId,
+        pages: List<VichanCatalogPage>,
+    ): List<CatalogThread> =
         pages.flatMap { page ->
             page.threads.map { op ->
                 val threadId = ThreadId(op.no)
@@ -53,7 +57,10 @@ class VichanMapper(private val site: VichanSite) {
             }
         }
 
-    fun mapThread(board: BoardId, response: VichanThreadResponse): Thread {
+    fun mapThread(
+        board: BoardId,
+        response: VichanThreadResponse,
+    ): Thread {
         val posts = response.posts
         require(posts.isNotEmpty()) { "Thread response had no posts" }
         val opDto = posts.first()
@@ -68,17 +75,23 @@ class VichanMapper(private val site: VichanSite) {
         )
     }
 
-    private fun mapStats(op: VichanPost): ThreadStats = ThreadStats(
-        replyCount = op.replies,
-        imageCount = op.images,
-        uniquePosterCount = op.uniqueIps,
-        isSticky = op.sticky == 1,
-        isClosed = op.closed == 1 || op.locked == 1,
-        isArchived = op.archived == 1,
-        lastModifiedMillis = (if (op.lastModified > 0) op.lastModified else op.time) * MILLIS_PER_SECOND,
-    )
+    private fun mapStats(op: VichanPost): ThreadStats =
+        ThreadStats(
+            replyCount = op.replies,
+            imageCount = op.images,
+            uniquePosterCount = op.uniqueIps,
+            isSticky = op.sticky == 1,
+            isClosed = op.closed == 1 || op.locked == 1,
+            isArchived = op.archived == 1,
+            lastModifiedMillis = (if (op.lastModified > 0) op.lastModified else op.time) * MILLIS_PER_SECOND,
+        )
 
-    fun mapPost(board: BoardId, threadId: ThreadId, dto: VichanPost, isOp: Boolean): Post {
+    fun mapPost(
+        board: BoardId,
+        threadId: ThreadId,
+        dto: VichanPost,
+        isOp: Boolean,
+    ): Post {
         val comment = VichanCommentParser.parse(dto.com)
         return Post(
             id = PostId(dto.no),
@@ -87,14 +100,15 @@ class VichanMapper(private val site: VichanSite) {
             isOriginalPost = isOp,
             subject = dto.sub?.takeIf { it.isNotBlank() },
             comment = comment,
-            poster = PosterInfo(
-                name = dto.name?.takeIf { it.isNotBlank() },
-                tripcode = dto.trip,
-                posterId = dto.id,
-                capcode = dto.capcode,
-                countryCode = dto.country,
-                countryName = dto.countryName,
-            ),
+            poster =
+                PosterInfo(
+                    name = dto.name?.takeIf { it.isNotBlank() },
+                    tripcode = dto.trip,
+                    posterId = dto.id,
+                    capcode = dto.capcode,
+                    countryCode = dto.country,
+                    countryName = dto.countryName,
+                ),
             createdAtMillis = dto.time * MILLIS_PER_SECOND,
             attachments = buildAttachments(board, dto).toImmutableList(),
             repliesTo = comment.quotedPosts.toImmutableList(),
@@ -102,10 +116,25 @@ class VichanMapper(private val site: VichanSite) {
         )
     }
 
-    private fun buildAttachments(board: BoardId, dto: VichanPost): List<MediaAttachment> {
-        val primary = dto.tim?.let { tim ->
-            attachment(board, tim, dto.filename, dto.ext, dto.fsize, dto.w, dto.h, dto.tnW, dto.tnH, dto.spoiler == 1)
-        }
+    private fun buildAttachments(
+        board: BoardId,
+        dto: VichanPost,
+    ): List<MediaAttachment> {
+        val primary =
+            dto.tim?.let { tim ->
+                attachment(
+                    board = board,
+                    tim = tim,
+                    filename = dto.filename,
+                    ext = dto.ext,
+                    sizeBytes = dto.fsize,
+                    width = dto.w,
+                    height = dto.h,
+                    thumbWidth = dto.tnW,
+                    thumbHeight = dto.tnH,
+                    spoiler = dto.spoiler == 1,
+                )
+            }
         val extras = dto.extraFiles.mapNotNull { it.toAttachment(board) }
         return listOfNotNull(primary) + extras
     }
@@ -146,12 +175,22 @@ class VichanMapper(private val site: VichanSite) {
         )
     }
 
-    private fun fullUrl(board: String, tim: String, ext: String): String = when (site.mediaUrlStyle) {
-        MediaUrlStyle.FOURCHAN -> "${site.mediaBaseUrl}/$board/$tim$ext"
-        MediaUrlStyle.VICHAN -> "${site.mediaBaseUrl}/$board/src/$tim$ext"
-    }
+    private fun fullUrl(
+        board: String,
+        tim: String,
+        ext: String,
+    ): String =
+        when (site.mediaUrlStyle) {
+            MediaUrlStyle.FOURCHAN -> "${site.mediaBaseUrl}/$board/$tim$ext"
+            MediaUrlStyle.VICHAN -> "${site.mediaBaseUrl}/$board/src/$tim$ext"
+        }
 
-    private fun thumbUrl(board: String, tim: String, ext: String, type: MediaType): String {
+    private fun thumbUrl(
+        board: String,
+        tim: String,
+        ext: String,
+        type: MediaType,
+    ): String {
         // Video/audio thumbnails are always still images on these engines.
         val thumbExt = if (type == MediaType.VIDEO || type == MediaType.AUDIO) ".jpg" else ext
         return when (site.mediaUrlStyle) {
@@ -160,13 +199,14 @@ class VichanMapper(private val site: VichanSite) {
         }
     }
 
-    private fun mediaType(ext: String): MediaType = when (ext.removePrefix(".").lowercase()) {
-        "jpg", "jpeg", "png", "webp", "bmp" -> MediaType.IMAGE
-        "gif", "apng" -> MediaType.ANIMATED_IMAGE
-        "webm", "mp4", "mov", "mkv" -> MediaType.VIDEO
-        "mp3", "ogg", "opus", "flac", "wav", "m4a" -> MediaType.AUDIO
-        else -> MediaType.UNKNOWN
-    }
+    private fun mediaType(ext: String): MediaType =
+        when (ext.removePrefix(".").lowercase()) {
+            "jpg", "jpeg", "png", "webp", "bmp" -> MediaType.IMAGE
+            "gif", "apng" -> MediaType.ANIMATED_IMAGE
+            "webm", "mp4", "mov", "mkv" -> MediaType.VIDEO
+            "mp3", "ogg", "opus", "flac", "wav", "m4a" -> MediaType.AUDIO
+            else -> MediaType.UNKNOWN
+        }
 
     private companion object {
         const val MILLIS_PER_SECOND = 1000L
