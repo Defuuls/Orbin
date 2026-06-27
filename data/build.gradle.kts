@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.orbin.android.library)
     alias(libs.plugins.orbin.android.hilt)
+    alias(libs.plugins.orbin.android.room)
 }
 
 android {
@@ -23,4 +24,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.robolectric)
 }
