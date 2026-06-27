@@ -30,6 +30,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             add("implementation", libs.findLibrary("androidx-hilt-navigation-compose").get())
             add("implementation", libs.findLibrary("androidx-navigation-compose").get())
             add("implementation", libs.findLibrary("compose-material3").get())
+            add("implementation", libs.findLibrary("compose-material-icons-extended").get())
             add("implementation", libs.findLibrary("kotlinx-immutable").get())
 
             add("testImplementation", project(":core:testing"))

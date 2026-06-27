@@ -8,6 +8,7 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    api(project(":domain"))
     api(libs.junit)
     api(libs.truth)
     api(libs.turbine)

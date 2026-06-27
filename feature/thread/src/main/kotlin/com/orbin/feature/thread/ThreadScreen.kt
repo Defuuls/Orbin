@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -51,9 +53,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun ThreadScreen(
     onBack: () -> Unit,
+    onOpenMedia: (Int) -> Unit,
     viewModel: ThreadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -62,6 +66,19 @@ fun ThreadScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = viewModel::toggleBookmark) {
+                        Icon(
+                            imageVector =
+                                if (isBookmarked) {
+                                    Icons.Filled.Bookmark
+                                } else {
+                                    Icons.Outlined.BookmarkBorder
+                                },
+                            contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark",
+                        )
                     }
                 },
             )
@@ -73,6 +90,7 @@ fun ThreadScreen(
             is ThreadUiState.Success ->
                 ThreadContent(
                     thread = state.thread,
+                    onOpenMedia = onOpenMedia,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -82,12 +100,18 @@ fun ThreadScreen(
 @Composable
 private fun ThreadContent(
     thread: Thread,
+    onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread) { thread.allPosts }
     val indexById =
         remember(posts) {
             posts.withIndex().associate { (index, post) -> post.id to index + 1 } // +1 for the header item
+        }
+    // Flattened media index across the whole thread, so a tapped attachment opens at the right page.
+    val mediaIndexById =
+        remember(posts) {
+            posts.flatMap { it.attachments }.withIndex().associate { (index, media) -> media.id to index }
         }
     val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
     val listState = rememberLazyListState()
@@ -114,6 +138,7 @@ private fun ThreadContent(
                 isCollapsed = collapsed[post.id] == true,
                 onToggleCollapse = { collapsed[post.id] = !(collapsed[post.id] ?: false) },
                 onQuoteClick = onQuoteClick,
+                onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
             )
         }
     }
@@ -143,6 +168,7 @@ private fun PostCard(
     isCollapsed: Boolean,
     onToggleCollapse: () -> Unit,
     onQuoteClick: (PostId) -> Unit,
+    onMediaClick: (String) -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -151,7 +177,7 @@ private fun PostCard(
             if (!isCollapsed) {
                 post.attachments.firstOrNull()?.let { media ->
                     Spacer(Modifier.padding(top = 8.dp))
-                    MediaThumbnail(attachment = media)
+                    MediaThumbnail(attachment = media, onClick = { onMediaClick(media.id) })
                 }
                 if (post.comment.nodes.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))

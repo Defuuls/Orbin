@@ -23,6 +23,18 @@ All notable changes to Orbin are documented here. The format is based on
 - **`:provider:vichan`:** reference provider for vichan/4chan-compatible JSON APIs with a
   data-driven site configuration, an HTML comment parser, a DTO→domain mapper, and Hilt
   multibinding registration.
+- **Persistence:** Room database (bookmarks, history, recent searches, downloads)
+  with exported schemas; offline-friendly repositories.
+- **Features:** bookmarks (unread badges, watch toggle), reading history, board
+  search with recent queries, all reachable from a Material 3 bottom navigation bar.
+- **Media:** Media3/ExoPlayer video playback and a pinch-zoom swipe gallery opened
+  from thread media.
+- **Downloads:** native download manager over the platform DownloadManager
+  (notifications, resume, retry) with an in-app history screen.
+- **Notifications:** watched-thread background updates via a WorkManager worker and
+  a swappable `ThreadNotifier` abstraction.
+- **Testing:** ViewModel unit tests with fakes/Turbine and Roborazzi screenshot tests
+  for the design system; a screenshots CI workflow.
 - **Docs:** README, contributing guide, architecture overview, and the "add a provider" guide.
 - **CI:** GitHub Actions workflows for build/test/lint and tag-driven signed releases.
 

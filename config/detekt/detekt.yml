@@ -27,6 +27,8 @@ complexity:
     thresholdInFiles: 25
     thresholdInClasses: 25
     thresholdInObjects: 20
+    # DI @Binds/@Provides modules legitimately group many one-line declarations.
+    thresholdInInterfaces: 30
     ignoreAnnotatedFunctions: ['Composable']
   CyclomaticComplexMethod:
     active: true

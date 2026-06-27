@@ -72,6 +72,11 @@ dependencies {
     implementation(project(":feature:board"))
     implementation(project(":feature:thread"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:bookmarks"))
+    implementation(project(":feature:history"))
+    implementation(project(":feature:search"))
+    implementation(project(":feature:gallery"))
+    implementation(project(":feature:downloads"))
 
     // Compose + framework
     implementation(libs.androidx.core.ktx)
@@ -82,6 +87,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.compose.material3)
     implementation(libs.compose.material3.window.size)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
     implementation(libs.kotlinx.serialization.json)
 
     debugImplementation(libs.compose.ui.tooling)

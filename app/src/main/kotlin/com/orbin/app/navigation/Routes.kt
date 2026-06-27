@@ -12,6 +12,15 @@ sealed interface Route {
     data object Home : Route
 
     @Serializable
+    data object Search : Route
+
+    @Serializable
+    data object Bookmarks : Route
+
+    @Serializable
+    data object History : Route
+
+    @Serializable
     data class Board(
         val provider: String,
         val board: String,
@@ -25,6 +34,17 @@ sealed interface Route {
         val thread: Long,
         val title: String,
     ) : Route
+
+    @Serializable
+    data class Gallery(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val startIndex: Int,
+    ) : Route
+
+    @Serializable
+    data object Downloads : Route
 
     @Serializable
     data object Settings : Route

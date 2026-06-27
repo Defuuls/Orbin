@@ -17,6 +17,11 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.foundation)
+
+    api(libs.media3.exoplayer)
+    api(libs.media3.ui)
+    implementation(libs.media3.common)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
