@@ -29,4 +29,6 @@ interface SettingsRepository {
     suspend fun setBiometricLockEnabled(enabled: Boolean)
 
     suspend fun setUserAgent(userAgent: String)
+
+    suspend fun setOnboardingCompleted(completed: Boolean)
 }

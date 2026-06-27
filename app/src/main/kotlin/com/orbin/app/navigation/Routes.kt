@@ -54,4 +54,7 @@ sealed interface Route {
 
     @Serializable
     data object Subscriptions : Route
+
+    @Serializable
+    data object Onboarding : Route
 }

@@ -98,6 +98,7 @@ dependencies {
     implementation(project(":feature:search"))
     implementation(project(":feature:gallery"))
     implementation(project(":feature:downloads"))
+    implementation(project(":feature:onboarding"))
 
     // Compose + framework
     implementation(libs.androidx.core.ktx)

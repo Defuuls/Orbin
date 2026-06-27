@@ -67,6 +67,9 @@ class SettingsRepositoryImpl
 
         override suspend fun setUserAgent(userAgent: String) = edit { it[Keys.userAgent] = userAgent }
 
+        override suspend fun setOnboardingCompleted(completed: Boolean) =
+            edit { it[Keys.onboardingCompleted] = completed }
+
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
             dataStore.data.map { preferences ->
                 preferences[Keys.favoriteBoards(provider)].orEmpty().map(::BoardId).toSet()
@@ -120,6 +123,7 @@ class SettingsRepositoryImpl
                 dohEnabled = this[Keys.doh] ?: false,
                 httpsOnly = this[Keys.httpsOnly] ?: true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
+                onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
@@ -141,6 +145,7 @@ class SettingsRepositoryImpl
             val doh = booleanPreferencesKey("doh_enabled")
             val httpsOnly = booleanPreferencesKey("https_only")
             val biometricLock = booleanPreferencesKey("biometric_lock")
+            val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 
             fun favoriteBoards(provider: ProviderId) = stringSetPreferencesKey("favorite_boards_${provider.value}")
 

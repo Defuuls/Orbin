@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
+import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.TopLevelDestination
 
 /**
@@ -23,7 +24,10 @@ import com.orbin.app.navigation.TopLevelDestination
  * destinations. Detail screens (board, thread, settings) take over the full screen.
  */
 @Composable
-fun OrbinApp(navController: NavHostController = rememberNavController()) {
+fun OrbinApp(
+    navController: NavHostController = rememberNavController(),
+    startWithOnboarding: Boolean = false,
+) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val snackbarHostState = LocalOrbinSnackbarHostState.current
@@ -52,6 +56,7 @@ fun OrbinApp(navController: NavHostController = rememberNavController()) {
         OrbinNavHost(
             navController = navController,
             modifier = Modifier.fillMaxSize().padding(padding),
+            startDestination = if (startWithOnboarding) Route.Onboarding else Route.Home,
         )
     }
 }
