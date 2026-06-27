@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Boards:** replaced the board-setup slide-in panel with a full-screen board gallery of
+  large, tappable tiles (the Tune action is now a grid icon). Favorites stay on the home
+  list and subscriptions are managed under Settings, so the old setup panel was redundant.
+
 ### Added
 - **Build system:** multi-module Gradle setup with a version catalog and `build-logic`
   convention plugins (application/library/feature/compose/hilt/room/jvm-library).
