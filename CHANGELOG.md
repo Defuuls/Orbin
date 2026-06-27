@@ -38,4 +38,15 @@ All notable changes to Orbin are documented here. The format is based on
 - **Docs:** README, contributing guide, architecture overview, and the "add a provider" guide.
 - **CI:** GitHub Actions workflows for build/test/lint and tag-driven signed releases.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/commits/main
+## [4.0] - 2026-06-27
+
+### Changed
+- **Settings:** board subscriptions are now managed from a dedicated **Subscriptions**
+  screen under Settings, rather than the board-setup overlay.
+
+### Fixed
+- **Gallery:** media can be swiped between items again — a zoomable image no longer
+  consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
+
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v4.0...HEAD
+[4.0]: https://github.com/Defuuls/Orbin/releases/tag/v4.0
