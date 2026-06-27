@@ -4,11 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.domain.repository.DownloadRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -29,8 +31,14 @@ class GalleryViewModel
         savedStateHandle: SavedStateHandle,
         observeThread: ObserveThreadUseCase,
         private val downloadRepository: DownloadRepository,
+        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
+
+        /** Drives video autoplay / mute in the gallery from the user's media settings. */
+        val settings: StateFlow<AppSettings> =
+            settingsRepository.settings
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())

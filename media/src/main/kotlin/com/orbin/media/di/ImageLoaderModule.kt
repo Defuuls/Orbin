@@ -2,6 +2,7 @@ package com.orbin.media.di
 
 import android.content.Context
 import coil3.ImageLoader
+import coil3.gif.AnimatedImageDecoder
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
@@ -35,6 +36,8 @@ object ImageLoaderModule {
             .Builder(context)
             .components {
                 add(OkHttpNetworkFetcherFactory(callFactory = { okHttpClient }))
+                // Animate GIFs (and animated WebP) instead of showing a static first frame.
+                add(AnimatedImageDecoder.Factory())
             }.memoryCache {
                 MemoryCache
                     .Builder()

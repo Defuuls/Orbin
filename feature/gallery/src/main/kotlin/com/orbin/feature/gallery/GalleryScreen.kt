@@ -39,6 +39,7 @@ fun GalleryScreen(
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val media by viewModel.media.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     if (media.isEmpty()) {
         Scaffold { padding -> EmptyView("No media", Modifier.padding(padding)) }
@@ -86,7 +87,12 @@ fun GalleryScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
-                    VideoPlayer(url = item.sourceUrl, modifier = Modifier.fillMaxSize())
+                    VideoPlayer(
+                        url = item.sourceUrl,
+                        modifier = Modifier.fillMaxSize(),
+                        autoPlay = settings.autoplayVideos,
+                        muted = settings.muteByDefault,
+                    )
                 } else {
                     ZoomableImage(
                         url = item.sourceUrl,
