@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,11 +22,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
@@ -40,6 +44,7 @@ fun BoardScreen(
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
+    val watchedThreadIds by viewModel.watchedThreadIds.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -67,6 +72,8 @@ fun BoardScreen(
                 val thread = threads[index] ?: return@items
                 CatalogCard(
                     thread = thread,
+                    isSubscribed = thread.key.thread.value in watchedThreadIds,
+                    onToggleSubscription = { viewModel.toggleThreadSubscription(thread) },
                     onClick = {
                         onOpenThread(
                             viewModel.providerId,
@@ -84,6 +91,8 @@ fun BoardScreen(
 @Composable
 private fun CatalogCard(
     thread: CatalogThread,
+    isSubscribed: Boolean,
+    onToggleSubscription: () -> Unit,
     onClick: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
@@ -92,14 +101,31 @@ private fun CatalogCard(
                 MediaThumbnail(attachment = media)
             }
             Column(modifier = Modifier.fillMaxWidth()) {
-                thread.originalPost.subject?.let { subject ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = subject,
+                        text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    IconButton(onClick = onToggleSubscription) {
+                        Icon(
+                            imageVector =
+                                if (isSubscribed) {
+                                    Icons.Filled.NotificationsActive
+                                } else {
+                                    Icons.Outlined.Notifications
+                                },
+                            contentDescription =
+                                if (isSubscribed) {
+                                    "Unsubscribe from thread"
+                                } else {
+                                    "Subscribe to thread"
+                                },
+                        )
+                    }
                 }
                 Box(modifier = Modifier.padding(top = 4.dp)) {
                     PostCommentText(comment = thread.originalPost.comment)

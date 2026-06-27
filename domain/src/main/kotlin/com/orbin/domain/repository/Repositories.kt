@@ -35,6 +35,16 @@ interface BoardRepository {
     ): OrbinResult<Board>
 }
 
+interface BoardPreferencesRepository {
+    fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>>
+
+    suspend fun setFavoriteBoard(
+        provider: ProviderId,
+        board: BoardId,
+        favorite: Boolean,
+    )
+}
+
 interface CatalogRepository {
     /** A Paging stream of catalog threads for a board. */
     fun catalogStream(
