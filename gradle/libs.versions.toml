@@ -54,7 +54,7 @@ turbine = "1.2.0"
 mockk = "1.13.13"
 truth = "1.4.5"
 robolectric = "4.14.1"
-roborazzi = "1.32.2"
+roborazzi = "1.64.0"
 
 # Quality
 detekt = "1.23.7"
