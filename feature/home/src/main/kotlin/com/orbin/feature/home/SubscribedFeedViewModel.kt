@@ -6,9 +6,11 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,6 +51,7 @@ class SubscribedFeedViewModel
         registry: ProviderRegistry,
         private val boardRepository: BoardRepository,
         boardPreferencesRepository: BoardPreferencesRepository,
+        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         private val provider = registry.default()
         val providerId: String = provider.metadata.id.value
@@ -59,9 +62,10 @@ class SubscribedFeedViewModel
             combine(
                 boardRepository.observeBoards(provider.metadata.id),
                 boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                settingsRepository.settings,
                 refreshRequests,
-            ) { boards, subscribedIds, _ ->
-                loadSubscribedFeeds(boards, subscribedIds)
+            ) { boards, subscribedIds, settings, _ ->
+                loadSubscribedFeeds(boards, subscribedIds, settings.feedThreadLimit)
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SubscribedFeedUiState.Loading)
 
         init {
@@ -78,6 +82,7 @@ class SubscribedFeedViewModel
         private suspend fun loadSubscribedFeeds(
             boards: List<Board>,
             subscribedIds: Set<BoardId>,
+            threadLimit: FeedThreadLimit,
         ): SubscribedFeedUiState {
             if (subscribedIds.isEmpty()) {
                 return SubscribedFeedUiState.Success(emptyList<SubscribedBoardFeed>().toImmutableList())
@@ -99,7 +104,7 @@ class SubscribedFeedViewModel
                         subscribedBoards
                             .map { board ->
                                 async {
-                                    val threads = requestLimit.withPermit { loadBoardThreads(board) }
+                                    val threads = requestLimit.withPermit { loadBoardThreads(board, threadLimit) }
                                     SubscribedBoardFeed(board, threads)
                                 }
                             }.map { it.await() }
@@ -110,15 +115,16 @@ class SubscribedFeedViewModel
             }
         }
 
-        private suspend fun loadBoardThreads(board: Board): ImmutableList<CatalogThread> =
-            provider
-                .getCatalog(CatalogRequest(ProviderId(providerId), board.id))
-                .take(THREADS_PER_BOARD)
-                .toImmutableList()
+        private suspend fun loadBoardThreads(
+            board: Board,
+            threadLimit: FeedThreadLimit,
+        ): ImmutableList<CatalogThread> {
+            val catalog = provider.getCatalog(CatalogRequest(ProviderId(providerId), board.id))
+            return (threadLimit.count?.let(catalog::take) ?: catalog).toImmutableList()
+        }
 
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
-            const val THREADS_PER_BOARD = 12
             const val MAX_CONCURRENT_BOARD_LOADS = 4
         }
     }

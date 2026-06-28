@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.DownloadRecord
@@ -11,11 +12,16 @@ import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.domain.repository.DownloadRepository
+import com.orbin.domain.repository.SettingsRepository
+import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,6 +37,8 @@ class DownloadRepositoryImpl
     constructor(
         @ApplicationContext private val context: Context,
         private val dao: DownloadDao,
+        private val settingsRepository: SettingsRepository,
+        @BaseOkHttp private val okHttpClient: OkHttpClient,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : DownloadRepository {
         private val downloadManager: DownloadManager
@@ -50,6 +58,10 @@ class DownloadRepositoryImpl
                 // The file name comes from the remote post; sanitise it so it can never escape the
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)
+                val customFolderUri = settingsRepository.settings.first().downloadFolderUri
+                if (customFolderUri.isNotBlank()) {
+                    return@withContext downloadToFolder(uri, safeName, customFolderUri)
+                }
 
                 val request =
                     DownloadManager
@@ -73,6 +85,54 @@ class DownloadRepositoryImpl
                 )
                 id
             }
+
+        private suspend fun downloadToFolder(
+            uri: Uri,
+            safeName: String,
+            folderUri: String,
+        ): Long {
+            val id = -System.currentTimeMillis()
+            dao.upsert(
+                DownloadEntity(
+                    id = id,
+                    url = uri.toString(),
+                    fileName = safeName,
+                    status = DownloadStatus.RUNNING.name,
+                    createdAtMillis = System.currentTimeMillis(),
+                ),
+            )
+
+            val target =
+                DocumentsContract.createDocument(
+                    context.contentResolver,
+                    folderUri.toParentDocumentUri(),
+                    MIME_OCTET_STREAM,
+                    safeName,
+                ) ?: return id.also { dao.updateStatus(id, DownloadStatus.FAILED.name) }
+
+            runCatching {
+                okHttpClient
+                    .newCall(Request.Builder().url(uri.toString()).build())
+                    .execute()
+                    .use { response ->
+                        if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
+                        val body = response.body ?: error("Download body was empty")
+                        context.contentResolver.openOutputStream(target)?.use { output ->
+                            body.byteStream().use { input -> input.copyTo(output) }
+                        } ?: error("Unable to open selected folder")
+                    }
+            }.onSuccess {
+                dao.updateStatus(id, DownloadStatus.COMPLETED.name)
+            }.onFailure {
+                dao.updateStatus(id, DownloadStatus.FAILED.name)
+            }
+            return id
+        }
+
+        private fun String.toParentDocumentUri(): Uri {
+            val treeUri = Uri.parse(this)
+            return DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
+        }
 
         /** Reduce a remote-supplied name to a safe basename: no separators, traversal or controls. */
         private fun sanitizeFileName(raw: String): String {
@@ -122,6 +182,7 @@ class DownloadRepositoryImpl
         private companion object {
             const val SKIPPED_ID = -1L
             const val MAX_FILENAME_LENGTH = 200
+            const val MIME_OCTET_STREAM = "application/octet-stream"
             val ALLOWED_SCHEMES = setOf("https")
         }
     }

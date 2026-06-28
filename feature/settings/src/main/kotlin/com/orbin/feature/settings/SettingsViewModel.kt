@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,7 +37,13 @@ class SettingsViewModel
 
         fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
 
+        fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
+
+        fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
+
         fun setDoh(enabled: Boolean) = update { repository.setDohEnabled(enabled) }
+
+        fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 
         fun setHttpsOnly(enabled: Boolean) = update { repository.setHttpsOnly(enabled) }
 

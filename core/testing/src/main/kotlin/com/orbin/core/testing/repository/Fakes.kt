@@ -7,6 +7,8 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
@@ -139,7 +141,13 @@ class FakeSettingsRepository(
 
     override suspend fun setPreloadImages(enabled: Boolean) = update { copy(preloadImages = enabled) }
 
+    override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) = update { copy(feedThreadLimit = limit) }
+
+    override suspend fun setDownloadFolderUri(uri: String) = update { copy(downloadFolderUri = uri) }
+
     override suspend fun setDohEnabled(enabled: Boolean) = update { copy(dohEnabled = enabled) }
+
+    override suspend fun setDohProvider(provider: DohProvider) = update { copy(dohProvider = provider) }
 
     override suspend fun setHttpsOnly(enabled: Boolean) = update { copy(httpsOnly = true) }
 
