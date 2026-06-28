@@ -12,6 +12,8 @@ import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -33,6 +35,7 @@ import javax.inject.Singleton
  * blocking.
  */
 @Singleton
+@Suppress("TooManyFunctions")
 class SettingsRepositoryImpl
     @Inject
     constructor(
@@ -59,7 +62,13 @@ class SettingsRepositoryImpl
 
         override suspend fun setPreloadImages(enabled: Boolean) = edit { it[Keys.preload] = enabled }
 
+        override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) = edit { it[Keys.feedThreadLimit] = limit.name }
+
+        override suspend fun setDownloadFolderUri(uri: String) = edit { it[Keys.downloadFolderUri] = uri }
+
         override suspend fun setDohEnabled(enabled: Boolean) = edit { it[Keys.doh] = enabled }
+
+        override suspend fun setDohProvider(provider: DohProvider) = edit { it[Keys.dohProvider] = provider.name }
 
         override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = true }
 
@@ -121,8 +130,14 @@ class SettingsRepositoryImpl
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
+                feedThreadLimit =
+                    this[Keys.feedThreadLimit]
+                        ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
+                        ?: FeedThreadLimit.TWELVE,
+                downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 userAgent = this[Keys.userAgent] ?: "",
                 dohEnabled = this[Keys.doh] ?: false,
+                dohProvider = this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE) ?: DohProvider.CLOUDFLARE,
                 httpsOnly = true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
@@ -132,9 +147,19 @@ class SettingsRepositoryImpl
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
             NetworkConfig(
                 userAgent = userAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT },
-                dnsOverHttps = if (dohEnabled) DohConfig.Cloudflare else DohConfig.Disabled,
+                dnsOverHttps = if (dohEnabled) dohProvider.toDohConfig() else DohConfig.Disabled,
                 httpsOnly = httpsOnly,
             )
+
+        private fun DohProvider.toDohConfig(): DohConfig =
+            when (this) {
+                DohProvider.CLOUDFLARE -> DohConfig.Cloudflare
+                DohProvider.OPENDNS -> DohConfig.OpenDns
+                DohProvider.NEXTDNS -> DohConfig.NextDns
+            }
+
+        private inline fun <reified T : Enum<T>> String.toEnumOrDefault(default: T): T =
+            runCatching { enumValueOf<T>(this) }.getOrDefault(default)
 
         private object Keys {
             val themeMode = stringPreferencesKey("theme_mode")
@@ -144,8 +169,11 @@ class SettingsRepositoryImpl
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val preload = booleanPreferencesKey("preload_images")
+            val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
+            val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")
+            val dohProvider = stringPreferencesKey("doh_provider")
             val httpsOnly = booleanPreferencesKey("https_only")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")

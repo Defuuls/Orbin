@@ -42,6 +42,16 @@ sealed interface DohConfig {
                 resolverUrl = "https://dns.google/dns-query",
                 bootstrapIps = listOf("8.8.8.8", "8.8.4.4"),
             )
+        val OpenDns =
+            Enabled(
+                resolverUrl = "https://doh.opendns.com/dns-query",
+                bootstrapIps = listOf("208.67.222.222", "208.67.220.220"),
+            )
+        val NextDns =
+            Enabled(
+                resolverUrl = "https://dns.nextdns.io",
+                bootstrapIps = listOf("45.90.28.0", "45.90.30.0"),
+            )
     }
 }
 

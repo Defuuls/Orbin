@@ -1,7 +1,6 @@
 package com.orbin.network.di
 
 import com.orbin.network.DohConfig
-import com.orbin.network.NetworkConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
 import com.orbin.network.interceptor.HttpsOnlyInterceptor
@@ -16,6 +15,8 @@ import okhttp3.OkHttpClient
 import okhttp3.dnsoverhttps.DnsOverHttps
 import okhttp3.logging.HttpLoggingInterceptor
 import java.net.InetAddress
+import java.net.UnknownHostException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -75,7 +76,7 @@ object NetworkModule {
             ).addInterceptor(HttpsOnlyInterceptor(configProvider))
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
-                dnsFor(config, bootstrap)?.let { dns(it) }
+                dns(DynamicDns(configProvider, bootstrap))
                 if (config.enableHttpLogging) {
                     addInterceptor(
                         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC },
@@ -84,21 +85,28 @@ object NetworkModule {
             }.build()
     }
 
-    private fun dnsFor(
-        config: NetworkConfig,
-        bootstrap: OkHttpClient,
-    ): Dns? =
-        when (val doh = config.dnsOverHttps) {
-            DohConfig.Disabled -> null
-            is DohConfig.Enabled ->
-                DnsOverHttps
-                    .Builder()
-                    .client(bootstrap)
-                    .url(doh.resolverUrl.toHttpUrl())
-                    .apply {
-                        if (doh.bootstrapIps.isNotEmpty()) {
-                            bootstrapDnsHosts(doh.bootstrapIps.map { InetAddress.getByName(it) })
-                        }
-                    }.build()
-        }
+    private class DynamicDns(
+        private val configProvider: NetworkConfigProvider,
+        private val bootstrap: OkHttpClient,
+    ) : Dns {
+        private val dohCache = ConcurrentHashMap<DohConfig.Enabled, Dns>()
+
+        @Throws(UnknownHostException::class)
+        override fun lookup(hostname: String): List<InetAddress> =
+            when (val doh = configProvider.current().dnsOverHttps) {
+                DohConfig.Disabled -> Dns.SYSTEM.lookup(hostname)
+                is DohConfig.Enabled -> dohCache.getOrPut(doh) { doh.toDns() }.lookup(hostname)
+            }
+
+        private fun DohConfig.Enabled.toDns(): Dns =
+            DnsOverHttps
+                .Builder()
+                .client(bootstrap)
+                .url(resolverUrl.toHttpUrl())
+                .apply {
+                    if (bootstrapIps.isNotEmpty()) {
+                        bootstrapDnsHosts(bootstrapIps.map { InetAddress.getByName(it) })
+                    }
+                }.build()
+    }
 }
