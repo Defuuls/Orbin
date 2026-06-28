@@ -2,6 +2,7 @@ package com.orbin.feature.search
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -9,8 +10,11 @@ import com.orbin.core.model.SearchResult
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.testing.MainDispatcherRule
+import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
+import com.orbin.core.testing.repository.FakeBoardRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
+import com.orbin.core.testing.repository.FakeSettingsRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +34,7 @@ class SearchViewModelTest {
     @Test
     fun `search populates results`() =
         runTest {
-            val viewModel = SearchViewModel(FakeSearchRepository(listOf(result)), FakeProviderRegistry())
+            val viewModel = createViewModel(FakeSearchRepository(listOf(result)))
 
             viewModel.search(text = "match", board = "g")
 
@@ -45,7 +49,7 @@ class SearchViewModelTest {
     @Test
     fun `blank query is ignored`() =
         runTest {
-            val viewModel = SearchViewModel(FakeSearchRepository(listOf(result)), FakeProviderRegistry())
+            val viewModel = createViewModel(FakeSearchRepository(listOf(result)))
 
             viewModel.search(text = "   ", board = "g")
 
@@ -55,10 +59,23 @@ class SearchViewModelTest {
         }
 
     @Test
-    fun `searching records the recent query`() =
+    fun `searching does not record the recent query by default`() =
         runTest {
             val repo = FakeSearchRepository(listOf(result))
-            val viewModel = SearchViewModel(repo, FakeProviderRegistry())
+            val viewModel = createViewModel(repo)
+
+            viewModel.search(text = "kotlin", board = "g")
+
+            viewModel.recentQueries.test {
+                assertThat(awaitItem()).isEmpty()
+            }
+        }
+
+    @Test
+    fun `searching records the recent query when enabled`() =
+        runTest {
+            val repo = FakeSearchRepository(listOf(result))
+            val viewModel = createViewModel(repo, AppSettings.Default.copy(saveRecentSearches = true))
 
             viewModel.search(text = "kotlin", board = "g")
 
@@ -68,4 +85,16 @@ class SearchViewModelTest {
                 assertThat(recents).contains("kotlin")
             }
         }
+
+    private fun createViewModel(
+        repository: FakeSearchRepository,
+        settings: AppSettings = AppSettings.Default,
+    ): SearchViewModel =
+        SearchViewModel(
+            searchRepository = repository,
+            boardRepository = FakeBoardRepository(),
+            boardPreferencesRepository = FakeBoardPreferencesRepository(),
+            settingsRepository = FakeSettingsRepository(settings),
+            registry = FakeProviderRegistry(),
+        )
 }

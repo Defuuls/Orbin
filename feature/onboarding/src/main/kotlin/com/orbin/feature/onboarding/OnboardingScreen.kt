@@ -160,7 +160,12 @@ fun OnboardingScreen(
                         viewModel::setPreload,
                     )
                 SetupStep.PRIVACY ->
-                    PrivacyStep(settings, viewModel::setHttpsOnly, viewModel::setDoh, viewModel::setBiometricLock)
+                    PrivacyStep(
+                        settings,
+                        viewModel::setDoh,
+                        viewModel::setBiometricLock,
+                        viewModel::setSaveRecentSearches,
+                    )
                 SetupStep.DONE -> DoneStep(subscribed.size, favorites.size)
             }
         }
@@ -249,7 +254,7 @@ private fun SignalPanel(settings: AppSettings) {
     ) {
         SetupSignal(Icons.Filled.Palette, "Display", settings.themeMode.name.lowercase())
         SetupSignal(Icons.Filled.PlayCircle, "Media", if (settings.autoplayVideos) "autoplay on" else "manual playback")
-        SetupSignal(Icons.Filled.Security, "Network", if (settings.httpsOnly) "https only" else "mixed mode")
+        SetupSignal(Icons.Filled.Security, "Network", "https only")
         SetupSignal(Icons.Filled.Lock, "App lock", if (settings.biometricLockEnabled) "biometric" else "off")
     }
 }
@@ -463,18 +468,18 @@ private fun MediaStep(
 @Composable
 private fun PrivacyStep(
     settings: AppSettings,
-    onHttpsOnly: (Boolean) -> Unit,
     onDoh: (Boolean) -> Unit,
     onBiometricLock: (Boolean) -> Unit,
+    onSaveRecentSearches: (Boolean) -> Unit,
 ) {
     SetupPage {
         PreferenceHeader(Icons.Filled.Security, "Privacy & network", "Transport security and local access")
         SurfacePanel {
             PreferenceSwitch(
                 "HTTPS only",
-                "Block non-HTTPS board traffic when possible",
-                settings.httpsOnly,
-                onHttpsOnly,
+                "Always enforced for board traffic and downloads",
+                true,
+                {},
             )
             PreferenceSwitch(
                 "DNS over HTTPS",
@@ -487,6 +492,12 @@ private fun PrivacyStep(
                 "Require fingerprint or device credential on launch",
                 settings.biometricLockEnabled,
                 onBiometricLock,
+            )
+            PreferenceSwitch(
+                "Save recent searches",
+                "Keep search suggestions on this device",
+                settings.saveRecentSearches,
+                onSaveRecentSearches,
             )
         }
     }

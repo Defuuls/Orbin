@@ -24,6 +24,7 @@ data class AppSettings(
     val dohEnabled: Boolean = false,
     val httpsOnly: Boolean = true,
     val biometricLockEnabled: Boolean = false,
+    val saveRecentSearches: Boolean = false,
     // First-run
     val onboardingCompleted: Boolean = false,
 ) {

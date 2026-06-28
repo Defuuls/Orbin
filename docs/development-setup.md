@@ -40,14 +40,18 @@ Gradle properties (set in `gradle.properties` or with `-P`):
 
 ## Release signing (local)
 
-Release builds are signed from a keystore referenced by `keystore.properties` (git-ignored):
+Keep release signing files outside the repository. Point local release builds at that external
+location with environment variables:
 
-```properties
-storeFile=/absolute/path/orbin-release.jks
-storePassword=…
-keyAlias=…
-keyPassword=…
+```bash
+export ORBIN_KEYSTORE_FILE=/absolute/path/orbin-release.jks
+export ORBIN_KEYSTORE_PASSWORD=...
+export ORBIN_KEY_ALIAS=...
+export ORBIN_KEY_PASSWORD=...
 ```
+
+The Gradle build still supports a git-ignored `keystore.properties` file for emergency local use,
+but avoid placing signing material inside the repo tree.
 
 In CI these come from repository secrets; see
 [docs/architecture/ci-cd.md](architecture/ci-cd.md).

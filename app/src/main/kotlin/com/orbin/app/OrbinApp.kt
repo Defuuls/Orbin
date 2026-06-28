@@ -56,7 +56,7 @@ fun OrbinApp(
         OrbinNavHost(
             navController = navController,
             modifier = Modifier.fillMaxSize().padding(padding),
-            startDestination = if (startWithOnboarding) Route.Onboarding else Route.Home,
+            startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
         )
     }
 }

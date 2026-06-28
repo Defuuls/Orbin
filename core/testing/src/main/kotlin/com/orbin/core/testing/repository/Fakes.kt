@@ -1,6 +1,8 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
@@ -10,7 +12,10 @@ import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.domain.repository.BoardPreferencesRepository
+import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderException
@@ -18,6 +23,8 @@ import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 
 /** Minimal [ImageBoardProvider] for tests; only metadata/capabilities and search are meaningful. */
 class FakeImageBoardProvider(
@@ -67,5 +74,84 @@ class FakeSearchRepository(
 
     override suspend fun clearRecentQueries() {
         recents.value = emptyList()
+    }
+}
+
+class FakeBoardRepository(
+    private val boards: List<Board> = listOf(Board(BoardId("g"), "Technology")),
+) : BoardRepository {
+    override fun observeBoards(provider: ProviderId): Flow<List<Board>> = flowOf(boards)
+
+    override suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>> = OrbinResult.Success(boards)
+
+    override suspend fun getBoard(
+        provider: ProviderId,
+        board: BoardId,
+    ): OrbinResult<Board> =
+        boards
+            .firstOrNull { it.id == board }
+            ?.let { OrbinResult.Success(it) }
+            ?: OrbinResult.Failure(
+                com.orbin.core.common.result.DataError
+                    .NotFound("Board not found"),
+            )
+}
+
+class FakeBoardPreferencesRepository(
+    private val subscribed: Set<BoardId> = setOf(BoardId("g")),
+    private val favorites: Set<BoardId> = emptySet(),
+) : BoardPreferencesRepository {
+    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(favorites)
+
+    override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(subscribed)
+
+    override suspend fun setFavoriteBoard(
+        provider: ProviderId,
+        board: BoardId,
+        favorite: Boolean,
+    ) = Unit
+
+    override suspend fun setSubscribedBoard(
+        provider: ProviderId,
+        board: BoardId,
+        subscribed: Boolean,
+    ) = Unit
+}
+
+class FakeSettingsRepository(
+    initial: AppSettings = AppSettings.Default,
+) : SettingsRepository {
+    private val state = MutableStateFlow(initial)
+
+    override val settings: Flow<AppSettings> = state
+
+    override suspend fun setThemeMode(mode: AppThemeMode) = update { copy(themeMode = mode) }
+
+    override suspend fun setDynamicColor(enabled: Boolean) = update { copy(dynamicColor = enabled) }
+
+    override suspend fun setAmoled(enabled: Boolean) = update { copy(amoled = enabled) }
+
+    override suspend fun setFontScale(scale: Float) = update { copy(fontScale = scale) }
+
+    override suspend fun setAutoplayVideos(enabled: Boolean) = update { copy(autoplayVideos = enabled) }
+
+    override suspend fun setMuteByDefault(enabled: Boolean) = update { copy(muteByDefault = enabled) }
+
+    override suspend fun setPreloadImages(enabled: Boolean) = update { copy(preloadImages = enabled) }
+
+    override suspend fun setDohEnabled(enabled: Boolean) = update { copy(dohEnabled = enabled) }
+
+    override suspend fun setHttpsOnly(enabled: Boolean) = update { copy(httpsOnly = true) }
+
+    override suspend fun setBiometricLockEnabled(enabled: Boolean) = update { copy(biometricLockEnabled = enabled) }
+
+    override suspend fun setSaveRecentSearches(enabled: Boolean) = update { copy(saveRecentSearches = enabled) }
+
+    override suspend fun setUserAgent(userAgent: String) = update { copy(userAgent = userAgent) }
+
+    override suspend fun setOnboardingCompleted(completed: Boolean) = update { copy(onboardingCompleted = completed) }
+
+    private fun update(block: AppSettings.() -> AppSettings) {
+        state.update { it.block() }
     }
 }

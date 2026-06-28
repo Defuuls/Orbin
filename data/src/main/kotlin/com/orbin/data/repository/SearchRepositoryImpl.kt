@@ -6,6 +6,8 @@ import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.MediaType
+import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
@@ -52,7 +54,7 @@ class SearchRepositoryImpl
                                     ?: return@runCatchingProvider emptyList()
                             provider
                                 .getCatalog(CatalogRequest(query.provider, board))
-                                .filter { it.matches(query.text) }
+                                .filter { it.matches(query) }
                                 .map { it.toSearchResult() }
                         }
                         // Current-thread search is done in the thread feature over already-loaded posts.
@@ -74,12 +76,31 @@ class SearchRepositoryImpl
 
         override suspend fun clearRecentQueries() = recentSearchDao.clear()
 
-        private fun CatalogThread.matches(text: String): Boolean {
-            val needle = text.trim().lowercase()
+        private fun CatalogThread.matches(query: SearchQuery): Boolean {
+            val needle = query.text.trim().lowercase()
             if (needle.isEmpty()) return true
             val subject = originalPost.subject?.lowercase().orEmpty()
             val comment = originalPost.comment.raw.lowercase()
-            return needle in subject || needle in comment
+            val textMatches = needle in subject || needle in comment
+            val filters = query.filters
+            if (filters.mediaOnly && originalPost.attachments.isEmpty()) return false
+            if (!textMatches) return false
+            if (filters.contentTypes.isEmpty()) return true
+            return filters.contentTypes.any { type -> matchesContentType(type) }
+        }
+
+        private fun CatalogThread.matchesContentType(type: SearchContentType): Boolean =
+            when (type) {
+                SearchContentType.POST -> true
+                SearchContentType.IMAGE ->
+                    originalPost.attachments.any { it.type == MediaType.IMAGE || it.type == MediaType.ANIMATED_IMAGE }
+                SearchContentType.VIDEO -> originalPost.attachments.any { it.type == MediaType.VIDEO }
+                SearchContentType.AUDIO -> originalPost.attachments.any { it.type == MediaType.AUDIO }
+                SearchContentType.URL -> URL_PATTERN.containsMatchIn(originalPost.comment.raw)
+            }
+
+        private companion object {
+            val URL_PATTERN = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
         }
 
         private fun CatalogThread.toSearchResult(): SearchResult =

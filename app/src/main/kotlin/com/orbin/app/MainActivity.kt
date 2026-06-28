@@ -2,6 +2,7 @@ package com.orbin.app
 
 import android.Manifest
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -41,7 +42,8 @@ class MainActivity : FragmentActivity() {
             val viewModel: MainViewModel = hiltViewModel()
             val settings by viewModel.settings.collectAsStateWithLifecycle()
             val ready by viewModel.ready.collectAsStateWithLifecycle()
-            var unlocked by remember { mutableStateOf(!settings.biometricLockEnabled) }
+            val shouldLock = settings.biometricLockEnabled && settings.onboardingCompleted
+            var unlocked by remember { mutableStateOf(!shouldLock) }
 
             // Ask for notification permission once so watched-thread updates can be delivered.
             val permissionLauncher =
@@ -52,11 +54,13 @@ class MainActivity : FragmentActivity() {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
 
-            LaunchedEffect(settings.biometricLockEnabled) {
-                if (settings.biometricLockEnabled) {
+            LaunchedEffect(shouldLock) {
+                if (shouldLock) {
+                    window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
                     unlocked = false
                     authenticateToUnlock { unlocked = true }
                 } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     unlocked = true
                 }
             }
@@ -90,7 +94,6 @@ class MainActivity : FragmentActivity() {
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-            onUnlocked()
             return
         }
 

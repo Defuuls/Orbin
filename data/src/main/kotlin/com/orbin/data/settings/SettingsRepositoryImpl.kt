@@ -61,9 +61,11 @@ class SettingsRepositoryImpl
 
         override suspend fun setDohEnabled(enabled: Boolean) = edit { it[Keys.doh] = enabled }
 
-        override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = enabled }
+        override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = true }
 
         override suspend fun setBiometricLockEnabled(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
+
+        override suspend fun setSaveRecentSearches(enabled: Boolean) = edit { it[Keys.saveRecentSearches] = enabled }
 
         override suspend fun setUserAgent(userAgent: String) = edit { it[Keys.userAgent] = userAgent }
 
@@ -121,8 +123,9 @@ class SettingsRepositoryImpl
                 preloadImages = this[Keys.preload] ?: true,
                 userAgent = this[Keys.userAgent] ?: "",
                 dohEnabled = this[Keys.doh] ?: false,
-                httpsOnly = this[Keys.httpsOnly] ?: true,
+                httpsOnly = true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
+                saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
 
@@ -145,6 +148,7 @@ class SettingsRepositoryImpl
             val doh = booleanPreferencesKey("doh_enabled")
             val httpsOnly = booleanPreferencesKey("https_only")
             val biometricLock = booleanPreferencesKey("biometric_lock")
+            val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 
             fun favoriteBoards(provider: ProviderId) = stringSetPreferencesKey("favorite_boards_${provider.value}")

@@ -45,7 +45,7 @@ class DownloadRepositoryImpl
         ): Long =
             withContext(ioDispatcher) {
                 val uri = Uri.parse(url)
-                // Defence in depth: only ever hand http(s) URLs to the platform DownloadManager.
+                // Defence in depth: only ever hand encrypted media URLs to the platform DownloadManager.
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
                 // The file name comes from the remote post; sanitise it so it can never escape the
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
@@ -122,6 +122,6 @@ class DownloadRepositoryImpl
         private companion object {
             const val SKIPPED_ID = -1L
             const val MAX_FILENAME_LENGTH = 200
-            val ALLOWED_SCHEMES = setOf("http", "https")
+            val ALLOWED_SCHEMES = setOf("https")
         }
     }

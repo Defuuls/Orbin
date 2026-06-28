@@ -41,6 +41,8 @@ class SettingsViewModel
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
+        fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
+
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }
         }
