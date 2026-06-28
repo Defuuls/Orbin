@@ -7,6 +7,9 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Onboarding:** a first-run setup wizard (`:feature:onboarding`) that walks through
+  subscribing to boards and the appearance / media / privacy preferences, then records a
+  persisted flag so it only shows once.
 - **Build system:** multi-module Gradle setup with a version catalog and `build-logic`
   convention plugins (application/library/feature/compose/hilt/room/jvm-library).
 - **`:core:model`:** immutable domain entities (Board, Thread, Post, CatalogThread,

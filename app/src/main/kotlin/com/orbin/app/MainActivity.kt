@@ -40,6 +40,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
             val settings by viewModel.settings.collectAsStateWithLifecycle()
+            val ready by viewModel.ready.collectAsStateWithLifecycle()
             var unlocked by remember { mutableStateOf(!settings.biometricLockEnabled) }
 
             // Ask for notification permission once so watched-thread updates can be delivered.
@@ -70,12 +71,13 @@ class MainActivity : FragmentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    if (unlocked) {
-                        OrbinAppProviders {
-                            OrbinApp()
-                        }
-                    } else {
-                        Text("Orbin is locked")
+                    when {
+                        !unlocked -> Text("Orbin is locked")
+                        // Wait for the first persisted snapshot so onboarding gating is correct.
+                        ready ->
+                            OrbinAppProviders {
+                                OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
+                            }
                     }
                 }
             }
