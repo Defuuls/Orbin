@@ -107,6 +107,7 @@ fun OrbinNavHost(
                 onBack = navController::navigateUp,
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
+                onOpenSetup = { navController.navigate(Route.Onboarding) },
             )
         }
 
@@ -119,7 +120,10 @@ fun OrbinNavHost(
                 onFinish = {
                     navController.navigate(Route.Home) {
                         // Clear onboarding from the back stack so Back from Home exits the app.
-                        popUpTo(navController.graph.id) { inclusive = true }
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                            saveState = false
+                        }
                     }
                 },
             )
