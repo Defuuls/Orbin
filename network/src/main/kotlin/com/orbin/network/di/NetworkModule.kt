@@ -4,6 +4,7 @@ import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
+import com.orbin.network.interceptor.HttpsOnlyInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -59,22 +60,23 @@ object NetworkModule {
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
                 .build()
 
+        // Always negotiate modern TLS. Cleartext is permitted at the transport layer but gated
+        // per-call by HttpsOnlyInterceptor, so the user's HTTPS-only toggle applies live without
+        // rebuilding this singleton client.
         return OkHttpClient
             .Builder()
             .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .connectionSpecs(
+                listOf(
+                    okhttp3.ConnectionSpec.RESTRICTED_TLS,
+                    okhttp3.ConnectionSpec.MODERN_TLS,
+                    okhttp3.ConnectionSpec.CLEARTEXT,
+                ),
+            ).addInterceptor(HttpsOnlyInterceptor(configProvider))
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
-                if (config.httpsOnly) {
-                    // Reject any cleartext connection at the OkHttp level.
-                    connectionSpecs(
-                        listOf(
-                            okhttp3.ConnectionSpec.RESTRICTED_TLS,
-                            okhttp3.ConnectionSpec.MODERN_TLS,
-                        ),
-                    )
-                }
                 dnsFor(config, bootstrap)?.let { dns(it) }
                 if (config.enableHttpLogging) {
                     addInterceptor(

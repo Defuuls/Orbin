@@ -92,6 +92,8 @@ fun GalleryScreen(
                         modifier = Modifier.fillMaxSize(),
                         autoPlay = settings.autoplayVideos,
                         muted = settings.muteByDefault,
+                        // Only the settled page plays, so swiping away stops its audio.
+                        active = page == pagerState.settledPage,
                     )
                 } else {
                     ZoomableImage(

@@ -28,7 +28,7 @@ object VichanCommentParser {
     fun parse(html: String?): PostComment {
         if (html.isNullOrEmpty()) return PostComment.Empty
         val tokens = tokenize(html)
-        val (nodes, _) = parseNodes(tokens, 0, stopTag = null)
+        val (nodes, _) = parseNodes(tokens, 0, stopTag = null, depth = 0)
         return PostComment(raw = html, nodes = nodes)
     }
 
@@ -120,6 +120,7 @@ object VichanCommentParser {
         tokens: List<Token>,
         start: Int,
         stopTag: String?,
+        depth: Int,
     ): Pair<ImmutableList<PostNode>, Int> {
         val out = mutableListOf<PostNode>()
         var i = start
@@ -138,16 +139,29 @@ object VichanCommentParser {
                     if (token.name == stopTag) return out.toImmutableList() to (i + 1)
                     i++
                 }
-                is Token.Open -> {
-                    val (children, next) = parseNodes(tokens, i + 1, token.name)
-                    val node = buildNode(token, children)
-                    // A null node means an unrecognised tag: splice its children in transparently.
-                    if (node != null) out.add(node) else out.addAll(children)
-                    i = next
-                }
+                is Token.Open -> i = parseOpenTag(tokens, i, token, depth, out)
             }
         }
         return out.toImmutableList() to i
+    }
+
+    /**
+     * Handles an open tag at [openIndex]: recurses into its children and appends the built node (or
+     * splices children for unknown tags), returning the next index. Beyond [MAX_DEPTH] the wrapper
+     * is dropped without recursing, so pathologically nested markup can't overflow the stack.
+     */
+    private fun parseOpenTag(
+        tokens: List<Token>,
+        openIndex: Int,
+        open: Token.Open,
+        depth: Int,
+        out: MutableList<PostNode>,
+    ): Int {
+        if (depth >= MAX_DEPTH) return openIndex + 1
+        val (children, next) = parseNodes(tokens, openIndex + 1, open.name, depth + 1)
+        val node = buildNode(open, children)
+        if (node != null) out.add(node) else out.addAll(children)
+        return next
     }
 
     /** Builds a node for a known tag, or returns null to signal "transparent / unknown tag". */
@@ -258,4 +272,7 @@ object VichanCommentParser {
     private const val MAX_ENTITY_LENGTH = 10
     private const val HEX_PREFIX_LENGTH = 2
     private const val RADIX_HEX = 16
+
+    /** Hard cap on tag nesting; pathological input beyond this is flattened, not recursed. */
+    private const val MAX_DEPTH = 64
 }
