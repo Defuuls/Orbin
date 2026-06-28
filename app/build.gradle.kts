@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 8
-        versionName = "7.0"
+        versionCode = 9
+        versionName = "8.0"
     }
 
     signingConfigs {
