@@ -1,7 +1,7 @@
 [versions]
 # Android / Build
 agp = "8.7.3"
-kotlin = "2.0.21"
+kotlin = "2.4.0"
 ksp = "2.0.21-1.0.28"
 compileSdk = "35"
 minSdk = "35"
