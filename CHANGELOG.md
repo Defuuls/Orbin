@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- **Downloads:** sanitise the remote-supplied file name (basename only, no separators,
+  traversal or control characters) and only enqueue `http(s)` URLs, closing a path-traversal
+  vector in the public Downloads folder.
+- **Backups:** disabled `allowBackup` and added data-extraction rules so local history,
+  bookmarks, subscriptions and downloads are excluded from cloud backup and device transfer.
+- **Comment parser:** cap tag-nesting depth so a maliciously nested post can no longer
+  overflow the stack and crash the app.
+- **Networking:** enforce the "HTTPS only" preference per-request (live) via an interceptor,
+  so toggling it takes effect without an app restart.
+
 ### Added
 - **Onboarding:** a first-run setup wizard (`:feature:onboarding`) that walks through
   subscribing to boards and the appearance / media / privacy preferences, then records a

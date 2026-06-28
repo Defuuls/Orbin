@@ -28,7 +28,7 @@ object VichanCommentParser {
     fun parse(html: String?): PostComment {
         if (html.isNullOrEmpty()) return PostComment.Empty
         val tokens = tokenize(html)
-        val (nodes, _) = parseNodes(tokens, 0, stopTag = null)
+        val (nodes, _) = parseNodes(tokens, 0, stopTag = null, depth = 0)
         return PostComment(raw = html, nodes = nodes)
     }
 
@@ -120,6 +120,7 @@ object VichanCommentParser {
         tokens: List<Token>,
         start: Int,
         stopTag: String?,
+        depth: Int,
     ): Pair<ImmutableList<PostNode>, Int> {
         val out = mutableListOf<PostNode>()
         var i = start
@@ -139,11 +140,17 @@ object VichanCommentParser {
                     i++
                 }
                 is Token.Open -> {
-                    val (children, next) = parseNodes(tokens, i + 1, token.name)
-                    val node = buildNode(token, children)
-                    // A null node means an unrecognised tag: splice its children in transparently.
-                    if (node != null) out.add(node) else out.addAll(children)
-                    i = next
+                    if (depth >= MAX_DEPTH) {
+                        // Pathologically nested markup: stop recursing to avoid a stack overflow.
+                        // Drop this tag wrapper and keep parsing its contents inline.
+                        i++
+                    } else {
+                        val (children, next) = parseNodes(tokens, i + 1, token.name, depth + 1)
+                        val node = buildNode(token, children)
+                        // A null node means an unrecognised tag: splice its children in transparently.
+                        if (node != null) out.add(node) else out.addAll(children)
+                        i = next
+                    }
                 }
             }
         }
@@ -258,4 +265,7 @@ object VichanCommentParser {
     private const val MAX_ENTITY_LENGTH = 10
     private const val HEX_PREFIX_LENGTH = 2
     private const val RADIX_HEX = 16
+
+    /** Hard cap on tag nesting; pathological input beyond this is flattened, not recursed. */
+    private const val MAX_DEPTH = 64
 }

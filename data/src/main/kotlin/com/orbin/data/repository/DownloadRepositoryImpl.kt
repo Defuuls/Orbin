@@ -44,13 +44,20 @@ class DownloadRepositoryImpl
             fileName: String,
         ): Long =
             withContext(ioDispatcher) {
+                val uri = Uri.parse(url)
+                // Defence in depth: only ever hand http(s) URLs to the platform DownloadManager.
+                if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
+                // The file name comes from the remote post; sanitise it so it can never escape the
+                // Orbin downloads folder (path traversal) or carry separators/control characters.
+                val safeName = sanitizeFileName(fileName)
+
                 val request =
                     DownloadManager
-                        .Request(Uri.parse(url))
-                        .setTitle(fileName)
+                        .Request(uri)
+                        .setTitle(safeName)
                         .setDescription("Orbin download")
                         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Orbin/$fileName")
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Orbin/$safeName")
                         .setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
 
@@ -59,13 +66,26 @@ class DownloadRepositoryImpl
                     DownloadEntity(
                         id = id,
                         url = url,
-                        fileName = fileName,
+                        fileName = safeName,
                         status = DownloadStatus.QUEUED.name,
                         createdAtMillis = System.currentTimeMillis(),
                     ),
                 )
                 id
             }
+
+        /** Reduce a remote-supplied name to a safe basename: no separators, traversal or controls. */
+        private fun sanitizeFileName(raw: String): String {
+            val base = raw.substringAfterLast('/').substringAfterLast('\\')
+            val cleaned =
+                base
+                    .filterNot { it.isISOControl() }
+                    .replace(Regex("""[/\\:*?"<>|]"""), "_")
+                    .replace("..", "_")
+                    .trim(' ', '.')
+                    .takeLast(MAX_FILENAME_LENGTH)
+            return cleaned.ifBlank { "download" }
+        }
 
         override suspend fun refreshStatuses() =
             withContext(ioDispatcher) {
@@ -98,4 +118,10 @@ class DownloadRepositoryImpl
                 status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
                 createdAtMillis = createdAtMillis,
             )
+
+        private companion object {
+            const val SKIPPED_ID = -1L
+            const val MAX_FILENAME_LENGTH = 200
+            val ALLOWED_SCHEMES = setOf("http", "https")
+        }
     }
