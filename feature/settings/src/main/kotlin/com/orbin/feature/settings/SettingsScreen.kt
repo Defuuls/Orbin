@@ -35,6 +35,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenSubscriptions: () -> Unit,
+    onOpenSetup: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -59,6 +60,19 @@ fun SettingsScreen(
                 modifier = Modifier.clickable(onClick = onOpenSubscriptions),
                 headlineContent = { Text("Subscriptions") },
                 supportingContent = { Text("Manage subscribed boards") },
+            )
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenSetup),
+                headlineContent = { Text("Run setup again") },
+                supportingContent = { Text("Subscriptions, preferences, and privacy") },
+                trailingContent = {
+                    Switch(
+                        checked = false,
+                        onCheckedChange = { enabled ->
+                            if (enabled) onOpenSetup()
+                        },
+                    )
+                },
             )
 
             SectionHeader("Appearance")
