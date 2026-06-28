@@ -121,6 +121,8 @@ class OnboardingViewModel
 
         fun setBiometricLock(enabled: Boolean) = update { settingsRepository.setBiometricLockEnabled(enabled) }
 
+        fun setSaveRecentSearches(enabled: Boolean) = update { settingsRepository.setSaveRecentSearches(enabled) }
+
         /** Persist that setup is done so the wizard never auto-shows again. */
         fun complete() = update { settingsRepository.setOnboardingCompleted(true) }
 

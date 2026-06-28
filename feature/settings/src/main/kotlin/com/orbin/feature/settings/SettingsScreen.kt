@@ -87,7 +87,12 @@ fun SettingsScreen(
 
             SectionHeader("Network & privacy")
             SwitchRow("Lock with biometrics", settings.biometricLockEnabled, viewModel::setBiometricLock)
-            SwitchRow("HTTPS only", settings.httpsOnly, viewModel::setHttpsOnly)
+            SwitchRow("Save recent searches", settings.saveRecentSearches, viewModel::setSaveRecentSearches)
+            ListItem(
+                headlineContent = { Text("HTTPS only") },
+                supportingContent = { Text("Always enforced") },
+                trailingContent = { Switch(checked = true, onCheckedChange = null) },
+            )
             SwitchRow("DNS over HTTPS", settings.dohEnabled, viewModel::setDoh)
 
             SectionHeader("Storage")

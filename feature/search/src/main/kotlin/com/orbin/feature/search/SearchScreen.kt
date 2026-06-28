@@ -13,7 +13,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
@@ -30,6 +34,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.Board
+import com.orbin.core.model.SearchContentType
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -43,16 +49,18 @@ fun SearchScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val recents by viewModel.recentQueries.collectAsStateWithLifecycle()
-    var board by remember { mutableStateOf("") }
+    val subscribedBoards by viewModel.subscribedBoards.collectAsStateWithLifecycle()
+    val saveRecentSearches by viewModel.saveRecentSearches.collectAsStateWithLifecycle()
+    var selectedBoard by remember { mutableStateOf<Board?>(null) }
     var query by remember { mutableStateOf("") }
+    var contentTypes by remember { mutableStateOf(emptySet<SearchContentType>()) }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Search") }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
-            OutlinedTextField(
-                value = board,
-                onValueChange = { board = it },
-                label = { Text("Board (e.g. g)") },
-                singleLine = true,
+            BoardDropdown(
+                boards = subscribedBoards,
+                selectedBoard = selectedBoard,
+                onSelected = { selectedBoard = it },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             OutlinedTextField(
@@ -61,11 +69,29 @@ fun SearchScreen(
                 label = { Text("Search query") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { viewModel.search(query, board) }),
+                keyboardActions =
+                    KeyboardActions(
+                        onSearch = {
+                            viewModel.search(query, selectedBoard?.id?.value.orEmpty(), contentTypes)
+                        },
+                    ),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
 
-            if (recents.isNotEmpty()) {
+            SearchTypeFilters(
+                selected = contentTypes,
+                onToggle = { type ->
+                    contentTypes =
+                        if (type in contentTypes) {
+                            contentTypes - type
+                        } else {
+                            contentTypes + type
+                        }
+                },
+                modifier = Modifier.padding(top = 8.dp),
+            )
+
+            if (saveRecentSearches && recents.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 8.dp),
@@ -74,7 +100,7 @@ fun SearchScreen(
                         AssistChip(
                             onClick = {
                                 query = recent
-                                viewModel.search(recent, board)
+                                viewModel.search(recent, selectedBoard?.id?.value.orEmpty(), contentTypes)
                             },
                             label = { Text(recent) },
                         )
@@ -83,7 +109,7 @@ fun SearchScreen(
             }
 
             when (val s = state) {
-                SearchUiState.Idle -> EmptyView("Search a board's catalog")
+                SearchUiState.Idle -> EmptyView("Search subscribed boards")
                 SearchUiState.Loading -> LoadingView()
                 is SearchUiState.Error -> ErrorView(s.message)
                 is SearchUiState.Results ->
@@ -113,3 +139,82 @@ fun SearchScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BoardDropdown(
+    boards: List<Board>,
+    selectedBoard: Board?,
+    onSelected: (Board?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selectedBoard?.let { "/${it.id.value}/ - ${it.title}" }.orEmpty(),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Subscribed board") },
+            placeholder = { Text("All subscribed boards") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text("All subscribed boards") },
+                onClick = {
+                    onSelected(null)
+                    expanded = false
+                },
+            )
+            boards.forEach { board ->
+                DropdownMenuItem(
+                    text = { Text("/${board.id.value}/ - ${board.title}") },
+                    onClick = {
+                        onSelected(board)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SearchTypeFilters(
+    selected: Set<SearchContentType>,
+    onToggle: (SearchContentType) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SearchContentType.entries.forEach { type ->
+            FilterChip(
+                selected = type in selected,
+                onClick = { onToggle(type) },
+                label = { Text(type.label) },
+            )
+        }
+    }
+}
+
+private val SearchContentType.label: String
+    get() =
+        when (this) {
+            SearchContentType.POST -> "Post"
+            SearchContentType.IMAGE -> "Image"
+            SearchContentType.VIDEO -> "Video"
+            SearchContentType.AUDIO -> "Audio"
+            SearchContentType.URL -> "URL"
+        }

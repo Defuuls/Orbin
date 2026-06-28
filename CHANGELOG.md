@@ -6,6 +6,29 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [7.0] - 2026-06-28
+
+### Security
+- **Downloads:** require HTTPS media downloads, keep sanitized file names inside
+  `Downloads/Orbin`, and remove cleartext OkHttp connection support.
+- **Privacy:** make recent search history opt-in, keep HTTPS-only enforced in setup and
+  settings, and move local release signing material outside the repository tree.
+- **App lock:** fail closed when biometric/device authentication is unavailable and enable
+  secure-window protection while the app is locked.
+
+### Added
+- **Subscribed feed:** add a continuous subscribed-board feed that loads followed boards with
+  bounded request concurrency.
+- **Search:** add subscribed-board selection and content-type filters for posts, images, videos,
+  audio, and URLs.
+- **Maintenance:** add Dependabot coverage for Gradle dependencies and GitHub Actions.
+
+### Changed
+- **Setup:** expose the search-history privacy preference during onboarding and keep HTTPS-only
+  presented as an always-on privacy boundary.
+
+## [6.0] - 2026-06-28
+
 ### Security
 - **Downloads:** sanitise the remote-supplied file name (basename only, no separators,
   traversal or control characters) and only enqueue `http(s)` URLs, closing a path-traversal
@@ -69,6 +92,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v5.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v7.0...HEAD
+[7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0
+[6.0]: https://github.com/Defuuls/Orbin/releases/tag/v6.0
 [5.0]: https://github.com/Defuuls/Orbin/releases/tag/v5.0
 [4.0]: https://github.com/Defuuls/Orbin/releases/tag/v4.0

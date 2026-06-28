@@ -15,6 +15,7 @@ import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.HomeScreen
+import com.orbin.feature.home.SubscribedFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsScreen
@@ -32,7 +33,7 @@ private const val TRANSITION_MS = 300
 fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: Route = Route.Home,
+    startDestination: Route = Route.SubscribedFeed,
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -62,6 +63,14 @@ fun OrbinNavHost(
                 },
                 onOpenSettings = { navController.navigate(Route.Settings) },
                 onOpenBoardGallery = { navController.navigate(Route.BoardGallery) },
+            )
+        }
+
+        composable<Route.SubscribedFeed> {
+            SubscribedFeedScreen(
+                onOpenThread = openThread,
+                onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenSettings = { navController.navigate(Route.Settings) },
             )
         }
 
@@ -118,8 +127,8 @@ fun OrbinNavHost(
         composable<Route.Onboarding> {
             OnboardingScreen(
                 onFinish = {
-                    navController.navigate(Route.Home) {
-                        // Clear onboarding from the back stack so Back from Home exits the app.
+                    navController.navigate(Route.SubscribedFeed) {
+                        // Clear onboarding from the back stack so Back from Feed exits the app.
                         popUpTo(navController.graph.id) {
                             inclusive = true
                             saveState = false

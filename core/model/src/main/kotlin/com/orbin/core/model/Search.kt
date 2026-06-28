@@ -26,7 +26,17 @@ data class SearchFilters(
     val mediaOnly: Boolean = false,
     val minReplies: Int? = null,
     val includeNsfw: Boolean = true,
+    val contentTypes: Set<SearchContentType> = emptySet(),
 )
+
+/** Optional content buckets used by catalog search filters. Empty means all content types. */
+enum class SearchContentType {
+    POST,
+    IMAGE,
+    VIDEO,
+    AUDIO,
+    URL,
+}
 
 /** A single search hit. Kept generic so thread and catalog results share one type. */
 data class SearchResult(
