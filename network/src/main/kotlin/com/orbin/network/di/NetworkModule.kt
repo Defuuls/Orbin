@@ -74,8 +74,7 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.MODERN_TLS,
                     okhttp3.ConnectionSpec.CLEARTEXT,
                 ),
-            )
-            .addInterceptor(HttpsOnlyInterceptor(configProvider))
+            ).addInterceptor(HttpsOnlyInterceptor(configProvider))
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
                 dnsFor(config, bootstrap)?.let { dns(it) }
