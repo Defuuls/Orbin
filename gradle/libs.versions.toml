@@ -36,7 +36,7 @@ serializationConverter = "1.0.0"
 
 # Networking
 okhttp = "4.12.0"
-retrofit = "2.11.0"
+retrofit = "3.0.0"
 
 # Media
 coil = "3.0.4"
