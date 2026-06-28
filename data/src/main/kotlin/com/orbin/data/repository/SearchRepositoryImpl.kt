@@ -78,15 +78,15 @@ class SearchRepositoryImpl
 
         private fun CatalogThread.matches(query: SearchQuery): Boolean {
             val needle = query.text.trim().lowercase()
-            if (needle.isEmpty()) return true
             val subject = originalPost.subject?.lowercase().orEmpty()
             val comment = originalPost.comment.raw.lowercase()
             val textMatches = needle in subject || needle in comment
             val filters = query.filters
-            if (filters.mediaOnly && originalPost.attachments.isEmpty()) return false
-            if (!textMatches) return false
-            if (filters.contentTypes.isEmpty()) return true
-            return filters.contentTypes.any { type -> matchesContentType(type) }
+            val mediaMatches = !filters.mediaOnly || originalPost.attachments.isNotEmpty()
+            val contentMatches =
+                filters.contentTypes.isEmpty() ||
+                    filters.contentTypes.any { type -> matchesContentType(type) }
+            return needle.isEmpty() || (textMatches && mediaMatches && contentMatches)
         }
 
         private fun CatalogThread.matchesContentType(type: SearchContentType): Boolean =
