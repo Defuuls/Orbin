@@ -60,14 +60,14 @@ object NetworkModule {
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
                 .build()
 
+        // Always negotiate modern TLS. Cleartext is permitted at the transport layer but gated
+        // per-call by HttpsOnlyInterceptor, so the user's HTTPS-only toggle applies live without
+        // rebuilding this singleton client.
         return OkHttpClient
             .Builder()
             .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
-            // Always negotiate modern TLS. Cleartext is permitted at the transport layer but gated
-            // per-call by HttpsOnlyInterceptor, so the user's HTTPS-only toggle applies live without
-            // rebuilding this singleton client.
             .connectionSpecs(
                 listOf(
                     okhttp3.ConnectionSpec.RESTRICTED_TLS,
