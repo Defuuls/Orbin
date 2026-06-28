@@ -9,6 +9,8 @@ implementing a single interface.
 > and the reference provider are in place; UI features and the data layer are landing
 > incrementally. See [CHANGELOG.md](CHANGELOG.md).
 
+![Orbin settings screenshot](docs/assets/orbin-settings-screenshot.svg)
+
 ---
 
 ## Features

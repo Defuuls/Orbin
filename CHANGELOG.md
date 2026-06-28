@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [8.0] - 2026-06-28
+
+### Added
+- **Settings:** add a configurable subscribed-feed thread limit with 6, 12, 18, and all-thread
+  options.
+- **Storage:** add a saved-media folder picker and route custom-folder downloads through the
+  selected Android folder.
+- **Networking:** add DNS-over-HTTPS provider selection for Cloudflare, OpenDNS, and NextDNS.
+- **Docs:** add an app screenshot to the README.
+
 ## [7.0] - 2026-06-28
 
 ### Security
@@ -92,7 +102,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v7.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v8.0...HEAD
+[8.0]: https://github.com/Defuuls/Orbin/releases/tag/v8.0
 [7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0
 [6.0]: https://github.com/Defuuls/Orbin/releases/tag/v6.0
 [5.0]: https://github.com/Defuuls/Orbin/releases/tag/v5.0
