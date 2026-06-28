@@ -2,6 +2,7 @@ package com.orbin.media.video
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +23,7 @@ fun VideoPlayer(
     modifier: Modifier = Modifier,
     autoPlay: Boolean = false,
     muted: Boolean = true,
+    active: Boolean = true,
 ) {
     val context = LocalContext.current
     val exoPlayer =
@@ -30,10 +32,16 @@ fun VideoPlayer(
                 setMediaItem(MediaItem.fromUri(url))
                 repeatMode = Player.REPEAT_MODE_ONE
                 volume = if (muted) 0f else 1f
-                playWhenReady = autoPlay
+                playWhenReady = active && autoPlay
                 prepare()
             }
         }
+
+    // Pause as soon as this page is no longer the active one so its audio never plays over the
+    // next video; the active page autoplays when enabled.
+    LaunchedEffect(active, autoPlay) {
+        exoPlayer.playWhenReady = active && autoPlay
+    }
 
     DisposableEffect(exoPlayer) {
         onDispose { exoPlayer.release() }
