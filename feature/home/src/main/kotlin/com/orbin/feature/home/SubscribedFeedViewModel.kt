@@ -9,6 +9,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
+import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -104,7 +105,7 @@ class SubscribedFeedViewModel
                             }.map { it.await() }
                     }
                 SubscribedFeedUiState.Success(feeds.toImmutableList())
-            } catch (e: Exception) {
+            } catch (e: ProviderException) {
                 SubscribedFeedUiState.Error(e.message ?: "Unable to load subscribed boards")
             }
         }
