@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [12.0] - 2026-06-29
+
+### Changed
+- **Release:** prepare the v12.0 release for the Coelacanth milestone.
+- **Release naming:** rare fish names replace dessert and gelato-flavor codenames for new
+  release milestones.
+
 ## [11.0] - 2026-06-28
 
 ### Added
@@ -80,11 +87,11 @@ All notable changes to Orbin are documented here. The format is based on
 - **`:core:common`:** `OrbinResult` with typed `DataError`, injectable coroutine dispatchers, and
   the `NetworkMonitor` contract.
 - **`:domain`:** repository contracts and use cases, including `BuildReplyGraphUseCase`
-  (quote links → backlinks).
+  (quote links -> backlinks).
 - **`:network`:** secure-by-default OkHttp client (HTTPS-only, optional DNS-over-HTTPS,
   configurable user-agent), and a connectivity-based `NetworkMonitor` implementation.
 - **`:provider:vichan`:** reference provider for vichan/4chan-compatible JSON APIs with a
-  data-driven site configuration, an HTML comment parser, a DTO→domain mapper, and Hilt
+  data-driven site configuration, an HTML comment parser, a DTO->domain mapper, and Hilt
   multibinding registration.
 - **Persistence:** Room database (bookmarks, history, recent searches, downloads)
   with exported schemas; offline-friendly repositories.
@@ -118,7 +125,10 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v9.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v12.0...HEAD
+[12.0]: https://github.com/Defuuls/Orbin/compare/v11.0...v12.0
+[11.0]: https://github.com/Defuuls/Orbin/compare/v10.0...v11.0
+[10.0]: https://github.com/Defuuls/Orbin/compare/v9.0...v10.0
 [9.0]: https://github.com/Defuuls/Orbin/releases/tag/v9.0
 [8.0]: https://github.com/Defuuls/Orbin/releases/tag/v8.0
 [7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0
