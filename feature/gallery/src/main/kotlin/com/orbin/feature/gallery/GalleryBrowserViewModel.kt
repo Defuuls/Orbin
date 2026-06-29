@@ -35,6 +35,8 @@ data class GalleryBrowserUiState(
     val loadingBoards: Boolean = true,
     val loadingThreads: Boolean = false,
     val preloadingThread: Boolean = false,
+    val progressMessage: String? = null,
+    val progressValue: Float = 0f,
     val message: String? = null,
 )
 
@@ -82,7 +84,17 @@ class GalleryBrowserViewModel
         fun preloadSelectedThread() {
             val thread = _uiState.value.selectedThread ?: return
             viewModelScope.launch {
-                _uiState.update { it.copy(preloadingThread = true, message = null) }
+                val total =
+                    thread.originalPost.attachments.size
+                        .coerceAtLeast(1)
+                _uiState.update {
+                    it.copy(
+                        preloadingThread = true,
+                        progressMessage = buildProgressMessage(1, total, "thread media"),
+                        progressValue = 0.2f,
+                        message = null,
+                    )
+                }
                 when (val result = threadRepository.refreshThread(providerId, thread.key.board, thread.key.thread)) {
                     is OrbinResult.Success ->
                         _uiState.update {
@@ -92,6 +104,8 @@ class GalleryBrowserViewModel
                                         .flatMap { post -> post.attachments }
                                         .toImmutableList(),
                                 preloadingThread = false,
+                                progressMessage = null,
+                                progressValue = 1f,
                                 message = "Thread preloaded",
                             )
                         }
@@ -99,6 +113,8 @@ class GalleryBrowserViewModel
                         _uiState.update {
                             it.copy(
                                 preloadingThread = false,
+                                progressMessage = null,
+                                progressValue = 0f,
                                 message =
                                     result.error.message ?: "Unable to preload thread",
                             )
