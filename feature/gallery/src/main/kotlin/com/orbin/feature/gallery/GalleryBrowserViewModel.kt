@@ -10,6 +10,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.ThreadRepository
+import com.orbin.media.preload.MediaPreloader
 import com.orbin.provider.api.ProviderRegistry
 import com.orbin.provider.api.require
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +47,7 @@ class GalleryBrowserViewModel
     constructor(
         private val providerRegistry: ProviderRegistry,
         private val threadRepository: ThreadRepository,
+        private val mediaPreloader: MediaPreloader,
     ) : ViewModel() {
         private val provider = providerRegistry.default()
         private val providerId = provider.metadata.id
@@ -84,31 +86,49 @@ class GalleryBrowserViewModel
         fun preloadSelectedThread() {
             val thread = _uiState.value.selectedThread ?: return
             viewModelScope.launch {
-                val total =
-                    thread.originalPost.attachments.size
-                        .coerceAtLeast(1)
                 _uiState.update {
                     it.copy(
                         preloadingThread = true,
-                        progressMessage = buildProgressMessage(1, total, "thread media"),
-                        progressValue = 0.2f,
+                        progressMessage = buildProgressMessage(1, 1, "refreshing thread"),
+                        progressValue = PRELOAD_START_PROGRESS,
                         message = null,
                     )
                 }
                 when (val result = threadRepository.refreshThread(providerId, thread.key.board, thread.key.thread)) {
-                    is OrbinResult.Success ->
+                    is OrbinResult.Success -> {
+                        val media =
+                            result.data.allPosts
+                                .flatMap { post -> post.attachments }
                         _uiState.update {
                             it.copy(
-                                media =
-                                    result.data.allPosts
-                                        .flatMap { post -> post.attachments }
-                                        .toImmutableList(),
+                                media = media.toImmutableList(),
+                                progressMessage = buildProgressMessage(1, media.size.coerceAtLeast(1), "media"),
+                                progressValue = PRELOAD_START_PROGRESS,
+                            )
+                        }
+                        val warmed =
+                            mediaPreloader.preload(media) { current, total, label ->
+                                _uiState.update {
+                                    it.copy(
+                                        progressMessage = buildProgressMessage(current, total, label),
+                                        progressValue = current.toFloat() / total.toFloat(),
+                                    )
+                                }
+                            }
+                        _uiState.update {
+                            it.copy(
                                 preloadingThread = false,
                                 progressMessage = null,
                                 progressValue = 1f,
-                                message = "Thread preloaded",
+                                message =
+                                    if (warmed > 0) {
+                                        "Thread media preloaded"
+                                    } else {
+                                        "Thread refreshed"
+                                    },
                             )
                         }
+                    }
                     is OrbinResult.Failure ->
                         _uiState.update {
                             it.copy(
@@ -196,5 +216,9 @@ class GalleryBrowserViewModel
                         }
                     }
                 }
+        }
+
+        private companion object {
+            const val PRELOAD_START_PROGRESS = 0.1f
         }
     }
