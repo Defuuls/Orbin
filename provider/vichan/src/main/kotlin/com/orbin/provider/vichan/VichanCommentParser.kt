@@ -228,32 +228,43 @@ object VichanCommentParser {
         if (trimmed.any { it.isISOControl() || it.isWhitespace() }) return null
 
         val lowered = trimmed.lowercase()
-        if (lowered.startsWith("javascript:") ||
-            lowered.startsWith("data:") ||
-            lowered.startsWith("vbscript:") ||
-            lowered.startsWith("file:") ||
-            lowered.startsWith("about:") ||
-            lowered.startsWith("blob:") ||
-            lowered.startsWith("jar:") ||
-            lowered.startsWith("intent:")
-        ) {
+        if (isUnsafeLinkScheme(lowered)) {
             return null
         }
 
         return runCatching { java.net.URI(trimmed) }.getOrNull()?.let { uri ->
             val scheme = uri.scheme?.lowercase()
             when {
-                scheme == null -> trimmed.takeIf { it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?") }
+                scheme == null ->
+                    trimmed.takeIf {
+                        it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?")
+                    }
+
                 scheme in SAFE_LINK_SCHEMES -> trimmed
                 else -> null
             }
-        } ?: trimmed.takeIf { it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?") }
+        } ?: trimmed.takeIf {
+            it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?")
+        }
     }
+
+    private fun isUnsafeLinkScheme(lowered: String): Boolean = UNSAFE_LINK_SCHEMES.any { lowered.startsWith(it) }
 
     private val POST_IN_HREF = Regex("""#[pq]?(\d+)""")
     private val BOARD_IN_PATH = Regex("""/([a-z0-9]+)/(?:res|thread)/""")
     private val NUMBER = Regex("""\d+""")
     private val SAFE_LINK_SCHEMES = setOf("http", "https")
+    private val UNSAFE_LINK_SCHEMES =
+        listOf(
+            "javascript:",
+            "data:",
+            "vbscript:",
+            "file:",
+            "about:",
+            "blob:",
+            "jar:",
+            "intent:",
+        )
 
     private val entityMap =
         mapOf(
