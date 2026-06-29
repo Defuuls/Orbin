@@ -18,6 +18,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 import java.io.IOException
+import java.time.Duration
+import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * [ImageBoardProvider] for vichan/4chan-compatible engines. A single instance targets one
@@ -88,14 +92,7 @@ class VichanProvider(
             } catch (e: HttpException) {
                 throw when (e.code()) {
                     HTTP_NOT_FOUND -> ProviderException.NotFound("Resource not found", e)
-                    HTTP_TOO_MANY_REQUESTS ->
-                        ProviderException.RateLimited(
-                            e
-                                .response()
-                                ?.headers()
-                                ?.get("Retry-After")
-                                ?.toLongOrNull(),
-                        )
+                    HTTP_TOO_MANY_REQUESTS -> ProviderException.RateLimited(e.retryAfterSeconds())
                     else -> ProviderException.Http(e.code(), e.message(), e)
                 }
             } catch (e: IOException) {
@@ -104,6 +101,17 @@ class VichanProvider(
                 throw ProviderException.Parse("Failed to parse response", e)
             }
         }
+
+    private fun HttpException.retryAfterSeconds(): Long? {
+        val retryAfter = response()?.headers()?.get("Retry-After") ?: return null
+        return retryAfter.toLongOrNull() ?: retryAfter.httpDateDelaySeconds()
+    }
+
+    private fun String.httpDateDelaySeconds(): Long? =
+        runCatching {
+            val retryAt = ZonedDateTime.parse(this, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
+            Duration.between(Instant.now(), retryAt).seconds.coerceAtLeast(0)
+        }.getOrNull()
 
     private fun CatalogSort.comparator(): Comparator<CatalogThread> =
         when (this) {
