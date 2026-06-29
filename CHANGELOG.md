@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [9.0] - 2026-06-28
+
+### Added
+- **Release:** prepare the v9.0 release for the Choco milestone.
+
 ## [8.0] - 2026-06-28
 
 ### Added
@@ -102,7 +107,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v8.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v9.0...HEAD
+[9.0]: https://github.com/Defuuls/Orbin/releases/tag/v9.0
 [8.0]: https://github.com/Defuuls/Orbin/releases/tag/v8.0
 [7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0
 [6.0]: https://github.com/Defuuls/Orbin/releases/tag/v6.0
