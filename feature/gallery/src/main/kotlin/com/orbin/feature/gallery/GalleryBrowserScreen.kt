@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -156,6 +157,19 @@ private fun GalleryControls(
                 Text(
                     text = if (state.preloadingThread) "Preloading" else "Preload thread",
                     modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+        if (state.preloadingThread) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = { state.progressValue },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = state.progressMessage ?: "Preparing media in the background…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

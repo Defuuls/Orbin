@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -23,8 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
+import com.orbin.network.NetworkConfig
 
 /**
  * A Media3/ExoPlayer-backed video player. The player is created per [url], loops by default, and
@@ -43,17 +48,41 @@ fun VideoPlayer(
     val context = LocalContext.current
     // Per-clip mute override; resets to the [muted] default when the clip (url) changes.
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
+    var isBuffering by remember { mutableStateOf(false) }
 
-    val exoPlayer =
-        remember(url) {
-            ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(url))
-                repeatMode = Player.REPEAT_MODE_ONE
-                volume = if (muted) 0f else 1f
-                playWhenReady = active && autoPlay
-                prepare()
+    val httpDataSourceFactory =
+        remember(context) {
+            DefaultHttpDataSource.Factory().apply {
+                setUserAgent(NetworkConfig.DEFAULT_USER_AGENT)
+                setAllowCrossProtocolRedirects(true)
+                setConnectTimeoutMs(15_000)
+                setReadTimeoutMs(30_000)
             }
         }
+
+    val mediaSourceFactory =
+        remember(context, httpDataSourceFactory) {
+            DefaultMediaSourceFactory(httpDataSourceFactory, DefaultExtractorsFactory())
+        }
+
+    val exoPlayer =
+        remember(url, context, mediaSourceFactory) {
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+                .apply {
+                    repeatMode = Player.REPEAT_MODE_ONE
+                    volume = if (muted) 0f else 1f
+                    playWhenReady = active && autoPlay
+                }
+        }
+
+    LaunchedEffect(url) {
+        exoPlayer.setMediaItem(MediaItem.fromUri(url))
+        exoPlayer.prepare()
+        exoPlayer.seekTo(0)
+        exoPlayer.playWhenReady = active && autoPlay
+    }
 
     // Pause as soon as this page is no longer the active one so its audio never plays over the
     // next video; the active page autoplays when enabled.
@@ -66,7 +95,17 @@ fun VideoPlayer(
     }
 
     DisposableEffect(exoPlayer) {
-        onDispose { exoPlayer.release() }
+        val listener =
+            object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    isBuffering = playbackState == Player.STATE_BUFFERING
+                }
+            }
+        exoPlayer.addListener(listener)
+        onDispose {
+            exoPlayer.removeListener(listener)
+            exoPlayer.release()
+        }
     }
 
     Box(modifier = modifier) {
@@ -75,10 +114,19 @@ fun VideoPlayer(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
-                    useController = true
+                    useController = false
                 }
             },
+            update = { playerView ->
+                playerView.player = exoPlayer
+                playerView.useController = false
+            },
         )
+        if (isBuffering) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
         FilledTonalIconButton(
             onClick = { isMuted = !isMuted },
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),

@@ -16,12 +16,25 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class GalleryDownloadUiState(
+    val isBusy: Boolean = false,
+    val label: String? = null,
+    val progressValue: Float = 0f,
+)
+
+fun buildProgressMessage(current: Int, total: Int, label: String): String {
+    val cleanedLabel = label.trim().ifBlank { "media" }
+    return "$current/$total · $cleanedLabel"
+}
 
 /** Collects all media in a thread for the swipeable gallery, starting at [startIndex]. */
 @HiltViewModel
@@ -44,6 +57,9 @@ class GalleryViewModel
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
 
+        private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
+        val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
+
         val media: StateFlow<ImmutableList<MediaAttachment>> =
             observeThread(provider, board, threadId)
                 .map { result ->
@@ -58,7 +74,14 @@ class GalleryViewModel
 
         fun download(attachment: MediaAttachment) {
             viewModelScope.launch {
-                downloadRepository.enqueue(attachment.sourceUrl, attachment.originalFileName)
+                _downloadState.value =
+                    GalleryDownloadUiState(
+                        isBusy = true,
+                        label = buildProgressMessage(1, 1, attachment.originalFileName),
+                        progressValue = 0.2f,
+                    )
+                runCatching { downloadRepository.enqueue(attachment.sourceUrl, attachment.originalFileName) }
+                _downloadState.value = GalleryDownloadUiState()
             }
         }
 
