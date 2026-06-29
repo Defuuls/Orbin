@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [11.0] - 2026-06-28
+
+### Added
+- **Release:** prepare the v11.0 release for the Coconut milestone.
+- **Media:** improve video playback reliability and add visible preload/download progress feedback.
+
 ## [10.0] - 2026-06-28
 
 ### Added
