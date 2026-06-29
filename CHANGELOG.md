@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [13.0] - 2026-06-29
+
+### Changed
+- **Release:** prepare the v13.0 release for the Oarfish milestone.
+- **Release naming:** continue rare fish codenames for release milestones.
+
 ## [12.0] - 2026-06-29
 
 ### Changed
@@ -125,7 +131,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v12.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v13.0...HEAD
+[13.0]: https://github.com/Defuuls/Orbin/compare/v12.0...v13.0
 [12.0]: https://github.com/Defuuls/Orbin/compare/v11.0...v12.0
 [11.0]: https://github.com/Defuuls/Orbin/compare/v10.0...v11.0
 [10.0]: https://github.com/Defuuls/Orbin/compare/v9.0...v10.0
