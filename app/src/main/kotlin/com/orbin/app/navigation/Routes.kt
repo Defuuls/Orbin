@@ -27,6 +27,9 @@ sealed interface Route {
     data object History : Route
 
     @Serializable
+    data object GalleryBrowser : Route
+
+    @Serializable
     data class Board(
         val provider: String,
         val board: String,

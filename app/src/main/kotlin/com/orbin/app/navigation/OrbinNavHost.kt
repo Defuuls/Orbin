@@ -11,6 +11,7 @@ import androidx.navigation.toRoute
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.bookmarks.BookmarksScreen
 import com.orbin.feature.downloads.DownloadsScreen
+import com.orbin.feature.gallery.GalleryBrowserScreen
 import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
@@ -88,6 +89,14 @@ fun OrbinNavHost(
         composable<Route.Bookmarks> { BookmarksScreen(onOpenThread = openThread) }
 
         composable<Route.History> { HistoryScreen(onOpenThread = openThread) }
+
+        composable<Route.GalleryBrowser> {
+            GalleryBrowserScreen(
+                onOpenMedia = { provider, board, thread, index ->
+                    navController.navigate(Route.Gallery(provider, board, thread, index))
+                },
+            )
+        }
 
         composable<Route.Board> {
             BoardScreen(onOpenThread = openThread, onBack = navController::navigateUp)

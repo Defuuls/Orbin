@@ -15,9 +15,47 @@ plugins {
     alias(libs.plugins.roborazzi) apply false
 }
 
+fun ResolutionStrategy.applySecurityDependencyPatches() {
+    eachDependency {
+        when {
+            requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
+                useVersion("4.1.135.Final")
+                because("Dependabot reports multiple Netty CVEs in the Android Gradle Plugin transitive classpath.")
+            }
+
+            requested.group == "org.bouncycastle" && requested.name in setOf(
+                "bcprov-jdk18on",
+                "bcpkix-jdk18on",
+                "bcutil-jdk18on",
+            ) -> {
+                useVersion("1.84")
+                because("Dependabot reports Bouncy Castle CVEs in the Android Gradle Plugin transitive classpath.")
+            }
+
+            requested.group == "org.apache.commons" && requested.name == "commons-compress" -> {
+                useVersion("1.28.0")
+                because("Dependabot reports Apache Commons Compress CVEs in the Android Gradle Plugin transitive classpath.")
+            }
+
+            requested.group == "org.jdom" && requested.name == "jdom2" -> {
+                useVersion("2.0.6.1")
+                because("Dependabot reports a JDOM XXE vulnerability in the Android Gradle Plugin transitive classpath.")
+            }
+        }
+    }
+}
+
+configurations.configureEach {
+    resolutionStrategy.applySecurityDependencyPatches()
+}
+
 // Apply code-quality tooling uniformly. Centralizing it here keeps per-module build files thin
 // and guarantees the `detekt` / `ktlintCheck` tasks exist on every module for CI.
 subprojects {
+    configurations.configureEach {
+        resolutionStrategy.applySecurityDependencyPatches()
+    }
+
     apply(plugin = "io.gitlab.arturbosch.detekt")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
