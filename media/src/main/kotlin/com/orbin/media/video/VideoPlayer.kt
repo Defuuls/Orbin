@@ -1,5 +1,8 @@
 package com.orbin.media.video
 
+import android.content.Context
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,6 +12,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,17 +24,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
-import com.orbin.network.NetworkConfig
+import com.orbin.network.di.BaseOkHttp
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 
 /**
  * A Media3/ExoPlayer-backed video player. The player is created per [url], loops by default, and
@@ -46,22 +59,22 @@ fun VideoPlayer(
     active: Boolean = true,
 ) {
     val context = LocalContext.current
+    val appContext = context.applicationContext
+    val okHttpClient = remember(appContext) { appContext.videoOkHttpClient() }
     // Per-clip mute override; resets to the [muted] default when the clip (url) changes.
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
+    var playbackError by remember(url) { mutableStateOf<String?>(null) }
 
     val httpDataSourceFactory =
-        remember(context) {
-            DefaultHttpDataSource.Factory().apply {
-                setUserAgent(NetworkConfig.DEFAULT_USER_AGENT)
+        remember(okHttpClient) {
+            OkHttpDataSource.Factory(okHttpClient).apply {
                 setAllowCrossProtocolRedirects(true)
-                setConnectTimeoutMs(15_000)
-                setReadTimeoutMs(30_000)
             }
         }
 
     val mediaSourceFactory =
-        remember(context, httpDataSourceFactory) {
+        remember(httpDataSourceFactory) {
             DefaultMediaSourceFactory(httpDataSourceFactory, DefaultExtractorsFactory())
         }
 
@@ -79,6 +92,7 @@ fun VideoPlayer(
         }
 
     LaunchedEffect(url) {
+        playbackError = null
         exoPlayer.setMediaItem(MediaItem.fromUri(url))
         exoPlayer.prepare()
         exoPlayer.seekTo(0)
@@ -88,18 +102,24 @@ fun VideoPlayer(
     // Pause as soon as this page is no longer the active one so its audio never plays over the
     // next video; the active page autoplays when enabled.
     LaunchedEffect(active, autoPlay) {
-        exoPlayer.playWhenReady = active && autoPlay
+        exoPlayer.playWhenReady = active && autoPlay && playbackError == null
     }
 
     LaunchedEffect(isMuted) {
         exoPlayer.volume = if (isMuted) 0f else 1f
     }
 
-    DisposableEffect(exoPlayer) {
+    DisposableEffect(exoPlayer, url) {
         val listener =
             object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     isBuffering = playbackState == Player.STATE_BUFFERING
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    Log.w(TAG, "Video failed to load: $url", error)
+                    playbackError = error.mediaLoadMessage()
+                    isBuffering = false
                 }
             }
         exoPlayer.addListener(listener)
@@ -128,6 +148,20 @@ fun VideoPlayer(
                 CircularProgressIndicator()
             }
         }
+        if (playbackError != null) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = ERROR_OVERLAY_ALPHA)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = playbackError.orEmpty(),
+                    modifier = Modifier.padding(24.dp),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
         FilledTonalIconButton(
             onClick = { isMuted = !isMuted },
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
@@ -139,3 +173,28 @@ fun VideoPlayer(
         }
     }
 }
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+private interface VideoPlayerEntryPoint {
+    @BaseOkHttp
+    fun okHttpClient(): OkHttpClient
+}
+
+private fun Context.videoOkHttpClient(): OkHttpClient =
+    EntryPointAccessors.fromApplication(this, VideoPlayerEntryPoint::class.java).okHttpClient()
+
+private fun PlaybackException.mediaLoadMessage(): String =
+    if (hasHttpStatus(HTTP_TOO_MANY_REQUESTS)) {
+        "Video rate limited. Try again later."
+    } else {
+        "Video unavailable"
+    }
+
+private fun Throwable.hasHttpStatus(statusCode: Int): Boolean =
+    generateSequence(this as Throwable?) { it.cause }
+        .any { throwable -> throwable.message?.contains(statusCode.toString()) == true }
+
+private const val TAG = "OrbinVideoPlayer"
+private const val HTTP_TOO_MANY_REQUESTS = 429
+private const val ERROR_OVERLAY_ALPHA = 0.68f
