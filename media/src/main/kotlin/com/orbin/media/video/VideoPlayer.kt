@@ -66,12 +66,7 @@ fun VideoPlayer(
     var isBuffering by remember { mutableStateOf(false) }
     var playbackError by remember(url) { mutableStateOf<String?>(null) }
 
-    val httpDataSourceFactory =
-        remember(okHttpClient) {
-            OkHttpDataSource.Factory(okHttpClient).apply {
-                setAllowCrossProtocolRedirects(true)
-            }
-        }
+    val httpDataSourceFactory = remember(okHttpClient) { OkHttpDataSource.Factory(okHttpClient) }
 
     val mediaSourceFactory =
         remember(httpDataSourceFactory) {
