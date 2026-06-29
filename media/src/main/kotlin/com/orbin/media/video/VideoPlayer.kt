@@ -257,6 +257,10 @@ private fun VideoControls(
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val timestampText =
+        "${positionMs.formatTimestamp()} / " +
+            durationMs.formatTimestamp()
+
     Box(
         modifier = modifier.background(Color.Black.copy(alpha = CONTROLS_OVERLAY_ALPHA)),
         contentAlignment = Alignment.Center,
@@ -290,7 +294,7 @@ private fun VideoControls(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${positionMs.formatTimestamp()} / ${durationMs.formatTimestamp()}",
+                    text = timestampText,
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium,
                 )
