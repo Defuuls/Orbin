@@ -31,7 +31,11 @@ data class GalleryDownloadUiState(
     val progressValue: Float = 0f,
 )
 
-fun buildProgressMessage(current: Int, total: Int, label: String): String {
+fun buildProgressMessage(
+    current: Int,
+    total: Int,
+    label: String,
+): String {
     val cleanedLabel = label.trim().ifBlank { "media" }
     return "$current/$total · $cleanedLabel"
 }

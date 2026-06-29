@@ -84,7 +84,9 @@ class GalleryBrowserViewModel
         fun preloadSelectedThread() {
             val thread = _uiState.value.selectedThread ?: return
             viewModelScope.launch {
-                val total = thread.originalPost.attachments.size.coerceAtLeast(1)
+                val total =
+                    thread.originalPost.attachments.size
+                        .coerceAtLeast(1)
                 _uiState.update {
                     it.copy(
                         preloadingThread = true,

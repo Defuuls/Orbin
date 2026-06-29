@@ -67,7 +67,8 @@ fun VideoPlayer(
 
     val exoPlayer =
         remember(url, context, mediaSourceFactory) {
-            ExoPlayer.Builder(context)
+            ExoPlayer
+                .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {
