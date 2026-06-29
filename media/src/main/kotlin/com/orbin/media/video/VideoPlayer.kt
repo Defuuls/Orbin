@@ -298,9 +298,17 @@ private fun VideoControls(
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                IconButton(onClick = onMuteToggle, modifier = Modifier.widthIn(min = 48.dp)) {
+                IconButton(
+                    onClick = onMuteToggle,
+                    modifier = Modifier.widthIn(min = 48.dp),
+                ) {
                     Icon(
-                        imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                        imageVector =
+                            if (isMuted) {
+                                Icons.AutoMirrored.Filled.VolumeOff
+                            } else {
+                                Icons.AutoMirrored.Filled.VolumeUp
+                            },
                         contentDescription = if (isMuted) "Unmute" else "Mute",
                         tint = Color.White,
                     )
