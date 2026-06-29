@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [10.0] - 2026-06-28
+
+### Added
+- **Release:** prepare the v10.0 release for the Tiramisu milestone.
+
 ## [9.0] - 2026-06-28
 
 ### Added
