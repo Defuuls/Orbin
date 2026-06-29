@@ -22,6 +22,7 @@ dependencies {
     api(libs.media3.exoplayer)
     api(libs.media3.ui)
     implementation(libs.media3.common)
+    implementation(libs.media3.datasource.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
