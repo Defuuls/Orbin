@@ -235,8 +235,9 @@ fun VideoPlayer(
                 },
                 onMuteToggle = { isMuted = !isMuted },
                 onSeek = { seekProgress ->
-                    val seekDuration = durationMs.takeIf { it > 0 } ?: return@VideoControls
-                    exoPlayer.seekTo((seekDuration * seekProgress).toLong())
+                    if (durationMs > 0) {
+                        exoPlayer.seekTo((durationMs * seekProgress).toLong())
+                    }
                 },
                 modifier = Modifier.fillMaxSize(),
             )
