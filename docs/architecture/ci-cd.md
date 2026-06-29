@@ -29,12 +29,18 @@ A single job that produces a complete, verifiable release:
 | `RELEASE_KEYSTORE_BASE64` | Base64-encoded release keystore (`base64 -w0 orbin-release.jks`) |
 | `RELEASE_KEYSTORE_PASSWORD` | Keystore password |
 | `RELEASE_KEY_ALIAS` | Signing key alias |
-| `RELEASE_KEY_PASSWORD` | Key password |
+| `RELEASE_KEY_PASSWORD` | Signing key password |
 
 The app's `signingConfigs.release` reads these from environment variables
 (`ORBIN_KEYSTORE_FILE`, `ORBIN_KEYSTORE_PASSWORD`, `ORBIN_KEY_ALIAS`, `ORBIN_KEY_PASSWORD`) and
 falls back to the debug signing config locally when they are absent, so local `assembleRelease`
 works without secrets.
+
+## Release codenames
+
+Release milestones use rare fish common names as codenames. Prefer names that are distinctive,
+short enough for changelog entries, and not already used by a previous release. Examples include
+Coelacanth, Devil's Hole Pupfish, Red Handfish, Alabama Sturgeon, and Sakhalin Sturgeon.
 
 ## Cutting a release
 
