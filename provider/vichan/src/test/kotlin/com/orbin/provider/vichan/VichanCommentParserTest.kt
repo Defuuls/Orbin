@@ -62,6 +62,14 @@ class VichanCommentParserTest {
     }
 
     @Test
+    fun `unsafe link schemes are stripped from parsed links`() {
+        val result = VichanCommentParser.parse("""<a href="javascript:alert(1)">click</a>""")
+        assertThat(result.nodes).hasSize(1)
+        val text = (result.nodes.single() as PostNode.Text).text
+        assertThat(text).isEqualTo("click")
+    }
+
+    @Test
     fun `unknown tags are transparent and keep their text`() {
         val result = VichanCommentParser.parse("a <font color=red>red</font> b")
         val joined = result.nodes.filterIsInstance<PostNode.Text>().joinToString("") { it.text }

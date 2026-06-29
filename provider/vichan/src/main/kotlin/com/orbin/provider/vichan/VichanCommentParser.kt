@@ -176,7 +176,10 @@ object VichanCommentParser {
             cls.contains("quote") || open.name == "blockquote" -> styled(InlineStyle.GREENTEXT, children)
             cls.contains("heading") -> styled(InlineStyle.HEADING, children)
             cls.contains("spoiler") || open.name == "s" -> styled(InlineStyle.SPOILER, children)
-            open.name == "a" -> PostNode.Link(open.href.orEmpty(), children)
+            open.name == "a" -> {
+                val href = sanitizeLinkHref(open.href)
+                if (href == null) null else PostNode.Link(href, children)
+            }
             open.name == "strong" || open.name == "b" -> styled(InlineStyle.BOLD, children)
             open.name == "em" || open.name == "i" -> styled(InlineStyle.ITALIC, children)
             open.name == "u" -> styled(InlineStyle.UNDERLINE, children)
@@ -196,10 +199,11 @@ object VichanCommentParser {
         children: List<PostNode>,
         dead: Boolean,
     ): PostNode {
+        val safeHref = sanitizeLinkHref(href)
         val text = children.joinToString("") { (it as? PostNode.Text)?.text ?: "" }
-        val board = href?.let { BOARD_IN_PATH.find(it)?.groupValues?.get(1) }?.let(::BoardId)
+        val board = safeHref?.let { BOARD_IN_PATH.find(it)?.groupValues?.get(1) }?.let(::BoardId)
         val target =
-            href?.let {
+            safeHref?.let {
                 POST_IN_HREF
                     .find(it)
                     ?.groupValues
@@ -218,9 +222,38 @@ object VichanCommentParser {
 
     // endregion
 
+    private fun sanitizeLinkHref(raw: String?): String? {
+        val trimmed = raw?.trim().orEmpty()
+        if (trimmed.isEmpty()) return null
+        if (trimmed.any { it.isISOControl() || it.isWhitespace() }) return null
+
+        val lowered = trimmed.lowercase()
+        if (lowered.startsWith("javascript:") ||
+            lowered.startsWith("data:") ||
+            lowered.startsWith("vbscript:") ||
+            lowered.startsWith("file:") ||
+            lowered.startsWith("about:") ||
+            lowered.startsWith("blob:") ||
+            lowered.startsWith("jar:") ||
+            lowered.startsWith("intent:")
+        ) {
+            return null
+        }
+
+        return runCatching { java.net.URI(trimmed) }.getOrNull()?.let { uri ->
+            val scheme = uri.scheme?.lowercase()
+            when {
+                scheme == null -> trimmed.takeIf { it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?") }
+                scheme in SAFE_LINK_SCHEMES -> trimmed
+                else -> null
+            }
+        } ?: trimmed.takeIf { it.startsWith("#") || it.startsWith("/") || it.startsWith(".") || it.startsWith("?") }
+    }
+
     private val POST_IN_HREF = Regex("""#[pq]?(\d+)""")
     private val BOARD_IN_PATH = Regex("""/([a-z0-9]+)/(?:res|thread)/""")
     private val NUMBER = Regex("""\d+""")
+    private val SAFE_LINK_SCHEMES = setOf("http", "https")
 
     private val entityMap =
         mapOf(
