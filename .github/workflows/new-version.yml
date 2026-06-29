@@ -1,0 +1,148 @@
+name: New Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name, for example 13.0'
+        required: true
+        type: string
+      version_code:
+        description: 'Android versionCode, must be greater than the current value'
+        required: true
+        type: number
+      codename:
+        description: 'Rare-fish release codename, for example Oarfish'
+        required: true
+        type: string
+      base_branch:
+        description: 'Branch to prepare the release from'
+        required: true
+        default: main
+        type: string
+      draft:
+        description: 'Open the release PR as a draft'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    name: Prepare release PR
+    runs-on: ubuntu-latest
+    env:
+      VERSION_NAME: ${{ inputs.version_name }}
+      VERSION_CODE: ${{ inputs.version_code }}
+      CODENAME: ${{ inputs.codename }}
+      BASE_BRANCH: ${{ inputs.base_branch }}
+      DRAFT_PR: ${{ inputs.draft }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+([.-][0-9A-Za-z]+)?$ ]]; then
+            echo "::error::version_name must look like 13.0 or 13.1"; exit 1
+          fi
+          if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error::version_code must be a whole number"; exit 1
+          fi
+          if ! [[ "$CODENAME" =~ ^[A-Za-z][A-Za-z0-9[:space:]'-]*$ ]]; then
+            echo "::error::codename must be a readable rare-fish name"; exit 1
+          fi
+          CURRENT_CODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' app/build.gradle.kts | awk '{print $3}')
+          if [ "$VERSION_CODE" -le "$CURRENT_CODE" ]; then
+            echo "::error::version_code must be greater than current versionCode $CURRENT_CODE"; exit 1
+          fi
+
+      - name: Update version metadata and changelog
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import os
+          import re
+          from datetime import date
+          from pathlib import Path
+
+          version_name = os.environ["VERSION_NAME"].strip()
+          version_code = os.environ["VERSION_CODE"].strip()
+          codename = " ".join(os.environ["CODENAME"].split())
+          release_date = date.today().isoformat()
+
+          build_file = Path("app/build.gradle.kts")
+          build_text = build_file.read_text()
+          build_text = re.sub(r'versionCode = \d+', f'versionCode = {version_code}', build_text, count=1)
+          build_text = re.sub(r'versionName = "[^"]+"', f'versionName = "{version_name}"', build_text, count=1)
+          build_file.write_text(build_text)
+
+          changelog = Path("CHANGELOG.md")
+          changelog_text = changelog.read_text()
+          if f"## [{version_name}]" in changelog_text:
+              raise SystemExit(f"CHANGELOG.md already contains {version_name}")
+
+          previous_match = re.search(r'^## \[([^\]]+)\] - ', changelog_text, flags=re.MULTILINE)
+          if not previous_match:
+              raise SystemExit("Could not find the previous released version in CHANGELOG.md")
+          previous_version = previous_match.group(1)
+
+          entry = (
+              f"\n## [{version_name}] - {release_date}\n\n"
+              "### Changed\n"
+              f"- **Release:** prepare the v{version_name} release for the {codename} milestone.\n"
+              "- **Release naming:** continue rare fish codenames for release milestones.\n"
+          )
+          changelog_text = changelog_text.replace("## [Unreleased]\n", f"## [Unreleased]\n{entry}", 1)
+
+          changelog_text = re.sub(
+              r'\[Unreleased\]: https://github.com/Defuuls/Orbin/compare/v[^.]+(?:\.[^.]*)?\.\.\.HEAD',
+              f"[Unreleased]: https://github.com/Defuuls/Orbin/compare/v{version_name}...HEAD",
+              changelog_text,
+              count=1,
+          )
+          new_link = f"[{version_name}]: https://github.com/Defuuls/Orbin/compare/v{previous_version}...v{version_name}\n"
+          changelog_text = changelog_text.replace(
+              f"[Unreleased]: https://github.com/Defuuls/Orbin/compare/v{version_name}...HEAD\n",
+              f"[Unreleased]: https://github.com/Defuuls/Orbin/compare/v{version_name}...HEAD\n{new_link}",
+              1,
+          )
+          changelog.write_text(changelog_text)
+          PY
+
+      - name: Open release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SAFE_CODENAME=$(echo "$CODENAME" | tr '[:upper:]' '[:lower:]' | sed -E "s/[^a-z0-9]+/-/g; s/^-+|-+$//g")
+          RELEASE_BRANCH="release/v${VERSION_NAME}-${SAFE_CODENAME}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$RELEASE_BRANCH"
+          git add app/build.gradle.kts CHANGELOG.md
+          git commit -m "Prepare v${VERSION_NAME} ${CODENAME} release"
+          git push --set-upstream origin "$RELEASE_BRANCH"
+
+          BODY=$(cat <<EOF
+          ## Summary
+          - bump Android version metadata to ${VERSION_NAME} / versionCode ${VERSION_CODE}
+          - add the v${VERSION_NAME} changelog entry for the ${CODENAME} rare-fish milestone
+          - advance changelog compare links to v${VERSION_NAME}
+
+          ## Release note
+          This continues the rare-fish release naming convention.
+          EOF
+          )
+
+          if [ "$DRAFT_PR" = "true" ]; then
+            gh pr create --base "$BASE_BRANCH" --head "$RELEASE_BRANCH" --title "Prepare v${VERSION_NAME} ${CODENAME} release" --body "$BODY" --draft
+          else
+            gh pr create --base "$BASE_BRANCH" --head "$RELEASE_BRANCH" --title "Prepare v${VERSION_NAME} ${CODENAME} release" --body "$BODY"
+          fi
