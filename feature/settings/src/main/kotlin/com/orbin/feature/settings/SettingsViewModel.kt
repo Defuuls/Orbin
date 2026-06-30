@@ -6,6 +6,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,11 +26,25 @@ class SettingsViewModel
             repository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
+        fun setPersonalizedHomeFeed(enabled: Boolean) = update { repository.setPersonalizedHomeFeed(enabled) }
+
+        fun setHiddenTags(tags: String) = update { repository.setHiddenTags(tags) }
+
+        fun setMutedTags(tags: String) = update { repository.setMutedTags(tags) }
+
+        fun setHideNsfwBoards(enabled: Boolean) = update { repository.setHideNsfwBoards(enabled) }
+
+        fun setHideTextOnlyThreads(enabled: Boolean) = update { repository.setHideTextOnlyThreads(enabled) }
+
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
         fun setDynamicColor(enabled: Boolean) = update { repository.setDynamicColor(enabled) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
+
+        fun setFontScale(scale: Float) = update { repository.setFontScale(scale) }
+
+        fun setThumbnailSize(size: ThumbnailSize) = update { repository.setThumbnailSize(size) }
 
         fun setAutoplay(enabled: Boolean) = update { repository.setAutoplayVideos(enabled) }
 
