@@ -24,7 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +37,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
@@ -44,6 +47,7 @@ import com.orbin.media.video.VideoPlayer
 @Composable
 fun GalleryScreen(
     onClose: () -> Unit,
+    onMediaPageChanged: (Int) -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val media by viewModel.media.collectAsStateWithLifecycle()
@@ -61,6 +65,12 @@ fun GalleryScreen(
             pageCount = { media.size },
         )
 
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .distinctUntilChanged()
+            .collect(onMediaPageChanged)
+    }
+
     Scaffold(
         containerColor = Color.Black,
         topBar = {
@@ -74,7 +84,12 @@ fun GalleryScreen(
                     ),
                 title = { Text("${pagerState.currentPage + 1} / ${media.size}") },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(
+                        onClick = {
+                            onMediaPageChanged(pagerState.settledPage)
+                            onClose()
+                        },
+                    ) {
                         Icon(Icons.Filled.Close, contentDescription = "Close")
                     }
                 },
