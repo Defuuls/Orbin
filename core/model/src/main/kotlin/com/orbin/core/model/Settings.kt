@@ -3,6 +3,15 @@ package com.orbin.core.model
 /** Theme preference independent of any UI framework type (mapped to the design-system enum in app). */
 enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
+enum class AppThemePalette(
+    val label: String,
+) {
+    ORBIN("Orbin"),
+    IOS("iOS"),
+    TOMORROW("Tomorrow"),
+    YORUBA("Yoruba"),
+}
+
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
@@ -37,6 +46,18 @@ enum class ThumbnailSize(
     LARGE("Large", THUMBNAIL_SIZE_LARGE_DP),
 }
 
+enum class VpnProvider(
+    val label: String,
+    val packageName: String?,
+) {
+    SYSTEM("System VPN settings", null),
+    PROTON("Proton VPN", "ch.protonvpn.android"),
+    MULLVAD("Mullvad", "net.mullvad.mullvadvpn"),
+    IVPN("IVPN", "net.ivpn.client"),
+    NORD("NordVPN", "com.nordvpn.android"),
+    WIREGUARD("WireGuard", "com.wireguard.android"),
+}
+
 /**
  * User-configurable application settings, persisted via DataStore. Grouped by the settings screen
  * sections (appearance / media / network) and exposed as one immutable snapshot so the UI observes
@@ -51,6 +72,7 @@ data class AppSettings(
     val hideTextOnlyThreads: Boolean = false,
     // Appearance
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    val themePalette: AppThemePalette = AppThemePalette.ORBIN,
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
@@ -59,6 +81,7 @@ data class AppSettings(
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
     val preloadImages: Boolean = true,
+    val autoDownloadFullThreadMedia: Boolean = false,
     val imageCacheLimitMb: Int = 256,
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
     val downloadFolderUri: String = "",
@@ -67,6 +90,10 @@ data class AppSettings(
     val dohEnabled: Boolean = false,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val httpsOnly: Boolean = true,
+    val vpnProvider: VpnProvider = VpnProvider.SYSTEM,
+    val proxyHost: String = "",
+    val proxyPort: String = "",
+    val proxySocks: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
     // First-run
