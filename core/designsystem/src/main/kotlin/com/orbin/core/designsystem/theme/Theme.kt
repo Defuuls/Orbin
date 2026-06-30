@@ -16,17 +16,77 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 private val LightColors =
     lightColorScheme(
         primary = OrbinPrimary,
+        onPrimary = OrbinOnPrimary,
+        primaryContainer = OrbinPrimaryContainer,
+        onPrimaryContainer = OrbinOnPrimaryContainer,
         secondary = OrbinSecondary,
+        onSecondary = OrbinOnSecondary,
+        secondaryContainer = OrbinSecondaryContainer,
+        onSecondaryContainer = OrbinOnSecondaryContainer,
         tertiary = OrbinTertiary,
+        onTertiary = OrbinOnTertiary,
+        tertiaryContainer = OrbinTertiaryContainer,
+        onTertiaryContainer = OrbinOnTertiaryContainer,
         error = OrbinError,
+        onError = OrbinOnError,
+        errorContainer = OrbinErrorContainer,
+        onErrorContainer = OrbinOnErrorContainer,
+        background = OrbinBackground,
+        onBackground = OrbinOnBackground,
+        surface = OrbinSurface,
+        onSurface = OrbinOnSurface,
+        surfaceVariant = OrbinSurfaceVariant,
+        onSurfaceVariant = OrbinOnSurfaceVariant,
+        surfaceTint = OrbinPrimary,
+        inverseSurface = OrbinInverseSurface,
+        inverseOnSurface = OrbinInverseOnSurface,
+        inversePrimary = OrbinInversePrimary,
+        outline = OrbinOutline,
+        outlineVariant = OrbinOutlineVariant,
+        scrim = OrbinScrim,
+        surfaceContainerLowest = OrbinSurfaceContainerLowest,
+        surfaceContainerLow = OrbinSurfaceContainerLow,
+        surfaceContainer = OrbinSurfaceContainer,
+        surfaceContainerHigh = OrbinSurfaceContainerHigh,
+        surfaceContainerHighest = OrbinSurfaceContainerHighest,
     )
 
 private val DarkColors =
     darkColorScheme(
-        primary = OrbinPrimary,
-        secondary = OrbinSecondary,
-        tertiary = OrbinTertiary,
-        error = OrbinError,
+        primary = OrbinDarkPrimary,
+        onPrimary = OrbinDarkOnPrimary,
+        primaryContainer = OrbinDarkPrimaryContainer,
+        onPrimaryContainer = OrbinDarkOnPrimaryContainer,
+        secondary = OrbinDarkSecondary,
+        onSecondary = OrbinDarkOnSecondary,
+        secondaryContainer = OrbinDarkSecondaryContainer,
+        onSecondaryContainer = OrbinDarkOnSecondaryContainer,
+        tertiary = OrbinDarkTertiary,
+        onTertiary = OrbinDarkOnTertiary,
+        tertiaryContainer = OrbinDarkTertiaryContainer,
+        onTertiaryContainer = OrbinDarkOnTertiaryContainer,
+        error = OrbinDarkError,
+        onError = OrbinDarkOnError,
+        errorContainer = OrbinDarkErrorContainer,
+        onErrorContainer = OrbinDarkOnErrorContainer,
+        background = OrbinDarkBackground,
+        onBackground = OrbinDarkOnBackground,
+        surface = OrbinDarkSurface,
+        onSurface = OrbinDarkOnSurface,
+        surfaceVariant = OrbinDarkSurfaceVariant,
+        onSurfaceVariant = OrbinDarkOnSurfaceVariant,
+        surfaceTint = OrbinDarkPrimary,
+        inverseSurface = OrbinDarkInverseSurface,
+        inverseOnSurface = OrbinDarkInverseOnSurface,
+        inversePrimary = OrbinDarkInversePrimary,
+        outline = OrbinDarkOutline,
+        outlineVariant = OrbinDarkOutlineVariant,
+        scrim = OrbinScrim,
+        surfaceContainerLowest = OrbinDarkSurfaceContainerLowest,
+        surfaceContainerLow = OrbinDarkSurfaceContainerLow,
+        surfaceContainer = OrbinDarkSurfaceContainer,
+        surfaceContainerHigh = OrbinDarkSurfaceContainerHigh,
+        surfaceContainerHighest = OrbinDarkSurfaceContainerHighest,
     )
 
 /**
@@ -67,6 +127,9 @@ fun OrbinTheme(
                 surface = Color.Black,
                 surfaceContainerLowest = Color.Black,
                 surfaceContainerLow = Color(0xFF0A0A0A),
+                surfaceContainer = Color(0xFF111111),
+                surfaceContainerHigh = Color(0xFF1A1A1A),
+                surfaceContainerHighest = Color(0xFF222222),
             )
         } else {
             baseScheme
@@ -75,6 +138,7 @@ fun OrbinTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = orbinTypography(fontScale),
+        shapes = OrbinShapes,
         content = content,
     )
 }
@@ -88,6 +152,7 @@ fun OrbinPreviewTheme(
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = orbinTypography(),
+        shapes = OrbinShapes,
         content = content,
     )
 }
