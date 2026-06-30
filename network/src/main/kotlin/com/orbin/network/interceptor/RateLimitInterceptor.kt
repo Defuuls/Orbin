@@ -2,6 +2,8 @@ package com.orbin.network.interceptor
 
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -33,8 +35,9 @@ class RateLimitInterceptor : Interceptor {
         if (raw.isBlank()) return null
         return raw.toLongOrNull()?.let { seconds -> TimeUnit.SECONDS.toMillis(seconds) }
             ?: runCatching {
-                java.time.ZonedDateTime
-                    .parse(raw, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US))
+                val formatter = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US)
+                ZonedDateTime
+                    .parse(raw, formatter)
                     .toInstant()
                     .toEpochMilli() - System.currentTimeMillis()
             }.getOrNull()
