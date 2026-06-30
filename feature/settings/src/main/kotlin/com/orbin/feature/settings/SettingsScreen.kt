@@ -1,6 +1,8 @@
 package com.orbin.feature.settings
 
+import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -33,9 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.AppThemePalette
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.VpnProvider
 
 private const val FONT_SCALE_SMALL = 0.9f
 private const val FONT_SCALE_DEFAULT = 1f
@@ -125,6 +129,13 @@ fun SettingsScreen(
 
             SectionHeader("Appearance")
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
+            ChoiceRow(
+                label = "Color palette",
+                values = AppThemePalette.entries,
+                selected = settings.themePalette,
+                text = { it.label },
+                onChange = viewModel::setThemePalette,
+            )
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
             SwitchRow("AMOLED black", settings.amoled, viewModel::setAmoled)
             ChoiceRow(
@@ -146,6 +157,11 @@ fun SettingsScreen(
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
             SwitchRow("Mute by default", settings.muteByDefault, viewModel::setMute)
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
+            SwitchRow(
+                "Auto-download full thread media",
+                settings.autoDownloadFullThreadMedia,
+                viewModel::setAutoDownloadFullThreadMedia,
+            )
             ChoiceRow(
                 label = "Threads per board",
                 values = FeedThreadLimit.entries,
@@ -167,8 +183,8 @@ fun SettingsScreen(
             )
             ListItem(
                 headlineContent = { Text("HTTPS only") },
-                supportingContent = { Text("Always enforced") },
-                trailingContent = { Switch(checked = true, onCheckedChange = null) },
+                supportingContent = { Text("Reject cleartext HTTP requests") },
+                trailingContent = { Switch(checked = settings.httpsOnly, onCheckedChange = viewModel::setHttpsOnly) },
             )
             SwitchRow("DNS over HTTPS", settings.dohEnabled, viewModel::setDoh)
             if (settings.dohEnabled) {
@@ -180,6 +196,33 @@ fun SettingsScreen(
                     onChange = viewModel::setDohProvider,
                 )
             }
+            ChoiceRow(
+                label = "VPN shortcut",
+                values = VpnProvider.entries,
+                selected = settings.vpnProvider,
+                text = { it.label },
+                onChange = viewModel::setVpnProvider,
+            )
+            ListItem(
+                modifier = Modifier.clickable { openVpnIntegration(context, settings.vpnProvider) },
+                headlineContent = { Text("Open VPN") },
+                supportingContent = {
+                    Text("Launch ${settings.vpnProvider.label} when installed; otherwise open Android VPN settings")
+                },
+            )
+            TextFieldRow(
+                label = "Proxy host",
+                value = settings.proxyHost,
+                supporting = "Optional HTTP/SOCKS proxy host used by Orbin networking.",
+                onValueChange = viewModel::setProxyHost,
+            )
+            TextFieldRow(
+                label = "Proxy port",
+                value = settings.proxyPort,
+                supporting = "Leave blank to use the system network path.",
+                onValueChange = viewModel::setProxyPort,
+            )
+            SwitchRow("SOCKS proxy", settings.proxySocks, viewModel::setProxySocks)
 
             SectionHeader("Storage")
             ListItem(
@@ -279,6 +322,21 @@ private fun <T> ChoiceRow(
                 label = { Text(text(value)) },
             )
         }
+    }
+}
+
+private fun openVpnIntegration(
+    context: Context,
+    provider: VpnProvider,
+) {
+    val providerIntent = provider.packageName?.let { packageName ->
+        context.packageManager.getLaunchIntentForPackage(packageName)
+    }
+    val fallback = Intent(Settings.ACTION_VPN_SETTINGS)
+    runCatching {
+        context.startActivity(providerIntent ?: fallback)
+    }.onFailure {
+        context.startActivity(fallback)
     }
 }
 
