@@ -49,47 +49,68 @@ class SettingsRepositoryImpl
 
         private val cached = settings.stateIn(scope, SharingStarted.Eagerly, AppSettings.Default)
 
-        override suspend fun setPersonalizedHomeFeed(enabled: Boolean) = edit { it[Keys.personalizedHomeFeed] = enabled }
+        override suspend fun setPersonalizedHomeFeed(enabled: Boolean) =
+            edit { it[Keys.personalizedHomeFeed] = enabled }
 
-        override suspend fun setHiddenTags(tags: String) = edit { it[Keys.hiddenTags] = tags }
+        override suspend fun setHiddenTags(tags: String) =
+            edit { it[Keys.hiddenTags] = tags }
 
-        override suspend fun setMutedTags(tags: String) = edit { it[Keys.mutedTags] = tags }
+        override suspend fun setMutedTags(tags: String) =
+            edit { it[Keys.mutedTags] = tags }
 
-        override suspend fun setHideNsfwBoards(enabled: Boolean) = edit { it[Keys.hideNsfwBoards] = enabled }
+        override suspend fun setHideNsfwBoards(enabled: Boolean) =
+            edit { it[Keys.hideNsfwBoards] = enabled }
 
-        override suspend fun setHideTextOnlyThreads(enabled: Boolean) = edit { it[Keys.hideTextOnlyThreads] = enabled }
+        override suspend fun setHideTextOnlyThreads(enabled: Boolean) =
+            edit { it[Keys.hideTextOnlyThreads] = enabled }
 
-        override suspend fun setThemeMode(mode: AppThemeMode) = edit { it[Keys.themeMode] = mode.name }
+        override suspend fun setThemeMode(mode: AppThemeMode) =
+            edit { it[Keys.themeMode] = mode.name }
 
-        override suspend fun setDynamicColor(enabled: Boolean) = edit { it[Keys.dynamicColor] = enabled }
+        override suspend fun setDynamicColor(enabled: Boolean) =
+            edit { it[Keys.dynamicColor] = enabled }
 
-        override suspend fun setAmoled(enabled: Boolean) = edit { it[Keys.amoled] = enabled }
+        override suspend fun setAmoled(enabled: Boolean) =
+            edit { it[Keys.amoled] = enabled }
 
-        override suspend fun setFontScale(scale: Float) = edit { it[Keys.fontScale] = scale }
+        override suspend fun setFontScale(scale: Float) =
+            edit { it[Keys.fontScale] = scale }
 
-        override suspend fun setThumbnailSize(size: ThumbnailSize) = edit { it[Keys.thumbnailSize] = size.name }
+        override suspend fun setThumbnailSize(size: ThumbnailSize) =
+            edit { it[Keys.thumbnailSize] = size.name }
 
-        override suspend fun setAutoplayVideos(enabled: Boolean) = edit { it[Keys.autoplay] = enabled }
+        override suspend fun setAutoplayVideos(enabled: Boolean) =
+            edit { it[Keys.autoplay] = enabled }
 
-        override suspend fun setMuteByDefault(enabled: Boolean) = edit { it[Keys.mute] = enabled }
+        override suspend fun setMuteByDefault(enabled: Boolean) =
+            edit { it[Keys.mute] = enabled }
 
-        override suspend fun setPreloadImages(enabled: Boolean) = edit { it[Keys.preload] = enabled }
+        override suspend fun setPreloadImages(enabled: Boolean) =
+            edit { it[Keys.preload] = enabled }
 
-        override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) = edit { it[Keys.feedThreadLimit] = limit.name }
+        override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) =
+            edit { it[Keys.feedThreadLimit] = limit.name }
 
-        override suspend fun setDownloadFolderUri(uri: String) = edit { it[Keys.downloadFolderUri] = uri }
+        override suspend fun setDownloadFolderUri(uri: String) =
+            edit { it[Keys.downloadFolderUri] = uri }
 
-        override suspend fun setDohEnabled(enabled: Boolean) = edit { it[Keys.doh] = enabled }
+        override suspend fun setDohEnabled(enabled: Boolean) =
+            edit { it[Keys.doh] = enabled }
 
-        override suspend fun setDohProvider(provider: DohProvider) = edit { it[Keys.dohProvider] = provider.name }
+        override suspend fun setDohProvider(provider: DohProvider) =
+            edit { it[Keys.dohProvider] = provider.name }
 
-        override suspend fun setHttpsOnly(enabled: Boolean) = edit { it[Keys.httpsOnly] = true }
+        override suspend fun setHttpsOnly(enabled: Boolean) =
+            edit { it[Keys.httpsOnly] = true }
 
-        override suspend fun setBiometricLockEnabled(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
+        override suspend fun setBiometricLockEnabled(enabled: Boolean) =
+            edit { it[Keys.biometricLock] = enabled }
 
-        override suspend fun setSaveRecentSearches(enabled: Boolean) = edit { it[Keys.saveRecentSearches] = enabled }
+        override suspend fun setSaveRecentSearches(enabled: Boolean) =
+            edit { it[Keys.saveRecentSearches] = enabled }
 
-        override suspend fun setUserAgent(userAgent: String) = edit { it[Keys.userAgent] = userAgent }
+        override suspend fun setUserAgent(userAgent: String) =
+            edit { it[Keys.userAgent] = userAgent }
 
         override suspend fun setOnboardingCompleted(completed: Boolean) =
             edit { it[Keys.onboardingCompleted] = completed }
@@ -145,7 +166,9 @@ class SettingsRepositoryImpl
                 dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
-                thumbnailSize = this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM) ?: ThumbnailSize.MEDIUM,
+                thumbnailSize =
+                    this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
+                        ?: ThumbnailSize.MEDIUM,
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
@@ -156,7 +179,9 @@ class SettingsRepositoryImpl
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 userAgent = this[Keys.userAgent] ?: "",
                 dohEnabled = this[Keys.doh] ?: false,
-                dohProvider = this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE) ?: DohProvider.CLOUDFLARE,
+                dohProvider =
+                    this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
+                        ?: DohProvider.CLOUDFLARE,
                 httpsOnly = true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
@@ -204,8 +229,10 @@ class SettingsRepositoryImpl
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 
-            fun favoriteBoards(provider: ProviderId) = stringSetPreferencesKey("favorite_boards_${provider.value}")
+            fun favoriteBoards(provider: ProviderId) =
+                stringSetPreferencesKey("favorite_boards_${provider.value}")
 
-            fun subscribedBoards(provider: ProviderId) = stringSetPreferencesKey("subscribed_boards_${provider.value}")
+            fun subscribedBoards(provider: ProviderId) =
+                stringSetPreferencesKey("subscribed_boards_${provider.value}")
         }
     }
