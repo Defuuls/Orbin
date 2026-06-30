@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Board
+import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 
@@ -48,6 +49,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val favoriteBoardIds by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(viewModel.providerId, board.id.value, board.title)
@@ -77,6 +79,9 @@ fun HomeScreen(
                 is HomeUiState.Success ->
                     BoardList(
                         boards = state.boards,
+                        personalizedHomeFeed = settings.personalizedHomeFeed,
+                        hiddenTags = settings.hiddenTagTokens(),
+                        hideNsfwBoards = settings.hideNsfwBoards,
                         favoriteBoardIds = favoriteBoardIds,
                         subscribedBoardIds = subscribedBoardIds,
                         onBoardClick = openBoard,
@@ -91,14 +96,33 @@ fun HomeScreen(
 @Composable
 private fun BoardList(
     boards: List<Board>,
+    personalizedHomeFeed: Boolean,
+    hiddenTags: Set<String>,
+    hideNsfwBoards: Boolean,
     favoriteBoardIds: Set<String>,
     subscribedBoardIds: Set<String>,
     onBoardClick: (Board) -> Unit,
     onFavoriteChange: (board: String, favorite: Boolean) -> Unit,
     onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
 ) {
+    val filteredBoards =
+        boards
+            .filterNot { board -> hideNsfwBoards && board.isNsfw }
+            .filterNot { board -> board.matchesAny(hiddenTags) }
+            .let { visibleBoards ->
+                if (!personalizedHomeFeed) {
+                    visibleBoards
+                } else {
+                    visibleBoards.sortedWith(
+                        compareByDescending<Board> { it.id.value in favoriteBoardIds }
+                            .thenByDescending { it.id.value in subscribedBoardIds }
+                            .thenBy { it.id.value },
+                    )
+                }
+            }
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(boards, key = { it.id.value }) { board ->
+        items(filteredBoards, key = { it.id.value }) { board ->
             val isFavorite = board.id.value in favoriteBoardIds
             val isSubscribed = board.id.value in subscribedBoardIds
             ListItem(
@@ -148,4 +172,10 @@ private fun BoardList(
             HorizontalDivider()
         }
     }
+}
+
+private fun Board.matchesAny(tokens: Set<String>): Boolean {
+    if (tokens.isEmpty()) return false
+    val haystack = listOf(id.value, title, description).joinToString(" ").lowercase()
+    return tokens.any(haystack::contains)
 }
