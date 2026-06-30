@@ -7,7 +7,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
