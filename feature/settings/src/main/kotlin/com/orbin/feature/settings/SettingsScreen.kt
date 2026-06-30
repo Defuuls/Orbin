@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ThumbnailSize
 
 /** Settings screen covering appearance, media, and network/privacy sections. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,11 +76,26 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
         ) {
             SectionHeader("Content")
+            SwitchRow("Personalized home feed", settings.personalizedHomeFeed, viewModel::setPersonalizedHomeFeed)
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSubscriptions),
                 headlineContent = { Text("Subscriptions") },
                 supportingContent = { Text("Manage subscribed boards") },
             )
+            TextFieldRow(
+                label = "Hidden tags",
+                value = settings.hiddenTags,
+                supporting = "Hidden tags are removed from feeds. Separate tags with commas.",
+                onValueChange = viewModel::setHiddenTags,
+            )
+            TextFieldRow(
+                label = "Muted tags",
+                value = settings.mutedTags,
+                supporting = "Muted tags stay visible but get de-emphasized in the feed.",
+                onValueChange = viewModel::setMutedTags,
+            )
+            SwitchRow("Hide NSFW boards", settings.hideNsfwBoards, viewModel::setHideNsfwBoards)
+            SwitchRow("Hide text-only threads", settings.hideTextOnlyThreads, viewModel::setHideTextOnlyThreads)
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSetup),
                 headlineContent = { Text("Run setup again") },
@@ -96,6 +114,20 @@ fun SettingsScreen(
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
             SwitchRow("AMOLED black", settings.amoled, viewModel::setAmoled)
+            ChoiceRow(
+                label = "Font size",
+                values = FontScaleOption.entries,
+                selected = FontScaleOption.fromScale(settings.fontScale),
+                text = { it.label },
+                onChange = { option -> viewModel.setFontScale(option.scale) },
+            )
+            ChoiceRow(
+                label = "Thumbnail size",
+                values = ThumbnailSize.entries,
+                selected = settings.thumbnailSize,
+                text = { it.label },
+                onChange = viewModel::setThumbnailSize,
+            )
 
             SectionHeader("Media")
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
@@ -167,6 +199,25 @@ private fun SwitchRow(
     )
 }
 
+@Composable
+private fun TextFieldRow(
+    label: String,
+    value: String,
+    supporting: String,
+    onValueChange: (String) -> Unit,
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            supportingText = { Text(supporting) },
+            singleLine = false,
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThemeModeRow(
@@ -207,5 +258,21 @@ private fun <T> ChoiceRow(
                 label = { Text(text(value)) },
             )
         }
+    }
+}
+
+private enum class FontScaleOption(
+    val scale: Float,
+    val label: String,
+) {
+    SMALL(0.9f, "Small"),
+    DEFAULT(1f, "Default"),
+    LARGE(1.1f, "Large"),
+    XLARGE(1.2f, "XL"),
+    ;
+
+    companion object {
+        fun fromScale(scale: Float): FontScaleOption =
+            entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
     }
 }
