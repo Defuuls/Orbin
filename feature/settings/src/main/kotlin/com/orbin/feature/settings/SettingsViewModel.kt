@@ -7,6 +7,9 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.domain.repository.DownloadRepository
+import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +24,9 @@ class SettingsViewModel
     @Inject
     constructor(
         private val repository: SettingsRepository,
+        private val historyRepository: HistoryRepository,
+        private val searchRepository: SearchRepository,
+        private val downloadRepository: DownloadRepository,
     ) : ViewModel() {
         val settings: StateFlow<AppSettings> =
             repository.settings
@@ -65,6 +71,13 @@ class SettingsViewModel
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
         fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
+
+        fun clearLocalActivity() =
+            update {
+                historyRepository.clear()
+                searchRepository.clearRecentQueries()
+                downloadRepository.clearHistory()
+            }
 
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }

@@ -37,10 +37,10 @@ class MediaPreloader
                 runCatching { imageLoader.execute(request) }
                     .onSuccess { result ->
                         if (result is ErrorResult) {
-                            Log.w(TAG, "Failed to preload media: ${target.url}", result.throwable)
+                            Log.w(TAG, "Failed to preload media", result.throwable)
                         }
                     }.onFailure { error ->
-                        Log.w(TAG, "Failed to preload media: ${target.url}", error)
+                        Log.w(TAG, "Failed to preload media", error)
                     }
             }
             return targets.size

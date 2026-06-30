@@ -18,6 +18,8 @@ class HeadersInterceptor(
                 .newBuilder()
                 .header("User-Agent", configProvider.current().userAgent)
                 .header("Accept", "application/json, image/*, */*")
+                .header("Cache-Control", "no-store")
+                .header("Pragma", "no-cache")
                 .build()
         return chain.proceed(request)
     }

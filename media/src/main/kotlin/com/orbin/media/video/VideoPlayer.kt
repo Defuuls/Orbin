@@ -156,7 +156,7 @@ fun VideoPlayer(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Log.w(TAG, "Video failed to load: $url", error)
+                    Log.w(TAG, "Video failed to load", error)
                     playbackError = error.mediaLoadMessage()
                     isBuffering = false
                     controlsVisible = true
