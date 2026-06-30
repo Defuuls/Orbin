@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.common.result.fold
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
@@ -15,6 +16,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +37,7 @@ class ThreadViewModel
         private val bookmarkRepository: BookmarkRepository,
         private val downloadRepository: DownloadRepository,
         private val historyRepository: HistoryRepository,
+        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -44,6 +47,11 @@ class ThreadViewModel
         private val key = ThreadKey(provider, board, threadId)
 
         private var loadedThread: Thread? = null
+        private var autoDownloadedThread: ThreadKey? = null
+
+        private val settings: StateFlow<AppSettings> =
+            settingsRepository.settings
+                .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings.Default)
 
         val uiState: StateFlow<ThreadUiState> =
             observeThread(provider, board, threadId)
@@ -73,16 +81,20 @@ class ThreadViewModel
 
         fun downloadAllMedia() {
             val thread = loadedThread ?: return
-            viewModelScope.launch {
-                thread.allPosts
-                    .flatMap { it.attachments }
-                    .forEach { attachment ->
-                        downloadRepository.enqueue(
-                            url = attachment.sourceUrl,
-                            fileName = attachment.downloadFileName(),
-                        )
-                    }
-            }
+            viewModelScope.launch { downloadThreadMedia(thread) }
+        }
+
+        private suspend fun downloadThreadMedia(thread: Thread) {
+            thread.allPosts
+                .asSequence()
+                .flatMap { it.attachments.asSequence() }
+                .distinctBy { it.sourceUrl }
+                .forEach { attachment ->
+                    downloadRepository.enqueue(
+                        url = attachment.sourceUrl,
+                        fileName = attachment.downloadFileName(),
+                    )
+                }
         }
 
         private fun onThreadLoaded(thread: Thread) {
@@ -100,6 +112,10 @@ class ThreadViewModel
                         lastReadPostId = thread.originalPost.id,
                     ),
                 )
+                if (settings.value.autoDownloadFullThreadMedia && autoDownloadedThread != key) {
+                    autoDownloadedThread = key
+                    downloadThreadMedia(thread)
+                }
             }
         }
 
