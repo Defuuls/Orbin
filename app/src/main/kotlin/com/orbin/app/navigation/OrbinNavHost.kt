@@ -3,7 +3,9 @@ package com.orbin.app.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,6 +26,8 @@ import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
 
 private const val TRANSITION_MS = 300
+private const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
+private const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 
 /**
  * The single navigation graph for the app. Slide + fade transitions give a smooth, native feel;
@@ -104,16 +108,33 @@ fun OrbinNavHost(
 
         composable<Route.Thread> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.Thread>()
+            val mediaScrollIndex by
+                backStackEntry.savedStateHandle
+                    .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
+                    .collectAsStateWithLifecycle()
+
             ThreadScreen(
                 onBack = navController::navigateUp,
                 onOpenMedia = { index ->
                     navController.navigate(Route.Gallery(route.provider, route.board, route.thread, index))
                 },
+                mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                onMediaScrollConsumed = {
+                    backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                        NO_THREAD_MEDIA_SCROLL_INDEX
+                },
             )
         }
 
         composable<Route.Gallery> {
-            GalleryScreen(onClose = navController::navigateUp)
+            GalleryScreen(
+                onClose = navController::navigateUp,
+                onMediaPageChanged = { page ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
+                },
+            )
         }
 
         composable<Route.Downloads> {
