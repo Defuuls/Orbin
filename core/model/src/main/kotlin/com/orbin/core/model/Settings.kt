@@ -25,17 +25,33 @@ enum class DohProvider(
     NEXTDNS("NextDNS"),
 }
 
+enum class ThumbnailSize(
+    val label: String,
+    val sizeDp: Int,
+) {
+    COMPACT("Compact", 80),
+    MEDIUM("Medium", 96),
+    LARGE("Large", 120),
+}
+
 /**
  * User-configurable application settings, persisted via DataStore. Grouped by the settings screen
  * sections (appearance / media / network) and exposed as one immutable snapshot so the UI observes
  * a single stable object.
  */
 data class AppSettings(
+    // Home / content
+    val personalizedHomeFeed: Boolean = true,
+    val hiddenTags: String = "",
+    val mutedTags: String = "",
+    val hideNsfwBoards: Boolean = false,
+    val hideTextOnlyThreads: Boolean = false,
     // Appearance
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
+    val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     // Media
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
@@ -57,3 +73,14 @@ data class AppSettings(
         val Default = AppSettings()
     }
 }
+
+fun AppSettings.hiddenTagTokens(): Set<String> = parseFilterTokens(hiddenTags)
+
+fun AppSettings.mutedTagTokens(): Set<String> = parseFilterTokens(mutedTags)
+
+private fun parseFilterTokens(raw: String): Set<String> =
+    raw
+        .split(',', '\n')
+        .map { token -> token.trim().removePrefix("#").lowercase() }
+        .filter { token -> token.isNotBlank() }
+        .toSet()
