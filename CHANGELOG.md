@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [19.0] - 2026-06-30
+
+### Changed
+- **Release:** prepare the v19.0 release for the Mandarinfish milestone.
+- **Release naming:** continue rare fish codenames for release milestones.
+
 ## [18.0] - 2026-06-30
 
 ### Changed
@@ -161,7 +167,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v18.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v19.0...HEAD
+[19.0]: https://github.com/Defuuls/Orbin/compare/v18.0...v19.0
 [18.0]: https://github.com/Defuuls/Orbin/compare/v17.0...v18.0
 [17.0]: https://github.com/Defuuls/Orbin/compare/v16.0...v17.0
 [16.0]: https://github.com/Defuuls/Orbin/compare/v15.0...v16.0
