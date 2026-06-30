@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -36,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -79,6 +83,7 @@ fun BoardScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -123,6 +128,11 @@ fun BoardScreen(
                         )
                     }
                 },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
     ) { padding ->
@@ -162,9 +172,17 @@ private fun CatalogList(
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(contentPadding),
-        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding =
+            PaddingValues(
+                start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(count = itemCount, key = itemKey) { index ->
@@ -189,10 +207,18 @@ private fun CatalogGrid(
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+
     LazyVerticalGrid(
         columns = GridCells.Adaptive(168.dp),
-        modifier = Modifier.fillMaxSize().padding(contentPadding),
-        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding =
+            PaddingValues(
+                start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
