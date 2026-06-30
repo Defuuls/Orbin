@@ -6,12 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-## [15.0] - 2026-06-30
-
-### Changed
-- **Release:** prepare the v15.0 release for the Devil's Hole Pupfish milestone.
-- **Release naming:** continue rare fish codenames for release milestones.
-
 ## [14.0] - 2026-06-30
 
 ### Changed
@@ -143,8 +137,7 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v15.0...HEAD
-[15.0]: https://github.com/Defuuls/Orbin/compare/v14.0...v15.0
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v14.0...HEAD
 [14.0]: https://github.com/Defuuls/Orbin/compare/v13.0...v14.0
 [13.0]: https://github.com/Defuuls/Orbin/compare/v12.0...v13.0
 [12.0]: https://github.com/Defuuls/Orbin/compare/v11.0...v12.0

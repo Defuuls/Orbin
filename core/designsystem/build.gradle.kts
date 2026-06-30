@@ -12,13 +12,13 @@ android {
     }
 }
 
-// Roborazzi only configures the debug unit-test variant, so screenshot tests must not run under
-// `testReleaseUnitTest` (which the aggregate `test` task also invokes).
+// Roborazzi screenshot tests are driven by the dedicated record/verify Roborazzi tasks. Keep them
+// out of the aggregate `test` task, which otherwise runs them without baselines.
 tasks.withType<Test>().configureEach {
-    if (name.contains("Release")) {
+    if (name.startsWith("test")) {
         filter {
             excludeTestsMatching("*ScreenshotTest")
-            // Screenshot tests are the only tests here, so release ends up empty — allow it.
+            // Screenshot tests are the only tests here, so these tasks end up empty.
             isFailOnNoMatchingTests = false
         }
     }
