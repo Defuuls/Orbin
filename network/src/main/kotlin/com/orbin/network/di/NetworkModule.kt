@@ -4,6 +4,7 @@ import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
 import com.orbin.network.interceptor.HttpsOnlyInterceptor
+import com.orbin.network.interceptor.RateLimitInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -74,6 +75,7 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
             ).addInterceptor(HttpsOnlyInterceptor(configProvider))
+            .addInterceptor(RateLimitInterceptor())
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
                 dns(DynamicDns(configProvider, bootstrap))
