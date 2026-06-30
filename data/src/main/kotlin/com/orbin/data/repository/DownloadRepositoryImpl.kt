@@ -117,7 +117,7 @@ class DownloadRepositoryImpl
                     .use { response ->
                         if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
                         val body = response.body ?: error("Download body was empty")
-                        context.contentResolver.openOutputStream(target)?.use { output ->
+                        context.contentResolver.openOutputStream(target, WRITE_MODE)?.use { output ->
                             body.byteStream().use { input -> input.copyTo(output) }
                         } ?: error("Unable to open selected folder")
                     }
@@ -150,6 +150,7 @@ class DownloadRepositoryImpl
         override suspend fun refreshStatuses() =
             withContext(ioDispatcher) {
                 dao.all().forEach { entity ->
+                    if (entity.id < 0L) return@forEach
                     val status = queryStatus(entity.id)
                     if (status.name != entity.status) dao.updateStatus(entity.id, status.name)
                 }
@@ -183,6 +184,7 @@ class DownloadRepositoryImpl
             const val SKIPPED_ID = -1L
             const val MAX_FILENAME_LENGTH = 200
             const val MIME_OCTET_STREAM = "application/octet-stream"
+            const val WRITE_MODE = "w"
             val ALLOWED_SCHEMES = setOf("https")
         }
     }
