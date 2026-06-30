@@ -11,16 +11,20 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.AppThemePalette
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.VpnProvider
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfig
 import com.orbin.network.NetworkConfigProvider
+import com.orbin.network.ProxyConfig
+import com.orbin.network.ProxyType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -73,6 +77,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.themeMode] = mode.name }
         }
 
+        override suspend fun setThemePalette(palette: AppThemePalette) {
+            edit { it[Keys.themePalette] = palette.name }
+        }
+
         override suspend fun setDynamicColor(enabled: Boolean) {
             edit { it[Keys.dynamicColor] = enabled }
         }
@@ -101,6 +109,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.preload] = enabled }
         }
 
+        override suspend fun setAutoDownloadFullThreadMedia(enabled: Boolean) {
+            edit { it[Keys.autoDownloadFullThreadMedia] = enabled }
+        }
+
         override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
             edit { it[Keys.feedThreadLimit] = limit.name }
         }
@@ -118,7 +130,23 @@ class SettingsRepositoryImpl
         }
 
         override suspend fun setHttpsOnly(enabled: Boolean) {
-            edit { it[Keys.httpsOnly] = true }
+            edit { it[Keys.httpsOnly] = enabled }
+        }
+
+        override suspend fun setVpnProvider(provider: VpnProvider) {
+            edit { it[Keys.vpnProvider] = provider.name }
+        }
+
+        override suspend fun setProxyHost(host: String) {
+            edit { it[Keys.proxyHost] = host.trim() }
+        }
+
+        override suspend fun setProxyPort(port: String) {
+            edit { it[Keys.proxyPort] = port.filter(Char::isDigit).take(MAX_PORT_LENGTH) }
+        }
+
+        override suspend fun setProxySocks(enabled: Boolean) {
+            edit { it[Keys.proxySocks] = enabled }
         }
 
         override suspend fun setBiometricLockEnabled(enabled: Boolean) {
@@ -184,7 +212,10 @@ class SettingsRepositoryImpl
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
-                themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
+                themeMode = this[Keys.themeMode]?.toEnumOrDefault(AppThemeMode.SYSTEM) ?: AppThemeMode.SYSTEM,
+                themePalette =
+                    this[Keys.themePalette]?.toEnumOrDefault(AppThemePalette.ORBIN)
+                        ?: AppThemePalette.ORBIN,
                 dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
@@ -194,6 +225,7 @@ class SettingsRepositoryImpl
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
+                autoDownloadFullThreadMedia = this[Keys.autoDownloadFullThreadMedia] ?: false,
                 feedThreadLimit =
                     this[Keys.feedThreadLimit]
                         ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
@@ -204,7 +236,11 @@ class SettingsRepositoryImpl
                 dohProvider =
                     this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
                         ?: DohProvider.CLOUDFLARE,
-                httpsOnly = true,
+                httpsOnly = this[Keys.httpsOnly] ?: true,
+                vpnProvider = this[Keys.vpnProvider]?.toEnumOrDefault(VpnProvider.SYSTEM) ?: VpnProvider.SYSTEM,
+                proxyHost = this[Keys.proxyHost] ?: "",
+                proxyPort = this[Keys.proxyPort] ?: "",
+                proxySocks = this[Keys.proxySocks] ?: false,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
@@ -214,8 +250,19 @@ class SettingsRepositoryImpl
             NetworkConfig(
                 userAgent = userAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT },
                 dnsOverHttps = if (dohEnabled) dohProvider.toDohConfig() else DohConfig.Disabled,
+                proxy = toProxyConfig(),
                 httpsOnly = httpsOnly,
             )
+
+        private fun AppSettings.toProxyConfig(): ProxyConfig? {
+            val port = proxyPort.toIntOrNull()?.takeIf { it in MIN_PORT..MAX_PORT } ?: return null
+            val host = proxyHost.trim().takeIf { it.isNotBlank() } ?: return null
+            return ProxyConfig(
+                host = host,
+                port = port,
+                type = if (proxySocks) ProxyType.SOCKS else ProxyType.HTTP,
+            )
+        }
 
         private fun DohProvider.toDohConfig(): DohConfig =
             when (this) {
@@ -234,6 +281,7 @@ class SettingsRepositoryImpl
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
             val themeMode = stringPreferencesKey("theme_mode")
+            val themePalette = stringPreferencesKey("theme_palette")
             val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")
@@ -241,12 +289,17 @@ class SettingsRepositoryImpl
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val preload = booleanPreferencesKey("preload_images")
+            val autoDownloadFullThreadMedia = booleanPreferencesKey("auto_download_full_thread_media")
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")
             val dohProvider = stringPreferencesKey("doh_provider")
             val httpsOnly = booleanPreferencesKey("https_only")
+            val vpnProvider = stringPreferencesKey("vpn_provider")
+            val proxyHost = stringPreferencesKey("proxy_host")
+            val proxyPort = stringPreferencesKey("proxy_port")
+            val proxySocks = booleanPreferencesKey("proxy_socks")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
@@ -256,5 +309,11 @@ class SettingsRepositoryImpl
 
             fun subscribedBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("subscribed_boards_${provider.value}")
+        }
+
+        private companion object {
+            const val MIN_PORT = 1
+            const val MAX_PORT = 65_535
+            const val MAX_PORT_LENGTH = 5
         }
     }
