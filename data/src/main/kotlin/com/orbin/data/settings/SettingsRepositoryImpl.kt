@@ -15,6 +15,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.network.DohConfig
@@ -48,6 +49,16 @@ class SettingsRepositoryImpl
 
         private val cached = settings.stateIn(scope, SharingStarted.Eagerly, AppSettings.Default)
 
+        override suspend fun setPersonalizedHomeFeed(enabled: Boolean) = edit { it[Keys.personalizedHomeFeed] = enabled }
+
+        override suspend fun setHiddenTags(tags: String) = edit { it[Keys.hiddenTags] = tags }
+
+        override suspend fun setMutedTags(tags: String) = edit { it[Keys.mutedTags] = tags }
+
+        override suspend fun setHideNsfwBoards(enabled: Boolean) = edit { it[Keys.hideNsfwBoards] = enabled }
+
+        override suspend fun setHideTextOnlyThreads(enabled: Boolean) = edit { it[Keys.hideTextOnlyThreads] = enabled }
+
         override suspend fun setThemeMode(mode: AppThemeMode) = edit { it[Keys.themeMode] = mode.name }
 
         override suspend fun setDynamicColor(enabled: Boolean) = edit { it[Keys.dynamicColor] = enabled }
@@ -55,6 +66,8 @@ class SettingsRepositoryImpl
         override suspend fun setAmoled(enabled: Boolean) = edit { it[Keys.amoled] = enabled }
 
         override suspend fun setFontScale(scale: Float) = edit { it[Keys.fontScale] = scale }
+
+        override suspend fun setThumbnailSize(size: ThumbnailSize) = edit { it[Keys.thumbnailSize] = size.name }
 
         override suspend fun setAutoplayVideos(enabled: Boolean) = edit { it[Keys.autoplay] = enabled }
 
@@ -123,10 +136,16 @@ class SettingsRepositoryImpl
 
         private fun Preferences.toAppSettings(): AppSettings =
             AppSettings(
+                personalizedHomeFeed = this[Keys.personalizedHomeFeed] ?: true,
+                hiddenTags = this[Keys.hiddenTags] ?: "",
+                mutedTags = this[Keys.mutedTags] ?: "",
+                hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
+                hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
+                thumbnailSize = this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM) ?: ThumbnailSize.MEDIUM,
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
@@ -162,10 +181,16 @@ class SettingsRepositoryImpl
             runCatching { enumValueOf<T>(this) }.getOrDefault(default)
 
         private object Keys {
+            val personalizedHomeFeed = booleanPreferencesKey("personalized_home_feed")
+            val hiddenTags = stringPreferencesKey("hidden_tags")
+            val mutedTags = stringPreferencesKey("muted_tags")
+            val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
+            val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
             val themeMode = stringPreferencesKey("theme_mode")
             val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")
+            val thumbnailSize = stringPreferencesKey("thumbnail_size")
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val preload = booleanPreferencesKey("preload_images")
