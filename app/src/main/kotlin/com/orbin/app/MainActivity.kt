@@ -24,7 +24,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.theme.ThemeMode
+import com.orbin.core.designsystem.theme.ThemePalette
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.AppThemePalette
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -67,6 +69,7 @@ class MainActivity : FragmentActivity() {
 
             com.orbin.core.designsystem.theme.OrbinTheme(
                 themeMode = settings.themeMode.toDesignSystem(),
+                palette = settings.themePalette.toDesignSystem(),
                 dynamicColor = settings.dynamicColor,
                 amoled = settings.amoled,
                 fontScale = settings.fontScale,
@@ -123,4 +126,12 @@ private fun AppThemeMode.toDesignSystem(): ThemeMode =
         AppThemeMode.SYSTEM -> ThemeMode.SYSTEM
         AppThemeMode.LIGHT -> ThemeMode.LIGHT
         AppThemeMode.DARK -> ThemeMode.DARK
+    }
+
+private fun AppThemePalette.toDesignSystem(): ThemePalette =
+    when (this) {
+        AppThemePalette.ORBIN -> ThemePalette.ORBIN
+        AppThemePalette.IOS -> ThemePalette.IOS
+        AppThemePalette.TOMORROW -> ThemePalette.TOMORROW
+        AppThemePalette.YORUBA -> ThemePalette.YORUBA
     }
