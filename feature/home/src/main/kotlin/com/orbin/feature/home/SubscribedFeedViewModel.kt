@@ -2,12 +2,14 @@ package com.orbin.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -58,14 +60,18 @@ class SubscribedFeedViewModel
 
         private val refreshRequests = MutableStateFlow(0)
 
+        val settings: StateFlow<AppSettings> =
+            settingsRepository.settings
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+
         val uiState: StateFlow<SubscribedFeedUiState> =
             combine(
                 boardRepository.observeBoards(provider.metadata.id),
                 boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                settingsRepository.settings,
+                settings,
                 refreshRequests,
             ) { boards, subscribedIds, settings, _ ->
-                loadSubscribedFeeds(boards, subscribedIds, settings.feedThreadLimit)
+                loadSubscribedFeeds(boards, subscribedIds, settings)
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SubscribedFeedUiState.Loading)
 
         init {
@@ -82,7 +88,7 @@ class SubscribedFeedViewModel
         private suspend fun loadSubscribedFeeds(
             boards: List<Board>,
             subscribedIds: Set<BoardId>,
-            threadLimit: FeedThreadLimit,
+            settings: AppSettings,
         ): SubscribedFeedUiState {
             if (subscribedIds.isEmpty()) {
                 return SubscribedFeedUiState.Success(emptyList<SubscribedBoardFeed>().toImmutableList())
@@ -91,6 +97,7 @@ class SubscribedFeedViewModel
             val subscribedBoards =
                 boards
                     .filter { it.id in subscribedIds }
+                    .filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
                     .sortedBy { it.id.value }
 
             if (subscribedBoards.isEmpty()) {
@@ -104,7 +111,7 @@ class SubscribedFeedViewModel
                         subscribedBoards
                             .map { board ->
                                 async {
-                                    val threads = requestLimit.withPermit { loadBoardThreads(board, threadLimit) }
+                                    val threads = requestLimit.withPermit { loadBoardThreads(board, settings) }
                                     SubscribedBoardFeed(board, threads)
                                 }
                             }.map { it.await() }
@@ -117,10 +124,13 @@ class SubscribedFeedViewModel
 
         private suspend fun loadBoardThreads(
             board: Board,
-            threadLimit: FeedThreadLimit,
+            settings: AppSettings,
         ): ImmutableList<CatalogThread> {
             val catalog = provider.getCatalog(CatalogRequest(ProviderId(providerId), board.id))
-            return (threadLimit.count?.let(catalog::take) ?: catalog).toImmutableList()
+            return (settings.feedThreadLimit.count?.let(catalog::take) ?: catalog)
+                .filterNot { thread -> thread.matchesAny(settings.hiddenTagTokens()) }
+                .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
+                .toImmutableList()
         }
 
         private companion object {
@@ -128,3 +138,9 @@ class SubscribedFeedViewModel
             const val MAX_CONCURRENT_BOARD_LOADS = 4
         }
     }
+
+private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
+    if (tokens.isEmpty()) return false
+    val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
+    return tokens.any(haystack::contains)
+}
