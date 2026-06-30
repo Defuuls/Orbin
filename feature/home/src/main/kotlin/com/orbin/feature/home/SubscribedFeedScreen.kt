@@ -1,5 +1,6 @@
 package com.orbin.feature.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,13 +32,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,21 +61,12 @@ fun SubscribedFeedScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Subscribed")
-                        Text(
-                            text = "Continuous board feed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    Text("Subscribed")
                 },
                 actions = {
                     IconButton(onClick = viewModel::refresh) {
@@ -89,7 +79,11 @@ fun SubscribedFeedScreen(
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
-                scrollBehavior = scrollBehavior,
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
     ) { padding ->
@@ -114,6 +108,7 @@ fun SubscribedFeedScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SubscribedFeedList(
     providerId: String,
@@ -128,7 +123,7 @@ private fun SubscribedFeedList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         feeds.forEach { feed ->
-            item(key = "header-${feed.board.id.value}") {
+            stickyHeader(key = "header-${feed.board.id.value}") {
                 BoardFeedHeader(feed)
             }
             items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
