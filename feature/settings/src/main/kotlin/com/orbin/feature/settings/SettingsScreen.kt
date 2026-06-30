@@ -14,6 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -27,6 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -54,6 +60,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showClearLocalActivityDialog by remember { mutableStateOf(false) }
     val folderPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             if (uri != null) {
@@ -166,6 +173,15 @@ fun SettingsScreen(
                 viewModel::setSaveRecentSearches,
             )
             ListItem(
+                headlineContent = { Text("Clear local activity") },
+                supportingContent = { Text("Delete history, recent searches, and download history") },
+                trailingContent = {
+                    IconButton(onClick = { showClearLocalActivityDialog = true }) {
+                        Icon(Icons.Filled.DeleteOutline, contentDescription = "Clear local activity")
+                    }
+                },
+            )
+            ListItem(
                 headlineContent = { Text("HTTPS only") },
                 supportingContent = { Text("Always enforced") },
                 trailingContent = { Switch(checked = true, onCheckedChange = null) },
@@ -195,6 +211,31 @@ fun SettingsScreen(
                 },
             )
         }
+    }
+
+    if (showClearLocalActivityDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearLocalActivityDialog = false },
+            title = { Text("Clear local activity?") },
+            text = {
+                Text("This deletes browsing history, recent searches, and download history stored on this device.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.clearLocalActivity()
+                        showClearLocalActivityDialog = false
+                    },
+                ) {
+                    Text("Clear")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showClearLocalActivityDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 }
 
