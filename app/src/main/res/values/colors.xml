@@ -2,4 +2,7 @@
 <resources>
     <color name="ic_launcher_background">#101524</color>
     <color name="splash_background">#101524</color>
+    <color name="orbin_icon_ios">#007AFF</color>
+    <color name="orbin_icon_tomorrow">#1D1F21</color>
+    <color name="orbin_icon_yoruba">#006B3F</color>
 </resources>
