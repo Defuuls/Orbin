@@ -6,10 +6,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -76,7 +76,11 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
         ) {
             SectionHeader("Content")
-            SwitchRow("Personalized home feed", settings.personalizedHomeFeed, viewModel::setPersonalizedHomeFeed)
+            SwitchRow(
+                "Personalized home feed",
+                settings.personalizedHomeFeed,
+                viewModel::setPersonalizedHomeFeed,
+            )
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSubscriptions),
                 headlineContent = { Text("Subscriptions") },
@@ -95,7 +99,11 @@ fun SettingsScreen(
                 onValueChange = viewModel::setMutedTags,
             )
             SwitchRow("Hide NSFW boards", settings.hideNsfwBoards, viewModel::setHideNsfwBoards)
-            SwitchRow("Hide text-only threads", settings.hideTextOnlyThreads, viewModel::setHideTextOnlyThreads)
+            SwitchRow(
+                "Hide text-only threads",
+                settings.hideTextOnlyThreads,
+                viewModel::setHideTextOnlyThreads,
+            )
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSetup),
                 headlineContent = { Text("Run setup again") },
@@ -142,8 +150,16 @@ fun SettingsScreen(
             )
 
             SectionHeader("Network & privacy")
-            SwitchRow("Lock with biometrics", settings.biometricLockEnabled, viewModel::setBiometricLock)
-            SwitchRow("Save recent searches", settings.saveRecentSearches, viewModel::setSaveRecentSearches)
+            SwitchRow(
+                "Lock with biometrics",
+                settings.biometricLockEnabled,
+                viewModel::setBiometricLock,
+            )
+            SwitchRow(
+                "Save recent searches",
+                settings.saveRecentSearches,
+                viewModel::setSaveRecentSearches,
+            )
             ListItem(
                 headlineContent = { Text("HTTPS only") },
                 supportingContent = { Text("Always enforced") },
