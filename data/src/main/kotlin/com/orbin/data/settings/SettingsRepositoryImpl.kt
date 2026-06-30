@@ -207,44 +207,52 @@ class SettingsRepositoryImpl
 
         private fun Preferences.toAppSettings(): AppSettings =
             AppSettings(
-                personalizedHomeFeed = this[Keys.personalizedHomeFeed] ?: true,
-                hiddenTags = this[Keys.hiddenTags] ?: "",
-                mutedTags = this[Keys.mutedTags] ?: "",
-                hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
-                hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
-                themeMode = this[Keys.themeMode]?.toEnumOrDefault(AppThemeMode.SYSTEM) ?: AppThemeMode.SYSTEM,
-                themePalette =
-                    this[Keys.themePalette]?.toEnumOrDefault(AppThemePalette.ORBIN)
-                        ?: AppThemePalette.ORBIN,
-                dynamicColor = this[Keys.dynamicColor] ?: true,
-                amoled = this[Keys.amoled] ?: false,
-                fontScale = this[Keys.fontScale] ?: 1f,
-                thumbnailSize =
-                    this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
-                        ?: ThumbnailSize.MEDIUM,
-                autoplayVideos = this[Keys.autoplay] ?: false,
-                muteByDefault = this[Keys.mute] ?: true,
-                preloadImages = this[Keys.preload] ?: true,
-                autoDownloadFullThreadMedia = this[Keys.autoDownloadFullThreadMedia] ?: false,
-                feedThreadLimit =
-                    this[Keys.feedThreadLimit]
-                        ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
-                        ?: FeedThreadLimit.TWELVE,
-                downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
-                userAgent = this[Keys.userAgent] ?: "",
-                dohEnabled = this[Keys.doh] ?: false,
-                dohProvider =
-                    this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
-                        ?: DohProvider.CLOUDFLARE,
-                httpsOnly = this[Keys.httpsOnly] ?: true,
-                vpnProvider = this[Keys.vpnProvider]?.toEnumOrDefault(VpnProvider.SYSTEM) ?: VpnProvider.SYSTEM,
-                proxyHost = this[Keys.proxyHost] ?: "",
-                proxyPort = this[Keys.proxyPort] ?: "",
-                proxySocks = this[Keys.proxySocks] ?: false,
-                biometricLockEnabled = this[Keys.biometricLock] ?: false,
-                saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
-                onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
+                personalizedHomeFeed = booleanValue(Keys.personalizedHomeFeed, true),
+                hiddenTags = stringValue(Keys.hiddenTags),
+                mutedTags = stringValue(Keys.mutedTags),
+                hideNsfwBoards = booleanValue(Keys.hideNsfwBoards),
+                hideTextOnlyThreads = booleanValue(Keys.hideTextOnlyThreads),
+                themeMode = enumValue(Keys.themeMode, AppThemeMode.SYSTEM),
+                themePalette = enumValue(Keys.themePalette, AppThemePalette.ORBIN),
+                dynamicColor = booleanValue(Keys.dynamicColor, true),
+                amoled = booleanValue(Keys.amoled),
+                fontScale = floatValue(Keys.fontScale, 1f),
+                thumbnailSize = enumValue(Keys.thumbnailSize, ThumbnailSize.MEDIUM),
+                autoplayVideos = booleanValue(Keys.autoplay),
+                muteByDefault = booleanValue(Keys.mute, true),
+                preloadImages = booleanValue(Keys.preload, true),
+                autoDownloadFullThreadMedia = booleanValue(Keys.autoDownloadFullThreadMedia),
+                feedThreadLimit = enumValue(Keys.feedThreadLimit, FeedThreadLimit.TWELVE),
+                downloadFolderUri = stringValue(Keys.downloadFolderUri),
+                userAgent = stringValue(Keys.userAgent),
+                dohEnabled = booleanValue(Keys.doh),
+                dohProvider = enumValue(Keys.dohProvider, DohProvider.CLOUDFLARE),
+                httpsOnly = booleanValue(Keys.httpsOnly, true),
+                vpnProvider = enumValue(Keys.vpnProvider, VpnProvider.SYSTEM),
+                proxyHost = stringValue(Keys.proxyHost),
+                proxyPort = stringValue(Keys.proxyPort),
+                proxySocks = booleanValue(Keys.proxySocks),
+                biometricLockEnabled = booleanValue(Keys.biometricLock),
+                saveRecentSearches = booleanValue(Keys.saveRecentSearches),
+                onboardingCompleted = booleanValue(Keys.onboardingCompleted),
             )
+
+        private fun Preferences.booleanValue(
+            key: Preferences.Key<Boolean>,
+            default: Boolean = false,
+        ): Boolean = this[key] ?: default
+
+        private fun Preferences.floatValue(
+            key: Preferences.Key<Float>,
+            default: Float,
+        ): Float = this[key] ?: default
+
+        private fun Preferences.stringValue(key: Preferences.Key<String>): String = this[key].orEmpty()
+
+        private inline fun <reified T : Enum<T>> Preferences.enumValue(
+            key: Preferences.Key<String>,
+            default: T,
+        ): T = this[key]?.toEnumOrDefault(default) ?: default
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
             NetworkConfig(
