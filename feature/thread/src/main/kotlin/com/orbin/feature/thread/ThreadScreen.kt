@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,8 @@ import kotlinx.coroutines.launch
 fun ThreadScreen(
     onBack: () -> Unit,
     onOpenMedia: (Int) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -95,6 +98,8 @@ fun ThreadScreen(
                 ThreadContent(
                     thread = state.thread,
                     onOpenMedia = onOpenMedia,
+                    mediaScrollIndex = mediaScrollIndex,
+                    onMediaScrollConsumed = onMediaScrollConsumed,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -105,6 +110,8 @@ fun ThreadScreen(
 private fun ThreadContent(
     thread: Thread,
     onOpenMedia: (Int) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread) { thread.allPosts }
@@ -117,12 +124,31 @@ private fun ThreadContent(
         remember(posts) {
             posts.flatMap { it.attachments }.withIndex().associate { (index, media) -> media.id to index }
         }
+    // Reverse lookup from the gallery page to the owning post row in this LazyColumn.
+    val postIndexByMediaIndex =
+        remember(posts) {
+            buildMap {
+                var mediaIndex = 0
+                posts.forEachIndexed { postIndex, post ->
+                    post.attachments.forEach { _ ->
+                        put(mediaIndex, postIndex + 1) // +1 for the header item
+                        mediaIndex += 1
+                    }
+                }
+            }
+        }
     val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
     val onQuoteClick: (PostId) -> Unit = { id ->
         indexById[id]?.let { target -> scope.launch { listState.animateScrollToItem(target) } }
+    }
+
+    LaunchedEffect(mediaScrollIndex, postIndexByMediaIndex) {
+        val target = mediaScrollIndex?.let(postIndexByMediaIndex::get) ?: return@LaunchedEffect
+        listState.animateScrollToItem(target)
+        onMediaScrollConsumed()
     }
 
     LazyColumn(
