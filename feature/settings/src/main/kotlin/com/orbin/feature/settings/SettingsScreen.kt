@@ -37,6 +37,11 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
 
+private const val FONT_SCALE_SMALL = 0.9f
+private const val FONT_SCALE_DEFAULT = 1f
+private const val FONT_SCALE_LARGE = 1.1f
+private const val FONT_SCALE_EXTRA_LARGE = 1.2f
+
 /** Settings screen covering appearance, media, and network/privacy sections. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,10 +286,10 @@ private enum class FontScaleOption(
     val scale: Float,
     val label: String,
 ) {
-    SMALL(0.9f, "Small"),
-    DEFAULT(1f, "Default"),
-    LARGE(1.1f, "Large"),
-    XLARGE(1.2f, "XL"),
+    SMALL(FONT_SCALE_SMALL, "Small"),
+    DEFAULT(FONT_SCALE_DEFAULT, "Default"),
+    LARGE(FONT_SCALE_LARGE, "Large"),
+    XLARGE(FONT_SCALE_EXTRA_LARGE, "XL"),
     ;
 
     companion object {
