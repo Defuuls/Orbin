@@ -56,9 +56,8 @@ class SettingsViewModel
 
         fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
 
-        fun setAutoDownloadFullThreadMedia(enabled: Boolean) = update {
-            repository.setAutoDownloadFullThreadMedia(enabled)
-        }
+        fun setAutoDownloadFullThreadMedia(enabled: Boolean) =
+            update { repository.setAutoDownloadFullThreadMedia(enabled) }
 
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
 
