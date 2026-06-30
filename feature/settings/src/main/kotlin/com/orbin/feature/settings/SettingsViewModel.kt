@@ -19,6 +19,7 @@ import javax.inject.Inject
 
 /** Exposes settings and update actions for the settings screen. */
 @HiltViewModel
+@Suppress("TooManyFunctions")
 class SettingsViewModel
     @Inject
     constructor(
