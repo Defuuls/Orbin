@@ -333,12 +333,11 @@ private fun openVpnIntegration(
         context.packageManager.getLaunchIntentForPackage(packageName)
     }
     val fallback = Intent(Settings.ACTION_VPN_SETTINGS)
-    runCatching {
+    try {
         context.startActivity(providerIntent ?: fallback)
+    } catch (_: RuntimeException) {
+        context.startActivity(fallback)
     }
-        .onFailure {
-            context.startActivity(fallback)
-        }
 }
 
 private enum class FontScaleOption(
