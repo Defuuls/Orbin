@@ -6,6 +6,9 @@ enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
+private const val THUMBNAIL_SIZE_COMPACT_DP = 80
+private const val THUMBNAIL_SIZE_MEDIUM_DP = 96
+private const val THUMBNAIL_SIZE_LARGE_DP = 120
 
 enum class FeedThreadLimit(
     val count: Int?,
@@ -29,9 +32,9 @@ enum class ThumbnailSize(
     val label: String,
     val sizeDp: Int,
 ) {
-    COMPACT("Compact", 80),
-    MEDIUM("Medium", 96),
-    LARGE("Large", 120),
+    COMPACT("Compact", THUMBNAIL_SIZE_COMPACT_DP),
+    MEDIUM("Medium", THUMBNAIL_SIZE_MEDIUM_DP),
+    LARGE("Large", THUMBNAIL_SIZE_LARGE_DP),
 }
 
 /**
