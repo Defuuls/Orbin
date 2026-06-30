@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Alternate "Stellar" mark: a warm orbital sweep around a bright core. -->
+    <path
+        android:fillColor="#00D7C0"
+        android:pathData="M54,54 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+    <path
+        android:strokeColor="#FFB84D"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M24,62 C35,31 77,26 88,50" />
+    <path
+        android:strokeColor="#E94F64"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M20,54 C35,81 76,84 90,58" />
+    <path
+        android:fillColor="#F7F3D6"
+        android:pathData="M82,43 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>
