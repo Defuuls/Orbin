@@ -251,12 +251,10 @@ class SettingsRepositoryImpl
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 
-            fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> {
-                return stringSetPreferencesKey("favorite_boards_${provider.value}")
-            }
+            fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
+                stringSetPreferencesKey("favorite_boards_${provider.value}")
 
-            fun subscribedBoards(provider: ProviderId): Preferences.Key<Set<String>> {
-                return stringSetPreferencesKey("subscribed_boards_${provider.value}")
-            }
+            fun subscribedBoards(provider: ProviderId): Preferences.Key<Set<String>> =
+                stringSetPreferencesKey("subscribed_boards_${provider.value}")
         }
     }
