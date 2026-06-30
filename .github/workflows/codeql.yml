@@ -30,6 +30,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-disabled: true
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -38,7 +40,7 @@ jobs:
           build-mode: manual
 
       - name: Build Android project
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew clean assembleDebug --no-daemon --no-build-cache -Dorg.gradle.caching=false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
