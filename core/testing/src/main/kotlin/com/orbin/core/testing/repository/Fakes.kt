@@ -14,6 +14,7 @@ import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
@@ -127,37 +128,93 @@ class FakeSettingsRepository(
 
     override val settings: Flow<AppSettings> = state
 
-    override suspend fun setThemeMode(mode: AppThemeMode) = update { copy(themeMode = mode) }
+    override suspend fun setPersonalizedHomeFeed(enabled: Boolean) {
+        update { copy(personalizedHomeFeed = enabled) }
+    }
 
-    override suspend fun setDynamicColor(enabled: Boolean) = update { copy(dynamicColor = enabled) }
+    override suspend fun setHiddenTags(tags: String) {
+        update { copy(hiddenTags = tags) }
+    }
 
-    override suspend fun setAmoled(enabled: Boolean) = update { copy(amoled = enabled) }
+    override suspend fun setMutedTags(tags: String) {
+        update { copy(mutedTags = tags) }
+    }
 
-    override suspend fun setFontScale(scale: Float) = update { copy(fontScale = scale) }
+    override suspend fun setHideNsfwBoards(enabled: Boolean) {
+        update { copy(hideNsfwBoards = enabled) }
+    }
 
-    override suspend fun setAutoplayVideos(enabled: Boolean) = update { copy(autoplayVideos = enabled) }
+    override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
+        update { copy(hideTextOnlyThreads = enabled) }
+    }
 
-    override suspend fun setMuteByDefault(enabled: Boolean) = update { copy(muteByDefault = enabled) }
+    override suspend fun setThemeMode(mode: AppThemeMode) {
+        update { copy(themeMode = mode) }
+    }
 
-    override suspend fun setPreloadImages(enabled: Boolean) = update { copy(preloadImages = enabled) }
+    override suspend fun setDynamicColor(enabled: Boolean) {
+        update { copy(dynamicColor = enabled) }
+    }
 
-    override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) = update { copy(feedThreadLimit = limit) }
+    override suspend fun setAmoled(enabled: Boolean) {
+        update { copy(amoled = enabled) }
+    }
 
-    override suspend fun setDownloadFolderUri(uri: String) = update { copy(downloadFolderUri = uri) }
+    override suspend fun setFontScale(scale: Float) {
+        update { copy(fontScale = scale) }
+    }
 
-    override suspend fun setDohEnabled(enabled: Boolean) = update { copy(dohEnabled = enabled) }
+    override suspend fun setThumbnailSize(size: ThumbnailSize) {
+        update { copy(thumbnailSize = size) }
+    }
 
-    override suspend fun setDohProvider(provider: DohProvider) = update { copy(dohProvider = provider) }
+    override suspend fun setAutoplayVideos(enabled: Boolean) {
+        update { copy(autoplayVideos = enabled) }
+    }
 
-    override suspend fun setHttpsOnly(enabled: Boolean) = update { copy(httpsOnly = true) }
+    override suspend fun setMuteByDefault(enabled: Boolean) {
+        update { copy(muteByDefault = enabled) }
+    }
 
-    override suspend fun setBiometricLockEnabled(enabled: Boolean) = update { copy(biometricLockEnabled = enabled) }
+    override suspend fun setPreloadImages(enabled: Boolean) {
+        update { copy(preloadImages = enabled) }
+    }
 
-    override suspend fun setSaveRecentSearches(enabled: Boolean) = update { copy(saveRecentSearches = enabled) }
+    override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
+        update { copy(feedThreadLimit = limit) }
+    }
 
-    override suspend fun setUserAgent(userAgent: String) = update { copy(userAgent = userAgent) }
+    override suspend fun setDownloadFolderUri(uri: String) {
+        update { copy(downloadFolderUri = uri) }
+    }
 
-    override suspend fun setOnboardingCompleted(completed: Boolean) = update { copy(onboardingCompleted = completed) }
+    override suspend fun setDohEnabled(enabled: Boolean) {
+        update { copy(dohEnabled = enabled) }
+    }
+
+    override suspend fun setDohProvider(provider: DohProvider) {
+        update { copy(dohProvider = provider) }
+    }
+
+    override suspend fun setHttpsOnly(enabled: Boolean) {
+        update { copy(httpsOnly = true) }
+    }
+
+    override suspend fun setBiometricLockEnabled(enabled: Boolean) {
+        update { copy(biometricLockEnabled = enabled) }
+    }
+
+    override suspend fun setSaveRecentSearches(enabled: Boolean) {
+        update { copy(saveRecentSearches = enabled) }
+    }
+
+    override suspend fun setUserAgent(userAgent: String) {
+        update { copy(userAgent = userAgent) }
+    }
+
+    override suspend fun setOnboardingCompleted(completed: Boolean) {
+        update { copy(onboardingCompleted = completed) }
+    }
 
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }

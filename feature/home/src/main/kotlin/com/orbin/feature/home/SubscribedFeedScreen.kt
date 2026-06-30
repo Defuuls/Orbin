@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -59,6 +61,7 @@ fun SubscribedFeedScreen(
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -101,6 +104,8 @@ fun SubscribedFeedScreen(
                         SubscribedFeedList(
                             providerId = viewModel.providerId,
                             feeds = state.boards,
+                            mutedTags = settings.mutedTagTokens(),
+                            thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,
                             onOpenThread = onOpenThread,
                         )
                     }
@@ -113,6 +118,8 @@ fun SubscribedFeedScreen(
 private fun SubscribedFeedList(
     providerId: String,
     feeds: List<SubscribedBoardFeed>,
+    mutedTags: Set<String>,
+    thumbnailSizeDp: androidx.compose.ui.unit.Dp,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
 ) {
     LazyColumn(
@@ -127,6 +134,8 @@ private fun SubscribedFeedList(
             items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
                 FeedThreadCell(
                     thread = thread,
+                    mutedTags = mutedTags,
+                    thumbnailSizeDp = thumbnailSizeDp,
                     onClick = {
                         onOpenThread(
                             providerId,
@@ -179,10 +188,13 @@ private fun BoardFeedHeader(feed: SubscribedBoardFeed) {
 @Composable
 private fun FeedThreadCell(
     thread: CatalogThread,
+    mutedTags: Set<String>,
+    thumbnailSizeDp: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
 ) {
+    val isMuted = thread.matchesAny(mutedTags)
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -190,7 +202,7 @@ private fun FeedThreadCell(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            FeedThumbnail(thread = thread, modifier = Modifier.size(96.dp))
+            FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
@@ -202,6 +214,9 @@ private fun FeedThreadCell(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     AssistChip(onClick = {}, label = { Text("${thread.stats.replyCount} replies") })
                     AssistChip(onClick = {}, label = { Text("${thread.stats.imageCount} media") })
+                    if (isMuted) {
+                        AssistChip(onClick = {}, label = { Text("Muted") })
+                    }
                 }
                 Box(modifier = Modifier.heightIn(max = 64.dp)) {
                     PostCommentText(comment = thread.originalPost.comment)
@@ -263,4 +278,10 @@ private fun EmptySubscribedFeed(
             OutlinedButton(onClick = onOpenSettings) { Text("Settings") }
         }
     }
+}
+
+private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
+    if (tokens.isEmpty()) return false
+    val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
+    return tokens.any(haystack::contains)
 }

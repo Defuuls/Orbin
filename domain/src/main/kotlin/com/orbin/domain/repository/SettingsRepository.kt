@@ -4,11 +4,22 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ThumbnailSize
 import kotlinx.coroutines.flow.Flow
 
 /** Reads and updates persisted [AppSettings]. Implemented in :data over DataStore. */
 interface SettingsRepository {
     val settings: Flow<AppSettings>
+
+    suspend fun setPersonalizedHomeFeed(enabled: Boolean)
+
+    suspend fun setHiddenTags(tags: String)
+
+    suspend fun setMutedTags(tags: String)
+
+    suspend fun setHideNsfwBoards(enabled: Boolean)
+
+    suspend fun setHideTextOnlyThreads(enabled: Boolean)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 
@@ -17,6 +28,8 @@ interface SettingsRepository {
     suspend fun setAmoled(enabled: Boolean)
 
     suspend fun setFontScale(scale: Float)
+
+    suspend fun setThumbnailSize(size: ThumbnailSize)
 
     suspend fun setAutoplayVideos(enabled: Boolean)
 

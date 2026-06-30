@@ -3,10 +3,12 @@ package com.orbin.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -30,6 +32,7 @@ class HomeViewModel
         private val registry: ProviderRegistry,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
+        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         private val provider = registry.default()
 
@@ -50,6 +53,10 @@ class HomeViewModel
                 .observeSubscribedBoards(provider.metadata.id)
                 .map { boards -> boards.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+
+        val settings: StateFlow<AppSettings> =
+            settingsRepository.settings
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
         init {
             load()
