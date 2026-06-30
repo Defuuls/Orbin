@@ -329,9 +329,10 @@ private fun openVpnIntegration(
     context: Context,
     provider: VpnProvider,
 ) {
-    val providerIntent = provider.packageName?.let { packageName ->
-        context.packageManager.getLaunchIntentForPackage(packageName)
-    }
+    val providerIntent =
+        provider.packageName?.let { packageName ->
+            context.packageManager.getLaunchIntentForPackage(packageName)
+        }
     val fallback = Intent(Settings.ACTION_VPN_SETTINGS)
     try {
         context.startActivity(providerIntent ?: fallback)
