@@ -12,9 +12,9 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
