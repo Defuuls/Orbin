@@ -28,7 +28,7 @@ val hasReleaseSigning =
 if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
     check(hasReleaseSigning) {
         "Release signing is not configured. Set ORBIN_KEYSTORE_FILE, " +
-            "ORBIN_KEYSTORE_PASSWORD, ORBIN_KEY_ALIAS, and ORBIN_KEY_PASSWORD, " +
+            "ORBIN_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS, and ORBIN_KEY_PASSWORD, " +
             "or create an ignored keystore.properties file."
     }
 }
@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 14
-        versionName = "13.0"
+        versionCode = 15
+        versionName = "14.0"
     }
 
     signingConfigs {
@@ -108,6 +108,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.work)
     implementation(libs.compose.material3)
     implementation(libs.compose.material3.window.size)
     implementation(libs.compose.material.icons.extended)
