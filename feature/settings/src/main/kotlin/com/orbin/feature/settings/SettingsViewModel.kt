@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.AppThemePalette
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.VpnProvider
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +40,8 @@ class SettingsViewModel
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
+        fun setThemePalette(palette: AppThemePalette) = update { repository.setThemePalette(palette) }
+
         fun setDynamicColor(enabled: Boolean) = update { repository.setDynamicColor(enabled) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
@@ -52,6 +56,10 @@ class SettingsViewModel
 
         fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
 
+        fun setAutoDownloadFullThreadMedia(enabled: Boolean) = update {
+            repository.setAutoDownloadFullThreadMedia(enabled)
+        }
+
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
 
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
@@ -61,6 +69,14 @@ class SettingsViewModel
         fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 
         fun setHttpsOnly(enabled: Boolean) = update { repository.setHttpsOnly(enabled) }
+
+        fun setVpnProvider(provider: VpnProvider) = update { repository.setVpnProvider(provider) }
+
+        fun setProxyHost(host: String) = update { repository.setProxyHost(host) }
+
+        fun setProxyPort(port: String) = update { repository.setProxyPort(port) }
+
+        fun setProxySocks(enabled: Boolean) = update { repository.setProxySocks(enabled) }
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
