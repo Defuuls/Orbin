@@ -3,13 +3,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Stylised orbit: a ring with an offset dot, evoking "Orbin". -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:fillColor="#00000000"
+        android:pathData="M54,24 a30,30 0,1 0,0.1 0" />
     <path
         android:strokeColor="#4F6BED"
-        android:strokeWidth="6"
+        android:strokeWidth="8"
         android:fillColor="#00000000"
-        android:pathData="M54,30 a24,24 0 1,0 0.01,0 Z" />
+        android:pathData="M54,34 a20,20 0,1 0,0.1 0" />
     <path
         android:fillColor="#7A5CA8"
-        android:pathData="M74,40 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+        android:pathData="M76,34 m-8,0 a8,8 0,1 0,16 0 a8,8 0,1 0,-16 0" />
+    <path
+        android:fillColor="#FFD166"
+        android:pathData="M38,74 m-6,0 a6,6 0,1 0,12 0 a6,6 0,1 0,-12 0" />
 </vector>
