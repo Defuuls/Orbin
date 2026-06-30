@@ -12,6 +12,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -127,6 +128,16 @@ class FakeSettingsRepository(
 
     override val settings: Flow<AppSettings> = state
 
+    override suspend fun setPersonalizedHomeFeed(enabled: Boolean) = update { copy(personalizedHomeFeed = enabled) }
+
+    override suspend fun setHiddenTags(tags: String) = update { copy(hiddenTags = tags) }
+
+    override suspend fun setMutedTags(tags: String) = update { copy(mutedTags = tags) }
+
+    override suspend fun setHideNsfwBoards(enabled: Boolean) = update { copy(hideNsfwBoards = enabled) }
+
+    override suspend fun setHideTextOnlyThreads(enabled: Boolean) = update { copy(hideTextOnlyThreads = enabled) }
+
     override suspend fun setThemeMode(mode: AppThemeMode) = update { copy(themeMode = mode) }
 
     override suspend fun setDynamicColor(enabled: Boolean) = update { copy(dynamicColor = enabled) }
@@ -134,6 +145,8 @@ class FakeSettingsRepository(
     override suspend fun setAmoled(enabled: Boolean) = update { copy(amoled = enabled) }
 
     override suspend fun setFontScale(scale: Float) = update { copy(fontScale = scale) }
+
+    override suspend fun setThumbnailSize(size: ThumbnailSize) = update { copy(thumbnailSize = size) }
 
     override suspend fun setAutoplayVideos(enabled: Boolean) = update { copy(autoplayVideos = enabled) }
 
