@@ -2,9 +2,11 @@ package com.orbin.domain.repository
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.AppThemePalette
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.VpnProvider
 import kotlinx.coroutines.flow.Flow
 
 /** Reads and updates persisted [AppSettings]. Implemented in :data over DataStore. */
@@ -23,6 +25,8 @@ interface SettingsRepository {
 
     suspend fun setThemeMode(mode: AppThemeMode)
 
+    suspend fun setThemePalette(palette: AppThemePalette)
+
     suspend fun setDynamicColor(enabled: Boolean)
 
     suspend fun setAmoled(enabled: Boolean)
@@ -37,6 +41,8 @@ interface SettingsRepository {
 
     suspend fun setPreloadImages(enabled: Boolean)
 
+    suspend fun setAutoDownloadFullThreadMedia(enabled: Boolean)
+
     suspend fun setFeedThreadLimit(limit: FeedThreadLimit)
 
     suspend fun setDownloadFolderUri(uri: String)
@@ -46,6 +52,14 @@ interface SettingsRepository {
     suspend fun setDohProvider(provider: DohProvider)
 
     suspend fun setHttpsOnly(enabled: Boolean)
+
+    suspend fun setVpnProvider(provider: VpnProvider)
+
+    suspend fun setProxyHost(host: String)
+
+    suspend fun setProxyPort(port: String)
+
+    suspend fun setProxySocks(enabled: Boolean)
 
     suspend fun setBiometricLockEnabled(enabled: Boolean)
 
