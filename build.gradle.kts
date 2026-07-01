@@ -1,4 +1,57 @@
 // Top-level build file. Convention plugins live in `build-logic` and are applied per-module.
+// Apply security overrides to the plugin classpath before the `plugins` block resolves.
+buildscript {
+    configurations.classpath {
+        resolutionStrategy.eachDependency {
+            when {
+                requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
+                    useVersion("4.1.135.Final")
+                    because("Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.")
+                }
+
+                requested.group == "org.bouncycastle" && requested.name in setOf(
+                    "bcprov-jdk18on",
+                    "bcpkix-jdk18on",
+                    "bcutil-jdk18on",
+                ) -> {
+                    useVersion("1.84")
+                    because("Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.")
+                }
+
+                requested.group == "org.apache.commons" && requested.name == "commons-compress" -> {
+                    useVersion("1.28.0")
+                    because("Dependabot reports Apache Commons Compress CVEs in the Gradle plugin classpath.")
+                }
+
+                requested.group == "org.apache.commons" && requested.name == "commons-io" -> {
+                    useVersion("2.18.0")
+                    because("Dependabot reports an Apache Commons IO denial-of-service vulnerability.")
+                }
+
+                requested.group == "org.jdom" && requested.name == "jdom2" -> {
+                    useVersion("2.0.6.1")
+                    because("Dependabot reports a JDOM XXE vulnerability in the Gradle plugin classpath.")
+                }
+
+                requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
+                    useVersion("3.25.5")
+                    because("Dependabot reports protobuf denial-of-service vulnerabilities.")
+                }
+
+                requested.group == "org.bitbucket.b_c" && requested.name == "jose4j" -> {
+                    useVersion("0.9.6")
+                    because("Dependabot reports a jose4j denial-of-service vulnerability.")
+                }
+
+                requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
+                    useVersion("1.5.25")
+                    because("Dependabot reports Logback vulnerabilities.")
+                }
+            }
+        }
+    }
+}
+
 // Plugins are declared here with `apply false` so their classpath is available to subprojects.
 plugins {
     alias(libs.plugins.android.application) apply false
@@ -47,9 +100,9 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
                 because("Dependabot reports a JDOM XXE vulnerability in the Android Gradle Plugin transitive classpath.")
             }
 
-            requested.group == "com.google.protobuf" && requested.name == "protobuf-java" -> {
+            requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
                 useVersion("3.25.5")
-                because("Dependabot reports a protobuf-java denial-of-service vulnerability.")
+                because("Dependabot reports protobuf denial-of-service vulnerabilities.")
             }
 
             requested.group == "org.bitbucket.b_c" && requested.name == "jose4j" -> {
@@ -58,7 +111,7 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
             }
 
             requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                useVersion("1.5.16")
+                useVersion("1.5.25")
                 because("Dependabot reports Logback EL injection and SSRF vulnerabilities.")
             }
         }
