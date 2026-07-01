@@ -310,12 +310,24 @@ object VichanCommentParser {
             } else {
                 entity.drop(1).toIntOrNull()
             } ?: return null
-        return code.toChar().toString()
+        if (!code.isAllowedEntityCodePoint()) return ""
+        return String(Character.toChars(code))
+    }
+
+    private fun Int.isAllowedEntityCodePoint(): Boolean {
+        val isAllowedControl = this == CHARACTER_TAB || this == CHARACTER_LINE_FEED || this == CHARACTER_CARRIAGE_RETURN
+        val isVisibleScalar = this in MIN_VISIBLE_CODE_POINT..Character.MAX_CODE_POINT && this !in SURROGATE_RANGE
+        return isAllowedControl || isVisibleScalar
     }
 
     private const val MAX_ENTITY_LENGTH = 10
     private const val HEX_PREFIX_LENGTH = 2
     private const val RADIX_HEX = 16
+    private const val CHARACTER_TAB = 0x09
+    private const val CHARACTER_LINE_FEED = 0x0A
+    private const val CHARACTER_CARRIAGE_RETURN = 0x0D
+    private const val MIN_VISIBLE_CODE_POINT = 0x20
+    private val SURROGATE_RANGE = Character.MIN_SURROGATE.code..Character.MAX_SURROGATE.code
 
     /** Hard cap on tag nesting; pathological input beyond this is flattened, not recursed. */
     private const val MAX_DEPTH = 64

@@ -14,6 +14,20 @@ class VichanCommentParserTest {
     }
 
     @Test
+    fun `numeric entities reject unsafe controls and decode astral characters`() {
+        val result = VichanCommentParser.parse("before&#0;&#x1F;&#x1F600;after")
+        val text = (result.nodes.single() as PostNode.Text).text
+        assertThat(text).isEqualTo("before\uD83D\uDE00after")
+    }
+
+    @Test
+    fun `numeric entities keep tab newline and carriage return`() {
+        val result = VichanCommentParser.parse("a&#9;b&#10;c&#13;d")
+        val text = (result.nodes.single() as PostNode.Text).text
+        assertThat(text).isEqualTo("a\tb\nc\rd")
+    }
+
+    @Test
     fun `br becomes line break`() {
         val result = VichanCommentParser.parse("line one<br>line two")
         assertThat(result.nodes).hasSize(3)

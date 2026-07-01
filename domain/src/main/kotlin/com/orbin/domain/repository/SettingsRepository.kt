@@ -45,8 +45,6 @@ interface SettingsRepository {
 
     suspend fun setDohProvider(provider: DohProvider)
 
-    suspend fun setHttpsOnly(enabled: Boolean)
-
     suspend fun setBiometricLockEnabled(enabled: Boolean)
 
     suspend fun setSaveRecentSearches(enabled: Boolean)

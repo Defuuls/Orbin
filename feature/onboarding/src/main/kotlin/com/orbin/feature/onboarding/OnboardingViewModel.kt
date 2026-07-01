@@ -115,8 +115,6 @@ class OnboardingViewModel
 
         fun setPreload(enabled: Boolean) = update { settingsRepository.setPreloadImages(enabled) }
 
-        fun setHttpsOnly(enabled: Boolean) = update { settingsRepository.setHttpsOnly(enabled) }
-
         fun setDoh(enabled: Boolean) = update { settingsRepository.setDohEnabled(enabled) }
 
         fun setBiometricLock(enabled: Boolean) = update { settingsRepository.setBiometricLockEnabled(enabled) }

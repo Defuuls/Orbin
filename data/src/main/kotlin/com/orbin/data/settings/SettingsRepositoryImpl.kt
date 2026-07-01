@@ -117,10 +117,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.dohProvider] = provider.name }
         }
 
-        override suspend fun setHttpsOnly(enabled: Boolean) {
-            edit { it[Keys.httpsOnly] = true }
-        }
-
         override suspend fun setBiometricLockEnabled(enabled: Boolean) {
             edit { it[Keys.biometricLock] = enabled }
         }
@@ -246,7 +242,6 @@ class SettingsRepositoryImpl
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")
             val dohProvider = stringPreferencesKey("doh_provider")
-            val httpsOnly = booleanPreferencesKey("https_only")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")

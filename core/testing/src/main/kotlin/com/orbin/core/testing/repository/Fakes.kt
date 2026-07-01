@@ -196,10 +196,6 @@ class FakeSettingsRepository(
         update { copy(dohProvider = provider) }
     }
 
-    override suspend fun setHttpsOnly(enabled: Boolean) {
-        update { copy(httpsOnly = true) }
-    }
-
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         update { copy(biometricLockEnabled = enabled) }
     }

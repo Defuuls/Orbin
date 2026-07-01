@@ -66,8 +66,6 @@ class SettingsViewModel
 
         fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 
-        fun setHttpsOnly(enabled: Boolean) = update { repository.setHttpsOnly(enabled) }
-
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
         fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
