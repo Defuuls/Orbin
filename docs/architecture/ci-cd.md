@@ -38,9 +38,9 @@ works without secrets.
 
 ## Release codenames
 
-Release milestones use rare fish common names as codenames. Prefer names that are distinctive,
-short enough for changelog entries, and not already used by a previous release. Examples include
-Coelacanth, Devil's Hole Pupfish, Red Handfish, Alabama Sturgeon, and Sakhalin Sturgeon.
+Release milestones use mythical cities as codenames. Prefer names that are distinctive, short
+enough for changelog entries, and not already used by a previous release. Examples include
+Atlantis, El Dorado, Shambhala, Ys, Kitezh, and Agartha.
 
 ## Cutting a release
 

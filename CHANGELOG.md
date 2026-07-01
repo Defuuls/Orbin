@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [23.0] - 2026-07-01
+
+### Security
+- **App lock:** re-arm biometric/device-credential lock after backgrounding, keep locked
+  content gated until persisted settings load, and provide recovery when Android auth is unavailable.
+- **Comment parser:** reject unsafe numeric HTML entity code points and decode astral Unicode
+  characters without truncation.
+- **HTTPS policy:** remove the unused mutable HTTPS-only setter so the always-on transport
+  boundary is reflected in the settings API.
+
+### Changed
+- **Release:** prepare the v23.0 release for the Atlantis milestone.
+- **Release naming:** mythical-city codenames replace rare-fish codenames for release milestones.
+
 ## [22.0] - 2026-06-30
 
 ### Changed
@@ -187,7 +201,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v22.0...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.0...HEAD
+[23.0]: https://github.com/Defuuls/Orbin/compare/v22.0...v23.0
 [22.0]: https://github.com/Defuuls/Orbin/compare/v21.0...v22.0
 [21.0]: https://github.com/Defuuls/Orbin/compare/v20.0...v21.0
 [20.0]: https://github.com/Defuuls/Orbin/compare/v19.0...v20.0

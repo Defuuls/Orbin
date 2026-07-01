@@ -12,7 +12,7 @@ on:
         required: true
         type: number
       codename:
-        description: 'Rare-fish release codename, for example Oarfish'
+        description: 'Mythical-city release codename, for example Atlantis'
         required: true
         type: string
       base_branch:
@@ -57,7 +57,7 @@ jobs:
             echo "::error::version_code must be a whole number"; exit 1
           fi
           if ! [[ "$CODENAME" =~ $CODENAME_PATTERN ]]; then
-            echo "::error::codename must be a readable rare-fish name"; exit 1
+            echo "::error::codename must be a readable mythical-city name"; exit 1
           fi
           CURRENT_CODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' app/build.gradle.kts | awk '{print $3}')
           if [ "$VERSION_CODE" -le "$CURRENT_CODE" ]; then
@@ -98,7 +98,7 @@ jobs:
               f"\n## [{version_name}] - {release_date}\n\n"
               "### Changed\n"
               f"- **Release:** prepare the v{version_name} release for the {codename} milestone.\n"
-              "- **Release naming:** continue rare fish codenames for release milestones.\n"
+              "- **Release naming:** continue mythical-city codenames for release milestones.\n"
           )
           changelog_text = changelog_text.replace("## [Unreleased]\n", f"## [Unreleased]\n{entry}", 1)
 
@@ -134,11 +134,11 @@ jobs:
           BODY=$(cat <<EOF
           ## Summary
           - bump Android version metadata to ${VERSION_NAME} / versionCode ${VERSION_CODE}
-          - add the v${VERSION_NAME} changelog entry for the ${CODENAME} rare-fish milestone
+          - add the v${VERSION_NAME} changelog entry for the ${CODENAME} mythical-city milestone
           - advance changelog compare links to v${VERSION_NAME}
 
           ## Release note
-          This continues the rare-fish release naming convention.
+          This continues the mythical-city release naming convention.
           EOF
           )
 
