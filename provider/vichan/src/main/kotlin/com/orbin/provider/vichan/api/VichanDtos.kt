@@ -1,7 +1,35 @@
 package com.orbin.provider.vichan.api
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+
+private object StringOrNumberAsStringSerializer : KSerializer<String> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("StringOrNumberAsString", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): String {
+        val jsonDecoder = decoder as? JsonDecoder ?: return decoder.decodeString()
+        return when (val element = jsonDecoder.decodeJsonElement()) {
+            JsonNull -> ""
+            is JsonPrimitive -> element.content
+            else -> ""
+        }
+    }
+
+    override fun serialize(
+        encoder: Encoder,
+        value: String,
+    ) = encoder.encodeString(value)
+}
 
 /**
  * Wire DTOs for the vichan / 4chan-compatible JSON API. These mirror the server response exactly;
@@ -60,7 +88,8 @@ data class VichanPost(
     val sub: String? = null,
     val com: String? = null,
     // File fields:
-    val tim: String? = null,
+    @Serializable(with = StringOrNumberAsStringSerializer::class)
+    val tim: String = "",
     val filename: String? = null,
     val ext: String? = null,
     val fsize: Long = 0,
@@ -84,7 +113,8 @@ data class VichanPost(
 
 @Serializable
 data class VichanFile(
-    val tim: String? = null,
+    @Serializable(with = StringOrNumberAsStringSerializer::class)
+    val tim: String = "",
     val filename: String? = null,
     val ext: String? = null,
     val fsize: Long = 0,

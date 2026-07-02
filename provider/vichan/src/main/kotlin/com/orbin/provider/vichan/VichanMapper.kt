@@ -121,7 +121,7 @@ class VichanMapper(
         dto: VichanPost,
     ): List<MediaAttachment> {
         val primary =
-            dto.tim?.let { tim ->
+            dto.tim.takeIf { it.isNotBlank() }?.let { tim ->
                 attachment(
                     board = board,
                     tim = tim,
@@ -140,7 +140,7 @@ class VichanMapper(
     }
 
     private fun VichanFile.toAttachment(board: BoardId): MediaAttachment? {
-        val tim = this.tim ?: return null
+        val tim = this.tim.takeIf { it.isNotBlank() } ?: return null
         return attachment(board, tim, filename, ext, fsize, w, h, tnW, tnH, spoiler == 1)
     }
 

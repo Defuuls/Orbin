@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [23.1] - 2026-07-02
+
+### Fixed
+- **4chan loading:** accept numeric media IDs from live catalog/thread responses so
+  boards, feeds, and threads load when the API sends `tim` as a number.
+- **Release:** prepare the v23.1 release for the El Dorado milestone.
+
 ## [23.0] - 2026-07-01
 
 ### Security
