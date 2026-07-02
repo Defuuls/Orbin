@@ -229,7 +229,7 @@ class MainActivity : FragmentActivity() {
     private companion object {
         private const val AUTHENTICATION_ERROR_MESSAGE = "Unlock was canceled. Try again."
         private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
-        private val AUTHENTICATION_UNAVAILABLE_MESSAGE =
+        private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
             "Device unlock is unavailable. Set up a biometric or screen lock in Android Settings, " +
                 "or continue without app lock."
     }
