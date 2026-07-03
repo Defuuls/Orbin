@@ -10,7 +10,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.orbin.app.browser.VanadiumBrowserScreen
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.bookmarks.BookmarksScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -68,8 +67,6 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenSettings = { navController.navigate(Route.Settings) },
-                onOpenBoardGallery = { navController.navigate(Route.BoardGallery) },
-                onOpenVanadiumBrowser = { navController.navigate(Route.VanadiumBrowser) },
             )
         }
 
@@ -78,7 +75,6 @@ fun OrbinNavHost(
                 onOpenThread = openThread,
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
-                onOpenVanadiumBrowser = { navController.navigate(Route.VanadiumBrowser) },
             )
         }
 
@@ -151,10 +147,6 @@ fun OrbinNavHost(
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
                 onOpenSetup = { navController.navigate(Route.Onboarding) },
             )
-        }
-
-        composable<Route.VanadiumBrowser> {
-            VanadiumBrowserScreen(onClose = navController::navigateUp)
         }
 
         composable<Route.Subscriptions> {
