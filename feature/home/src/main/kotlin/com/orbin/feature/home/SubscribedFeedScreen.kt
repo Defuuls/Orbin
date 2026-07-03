@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
@@ -57,12 +56,10 @@ fun SubscribedFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenBoards: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenVanadiumBrowser: () -> Unit,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val onSettingsIconTap = rememberSettingsIconTapHandler(onOpenSettings, onOpenVanadiumBrowser)
 
     Scaffold(
         topBar = {
@@ -74,10 +71,7 @@ fun SubscribedFeedScreen(
                     IconButton(onClick = viewModel::refresh) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
                     }
-                    IconButton(onClick = onOpenBoards) {
-                        Icon(Icons.Filled.GridView, contentDescription = "Board gallery")
-                    }
-                    IconButton(onClick = onSettingsIconTap) {
+                    IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
