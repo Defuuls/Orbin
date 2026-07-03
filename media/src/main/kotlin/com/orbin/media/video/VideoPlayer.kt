@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -52,12 +54,14 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
-import com.orbin.network.di.BaseOkHttp
+import com.orbin.network.di.VideoOkHttp
+import com.orbin.network.interceptor.RetryAfterTracker
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.delay
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 
 /**
@@ -76,12 +80,15 @@ fun VideoPlayer(
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
+    val uriHandler = LocalUriHandler.current
     val okHttpClient = remember(appContext) { appContext.videoOkHttpClient() }
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
     var playbackError by remember(url) { mutableStateOf<String?>(null) }
+    var isRateLimited by remember(url) { mutableStateOf(false) }
+    var rateLimitCooldownSeconds by remember { mutableLongStateOf(0L) }
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var bufferedProgress by remember { mutableFloatStateOf(0f) }
@@ -108,14 +115,36 @@ fun VideoPlayer(
 
     LaunchedEffect(url) {
         playbackError = null
+        isRateLimited = false
+        rateLimitCooldownSeconds = 0L
         positionMs = 0L
         durationMs = 0L
         bufferedProgress = 0f
-        exoPlayer.setMediaItem(MediaItem.fromUri(url))
-        exoPlayer.prepare()
-        exoPlayer.seekTo(0)
-        exoPlayer.playWhenReady = active && autoPlay
-        controlsVisible = !autoPlay
+        // Skip network hit if the CDN host is still in cooldown.
+        val host = runCatching { url.toHttpUrl().host }.getOrNull()
+        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it) }
+        if (blockedUntil != null) {
+            isRateLimited = true
+            rateLimitCooldownSeconds = ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
+            playbackError = "Video rate limited by CDN"
+        } else {
+            exoPlayer.setMediaItem(MediaItem.fromUri(url))
+            exoPlayer.prepare()
+            exoPlayer.seekTo(0)
+            exoPlayer.playWhenReady = active && autoPlay
+            controlsVisible = !autoPlay
+        }
+    }
+
+    // Tick down the rate-limit cooldown every second so the UI stays current.
+    LaunchedEffect(isRateLimited) {
+        if (!isRateLimited) return@LaunchedEffect
+        while (rateLimitCooldownSeconds > 0L) {
+            delay(1_000L)
+            rateLimitCooldownSeconds = (rateLimitCooldownSeconds - 1L).coerceAtLeast(0L)
+        }
+        isRateLimited = false
+        playbackError = null
     }
 
     // Pause as soon as this page is no longer active so audio never plays over the next video.
@@ -157,6 +186,18 @@ fun VideoPlayer(
 
                 override fun onPlayerError(error: PlaybackException) {
                     Log.w(TAG, "Video failed to load", error)
+                    val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
+                    isRateLimited = rateLimited
+                    if (rateLimited) {
+                        val host = runCatching { url.toHttpUrl().host }.getOrNull()
+                        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it) }
+                        rateLimitCooldownSeconds =
+                            if (blockedUntil != null) {
+                                ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
+                            } else {
+                                DEFAULT_RATE_LIMIT_DISPLAY_SECONDS
+                            }
+                    }
                     playbackError = error.mediaLoadMessage()
                     isBuffering = false
                     controlsVisible = true
@@ -214,13 +255,26 @@ fun VideoPlayer(
                 modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = ERROR_OVERLAY_ALPHA)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = playbackError.orEmpty(),
+                Column(
                     modifier = Modifier.padding(24.dp),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        text =
+                            if (isRateLimited && rateLimitCooldownSeconds > 0L) {
+                                "Video rate limited by CDN\nRetry in ${rateLimitCooldownSeconds}s"
+                            } else {
+                                playbackError.orEmpty()
+                            },
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                    )
+                    Button(onClick = { uriHandler.openUri(url) }) {
+                        Text("Open in browser")
+                    }
+                }
             }
         } else if (controlsVisible) {
             VideoControls(
@@ -321,7 +375,7 @@ private fun VideoControls(
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 private interface VideoPlayerEntryPoint {
-    @BaseOkHttp
+    @VideoOkHttp
     fun okHttpClient(): OkHttpClient
 }
 
@@ -355,6 +409,7 @@ private fun Throwable.hasHttpStatus(statusCode: Int): Boolean =
 
 private const val TAG = "OrbinVideoPlayer"
 private const val HTTP_TOO_MANY_REQUESTS = 429
+private const val DEFAULT_RATE_LIMIT_DISPLAY_SECONDS = 300L
 private const val ERROR_OVERLAY_ALPHA = 0.68f
 private const val CONTROLS_OVERLAY_ALPHA = 0.38f
 private const val PASSIVE_PROGRESS_ALPHA = 0.65f
