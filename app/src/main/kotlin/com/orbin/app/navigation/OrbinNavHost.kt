@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.orbin.app.browser.VanadiumBrowserScreen
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.bookmarks.BookmarksScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -24,7 +25,6 @@ import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsScreen
 import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
-import com.orbin.app.browser.VanadiumBrowserScreen
 
 private const val TRANSITION_MS = 300
 private const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
