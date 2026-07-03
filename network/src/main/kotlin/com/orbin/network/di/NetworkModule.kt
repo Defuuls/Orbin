@@ -147,9 +147,6 @@ object NetworkModule {
                     }
                 }.build()
     }
-
-    private companion object {
-        // 100 MB disk cache for video CDN responses.
-        const val VIDEO_CACHE_BYTES = 100L * 1024 * 1024
-    }
 }
+
+private const val VIDEO_CACHE_BYTES = 100L * 1024 * 1024
