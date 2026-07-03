@@ -59,6 +59,9 @@ sealed interface Route {
     data object Settings : Route
 
     @Serializable
+    data object VanadiumBrowser : Route
+
+    @Serializable
     data object Subscriptions : Route
 
     @Serializable

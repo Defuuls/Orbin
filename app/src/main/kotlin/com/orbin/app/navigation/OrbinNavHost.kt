@@ -24,6 +24,7 @@ import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsScreen
 import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
+import com.orbin.app.browser.VanadiumBrowserScreen
 
 private const val TRANSITION_MS = 300
 private const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
@@ -68,6 +69,7 @@ fun OrbinNavHost(
                 },
                 onOpenSettings = { navController.navigate(Route.Settings) },
                 onOpenBoardGallery = { navController.navigate(Route.BoardGallery) },
+                onOpenVanadiumBrowser = { navController.navigate(Route.VanadiumBrowser) },
             )
         }
 
@@ -76,6 +78,7 @@ fun OrbinNavHost(
                 onOpenThread = openThread,
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenVanadiumBrowser = { navController.navigate(Route.VanadiumBrowser) },
             )
         }
 
@@ -148,6 +151,10 @@ fun OrbinNavHost(
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
                 onOpenSetup = { navController.navigate(Route.Onboarding) },
             )
+        }
+
+        composable<Route.VanadiumBrowser> {
+            VanadiumBrowserScreen(onClose = navController::navigateUp)
         }
 
         composable<Route.Subscriptions> {

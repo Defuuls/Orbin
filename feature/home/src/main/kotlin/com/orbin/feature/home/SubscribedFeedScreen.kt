@@ -57,10 +57,12 @@ fun SubscribedFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenBoards: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenVanadiumBrowser: () -> Unit,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val onSettingsIconTap = rememberSettingsIconTapHandler(onOpenSettings, onOpenVanadiumBrowser)
 
     Scaffold(
         topBar = {
@@ -75,7 +77,7 @@ fun SubscribedFeedScreen(
                     IconButton(onClick = onOpenBoards) {
                         Icon(Icons.Filled.GridView, contentDescription = "Board gallery")
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(onClick = onSettingsIconTap) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },

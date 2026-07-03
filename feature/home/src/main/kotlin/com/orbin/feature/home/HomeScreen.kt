@@ -27,6 +27,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -36,6 +41,9 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Home screen: the board list for the active provider. Tapping a board opens its catalog. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +52,7 @@ fun HomeScreen(
     onOpenBoard: (provider: String, board: String, title: String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBoardGallery: () -> Unit,
+    onOpenVanadiumBrowser: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,6 +60,7 @@ fun HomeScreen(
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val onSettingsIconTap = rememberSettingsIconTapHandler(onOpenSettings, onOpenVanadiumBrowser)
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(viewModel.providerId, board.id.value, board.title)
     }
@@ -64,7 +74,7 @@ fun HomeScreen(
                     IconButton(onClick = onOpenBoardGallery) {
                         Icon(Icons.Filled.GridView, contentDescription = "Board gallery")
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(onClick = onSettingsIconTap) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
@@ -179,3 +189,32 @@ private fun Board.matchesAny(tokens: Set<String>): Boolean {
     val haystack = listOf(id.value, title, description).joinToString(" ").lowercase()
     return tokens.any(haystack::contains)
 }
+
+@Composable
+internal fun rememberSettingsIconTapHandler(
+    onOpenSettings: () -> Unit,
+    onOpenVanadiumBrowser: () -> Unit,
+): () -> Unit {
+    val scope = rememberCoroutineScope()
+    var settingsTapCount by rememberSaveable { mutableStateOf(0) }
+    var pendingOpenSettings by remember { mutableStateOf<Job?>(null) }
+
+    return {
+        pendingOpenSettings?.cancel()
+        settingsTapCount += 1
+        if (settingsTapCount >= SECRET_TAP_COUNT) {
+            settingsTapCount = 0
+            onOpenVanadiumBrowser()
+        } else {
+            pendingOpenSettings =
+                scope.launch {
+                    delay(SECRET_TAP_WINDOW_MS)
+                    settingsTapCount = 0
+                    onOpenSettings()
+                }
+        }
+    }
+}
+
+private const val SECRET_TAP_COUNT = 5
+private const val SECRET_TAP_WINDOW_MS = 650L
