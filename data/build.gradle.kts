@@ -22,6 +22,8 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.sqlcipher.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
