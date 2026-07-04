@@ -46,6 +46,7 @@ class MainActivity : FragmentActivity() {
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
+    private var activePrompt: BiometricPrompt? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -156,7 +157,14 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (biometricLockActive && !authenticationInProgress) {
+        if (biometricLockActive) {
+            // Cancel defensively rather than relying on the system to always deliver a
+            // cancellation callback before the activity fully stops — that race can leave
+            // authenticationInProgress stuck true, which would silently block every future
+            // unlock attempt (automatic and manual).
+            activePrompt?.cancelAuthentication()
+            activePrompt = null
+            authenticationInProgress = false
             relockOnResume = true
         }
     }
@@ -186,6 +194,7 @@ class MainActivity : FragmentActivity() {
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                         authenticationInProgress = false
+                        activePrompt = null
                         onUnlocked()
                     }
 
@@ -194,6 +203,7 @@ class MainActivity : FragmentActivity() {
                         errString: CharSequence,
                     ) {
                         authenticationInProgress = false
+                        activePrompt = null
                         onAuthenticationError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
                     }
 
@@ -210,9 +220,11 @@ class MainActivity : FragmentActivity() {
                 .setAllowedAuthenticators(authenticators)
                 .build()
 
+        activePrompt = prompt
         runCatching { prompt.authenticate(promptInfo) }
             .onFailure {
                 authenticationInProgress = false
+                activePrompt = null
                 onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
             }
     }
