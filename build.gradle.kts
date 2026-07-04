@@ -44,8 +44,8 @@ buildscript {
                 }
 
                 requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                    useVersion("1.5.25")
-                    because("Dependabot reports Logback vulnerabilities.")
+                    useVersion("1.5.33")
+                    because("Dependabot reports a Logback deserialization vulnerability.")
                 }
             }
         }
@@ -111,8 +111,8 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
             }
 
             requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                useVersion("1.5.25")
-                because("Dependabot reports Logback EL injection and SSRF vulnerabilities.")
+                useVersion("1.5.33")
+                because("Dependabot reports a Logback deserialization vulnerability.")
             }
         }
     }
