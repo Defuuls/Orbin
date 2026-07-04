@@ -52,6 +52,8 @@ class SettingsViewModel
 
         fun setThumbnailSize(size: ThumbnailSize) = update { repository.setThumbnailSize(size) }
 
+        fun setOneHandedMode(enabled: Boolean) = update { repository.setOneHandedModeEnabled(enabled) }
+
         fun setAutoplay(enabled: Boolean) = update { repository.setAutoplayVideos(enabled) }
 
         fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
