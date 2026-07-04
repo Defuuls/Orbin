@@ -1,6 +1,5 @@
 package com.orbin.network.di
 
-import android.content.Context
 import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
@@ -9,16 +8,13 @@ import com.orbin.network.interceptor.VideoRetryAfterInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
-import okhttp3.Cache
 import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.dnsoverhttps.DnsOverHttps
 import okhttp3.logging.HttpLoggingInterceptor
-import java.io.File
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
@@ -100,13 +96,14 @@ object NetworkModule {
     @VideoOkHttp
     fun providesVideoOkHttpClient(
         @BaseOkHttp base: OkHttpClient,
-        @ApplicationContext context: Context,
-    ): OkHttpClient {
-        val cacheDir = File(context.cacheDir, "video-http-cache")
-        val cache = Cache(cacheDir, VIDEO_CACHE_BYTES)
-        return base
+    ): OkHttpClient =
+        base
             .newBuilder()
-            .cache(cache)
+            // Deliberately no okhttp3.Cache here: ExoPlayer's OkHttpDataSource issues byte-range
+            // (Range:) requests to seek/buffer within the file, and OkHttp's built-in disk cache
+            // doesn't correctly serve or store partial (206) responses against it - a documented
+            // source of misbehavior for large streamed files. If on-disk caching of video is
+            // wanted later, use Media3's own range-aware SimpleCache/CacheDataSource instead.
             // Override the base HeadersInterceptor's no-store/pragma with video-appropriate values.
             .addInterceptor { chain ->
                 val req =
@@ -121,7 +118,6 @@ object NetworkModule {
                 chain.proceed(req)
             }.addInterceptor(VideoRetryAfterInterceptor())
             .build()
-    }
 
     private class DynamicDns(
         private val configProvider: NetworkConfigProvider,
@@ -148,5 +144,3 @@ object NetworkModule {
                 }.build()
     }
 }
-
-private const val VIDEO_CACHE_BYTES = 100L * 1024 * 1024
