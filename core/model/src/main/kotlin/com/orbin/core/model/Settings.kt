@@ -9,6 +9,7 @@ private const val FEED_LIMIT_EIGHTEEN = 18
 private const val THUMBNAIL_SIZE_COMPACT_DP = 80
 private const val THUMBNAIL_SIZE_MEDIUM_DP = 96
 private const val THUMBNAIL_SIZE_LARGE_DP = 120
+private const val THUMBNAIL_SIZE_FILL_DP = 240
 
 enum class FeedThreadLimit(
     val count: Int?,
@@ -35,6 +36,13 @@ enum class ThumbnailSize(
     COMPACT("Compact", THUMBNAIL_SIZE_COMPACT_DP),
     MEDIUM("Medium", THUMBNAIL_SIZE_MEDIUM_DP),
     LARGE("Large", THUMBNAIL_SIZE_LARGE_DP),
+
+    /**
+     * As large as the layout allows - a single column of full-width thumbnails in the thread
+     * grid view. [sizeDp] is only a sane fallback for layouts (like the subscribed feed) that
+     * size thumbnails as a fixed square rather than filling the available width.
+     */
+    FILL("Fill", THUMBNAIL_SIZE_FILL_DP),
 }
 
 /**

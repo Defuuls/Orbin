@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
@@ -48,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -71,6 +75,11 @@ fun ThreadScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
+    val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
+    // Lets the grid toggle temporarily override the persisted default for this session, without
+    // writing back to Settings.
+    var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
+    val thumbnailSize = thumbnailSizeOverride ?: defaultThumbnailSize
 
     Scaffold(
         topBar = {
@@ -107,6 +116,14 @@ fun ThreadScreen(
                                 },
                         )
                     }
+                    if (layoutMode == ThreadLayoutMode.ThumbnailGrid) {
+                        IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
+                            Icon(
+                                Icons.Filled.PhotoSizeSelectLarge,
+                                contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                            )
+                        }
+                    }
                     IconButton(onClick = viewModel::downloadAllMedia) {
                         Icon(Icons.Filled.Download, contentDescription = "Download all media")
                     }
@@ -132,6 +149,7 @@ fun ThreadScreen(
                 ThreadContent(
                     thread = state.thread,
                     layoutMode = layoutMode,
+                    thumbnailSize = thumbnailSize,
                     onOpenMedia = onOpenMedia,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
@@ -145,6 +163,7 @@ fun ThreadScreen(
 private fun ThreadContent(
     thread: Thread,
     layoutMode: ThreadLayoutMode,
+    thumbnailSize: ThumbnailSize,
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
@@ -162,6 +181,7 @@ private fun ThreadContent(
         ThreadLayoutMode.ThumbnailGrid ->
             ThumbnailGridContent(
                 thread = thread,
+                thumbnailSize = thumbnailSize,
                 onOpenMedia = onOpenMedia,
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
@@ -241,6 +261,7 @@ private fun PostListContent(
 @Composable
 private fun ThumbnailGridContent(
     thread: Thread,
+    thumbnailSize: ThumbnailSize,
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
@@ -248,6 +269,7 @@ private fun ThumbnailGridContent(
 ) {
     val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
     val gridState = rememberLazyGridState()
+    val fill = thumbnailSize == ThumbnailSize.FILL
 
     LaunchedEffect(mediaScrollIndex) {
         val target = mediaScrollIndex ?: return@LaunchedEffect
@@ -256,7 +278,7 @@ private fun ThumbnailGridContent(
     }
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(THUMBNAIL_GRID_CELL_MIN_SIZE_DP.dp),
+        columns = if (fill) GridCells.Fixed(1) else GridCells.Adaptive(thumbnailSize.sizeDp.dp),
         modifier = modifier,
         state = gridState,
         contentPadding =
@@ -266,7 +288,16 @@ private fun ThumbnailGridContent(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(count = attachments.size, key = { attachments[it].id }) { index ->
-            MediaThumbnail(attachment = attachments[index], onClick = { onOpenMedia(index) })
+            MediaThumbnail(
+                attachment = attachments[index],
+                modifier =
+                    if (fill) {
+                        Modifier.fillMaxWidth().aspectRatio(1f)
+                    } else {
+                        Modifier.size(thumbnailSize.sizeDp.dp)
+                    },
+                onClick = { onOpenMedia(index) },
+            )
         }
     }
 }
@@ -371,5 +402,7 @@ private enum class ThreadLayoutMode {
     ThumbnailGrid,
 }
 
-// Matches MediaThumbnail's fixed inner image size so grid cells don't crop or letterbox it.
-private const val THUMBNAIL_GRID_CELL_MIN_SIZE_DP = 120
+private fun ThumbnailSize.next(): ThumbnailSize {
+    val values = ThumbnailSize.entries
+    return values[(values.indexOf(this) + 1) % values.size]
+}

@@ -12,9 +12,11 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +37,7 @@ class ThreadViewModel
         private val bookmarkRepository: BookmarkRepository,
         private val downloadRepository: DownloadRepository,
         private val historyRepository: HistoryRepository,
+        private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -60,6 +63,13 @@ class ThreadViewModel
                 .observeBookmark(key)
                 .map { it != null }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
+        // The default for this session, from Settings. The grid's size toggle can temporarily
+        // override it without changing the persisted preference.
+        val thumbnailSize: StateFlow<ThumbnailSize> =
+            settingsRepository.settings
+                .map { it.thumbnailSize }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
 
         fun toggleBookmark() {
             viewModelScope.launch {
