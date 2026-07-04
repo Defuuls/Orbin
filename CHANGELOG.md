@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [23.9] - 2026-07-04
+
+### Changed
+- **Release:** prepare the v23.9 release for the Thule milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [23.8] - 2026-07-04
 
 ### Fixed
@@ -249,7 +255,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.8...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.9...HEAD
+[23.9]: https://github.com/Defuuls/Orbin/compare/v23.8...v23.9
 [23.8]: https://github.com/Defuuls/Orbin/compare/v23.7...v23.8
 [23.7]: https://github.com/Defuuls/Orbin/compare/v23.6...v23.7
 [23.6]: https://github.com/Defuuls/Orbin/compare/v23.5...v23.6
