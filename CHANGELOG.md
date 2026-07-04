@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [23.8] - 2026-07-04
+
+### Fixed
+- **App lock:** prevent biometric unlock from hanging by cancelling stale prompts on app
+  background/destruction, ignoring stale callbacks, and timing out stuck unlock attempts.
+- **Permissions:** wait until Orbin is ready and unlocked before requesting notification
+  permission so the Android permission dialog does not race the biometric prompt.
+- **Release:** prepare the v23.8 release for the Delilah milestone.
+- **Release naming:** famous-seductress codenames replace mythical-city codenames for
+  release milestones.
+
 ## [23.7] - 2026-07-04
 
 ### Changed
@@ -238,7 +249,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.7...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.8...HEAD
+[23.8]: https://github.com/Defuuls/Orbin/compare/v23.7...v23.8
 [23.7]: https://github.com/Defuuls/Orbin/compare/v23.6...v23.7
 [23.6]: https://github.com/Defuuls/Orbin/compare/v23.5...v23.6
 [23.5]: https://github.com/Defuuls/Orbin/compare/v23.4...v23.5

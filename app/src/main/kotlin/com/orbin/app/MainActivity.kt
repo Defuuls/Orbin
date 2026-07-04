@@ -2,6 +2,8 @@ package com.orbin.app
 
 import android.Manifest
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -26,6 +28,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +54,9 @@ class MainActivity : FragmentActivity() {
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
-    private var activePrompt: BiometricPrompt? = null
+    private var activeBiometricPrompt: BiometricPrompt? = null
+    private var authenticationSession = 0
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -89,15 +94,11 @@ class MainActivity : FragmentActivity() {
                 )
             }
 
-            // Ask for notification permission once so watched-thread updates can be delivered.
-            val permissionLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission(),
-                ) { }
-            LaunchedEffect(Unit) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-
+            RequestNotificationPermissionWhenUnlocked(
+                ready = ready,
+                shouldLock = shouldLock,
+                unlocked = unlocked,
+            )
             SideEffect {
                 biometricLockActive = shouldLock
             }
@@ -144,17 +145,20 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onStop() {
+        cancelActiveAuthentication()
         super.onStop()
         if (biometricLockActive) {
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave
             // authenticationInProgress stuck true, which would silently block every future
             // unlock attempt (automatic and manual).
-            activePrompt?.cancelAuthentication()
-            activePrompt = null
-            authenticationInProgress = false
             relockOnResume = true
         }
+    }
+
+    override fun onDestroy() {
+        cancelActiveAuthentication()
+        super.onDestroy()
     }
 
     private fun authenticateToUnlock(
@@ -165,34 +169,47 @@ class MainActivity : FragmentActivity() {
     ) {
         if (authenticationInProgress) return
         authenticationInProgress = true
+        val session = ++authenticationSession
 
         val authenticators =
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-            authenticationInProgress = false
+            finishAuthentication(session)
             onAuthenticationUnavailable(AUTHENTICATION_UNAVAILABLE_MESSAGE)
             return
         }
+
+        val timeout =
+            Runnable {
+                val promptToCancel = activeBiometricPrompt
+                if (finishAuthentication(session)) {
+                    promptToCancel?.cancelAuthentication()
+                    onAuthenticationError(AUTHENTICATION_TIMEOUT_MESSAGE)
+                }
+            }
+        mainHandler.postDelayed(timeout, AUTHENTICATION_TIMEOUT_MS)
 
         val prompt =
             BiometricPrompt(
                 this,
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        authenticationInProgress = false
-                        activePrompt = null
-                        onUnlocked()
+                        mainHandler.removeCallbacks(timeout)
+                        if (finishAuthentication(session)) {
+                            onUnlocked()
+                        }
                     }
 
                     override fun onAuthenticationError(
                         errorCode: Int,
                         errString: CharSequence,
                     ) {
-                        authenticationInProgress = false
-                        activePrompt = null
-                        onAuthenticationError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
+                        mainHandler.removeCallbacks(timeout)
+                        if (finishAuthentication(session)) {
+                            onAuthenticationError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
+                        }
                     }
 
                     override fun onAuthenticationFailed() {
@@ -200,6 +217,7 @@ class MainActivity : FragmentActivity() {
                     }
                 },
             )
+        activeBiometricPrompt = prompt
         val promptInfo =
             BiometricPrompt.PromptInfo
                 .Builder()
@@ -208,13 +226,27 @@ class MainActivity : FragmentActivity() {
                 .setAllowedAuthenticators(authenticators)
                 .build()
 
-        activePrompt = prompt
         runCatching { prompt.authenticate(promptInfo) }
             .onFailure {
-                authenticationInProgress = false
-                activePrompt = null
-                onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                mainHandler.removeCallbacks(timeout)
+                if (finishAuthentication(session)) {
+                    onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                }
             }
+    }
+
+    private fun cancelActiveAuthentication() {
+        activeBiometricPrompt?.cancelAuthentication()
+        activeBiometricPrompt = null
+        authenticationInProgress = false
+        authenticationSession++
+    }
+
+    private fun finishAuthentication(session: Int): Boolean {
+        if (session != authenticationSession) return false
+        activeBiometricPrompt = null
+        authenticationInProgress = false
+        return true
     }
 
     private fun setSecureContent(enabled: Boolean) {
@@ -229,9 +261,38 @@ class MainActivity : FragmentActivity() {
     private companion object {
         private const val AUTHENTICATION_ERROR_MESSAGE = "Unlock was canceled. Try again."
         private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
+        private const val AUTHENTICATION_TIMEOUT_MESSAGE = "Unlock timed out. Try again."
         private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
             "Device unlock is unavailable. Set up a biometric or screen lock in Android Settings, " +
                 "or continue without app lock."
+        private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
+    }
+}
+
+@Composable
+private fun RequestNotificationPermissionWhenUnlocked(
+    ready: Boolean,
+    shouldLock: Boolean,
+    unlocked: Boolean,
+) {
+    var notificationPermissionRequested by rememberSaveable { mutableStateOf(false) }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { }
+
+    LaunchedEffect(ready, shouldLock, unlocked) {
+        val shouldRequest =
+            shouldRequestNotificationPermission(
+                ready = ready,
+                shouldLock = shouldLock,
+                unlocked = unlocked,
+                alreadyRequested = notificationPermissionRequested,
+            )
+        if (shouldRequest) {
+            notificationPermissionRequested = true
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 }
 
@@ -342,3 +403,10 @@ private fun AppThemeMode.toDesignSystem(): ThemeMode =
         AppThemeMode.LIGHT -> ThemeMode.LIGHT
         AppThemeMode.DARK -> ThemeMode.DARK
     }
+
+private fun shouldRequestNotificationPermission(
+    ready: Boolean,
+    shouldLock: Boolean,
+    unlocked: Boolean,
+    alreadyRequested: Boolean,
+): Boolean = ready && (unlocked || !shouldLock) && !alreadyRequested
