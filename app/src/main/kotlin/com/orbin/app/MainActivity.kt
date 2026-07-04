@@ -38,6 +38,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.theme.ThemeMode
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -124,58 +125,21 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            com.orbin.core.designsystem.theme.OrbinTheme(
-                themeMode = settings.themeMode.toDesignSystem(),
-                dynamicColor = settings.dynamicColor,
-                amoled = settings.amoled,
-                fontScale = settings.fontScale,
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                ) {
-                    Surface(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .then(
-                                    if (settings.oneHandedModeEnabled) {
-                                        Modifier.graphicsLayer {
-                                            // Pivoting on bottom-center and scaling both axes equally
-                                            // shrinks the whole app, undistorted, into the bottom half
-                                            // of the screen so it's reachable one-handed.
-                                            scaleX = ONE_HANDED_MODE_SCALE
-                                            scaleY = ONE_HANDED_MODE_SCALE
-                                            transformOrigin = TransformOrigin(0.5f, 1f)
-                                        }
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {
-                        when {
-                            !ready -> Unit
-                            shouldLock && !unlocked ->
-                                LockedScreen(
-                                    message = unlockMessage,
-                                    unlocking = authenticationInProgress,
-                                    allowContinueWithoutLock = allowContinueWithoutLock,
-                                    onRetry = { requestUnlock() },
-                                    onContinueWithoutLock = {
-                                        unlockMessage = null
-                                        allowContinueWithoutLock = false
-                                        unlocked = true
-                                    },
-                                )
-                            // Wait for the first persisted snapshot so onboarding gating is correct.
-                            else ->
-                                OrbinAppProviders {
-                                    OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
-                                }
-                        }
-                    }
-                }
-            }
+            AppContent(
+                settings = settings,
+                ready = ready,
+                shouldLock = shouldLock,
+                unlocked = unlocked,
+                unlockMessage = unlockMessage,
+                allowContinueWithoutLock = allowContinueWithoutLock,
+                authenticationInProgress = authenticationInProgress,
+                onRetryUnlock = { requestUnlock() },
+                onContinueWithoutLock = {
+                    unlockMessage = null
+                    allowContinueWithoutLock = false
+                    unlocked = true
+                },
+            )
         }
     }
 
@@ -268,7 +232,72 @@ class MainActivity : FragmentActivity() {
         private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
             "Device unlock is unavailable. Set up a biometric or screen lock in Android Settings, " +
                 "or continue without app lock."
-        private const val ONE_HANDED_MODE_SCALE = 0.5f
+    }
+}
+
+private const val ONE_HANDED_MODE_SCALE = 0.5f
+private const val ONE_HANDED_MODE_PIVOT_X = 0.5f
+private const val ONE_HANDED_MODE_PIVOT_Y = 1f
+
+@Composable
+private fun AppContent(
+    settings: AppSettings,
+    ready: Boolean,
+    shouldLock: Boolean,
+    unlocked: Boolean,
+    unlockMessage: String?,
+    allowContinueWithoutLock: Boolean,
+    authenticationInProgress: Boolean,
+    onRetryUnlock: () -> Unit,
+    onContinueWithoutLock: () -> Unit,
+) {
+    com.orbin.core.designsystem.theme.OrbinTheme(
+        themeMode = settings.themeMode.toDesignSystem(),
+        dynamicColor = settings.dynamicColor,
+        amoled = settings.amoled,
+        fontScale = settings.fontScale,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        ) {
+            Surface(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (settings.oneHandedModeEnabled) {
+                                Modifier.graphicsLayer {
+                                    // Pivoting on bottom-center and scaling both axes equally shrinks
+                                    // the whole app, undistorted, into the bottom half of the screen
+                                    // so it's reachable one-handed.
+                                    scaleX = ONE_HANDED_MODE_SCALE
+                                    scaleY = ONE_HANDED_MODE_SCALE
+                                    transformOrigin = TransformOrigin(ONE_HANDED_MODE_PIVOT_X, ONE_HANDED_MODE_PIVOT_Y)
+                                }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                when {
+                    !ready -> Unit
+                    shouldLock && !unlocked ->
+                        LockedScreen(
+                            message = unlockMessage,
+                            unlocking = authenticationInProgress,
+                            allowContinueWithoutLock = allowContinueWithoutLock,
+                            onRetry = onRetryUnlock,
+                            onContinueWithoutLock = onContinueWithoutLock,
+                        )
+                    // Wait for the first persisted snapshot so onboarding gating is correct.
+                    else ->
+                        OrbinAppProviders {
+                            OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
+                        }
+                }
+            }
+        }
     }
 }
 
