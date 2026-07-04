@@ -39,7 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.currentStateAsState
 import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
@@ -103,7 +106,15 @@ class MainActivity : FragmentActivity() {
                 biometricLockActive = shouldLock
             }
 
-            LaunchedEffect(ready, shouldLock, relockOnResume) {
+            // BiometricPrompt silently fails to appear (no callback, no exception - just no
+            // dialog) if authenticate() is called before the activity is genuinely RESUMED, which
+            // a plain LaunchedEffect can't guarantee since Compose's first composition can run
+            // before onResume finishes. Track the real lifecycle state so the prompt is only ever
+            // requested once the activity has actually reached RESUMED.
+            val lifecycleOwner = LocalLifecycleOwner.current
+            val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+
+            LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
                 if (!ready) return@LaunchedEffect
 
                 if (shouldLock) {
@@ -114,7 +125,7 @@ class MainActivity : FragmentActivity() {
                         unlockMessage = null
                         allowContinueWithoutLock = false
                     }
-                    if (!unlocked) {
+                    if (!unlocked && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
                         requestUnlock()
                     }
                 } else {
