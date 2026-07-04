@@ -171,15 +171,28 @@ class MainActivity : FragmentActivity() {
         authenticationInProgress = true
         val session = ++authenticationSession
 
-        val authenticators =
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        // Biometric-only: a CryptoObject-gated unlock (see below) can't be combined with
+        // DEVICE_CREDENTIAL, since a PIN/pattern unlock doesn't correspond to a fresh execution
+        // of the underlying Keystore crypto operation the way a biometric match does.
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
             finishAuthentication(session)
             onAuthenticationUnavailable(AUTHENTICATION_UNAVAILABLE_MESSAGE)
             return
         }
+
+        val cipher =
+            runCatching { AppLockCrypto.createUnlockCipher() }
+                .getOrElse {
+                    // Enrolled biometrics changed since the key was created; the old key is
+                    // permanently invalidated. Drop it so a fresh one is generated (and gated by
+                    // the current enrollment) on the next attempt.
+                    AppLockCrypto.invalidate()
+                    finishAuthentication(session)
+                    onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                    return
+                }
 
         val timeout =
             Runnable {
@@ -198,7 +211,19 @@ class MainActivity : FragmentActivity() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                         mainHandler.removeCallbacks(timeout)
                         if (finishAuthentication(session)) {
-                            onUnlocked()
+                            // The callback firing isn't proof enough on its own; only treat this
+                            // as unlocked once the Keystore-backed cipher actually completes,
+                            // since that is what the TEE/StrongBox gates on a genuine biometric
+                            // match.
+                            val resultCipher = result.cryptoObject?.cipher
+                            val verified =
+                                resultCipher != null &&
+                                    runCatching { AppLockCrypto.verify(resultCipher) }.isSuccess
+                            if (verified) {
+                                onUnlocked()
+                            } else {
+                                onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                            }
                         }
                     }
 
@@ -222,11 +247,11 @@ class MainActivity : FragmentActivity() {
             BiometricPrompt.PromptInfo
                 .Builder()
                 .setTitle("Unlock Orbin")
-                .setSubtitle("Use fingerprint or device credentials")
+                .setSubtitle("Use fingerprint or face unlock")
                 .setAllowedAuthenticators(authenticators)
                 .build()
 
-        runCatching { prompt.authenticate(promptInfo) }
+        runCatching { prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher)) }
             .onFailure {
                 mainHandler.removeCallbacks(timeout)
                 if (finishAuthentication(session)) {
@@ -263,8 +288,8 @@ class MainActivity : FragmentActivity() {
         private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
         private const val AUTHENTICATION_TIMEOUT_MESSAGE = "Unlock timed out. Try again."
         private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
-            "Device unlock is unavailable. Set up a biometric or screen lock in Android Settings, " +
-                "or continue without app lock."
+            "Biometric unlock is unavailable. Enroll a fingerprint or face unlock in Android " +
+                "Settings, or continue without app lock."
         private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
     }
 }
