@@ -9,7 +9,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -126,29 +130,49 @@ class MainActivity : FragmentActivity() {
                 amoled = settings.amoled,
                 fontScale = settings.fontScale,
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
+                Box(
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
                 ) {
-                    when {
-                        !ready -> Unit
-                        shouldLock && !unlocked ->
-                            LockedScreen(
-                                message = unlockMessage,
-                                unlocking = authenticationInProgress,
-                                allowContinueWithoutLock = allowContinueWithoutLock,
-                                onRetry = { requestUnlock() },
-                                onContinueWithoutLock = {
-                                    unlockMessage = null
-                                    allowContinueWithoutLock = false
-                                    unlocked = true
-                                },
-                            )
-                        // Wait for the first persisted snapshot so onboarding gating is correct.
-                        else ->
-                            OrbinAppProviders {
-                                OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
-                            }
+                    Surface(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .then(
+                                    if (settings.oneHandedModeEnabled) {
+                                        Modifier.graphicsLayer {
+                                            // Pivoting on bottom-center and scaling both axes equally
+                                            // shrinks the whole app, undistorted, into the bottom half
+                                            // of the screen so it's reachable one-handed.
+                                            scaleX = ONE_HANDED_MODE_SCALE
+                                            scaleY = ONE_HANDED_MODE_SCALE
+                                            transformOrigin = TransformOrigin(0.5f, 1f)
+                                        }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        when {
+                            !ready -> Unit
+                            shouldLock && !unlocked ->
+                                LockedScreen(
+                                    message = unlockMessage,
+                                    unlocking = authenticationInProgress,
+                                    allowContinueWithoutLock = allowContinueWithoutLock,
+                                    onRetry = { requestUnlock() },
+                                    onContinueWithoutLock = {
+                                        unlockMessage = null
+                                        allowContinueWithoutLock = false
+                                        unlocked = true
+                                    },
+                                )
+                            // Wait for the first persisted snapshot so onboarding gating is correct.
+                            else ->
+                                OrbinAppProviders {
+                                    OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
+                                }
+                        }
                     }
                 }
             }
@@ -244,6 +268,7 @@ class MainActivity : FragmentActivity() {
         private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
             "Device unlock is unavailable. Set up a biometric or screen lock in Android Settings, " +
                 "or continue without app lock."
+        private const val ONE_HANDED_MODE_SCALE = 0.5f
     }
 }
 

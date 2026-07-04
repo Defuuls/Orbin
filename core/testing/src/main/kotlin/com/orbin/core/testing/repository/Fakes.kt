@@ -168,6 +168,10 @@ class FakeSettingsRepository(
         update { copy(thumbnailSize = size) }
     }
 
+    override suspend fun setOneHandedModeEnabled(enabled: Boolean) {
+        update { copy(oneHandedModeEnabled = enabled) }
+    }
+
     override suspend fun setAutoplayVideos(enabled: Boolean) {
         update { copy(autoplayVideos = enabled) }
     }

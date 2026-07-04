@@ -151,6 +151,12 @@ fun SettingsScreen(
                 text = { it.label },
                 onChange = viewModel::setThumbnailSize,
             )
+            SwitchRow(
+                label = "One-handed mode",
+                checked = settings.oneHandedModeEnabled,
+                onChange = viewModel::setOneHandedMode,
+                supporting = "Shrinks the app into the bottom half of the screen for easier one-handed use.",
+            )
 
             SectionHeader("Media")
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
@@ -274,9 +280,11 @@ private fun SwitchRow(
     label: String,
     checked: Boolean,
     onChange: (Boolean) -> Unit,
+    supporting: String? = null,
 ) {
     ListItem(
         headlineContent = { Text(label) },
+        supportingContent = supporting?.let { { Text(it) } },
         trailingContent = { Switch(checked = checked, onCheckedChange = onChange) },
     )
 }
