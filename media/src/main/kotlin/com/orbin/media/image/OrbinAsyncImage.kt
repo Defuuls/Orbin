@@ -91,11 +91,14 @@ fun OrbinAsyncImage(
 /**
  * A post thumbnail: shows the attachment's thumbnail, a play badge for video/audio, and a
  * blur-style overlay for spoilers. Tapping invokes [onClick] (open full media / gallery).
+ *
+ * Sized entirely by [modifier] (defaults to the classic 120dp square) so callers can render it
+ * as a fixed size or have it fill its container, e.g. a full-width grid cell.
  */
 @Composable
 fun MediaThumbnail(
     attachment: MediaAttachment,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.size(120.dp),
     onClick: () -> Unit = {},
 ) {
     Box(
@@ -108,11 +111,11 @@ fun MediaThumbnail(
         OrbinAsyncImage(
             url = attachment.thumbnailUrl,
             contentDescription = attachment.originalFileName,
-            modifier = Modifier.size(120.dp),
+            modifier = Modifier.fillMaxSize(),
         )
 
         if (attachment.isSpoiler) {
-            Box(modifier = Modifier.size(120.dp).background(Color.Black.copy(alpha = 0.85f)))
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)))
             Icon(
                 imageVector = Icons.Filled.VisibilityOff,
                 contentDescription = "Spoiler",
