@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [24.1.1] - 2026-07-04
+
+### Changed
+- **Release:** prepare the v24.1.1 release for the Arcadia milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [24.1] - 2026-07-04
 
 ### Changed
