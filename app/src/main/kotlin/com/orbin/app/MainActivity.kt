@@ -249,6 +249,7 @@ class MainActivity : FragmentActivity() {
                 .setTitle("Unlock Orbin")
                 .setSubtitle("Use fingerprint or face unlock")
                 .setAllowedAuthenticators(authenticators)
+                .setNegativeButtonText("Cancel")
                 .build()
 
         runCatching { prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher)) }
