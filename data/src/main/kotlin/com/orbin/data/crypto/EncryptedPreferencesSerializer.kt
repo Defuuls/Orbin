@@ -1,5 +1,6 @@
 package com.orbin.data.crypto
 
+import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -12,6 +13,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -40,11 +42,20 @@ internal object EncryptedPreferencesSerializer : Serializer<Preferences> {
     override suspend fun readFrom(input: InputStream): Preferences {
         val blob = input.readBytes()
         if (blob.isEmpty()) return defaultValue
-        val json = LocalDataCipher.decrypt(blob).decodeToString()
-        val root = Json.parseToJsonElement(json).jsonObject
-        val prefs = mutablePreferencesOf()
-        root.forEach { (name, element) -> prefs.putEntry(name, element.jsonObject) }
-        return prefs
+        return runCatching {
+            val json = LocalDataCipher.decrypt(blob).decodeToString()
+            val root = Json.parseToJsonElement(json).jsonObject
+            val prefs = mutablePreferencesOf()
+            root.forEach { (name, element) -> prefs.putEntry(name, element.jsonObject) }
+            prefs
+        }.getOrElse {
+            if (it is CancellationException) throw it
+            // Undecryptable or malformed settings blob (lost/rotated Keystore key, a write
+            // interrupted mid-flight, corrupt JSON). DataStore's corruption handler only engages
+            // for CorruptionException, so translate any failure here into one instead of letting
+            // it crash every collector of dataStore.data.
+            throw CorruptionException("Unable to decrypt or parse settings", it)
+        }
     }
 
     override suspend fun writeTo(
