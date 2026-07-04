@@ -1,0 +1,73 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Orbin thread viewer screenshot</title>
+  <desc id="desc">A screenshot-style view of the Orbin Android app showing the thread viewer in thumbnail-only grid mode, alongside cards highlighting at-rest encryption and a biometric app-lock.</desc>
+  <rect width="1200" height="760" fill="#F6F7FB"/>
+
+  <!-- Left info panel -->
+  <rect x="150" y="152" width="212" height="360" rx="28" fill="#FFFFFF"/>
+  <text x="182" y="200" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="900" fill="#202431">Orbin</text>
+  <text x="182" y="230" font-family="Inter, Arial, sans-serif" font-size="15" fill="#596171">Modern image board client</text>
+  <rect x="182" y="262" width="150" height="34" rx="17" fill="#DCE6FF"/>
+  <text x="204" y="284" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 23.9</text>
+  <rect x="182" y="326" width="146" height="12" rx="6" fill="#E5E9F2"/>
+  <rect x="182" y="350" width="112" height="12" rx="6" fill="#E5E9F2"/>
+  <rect x="182" y="374" width="150" height="12" rx="6" fill="#E5E9F2"/>
+  <rect x="182" y="398" width="96" height="12" rx="6" fill="#E5E9F2"/>
+  <text x="182" y="470" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Thule release</text>
+
+  <!-- Phone frame -->
+  <rect x="412" y="42" width="376" height="676" rx="36" fill="#15161B"/>
+  <rect x="424" y="56" width="352" height="648" rx="28" fill="#FAFBFF"/>
+
+  <!-- Top app bar -->
+  <rect x="424" y="56" width="352" height="76" rx="28" fill="#EDF1FF"/>
+  <path d="M461 86L451 96L461 106" stroke="#27304D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="480" y="102" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#1D2233">Thread</text>
+  <!-- active thumbnail-grid toggle -->
+  <rect x="662" y="86" width="9" height="9" rx="2" fill="#3157B8"/>
+  <rect x="675" y="86" width="9" height="9" rx="2" fill="#3157B8"/>
+  <rect x="662" y="99" width="9" height="9" rx="2" fill="#3157B8"/>
+  <rect x="675" y="99" width="9" height="9" rx="2" fill="#3157B8"/>
+  <path d="M708 88v14M701 95h14" stroke="#5B6274" stroke-width="3" stroke-linecap="round"/>
+  <path d="M736 88a5 5 0 0 1 10 0v14l-5-4-5 4z" fill="#5B6274"/>
+
+  <!-- Thumbnail grid: 3 columns x 3 rows -->
+  <rect x="440" y="148" width="100" height="100" rx="10" fill="#C9D6F5"/>
+  <rect x="548" y="148" width="100" height="100" rx="10" fill="#D7E7D8"/>
+  <rect x="656" y="148" width="100" height="100" rx="10" fill="#F3D9C7"/>
+  <circle cx="706" cy="198" r="16" fill="#15161B" fill-opacity="0.55"/>
+  <path d="M701 190l12 8-12 8z" fill="#FFFFFF"/>
+
+  <rect x="440" y="256" width="100" height="100" rx="10" fill="#E5D4F0"/>
+  <rect x="548" y="256" width="100" height="100" rx="10" fill="#CDE7EE"/>
+  <rect x="656" y="256" width="100" height="100" rx="10" fill="#F5D6DE"/>
+
+  <rect x="440" y="364" width="100" height="100" rx="10" fill="#DCE6FF"/>
+  <circle cx="490" cy="414" r="16" fill="#15161B" fill-opacity="0.55"/>
+  <path d="M485 406l12 8-12 8z" fill="#FFFFFF"/>
+  <rect x="548" y="364" width="100" height="100" rx="10" fill="#E8F0D8"/>
+  <rect x="656" y="364" width="100" height="100" rx="10" fill="#F0E2CE"/>
+
+  <rect x="440" y="472" width="100" height="100" rx="10" fill="#D7E2F7"/>
+  <rect x="548" y="472" width="100" height="100" rx="10" fill="#EBDCEF"/>
+  <rect x="656" y="472" width="100" height="100" rx="10" fill="#D8ECE4"/>
+
+  <!-- Right feature cards -->
+  <rect x="824" y="128" width="216" height="140" rx="24" fill="#FFFFFF"/>
+  <path d="M853 156a9 9 0 0 1 18 0v8" stroke="#274B9F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="849" y="164" width="26" height="20" rx="4" fill="#274B9F"/>
+  <circle cx="862" cy="173" r="2.6" fill="#FFFFFF"/>
+  <text x="850" y="210" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="#202431">Encrypted at rest</text>
+  <text x="850" y="230" font-family="Inter, Arial, sans-serif" font-size="12.5" fill="#596171">Database &amp; settings on device</text>
+  <rect x="850" y="240" width="158" height="26" rx="13" fill="#E8F6EF"/>
+  <text x="866" y="257" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#226642">AES-256 · Keystore</text>
+
+  <rect x="824" y="292" width="216" height="140" rx="24" fill="#FFFFFF"/>
+  <circle cx="862" cy="322" r="12" fill="none" stroke="#274B9F" stroke-width="2.5"/>
+  <circle cx="862" cy="322" r="7" fill="none" stroke="#274B9F" stroke-width="2.5"/>
+  <circle cx="862" cy="322" r="2.6" fill="#274B9F"/>
+  <text x="850" y="374" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="#202431">Biometric app-lock</text>
+  <text x="850" y="394" font-family="Inter, Arial, sans-serif" font-size="12.5" fill="#596171">Keystore-gated unlock</text>
+  <rect x="850" y="404" width="164" height="26" rx="13" fill="#DCE6FF"/>
+  <text x="866" y="421" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#274B9F">CryptoObject verified</text>
+</svg>

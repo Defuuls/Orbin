@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- **Encryption at rest:** the local database (history, bookmarks, downloads, recent searches) is
+  now encrypted with SQLCipher, and app settings are stored in an encrypted DataStore. Both are
+  protected by a hardware-backed Android Keystore key that never leaves the TEE/StrongBox, so a
+  copy of the app's data directory yields only ciphertext.
+
+### Changed
+- **One-time data reset:** because encryption changes the on-disk format, existing history,
+  bookmarks, downloads, and settings — **including favorites and subscriptions** — are reset once
+  when updating to this version.
+
 ## [23.9] - 2026-07-04
 
 ### Changed

@@ -5,9 +5,11 @@ Jetpack Compose, and Material 3. Orbin targets **Android 15+ (API 35+)** and is 
 a strict, modular Clean Architecture so that supporting a new image board engine is a matter of
 implementing a single interface.
 
-> **Status:** under active development. The architecture, build system, domain core, networking,
-> and the reference provider are in place; UI features and the data layer are landing
-> incrementally. See [CHANGELOG.md](CHANGELOG.md).
+> **Status:** under active development, with regular signed releases. The architecture, build
+> system, domain core, networking, media pipeline, encrypted data layer, and the reference
+> provider are in place; features continue to land incrementally. See [CHANGELOG.md](CHANGELOG.md).
+
+![Orbin thread viewer in thumbnail-grid mode, with encrypted-at-rest and biometric app-lock highlights](docs/assets/orbin-hero-screenshot.svg)
 
 ![Orbin settings screenshot](docs/assets/orbin-settings-screenshot.svg)
 
@@ -22,21 +24,28 @@ implementing a single interface.
 
 **Thread viewer**
 - Structured reply tree with quote links, quote previews, and backlinks.
-- Inline images and video, collapsible replies, thread stats, image grid.
+- Inline images and video, collapsible replies, and thread stats.
+- A thumbnail-only grid view that shows every attachment in the thread at a glance.
 - Reading history with unread indicators and scroll-position restore.
 
-**Media** *(planned/landing)*
+**Media**
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, and a native download manager.
 
 **Personalization**
 - Material 3 with dynamic color, light/dark, and AMOLED-black themes.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
+- One-handed mode that shrinks the whole UI into the bottom half of the screen for thumb reach.
 - Predictive back gesture and smooth shared-element transitions.
 
 **Privacy & security**
-- HTTPS-only networking by default, optional DNS-over-HTTPS, configurable user-agent and proxy,
-  optional certificate pinning, and encrypted local storage where appropriate.
+- **Encrypted at rest:** the local database (history, bookmarks, downloads, searches) is encrypted
+  with SQLCipher and app settings with an encrypted DataStore, both protected by a hardware-backed
+  Android Keystore key — so a copy of the app's data directory is only ciphertext.
+- **Biometric app-lock** gated on a Keystore-backed cryptographic operation (not just the prompt
+  callback), plus `FLAG_SECURE` to keep locked content out of the recents preview.
+- HTTPS-only networking enforced end-to-end, optional DNS-over-HTTPS, and a configurable
+  user-agent. Cloud backup and device-transfer of local data are disabled.
 
 ## Tech stack
 
@@ -45,7 +54,7 @@ implementing a single interface.
 | Language | Kotlin 2.0 (K2), Coroutines, Flow/StateFlow, Serialization |
 | UI | Jetpack Compose, Material 3, Navigation Compose, Paging 3 |
 | DI | Hilt |
-| Persistence | Room, DataStore |
+| Persistence | Room + SQLCipher, encrypted DataStore |
 | Networking | OkHttp + Retrofit, kotlinx.serialization |
 | Media | Coil 3 (images), Media3/ExoPlayer (video) |
 | Background | WorkManager |
