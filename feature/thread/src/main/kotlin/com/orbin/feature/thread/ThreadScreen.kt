@@ -11,11 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,8 +35,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,6 +70,7 @@ fun ThreadScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
+    var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
 
     Scaffold(
         topBar = {
@@ -73,6 +82,31 @@ fun ThreadScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            layoutMode =
+                                if (layoutMode == ThreadLayoutMode.Posts) {
+                                    ThreadLayoutMode.ThumbnailGrid
+                                } else {
+                                    ThreadLayoutMode.Posts
+                                }
+                        },
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (layoutMode == ThreadLayoutMode.Posts) {
+                                    Icons.Filled.GridView
+                                } else {
+                                    Icons.Filled.ViewAgenda
+                                },
+                            contentDescription =
+                                if (layoutMode == ThreadLayoutMode.Posts) {
+                                    "Show thumbnails only"
+                                } else {
+                                    "Show posts"
+                                },
+                        )
+                    }
                     IconButton(onClick = viewModel::downloadAllMedia) {
                         Icon(Icons.Filled.Download, contentDescription = "Download all media")
                     }
@@ -97,6 +131,7 @@ fun ThreadScreen(
             is ThreadUiState.Success ->
                 ThreadContent(
                     thread = state.thread,
+                    layoutMode = layoutMode,
                     onOpenMedia = onOpenMedia,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
@@ -108,6 +143,35 @@ fun ThreadScreen(
 
 @Composable
 private fun ThreadContent(
+    thread: Thread,
+    layoutMode: ThreadLayoutMode,
+    onOpenMedia: (Int) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    when (layoutMode) {
+        ThreadLayoutMode.Posts ->
+            PostListContent(
+                thread = thread,
+                onOpenMedia = onOpenMedia,
+                mediaScrollIndex = mediaScrollIndex,
+                onMediaScrollConsumed = onMediaScrollConsumed,
+                modifier = modifier,
+            )
+        ThreadLayoutMode.ThumbnailGrid ->
+            ThumbnailGridContent(
+                thread = thread,
+                onOpenMedia = onOpenMedia,
+                mediaScrollIndex = mediaScrollIndex,
+                onMediaScrollConsumed = onMediaScrollConsumed,
+                modifier = modifier,
+            )
+    }
+}
+
+@Composable
+private fun PostListContent(
     thread: Thread,
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
@@ -170,6 +234,39 @@ private fun ThreadContent(
                 onQuoteClick = onQuoteClick,
                 onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
             )
+        }
+    }
+}
+
+@Composable
+private fun ThumbnailGridContent(
+    thread: Thread,
+    onOpenMedia: (Int) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(mediaScrollIndex) {
+        val target = mediaScrollIndex ?: return@LaunchedEffect
+        gridState.animateScrollToItem(target)
+        onMediaScrollConsumed()
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(THUMBNAIL_GRID_CELL_MIN_SIZE_DP.dp),
+        modifier = modifier,
+        state = gridState,
+        contentPadding =
+            androidx.compose.foundation.layout
+                .PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        items(count = attachments.size, key = { attachments[it].id }) { index ->
+            MediaThumbnail(attachment = attachments[index], onClick = { onOpenMedia(index) })
         }
     }
 }
@@ -268,3 +365,11 @@ private fun Backlinks(
         }
     }
 }
+
+private enum class ThreadLayoutMode {
+    Posts,
+    ThumbnailGrid,
+}
+
+// Matches MediaThumbnail's fixed inner image size so grid cells don't crop or letterbox it.
+private const val THUMBNAIL_GRID_CELL_MIN_SIZE_DP = 120
