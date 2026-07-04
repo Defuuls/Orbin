@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [23.6] - 2026-07-04
+
+### Changed
+- **Release:** prepare the v23.6 release for the Lyonesse milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [23.5] - 2026-07-04
 
 ### Changed
@@ -226,7 +232,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.5...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.6...HEAD
+[23.6]: https://github.com/Defuuls/Orbin/compare/v23.5...v23.6
 [23.5]: https://github.com/Defuuls/Orbin/compare/v23.4...v23.5
 [23.4]: https://github.com/Defuuls/Orbin/compare/v23.3...v23.4
 [23.3]: https://github.com/Defuuls/Orbin/compare/v23.1...v23.3
