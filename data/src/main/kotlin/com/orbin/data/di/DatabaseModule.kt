@@ -25,6 +25,10 @@ object DatabaseModule {
     fun providesDatabase(
         @ApplicationContext context: Context,
     ): OrbinDatabase {
+        // sqlcipher-android does not auto-load its native library the way the older
+        // android-database-sqlcipher artifact did; without this, SupportOpenHelperFactory's first
+        // open throws UnsatisfiedLinkError on nativeOpen.
+        System.loadLibrary("sqlcipher")
         val (passphrase, wipeDatabase) = DatabasePassphrase(context).resolve()
         if (wipeDatabase) {
             // No usable passphrase existed yet: either a pre-encryption install left a plaintext
