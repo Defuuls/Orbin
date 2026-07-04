@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [24.0] - 2026-07-04
+
+### Changed
+- **Release:** prepare the v24.0 release for the Elysium milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ### Security
 - **Encryption at rest:** the local database (history, bookmarks, downloads, recent searches) is
   now encrypted with SQLCipher, and app settings are stored in an encrypted DataStore. Both are
@@ -266,7 +272,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v23.9...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v24.0...HEAD
+[24.0]: https://github.com/Defuuls/Orbin/compare/v23.9...v24.0
 [23.9]: https://github.com/Defuuls/Orbin/compare/v23.8...v23.9
 [23.8]: https://github.com/Defuuls/Orbin/compare/v23.7...v23.8
 [23.7]: https://github.com/Defuuls/Orbin/compare/v23.6...v23.7
