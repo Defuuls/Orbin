@@ -21,7 +21,7 @@ paging = "3.3.5"
 pagingCompose = "3.3.5"
 
 # DI
-hilt = "2.53.1"
+hilt = "2.60"
 hiltNavigationCompose = "1.2.0"
 
 # Persistence
