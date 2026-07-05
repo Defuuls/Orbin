@@ -133,6 +133,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.onboardingCompleted] = completed }
         }
 
+        override suspend fun setActiveProviderId(id: ProviderId) {
+            edit { it[Keys.activeProviderId] = id.value }
+        }
+
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
             dataStore.data.map { preferences ->
                 preferences[Keys.favoriteBoards(provider)].orEmpty().map(::BoardId).toSet()
@@ -224,6 +228,7 @@ class SettingsRepositoryImpl
                 httpsOnly = true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
+                activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
 
@@ -265,6 +270,7 @@ class SettingsRepositoryImpl
             val dohProvider = stringPreferencesKey("doh_provider")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
+            val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =

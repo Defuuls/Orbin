@@ -48,9 +48,10 @@ fun HomeScreen(
     val favoriteBoardIds by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val openBoard: (Board) -> Unit = { board ->
-        onOpenBoard(viewModel.providerId, board.id.value, board.title)
+        onOpenBoard(providerId, board.id.value, board.title)
     }
 
     Scaffold(

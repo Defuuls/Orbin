@@ -69,6 +69,7 @@ fun SubscribedFeedScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val providerId by viewModel.providerId.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -101,7 +102,7 @@ fun SubscribedFeedScreen(
                         EmptySubscribedFeed(onOpenBoards = onOpenBoards, onOpenSettings = onOpenSettings)
                     } else {
                         SubscribedFeedList(
-                            providerId = viewModel.providerId,
+                            providerId = providerId,
                             feeds = state.boards,
                             mutedTags = settings.mutedTagTokens(),
                             thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,

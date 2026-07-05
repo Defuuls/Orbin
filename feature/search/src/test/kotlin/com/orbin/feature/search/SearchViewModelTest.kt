@@ -15,6 +15,7 @@ import com.orbin.core.testing.repository.FakeBoardRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -89,12 +90,16 @@ class SearchViewModelTest {
     private fun createViewModel(
         repository: FakeSearchRepository,
         settings: AppSettings = AppSettings.Default,
-    ): SearchViewModel =
-        SearchViewModel(
+    ): SearchViewModel {
+        val registry = FakeProviderRegistry()
+        val settingsRepository = FakeSettingsRepository(settings)
+        return SearchViewModel(
             searchRepository = repository,
             boardRepository = FakeBoardRepository(),
             boardPreferencesRepository = FakeBoardPreferencesRepository(),
-            settingsRepository = FakeSettingsRepository(settings),
-            registry = FakeProviderRegistry(),
+            settingsRepository = settingsRepository,
+            registry = registry,
+            observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
         )
+    }
 }

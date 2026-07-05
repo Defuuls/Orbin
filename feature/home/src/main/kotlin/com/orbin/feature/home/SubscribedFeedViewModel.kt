@@ -8,11 +8,12 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.ProviderId
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +27,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
@@ -57,12 +60,19 @@ class SubscribedFeedViewModel
     @Inject
     constructor(
         registry: ProviderRegistry,
+        observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
         settingsRepository: SettingsRepository,
     ) : ViewModel() {
-        private val provider = registry.default()
-        val providerId: String = provider.metadata.id.value
+        private val activeProvider: StateFlow<ImageBoardProvider> =
+            observeActiveProvider()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
+
+        val providerId: StateFlow<String> =
+            activeProvider
+                .map { it.metadata.id.value }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, activeProvider.value.metadata.id.value)
 
         private val refreshRequests = MutableStateFlow(0)
 
@@ -71,17 +81,20 @@ class SubscribedFeedViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
         val uiState: StateFlow<SubscribedFeedUiState> =
-            boardPreferencesRepository
-                .observeSubscribedBoards(provider.metadata.id)
-                .flatMapLatest { subscribedIds ->
-                    combine(
-                        boardRepository.observeBoards(provider.metadata.id),
-                        observeThreadLimitOverrides(subscribedIds),
-                        settings,
-                        refreshRequests,
-                    ) { boards, limitOverrides, settings, _ ->
-                        loadSubscribedFeeds(boards, subscribedIds, limitOverrides, settings)
-                    }
+            activeProvider
+                .flatMapLatest { provider ->
+                    boardPreferencesRepository
+                        .observeSubscribedBoards(provider.metadata.id)
+                        .flatMapLatest { subscribedIds ->
+                            combine(
+                                boardRepository.observeBoards(provider.metadata.id),
+                                observeThreadLimitOverrides(provider, subscribedIds),
+                                settings,
+                                refreshRequests,
+                            ) { boards, limitOverrides, settings, _ ->
+                                loadSubscribedFeeds(provider, boards, subscribedIds, limitOverrides, settings)
+                            }
+                        }
                 }.stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -89,12 +102,12 @@ class SubscribedFeedViewModel
                 )
 
         init {
-            refresh()
+            activeProvider.onEach { refresh() }.launchIn(viewModelScope)
         }
 
         fun refresh() {
             viewModelScope.launch {
-                boardRepository.refreshBoards(provider.metadata.id)
+                boardRepository.refreshBoards(activeProvider.value.metadata.id)
                 refreshRequests.value += 1
             }
         }
@@ -104,11 +117,14 @@ class SubscribedFeedViewModel
             limit: FeedThreadLimit?,
         ) {
             viewModelScope.launch {
-                boardPreferencesRepository.setFeedThreadLimit(provider.metadata.id, board, limit)
+                boardPreferencesRepository.setFeedThreadLimit(activeProvider.value.metadata.id, board, limit)
             }
         }
 
-        private fun observeThreadLimitOverrides(subscribedIds: Set<BoardId>): Flow<Map<BoardId, FeedThreadLimit?>> {
+        private fun observeThreadLimitOverrides(
+            provider: ImageBoardProvider,
+            subscribedIds: Set<BoardId>,
+        ): Flow<Map<BoardId, FeedThreadLimit?>> {
             if (subscribedIds.isEmpty()) return flowOf(emptyMap())
             return combine(
                 subscribedIds.map { id ->
@@ -120,6 +136,7 @@ class SubscribedFeedViewModel
         }
 
         private suspend fun loadSubscribedFeeds(
+            provider: ImageBoardProvider,
             boards: List<Board>,
             subscribedIds: Set<BoardId>,
             limitOverrides: Map<BoardId, FeedThreadLimit?>,
@@ -150,6 +167,7 @@ class SubscribedFeedViewModel
                                     val threads =
                                         requestLimit.withPermit {
                                             loadBoardThreads(
+                                                provider,
                                                 board,
                                                 override,
                                                 settings,
@@ -166,11 +184,12 @@ class SubscribedFeedViewModel
         }
 
         private suspend fun loadBoardThreads(
+            provider: ImageBoardProvider,
             board: Board,
             limitOverride: FeedThreadLimit?,
             settings: AppSettings,
         ): ImmutableList<CatalogThread> {
-            val catalog = provider.getCatalog(CatalogRequest(ProviderId(providerId), board.id))
+            val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
             val effectiveLimit = limitOverride ?: settings.feedThreadLimit
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
                 .filterNot { thread -> thread.matchesAny(settings.hiddenTagTokens()) }
