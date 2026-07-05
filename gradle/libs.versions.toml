@@ -59,7 +59,7 @@ roborazzi = "1.60.0"
 
 # Quality
 detekt = "1.23.7"
-ktlintGradle = "12.1.2"
+ktlintGradle = "14.2.0"
 
 [libraries]
 # AndroidX
