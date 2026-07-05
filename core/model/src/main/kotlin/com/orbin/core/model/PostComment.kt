@@ -63,8 +63,16 @@ data class PostComment(
             out: MutableList<String>,
         ) {
             plainTextUrlRegex.findAll(text).forEach { match ->
-                out.add(normalizePlainTextUrl(match.value.trimEnd(*trailingUrlPunctuation)))
+                out.add(normalizePlainTextUrl(trimTrailingUrlPunctuation(match.value)))
             }
+        }
+
+        private fun trimTrailingUrlPunctuation(url: String): String {
+            var end = url.length
+            while (end > 0 && url[end - 1] in trailingUrlPunctuation) {
+                end -= 1
+            }
+            return url.substring(0, end)
         }
 
         private fun normalizePlainTextUrl(url: String): String =
