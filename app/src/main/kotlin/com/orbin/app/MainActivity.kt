@@ -356,21 +356,25 @@ private fun AppContent(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
-                when {
-                    !ready -> Unit
-                    shouldLock && !unlocked ->
-                        LockedScreen(
-                            message = unlockMessage,
-                            unlocking = authenticationInProgress,
-                            allowContinueWithoutLock = allowContinueWithoutLock,
-                            onRetry = onRetryUnlock,
-                            onContinueWithoutLock = onContinueWithoutLock,
-                        )
-                    // Wait for the first persisted snapshot so onboarding gating is correct.
-                    else ->
-                        OrbinAppProviders {
-                            OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
-                        }
+                if (ready) {
+                    OrbinAppProviders {
+                        OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
+                    }
+                }
+            }
+
+            if (ready && shouldLock && !unlocked) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    LockedScreen(
+                        message = unlockMessage,
+                        unlocking = authenticationInProgress,
+                        allowContinueWithoutLock = allowContinueWithoutLock,
+                        onRetry = onRetryUnlock,
+                        onContinueWithoutLock = onContinueWithoutLock,
+                    )
                 }
             }
         }

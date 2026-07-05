@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
@@ -239,7 +239,10 @@ private fun PostListContent(
             }
         }
     val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
-    val listState = rememberLazyListState()
+    val listState =
+        rememberSaveable(thread.key, saver = LazyListState.Saver) {
+            LazyListState()
+        }
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
 
