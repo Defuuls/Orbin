@@ -4,6 +4,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
 import kotlinx.coroutines.flow.Flow
 
@@ -52,4 +53,6 @@ interface SettingsRepository {
     suspend fun setUserAgent(userAgent: String)
 
     suspend fun setOnboardingCompleted(completed: Boolean)
+
+    suspend fun setActiveProviderId(id: ProviderId)
 }

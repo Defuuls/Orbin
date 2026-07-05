@@ -10,18 +10,23 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.ThreadRepository
+import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.media.preload.MediaPreloader
+import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
-import com.orbin.provider.api.require
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -45,19 +50,27 @@ data class GalleryBrowserUiState(
 class GalleryBrowserViewModel
     @Inject
     constructor(
-        private val providerRegistry: ProviderRegistry,
+        providerRegistry: ProviderRegistry,
+        observeActiveProvider: ObserveActiveProviderUseCase,
         private val threadRepository: ThreadRepository,
         private val mediaPreloader: MediaPreloader,
     ) : ViewModel() {
-        private val provider = providerRegistry.default()
-        private val providerId = provider.metadata.id
+        private val activeProvider: StateFlow<ImageBoardProvider> =
+            observeActiveProvider()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, providerRegistry.default())
         private var threadJob: Job? = null
 
-        private val _uiState = MutableStateFlow(GalleryBrowserUiState(provider = providerId))
+        private val _uiState =
+            MutableStateFlow(GalleryBrowserUiState(provider = activeProvider.value.metadata.id))
         val uiState: StateFlow<GalleryBrowserUiState> = _uiState.asStateFlow()
 
         init {
-            loadBoards()
+            activeProvider
+                .onEach { provider ->
+                    threadJob?.cancel()
+                    _uiState.value = GalleryBrowserUiState(provider = provider.metadata.id)
+                    loadBoards(provider)
+                }.launchIn(viewModelScope)
         }
 
         fun selectBoard(board: Board) {
@@ -72,7 +85,7 @@ class GalleryBrowserViewModel
                     message = null,
                 )
             }
-            loadThreads(board)
+            loadThreads(activeProvider.value, board)
         }
 
         fun selectThread(thread: CatalogThread) {
@@ -94,6 +107,7 @@ class GalleryBrowserViewModel
                         message = null,
                     )
                 }
+                val providerId = activeProvider.value.metadata.id
                 when (val result = threadRepository.refreshThread(providerId, thread.key.board, thread.key.thread)) {
                     is OrbinResult.Success -> {
                         val media =
@@ -143,9 +157,9 @@ class GalleryBrowserViewModel
             }
         }
 
-        private fun loadBoards() {
+        private fun loadBoards(provider: ImageBoardProvider) {
             viewModelScope.launch {
-                runCatching { providerRegistry.require(providerId).getBoards() }
+                runCatching { provider.getBoards() }
                     .onSuccess { boards ->
                         val selected = boards.firstOrNull()
                         _uiState.update {
@@ -157,7 +171,7 @@ class GalleryBrowserViewModel
                                 message = if (selected == null) "No boards available" else null,
                             )
                         }
-                        if (selected != null) loadThreads(selected)
+                        if (selected != null) loadThreads(provider, selected)
                     }.onFailure { error ->
                         _uiState.update {
                             it.copy(loadingBoards = false, message = error.message ?: "Unable to load boards")
@@ -166,9 +180,12 @@ class GalleryBrowserViewModel
             }
         }
 
-        private fun loadThreads(board: Board) {
+        private fun loadThreads(
+            provider: ImageBoardProvider,
+            board: Board,
+        ) {
             viewModelScope.launch {
-                runCatching { provider.getCatalog(CatalogRequest(providerId, board.id)) }
+                runCatching { provider.getCatalog(CatalogRequest(provider.metadata.id, board.id)) }
                     .onSuccess { threads ->
                         val selected =
                             threads.firstOrNull { it.originalPost.attachments.isNotEmpty() } ?: threads.firstOrNull()

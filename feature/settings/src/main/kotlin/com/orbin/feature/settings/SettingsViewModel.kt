@@ -6,14 +6,20 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.provider.api.ProviderMetadata
+import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,10 +33,25 @@ class SettingsViewModel
         private val historyRepository: HistoryRepository,
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
+        registry: ProviderRegistry,
     ) : ViewModel() {
         val settings: StateFlow<AppSettings> =
             repository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+
+        /** All registered providers the user can pick as active, in display order. */
+        val providers: ImmutableList<ProviderMetadata> = registry.all().map { it.metadata }.toImmutableList()
+
+        private val defaultProviderMetadata: ProviderMetadata = registry.default().metadata
+
+        /** The provider currently selected as active, resolved against [providers]. */
+        val activeProvider: StateFlow<ProviderMetadata> =
+            settings
+                .map { appSettings ->
+                    providers.firstOrNull { it.id.value == appSettings.activeProviderId } ?: defaultProviderMetadata
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), defaultProviderMetadata)
+
+        fun setActiveProvider(id: ProviderId) = update { repository.setActiveProviderId(id) }
 
         fun setPersonalizedHomeFeed(enabled: Boolean) = update { repository.setPersonalizedHomeFeed(enabled) }
 

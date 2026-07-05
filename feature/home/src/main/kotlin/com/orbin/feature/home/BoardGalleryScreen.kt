@@ -56,8 +56,9 @@ fun BoardGalleryScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     val openBoard: (Board) -> Unit = { board ->
-        onOpenBoard(viewModel.providerId, board.id.value, board.title)
+        onOpenBoard(providerId, board.id.value, board.title)
     }
 
     Scaffold(

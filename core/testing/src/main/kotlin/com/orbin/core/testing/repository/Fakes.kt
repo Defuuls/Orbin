@@ -228,6 +228,10 @@ class FakeSettingsRepository(
         update { copy(onboardingCompleted = completed) }
     }
 
+    override suspend fun setActiveProviderId(id: ProviderId) {
+        update { copy(activeProviderId = id.value) }
+    }
+
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }
     }

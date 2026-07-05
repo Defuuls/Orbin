@@ -7,10 +7,11 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
-import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -19,7 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,26 +51,27 @@ class OnboardingViewModel
     @Inject
     constructor(
         registry: ProviderRegistry,
+        observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
         private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
-        private val provider = registry.default()
-
-        private val providerId: String = provider.metadata.id.value
+        private val activeProvider: StateFlow<ImageBoardProvider> =
+            observeActiveProvider()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
 
         private val _boards = MutableStateFlow<OnboardingBoardsState>(OnboardingBoardsState.Loading)
         val boards: StateFlow<OnboardingBoardsState> = _boards.asStateFlow()
 
         val subscribedBoardIds: StateFlow<Set<String>> =
-            boardPreferencesRepository
-                .observeSubscribedBoards(provider.metadata.id)
+            activeProvider
+                .flatMapLatest { provider -> boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id) }
                 .map { ids -> ids.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val favoriteBoardIds: StateFlow<Set<String>> =
-            boardPreferencesRepository
-                .observeFavoriteBoards(provider.metadata.id)
+            activeProvider
+                .flatMapLatest { provider -> boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id) }
                 .map { ids -> ids.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
@@ -75,14 +80,14 @@ class OnboardingViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
         init {
-            loadBoards()
+            activeProvider.onEach { loadBoards() }.launchIn(viewModelScope)
         }
 
         fun loadBoards() {
             viewModelScope.launch {
                 _boards.value = OnboardingBoardsState.Loading
                 _boards.value =
-                    when (val result = boardRepository.refreshBoards(provider.metadata.id)) {
+                    when (val result = boardRepository.refreshBoards(activeProvider.value.metadata.id)) {
                         is OrbinResult.Success -> OnboardingBoardsState.Success(result.data.toImmutableList())
                         is OrbinResult.Failure -> OnboardingBoardsState.Error(result.error.message)
                     }
@@ -93,14 +98,18 @@ class OnboardingViewModel
             boardId: String,
             subscribed: Boolean,
         ) = update {
-            boardPreferencesRepository.setSubscribedBoard(ProviderId(providerId), BoardId(boardId), subscribed)
+            boardPreferencesRepository.setSubscribedBoard(
+                activeProvider.value.metadata.id,
+                BoardId(boardId),
+                subscribed,
+            )
         }
 
         fun setFavorite(
             boardId: String,
             favorite: Boolean,
         ) = update {
-            boardPreferencesRepository.setFavoriteBoard(ProviderId(providerId), BoardId(boardId), favorite)
+            boardPreferencesRepository.setFavoriteBoard(activeProvider.value.metadata.id, BoardId(boardId), favorite)
         }
 
         fun setThemeMode(mode: AppThemeMode) = update { settingsRepository.setThemeMode(mode) }

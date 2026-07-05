@@ -14,6 +14,8 @@ import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -22,7 +24,10 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -37,8 +42,11 @@ class SearchViewModel
         boardPreferencesRepository: BoardPreferencesRepository,
         settingsRepository: SettingsRepository,
         registry: ProviderRegistry,
+        observeActiveProvider: ObserveActiveProviderUseCase,
     ) : ViewModel() {
-        private val providerId = registry.default().metadata.id
+        private val activeProvider: StateFlow<ImageBoardProvider> =
+            observeActiveProvider()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
 
         val recentQueries: StateFlow<ImmutableList<String>> =
             searchRepository
@@ -47,15 +55,18 @@ class SearchViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
         val subscribedBoards: StateFlow<ImmutableList<Board>> =
-            combine(
-                boardRepository.observeBoards(providerId),
-                boardPreferencesRepository.observeSubscribedBoards(providerId),
-            ) { boards, subscribedIds ->
-                boards
-                    .filter { it.id in subscribedIds }
-                    .sortedBy { it.id.value }
-                    .toImmutableList()
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+            activeProvider
+                .flatMapLatest { provider ->
+                    combine(
+                        boardRepository.observeBoards(provider.metadata.id),
+                        boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                    ) { boards, subscribedIds ->
+                        boards
+                            .filter { it.id in subscribedIds }
+                            .sortedBy { it.id.value }
+                            .toImmutableList()
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
         val saveRecentSearches: StateFlow<Boolean> =
             settingsRepository.settings
@@ -66,7 +77,9 @@ class SearchViewModel
         val state: StateFlow<SearchUiState> = _state
 
         init {
-            viewModelScope.launch { boardRepository.refreshBoards(providerId) }
+            activeProvider
+                .onEach { provider -> boardRepository.refreshBoards(provider.metadata.id) }
+                .launchIn(viewModelScope)
         }
 
         fun search(
@@ -122,7 +135,7 @@ class SearchViewModel
             contentTypes: Set<SearchContentType>,
         ): SearchQuery =
             SearchQuery(
-                provider = providerId,
+                provider = activeProvider.value.metadata.id,
                 text = text,
                 scope = SearchScope.BOARD_CATALOG,
                 board = board,

@@ -44,6 +44,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.provider.api.ProviderMetadata
 
 private const val FONT_SCALE_SMALL = 0.9f
 private const val FONT_SCALE_DEFAULT = 1f
@@ -61,6 +62,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val activeProvider by viewModel.activeProvider.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showClearLocalActivityDialog by remember { mutableStateOf(false) }
     val folderPicker =
@@ -89,6 +91,17 @@ fun SettingsScreen(
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
         ) {
+            if (viewModel.providers.size > 1) {
+                SectionHeader("Site")
+                ChoiceRow(
+                    label = "Active provider",
+                    values = viewModel.providers,
+                    selected = activeProvider,
+                    text = ProviderMetadata::displayName,
+                    onChange = { metadata -> viewModel.setActiveProvider(metadata.id) },
+                )
+            }
+
             SectionHeader("Content")
             SwitchRow(
                 "Personalized home feed",
