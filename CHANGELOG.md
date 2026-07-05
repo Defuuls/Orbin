@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [24.3] - 2026-07-05
+
+### Changed
+- **Release:** prepare the v24.3 release for the Truckin' milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [24.2] - 2026-07-05
 
 ### Changed
