@@ -117,7 +117,7 @@ class ThreadViewModel
                     if (saved) {
                         "Saved ${links.size} link${if (links.size == 1) "" else "s"} to $fileName"
                     } else {
-                        "Couldn't save links — set a download folder in Settings first"
+                        "Couldn't save links to the saved media folder"
                     }
             }
         }

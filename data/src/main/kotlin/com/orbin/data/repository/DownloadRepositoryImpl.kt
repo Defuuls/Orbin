@@ -1,10 +1,12 @@
 package com.orbin.data.repository
 
 import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.DownloadRecord
@@ -163,7 +165,9 @@ class DownloadRepositoryImpl
         ): Boolean =
             withContext(ioDispatcher) {
                 val folderUri = settingsRepository.settings.first().downloadFolderUri
-                if (folderUri.isBlank()) return@withContext false
+                if (folderUri.isBlank()) {
+                    return@withContext writeTextToDefaultDownloads(fileName, content)
+                }
                 val target =
                     DocumentsContract.createDocument(
                         context.contentResolver,
@@ -177,6 +181,32 @@ class DownloadRepositoryImpl
                     } ?: error("Unable to open selected folder")
                 }.isSuccess
             }
+
+        private fun writeTextToDefaultDownloads(
+            fileName: String,
+            content: String,
+        ): Boolean {
+            val safeName = sanitizeFileName(fileName)
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, safeName)
+                    put(MediaStore.Downloads.MIME_TYPE, MIME_TEXT_PLAIN)
+                    put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/Orbin")
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+            val resolver = context.contentResolver
+            val target = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+            return runCatching {
+                resolver.openOutputStream(target)?.use { output ->
+                    output.write(content.toByteArray())
+                } ?: error("Unable to open default downloads folder")
+                ContentValues()
+                    .apply { put(MediaStore.Downloads.IS_PENDING, 0) }
+                    .also { resolver.update(target, it, null, null) }
+            }.onFailure {
+                resolver.delete(target, null, null)
+            }.isSuccess
+        }
 
         private fun queryStatus(id: Long): DownloadStatus {
             downloadManager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
