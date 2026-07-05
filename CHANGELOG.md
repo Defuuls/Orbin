@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [25.2.1] - 2026-07-05
+
+### Fixed
+- **Thread links:** exporting thread links now saves to the configured saved media folder,
+  falling back to `Downloads/Orbin` when the default save location is active.
+
+### Changed
+- **Release:** prepare the v25.2.1 release for the Cleopatra milestone.
+- **Release naming:** continue famous-seductress codenames for release milestones.
+
 ## [25.2] - 2026-07-05
 
 ### Changed
@@ -344,7 +354,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v25.2...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v25.2.1...HEAD
+[25.2.1]: https://github.com/Defuuls/Orbin/compare/v25.2...v25.2.1
 [25.2]: https://github.com/Defuuls/Orbin/compare/v25.1...v25.2
 [25.1]: https://github.com/Defuuls/Orbin/compare/v25.0...v25.1
 [25.0]: https://github.com/Defuuls/Orbin/compare/v24.4...v25.0

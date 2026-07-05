@@ -23,8 +23,8 @@ interface DownloadRepository {
     suspend fun clearHistory()
 
     /**
-     * Writes [content] as a text file named [fileName] into the user's configured download
-     * folder. Returns false if no folder is configured (Settings > "Saved media folder") or the
+     * Writes [content] as a text file named [fileName] into the user's configured download folder,
+     * falling back to Downloads/Orbin when no custom folder is configured. Returns false if the
      * write fails.
      */
     suspend fun writeTextFile(
