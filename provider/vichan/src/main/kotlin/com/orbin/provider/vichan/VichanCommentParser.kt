@@ -278,7 +278,11 @@ object VichanCommentParser {
             "#39" to "'",
         )
 
-    private fun decodeEntities(input: String): String {
+    /**
+     * Decodes the small set of HTML entities vichan/4chan engines emit, in any free-text field
+     * (comment body, subject, poster name, board title/description) - not just parsed comments.
+     */
+    internal fun decodeEntities(input: String): String {
         if ('&' !in input) return input
         return buildString(input.length) {
             var i = 0

@@ -27,6 +27,7 @@ import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 /** Minimal [ImageBoardProvider] for tests; only metadata/capabilities and search are meaningful. */
@@ -104,6 +105,8 @@ class FakeBoardPreferencesRepository(
     private val subscribed: Set<BoardId> = setOf(BoardId("g")),
     private val favorites: Set<BoardId> = emptySet(),
 ) : BoardPreferencesRepository {
+    private val threadLimits = MutableStateFlow<Map<BoardId, FeedThreadLimit?>>(emptyMap())
+
     override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(favorites)
 
     override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(subscribed)
@@ -119,6 +122,19 @@ class FakeBoardPreferencesRepository(
         board: BoardId,
         subscribed: Boolean,
     ) = Unit
+
+    override fun observeFeedThreadLimit(
+        provider: ProviderId,
+        board: BoardId,
+    ): Flow<FeedThreadLimit?> = threadLimits.map { it[board] }
+
+    override suspend fun setFeedThreadLimit(
+        provider: ProviderId,
+        board: BoardId,
+        limit: FeedThreadLimit?,
+    ) {
+        threadLimits.update { it + (board to limit) }
+    }
 }
 
 class FakeSettingsRepository(
