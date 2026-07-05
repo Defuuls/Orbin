@@ -108,4 +108,10 @@ class VichanCommentParserTest {
         val links = VichanCommentParser.parse(html).externalLinks
         assertThat(links).containsExactly("https://example.org", "https://example.com")
     }
+
+    @Test
+    fun `externalLinks includes non-hyperlinked plain text urls`() {
+        val links = VichanCommentParser.parse("check https://example.org/a and www.example.com.").externalLinks
+        assertThat(links).containsExactly("https://example.org/a", "https://www.example.com")
+    }
 }
