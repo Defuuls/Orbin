@@ -109,4 +109,14 @@ class LynxChanCommentParserTest {
         val quoted = parse(html).quotedPosts.map { it.value }
         assertThat(quoted).containsExactly(1L, 2L)
     }
+
+    @Test
+    fun `externalLinks aggregates all external links, excluding quote links`() {
+        val html =
+            """<a class="quoteLink" href="/bbw/res/7.html#1">&gt;&gt;1</a>""" +
+                """<a href="https://example.org">one</a>""" +
+                """<a href="https://example.com">two</a>"""
+        val links = parse(html).externalLinks
+        assertThat(links).containsExactly("https://example.org", "https://example.com")
+    }
 }

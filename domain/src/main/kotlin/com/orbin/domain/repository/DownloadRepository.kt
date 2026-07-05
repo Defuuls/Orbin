@@ -21,4 +21,14 @@ interface DownloadRepository {
     suspend fun refreshStatuses()
 
     suspend fun clearHistory()
+
+    /**
+     * Writes [content] as a text file named [fileName] into the user's configured download
+     * folder. Returns false if no folder is configured (Settings > "Saved media folder") or the
+     * write fails.
+     */
+    suspend fun writeTextFile(
+        fileName: String,
+        content: String,
+    ): Boolean
 }

@@ -98,4 +98,14 @@ class VichanCommentParserTest {
         val quoted = VichanCommentParser.parse(html).quotedPosts.map { it.value }
         assertThat(quoted).containsExactly(1L, 2L)
     }
+
+    @Test
+    fun `externalLinks aggregates all external links, excluding quote links`() {
+        val html =
+            """<a href="#p1" class="quotelink">&gt;&gt;1</a> """ +
+                """<a href="https://example.org">one</a> """ +
+                """<a href="https://example.com">two</a>"""
+        val links = VichanCommentParser.parse(html).externalLinks
+        assertThat(links).containsExactly("https://example.org", "https://example.com")
+    }
 }

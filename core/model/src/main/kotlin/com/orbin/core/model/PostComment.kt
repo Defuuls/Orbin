@@ -20,6 +20,10 @@ data class PostComment(
     val quotedPosts: List<PostId>
         get() = buildList { collectQuotes(nodes, this) }
 
+    /** External hyperlinks (`PostNode.Link.url`) found anywhere in the comment. */
+    val externalLinks: List<String>
+        get() = buildList { collectLinks(nodes, this) }
+
     companion object {
         val Empty = PostComment(raw = "", nodes = persistentListOf())
 
@@ -32,6 +36,22 @@ data class PostComment(
                     is PostNode.QuoteLink -> out.add(node.target)
                     is PostNode.Styled -> collectQuotes(node.children, out)
                     is PostNode.Link -> collectQuotes(node.children, out)
+                    else -> Unit
+                }
+            }
+        }
+
+        private fun collectLinks(
+            nodes: List<PostNode>,
+            out: MutableList<String>,
+        ) {
+            nodes.forEach { node ->
+                when (node) {
+                    is PostNode.Link -> {
+                        out.add(node.url)
+                        collectLinks(node.children, out)
+                    }
+                    is PostNode.Styled -> collectLinks(node.children, out)
                     else -> Unit
                 }
             }
