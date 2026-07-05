@@ -1,6 +1,7 @@
 package com.orbin.core.ui.post
 
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -24,13 +25,14 @@ import com.orbin.core.model.PostNode
 private const val TAG_QUOTE = "quote"
 private const val TAG_LINK = "link"
 
+private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
+private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
+
 /**
  * Renders a parsed [PostComment] as styled, clickable text. Quote links invoke [onQuoteClick];
- * external links invoke [onLinkClick]. A tap that lands on neither invokes [onClick] - callers
- * that put this inside a larger tappable row/card (e.g. a thread preview) can use it so the text
- * doesn't swallow taps meant for that outer target. The comment is converted to an
- * [AnnotatedString] once and memoized, so scrolling a long thread does not re-walk the node tree
- * every recomposition.
+ * external links invoke [onLinkClick]. Plain-text URLs are linkified too, so thread link export and
+ * in-post tapping are not limited to provider-supplied HTML anchors. Set [selectable] for full post
+ * views so long-press selection exposes the platform copy menu.
  *
  * TODO(spoiler-reveal): spoilers currently render blacked-out; add tap-to-reveal per span.
  */
@@ -38,6 +40,7 @@ private const val TAG_LINK = "link"
 fun PostCommentText(
     comment: PostComment,
     modifier: Modifier = Modifier,
+    selectable: Boolean = false,
     onQuoteClick: (PostId) -> Unit = {},
     onLinkClick: (String) -> Unit = {},
     onClick: () -> Unit = {},
@@ -50,10 +53,39 @@ fun PostCommentText(
             }
         }
 
+    if (selectable) {
+        SelectionContainer {
+            ClickablePostText(
+                annotated = annotated,
+                modifier = modifier,
+                onQuoteClick = onQuoteClick,
+                onLinkClick = onLinkClick,
+                onClick = onClick,
+            )
+        }
+    } else {
+        ClickablePostText(
+            annotated = annotated,
+            modifier = modifier,
+            onQuoteClick = onQuoteClick,
+            onLinkClick = onLinkClick,
+            onClick = onClick,
+        )
+    }
+}
+
+@Composable
+private fun ClickablePostText(
+    annotated: AnnotatedString,
+    modifier: Modifier,
+    onQuoteClick: (PostId) -> Unit,
+    onLinkClick: (String) -> Unit,
+    onClick: () -> Unit,
+) {
     ClickableText(
         text = annotated,
         modifier = modifier,
-        style = LocalTextStyle.current.copy(color = onSurface),
+        style = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
         onClick = { offset ->
             annotated.getStringAnnotations(TAG_QUOTE, offset, offset).firstOrNull()?.let {
                 it.item.toLongOrNull()?.let { id -> onQuoteClick(PostId(id)) }
@@ -68,20 +100,50 @@ fun PostCommentText(
     )
 }
 
-private fun AnnotatedString.Builder.appendNode(node: PostNode) {
+private fun AnnotatedString.Builder.appendNode(
+    node: PostNode,
+    linkifyPlainText: Boolean = true,
+) {
     when (node) {
-        is PostNode.Text -> append(node.text)
+        is PostNode.Text -> {
+            if (linkifyPlainText) {
+                appendPlainTextWithLinks(node.text)
+            } else {
+                append(node.text)
+            }
+        }
         PostNode.LineBreak -> append('\n')
         is PostNode.QuoteLink -> appendQuoteLink(node)
         is PostNode.Link -> {
-            pushStringAnnotation(TAG_LINK, node.url)
+            pushStringAnnotation(TAG_LINK, normalizePlainTextUrl(node.url))
             withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)) {
-                node.children.forEach { appendNode(it) }
+                node.children.forEach { appendNode(it, linkifyPlainText = false) }
             }
             pop()
         }
-        is PostNode.Styled -> appendStyled(node)
+        is PostNode.Styled -> appendStyled(node, linkifyPlainText)
     }
+}
+
+private fun AnnotatedString.Builder.appendPlainTextWithLinks(text: String) {
+    var nextStart = 0
+    plainTextUrlRegex.findAll(text).forEach { match ->
+        append(text.substring(nextStart, match.range.first))
+
+        val rawMatch = match.value
+        val displayUrl = rawMatch.trimEnd(*trailingUrlPunctuation)
+        val trailing = rawMatch.substring(displayUrl.length)
+
+        pushStringAnnotation(TAG_LINK, normalizePlainTextUrl(displayUrl))
+        withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)) {
+            append(displayUrl)
+        }
+        pop()
+        append(trailing)
+
+        nextStart = match.range.last + 1
+    }
+    append(text.substring(nextStart))
 }
 
 private fun AnnotatedString.Builder.appendQuoteLink(node: PostNode.QuoteLink) {
@@ -101,7 +163,10 @@ private fun AnnotatedString.Builder.appendQuoteLink(node: PostNode.QuoteLink) {
     pop()
 }
 
-private fun AnnotatedString.Builder.appendStyled(node: PostNode.Styled) {
+private fun AnnotatedString.Builder.appendStyled(
+    node: PostNode.Styled,
+    linkifyPlainText: Boolean,
+) {
     val span =
         when (node.style) {
             InlineStyle.GREENTEXT -> SpanStyle(color = GreentextColor)
@@ -115,6 +180,13 @@ private fun AnnotatedString.Builder.appendStyled(node: PostNode.Styled) {
             InlineStyle.HEADING -> SpanStyle(fontWeight = FontWeight.Bold)
         }
     withStyle(span) {
-        node.children.forEach { appendNode(it) }
+        node.children.forEach { appendNode(it, linkifyPlainText = linkifyPlainText) }
     }
 }
+
+private fun normalizePlainTextUrl(url: String): String =
+    if (url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)) {
+        url
+    } else {
+        "https://$url"
+    }
