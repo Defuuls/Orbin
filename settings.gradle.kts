@@ -46,6 +46,7 @@ include(":media")
 // Provider abstraction + implementations
 include(":provider:api")
 include(":provider:vichan")
+include(":provider:lynxchan")
 
 // Feature modules.
 include(":feature:home")
