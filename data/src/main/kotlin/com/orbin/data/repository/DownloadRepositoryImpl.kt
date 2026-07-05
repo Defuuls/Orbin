@@ -157,6 +157,27 @@ class DownloadRepositoryImpl
 
         override suspend fun clearHistory() = dao.clear()
 
+        override suspend fun writeTextFile(
+            fileName: String,
+            content: String,
+        ): Boolean =
+            withContext(ioDispatcher) {
+                val folderUri = settingsRepository.settings.first().downloadFolderUri
+                if (folderUri.isBlank()) return@withContext false
+                val target =
+                    DocumentsContract.createDocument(
+                        context.contentResolver,
+                        folderUri.toParentDocumentUri(),
+                        MIME_TEXT_PLAIN,
+                        sanitizeFileName(fileName),
+                    ) ?: return@withContext false
+                runCatching {
+                    context.contentResolver.openOutputStream(target)?.use { output ->
+                        output.write(content.toByteArray())
+                    } ?: error("Unable to open selected folder")
+                }.isSuccess
+            }
+
         private fun queryStatus(id: Long): DownloadStatus {
             downloadManager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
                 if (!cursor.moveToFirst()) return DownloadStatus.FAILED
@@ -183,6 +204,7 @@ class DownloadRepositoryImpl
             const val SKIPPED_ID = -1L
             const val MAX_FILENAME_LENGTH = 200
             const val MIME_OCTET_STREAM = "application/octet-stream"
+            const val MIME_TEXT_PLAIN = "text/plain"
             val ALLOWED_SCHEMES = setOf("https")
         }
     }

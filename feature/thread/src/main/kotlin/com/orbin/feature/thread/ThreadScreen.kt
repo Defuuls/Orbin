@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -32,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -74,14 +77,24 @@ fun ThreadScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
+    val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
     val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
     // Lets the grid toggle temporarily override the persisted default for this session, without
     // writing back to Settings.
     var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
     val thumbnailSize = thumbnailSizeOverride ?: defaultThumbnailSize
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(exportMessage) {
+        exportMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.consumeExportMessage()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(viewModel.title.ifBlank { "Thread" }, maxLines = 1) },
@@ -126,6 +139,9 @@ fun ThreadScreen(
                     }
                     IconButton(onClick = viewModel::downloadAllMedia) {
                         Icon(Icons.Filled.Download, contentDescription = "Download all media")
+                    }
+                    IconButton(onClick = viewModel::exportLinks) {
+                        Icon(Icons.Filled.Link, contentDescription = "Export links")
                     }
                     IconButton(onClick = viewModel::toggleBookmark) {
                         Icon(

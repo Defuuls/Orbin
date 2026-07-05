@@ -19,8 +19,10 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -47,6 +49,11 @@ class ThreadViewModel
         private val key = ThreadKey(provider, board, threadId)
 
         private var loadedThread: Thread? = null
+
+        private val _exportMessage = MutableStateFlow<String?>(null)
+
+        /** One-shot status message for the last [exportLinks] call; cleared via [consumeExportMessage]. */
+        val exportMessage: StateFlow<String?> = _exportMessage.asStateFlow()
 
         val uiState: StateFlow<ThreadUiState> =
             observeThread(provider, board, threadId)
@@ -93,6 +100,30 @@ class ThreadViewModel
                         )
                     }
             }
+        }
+
+        /** Exports every external link found in the thread's posts as a `.txt` file, one per line. */
+        fun exportLinks() {
+            val thread = loadedThread ?: return
+            viewModelScope.launch {
+                val links = thread.allPosts.flatMap { it.comment.externalLinks }.distinct()
+                if (links.isEmpty()) {
+                    _exportMessage.value = "No links found in this thread"
+                    return@launch
+                }
+                val fileName = "orbin_links_${board.value}_${threadId.value}.txt"
+                val saved = downloadRepository.writeTextFile(fileName, links.joinToString("\n"))
+                _exportMessage.value =
+                    if (saved) {
+                        "Saved ${links.size} link${if (links.size == 1) "" else "s"} to $fileName"
+                    } else {
+                        "Couldn't save links — set a download folder in Settings first"
+                    }
+            }
+        }
+
+        fun consumeExportMessage() {
+            _exportMessage.value = null
         }
 
         private fun onThreadLoaded(thread: Thread) {
