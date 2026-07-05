@@ -167,6 +167,27 @@ class SettingsRepositoryImpl
             }
         }
 
+        override fun observeFeedThreadLimit(
+            provider: ProviderId,
+            board: BoardId,
+        ): Flow<FeedThreadLimit?> =
+            dataStore.data.map { preferences ->
+                preferences[Keys.boardFeedThreadLimit(provider, board)]?.let {
+                    runCatching { enumValueOf<FeedThreadLimit>(it) }.getOrNull()
+                }
+            }
+
+        override suspend fun setFeedThreadLimit(
+            provider: ProviderId,
+            board: BoardId,
+            limit: FeedThreadLimit?,
+        ) {
+            edit { preferences ->
+                val key = Keys.boardFeedThreadLimit(provider, board)
+                if (limit != null) preferences[key] = limit.name else preferences.remove(key)
+            }
+        }
+
         override fun current(): NetworkConfig = cached.value.toNetworkConfig()
 
         private suspend fun edit(block: (MutablePreferences) -> Unit) {
@@ -251,5 +272,10 @@ class SettingsRepositoryImpl
 
             fun subscribedBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("subscribed_boards_${provider.value}")
+
+            fun boardFeedThreadLimit(
+                provider: ProviderId,
+                board: BoardId,
+            ): Preferences.Key<String> = stringPreferencesKey("feed_thread_limit_${provider.value}_${board.value}")
         }
     }

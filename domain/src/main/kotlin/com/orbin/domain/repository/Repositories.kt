@@ -7,6 +7,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -50,6 +51,18 @@ interface BoardPreferencesRepository {
         provider: ProviderId,
         board: BoardId,
         subscribed: Boolean,
+    )
+
+    /** Per-board override for how many threads the subscribed feed shows; null uses the global default. */
+    fun observeFeedThreadLimit(
+        provider: ProviderId,
+        board: BoardId,
+    ): Flow<FeedThreadLimit?>
+
+    suspend fun setFeedThreadLimit(
+        provider: ProviderId,
+        board: BoardId,
+        limit: FeedThreadLimit?,
     )
 }
 

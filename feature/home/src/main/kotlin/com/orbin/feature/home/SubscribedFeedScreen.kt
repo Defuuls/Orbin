@@ -16,10 +16,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +37,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,7 +49,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.post.PostCommentText
@@ -96,6 +105,8 @@ fun SubscribedFeedScreen(
                             feeds = state.boards,
                             mutedTags = settings.mutedTagTokens(),
                             thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,
+                            globalThreadLimit = settings.feedThreadLimit,
+                            onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                         )
                     }
@@ -111,6 +122,8 @@ private fun SubscribedFeedList(
     feeds: List<SubscribedBoardFeed>,
     mutedTags: Set<String>,
     thumbnailSizeDp: androidx.compose.ui.unit.Dp,
+    globalThreadLimit: FeedThreadLimit,
+    onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
 ) {
     LazyColumn(
@@ -120,7 +133,11 @@ private fun SubscribedFeedList(
     ) {
         feeds.forEach { feed ->
             stickyHeader(key = "header-${feed.board.id.value}") {
-                BoardFeedHeader(feed)
+                BoardFeedHeader(
+                    feed = feed,
+                    globalThreadLimit = globalThreadLimit,
+                    onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
+                )
             }
             items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
                 FeedThreadCell(
@@ -142,7 +159,13 @@ private fun SubscribedFeedList(
 }
 
 @Composable
-private fun BoardFeedHeader(feed: SubscribedBoardFeed) {
+private fun BoardFeedHeader(
+    feed: SubscribedBoardFeed,
+    globalThreadLimit: FeedThreadLimit,
+    onSetThreadLimit: (FeedThreadLimit?) -> Unit,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(6.dp),
@@ -171,10 +194,45 @@ private fun BoardFeedHeader(feed: SubscribedBoardFeed) {
                     )
                 }
             }
-            AssistChip(onClick = {}, label = { Text("${feed.threads.size} threads") })
+            Box {
+                AssistChip(
+                    onClick = { menuExpanded = true },
+                    label = { Text("${feed.threads.size} threads") },
+                    trailingIcon = {
+                        Icon(Icons.Filled.ArrowDropDown, contentDescription = "Adjust threads shown for this board")
+                    },
+                )
+                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Default (${globalThreadLimit.label})") },
+                        onClick = {
+                            onSetThreadLimit(null)
+                            menuExpanded = false
+                        },
+                        leadingIcon = selectedIconOrNull(feed.threadLimitOverride == null),
+                    )
+                    FeedThreadLimit.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                onSetThreadLimit(option)
+                                menuExpanded = false
+                            },
+                            leadingIcon = selectedIconOrNull(feed.threadLimitOverride == option),
+                        )
+                    }
+                }
+            }
         }
     }
 }
+
+private fun selectedIconOrNull(selected: Boolean): (@Composable () -> Unit)? =
+    if (selected) {
+        { Icon(Icons.Filled.Check, contentDescription = null) }
+    } else {
+        null
+    }
 
 @Composable
 private fun FeedThreadCell(

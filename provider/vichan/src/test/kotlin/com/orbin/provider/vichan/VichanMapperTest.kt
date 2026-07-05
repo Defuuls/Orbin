@@ -60,6 +60,42 @@ class VichanMapperTest {
     }
 
     @Test
+    fun `subject and poster name decode html entities`() {
+        val op =
+            VichanPost(
+                no = 1,
+                resto = 0,
+                time = 1,
+                sub = "Cat&#039;s &quot;toy&quot;",
+                name = "Bob &amp; Alice",
+            )
+        val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op)))
+
+        assertThat(thread.originalPost.subject).isEqualTo("Cat's \"toy\"")
+        assertThat(thread.originalPost.poster.name).isEqualTo("Bob & Alice")
+    }
+
+    @Test
+    fun `board title and description decode html entities`() {
+        val boards =
+            mapper.mapBoards(
+                com.orbin.provider.vichan.api.VichanBoardsResponse(
+                    boards =
+                        listOf(
+                            com.orbin.provider.vichan.api.VichanBoard(
+                                board = "g",
+                                title = "Tech &amp; Gadgets",
+                                metaDescription = "Discuss &quot;technology&quot;",
+                            ),
+                        ),
+                ),
+            )
+        val g = boards.single()
+        assertThat(g.title).isEqualTo("Tech & Gadgets")
+        assertThat(g.description).isEqualTo("Discuss \"technology\"")
+    }
+
+    @Test
     fun `nsfw board is detected from ws_board flag`() {
         val boards =
             mapper.mapBoards(

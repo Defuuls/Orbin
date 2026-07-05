@@ -33,8 +33,8 @@ class VichanMapper(
     private fun mapBoard(dto: VichanBoard): Board =
         Board(
             id = BoardId(dto.board),
-            title = dto.title,
-            description = dto.metaDescription,
+            title = VichanCommentParser.decodeEntities(dto.title),
+            description = VichanCommentParser.decodeEntities(dto.metaDescription),
             isNsfw = dto.workSafe == 0,
             pageCount = dto.pages,
             bumpLimit = dto.bumpLimit,
@@ -98,11 +98,11 @@ class VichanMapper(
             board = board,
             threadId = threadId,
             isOriginalPost = isOp,
-            subject = dto.sub?.takeIf { it.isNotBlank() },
+            subject = dto.sub?.takeIf { it.isNotBlank() }?.let(VichanCommentParser::decodeEntities),
             comment = comment,
             poster =
                 PosterInfo(
-                    name = dto.name?.takeIf { it.isNotBlank() },
+                    name = dto.name?.takeIf { it.isNotBlank() }?.let(VichanCommentParser::decodeEntities),
                     tripcode = dto.trip,
                     posterId = dto.id,
                     capcode = dto.capcode,
