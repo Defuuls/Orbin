@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -240,9 +241,13 @@ private fun PostListContent(
     val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     val onQuoteClick: (PostId) -> Unit = { id ->
         indexById[id]?.let { target -> scope.launch { listState.animateScrollToItem(target) } }
+    }
+    val onLinkClick: (String) -> Unit = { url ->
+        runCatching { uriHandler.openUri(url) }
     }
 
     LaunchedEffect(mediaScrollIndex, postIndexByMediaIndex) {
@@ -268,6 +273,7 @@ private fun PostListContent(
                 isCollapsed = collapsed[post.id] == true,
                 onToggleCollapse = { collapsed[post.id] = !(collapsed[post.id] ?: false) },
                 onQuoteClick = onQuoteClick,
+                onLinkClick = onLinkClick,
                 onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
             )
         }
@@ -342,6 +348,7 @@ private fun PostCard(
     isCollapsed: Boolean,
     onToggleCollapse: () -> Unit,
     onQuoteClick: (PostId) -> Unit,
+    onLinkClick: (String) -> Unit,
     onMediaClick: (String) -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -355,7 +362,12 @@ private fun PostCard(
                 }
                 if (post.comment.nodes.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
-                    PostCommentText(comment = post.comment, onQuoteClick = onQuoteClick)
+                    PostCommentText(
+                        comment = post.comment,
+                        selectable = true,
+                        onQuoteClick = onQuoteClick,
+                        onLinkClick = onLinkClick,
+                    )
                 }
                 if (post.backlinks.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
