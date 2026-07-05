@@ -41,7 +41,7 @@ retrofit = "3.0.0"
 
 # Media
 coil = "3.0.4"
-media3 = "1.5.1"
+media3 = "1.10.1"
 
 # Work
 work = "2.10.0"
