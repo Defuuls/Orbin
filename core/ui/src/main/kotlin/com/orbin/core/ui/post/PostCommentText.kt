@@ -26,8 +26,11 @@ private const val TAG_LINK = "link"
 
 /**
  * Renders a parsed [PostComment] as styled, clickable text. Quote links invoke [onQuoteClick];
- * external links invoke [onLinkClick]. The comment is converted to an [AnnotatedString] once and
- * memoized, so scrolling a long thread does not re-walk the node tree every recomposition.
+ * external links invoke [onLinkClick]. A tap that lands on neither invokes [onClick] - callers
+ * that put this inside a larger tappable row/card (e.g. a thread preview) can use it so the text
+ * doesn't swallow taps meant for that outer target. The comment is converted to an
+ * [AnnotatedString] once and memoized, so scrolling a long thread does not re-walk the node tree
+ * every recomposition.
  *
  * TODO(spoiler-reveal): spoilers currently render blacked-out; add tap-to-reveal per span.
  */
@@ -37,6 +40,7 @@ fun PostCommentText(
     modifier: Modifier = Modifier,
     onQuoteClick: (PostId) -> Unit = {},
     onLinkClick: (String) -> Unit = {},
+    onClick: () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val annotated =
@@ -57,7 +61,9 @@ fun PostCommentText(
             }
             annotated.getStringAnnotations(TAG_LINK, offset, offset).firstOrNull()?.let {
                 onLinkClick(it.item)
+                return@ClickableText
             }
+            onClick()
         },
     )
 }

@@ -203,14 +203,19 @@ private fun FeedThreadCell(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AssistChip(onClick = {}, label = { Text("${thread.stats.replyCount} replies") })
-                    AssistChip(onClick = {}, label = { Text("${thread.stats.imageCount} media") })
+                    AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
+                    AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
                     if (isMuted) {
-                        AssistChip(onClick = {}, label = { Text("Muted") })
+                        AssistChip(onClick = onClick, label = { Text("Muted") })
                     }
                 }
                 Box(modifier = Modifier.heightIn(max = 64.dp)) {
-                    PostCommentText(comment = thread.originalPost.comment)
+                    PostCommentText(
+                        comment = thread.originalPost.comment,
+                        onQuoteClick = { onClick() },
+                        onLinkClick = { onClick() },
+                        onClick = onClick,
+                    )
                 }
             }
         }

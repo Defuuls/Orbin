@@ -35,7 +35,6 @@ implementing a single interface.
 **Personalization**
 - Material 3 with dynamic color, light/dark, and AMOLED-black themes.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
-- One-handed mode that shrinks the whole UI into the bottom half of the screen for thumb reach.
 - Predictive back gesture and smooth shared-element transitions.
 
 **Privacy & security**

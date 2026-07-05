@@ -256,16 +256,21 @@ private fun KurobaListThreadCell(
                         WatchButton(isSubscribed = isSubscribed, onClick = onToggleSubscription)
                     }
 
-                    MetadataRow(thread = thread, compact = false)
+                    MetadataRow(thread = thread, compact = false, onClick = onClick)
 
                     Box(modifier = Modifier.heightIn(max = 76.dp)) {
-                        PostCommentText(comment = thread.originalPost.comment)
+                        PostCommentText(
+                            comment = thread.originalPost.comment,
+                            onQuoteClick = { onClick() },
+                            onLinkClick = { onClick() },
+                            onClick = onClick,
+                        )
                     }
                 }
             }
 
             if (thread.previewReplies.isNotEmpty()) {
-                PreviewReplyStrip(thread)
+                PreviewReplyStrip(thread, onClick = onClick)
             }
         }
     }
@@ -313,9 +318,14 @@ private fun KurobaGridThreadCell(
 
             Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 ThreadTitle(thread = thread, maxLines = 2)
-                MetadataRow(thread = thread, compact = true)
+                MetadataRow(thread = thread, compact = true, onClick = onClick)
                 Box(modifier = Modifier.heightIn(max = 72.dp)) {
-                    PostCommentText(comment = thread.originalPost.comment)
+                    PostCommentText(
+                        comment = thread.originalPost.comment,
+                        onQuoteClick = { onClick() },
+                        onLinkClick = { onClick() },
+                        onClick = onClick,
+                    )
                 }
             }
         }
@@ -399,29 +409,33 @@ private fun ThreadTitle(
 private fun MetadataRow(
     thread: CatalogThread,
     compact: Boolean,
+    onClick: () -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatChip("${thread.stats.replyCount} replies")
-        StatChip("${thread.stats.imageCount} media")
+        StatChip("${thread.stats.replyCount} replies", onClick)
+        StatChip("${thread.stats.imageCount} media", onClick)
         if (!compact && thread.stats.uniquePosterCount > 0) {
-            StatChip("${thread.stats.uniquePosterCount} posters")
+            StatChip("${thread.stats.uniquePosterCount} posters", onClick)
         }
         if (thread.stats.isClosed) {
-            StatChip("closed")
+            StatChip("closed", onClick)
         }
         if (thread.stats.isArchived) {
-            StatChip("archived")
+            StatChip("archived", onClick)
         }
     }
 }
 
 @Composable
-private fun StatChip(text: String) {
+private fun StatChip(
+    text: String,
+    onClick: () -> Unit,
+) {
     AssistChip(
-        onClick = {},
+        onClick = onClick,
         label = { Text(text, maxLines = 1) },
         modifier = Modifier.heightIn(min = 28.dp),
     )
@@ -452,7 +466,10 @@ private fun WatchButton(
 }
 
 @Composable
-private fun PreviewReplyStrip(thread: CatalogThread) {
+private fun PreviewReplyStrip(
+    thread: CatalogThread,
+    onClick: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         thread.previewReplies.take(2).forEach { reply ->
             Surface(
@@ -469,7 +486,12 @@ private fun PreviewReplyStrip(thread: CatalogThread) {
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Box(modifier = Modifier.weight(1f).heightIn(max = 44.dp)) {
-                        PostCommentText(comment = reply.comment)
+                        PostCommentText(
+                            comment = reply.comment,
+                            onQuoteClick = { onClick() },
+                            onLinkClick = { onClick() },
+                            onClick = onClick,
+                        )
                     }
                 }
             }
