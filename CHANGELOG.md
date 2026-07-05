@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [25.2] - 2026-07-05
+
+### Changed
+- **Release:** prepare the v25.2 release for the Casey Jones milestone.
+- **Release naming:** continue Grateful Dead codenames for release milestones.
+
 ## [25.1] - 2026-07-05
 
 ### Changed
@@ -338,7 +344,18 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v24.0.1...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v25.2...HEAD
+[25.2]: https://github.com/Defuuls/Orbin/compare/v25.1...v25.2
+[25.1]: https://github.com/Defuuls/Orbin/compare/v25.0...v25.1
+[25.0]: https://github.com/Defuuls/Orbin/compare/v24.4...v25.0
+[24.4]: https://github.com/Defuuls/Orbin/compare/v24.3...v24.4
+[24.3]: https://github.com/Defuuls/Orbin/compare/v24.2...v24.3
+[24.2]: https://github.com/Defuuls/Orbin/compare/v24.1.1...v24.2
+[24.1.1]: https://github.com/Defuuls/Orbin/compare/v24.1...v24.1.1
+[24.1]: https://github.com/Defuuls/Orbin/compare/v24.0.4...v24.1
+[24.0.4]: https://github.com/Defuuls/Orbin/compare/v24.0.3...v24.0.4
+[24.0.3]: https://github.com/Defuuls/Orbin/compare/v24.0.2...v24.0.3
+[24.0.2]: https://github.com/Defuuls/Orbin/compare/v24.0.1...v24.0.2
 [24.0.1]: https://github.com/Defuuls/Orbin/compare/v24.0...v24.0.1
 [24.0]: https://github.com/Defuuls/Orbin/compare/v23.9...v24.0
 [23.9]: https://github.com/Defuuls/Orbin/compare/v23.8...v23.9
