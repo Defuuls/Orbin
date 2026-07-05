@@ -131,7 +131,7 @@ private fun AnnotatedString.Builder.appendPlainTextWithLinks(text: String) {
         append(text.substring(nextStart, match.range.first))
 
         val rawMatch = match.value
-        val displayUrl = rawMatch.trimEnd(*trailingUrlPunctuation)
+        val displayUrl = trimTrailingUrlPunctuation(rawMatch)
         val trailing = rawMatch.substring(displayUrl.length)
 
         pushStringAnnotation(TAG_LINK, normalizePlainTextUrl(displayUrl))
@@ -182,6 +182,14 @@ private fun AnnotatedString.Builder.appendStyled(
     withStyle(span) {
         node.children.forEach { appendNode(it, linkifyPlainText = linkifyPlainText) }
     }
+}
+
+private fun trimTrailingUrlPunctuation(url: String): String {
+    var end = url.length
+    while (end > 0 && url[end - 1] in trailingUrlPunctuation) {
+        end -= 1
+    }
+    return url.substring(0, end)
 }
 
 private fun normalizePlainTextUrl(url: String): String =
