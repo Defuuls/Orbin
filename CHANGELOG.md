@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [25.1] - 2026-07-05
+
+### Changed
+- **Release:** prepare the v25.1 release for the Box of Rain milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [25.0] - 2026-07-05
 
 ### Changed
