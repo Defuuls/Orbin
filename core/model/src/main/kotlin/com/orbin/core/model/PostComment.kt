@@ -20,12 +20,15 @@ data class PostComment(
     val quotedPosts: List<PostId>
         get() = buildList { collectQuotes(nodes, this) }
 
-    /** External hyperlinks (`PostNode.Link.url`) found anywhere in the comment. */
+    /** External links found anywhere in the comment, including non-hyperlinked plain-text URLs. */
     val externalLinks: List<String>
         get() = buildList { collectLinks(nodes, this) }
 
     companion object {
         val Empty = PostComment(raw = "", nodes = persistentListOf())
+
+        private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
+        private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
 
         private fun collectQuotes(
             nodes: List<PostNode>,
@@ -47,15 +50,29 @@ data class PostComment(
         ) {
             nodes.forEach { node ->
                 when (node) {
-                    is PostNode.Link -> {
-                        out.add(node.url)
-                        collectLinks(node.children, out)
-                    }
+                    is PostNode.Link -> out.add(normalizePlainTextUrl(node.url))
                     is PostNode.Styled -> collectLinks(node.children, out)
+                    is PostNode.Text -> collectPlainTextLinks(node.text, out)
                     else -> Unit
                 }
             }
         }
+
+        private fun collectPlainTextLinks(
+            text: String,
+            out: MutableList<String>,
+        ) {
+            plainTextUrlRegex.findAll(text).forEach { match ->
+                out.add(normalizePlainTextUrl(match.value.trimEnd(*trailingUrlPunctuation)))
+            }
+        }
+
+        private fun normalizePlainTextUrl(url: String): String =
+            if (url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)) {
+                url
+            } else {
+                "https://$url"
+            }
     }
 }
 
