@@ -63,7 +63,6 @@ data class AppSettings(
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
-    val oneHandedModeEnabled: Boolean = false,
     // Media
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,

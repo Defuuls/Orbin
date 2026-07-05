@@ -31,8 +31,6 @@ interface SettingsRepository {
 
     suspend fun setThumbnailSize(size: ThumbnailSize)
 
-    suspend fun setOneHandedModeEnabled(enabled: Boolean)
-
     suspend fun setAutoplayVideos(enabled: Boolean)
 
     suspend fun setMuteByDefault(enabled: Boolean)

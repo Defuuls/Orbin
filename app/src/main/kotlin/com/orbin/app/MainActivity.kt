@@ -32,8 +32,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -333,10 +331,6 @@ private fun RequestNotificationPermissionWhenUnlocked(
     }
 }
 
-private const val ONE_HANDED_MODE_SCALE = 0.5f
-private const val ONE_HANDED_MODE_PIVOT_X = 0.5f
-private const val ONE_HANDED_MODE_PIVOT_Y = 1f
-
 @Composable
 private fun AppContent(
     settings: AppSettings,
@@ -359,23 +353,7 @@ private fun AppContent(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         ) {
             Surface(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (settings.oneHandedModeEnabled) {
-                                Modifier.graphicsLayer {
-                                    // Pivoting on bottom-center and scaling both axes equally shrinks
-                                    // the whole app, undistorted, into the bottom half of the screen
-                                    // so it's reachable one-handed.
-                                    scaleX = ONE_HANDED_MODE_SCALE
-                                    scaleY = ONE_HANDED_MODE_SCALE
-                                    transformOrigin = TransformOrigin(ONE_HANDED_MODE_PIVOT_X, ONE_HANDED_MODE_PIVOT_Y)
-                                }
-                            } else {
-                                Modifier
-                            },
-                        ),
+                modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background,
             ) {
                 when {

@@ -89,10 +89,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.thumbnailSize] = size.name }
         }
 
-        override suspend fun setOneHandedModeEnabled(enabled: Boolean) {
-            edit { it[Keys.oneHandedMode] = enabled }
-        }
-
         override suspend fun setAutoplayVideos(enabled: Boolean) {
             edit { it[Keys.autoplay] = enabled }
         }
@@ -191,7 +187,6 @@ class SettingsRepositoryImpl
                 thumbnailSize =
                     this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
                         ?: ThumbnailSize.MEDIUM,
-                oneHandedModeEnabled = this[Keys.oneHandedMode] ?: false,
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
@@ -239,7 +234,6 @@ class SettingsRepositoryImpl
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")
             val thumbnailSize = stringPreferencesKey("thumbnail_size")
-            val oneHandedMode = booleanPreferencesKey("one_handed_mode")
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val preload = booleanPreferencesKey("preload_images")
