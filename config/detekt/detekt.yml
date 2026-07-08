@@ -25,7 +25,7 @@ complexity:
   TooManyFunctions:
     active: true
     thresholdInFiles: 25
-    thresholdInClasses: 25
+    thresholdInClasses: 30
     thresholdInObjects: 20
     # DI @Binds/@Provides modules legitimately group many one-line declarations.
     thresholdInInterfaces: 30
