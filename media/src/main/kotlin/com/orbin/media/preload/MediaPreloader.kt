@@ -84,13 +84,13 @@ class MediaPreloader
             // Preload video by fetching metadata via HEAD request or by warming up the cache
             // This validates the URL is accessible without downloading the full video
             runCatching {
-                imageLoader.networkClient.newCall(
+                imageLoader.httpClient.newCall(
                     Request.Builder()
                         .head()
                         .url(url)
                         .build()
                 ).execute().close()
-            }.onSuccess {
+            }.onSuccess { _ ->
                 Log.d(TAG, "Preloaded video metadata: $url")
             }.onFailure { error ->
                 Log.w(TAG, "Failed to preload video: $url", error)

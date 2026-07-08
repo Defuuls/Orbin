@@ -9,6 +9,8 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PreloadOption
+import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
@@ -194,6 +196,14 @@ class FakeSettingsRepository(
 
     override suspend fun setPreloadImages(enabled: Boolean) {
         update { copy(preloadImages = enabled) }
+    }
+
+    override suspend fun setPreloadOption(option: PreloadOption) {
+        update { copy(preloadOption = option) }
+    }
+
+    override suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode) {
+        update { copy(preloadThrottleMode = mode) }
     }
 
     override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {

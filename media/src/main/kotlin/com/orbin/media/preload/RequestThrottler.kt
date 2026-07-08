@@ -29,6 +29,7 @@ class RequestThrottler(
     private suspend fun throttlePerMinute() {
         if (maxPerMinute <= 0) return
 
+        var waitTime = 0L
         synchronized(lock) {
             val now = System.currentTimeMillis()
             val oneMinuteAgo = now - 60_000
@@ -37,16 +38,18 @@ class RequestThrottler(
 
             if (requestTimestamps.size >= maxPerMinute) {
                 val oldestTimestamp = requestTimestamps.first()
-                val waitTime = (oldestTimestamp + 60_000) - now
-                if (waitTime > 0) {
-                    delay(waitTime)
-                }
-                synchronized(lock) {
-                    requestTimestamps.removeAll { it < System.currentTimeMillis() - 60_000 }
-                }
+                waitTime = (oldestTimestamp + 60_000) - now
             }
+        }
 
-            requestTimestamps.addLast(System.currentTimeMillis())
+        if (waitTime > 0) {
+            delay(waitTime)
+        }
+
+        synchronized(lock) {
+            val now = System.currentTimeMillis()
+            requestTimestamps.removeAll { it < now - 60_000 }
+            requestTimestamps.addLast(now)
         }
     }
 }
