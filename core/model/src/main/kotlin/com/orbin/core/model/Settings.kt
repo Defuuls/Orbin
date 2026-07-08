@@ -79,9 +79,7 @@ data class AppSettings(
     val httpsOnly: Boolean = true,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
-    // Providers - empty activeProviderId means "use the registry default"
     val activeProviderId: String = "",
-    // First-run
     val onboardingCompleted: Boolean = false,
 ) {
     companion object {
