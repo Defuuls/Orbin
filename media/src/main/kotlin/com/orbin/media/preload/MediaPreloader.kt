@@ -10,7 +10,9 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
+import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import javax.inject.Inject
 
@@ -24,6 +26,7 @@ class MediaPreloader
     constructor(
         @ApplicationContext private val context: Context,
         private val imageLoader: ImageLoader,
+        @BaseOkHttp private val okHttpClient: OkHttpClient,
     ) {
         suspend fun preload(
             attachments: List<MediaAttachment>,
@@ -84,7 +87,7 @@ class MediaPreloader
             // Preload video by fetching metadata via HEAD request or by warming up the cache
             // This validates the URL is accessible without downloading the full video
             runCatching {
-                imageLoader.httpClient.newCall(
+                okHttpClient.newCall(
                     Request.Builder()
                         .head()
                         .url(url)
