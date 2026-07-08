@@ -139,6 +139,7 @@ class FakeBoardPreferencesRepository(
     }
 }
 
+@Suppress("TooManyFunctions")
 class FakeSettingsRepository(
     initial: AppSettings = AppSettings.Default,
 ) : SettingsRepository {
