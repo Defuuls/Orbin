@@ -52,8 +52,8 @@ class MediaPreloader
             return targets.size
         }
 
-        private fun createThrottler(mode: PreloadThrottleMode): RequestThrottler {
-            return when (mode) {
+        private fun createThrottler(mode: PreloadThrottleMode): RequestThrottler =
+            when (mode) {
                 PreloadThrottleMode.CONSERVATIVE ->
                     RequestThrottler(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30)
                 PreloadThrottleMode.MODERATE ->
@@ -61,7 +61,6 @@ class MediaPreloader
                 PreloadThrottleMode.AGGRESSIVE ->
                     RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120)
             }
-        }
 
         private suspend fun preloadImage(url: String) {
             val request =
@@ -109,13 +108,31 @@ class MediaPreloader
                         option.includesVideos() && attachment.type == MediaType.VIDEO
 
                     if (shouldPreloadThumbnail && attachment.thumbnailUrl.isNotBlank()) {
-                        add(PreloadTarget(attachment.thumbnailUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
+                        add(
+                            PreloadTarget(
+                                attachment.thumbnailUrl,
+                                attachment.originalFileName,
+                                PreloadTargetType.IMAGE,
+                            )
+                        )
                     }
                     if (shouldPreloadImage) {
-                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
+                        add(
+                            PreloadTarget(
+                                attachment.sourceUrl,
+                                attachment.originalFileName,
+                                PreloadTargetType.IMAGE,
+                            )
+                        )
                     }
                     if (shouldPreloadVideo) {
-                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.VIDEO))
+                        add(
+                            PreloadTarget(
+                                attachment.sourceUrl,
+                                attachment.originalFileName,
+                                PreloadTargetType.VIDEO,
+                            )
+                        )
                     }
                 }
             }.distinctBy { it.url }
