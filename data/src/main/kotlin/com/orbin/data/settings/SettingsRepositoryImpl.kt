@@ -77,11 +77,11 @@ class SettingsRepositoryImpl
             edit { it[Keys.themeMode] = mode.name }
         }
 
-        suspend fun setColorTheme(theme: ColorTheme) {
+        override suspend fun setColorTheme(theme: ColorTheme) {
             edit { it[Keys.colorTheme] = theme.name }
         }
 
-        suspend fun setAppIconVariant(variant: AppIconVariant) {
+        override suspend fun setAppIconVariant(variant: AppIconVariant) {
             edit { it[Keys.appIconVariant] = variant.name }
         }
 
