@@ -2,8 +2,11 @@ package com.orbin.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.app.AppIconManager
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
@@ -33,6 +36,7 @@ class SettingsViewModel
         private val historyRepository: HistoryRepository,
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
+        private val appIconManager: AppIconManager,
         registry: ProviderRegistry,
     ) : ViewModel() {
         val settings: StateFlow<AppSettings> =
@@ -90,6 +94,13 @@ class SettingsViewModel
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
         fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
+
+        fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
+
+        fun setAppIconVariant(variant: AppIconVariant) = update {
+            appIconManager.setIconVariant(variant)
+            repository.setAppIconVariant(variant)
+        }
 
         fun clearLocalActivity() =
             update {
