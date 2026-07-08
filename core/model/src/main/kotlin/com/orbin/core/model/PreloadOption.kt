@@ -28,8 +28,8 @@ enum class PreloadOption(
  */
 data class PreloadThrottling(
     val maxConcurrent: Int = 1,
-    val delayBetweenRequests: Long = 250, // ms
-    val maxPerMinute: Int = 0, // 0 = unlimited
+    val delayBetweenRequests: Long = 250,
+    val maxPerMinute: Int = 0,
 ) {
     init {
         require(maxConcurrent in 1..5) { "maxConcurrent must be between 1 and 5" }
