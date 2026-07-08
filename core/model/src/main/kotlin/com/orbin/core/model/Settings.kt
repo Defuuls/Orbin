@@ -39,13 +39,12 @@ enum class ThumbnailSize(
 ) {
     COMPACT("Compact", THUMBNAIL_SIZE_COMPACT_DP),
     MEDIUM("Medium", THUMBNAIL_SIZE_MEDIUM_DP),
-    LARGE("Large", THUMBNAIL_SIZE_LARGE_DP),
-
     /**
      * As large as the layout allows - a single column of full-width thumbnails in the thread
      * grid view. [sizeDp] is only a sane fallback for layouts (like the subscribed feed) that
      * size thumbnails as a fixed square rather than filling the available width.
      */
+    LARGE("Large", THUMBNAIL_SIZE_LARGE_DP),
     FILL("Fill", THUMBNAIL_SIZE_FILL_DP),
 }
 
