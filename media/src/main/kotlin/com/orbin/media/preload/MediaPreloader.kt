@@ -87,12 +87,15 @@ class MediaPreloader
             // Preload video by fetching metadata via HEAD request or by warming up the cache
             // This validates the URL is accessible without downloading the full video
             runCatching {
-                okHttpClient.newCall(
-                    Request.Builder()
-                        .head()
-                        .url(url)
-                        .build()
-                ).execute().close()
+                okHttpClient
+                    .newCall(
+                        Request
+                            .Builder()
+                            .head()
+                            .url(url)
+                            .build(),
+                    ).execute()
+                    .close()
             }.onSuccess { _ ->
                 Log.d(TAG, "Preloaded video metadata: $url")
             }.onFailure { error ->
@@ -116,7 +119,7 @@ class MediaPreloader
                                 attachment.thumbnailUrl,
                                 attachment.originalFileName,
                                 PreloadTargetType.IMAGE,
-                            )
+                            ),
                         )
                     }
                     if (shouldPreloadImage) {
@@ -125,7 +128,7 @@ class MediaPreloader
                                 attachment.sourceUrl,
                                 attachment.originalFileName,
                                 PreloadTargetType.IMAGE,
-                            )
+                            ),
                         )
                     }
                     if (shouldPreloadVideo) {
@@ -134,7 +137,7 @@ class MediaPreloader
                                 attachment.sourceUrl,
                                 attachment.originalFileName,
                                 PreloadTargetType.VIDEO,
-                            )
+                            ),
                         )
                     }
                 }
