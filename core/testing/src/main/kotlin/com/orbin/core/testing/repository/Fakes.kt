@@ -1,12 +1,14 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -241,6 +243,14 @@ class FakeSettingsRepository(
 
     override suspend fun setActiveProviderId(id: ProviderId) {
         update { copy(activeProviderId = id.value) }
+    }
+
+    override suspend fun setColorTheme(theme: ColorTheme) {
+        update { copy(colorTheme = theme) }
+    }
+
+    override suspend fun setAppIconVariant(variant: AppIconVariant) {
+        update { copy(appIconVariant = variant) }
     }
 
     private fun update(block: AppSettings.() -> AppSettings) {
