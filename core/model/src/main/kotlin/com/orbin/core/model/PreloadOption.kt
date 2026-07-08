@@ -11,7 +11,8 @@ enum class PreloadOption(
     THUMBNAILS("Thumbnails only"),
     IMAGES("Thumbnails + Images"),
     VIDEOS("Thumbnails + Images + Videos"),
-    ALL("All media");
+    ALL("All media"),
+    ;
 
     fun includesThumbnails(): Boolean = this != NONE
 
