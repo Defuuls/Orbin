@@ -16,6 +16,10 @@ class RequestThrottler(
     private val requestTimestamps = ArrayDeque<Long>()
     private val lock = Any()
 
+    companion object {
+        private const val ONE_MINUTE_MILLIS = 60_000L
+    }
+
     suspend fun acquire() {
         semaphore.acquire()
         throttlePerMinute()
@@ -32,13 +36,13 @@ class RequestThrottler(
         var waitTime = 0L
         synchronized(lock) {
             val now = System.currentTimeMillis()
-            val oneMinuteAgo = now - 60_000
+            val oneMinuteAgo = now - ONE_MINUTE_MILLIS
 
             requestTimestamps.removeAll { it < oneMinuteAgo }
 
             if (requestTimestamps.size >= maxPerMinute) {
                 val oldestTimestamp = requestTimestamps.first()
-                waitTime = (oldestTimestamp + 60_000) - now
+                waitTime = (oldestTimestamp + ONE_MINUTE_MILLIS) - now
             }
         }
 
@@ -48,7 +52,7 @@ class RequestThrottler(
 
         synchronized(lock) {
             val now = System.currentTimeMillis()
-            requestTimestamps.removeAll { it < now - 60_000 }
+            requestTimestamps.removeAll { it < now - ONE_MINUTE_MILLIS }
             requestTimestamps.addLast(now)
         }
     }

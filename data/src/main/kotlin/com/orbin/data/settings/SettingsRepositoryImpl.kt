@@ -208,6 +208,7 @@ class SettingsRepositoryImpl
             dataStore.edit { block(it) }
         }
 
+        @Suppress("ComplexMethod")
         private fun Preferences.toAppSettings(): AppSettings =
             AppSettings(
                 personalizedHomeFeed = this[Keys.personalizedHomeFeed] ?: true,
