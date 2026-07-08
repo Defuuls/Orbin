@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [25.3] - 2026-07-08
+
+### Changed
+- **Release:** prepare the v25.3 release for the Wimberley milestone.
+- **Release naming:** continue mythical-city codenames for release milestones.
+
 ## [25.2.1] - 2026-07-05
 
 ### Fixed
