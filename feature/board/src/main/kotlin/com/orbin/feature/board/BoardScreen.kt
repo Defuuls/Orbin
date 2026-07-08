@@ -16,8 +16,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -72,6 +76,10 @@ fun BoardScreen(
     val threads = viewModel.catalog.collectAsLazyPagingItems()
     val watchedThreadIds by viewModel.watchedThreadIds.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { androidx.compose.runtime.mutableStateOf(BoardLayoutMode.List) }
+
+    val boardKey = "${viewModel.providerId}/${viewModel.boardId}"
+    val listState = rememberSaveable(boardKey, saver = LazyListState.Saver) { LazyListState() }
+    val gridState = rememberSaveable(boardKey, saver = LazyGridState.Saver) { LazyGridState() }
 
     val openThread: (CatalogThread) -> Unit = { thread ->
         onOpenThread(
@@ -146,6 +154,7 @@ fun BoardScreen(
                     watchedThreadIds = watchedThreadIds,
                     onToggleSubscription = viewModel::toggleThreadSubscription,
                     onOpenThread = openThread,
+                    listState = listState,
                 )
 
             BoardLayoutMode.Grid ->
@@ -157,6 +166,7 @@ fun BoardScreen(
                     watchedThreadIds = watchedThreadIds,
                     onToggleSubscription = viewModel::toggleThreadSubscription,
                     onOpenThread = openThread,
+                    gridState = gridState,
                 )
         }
     }
@@ -171,11 +181,13 @@ private fun CatalogList(
     watchedThreadIds: Set<Long>,
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
+    listState: LazyListState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        state = listState,
         contentPadding =
             PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
@@ -206,12 +218,14 @@ private fun CatalogGrid(
     watchedThreadIds: Set<Long>,
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
+    gridState: LazyGridState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(168.dp),
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        state = gridState,
         contentPadding =
             PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,

@@ -293,7 +293,10 @@ private fun ThumbnailGridContent(
     modifier: Modifier = Modifier,
 ) {
     val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
-    val gridState = rememberLazyGridState()
+    val gridState =
+        rememberSaveable(thread.key, saver = LazyGridState.Saver) {
+            LazyGridState()
+        }
     val fill = thumbnailSize == ThumbnailSize.FILL
 
     LaunchedEffect(mediaScrollIndex) {
