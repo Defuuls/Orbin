@@ -36,9 +36,12 @@ data class PreloadThrottling(
     }
 
     companion object {
-        val Conservative = PreloadThrottling(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30)
-        val Moderate = PreloadThrottling(maxConcurrent = 2, delayBetweenRequests = 250, maxPerMinute = 60)
-        val Aggressive = PreloadThrottling(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120)
+        val Conservative =
+            PreloadThrottling(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30)
+        val Moderate =
+            PreloadThrottling(maxConcurrent = 2, delayBetweenRequests = 250, maxPerMinute = 60)
+        val Aggressive =
+            PreloadThrottling(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120)
         val Default = Moderate
     }
 }
