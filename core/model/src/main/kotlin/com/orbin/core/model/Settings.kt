@@ -1,7 +1,11 @@
 package com.orbin.core.model
 
 /** Theme preference independent of any UI framework type (mapped to the design-system enum in app). */
-enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+enum class AppThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
 
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
@@ -51,40 +55,44 @@ enum class ThumbnailSize(
  * a single stable object.
  */
 data class AppSettings(
-    // Home / content
     val personalizedHomeFeed: Boolean = true,
     val hiddenTags: String = "",
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
-    // Appearance
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
-    // Media
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
     val preloadImages: Boolean = true,
+    val preloadOption: PreloadOption = PreloadOption.IMAGES,
+    val preloadThrottleMode: PreloadThrottleMode = PreloadThrottleMode.MODERATE,
     val imageCacheLimitMb: Int = 256,
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
     val downloadFolderUri: String = "",
-    // Network / privacy
     val userAgent: String = "",
     val dohEnabled: Boolean = false,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val httpsOnly: Boolean = true,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
-    // Providers - empty activeProviderId means "use the registry default"
     val activeProviderId: String = "",
-    // First-run
     val onboardingCompleted: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()
     }
+}
+
+enum class PreloadThrottleMode(
+    val label: String,
+) {
+    CONSERVATIVE("Conservative (1 at a time)"),
+    MODERATE("Moderate (2 at a time)"),
+    AGGRESSIVE("Aggressive (3 at a time)"),
 }
 
 fun AppSettings.hiddenTagTokens(): Set<String> = parseFilterTokens(hiddenTags)

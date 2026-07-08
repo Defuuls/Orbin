@@ -9,6 +9,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.media.preload.MediaPreloader
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -54,6 +56,7 @@ class GalleryBrowserViewModel
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val threadRepository: ThreadRepository,
         private val mediaPreloader: MediaPreloader,
+        private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -120,8 +123,13 @@ class GalleryBrowserViewModel
                                 progressValue = PRELOAD_START_PROGRESS,
                             )
                         }
+                        val settings = settingsRepository.settings.first()
                         val warmed =
-                            mediaPreloader.preload(media) { current, total, label ->
+                            mediaPreloader.preload(
+                                media,
+                                option = settings.preloadOption,
+                                throttleMode = settings.preloadThrottleMode,
+                            ) { current, total, label ->
                                 _uiState.update {
                                     it.copy(
                                         progressMessage = buildProgressMessage(current, total, label),

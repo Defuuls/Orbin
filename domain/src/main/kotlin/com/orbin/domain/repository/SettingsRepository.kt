@@ -4,6 +4,8 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PreloadOption
+import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +39,10 @@ interface SettingsRepository {
     suspend fun setMuteByDefault(enabled: Boolean)
 
     suspend fun setPreloadImages(enabled: Boolean)
+
+    suspend fun setPreloadOption(option: PreloadOption)
+
+    suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode)
 
     suspend fun setFeedThreadLimit(limit: FeedThreadLimit)
 
