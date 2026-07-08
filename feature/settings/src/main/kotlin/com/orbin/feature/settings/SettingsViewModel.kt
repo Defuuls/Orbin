@@ -2,7 +2,6 @@ package com.orbin.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.orbin.app.AppIconManager
 import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
@@ -36,7 +35,6 @@ class SettingsViewModel
         private val historyRepository: HistoryRepository,
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
-        private val appIconManager: AppIconManager,
         registry: ProviderRegistry,
     ) : ViewModel() {
         val settings: StateFlow<AppSettings> =
@@ -97,10 +95,7 @@ class SettingsViewModel
 
         fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
 
-        fun setAppIconVariant(variant: AppIconVariant) = update {
-            appIconManager.setIconVariant(variant)
-            repository.setAppIconVariant(variant)
-        }
+        fun setAppIconVariant(variant: AppIconVariant) = update { repository.setAppIconVariant(variant) }
 
         fun clearLocalActivity() =
             update {

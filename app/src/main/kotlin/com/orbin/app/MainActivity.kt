@@ -43,10 +43,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.core.designsystem.theme.ThemeMode
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Single-activity host. Sets up the splash screen, edge-to-edge layout, and the Compose content,
@@ -54,6 +56,9 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+    @Inject
+    lateinit var appIconManager: AppIconManager
+
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
@@ -104,6 +109,10 @@ class MainActivity : FragmentActivity() {
             )
             SideEffect {
                 biometricLockActive = shouldLock
+            }
+
+            LaunchedEffect(settings.appIconVariant) {
+                appIconManager.setIconVariant(settings.appIconVariant)
             }
 
             // BiometricPrompt silently fails to appear (no callback, no exception - just no
