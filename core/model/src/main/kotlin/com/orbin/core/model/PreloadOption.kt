@@ -36,7 +36,6 @@ data class PreloadThrottling(
         require(delayBetweenRequests >= 0) { "delayBetweenRequests must be non-negative" }
         require(maxPerMinute >= 0) { "maxPerMinute must be non-negative" }
     }
-
     companion object {
         val Conservative =
             PreloadThrottling(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30)
