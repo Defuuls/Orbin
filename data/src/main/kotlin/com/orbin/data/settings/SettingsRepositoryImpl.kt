@@ -14,6 +14,8 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PreloadOption
+import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -99,6 +101,14 @@ class SettingsRepositoryImpl
 
         override suspend fun setPreloadImages(enabled: Boolean) {
             edit { it[Keys.preload] = enabled }
+        }
+
+        override suspend fun setPreloadOption(option: PreloadOption) {
+            edit { it[Keys.preloadOption] = option.name }
+        }
+
+        override suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode) {
+            edit { it[Keys.preloadThrottleMode] = mode.name }
         }
 
         override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
@@ -215,6 +225,12 @@ class SettingsRepositoryImpl
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 preloadImages = this[Keys.preload] ?: true,
+                preloadOption =
+                    this[Keys.preloadOption]?.toEnumOrDefault(PreloadOption.IMAGES)
+                        ?: PreloadOption.IMAGES,
+                preloadThrottleMode =
+                    this[Keys.preloadThrottleMode]?.toEnumOrDefault(PreloadThrottleMode.MODERATE)
+                        ?: PreloadThrottleMode.MODERATE,
                 feedThreadLimit =
                     this[Keys.feedThreadLimit]
                         ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
@@ -263,6 +279,8 @@ class SettingsRepositoryImpl
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val preload = booleanPreferencesKey("preload_images")
+            val preloadOption = stringPreferencesKey("preload_option")
+            val preloadThrottleMode = stringPreferencesKey("preload_throttle_mode")
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val userAgent = stringPreferencesKey("user_agent")
