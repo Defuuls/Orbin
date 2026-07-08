@@ -1,7 +1,12 @@
 package com.orbin.core.model
 
 /** Theme preference independent of any UI framework type (mapped to the design-system enum in app). */
-enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+enum class AppThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
+    ;
+}
 
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
@@ -19,6 +24,7 @@ enum class FeedThreadLimit(
     TWELVE(FEED_LIMIT_TWELVE, "12"),
     EIGHTEEN(FEED_LIMIT_EIGHTEEN, "18"),
     ALL(null, "All"),
+    ;
 }
 
 enum class DohProvider(
@@ -27,6 +33,7 @@ enum class DohProvider(
     CLOUDFLARE("Cloudflare"),
     OPENDNS("OpenDNS"),
     NEXTDNS("NextDNS"),
+    ;
 }
 
 enum class ThumbnailSize(
@@ -43,6 +50,7 @@ enum class ThumbnailSize(
      * size thumbnails as a fixed square rather than filling the available width.
      */
     FILL("Fill", THUMBNAIL_SIZE_FILL_DP),
+    ;
 }
 
 /**
