@@ -12,9 +12,9 @@ import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import javax.inject.Inject
 
 /**
  * Preloads media (images, videos, thumbnails) into cache before user views them.
