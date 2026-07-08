@@ -4,12 +4,15 @@ package com.orbin.core.model
  * Preload mode configuration. Controls which types of media are preloaded from the CDN.
  * Used in conjunction with throttling to avoid rate limiting.
  */
-enum class PreloadOption(val label: String) {
+enum class PreloadOption(
+    val label: String,
+) {
     NONE("Disabled"),
     THUMBNAILS("Thumbnails only"),
     IMAGES("Thumbnails + Images"),
     VIDEOS("Thumbnails + Images + Videos"),
-    ALL("All media");
+    ALL("All media"),
+    ;
 
     fun includesThumbnails(): Boolean = this != NONE
 

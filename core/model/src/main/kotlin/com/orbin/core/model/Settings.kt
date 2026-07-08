@@ -89,10 +89,13 @@ data class AppSettings(
     }
 }
 
-enum class PreloadThrottleMode(val label: String) {
+enum class PreloadThrottleMode(
+    val label: String,
+) {
     CONSERVATIVE("Conservative (1 at a time)"),
     MODERATE("Moderate (2 at a time)"),
-    AGGRESSIVE("Aggressive (3 at a time)")
+    AGGRESSIVE("Aggressive (3 at a time)"),
+    ;
 }
 
 fun AppSettings.hiddenTagTokens(): Set<String> = parseFilterTokens(hiddenTags)
