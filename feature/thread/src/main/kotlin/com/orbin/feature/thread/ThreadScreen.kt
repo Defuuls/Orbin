@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
@@ -293,7 +293,10 @@ private fun ThumbnailGridContent(
     modifier: Modifier = Modifier,
 ) {
     val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
-    val gridState = rememberLazyGridState()
+    val gridState =
+        rememberSaveable(thread.key, saver = LazyGridState.Saver) {
+            LazyGridState()
+        }
     val fill = thumbnailSize == ThumbnailSize.FILL
 
     LaunchedEffect(mediaScrollIndex) {
