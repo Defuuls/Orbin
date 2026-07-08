@@ -55,19 +55,16 @@ enum class ThumbnailSize(
  * a single stable object.
  */
 data class AppSettings(
-    // Home / content
     val personalizedHomeFeed: Boolean = true,
     val hiddenTags: String = "",
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
-    // Appearance
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
-    // Media
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
     val preloadImages: Boolean = true,
@@ -76,7 +73,6 @@ data class AppSettings(
     val imageCacheLimitMb: Int = 256,
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
     val downloadFolderUri: String = "",
-    // Network / privacy
     val userAgent: String = "",
     val dohEnabled: Boolean = false,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
