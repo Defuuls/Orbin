@@ -13,6 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 /** Whether the app follows the system theme or is forced light/dark. */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** Color scheme variant selection. */
+enum class ColorSchemeVariant { ORBIN, TOMORROW, TOMORROW_NIGHT }
+
 private val LightColors =
     lightColorScheme(
         primary = OrbinPrimary,
@@ -89,16 +92,94 @@ private val DarkColors =
         surfaceContainerHighest = OrbinDarkSurfaceContainerHighest,
     )
 
+private val TomorrowLightColors =
+    lightColorScheme(
+        primary = TomorrowPrimary,
+        onPrimary = TomorrowOnPrimary,
+        primaryContainer = TomorrowPrimaryContainer,
+        onPrimaryContainer = TomorrowOnPrimaryContainer,
+        secondary = TomorrowSecondary,
+        onSecondary = TomorrowOnSecondary,
+        secondaryContainer = TomorrowSecondaryContainer,
+        onSecondaryContainer = TomorrowOnSecondaryContainer,
+        tertiary = TomorrowTertiary,
+        onTertiary = TomorrowOnTertiary,
+        tertiaryContainer = TomorrowTertiaryContainer,
+        onTertiaryContainer = TomorrowOnTertiaryContainer,
+        error = TomorrowError,
+        onError = TomorrowOnError,
+        errorContainer = TomorrowErrorContainer,
+        onErrorContainer = TomorrowOnErrorContainer,
+        background = TomorrowBackground,
+        onBackground = TomorrowOnBackground,
+        surface = TomorrowSurface,
+        onSurface = TomorrowOnSurface,
+        surfaceVariant = TomorrowSurfaceVariant,
+        onSurfaceVariant = TomorrowOnSurfaceVariant,
+        surfaceTint = TomorrowPrimary,
+        inverseSurface = TomorrowInverseSurface,
+        inverseOnSurface = TomorrowInverseOnSurface,
+        inversePrimary = TomorrowInversePrimary,
+        outline = TomorrowOutline,
+        outlineVariant = TomorrowOutlineVariant,
+        scrim = TomorrowScrim,
+        surfaceContainerLowest = TomorrowSurfaceContainerLowest,
+        surfaceContainerLow = TomorrowSurfaceContainerLow,
+        surfaceContainer = TomorrowSurfaceContainer,
+        surfaceContainerHigh = TomorrowSurfaceContainerHigh,
+        surfaceContainerHighest = TomorrowSurfaceContainerHighest,
+    )
+
+private val TomorrowNightDarkColors =
+    darkColorScheme(
+        primary = TomorrowNightPrimary,
+        onPrimary = TomorrowNightOnPrimary,
+        primaryContainer = TomorrowNightPrimaryContainer,
+        onPrimaryContainer = TomorrowNightOnPrimaryContainer,
+        secondary = TomorrowNightSecondary,
+        onSecondary = TomorrowNightOnSecondary,
+        secondaryContainer = TomorrowNightSecondaryContainer,
+        onSecondaryContainer = TomorrowNightOnSecondaryContainer,
+        tertiary = TomorrowNightTertiary,
+        onTertiary = TomorrowNightOnTertiary,
+        tertiaryContainer = TomorrowNightTertiaryContainer,
+        onTertiaryContainer = TomorrowNightOnTertiaryContainer,
+        error = TomorrowNightError,
+        onError = TomorrowNightOnError,
+        errorContainer = TomorrowNightErrorContainer,
+        onErrorContainer = TomorrowNightOnErrorContainer,
+        background = TomorrowNightBackground,
+        onBackground = TomorrowNightOnBackground,
+        surface = TomorrowNightSurface,
+        onSurface = TomorrowNightOnSurface,
+        surfaceVariant = TomorrowNightSurfaceVariant,
+        onSurfaceVariant = TomorrowNightOnSurfaceVariant,
+        surfaceTint = TomorrowNightPrimary,
+        inverseSurface = TomorrowNightInverseSurface,
+        inverseOnSurface = TomorrowNightInverseOnSurface,
+        inversePrimary = TomorrowNightInversePrimary,
+        outline = TomorrowNightOutline,
+        outlineVariant = TomorrowNightOutlineVariant,
+        scrim = TomorrowScrim,
+        surfaceContainerLowest = TomorrowNightSurfaceContainerLowest,
+        surfaceContainerLow = TomorrowNightSurfaceContainerLow,
+        surfaceContainer = TomorrowNightSurfaceContainer,
+        surfaceContainerHigh = TomorrowNightSurfaceContainerHigh,
+        surfaceContainerHighest = TomorrowNightSurfaceContainerHighest,
+    )
+
 /**
  * The Orbin Material 3 theme. On Android 12+ (always true at our min SDK 35) dynamic color is
  * used when [dynamicColor] is on; otherwise the brand schemes apply. When [amoled] is set in dark
  * mode, backgrounds/surfaces collapse to true black to save power on OLED panels.
  *
  * @param fontScale multiplies in-app text sizes (appearance setting), independent of system scale.
+ * @param colorSchemeVariant selects the color palette variant (Orbin, Tomorrow, Tomorrow Night).
  */
 @Composable
 fun OrbinTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
+    colorSchemeVariant: ColorSchemeVariant = ColorSchemeVariant.ORBIN,
     dynamicColor: Boolean = true,
     amoled: Boolean = false,
     fontScale: Float = 1f,
@@ -114,6 +195,9 @@ fun OrbinTheme(
     val context = LocalContext.current
     val baseScheme =
         when {
+            colorSchemeVariant == ColorSchemeVariant.TOMORROW_NIGHT -> TomorrowNightDarkColors
+            colorSchemeVariant == ColorSchemeVariant.TOMORROW && darkTheme -> TomorrowNightDarkColors
+            colorSchemeVariant == ColorSchemeVariant.TOMORROW && !darkTheme -> TomorrowLightColors
             dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
             dynamicColor && !darkTheme -> dynamicLightColorScheme(context)
             darkTheme -> DarkColors

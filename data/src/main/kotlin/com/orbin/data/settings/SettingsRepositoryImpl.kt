@@ -9,9 +9,11 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.common.dispatchers.ApplicationScope
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -73,6 +75,14 @@ class SettingsRepositoryImpl
 
         override suspend fun setThemeMode(mode: AppThemeMode) {
             edit { it[Keys.themeMode] = mode.name }
+        }
+
+        suspend fun setColorTheme(theme: ColorTheme) {
+            edit { it[Keys.colorTheme] = theme.name }
+        }
+
+        suspend fun setAppIconVariant(variant: AppIconVariant) {
+            edit { it[Keys.appIconVariant] = variant.name }
         }
 
         override suspend fun setDynamicColor(enabled: Boolean) {
@@ -217,9 +227,15 @@ class SettingsRepositoryImpl
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
+                colorTheme =
+                    this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
+                        ?: ColorTheme.ORBIN,
                 dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
+                appIconVariant =
+                    this[Keys.appIconVariant]?.toEnumOrDefault(AppIconVariant.DEFAULT)
+                        ?: AppIconVariant.DEFAULT,
                 thumbnailSize =
                     this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
                         ?: ThumbnailSize.MEDIUM,
@@ -273,6 +289,8 @@ class SettingsRepositoryImpl
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
             val themeMode = stringPreferencesKey("theme_mode")
+            val colorTheme = stringPreferencesKey("color_theme")
+            val appIconVariant = stringPreferencesKey("app_icon_variant")
             val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")

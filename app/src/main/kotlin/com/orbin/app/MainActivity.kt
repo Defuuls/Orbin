@@ -41,9 +41,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
+import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.ColorTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -345,6 +347,7 @@ private fun AppContent(
 ) {
     com.orbin.core.designsystem.theme.OrbinTheme(
         themeMode = settings.themeMode.toDesignSystem(),
+        colorSchemeVariant = settings.colorTheme.toDesignSystem(),
         dynamicColor = settings.dynamicColor,
         amoled = settings.amoled,
         fontScale = settings.fontScale,
@@ -421,6 +424,13 @@ private fun AppThemeMode.toDesignSystem(): ThemeMode =
         AppThemeMode.SYSTEM -> ThemeMode.SYSTEM
         AppThemeMode.LIGHT -> ThemeMode.LIGHT
         AppThemeMode.DARK -> ThemeMode.DARK
+    }
+
+private fun ColorTheme.toDesignSystem(): ColorSchemeVariant =
+    when (this) {
+        ColorTheme.ORBIN -> ColorSchemeVariant.ORBIN
+        ColorTheme.TOMORROW -> ColorSchemeVariant.TOMORROW
+        ColorTheme.TOMORROW_NIGHT -> ColorSchemeVariant.TOMORROW_NIGHT
     }
 
 private fun shouldRequestNotificationPermission(
