@@ -6,10 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [31-Fomalhaut C] - 2026-07-09
+
 ### Fixed
 - **Full-screen feed:** the option now actually goes full screen — the status and navigation
   bars hide together with the feed chrome while scrolling, and the duplicated window-inset
   padding that left white strips at the top and bottom of the feed view is removed.
+
+### Changed
+- **Release:** prepare the v31 release for the Fomalhaut C milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
 
 ## [30-Janus] - 2026-07-09
 
@@ -377,7 +383,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v30-Janus...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v31-Fomalhaut-C...HEAD
+[31-Fomalhaut C]: https://github.com/Defuuls/Orbin/compare/v30-Janus...v31-Fomalhaut-C
 [30-Janus]: https://github.com/Defuuls/Orbin/compare/v29-Brown-Bears...v30-Janus
 [25.2.1]: https://github.com/Defuuls/Orbin/compare/v25.2...v25.2.1
 [25.2]: https://github.com/Defuuls/Orbin/compare/v25.1...v25.2
