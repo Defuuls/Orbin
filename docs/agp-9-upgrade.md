@@ -10,7 +10,7 @@ AGP 9.2.1 / Gradle 9.4.1 / Kotlin 2.2.21, executed July 2026.
 | AGP | 8.13.2 | 9.2.1 | Target. 9.2.1 (not 9.2.0) because 9.2.0 ships an R8 `RecordTag` `ClassNotFoundException` regression fixed in the patch. |
 | Gradle | 8.14.3 | 9.4.1 | AGP 9.2 minimum/default. |
 | Kotlin (KGP) | 2.0.21 | 2.2.21 | AGP 9 bundles/expects KGP 2.2.10+. |
-| KSP | 2.0.21-1.0.28 | 2.2.21-2.0.5 | Must match Kotlin; 2.x line is KSP2. |
+| KSP | 2.0.21-1.0.28 | 2.3.6 | KSP is standalone-versioned since 2.3.0 (no Kotlin prefix). 2.3.1+ is required for AGP 9 built-in Kotlin — older KSP fails configuration with "KSP is not compatible with Android Gradle Plugin's built-in Kotlin". |
 | Room | 2.6.1 | 2.8.4 | 2.7.0 was the first release with proper KSP2/Kotlin 2.x support; 2.6.1 room-compiler fails under KSP2. |
 | Hilt | 2.53.1 | 2.60.1 | Hilt 2.59 is the first Gradle plugin supporting (and requiring) AGP 9; 2.59.2+ fixes Gradle 9 transform registration. Must move in the same commit as AGP. |
 | detekt | 1.23.7 | 1.23.8 | Kotlin 2.x analysis support. |

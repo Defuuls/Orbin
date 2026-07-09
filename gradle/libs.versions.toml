@@ -2,7 +2,9 @@
 # Android / Build
 agp = "9.2.1"
 kotlin = "2.2.21"
-ksp = "2.2.21-2.0.5"
+# KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
+# built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
+ksp = "2.3.6"
 compileSdk = "36"
 minSdk = "35"
 targetSdk = "36"
