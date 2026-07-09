@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Exposes settings and update actions for the settings screen. */
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class SettingsViewModel
     @Inject
