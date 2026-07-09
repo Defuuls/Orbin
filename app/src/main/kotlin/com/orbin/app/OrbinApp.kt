@@ -1,5 +1,8 @@
 package com.orbin.app
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +15,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -32,6 +37,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,8 +47,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -85,8 +95,34 @@ fun OrbinApp(
             }
         }
 
+        // True full screen: while the feed chrome is scrolled away, also hide the status and
+        // navigation bars so the feed uses the entire display instead of leaving inset strips.
+        val view = LocalView.current
+        val immersiveFeed = isSubscribedFeed && fullScreenFeedChrome && !feedChromeVisible
+        DisposableEffect(view, immersiveFeed) {
+            val window = view.context.findActivity()?.window
+            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+            if (controller != null) {
+                if (immersiveFeed) {
+                    controller.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    controller.hide(WindowInsetsCompat.Type.systemBars())
+                } else {
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
+            onDispose {
+                if (immersiveFeed) {
+                    controller?.show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
+        }
+
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            // Each destination owns its insets via its own top bar / scaffold; applying the
+            // default insets here as well double-pads content with status/navigation-bar strips.
+            contentWindowInsets = WindowInsets(0),
             bottomBar = {
                 AnimatedVisibility(
                     visible = bottomBarVisible,
@@ -127,7 +163,7 @@ fun OrbinApp(
         ) { padding ->
             OrbinNavHost(
                 navController = navController,
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
                 startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
                 subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
                 hideSubscribedFeedTopBar = useTabletFeedDock,
@@ -287,6 +323,13 @@ private fun RowScope.TopLevelNavigationItems(
         )
     }
 }
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 
 private fun NavHostController.navigateToTopLevel(destination: TopLevelDestination) {
     navigate(destination.route) {

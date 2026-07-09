@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Full-screen feed:** the option now actually goes full screen — the status and navigation
+  bars hide together with the feed chrome while scrolling, and the duplicated window-inset
+  padding that left white strips at the top and bottom of the feed view is removed.
+
 ## [30-Janus] - 2026-07-09
 
 ### Added
