@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Gallery:** the board picker now offers only subscribed boards (honouring the NSFW-board
+  visibility setting), matching the feed instead of listing every board on the provider.
+- **Bookmarks:** the Bookmarks bottom-navigation tab is removed; bookmarks now live in a
+  Bookmarks tab inside the Gallery view, keeping the watch toggle, unread badges, and remove
+  actions.
+
 ## [32-EQ Pegasi A] - 2026-07-09
 
 ### Fixed

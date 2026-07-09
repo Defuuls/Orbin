@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.Board
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
@@ -19,14 +21,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -48,6 +54,7 @@ data class GalleryBrowserUiState(
     val message: String? = null,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class GalleryBrowserViewModel
     @Inject
@@ -57,6 +64,7 @@ class GalleryBrowserViewModel
         private val threadRepository: ThreadRepository,
         private val mediaPreloader: MediaPreloader,
         private val settingsRepository: SettingsRepository,
+        private val boardPreferencesRepository: BoardPreferencesRepository,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -69,10 +77,15 @@ class GalleryBrowserViewModel
 
         init {
             activeProvider
-                .onEach { provider ->
+                .flatMapLatest { provider ->
+                    boardPreferencesRepository
+                        .observeSubscribedBoards(provider.metadata.id)
+                        .distinctUntilChanged()
+                        .map { subscribedIds -> provider to subscribedIds }
+                }.onEach { (provider, subscribedIds) ->
                     threadJob?.cancel()
                     _uiState.value = GalleryBrowserUiState(provider = provider.metadata.id)
-                    loadBoards(provider)
+                    loadBoards(provider, subscribedIds)
                 }.launchIn(viewModelScope)
         }
 
@@ -165,18 +178,33 @@ class GalleryBrowserViewModel
             }
         }
 
-        private fun loadBoards(provider: ImageBoardProvider) {
+        private fun loadBoards(
+            provider: ImageBoardProvider,
+            subscribedIds: Set<BoardId>,
+        ) {
             viewModelScope.launch {
                 runCatching { provider.getBoards() }
                     .onSuccess { boards ->
-                        val selected = boards.firstOrNull()
+                        // The gallery browses subscribed boards only, mirroring the feed's rules.
+                        val hideNsfw = settingsRepository.settings.first().hideNsfwBoards
+                        val subscribed =
+                            boards
+                                .filter { it.id in subscribedIds }
+                                .filterNot { board -> hideNsfw && board.isNsfw }
+                                .sortedBy { it.id.value }
+                        val selected = subscribed.firstOrNull()
                         _uiState.update {
                             it.copy(
-                                boards = boards.toImmutableList(),
+                                boards = subscribed.toImmutableList(),
                                 selectedBoard = selected,
                                 loadingBoards = false,
                                 loadingThreads = selected != null,
-                                message = if (selected == null) "No boards available" else null,
+                                message =
+                                    if (selected == null) {
+                                        "No subscribed boards — subscribe to boards to browse their media"
+                                    } else {
+                                        null
+                                    },
                             )
                         }
                         if (selected != null) loadThreads(provider, selected)

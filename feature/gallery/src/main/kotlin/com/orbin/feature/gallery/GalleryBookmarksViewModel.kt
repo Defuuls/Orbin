@@ -1,4 +1,4 @@
-package com.orbin.feature.bookmarks
+package com.orbin.feature.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,9 +16,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Exposes the user's bookmarks and watch/remove actions. */
+/** Exposes the user's bookmarks and watch/remove actions for the gallery's Bookmarks tab. */
 @HiltViewModel
-class BookmarksViewModel
+class GalleryBookmarksViewModel
     @Inject
     constructor(
         private val repository: BookmarkRepository,

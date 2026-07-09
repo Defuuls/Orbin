@@ -1,4 +1,4 @@
-package com.orbin.feature.bookmarks
+package com.orbin.feature.gallery
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -13,7 +13,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
-class BookmarksViewModelTest {
+class GalleryBookmarksViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
@@ -23,7 +23,7 @@ class BookmarksViewModelTest {
     @Test
     fun `exposes bookmarks from the repository`() =
         runTest {
-            val viewModel = BookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
+            val viewModel = GalleryBookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
 
             viewModel.bookmarks.test {
                 assertThat(awaitItem().map { it.title }).containsExactly("Thread")
@@ -33,7 +33,7 @@ class BookmarksViewModelTest {
     @Test
     fun `remove deletes the bookmark`() =
         runTest {
-            val viewModel = BookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
+            val viewModel = GalleryBookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
 
             viewModel.bookmarks.test {
                 assertThat(awaitItem()).hasSize(1)
@@ -45,7 +45,7 @@ class BookmarksViewModelTest {
     @Test
     fun `toggleWatched updates the watched flag`() =
         runTest {
-            val viewModel = BookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
+            val viewModel = GalleryBookmarksViewModel(FakeBookmarkRepository(listOf(bookmark)))
 
             viewModel.bookmarks.test {
                 assertThat(awaitItem().single().isWatched).isFalse()

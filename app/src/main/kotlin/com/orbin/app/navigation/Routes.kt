@@ -21,9 +21,6 @@ sealed interface Route {
     data object Search : Route
 
     @Serializable
-    data object Bookmarks : Route
-
-    @Serializable
     data object History : Route
 
     @Serializable

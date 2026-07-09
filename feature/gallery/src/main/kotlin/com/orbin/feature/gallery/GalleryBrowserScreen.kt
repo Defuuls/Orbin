@@ -28,14 +28,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +61,10 @@ import com.orbin.media.image.OrbinAsyncImage
 @Composable
 fun GalleryBrowserScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, startIndex: Int) -> Unit,
+    onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     viewModel: GalleryBrowserViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectedTab by rememberSaveable { mutableIntStateOf(BROWSE_TAB) }
 
     Scaffold(
         topBar = {
@@ -68,7 +73,12 @@ fun GalleryBrowserScreen(
                     Column {
                         Text("Gallery")
                         Text(
-                            text = "Browse media by board and thread",
+                            text =
+                                if (selectedTab == BROWSE_TAB) {
+                                    "Browse media by board and thread"
+                                } else {
+                                    "Your bookmarked threads"
+                                },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -77,40 +87,68 @@ fun GalleryBrowserScreen(
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            GalleryControls(
-                state = state,
-                onSelectBoard = viewModel::selectBoard,
-                onSelectThread = viewModel::selectThread,
-                onPreload = viewModel::preloadSelectedThread,
-            )
-
-            when {
-                state.loadingBoards || state.loadingThreads ->
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-
-                state.media.isEmpty() ->
-                    EmptyView(state.message ?: "No media in this thread", Modifier.fillMaxSize())
-
-                else ->
-                    MediaGrid(
-                        media = state.media,
-                        onOpenMedia = { index ->
-                            val thread = state.selectedThread ?: return@MediaGrid
-                            onOpenMedia(
-                                state.provider.value,
-                                thread.key.board.value,
-                                thread.key.thread.value,
-                                index,
-                            )
-                        },
-                    )
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
+                Tab(
+                    selected = selectedTab == BROWSE_TAB,
+                    onClick = { selectedTab = BROWSE_TAB },
+                    text = { Text("Browse") },
+                )
+                Tab(
+                    selected = selectedTab == BOOKMARKS_TAB,
+                    onClick = { selectedTab = BOOKMARKS_TAB },
+                    text = { Text("Bookmarks") },
+                )
             }
+            if (selectedTab == BROWSE_TAB) {
+                GalleryBrowseTab(onOpenMedia = onOpenMedia, viewModel = viewModel)
+            } else {
+                GalleryBookmarksTab(onOpenThread = onOpenThread)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryBrowseTab(
+    onOpenMedia: (provider: String, board: String, thread: Long, startIndex: Int) -> Unit,
+    viewModel: GalleryBrowserViewModel,
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        GalleryControls(
+            state = state,
+            onSelectBoard = viewModel::selectBoard,
+            onSelectThread = viewModel::selectThread,
+            onPreload = viewModel::preloadSelectedThread,
+        )
+
+        when {
+            state.loadingBoards || state.loadingThreads ->
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+
+            state.media.isEmpty() ->
+                EmptyView(state.message ?: "No media in this thread", Modifier.fillMaxSize())
+
+            else ->
+                MediaGrid(
+                    media = state.media,
+                    onOpenMedia = { index ->
+                        val thread = state.selectedThread ?: return@MediaGrid
+                        onOpenMedia(
+                            state.provider.value,
+                            thread.key.board.value,
+                            thread.key.thread.value,
+                            index,
+                        )
+                    },
+                )
         }
     }
 }
@@ -315,3 +353,6 @@ private fun MediaTile(
 }
 
 private fun CatalogThread.label(): String = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}"
+
+private const val BROWSE_TAB = 0
+private const val BOOKMARKS_TAB = 1
