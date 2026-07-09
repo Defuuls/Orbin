@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.LibraryExtension
+import com.orbin.buildlogic.configureJava
 import com.orbin.buildlogic.configureKotlinAndroid
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -17,6 +18,9 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this)
+            compileOptions {
+                configureJava()
+            }
             defaultConfig {
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 consumerProguardFiles("consumer-rules.pro")

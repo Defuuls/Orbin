@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.orbin.buildlogic.configureAndroidCompose
+import com.orbin.buildlogic.configureJava
 import com.orbin.buildlogic.configureKotlinAndroid
 import com.orbin.buildlogic.libs
 import org.gradle.api.Plugin
@@ -20,6 +21,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this)
+            compileOptions {
+                configureJava()
+            }
             defaultConfig {
                 targetSdk = libs.findVersion("targetSdk").get().requiredVersion.toInt()
                 vectorDrawables.useSupportLibrary = true
