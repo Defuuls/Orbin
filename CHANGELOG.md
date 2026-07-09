@@ -6,12 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [33-CM Draconis A] - 2026-07-09
+
 ### Changed
 - **Gallery:** the board picker now offers only subscribed boards (honouring the NSFW-board
   visibility setting), matching the feed instead of listing every board on the provider.
 - **Bookmarks:** the Bookmarks bottom-navigation tab is removed; bookmarks now live in a
   Bookmarks tab inside the Gallery view, keeping the watch toggle, unread badges, and remove
   actions.
+- **Release:** prepare the v33 release for the CM Draconis A milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
 
 ## [32-EQ Pegasi A] - 2026-07-09
 
@@ -401,7 +405,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v32-EQ-Pegasi-A...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v33-CM-Draconis-A...HEAD
+[33-CM Draconis A]: https://github.com/Defuuls/Orbin/compare/v32-EQ-Pegasi-A...v33-CM-Draconis-A
 [32-EQ Pegasi A]: https://github.com/Defuuls/Orbin/compare/v31-Fomalhaut-C...v32-EQ-Pegasi-A
 [31-Fomalhaut C]: https://github.com/Defuuls/Orbin/compare/v30-Janus...v31-Fomalhaut-C
 [30-Janus]: https://github.com/Defuuls/Orbin/compare/v29-Brown-Bears...v30-Janus
