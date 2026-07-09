@@ -102,9 +102,9 @@ object NetworkModule {
             // Deliberately no okhttp3.Cache here: ExoPlayer's OkHttpDataSource issues byte-range
             // (Range:) requests to seek/buffer within the file, and OkHttp's built-in disk cache
             // doesn't correctly serve or store partial (206) responses against it - a documented
-            // source of misbehavior for large streamed files. If on-disk caching of video is
-            // wanted later, use Media3's own range-aware SimpleCache/CacheDataSource instead.
-            // Override the base HeadersInterceptor's no-store/pragma with video-appropriate values.
+            // source of misbehavior for large streamed files. Media3's range-aware
+            // SimpleCache/CacheDataSource is layered on top of this client in :media.
+            // Keep video requests CDN-friendly even when the URL does not have a media extension.
             .addInterceptor { chain ->
                 val req =
                     chain

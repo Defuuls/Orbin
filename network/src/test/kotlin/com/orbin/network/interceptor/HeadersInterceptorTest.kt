@@ -10,7 +10,7 @@ import org.junit.Test
 
 class HeadersInterceptorTest {
     @Test
-    fun `adds privacy preserving cache headers`() {
+    fun `adds privacy preserving cache headers to api requests`() {
         MockWebServer().use { server ->
             server.enqueue(MockResponse())
             server.start()
@@ -27,6 +27,28 @@ class HeadersInterceptorTest {
             assertThat(request.getHeader("User-Agent")).isEqualTo("OrbinTest")
             assertThat(request.getHeader("Cache-Control")).isEqualTo("no-store")
             assertThat(request.getHeader("Pragma")).isEqualTo("no-cache")
+        }
+    }
+
+    @Test
+    fun `allows static media responses to use normal http caching`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse())
+            server.start()
+
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(HeadersInterceptor { NetworkConfig(userAgent = "OrbinTest") })
+                    .build()
+
+            client.newCall(Request.Builder().url(server.url("/g/1690000000000.jpg")).build()).execute().close()
+
+            val request = server.takeRequest()
+            assertThat(request.getHeader("User-Agent")).isEqualTo("OrbinTest")
+            assertThat(request.getHeader("Accept")).contains("image/*")
+            assertThat(request.getHeader("Cache-Control")).isNull()
+            assertThat(request.getHeader("Pragma")).isNull()
         }
     }
 }

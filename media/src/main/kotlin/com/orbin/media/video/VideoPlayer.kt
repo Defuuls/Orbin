@@ -49,12 +49,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
-import com.orbin.network.di.VideoOkHttp
+import com.orbin.media.di.VideoMediaDataSource
 import com.orbin.network.interceptor.RetryAfterTracker
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -62,7 +62,6 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.delay
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
 
 /**
  * A Media3/ExoPlayer-backed video player. The player is created per [url], loops by default, and
@@ -81,7 +80,7 @@ fun VideoPlayer(
     val context = LocalContext.current
     val appContext = context.applicationContext
     val uriHandler = LocalUriHandler.current
-    val okHttpClient = remember(appContext) { appContext.videoOkHttpClient() }
+    val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
@@ -93,11 +92,9 @@ fun VideoPlayer(
     var durationMs by remember { mutableLongStateOf(0L) }
     var bufferedProgress by remember { mutableFloatStateOf(0f) }
 
-    val httpDataSourceFactory = remember(okHttpClient) { OkHttpDataSource.Factory(okHttpClient) }
-
     val mediaSourceFactory =
-        remember(httpDataSourceFactory) {
-            DefaultMediaSourceFactory(httpDataSourceFactory, DefaultExtractorsFactory())
+        remember(dataSourceFactory) {
+            DefaultMediaSourceFactory(dataSourceFactory, DefaultExtractorsFactory())
         }
 
     val exoPlayer =
@@ -375,12 +372,12 @@ private fun VideoControls(
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 private interface VideoPlayerEntryPoint {
-    @VideoOkHttp
-    fun okHttpClient(): OkHttpClient
+    @VideoMediaDataSource
+    fun videoDataSourceFactory(): DataSource.Factory
 }
 
-private fun Context.videoOkHttpClient(): OkHttpClient =
-    EntryPointAccessors.fromApplication(this, VideoPlayerEntryPoint::class.java).okHttpClient()
+private fun Context.videoMediaDataSourceFactory(): DataSource.Factory =
+    EntryPointAccessors.fromApplication(this, VideoPlayerEntryPoint::class.java).videoDataSourceFactory()
 
 private fun Long.progressIn(durationMs: Long): Float =
     if (durationMs > 0L) {
