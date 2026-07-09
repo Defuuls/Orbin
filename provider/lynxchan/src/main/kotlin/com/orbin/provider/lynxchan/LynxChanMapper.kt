@@ -222,12 +222,14 @@ class LynxChanMapper(
 
     private fun String?.toSafeSitePath(): String? {
         val path = this?.trim().orEmpty()
-        if (path.isEmpty()) return null
-        if (!path.startsWith('/') || path.startsWith("//")) return null
-        if (path.any { it.isISOControl() || it.isWhitespace() }) return null
-        if (path.contains("\\")) return null
-        if (path.split('/').any { it == ".." }) return null
-        return path
+        val isSafe =
+            path.isNotEmpty() &&
+                path.startsWith('/') &&
+                !path.startsWith("//") &&
+                path.none { it.isISOControl() || it.isWhitespace() } &&
+                !path.contains("\\") &&
+                path.split('/').none { it == ".." }
+        return path.takeIf { isSafe }
     }
 
     private fun LynxChanSite.resolveSitePath(path: String): String = siteUrl.trimEnd('/') + path
