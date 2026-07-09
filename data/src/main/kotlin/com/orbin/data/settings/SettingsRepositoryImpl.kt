@@ -149,6 +149,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.saveRecentSearches] = enabled }
         }
 
+        override suspend fun setInternalUpdaterEnabled(enabled: Boolean) {
+            edit { it[Keys.internalUpdater] = enabled }
+        }
+
         override suspend fun setUserAgent(userAgent: String) {
             edit { it[Keys.userAgent] = userAgent }
         }
@@ -266,6 +270,7 @@ class SettingsRepositoryImpl
                 httpsOnly = true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
+                internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
@@ -313,6 +318,7 @@ class SettingsRepositoryImpl
             val dohProvider = stringPreferencesKey("doh_provider")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
+            val internalUpdater = booleanPreferencesKey("internal_updater")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 

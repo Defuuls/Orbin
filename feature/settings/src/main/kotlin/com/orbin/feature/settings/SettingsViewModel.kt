@@ -100,6 +100,8 @@ class SettingsViewModel
 
         fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
 
+        fun setInternalUpdater(enabled: Boolean) = update { repository.setInternalUpdaterEnabled(enabled) }
+
         fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
 
         fun setAppIconVariant(variant: AppIconVariant) = update { repository.setAppIconVariant(variant) }

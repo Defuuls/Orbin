@@ -58,6 +58,8 @@ interface SettingsRepository {
 
     suspend fun setSaveRecentSearches(enabled: Boolean)
 
+    suspend fun setInternalUpdaterEnabled(enabled: Boolean)
+
     suspend fun setUserAgent(userAgent: String)
 
     suspend fun setOnboardingCompleted(completed: Boolean)
