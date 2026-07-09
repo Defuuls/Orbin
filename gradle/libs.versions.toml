@@ -1,6 +1,6 @@
 [versions]
 # Android / Build
-agp = "8.13.2"
+agp = "9.2.1"
 kotlin = "2.2.21"
 ksp = "2.2.21-2.0.5"
 compileSdk = "36"
@@ -21,7 +21,9 @@ paging = "3.3.5"
 pagingCompose = "3.3.5"
 
 # DI
-hilt = "2.53.1"
+# 2.59 is the first Hilt release whose Gradle plugin supports (and requires) AGP 9;
+# 2.59.2+ fixes transform registration on Gradle 9.
+hilt = "2.60.1"
 hiltNavigationCompose = "1.2.0"
 
 # Persistence

@@ -18,11 +18,11 @@ internal val Project.libs: VersionCatalog
  * Applies shared Android + Kotlin configuration: SDK levels, Java/Kotlin 17 targets,
  * desugaring-free defaults, and common compiler flags. Used by every Android module.
  */
-internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, *, *, *, *, *>) {
+internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension) {
     commonExtension.apply {
         compileSdk = libs.findVersion("compileSdk").get().requiredVersion.toInt()
 
-        defaultConfig {
+        defaultConfig.apply {
             minSdk = libs.findVersion("minSdk").get().requiredVersion.toInt()
         }
 
