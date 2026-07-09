@@ -82,9 +82,9 @@ class LynxChanMapper(
     }
 
     private fun catalogThumbAttachment(dto: LynxChanCatalogThread): MediaAttachment? {
-        val thumb = dto.thumb?.takeIf { it.isNotBlank() } ?: return null
+        val thumb = dto.thumb.toSafeSitePath() ?: return null
         val mime = dto.mime.orEmpty()
-        val url = "${site.siteUrl}$thumb"
+        val url = site.resolveSitePath(thumb)
         return MediaAttachment(
             id = thumb,
             // Catalog previews don't expose the original filename or a full-resolution source; the
@@ -141,7 +141,7 @@ class LynxChanMapper(
                     capcode = response.signedRole,
                 ),
             createdAtMillis = response.creation.parseIsoOrZero(),
-            attachments = response.files.map(::mapFile).toImmutableList(),
+            attachments = response.files.mapNotNull(::mapFile).toImmutableList(),
             repliesTo = comment.quotedPosts.toImmutableList(),
             backlinks = persistentListOf(),
         )
@@ -167,26 +167,28 @@ class LynxChanMapper(
                     capcode = dto.signedRole,
                 ),
             createdAtMillis = dto.creation.parseIsoOrZero(),
-            attachments = dto.files.map(::mapFile).toImmutableList(),
+            attachments = dto.files.mapNotNull(::mapFile).toImmutableList(),
             repliesTo = comment.quotedPosts.toImmutableList(),
             backlinks = persistentListOf(),
         )
     }
 
-    private fun mapFile(file: LynxChanFile): MediaAttachment {
+    private fun mapFile(file: LynxChanFile): MediaAttachment? {
         val type = file.mime.toMediaType()
+        val sourcePath = file.path.toSafeSitePath() ?: return null
+        val thumbnailPath = (file.thumb ?: file.path).toSafeSitePath() ?: sourcePath
         return MediaAttachment(
-            id = file.path,
-            originalFileName = file.originalName ?: file.path.substringAfterLast('/'),
+            id = sourcePath,
+            originalFileName = file.originalName ?: sourcePath.substringAfterLast('/'),
             extension =
-                file.path
+                sourcePath
                     .substringAfterLast(
                         '.',
                         missingDelimiterValue = "",
                     ).ifBlank { file.mime.toExtension() },
             type = type,
-            sourceUrl = "${site.siteUrl}${file.path}",
-            thumbnailUrl = "${site.siteUrl}${file.thumb ?: file.path}",
+            sourceUrl = site.resolveSitePath(sourcePath),
+            thumbnailUrl = site.resolveSitePath(thumbnailPath),
             width = file.width,
             height = file.height,
             sizeBytes = file.size,
@@ -217,4 +219,16 @@ class LynxChanMapper(
             "audio/ogg" -> "ogg"
             else -> substringAfter('/', missingDelimiterValue = "bin")
         }
+
+    private fun String?.toSafeSitePath(): String? {
+        val path = this?.trim().orEmpty()
+        if (path.isEmpty()) return null
+        if (!path.startsWith('/') || path.startsWith("//")) return null
+        if (path.any { it.isISOControl() || it.isWhitespace() }) return null
+        if (path.contains("\\")) return null
+        if (path.split('/').any { it == ".." }) return null
+        return path
+    }
+
+    private fun LynxChanSite.resolveSitePath(path: String): String = siteUrl.trimEnd('/') + path
 }
