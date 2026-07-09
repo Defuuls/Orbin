@@ -40,6 +40,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +87,7 @@ fun ThreadScreen(
     var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
     val thumbnailSize = thumbnailSizeOverride ?: defaultThumbnailSize
     val snackbarHostState = remember { SnackbarHostState() }
+    var scrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(exportMessage) {
         exportMessage?.let {
@@ -98,6 +100,11 @@ fun ThreadScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
+                modifier =
+                    Modifier.clickable(
+                        onClickLabel = "Scroll to top",
+                        onClick = { scrollToTopRequest += 1 },
+                    ),
                 title = { Text(viewModel.title.ifBlank { "Thread" }, maxLines = 1) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -170,6 +177,7 @@ fun ThreadScreen(
                     onOpenMedia = onOpenMedia,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
+                    scrollToTopRequest = scrollToTopRequest,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -184,6 +192,7 @@ private fun ThreadContent(
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
+    scrollToTopRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     when (layoutMode) {
@@ -193,6 +202,7 @@ private fun ThreadContent(
                 onOpenMedia = onOpenMedia,
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
+                scrollToTopRequest = scrollToTopRequest,
                 modifier = modifier,
             )
         ThreadLayoutMode.ThumbnailGrid ->
@@ -202,6 +212,7 @@ private fun ThreadContent(
                 onOpenMedia = onOpenMedia,
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
+                scrollToTopRequest = scrollToTopRequest,
                 modifier = modifier,
             )
     }
@@ -213,6 +224,7 @@ private fun PostListContent(
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
+    scrollToTopRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread) { thread.allPosts }
@@ -259,6 +271,10 @@ private fun PostListContent(
         onMediaScrollConsumed()
     }
 
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    }
+
     LazyColumn(
         modifier = modifier,
         state = listState,
@@ -290,6 +306,7 @@ private fun ThumbnailGridContent(
     onOpenMedia: (Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
+    scrollToTopRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
@@ -303,6 +320,10 @@ private fun ThumbnailGridContent(
         val target = mediaScrollIndex ?: return@LaunchedEffect
         gridState.animateScrollToItem(target)
         onMediaScrollConsumed()
+    }
+
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
     }
 
     LazyVerticalGrid(

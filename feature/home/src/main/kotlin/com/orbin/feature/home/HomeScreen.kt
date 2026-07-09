@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
@@ -27,6 +28,8 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -36,6 +39,7 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import kotlinx.coroutines.launch
 
 /** Home screen: the board list for the active provider. Tapping a board opens its catalog. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +55,8 @@ fun HomeScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val scope = rememberCoroutineScope()
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(providerId, board.id.value, board.title)
     }
@@ -59,6 +65,11 @@ fun HomeScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
+                modifier =
+                    Modifier.clickable(
+                        onClickLabel = "Scroll to top",
+                        onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                    ),
                 title = { Text("Orbin") },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
@@ -86,6 +97,7 @@ fun HomeScreen(
                         onBoardClick = openBoard,
                         onFavoriteChange = viewModel::setFavorite,
                         onSubscriptionChange = viewModel::setSubscribed,
+                        listState = listState,
                     )
             }
         }
@@ -103,6 +115,7 @@ private fun BoardList(
     onBoardClick: (Board) -> Unit,
     onFavoriteChange: (board: String, favorite: Boolean) -> Unit,
     onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
+    listState: LazyListState,
 ) {
     val filteredBoards =
         boards
@@ -120,7 +133,7 @@ private fun BoardList(
                 }
             }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
         items(filteredBoards, key = { it.id.value }) { board ->
             val isFavorite = board.id.value in favoriteBoardIds
             val isSubscribed = board.id.value in subscribedBoardIds

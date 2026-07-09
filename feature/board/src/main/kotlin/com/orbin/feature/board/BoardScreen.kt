@@ -43,6 +43,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +63,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.OrbinAsyncImage
+import kotlinx.coroutines.launch
 
 /** Board catalog with a Kuroba-inspired dense list/grid presentation. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +80,7 @@ fun BoardScreen(
     val boardKey = "${viewModel.providerId}/${viewModel.boardId}"
     val listState = rememberSaveable(boardKey, saver = LazyListState.Saver) { LazyListState() }
     val gridState = rememberSaveable(boardKey, saver = LazyGridState.Saver) { LazyGridState() }
+    val scope = rememberCoroutineScope()
 
     val openThread: (CatalogThread) -> Unit = { thread ->
         onOpenThread(
@@ -92,6 +95,18 @@ fun BoardScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                modifier =
+                    Modifier.clickable(
+                        onClickLabel = "Scroll to top",
+                        onClick = {
+                            scope.launch {
+                                when (layoutMode) {
+                                    BoardLayoutMode.List -> listState.animateScrollToItem(0)
+                                    BoardLayoutMode.Grid -> gridState.animateScrollToItem(0)
+                                }
+                            }
+                        },
+                    ),
                 title = {
                     Column {
                         Text(viewModel.title.ifBlank { "/${viewModel.boardId}/" })

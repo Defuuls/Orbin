@@ -39,6 +39,12 @@ fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: Route = Route.SubscribedFeed,
+    subscribedFeedChromeHidesOnScroll: Boolean = false,
+    hideSubscribedFeedTopBar: Boolean = false,
+    tabletSubscribedFeedLayout: Boolean = false,
+    subscribedFeedScrollToTopRequest: Int = 0,
+    subscribedFeedRefreshRequest: Int = 0,
+    onFeedChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -75,6 +81,12 @@ fun OrbinNavHost(
                 onOpenThread = openThread,
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+                chromeHidesOnScroll = subscribedFeedChromeHidesOnScroll,
+                showTopBar = !hideSubscribedFeedTopBar,
+                tabletFeedLayout = tabletSubscribedFeedLayout,
+                scrollToTopRequest = subscribedFeedScrollToTopRequest,
+                refreshRequest = subscribedFeedRefreshRequest,
+                onChromeVisibleChange = onFeedChromeVisibleChange,
             )
         }
 

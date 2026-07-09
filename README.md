@@ -21,6 +21,8 @@ implementing a single interface.
 - Multi-provider support through a clean provider abstraction (vichan/4chan-compatible engine
   included; LynxChan, TinyIB, etc. can be added without touching app code).
 - Board list, catalog with sorting, and a rich thread viewer.
+- Subscribed feed with tap-to-top chrome, optional full-screen scrolling, and an adaptive
+  tablet dock that keeps navigation close without crowding the feed.
 
 **Thread viewer**
 - Structured reply tree with quote links, quote previews, and backlinks.
@@ -35,6 +37,8 @@ implementing a single interface.
 **Personalization**
 - Material 3 with dynamic color, light/dark, and AMOLED-black themes.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
+- Tablet feed rows use an old-Reddit-style thumbnail-and-text layout for faster scanning on
+  larger screens.
 - Predictive back gesture and smooth shared-element transitions.
 
 **Privacy & security**

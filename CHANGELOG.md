@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Feed chrome:** add iOS-style tap-to-top behavior from the top feed, board, and thread bars.
+- **Settings:** add a Full-screen feed option that lets the subscribed feed hide top and bottom
+  bars while scrolling for more reading space.
+- **Tablet feed:** add an initial tablet mock-up with a floating dock, combined subscribed-feed
+  controls, auto-hiding chrome, and old-Reddit-style thumbnail/text rows.
+
+### Fixed
+- **Media CDN usage:** cache video media through Media3 and avoid no-cache request headers for
+  static media so repeated viewing does not churn CDN requests.
+
 ## [25.2.1] - 2026-07-05
 
 ### Fixed

@@ -32,6 +32,9 @@ See [docs/development-setup.md](docs/development-setup.md) for details.
 - **DI.** Use constructor injection and Hilt. Bind implementations to interfaces in a `di` package.
 - **No leaky abstractions.** Transport/engine details stay inside `network`/`provider:*`. The rest
   of the app speaks in domain models and `OrbinResult`.
+- **Adaptive UI.** Feed chrome and navigation changes must preserve phone behavior while checking
+  tablet/foldable widths, landscape, and scrolling states. Prefer width/height breakpoints and
+  existing Compose state patterns over device-name checks.
 - **Documentation.** Public types and non-obvious logic get KDoc explaining the *why*.
 
 ## Tests
@@ -40,6 +43,8 @@ Every behavioral change ships with tests:
 - **Unit tests** for use cases, mappers, parsers, and ViewModels (`src/test`).
 - **Instrumented/UI tests** for Compose screens (`src/androidTest`).
 - **Screenshot tests** via Roborazzi for design-system components.
+- **Local build checks** for UI/chrome changes should include `:app:assembleDebug` and targeted
+  ktlint checks for touched modules.
 
 ```bash
 ./gradlew test                    # all JVM unit tests

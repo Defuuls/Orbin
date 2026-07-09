@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,17 +36,24 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +66,7 @@ import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,32 +74,87 @@ fun SubscribedFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenBoards: () -> Unit,
     onOpenSettings: () -> Unit,
+    chromeHidesOnScroll: Boolean = false,
+    showTopBar: Boolean = true,
+    tabletFeedLayout: Boolean = false,
+    scrollToTopRequest: Int = 0,
+    refreshRequest: Int = 0,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val scope = rememberCoroutineScope()
+    val scrollBehavior =
+        if (showTopBar && chromeHidesOnScroll) {
+            TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+        } else {
+            null
+        }
+
+    LaunchedEffect(chromeHidesOnScroll, listState) {
+        if (!chromeHidesOnScroll) {
+            onChromeVisibleChange(true)
+            return@LaunchedEffect
+        }
+
+        var previous = listState.scrollPositionKey()
+        snapshotFlow { listState.scrollPositionKey() }
+            .collect { current ->
+                val scrollingUp = current < previous
+                onChromeVisibleChange(current == 0 || scrollingUp)
+                previous = current
+            }
+    }
+
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) {
+            listState.animateScrollToItem(0)
+        }
+    }
+
+    LaunchedEffect(refreshRequest) {
+        if (refreshRequest > 0) {
+            viewModel.refresh()
+        }
+    }
 
     Scaffold(
+        modifier =
+            if (scrollBehavior != null) {
+                Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+            } else {
+                Modifier
+            },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("Subscribed")
-                },
-                actions = {
-                    IconButton(onClick = viewModel::refresh) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
-                    }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                    ),
-            )
+            if (showTopBar) {
+                TopAppBar(
+                    modifier =
+                        Modifier.clickable(
+                            onClickLabel = "Scroll to top",
+                            onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                        ),
+                    title = {
+                        Text("Subscribed")
+                    },
+                    actions = {
+                        IconButton(onClick = viewModel::refresh) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                        }
+                    },
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -111,6 +175,8 @@ fun SubscribedFeedScreen(
                             globalThreadLimit = settings.feedThreadLimit,
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
+                            listState = listState,
+                            tabletLayout = tabletFeedLayout,
                         )
                     }
             }
@@ -124,15 +190,23 @@ private fun SubscribedFeedList(
     providerId: String,
     feeds: List<SubscribedBoardFeed>,
     mutedTags: Set<String>,
-    thumbnailSizeDp: androidx.compose.ui.unit.Dp,
+    thumbnailSizeDp: Dp,
     globalThreadLimit: FeedThreadLimit,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    listState: LazyListState,
+    tabletLayout: Boolean,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        state = listState,
+        contentPadding =
+            if (tabletLayout) {
+                PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+            } else {
+                PaddingValues(8.dp)
+            },
+        verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 5.dp else 8.dp),
     ) {
         feeds.forEach { feed ->
             stickyHeader(key = "header-${feed.board.id.value}") {
@@ -147,6 +221,7 @@ private fun SubscribedFeedList(
                     thread = thread,
                     mutedTags = mutedTags,
                     thumbnailSizeDp = thumbnailSizeDp,
+                    tabletLayout = tabletLayout,
                     onClick = {
                         onOpenThread(
                             providerId,
@@ -241,43 +316,87 @@ private fun selectedIconOrNull(selected: Boolean): (@Composable () -> Unit)? =
 private fun FeedThreadCell(
     thread: CatalogThread,
     mutedTags: Set<String>,
-    thumbnailSizeDp: androidx.compose.ui.unit.Dp,
+    thumbnailSizeDp: Dp,
+    tabletLayout: Boolean,
     onClick: () -> Unit,
 ) {
     val isMuted = thread.matchesAny(mutedTags)
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+
+    if (tabletLayout) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 1.dp,
         ) {
-            FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+            FeedThreadCellContent(
+                thread = thread,
+                isMuted = isMuted,
+                thumbnailSizeDp = 108.dp,
+                tabletLayout = true,
+                onClick = onClick,
+            )
+        }
+    } else {
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
+            FeedThreadCellContent(
+                thread = thread,
+                isMuted = isMuted,
+                thumbnailSizeDp = thumbnailSizeDp,
+                tabletLayout = false,
+                onClick = onClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeedThreadCellContent(
+    thread: CatalogThread,
+    isMuted: Boolean,
+    thumbnailSizeDp: Dp,
+    tabletLayout: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = if (tabletLayout) 8.dp else 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (tabletLayout) 12.dp else 10.dp),
+    ) {
+        FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 4.dp else 6.dp),
+        ) {
+            Text(
+                text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
+                style =
+                    if (tabletLayout) {
+                        MaterialTheme.typography.bodyLarge
+                    } else {
+                        MaterialTheme.typography.titleSmall
+                    },
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
+                AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
+                if (isMuted) {
+                    AssistChip(onClick = onClick, label = { Text("Muted") })
+                }
+            }
+            Box(modifier = Modifier.heightIn(max = if (tabletLayout) 72.dp else 64.dp)) {
+                PostCommentText(
+                    comment = thread.originalPost.comment,
+                    onQuoteClick = { onClick() },
+                    onLinkClick = { onClick() },
+                    onClick = onClick,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
-                    AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
-                    if (isMuted) {
-                        AssistChip(onClick = onClick, label = { Text("Muted") })
-                    }
-                }
-                Box(modifier = Modifier.heightIn(max = 64.dp)) {
-                    PostCommentText(
-                        comment = thread.originalPost.comment,
-                        onQuoteClick = { onClick() },
-                        onLinkClick = { onClick() },
-                        onClick = onClick,
-                    )
-                }
             }
         }
     }
@@ -342,3 +461,8 @@ private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
     val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
     return tokens.any(haystack::contains)
 }
+
+private fun LazyListState.scrollPositionKey(): Int =
+    firstVisibleItemIndex * SCROLL_POSITION_INDEX_WEIGHT + firstVisibleItemScrollOffset
+
+private const val SCROLL_POSITION_INDEX_WEIGHT = 100_000

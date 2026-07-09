@@ -86,6 +86,7 @@ data class AppSettings(
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
     val appIconVariant: AppIconVariant = AppIconVariant.DEFAULT,
+    val fullScreenFeedChrome: Boolean = false,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
