@@ -14,7 +14,7 @@ class AppIconManager
         @ApplicationContext private val context: Context,
     ) {
         fun setIconVariant(variant: AppIconVariant) {
-            try {
+            runCatching {
                 val aliasNames =
                     mapOf(
                         AppIconVariant.DEFAULT to "com.orbin.app.DefaultIconAlias",
@@ -35,7 +35,7 @@ class AppIconManager
                         }
                     pm.setComponentEnabledSetting(componentName, state, PackageManager.DONT_KILL_APP)
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 android.util.Log.e("AppIconManager", "Failed to set icon variant: ${e.message}", e)
             }
         }
