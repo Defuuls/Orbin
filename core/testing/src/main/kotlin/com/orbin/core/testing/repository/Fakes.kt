@@ -253,6 +253,10 @@ class FakeSettingsRepository(
         update { copy(appIconVariant = variant) }
     }
 
+    override suspend fun setFullScreenFeedChrome(enabled: Boolean) {
+        update { copy(fullScreenFeedChrome = enabled) }
+    }
+
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }
     }

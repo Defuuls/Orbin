@@ -85,6 +85,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.appIconVariant] = variant.name }
         }
 
+        override suspend fun setFullScreenFeedChrome(enabled: Boolean) {
+            edit { it[Keys.fullScreenFeedChrome] = enabled }
+        }
+
         override suspend fun setDynamicColor(enabled: Boolean) {
             edit { it[Keys.dynamicColor] = enabled }
         }
@@ -236,6 +240,7 @@ class SettingsRepositoryImpl
                 appIconVariant =
                     this[Keys.appIconVariant]?.toEnumOrDefault(AppIconVariant.DEFAULT)
                         ?: AppIconVariant.DEFAULT,
+                fullScreenFeedChrome = this[Keys.fullScreenFeedChrome] ?: false,
                 thumbnailSize =
                     this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
                         ?: ThumbnailSize.MEDIUM,
@@ -291,6 +296,7 @@ class SettingsRepositoryImpl
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val appIconVariant = stringPreferencesKey("app_icon_variant")
+            val fullScreenFeedChrome = booleanPreferencesKey("full_screen_feed_chrome")
             val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")

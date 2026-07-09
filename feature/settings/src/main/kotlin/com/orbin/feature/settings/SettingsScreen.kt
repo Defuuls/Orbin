@@ -154,6 +154,12 @@ fun SettingsScreen(
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
             SwitchRow("AMOLED black", settings.amoled, viewModel::setAmoled)
+            SwitchRow(
+                "Full-screen feed",
+                settings.fullScreenFeedChrome,
+                viewModel::setFullScreenFeedChrome,
+                supporting = "Hide the feed bars while scrolling for more reading space.",
+            )
             ChoiceRow(
                 label = "Font size",
                 values = FontScaleOption.entries,

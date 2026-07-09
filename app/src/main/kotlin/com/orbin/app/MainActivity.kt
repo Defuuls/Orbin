@@ -369,7 +369,10 @@ private fun AppContent(
             ) {
                 if (ready) {
                     OrbinAppProviders {
-                        OrbinApp(startWithOnboarding = !settings.onboardingCompleted)
+                        OrbinApp(
+                            startWithOnboarding = !settings.onboardingCompleted,
+                            fullScreenFeedChrome = settings.fullScreenFeedChrome,
+                        )
                     }
                 }
             }

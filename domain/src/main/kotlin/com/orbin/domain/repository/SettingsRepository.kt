@@ -67,4 +67,6 @@ interface SettingsRepository {
     suspend fun setColorTheme(theme: ColorTheme)
 
     suspend fun setAppIconVariant(variant: AppIconVariant)
+
+    suspend fun setFullScreenFeedChrome(enabled: Boolean)
 }

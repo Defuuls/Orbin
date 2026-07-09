@@ -104,6 +104,8 @@ class SettingsViewModel
 
         fun setAppIconVariant(variant: AppIconVariant) = update { repository.setAppIconVariant(variant) }
 
+        fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
+
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()
