@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [30-Janus] - 2026-07-09
+
 ### Added
 - **Feed chrome:** add iOS-style tap-to-top behavior from the top feed, board, and thread bars.
 - **Settings:** add a Full-screen feed option that lets the subscribed feed hide top and bottom
@@ -16,6 +18,11 @@ All notable changes to Orbin are documented here. The format is based on
 ### Fixed
 - **Media CDN usage:** cache video media through Media3 and avoid no-cache request headers for
   static media so repeated viewing does not churn CDN requests.
+
+### Changed
+- **Release:** prepare the v30 release for the Janus milestone.
+- **Release naming:** smallest-known-star names replace bear-family codenames for release
+  milestones.
 
 ## [25.2.1] - 2026-07-05
 
@@ -365,7 +372,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v25.2.1...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v30-Janus...HEAD
+[30-Janus]: https://github.com/Defuuls/Orbin/compare/v29-Brown-Bears...v30-Janus
 [25.2.1]: https://github.com/Defuuls/Orbin/compare/v25.2...v25.2.1
 [25.2]: https://github.com/Defuuls/Orbin/compare/v25.1...v25.2
 [25.1]: https://github.com/Defuuls/Orbin/compare/v25.0...v25.1
