@@ -41,12 +41,54 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".StellarIconAlias"
+            android:name=".MinimalistIconAlias"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_stellar"
+            android:icon="@mipmap/ic_launcher_minimalist"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_stellar_round"
+            android:roundIcon="@mipmap/ic_launcher_minimalist_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".GradientIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_gradient"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_gradient_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".NeonIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_neon"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_neon_round"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".RetroIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_retro"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_retro_round"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

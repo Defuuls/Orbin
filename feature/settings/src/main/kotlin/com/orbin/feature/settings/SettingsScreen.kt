@@ -1,8 +1,6 @@
 package com.orbin.feature.settings
 
-import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -40,7 +38,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThumbnailSize
@@ -146,7 +146,8 @@ fun SettingsScreen(
             )
 
             SectionHeader("Appearance")
-            LauncherIconRow()
+            ColorThemeRow(settings.colorTheme, viewModel::setColorTheme)
+            AppIconVariantRow(settings.appIconVariant, viewModel::setAppIconVariant)
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
             SwitchRow("AMOLED black", settings.amoled, viewModel::setAmoled)
@@ -256,19 +257,30 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun LauncherIconRow() {
-    val context = LocalContext.current
-    var selected by remember { mutableStateOf(context.currentLauncherIcon()) }
+private fun ColorThemeRow(
+    current: ColorTheme,
+    onChange: (ColorTheme) -> Unit,
+) {
+    ChoiceRow(
+        label = "Color theme",
+        values = ColorTheme.entries,
+        selected = current,
+        text = { it.name.lowercase().replaceFirstChar { char -> char.uppercase() } },
+        onChange = onChange,
+    )
+}
 
+@Composable
+private fun AppIconVariantRow(
+    current: AppIconVariant,
+    onChange: (AppIconVariant) -> Unit,
+) {
     ChoiceRow(
         label = "App icon",
-        values = LauncherIconChoice.entries,
-        selected = selected,
-        text = { it.label },
-        onChange = { choice ->
-            context.setLauncherIcon(choice)
-            selected = choice
-        },
+        values = AppIconVariant.entries,
+        selected = current,
+        text = { it.name.lowercase().replaceFirstChar { char -> char.uppercase() } },
+        onChange = onChange,
     )
 }
 
@@ -371,37 +383,5 @@ private enum class FontScaleOption(
     companion object {
         fun fromScale(scale: Float): FontScaleOption =
             entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
-    }
-}
-
-private enum class LauncherIconChoice(
-    val label: String,
-    val aliasName: String,
-) {
-    DEFAULT("Orbit", "com.orbin.app.DefaultIconAlias"),
-    STELLAR("Stellar", "com.orbin.app.StellarIconAlias"),
-}
-
-private fun android.content.Context.currentLauncherIcon(): LauncherIconChoice {
-    val packageManager = packageManager
-    return LauncherIconChoice.entries.firstOrNull { choice ->
-        packageManager.getComponentEnabledSetting(ComponentName(this, choice.aliasName)) ==
-            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-    } ?: LauncherIconChoice.DEFAULT
-}
-
-private fun android.content.Context.setLauncherIcon(choice: LauncherIconChoice) {
-    LauncherIconChoice.entries.forEach { option ->
-        val state =
-            if (option == choice) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
-        packageManager.setComponentEnabledSetting(
-            ComponentName(this, option.aliasName),
-            state,
-            PackageManager.DONT_KILL_APP,
-        )
     }
 }

@@ -7,6 +7,26 @@ enum class AppThemeMode {
     DARK,
 }
 
+/** Color theme variant for the app. */
+enum class ColorTheme(
+    val label: String,
+) {
+    ORBIN("Orbin"),
+    TOMORROW("Tomorrow"),
+    TOMORROW_NIGHT("Tomorrow Night"),
+}
+
+/** App icon variant for home screen. */
+enum class AppIconVariant(
+    val label: String,
+) {
+    DEFAULT("Default"),
+    MINIMALIST("Minimalist"),
+    GRADIENT("Gradient"),
+    NEON("Neon"),
+    RETRO("Retro"),
+}
+
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
@@ -61,9 +81,11 @@ data class AppSettings(
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
+    val appIconVariant: AppIconVariant = AppIconVariant.DEFAULT,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
