@@ -102,6 +102,7 @@ data class AppSettings(
     val httpsOnly: Boolean = true,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
+    val internalUpdaterEnabled: Boolean = true,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
 ) {

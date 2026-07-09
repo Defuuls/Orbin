@@ -18,10 +18,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
@@ -33,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
@@ -55,6 +60,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -69,6 +75,7 @@ import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +96,7 @@ fun SubscribedFeedScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scope = rememberCoroutineScope()
     val scrollBehavior =
@@ -176,6 +184,8 @@ fun SubscribedFeedScreen(
                         SubscribedFeedList(
                             providerId = providerId,
                             feeds = state.boards,
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = { searchQuery = it },
                             // Parse once per raw value: a fresh Set each recomposition would
                             // defeat Compose skipping for the whole feed subtree.
                             mutedTags = remember(settings.mutedTags) { settings.mutedTagTokens() },
@@ -198,6 +208,8 @@ fun SubscribedFeedScreen(
 private fun SubscribedFeedList(
     providerId: String,
     feeds: List<SubscribedBoardFeed>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     mutedTags: Set<String>,
     thumbnailSizeDp: Dp,
     globalThreadLimit: FeedThreadLimit,
@@ -218,7 +230,32 @@ private fun SubscribedFeedList(
             },
         verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 5.dp else 8.dp),
     ) {
-        feeds.forEach { feed ->
+        item(key = "subscribed-search") {
+            SubscribedFeedSearchBar(
+                query = searchQuery,
+                onQueryChange = onSearchQueryChange,
+            )
+        }
+
+        val filteredFeeds = feeds.filterBySearchQuery(searchQuery)
+        if (filteredFeeds.isEmpty() && searchQuery.isNotBlank()) {
+            item(key = "subscribed-search-empty") {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "No subscribed threads match your search.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+        }
+
+        filteredFeeds.forEach { feed ->
             // In full-screen mode the pinned board headers are dropped entirely so nothing
             // stays fixed at the top and the threads flow as one uninterrupted list.
             if (showBoardHeaders) {
@@ -248,6 +285,33 @@ private fun SubscribedFeedList(
             }
         }
     }
+}
+
+@Composable
+private fun SubscribedFeedSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text("Search subscribed threads") },
+        singleLine = true,
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        trailingIcon =
+            if (query.isNotBlank()) {
+                {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                    }
+                }
+            } else {
+                null
+            },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = {}),
+    )
 }
 
 @Composable
@@ -480,3 +544,33 @@ private fun LazyListState.scrollPositionKey(): Int =
     firstVisibleItemIndex * SCROLL_POSITION_INDEX_WEIGHT + firstVisibleItemScrollOffset
 
 private const val SCROLL_POSITION_INDEX_WEIGHT = 100_000
+
+private fun List<SubscribedBoardFeed>.filterBySearchQuery(query: String): List<SubscribedBoardFeed> {
+    val token = query.trim().lowercase()
+    if (token.isBlank()) return this
+    return mapNotNull { feed ->
+        val threads = feed.threads.filter { thread -> thread.matchesSearch(token, feed.board.id.value) }
+        if (threads.isEmpty()) {
+            null
+        } else {
+            feed.copy(threads = threads.toImmutableList())
+        }
+    }
+}
+
+private fun CatalogThread.matchesSearch(
+    query: String,
+    board: String,
+): Boolean {
+    val haystack =
+        listOfNotNull(
+            board,
+            originalPost.subject,
+            originalPost.comment.raw,
+            originalPost.poster.name,
+            originalPost.poster.tripcode,
+            originalPost.attachments.firstOrNull()?.originalFileName,
+        ).joinToString(" ")
+            .lowercase()
+    return haystack.contains(query)
+}

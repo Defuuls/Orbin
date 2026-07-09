@@ -233,6 +233,10 @@ class FakeSettingsRepository(
         update { copy(saveRecentSearches = enabled) }
     }
 
+    override suspend fun setInternalUpdaterEnabled(enabled: Boolean) {
+        update { copy(internalUpdaterEnabled = enabled) }
+    }
+
     override suspend fun setUserAgent(userAgent: String) {
         update { copy(userAgent = userAgent) }
     }

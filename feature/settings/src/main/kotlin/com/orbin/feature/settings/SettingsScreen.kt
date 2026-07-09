@@ -212,6 +212,12 @@ fun SettingsScreen(
                 settings.saveRecentSearches,
                 viewModel::setSaveRecentSearches,
             )
+            SwitchRow(
+                "Internal updater",
+                settings.internalUpdaterEnabled,
+                viewModel::setInternalUpdater,
+                supporting = "Check for Orbin updates inside the app",
+            )
             ListItem(
                 headlineContent = { Text("Clear local activity") },
                 supportingContent = { Text("Delete history, recent searches, and download history") },
