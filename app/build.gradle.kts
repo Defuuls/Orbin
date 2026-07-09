@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 55
-        versionName = "33-CM Draconis A"
+        versionCode = 56
+        versionName = "34-Dippin"
     }
 
     signingConfigs {

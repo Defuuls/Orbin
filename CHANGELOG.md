@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [34-Dippin] - 2026-07-09
+
+### Added
+- **Settings:** add an Internal updater toggle so update checks can be managed from app settings.
+
+### Changed
+- **Feed search:** move subscribed-thread search into the top of the subscribed feed and scope it
+  to subscribed boards only.
+- **Navigation:** remove Search as a standalone bottom-navigation tab now that subscribed search
+  lives in the feed.
+- **Release:** prepare the v34 release for the Dippin milestone.
+
 ## [33-CM Draconis A] - 2026-07-09
 
 ### Changed
@@ -405,7 +417,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v33-CM-Draconis-A...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v34-Dippin...HEAD
+[34-Dippin]: https://github.com/Defuuls/Orbin/compare/v33-CM-Draconis-A...v34-Dippin
 [33-CM Draconis A]: https://github.com/Defuuls/Orbin/compare/v32-EQ-Pegasi-A...v33-CM-Draconis-A
 [32-EQ Pegasi A]: https://github.com/Defuuls/Orbin/compare/v31-Fomalhaut-C...v32-EQ-Pegasi-A
 [31-Fomalhaut C]: https://github.com/Defuuls/Orbin/compare/v30-Janus...v31-Fomalhaut-C
