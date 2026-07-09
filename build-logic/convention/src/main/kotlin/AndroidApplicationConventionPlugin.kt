@@ -15,7 +15,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         with(pluginManager) {
             apply("com.android.application")
-            apply("org.jetbrains.kotlin.android")
+            // Kotlin is compiled by AGP 9's built-in Kotlin support; applying
+            // org.jetbrains.kotlin.android is no longer needed (and its BaseExtension cast
+            // crashes against the AGP 9 new DSL).
             apply("orbin.android.compose")
         }
 

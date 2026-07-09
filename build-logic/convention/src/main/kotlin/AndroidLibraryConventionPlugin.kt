@@ -12,8 +12,8 @@ import org.gradle.kotlin.dsl.configure
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         with(pluginManager) {
+            // Kotlin is compiled by AGP 9's built-in Kotlin support; no KGP android plugin.
             apply("com.android.library")
-            apply("org.jetbrains.kotlin.android")
         }
 
         extensions.configure<LibraryExtension> {

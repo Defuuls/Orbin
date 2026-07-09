@@ -25,17 +25,24 @@ AGP 9.2.1 / Gradle 9.4.1 / Kotlin 2.2.21, executed July 2026.
 - `AndroidLibraryConventionPlugin.kt`, `AndroidComposeConventionPlugin.kt`:
   `com.android.build.gradle.LibraryExtension` (old implementation class, removed in AGP 9)
   → `com.android.build.api.dsl.LibraryExtension` (public interface).
-- `gradle.properties`: `android.builtInKotlin=false` — AGP 9 enables built-in Kotlin by
-  default, which conflicts with the `org.jetbrains.kotlin.android` applies in our
-  convention plugins.
+- `compileOptions` is no longer a `CommonExtension` member — block methods moved to the
+  concrete Application/Library extensions, so each convention plugin sets it via a shared
+  `CompileOptions.configureJava()` helper.
+- **Built-in Kotlin adopted** (AGP 9 default): the `org.jetbrains.kotlin.android` applies
+  were removed from the application/library convention plugins and the plugin alias was
+  dropped. Opting out via `android.builtInKotlin=false` is NOT viable here: KGP's
+  kotlin-android plugin casts the android extension to `BaseExtension`, which the AGP 9
+  new-DSL extension no longer implements
+  (`ApplicationExtensionImpl ... cannot be cast to ... BaseExtension`).
+  Kotlin compiler flags are still wired through `tasks.withType<KotlinCompile>` — AGP's
+  built-in Kotlin drives KGP (runtime dependency on KGP 2.2.10+) and reuses its task
+  types; `jvmTarget` additionally defaults to `compileOptions.targetCompatibility`.
+  The `org.jetbrains.kotlin.plugin.compose` and `...plugin.serialization` compiler
+  plugins remain applied as before.
 
 ## Deliberate deferrals (follow-up work)
 
-1. **Built-in Kotlin migration** — remove `android.builtInKotlin=false`, drop the
-   `org.jetbrains.kotlin.android` applies from convention plugins, and re-verify the
-   `KotlinCompile` task wiring (`jvmTarget`, `allWarningsAsErrors`, opt-ins). Required
-   before AGP 10, which removes the opt-out flag.
-2. **Kotlin 2.3.x + library refresh** — unlocks kotlinx-serialization 1.11.x,
+1. **Kotlin 2.3.x + library refresh** — unlocks kotlinx-serialization 1.11.x,
    kotlinx-collections-immutable 0.5.x, roborazzi 1.65+. Kept out of this upgrade to keep
    the change reviewable and bisectable.
 
