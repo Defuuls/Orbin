@@ -6,10 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [32-EQ Pegasi A] - 2026-07-09
+
 ### Fixed
 - **Full-screen feed:** drop the pinned board headers from the feed while the full-screen
   option is on — nothing stays fixed at the top and boards are no longer listed between
   threads, so the feed is a total full-screen view.
+
+### Changed
+- **Release:** prepare the v32 release for the EQ Pegasi A milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
 
 ## [31-Fomalhaut C] - 2026-07-09
 
@@ -388,7 +394,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v31-Fomalhaut-C...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v32-EQ-Pegasi-A...HEAD
+[32-EQ Pegasi A]: https://github.com/Defuuls/Orbin/compare/v31-Fomalhaut-C...v32-EQ-Pegasi-A
 [31-Fomalhaut C]: https://github.com/Defuuls/Orbin/compare/v30-Janus...v31-Fomalhaut-C
 [30-Janus]: https://github.com/Defuuls/Orbin/compare/v29-Brown-Bears...v30-Janus
 [25.2.1]: https://github.com/Defuuls/Orbin/compare/v25.2...v25.2.1
