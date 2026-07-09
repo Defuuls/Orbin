@@ -13,6 +13,7 @@ import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,50 +42,69 @@ class MediaPreloader
         ): Int {
             if (option == PreloadOption.NONE) return 0
 
-            val throttler = createThrottler(throttleMode)
-            val targets = attachments.preloadTargets(option)
+            val plan = createPreloadPlan(throttleMode)
+            val targets = attachments.preloadTargets(option).take(plan.maxTargets)
             if (targets.isEmpty()) return 0
 
-            // Fan the targets out to parallel workers gated by the throttler's semaphore.
-            // (The previous implementation awaited each target in a plain loop, so the
-            // configured concurrency never actually applied and preloading was serial.)
-            // IO dispatcher: preloadVideo issues blocking OkHttp calls, and callers invoke
-            // preload() from viewModelScope (main thread).
+            // Keep coroutine fan-out bounded as well as network concurrency. A hostile or enormous
+            // thread can expose many media targets; launching one coroutine per target would create
+            // avoidable CPU/memory pressure even though requests are semaphore-gated. A small worker
+            // pool preserves configured parallelism without unbounded job creation.
             val completed = AtomicInteger(0)
             withContext(Dispatchers.IO) {
                 coroutineScope {
-                    targets.forEach { target ->
+                    val queue = Channel<PreloadTarget>(capacity = plan.workerCount)
+                    repeat(plan.workerCount) {
                         launch {
-                            throttler.acquire()
-                            try {
-                                when (target.type) {
-                                    PreloadTargetType.IMAGE -> preloadImage(target.url)
-                                    PreloadTargetType.VIDEO -> preloadVideo(target.url)
+                            for (target in queue) {
+                                plan.throttler.acquire()
+                                try {
+                                    when (target.type) {
+                                        PreloadTargetType.IMAGE -> preloadImage(target.url)
+                                        PreloadTargetType.VIDEO -> preloadVideo(target.url, plan.throttler)
+                                    }
+                                } finally {
+                                    plan.throttler.release()
                                 }
-                            } finally {
-                                throttler.release()
+                                onProgress(completed.incrementAndGet(), targets.size, target.label)
                             }
-                            onProgress(completed.incrementAndGet(), targets.size, target.label)
                         }
                     }
+                    targets.forEach { queue.send(it) }
+                    queue.close()
                 }
             }
             return targets.size
         }
 
-        private fun createThrottler(mode: PreloadThrottleMode): RequestThrottler =
+        private fun createPreloadPlan(mode: PreloadThrottleMode): PreloadPlan =
             when (mode) {
                 PreloadThrottleMode.CONSERVATIVE ->
-                    RequestThrottler(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30)
+                    PreloadPlan(
+                        throttler = RequestThrottler(maxConcurrent = 1, delayBetweenRequests = 500, maxPerMinute = 30),
+                        workerCount = 1,
+                        maxTargets = 48,
+                    )
                 PreloadThrottleMode.MODERATE ->
-                    RequestThrottler(maxConcurrent = 2, delayBetweenRequests = 250, maxPerMinute = 60)
+                    PreloadPlan(
+                        throttler = RequestThrottler(maxConcurrent = 2, delayBetweenRequests = 250, maxPerMinute = 60),
+                        workerCount = 2,
+                        maxTargets = 96,
+                    )
                 PreloadThrottleMode.AGGRESSIVE ->
-                    RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120)
-                // No client-side pacing: no inter-request delay, no per-minute cap. Parallelism
-                // stays bounded so a huge thread doesn't exhaust sockets/memory - OkHttp caps
-                // per-host connections anyway, and excess workers just queue there.
+                    PreloadPlan(
+                        throttler = RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120),
+                        workerCount = 3,
+                        maxTargets = 160,
+                    )
+                // High-throughput mode: faster than aggressive, but still bounded and backoff-aware.
+                // A literal no-limit mode causes CDN throttling and hurts browsing reliability.
                 PreloadThrottleMode.UNLIMITED ->
-                    RequestThrottler(maxConcurrent = 8, delayBetweenRequests = 0, maxPerMinute = 0)
+                    PreloadPlan(
+                        throttler = RequestThrottler(maxConcurrent = 4, delayBetweenRequests = 75, maxPerMinute = 180),
+                        workerCount = 4,
+                        maxTargets = 240,
+                    )
             }
 
         private suspend fun preloadImage(url: String) {
@@ -105,9 +125,13 @@ class MediaPreloader
                 }
         }
 
-        private suspend fun preloadVideo(url: String) {
-            // Preload video by fetching metadata via HEAD request or by warming up the cache
-            // This validates the URL is accessible without downloading the full video
+        private suspend fun preloadVideo(
+            url: String,
+            throttler: RequestThrottler,
+        ) {
+            // Preload video by fetching metadata via HEAD request. This validates that the URL is
+            // reachable without downloading the full video body, and feeds 429/503 back into the
+            // throttler so subsequent workers pause instead of amplifying a rate-limit response.
             runCatching {
                 okHttpClient
                     .newCall(
@@ -117,7 +141,9 @@ class MediaPreloader
                             .url(url)
                             .build(),
                     ).execute()
-                    .close()
+                    .use { response ->
+                        throttler.recordResponse(response.code, response.header(RETRY_AFTER_HEADER))
+                    }
             }.onSuccess { _ ->
                 Log.d(TAG, "Preloaded video metadata: $url")
             }.onFailure { error ->
@@ -165,6 +191,12 @@ class MediaPreloader
                 }
             }.distinctBy { it.url }
 
+        private data class PreloadPlan(
+            val throttler: RequestThrottler,
+            val workerCount: Int,
+            val maxTargets: Int,
+        )
+
         private data class PreloadTarget(
             val url: String,
             val label: String,
@@ -178,5 +210,6 @@ class MediaPreloader
 
         private companion object {
             const val TAG = "OrbinMediaPreloader"
+            const val RETRY_AFTER_HEADER = "Retry-After"
         }
     }
