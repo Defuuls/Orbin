@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Full-screen feed:** drop the pinned board headers from the feed while the full-screen
+  option is on — nothing stays fixed at the top and boards are no longer listed between
+  threads, so the feed is a total full-screen view.
+
 ## [31-Fomalhaut C] - 2026-07-09
 
 ### Fixed
