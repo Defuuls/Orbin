@@ -1,8 +1,8 @@
-package com.orbin.feature.bookmarks
+package com.orbin.feature.gallery
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -10,55 +10,48 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Badge
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.ui.state.EmptyView
 
-/** Bookmarks list with watch toggle, unread badges, and remove. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Bookmarks list with watch toggle, unread badges, and remove, hosted inside the gallery. */
 @Composable
-fun BookmarksScreen(
+fun GalleryBookmarksTab(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
-    viewModel: BookmarksViewModel = hiltViewModel(),
+    viewModel: GalleryBookmarksViewModel = hiltViewModel(),
 ) {
     val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Bookmarks") }) },
-    ) { padding ->
-        if (bookmarks.isEmpty()) {
-            EmptyView("No bookmarks yet", Modifier.padding(padding))
-            return@Scaffold
-        }
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-            items(bookmarks, key = { it.key.threadString() }) { bookmark ->
-                BookmarkRow(
-                    bookmark = bookmark,
-                    onOpen = {
-                        onOpenThread(
-                            bookmark.key.provider.value,
-                            bookmark.key.board.value,
-                            bookmark.key.thread.value,
-                            bookmark.title,
-                        )
-                    },
-                    onToggleWatch = { viewModel.toggleWatched(bookmark.key, !bookmark.isWatched) },
-                    onRemove = { viewModel.remove(bookmark.key) },
-                )
-                HorizontalDivider()
-            }
+    if (bookmarks.isEmpty()) {
+        EmptyView("No bookmarks yet", Modifier.fillMaxSize())
+        return
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(bookmarks, key = { it.key.threadString() }) { bookmark ->
+            BookmarkRow(
+                bookmark = bookmark,
+                onOpen = {
+                    onOpenThread(
+                        bookmark.key.provider.value,
+                        bookmark.key.board.value,
+                        bookmark.key.thread.value,
+                        bookmark.title,
+                    )
+                },
+                onToggleWatch = { viewModel.toggleWatched(bookmark.key, !bookmark.isWatched) },
+                onRemove = { viewModel.remove(bookmark.key) },
+            )
+            HorizontalDivider()
         }
     }
 }
@@ -83,7 +76,7 @@ private fun BookmarkRow(
                 null
             },
         trailingContent = {
-            androidx.compose.foundation.layout.Row {
+            Row {
                 IconButton(onClick = onToggleWatch) {
                     Icon(
                         imageVector =
@@ -103,4 +96,4 @@ private fun BookmarkRow(
     )
 }
 
-private fun com.orbin.core.model.ThreadKey.threadString(): String = "${provider.value}/${board.value}/${thread.value}"
+private fun ThreadKey.threadString(): String = "${provider.value}/${board.value}/${thread.value}"
