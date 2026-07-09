@@ -104,7 +104,9 @@ fun SubscribedFeedScreen(
                         SubscribedFeedList(
                             providerId = providerId,
                             feeds = state.boards,
-                            mutedTags = settings.mutedTagTokens(),
+                            // Parse once per raw value: a fresh Set each recomposition would
+                            // defeat Compose skipping for the whole feed subtree.
+                            mutedTags = remember(settings.mutedTags) { settings.mutedTagTokens() },
                             thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,
                             globalThreadLimit = settings.feedThreadLimit,
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,

@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -76,7 +77,9 @@ fun HomeScreen(
                     BoardList(
                         boards = state.boards,
                         personalizedHomeFeed = settings.personalizedHomeFeed,
-                        hiddenTags = settings.hiddenTagTokens(),
+                        // Parse once per raw value: a fresh Set each recomposition would defeat
+                        // Compose skipping for the whole list subtree.
+                        hiddenTags = remember(settings.hiddenTags) { settings.hiddenTagTokens() },
                         hideNsfwBoards = settings.hideNsfwBoards,
                         favoriteBoardIds = favoriteBoardIds,
                         subscribedBoardIds = subscribedBoardIds,

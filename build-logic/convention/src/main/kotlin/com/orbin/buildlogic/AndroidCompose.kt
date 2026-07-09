@@ -29,9 +29,12 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension) {
     }
 
     extensions.configure(ComposeCompilerGradlePluginExtension::class.java) {
-        // Strong skipping is enabled by default in Kotlin 2.0.20+. We emit compiler metrics and
-        // reports so recomposition regressions can be tracked in CI.
-        metricsDestination.set(layout.buildDirectory.dir("compose_compiler"))
-        reportsDestination.set(layout.buildDirectory.dir("compose_compiler"))
+        // Strong skipping is enabled by default in Kotlin 2.0.20+. Compiler metrics/reports are
+        // useful for chasing recomposition regressions but add measurable compile-time overhead,
+        // so they are opt-in: ./gradlew assembleDebug -Porbin.composeMetrics=true
+        if (providers.gradleProperty("orbin.composeMetrics").map { it.toBoolean() }.getOrElse(false)) {
+            metricsDestination.set(layout.buildDirectory.dir("compose_compiler"))
+            reportsDestination.set(layout.buildDirectory.dir("compose_compiler"))
+        }
     }
 }
