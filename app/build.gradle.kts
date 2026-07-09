@@ -39,7 +39,7 @@ android {
     defaultConfig {
         applicationId = "com.orbin.app"
         versionCode = 48
-        versionName = "26-Led Zeppelin"
+        versionName = "26-Ledd Zepplyn"
     }
 
     signingConfigs {
