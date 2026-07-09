@@ -158,7 +158,7 @@ fun SettingsScreen(
                 "Full-screen feed",
                 settings.fullScreenFeedChrome,
                 viewModel::setFullScreenFeedChrome,
-                supporting = "Hide the feed bars while scrolling for more reading space.",
+                supporting = "Hide the feed and system bars while scrolling so the feed fills the whole screen.",
             )
             ChoiceRow(
                 label = "Font size",
