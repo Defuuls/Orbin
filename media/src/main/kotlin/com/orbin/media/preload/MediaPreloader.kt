@@ -12,8 +12,13 @@ import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 /**
@@ -40,16 +45,28 @@ class MediaPreloader
             val targets = attachments.preloadTargets(option)
             if (targets.isEmpty()) return 0
 
-            targets.forEachIndexed { index, target ->
-                onProgress(index + 1, targets.size, target.label)
-                throttler.acquire()
-                try {
-                    when (target.type) {
-                        PreloadTargetType.IMAGE -> preloadImage(target.url)
-                        PreloadTargetType.VIDEO -> preloadVideo(target.url)
+            // Fan the targets out to parallel workers gated by the throttler's semaphore.
+            // (The previous implementation awaited each target in a plain loop, so the
+            // configured concurrency never actually applied and preloading was serial.)
+            // IO dispatcher: preloadVideo issues blocking OkHttp calls, and callers invoke
+            // preload() from viewModelScope (main thread).
+            val completed = AtomicInteger(0)
+            withContext(Dispatchers.IO) {
+                coroutineScope {
+                    targets.forEach { target ->
+                        launch {
+                            throttler.acquire()
+                            try {
+                                when (target.type) {
+                                    PreloadTargetType.IMAGE -> preloadImage(target.url)
+                                    PreloadTargetType.VIDEO -> preloadVideo(target.url)
+                                }
+                            } finally {
+                                throttler.release()
+                            }
+                            onProgress(completed.incrementAndGet(), targets.size, target.label)
+                        }
                     }
-                } finally {
-                    throttler.release()
                 }
             }
             return targets.size
@@ -63,6 +80,11 @@ class MediaPreloader
                     RequestThrottler(maxConcurrent = 2, delayBetweenRequests = 250, maxPerMinute = 60)
                 PreloadThrottleMode.AGGRESSIVE ->
                     RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120)
+                // No client-side pacing: no inter-request delay, no per-minute cap. Parallelism
+                // stays bounded so a huge thread doesn't exhaust sockets/memory - OkHttp caps
+                // per-host connections anyway, and excess workers just queue there.
+                PreloadThrottleMode.UNLIMITED ->
+                    RequestThrottler(maxConcurrent = 8, delayBetweenRequests = 0, maxPerMinute = 0)
             }
 
         private suspend fun preloadImage(url: String) {

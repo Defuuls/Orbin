@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +44,8 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PreloadOption
+import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.provider.api.ProviderMetadata
 
@@ -170,6 +173,20 @@ fun SettingsScreen(
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
             SwitchRow("Mute by default", settings.muteByDefault, viewModel::setMute)
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
+            ChoiceRow(
+                label = "Preload content",
+                values = PreloadOption.entries,
+                selected = settings.preloadOption,
+                text = { it.label },
+                onChange = viewModel::setPreloadOption,
+            )
+            ChoiceRow(
+                label = "Preload speed",
+                values = PreloadThrottleMode.entries,
+                selected = settings.preloadThrottleMode,
+                text = { it.label },
+                onChange = viewModel::setPreloadThrottleMode,
+            )
             ChoiceRow(
                 label = "Threads per board",
                 values = FeedThreadLimit.entries,
@@ -357,7 +374,10 @@ private fun <T> ChoiceRow(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
     )
     Row(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         values.forEach { value ->

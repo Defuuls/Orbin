@@ -8,6 +8,8 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PreloadOption
+import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.DownloadRepository
@@ -80,6 +82,10 @@ class SettingsViewModel
         fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
 
         fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
+
+        fun setPreloadOption(option: PreloadOption) = update { repository.setPreloadOption(option) }
+
+        fun setPreloadThrottleMode(mode: PreloadThrottleMode) = update { repository.setPreloadThrottleMode(mode) }
 
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
 

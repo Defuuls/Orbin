@@ -109,12 +109,18 @@ data class AppSettings(
     }
 }
 
+/**
+ * How fast media preloading is allowed to hit the CDN. The throttled modes trade speed for
+ * safety against server-side rate limits; [UNLIMITED] removes all client-side pacing (no
+ * delays, no per-minute cap) and preloads many files in parallel for uninterrupted browsing.
+ */
 enum class PreloadThrottleMode(
     val label: String,
 ) {
-    CONSERVATIVE("Conservative (1 at a time)"),
-    MODERATE("Moderate (2 at a time)"),
-    AGGRESSIVE("Aggressive (3 at a time)"),
+    CONSERVATIVE("Conservative"),
+    MODERATE("Moderate"),
+    AGGRESSIVE("Aggressive"),
+    UNLIMITED("Unlimited"),
 }
 
 fun AppSettings.hiddenTagTokens(): Set<String> = parseFilterTokens(hiddenTags)
