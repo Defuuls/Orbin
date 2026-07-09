@@ -23,7 +23,8 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             }
             defaultConfig {
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                consumerProguardFiles("consumer-rules.pro")
+                // Note: no consumerProguardFiles here - no module ships a consumer-rules.pro,
+                // and AGP 9 fails the build on declared-but-missing proguard files.
             }
             // Library modules don't ship Android resources unless they opt in (set per module).
             testOptions {
