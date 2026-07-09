@@ -269,7 +269,12 @@ private fun MediaGrid(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        itemsIndexed(media) { index, attachment ->
+        itemsIndexed(
+            items = media,
+            // Index-qualified: a thread can legitimately repost the same attachment.
+            key = { index, attachment -> "${attachment.id}#$index" },
+            contentType = { _, _ -> "media-tile" },
+        ) { index, attachment ->
             MediaTile(attachment = attachment, onClick = { onOpenMedia(index) })
         }
     }
