@@ -157,4 +157,11 @@ subprojects {
             xml.required.set(false)
         }
     }
+
+    // Gradle 9.4+ fails test tasks that discover zero tests. Several feature modules have no
+    // unit tests yet, but their unit-test classpaths still contain generated classes, which
+    // trips the "test sources present" heuristic. Restore the pre-9.4 behavior.
+    tasks.withType<Test>().configureEach {
+        failOnNoDiscoveredTests = false
+    }
 }
