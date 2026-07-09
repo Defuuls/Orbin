@@ -79,6 +79,7 @@ fun SubscribedFeedScreen(
     onOpenSettings: () -> Unit,
     chromeHidesOnScroll: Boolean = false,
     showTopBar: Boolean = true,
+    showBoardHeaders: Boolean = true,
     tabletFeedLayout: Boolean = false,
     scrollToTopRequest: Int = 0,
     refreshRequest: Int = 0,
@@ -183,6 +184,7 @@ fun SubscribedFeedScreen(
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                             listState = listState,
+                            showBoardHeaders = showBoardHeaders,
                             tabletLayout = tabletFeedLayout,
                         )
                     }
@@ -202,6 +204,7 @@ private fun SubscribedFeedList(
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     listState: LazyListState,
+    showBoardHeaders: Boolean,
     tabletLayout: Boolean,
 ) {
     LazyColumn(
@@ -216,12 +219,16 @@ private fun SubscribedFeedList(
         verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 5.dp else 8.dp),
     ) {
         feeds.forEach { feed ->
-            stickyHeader(key = "header-${feed.board.id.value}") {
-                BoardFeedHeader(
-                    feed = feed,
-                    globalThreadLimit = globalThreadLimit,
-                    onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
-                )
+            // In full-screen mode the pinned board headers are dropped entirely so nothing
+            // stays fixed at the top and the threads flow as one uninterrupted list.
+            if (showBoardHeaders) {
+                stickyHeader(key = "header-${feed.board.id.value}") {
+                    BoardFeedHeader(
+                        feed = feed,
+                        globalThreadLimit = globalThreadLimit,
+                        onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
+                    )
+                }
             }
             items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
                 FeedThreadCell(
