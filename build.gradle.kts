@@ -13,6 +13,7 @@ buildscript {
                     "bcprov-jdk18on",
                     "bcpkix-jdk18on",
                     "bcutil-jdk18on",
+                    "bcpg-jdk18on",
                 ) -> {
                     useVersion("1.84")
                     because("Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.")
@@ -44,8 +45,24 @@ buildscript {
                 }
 
                 requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                    useVersion("1.5.33")
-                    because("Dependabot reports a Logback deserialization vulnerability.")
+                    useVersion("1.5.35")
+                    because("Dependabot reports Logback deserialization and object-injection vulnerabilities.")
+                }
+
+                requested.group == "org.apache.httpcomponents" && requested.name == "httpclient" -> {
+                    useVersion("4.5.13")
+                    because("Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).")
+                }
+
+                requested.group == "io.opentelemetry" && requested.name in setOf(
+                    "opentelemetry-api",
+                    "opentelemetry-extension-trace-propagators",
+                ) -> {
+                    useVersion("1.62.0")
+                    because(
+                        "Dependabot reports an OpenTelemetry unbounded memory allocation " +
+                            "vulnerability (GHSA-rcgg-9c38-7xpx).",
+                    )
                 }
             }
         }
@@ -79,6 +96,7 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
                 "bcprov-jdk18on",
                 "bcpkix-jdk18on",
                 "bcutil-jdk18on",
+                "bcpg-jdk18on",
             ) -> {
                 useVersion("1.84")
                 because("Dependabot reports Bouncy Castle CVEs in the Android Gradle Plugin transitive classpath.")
@@ -110,8 +128,24 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
             }
 
             requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                useVersion("1.5.33")
-                because("Dependabot reports a Logback deserialization vulnerability.")
+                useVersion("1.5.35")
+                because("Dependabot reports Logback deserialization and object-injection vulnerabilities.")
+            }
+
+            requested.group == "org.apache.httpcomponents" && requested.name == "httpclient" -> {
+                useVersion("4.5.13")
+                because("Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).")
+            }
+
+            requested.group == "io.opentelemetry" && requested.name in setOf(
+                "opentelemetry-api",
+                "opentelemetry-extension-trace-propagators",
+            ) -> {
+                useVersion("1.62.0")
+                because(
+                    "Dependabot reports an OpenTelemetry unbounded memory allocation " +
+                        "vulnerability (GHSA-rcgg-9c38-7xpx).",
+                )
             }
         }
     }
