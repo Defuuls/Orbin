@@ -1,4 +1,5 @@
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.LibraryExtension
+import com.orbin.buildlogic.configureJava
 import com.orbin.buildlogic.configureKotlinAndroid
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -11,15 +12,19 @@ import org.gradle.kotlin.dsl.configure
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         with(pluginManager) {
+            // Kotlin is compiled by AGP 9's built-in Kotlin support; no KGP android plugin.
             apply("com.android.library")
-            apply("org.jetbrains.kotlin.android")
         }
 
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this)
+            compileOptions {
+                configureJava()
+            }
             defaultConfig {
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                consumerProguardFiles("consumer-rules.pro")
+                // Note: no consumerProguardFiles here - no module ships a consumer-rules.pro,
+                // and AGP 9 fails the build on declared-but-missing proguard files.
             }
             // Library modules don't ship Android resources unless they opt in (set per module).
             testOptions {

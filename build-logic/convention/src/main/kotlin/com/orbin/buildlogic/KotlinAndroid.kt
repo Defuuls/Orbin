@@ -1,6 +1,7 @@
 package com.orbin.buildlogic
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.CompileOptions
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
@@ -15,24 +16,28 @@ internal val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 /**
- * Applies shared Android + Kotlin configuration: SDK levels, Java/Kotlin 17 targets,
- * desugaring-free defaults, and common compiler flags. Used by every Android module.
+ * Applies shared Android + Kotlin configuration: SDK levels, Kotlin 17 target, and common
+ * compiler flags. Used by every Android module.
+ *
+ * Note: `compileOptions` is no longer on [CommonExtension] in AGP 9 — it moved to the concrete
+ * Application/Library extensions, so each convention plugin sets it via [configureJava].
  */
-internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, *, *, *, *, *>) {
+internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension) {
     commonExtension.apply {
         compileSdk = libs.findVersion("compileSdk").get().requiredVersion.toInt()
 
-        defaultConfig {
+        defaultConfig.apply {
             minSdk = libs.findVersion("minSdk").get().requiredVersion.toInt()
-        }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
         }
     }
 
     configureKotlin()
+}
+
+/** Shared Java source/target compatibility, applied inside each plugin's `compileOptions`. */
+internal fun CompileOptions.configureJava() {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 /** Configures Kotlin compiler options shared across Android and pure-JVM modules. */

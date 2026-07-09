@@ -1,8 +1,10 @@
 [versions]
 # Android / Build
-agp = "8.13.2"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.28"
+agp = "9.2.1"
+kotlin = "2.2.21"
+# KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
+# built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
+ksp = "2.3.6"
 compileSdk = "36"
 minSdk = "35"
 targetSdk = "36"
@@ -21,11 +23,13 @@ paging = "3.3.5"
 pagingCompose = "3.3.5"
 
 # DI
-hilt = "2.53.1"
+# 2.59 is the first Hilt release whose Gradle plugin supports (and requires) AGP 9;
+# 2.59.2+ fixes transform registration on Gradle 9.
+hilt = "2.60.1"
 hiltNavigationCompose = "1.2.0"
 
 # Persistence
-room = "2.6.1"
+room = "2.8.4"
 datastore = "1.1.1"
 securityCrypto = "1.1.0-alpha06"
 sqlcipher = "4.16.0"
@@ -55,10 +59,12 @@ turbine = "1.2.1"
 mockk = "1.13.13"
 truth = "1.4.5"
 robolectric = "4.16.1"
-roborazzi = "1.60.0"
+# 1.64.0 is the last release before roborazzi requires Kotlin 2.3; includes Gradle 9 input
+# validation fixes (1.63/1.64).
+roborazzi = "1.64.0"
 
 # Quality
-detekt = "1.23.7"
+detekt = "1.23.8"
 ktlintGradle = "14.2.0"
 
 [libraries]
@@ -162,7 +168,6 @@ room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref =
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

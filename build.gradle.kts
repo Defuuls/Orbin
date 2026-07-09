@@ -56,7 +56,6 @@ buildscript {
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.compose.compiler) apply false
@@ -157,5 +156,12 @@ subprojects {
             sarif.required.set(true)
             xml.required.set(false)
         }
+    }
+
+    // Gradle 9.4+ fails test tasks that discover zero tests. Several feature modules have no
+    // unit tests yet, but their unit-test classpaths still contain generated classes, which
+    // trips the "test sources present" heuristic. Restore the pre-9.4 behavior.
+    tasks.withType<Test>().configureEach {
+        failOnNoDiscoveredTests = false
     }
 }
