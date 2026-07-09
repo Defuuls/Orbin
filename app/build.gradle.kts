@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 49
-        versionName = "27-Grizz-Lee Bears"
+        versionCode = 50
+        versionName = "28-Polar Bears"
     }
 
     signingConfigs {
