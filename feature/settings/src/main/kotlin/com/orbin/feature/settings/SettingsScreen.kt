@@ -385,4 +385,3 @@ private enum class FontScaleOption(
             entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
     }
 }
-
