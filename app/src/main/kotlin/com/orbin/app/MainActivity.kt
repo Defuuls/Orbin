@@ -111,7 +111,7 @@ class MainActivity : FragmentActivity() {
             }
 
             LaunchedEffect(settings.appIconVariant) {
-                runCatching { appIconManager.setIconVariant(settings.appIconVariant) }
+                appIconManager.setIconVariant(settings.appIconVariant)
             }
 
             // BiometricPrompt silently fails to appear (no callback, no exception - just no
