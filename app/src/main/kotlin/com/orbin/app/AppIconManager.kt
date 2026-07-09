@@ -14,25 +14,29 @@ class AppIconManager
         @ApplicationContext private val context: Context,
     ) {
         fun setIconVariant(variant: AppIconVariant) {
-            val aliasNames =
-                mapOf(
-                    AppIconVariant.DEFAULT to "com.orbin.app.DefaultIconAlias",
-                    AppIconVariant.MINIMALIST to "com.orbin.app.MinimalistIconAlias",
-                    AppIconVariant.GRADIENT to "com.orbin.app.GradientIconAlias",
-                    AppIconVariant.NEON to "com.orbin.app.NeonIconAlias",
-                    AppIconVariant.RETRO to "com.orbin.app.RetroIconAlias",
-                )
+            try {
+                val aliasNames =
+                    mapOf(
+                        AppIconVariant.DEFAULT to "com.orbin.app.DefaultIconAlias",
+                        AppIconVariant.MINIMALIST to "com.orbin.app.MinimalistIconAlias",
+                        AppIconVariant.GRADIENT to "com.orbin.app.GradientIconAlias",
+                        AppIconVariant.NEON to "com.orbin.app.NeonIconAlias",
+                        AppIconVariant.RETRO to "com.orbin.app.RetroIconAlias",
+                    )
 
-            val pm = context.packageManager
-            aliasNames.forEach { (iconVariant, aliasName) ->
-                val componentName = ComponentName(context, aliasName)
-                val state =
-                    if (iconVariant == variant) {
-                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                    } else {
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                    }
-                pm.setComponentEnabledSetting(componentName, state, PackageManager.DONT_KILL_APP)
+                val pm = context.packageManager
+                aliasNames.forEach { (iconVariant, aliasName) ->
+                    val componentName = ComponentName(context, aliasName)
+                    val state =
+                        if (iconVariant == variant) {
+                            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                        } else {
+                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                        }
+                    pm.setComponentEnabledSetting(componentName, state, PackageManager.DONT_KILL_APP)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AppIconManager", "Failed to set icon variant: ${e.message}", e)
             }
         }
     }
