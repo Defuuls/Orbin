@@ -23,6 +23,7 @@ enum class EngineKind {
     LYNXCHAN,
     TINYIB,
     FOURCHAN,
+    WAKABA,
 }
 
 /**

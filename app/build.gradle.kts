@@ -88,6 +88,7 @@ dependencies {
     // Providers (registered via Hilt @IntoSet)
     implementation(project(":provider:vichan"))
     implementation(project(":provider:lynxchan"))
+    implementation(project(":provider:wakaba"))
 
     // Feature modules
     implementation(project(":feature:home"))

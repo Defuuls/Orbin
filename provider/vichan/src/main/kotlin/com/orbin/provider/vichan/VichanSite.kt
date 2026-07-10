@@ -21,6 +21,7 @@ data class VichanSite(
     val mediaUrlStyle: MediaUrlStyle,
     val nsfwByDefault: Boolean = false,
     val supportsBoardList: Boolean = true,
+    val supportsArchive: Boolean = false,
 ) {
     companion object {
         /**
@@ -39,6 +40,7 @@ data class VichanSite(
                 mediaUrlStyle = MediaUrlStyle.FOURCHAN,
                 nsfwByDefault = false,
                 supportsBoardList = true,
+                supportsArchive = true,
             )
     }
 }
