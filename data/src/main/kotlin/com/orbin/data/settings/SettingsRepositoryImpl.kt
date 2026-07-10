@@ -77,6 +77,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.refreshFeedOnReturn] = enabled }
         }
 
+        override suspend fun setVerifyFileHostLinks(enabled: Boolean) {
+            edit { it[Keys.verifyFileHostLinks] = enabled }
+        }
+
         override suspend fun setThemeMode(mode: AppThemeMode) {
             edit { it[Keys.themeMode] = mode.name }
         }
@@ -239,6 +243,7 @@ class SettingsRepositoryImpl
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
                 refreshFeedOnReturn = this[Keys.refreshFeedOnReturn] ?: true,
+                verifyFileHostLinks = this[Keys.verifyFileHostLinks] ?: false,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
@@ -304,6 +309,7 @@ class SettingsRepositoryImpl
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
             val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
+            val verifyFileHostLinks = booleanPreferencesKey("verify_file_host_links")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val appIconVariant = stringPreferencesKey("app_icon_variant")

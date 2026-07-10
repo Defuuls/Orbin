@@ -13,6 +13,7 @@ import com.orbin.core.model.ThumbnailSize
 import kotlinx.coroutines.flow.Flow
 
 /** Reads and updates persisted [AppSettings]. Implemented in :data over DataStore. */
+@Suppress("TooManyFunctions")
 interface SettingsRepository {
     val settings: Flow<AppSettings>
 
@@ -27,6 +28,8 @@ interface SettingsRepository {
     suspend fun setHideTextOnlyThreads(enabled: Boolean)
 
     suspend fun setRefreshFeedOnReturn(enabled: Boolean)
+
+    suspend fun setVerifyFileHostLinks(enabled: Boolean)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 

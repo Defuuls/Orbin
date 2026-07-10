@@ -46,6 +46,8 @@ import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
+import com.orbin.core.ui.post.LinkVerifier
+import com.orbin.domain.repository.LinkVerificationRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -57,6 +59,9 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
     @Inject
     lateinit var appIconManager: AppIconManager
+
+    @Inject
+    lateinit var linkVerificationRepository: LinkVerificationRepository
 
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
@@ -147,6 +152,7 @@ class MainActivity : FragmentActivity() {
 
             AppContent(
                 settings = settings,
+                linkVerifier = remember { LinkVerifier(linkVerificationRepository::verify) },
                 ready = ready,
                 shouldLock = shouldLock,
                 unlocked = unlocked,
@@ -344,6 +350,7 @@ private fun RequestNotificationPermissionWhenUnlocked(
 @Composable
 private fun AppContent(
     settings: AppSettings,
+    linkVerifier: LinkVerifier,
     ready: Boolean,
     shouldLock: Boolean,
     unlocked: Boolean,
@@ -368,7 +375,7 @@ private fun AppContent(
                 color = MaterialTheme.colorScheme.background,
             ) {
                 if (ready) {
-                    OrbinAppProviders {
+                    OrbinAppProviders(linkVerifier = linkVerifier) {
                         OrbinApp(
                             startWithOnboarding = !settings.onboardingCompleted,
                             fullScreenFeedChrome = settings.fullScreenFeedChrome,

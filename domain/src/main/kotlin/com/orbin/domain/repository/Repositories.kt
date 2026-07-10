@@ -9,6 +9,7 @@ import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.LinkStatus
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
@@ -138,4 +139,13 @@ interface SearchRepository {
     suspend fun recordQuery(text: String)
 
     suspend fun clearRecentQueries()
+}
+
+interface LinkVerificationRepository {
+    /**
+     * Checks whether a file-host link (gofile.io, fast-file.ru, mega.nz) still exists. Results
+     * are cached for the process lifetime; returns [LinkStatus.UNKNOWN] when verification is
+     * disabled in settings, the host is unsupported, or the host could not be reached.
+     */
+    suspend fun verify(url: String): LinkStatus
 }
