@@ -5,12 +5,12 @@ detail; the full record lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
 [Releases page](https://github.com/Defuuls/Orbin/releases).
 
-Since v30, release milestones are codenamed after the **smallest known stars**, replacing the
-bear-family codenames used for v26–v29.
+Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
+codenames used for v26–v29; v34 is "Dippin".
 
-## v34 — in development
+## v34 — Dippin (2026-07-09)
 
-Not yet released; landing on `main` after v33.
+*Current release.*
 
 - **Feed search:** a search bar at the top of the subscribed feed filters your subscribed
   threads as you type, with a clear button and an inline "no subscribed threads match your
@@ -21,8 +21,6 @@ Not yet released; landing on `main` after v33.
   Orbin updates inside the app" — on by default.
 
 ## v33 — CM Draconis A (2026-07-09)
-
-*Current release. `versionCode` 55.*
 
 - **Gallery:** the board picker now offers only subscribed boards (honouring the NSFW-board
   visibility setting), matching the feed instead of listing every board on the provider.

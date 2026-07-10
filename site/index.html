@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orbin — a modern image board client for Android</title>
+  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source image board client for Android, built with Kotlin, Jetpack Compose, and Material 3.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233157B8'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%23FAFBFF'/%3E%3Ccircle cx='49' cy='19' r='6' fill='%23DCE6FF'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --accent: #3157B8;
+      --accent-strong: #274B9F;
+      --accent-soft: #DCE6FF;
+      --bg: #FAFBFF;
+      --bg-alt: #F0F3FA;
+      --surface: #FFFFFF;
+      --text: #1B1F2A;
+      --text-muted: #596171;
+      --border: #E5E9F2;
+      --code-bg: #202431;
+      --code-text: #E5E9F2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --accent: #8FA9EC;
+        --accent-strong: #ADC0F2;
+        --accent-soft: #263250;
+        --bg: #15161B;
+        --bg-alt: #1B1D25;
+        --surface: #202431;
+        --text: #E7EAF3;
+        --text-muted: #9AA3B5;
+        --border: #2C3140;
+        --code-bg: #0F1015;
+        --code-text: #CBD3E4;
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+
+    header.topbar {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar .wrap {
+      display: flex; align-items: center; gap: 1.25rem;
+      height: 3.25rem;
+    }
+    .brand { font-weight: 700; font-size: 1.05rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+    .brand svg { display: block; }
+    nav { margin-left: auto; display: flex; gap: 1rem; flex-wrap: wrap; }
+    nav a { color: var(--text-muted); text-decoration: none; font-size: .95rem; }
+    nav a:hover { color: var(--accent); }
+
+    .hero { text-align: center; padding: 4.5rem 0 3rem; }
+    .hero h1 { font-size: clamp(2.4rem, 6vw, 3.4rem); letter-spacing: -.02em; }
+    .hero .tagline { font-size: clamp(1.05rem, 2.5vw, 1.3rem); color: var(--text-muted); max-width: 38em; margin: .75rem auto 0; }
+    .cta { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.75rem; }
+    .btn {
+      display: inline-block; padding: .7rem 1.5rem; border-radius: 999px;
+      text-decoration: none; font-weight: 600; font-size: 1rem;
+      border: 1px solid transparent;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-strong); }
+    @media (prefers-color-scheme: dark) {
+      .btn-primary { color: #10131C; }
+    }
+    .btn-secondary { border-color: var(--border); color: var(--text); background: var(--surface); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .hero .note { margin-top: 1rem; font-size: .9rem; color: var(--text-muted); }
+
+    section { padding: 3.25rem 0; }
+    section.alt { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    h2 { font-size: 1.7rem; letter-spacing: -.01em; margin-bottom: 1rem; }
+    .section-lead { color: var(--text-muted); max-width: 44em; margin-bottom: 1.5rem; }
+
+    .shots { display: grid; gap: 1.25rem; }
+    .shots img {
+      width: 100%; height: auto; display: block;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.25rem 1.4rem;
+    }
+    .card h3 { font-size: 1.05rem; margin-bottom: .4rem; }
+    .card p { font-size: .95rem; color: var(--text-muted); }
+
+    .dl-steps { list-style: none; counter-reset: step; display: grid; gap: 1rem; margin-top: 1.25rem; }
+    .dl-steps li {
+      counter-increment: step; position: relative; padding-left: 3rem;
+    }
+    .dl-steps li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: .1rem;
+      width: 2rem; height: 2rem; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+    }
+    pre {
+      background: var(--code-bg); color: var(--code-text);
+      border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
+      font-size: .88rem; margin-top: .5rem;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    ul.links { list-style: none; display: grid; gap: .5rem; margin-top: .75rem; }
+    ul.links li::before { content: "→ "; color: var(--accent); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 0 2.5rem; color: var(--text-muted); font-size: .9rem;
+    }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#3157B8"/><circle cx="32" cy="32" r="13" fill="#FAFBFF"/><circle cx="49" cy="19" r="6" fill="#DCE6FF"/></svg>
+      Orbin
+    </a>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#download">Download</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#development">Development</a>
+      <a href="https://github.com/Defuuls/Orbin">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero wrap">
+  <h1>Orbin</h1>
+  <p class="tagline">A modern, fast, and beautiful open-source image board client for Android — built with Kotlin, Jetpack Compose, and Material 3.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download APK</a>
+    <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
+  </div>
+  <p class="note">Free and MIT-licensed, forever. Not available on Google Play — releases are signed and published on GitHub.</p>
+</section>
+
+<section id="about" class="alt">
+  <div class="wrap">
+    <h2>About</h2>
+    <p class="section-lead">
+      Orbin browses vichan/4chan-compatible image boards today, and its provider architecture means
+      new engines (LynxChan, TinyIB, …) can be added by implementing a single interface — no app
+      changes required. It targets Android&nbsp;15+ and ships regular signed releases.
+    </p>
+    <div class="grid">
+      <div class="card">
+        <h3>Subscribed feed</h3>
+        <p>One continuous feed of your followed boards, with in-feed search, tap-to-top chrome, an optional true full-screen mode, and an adaptive tablet layout.</p>
+      </div>
+      <div class="card">
+        <h3>Rich thread viewer</h3>
+        <p>Structured reply trees with quote links and backlinks, inline images and video, collapsible replies, a thumbnail-only grid view, and reading history with scroll restore.</p>
+      </div>
+      <div class="card">
+        <h3>Media done right</h3>
+        <p>Hardware-accelerated playback, pinch-zoom swipe gallery, background preloading, autoplay and mute toggles, and a native download manager with resume and retry.</p>
+      </div>
+      <div class="card">
+        <h3>Gallery &amp; bookmarks</h3>
+        <p>A gallery scoped to your subscriptions with a built-in Bookmarks tab: watch toggles, unread badges, and background thread-watching notifications.</p>
+      </div>
+      <div class="card">
+        <h3>Make it yours</h3>
+        <p>Material 3 with dynamic color, light/dark and AMOLED-black themes, app icon variants, font and thumbnail sizing, and predictive back with smooth transitions.</p>
+      </div>
+      <div class="card">
+        <h3>Private by default</h3>
+        <p>Everything local is encrypted at rest, networking is HTTPS-only with optional DNS-over-HTTPS, and a biometric app-lock keeps the app and its previews gated.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screenshots">
+  <div class="wrap">
+    <h2>Screenshots</h2>
+    <div class="shots">
+      <img src="assets/orbin-hero-screenshot.svg" alt="Orbin thread viewer in thumbnail-grid mode, with encrypted-at-rest and biometric app-lock highlights" loading="lazy">
+      <img src="assets/orbin-settings-screenshot.svg" alt="Orbin settings screen showing content, appearance, media, network, privacy, and storage preferences" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="download" class="alt">
+  <div class="wrap">
+    <h2>Download</h2>
+    <p class="section-lead">
+      Orbin requires <strong>Android 15 or newer</strong>. Signed APKs are published on
+      <a href="https://github.com/Defuuls/Orbin/releases">GitHub Releases</a> with SHA-256 checksums
+      for every artifact.
+    </p>
+    <ol class="dl-steps">
+      <li>
+        <strong>Get the APK</strong> from the
+        <a href="https://github.com/Defuuls/Orbin/releases/latest">latest release</a> and allow
+        installs from your browser when Android asks.
+      </li>
+      <li>
+        <strong>Verify the download</strong> (optional but encouraged) with the checksum file
+        attached to the release:
+        <pre><code>sha256sum -c orbin-&lt;version&gt;.apk.sha256</code></pre>
+      </li>
+      <li>
+        <strong>Stay up to date.</strong> Orbin checks for new versions inside the app
+        (Settings → Network &amp; privacy → Internal updater — on by default), or watch the
+        <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>.
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <h2>Privacy &amp; security</h2>
+    <p class="section-lead">Privacy in Orbin is structural, not a settings checkbox.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Encrypted at rest</h3>
+        <p>History, bookmarks, downloads, and searches live in a SQLCipher-encrypted database; settings in an encrypted DataStore. Keys are hardware-backed and never leave the TEE/StrongBox.</p>
+      </div>
+      <div class="card">
+        <h3>Locked down</h3>
+        <p>Biometric app-lock gated on a real Keystore cryptographic operation, with FLAG_SECURE keeping locked content out of the recents preview.</p>
+      </div>
+      <div class="card">
+        <h3>Quiet on the wire</h3>
+        <p>HTTPS-only networking enforced end-to-end, optional DNS-over-HTTPS (Cloudflare, OpenDNS, NextDNS), opt-in search history, and no cloud backup of local data.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="development" class="alt">
+  <div class="wrap">
+    <h2>Development</h2>
+    <p class="section-lead">
+      Orbin is open source under the MIT license, built as a strict multi-module Clean Architecture
+      Kotlin project. Contributions are welcome.
+    </p>
+    <ul class="links">
+      <li><a href="https://github.com/Defuuls/Orbin">Source code</a> — the main repository</li>
+      <li><a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> — user guide, settings guide, release history, troubleshooting</li>
+      <li><a href="https://github.com/Defuuls/Orbin/wiki/Developer-Guide">Developer guide</a> — building, toolchain, CI, and releases</li>
+      <li><a href="https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules">Architecture</a> — layers, modules, and design decisions</li>
+      <li><a href="https://github.com/Defuuls/Orbin/blob/main/CONTRIBUTING.md">Contributing guide</a> — how to get a change merged</li>
+      <li><a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">Changelog</a> — what shipped, release by release</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Orbin — MIT licensed, free forever.</span>
+    <span>
+      <a href="https://github.com/Defuuls/Orbin">GitHub</a> ·
+      <a href="https://github.com/Defuuls/Orbin/releases">Releases</a> ·
+      <a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> ·
+      <a href="https://github.com/Defuuls/Orbin/blob/main/LICENSE">License</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

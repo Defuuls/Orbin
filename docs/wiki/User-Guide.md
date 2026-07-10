@@ -1,7 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v33 (CM Draconis A)**, with notes on what
-changes in the upcoming **v34**.
+This guide covers day-to-day use of Orbin as of **v34 (Dippin)**.
 
 ## Getting started
 
@@ -14,8 +13,8 @@ The bottom navigation bar has two tabs:
 - **Feed** — the subscribed feed, a continuous stream of threads from your followed boards.
 - **Gallery** — the media gallery, which since v33 also contains your **Bookmarks** tab.
 
-> **v34 note:** earlier versions also had a dedicated **Search** tab in the bottom bar. From v34
-> it is removed in favor of the search bar built directly into the subscribed feed.
+> **Since v34:** earlier versions also had a dedicated **Search** tab in the bottom bar. It was
+> removed in favor of the search bar built directly into the subscribed feed.
 
 ## The subscribed feed
 
