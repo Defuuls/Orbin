@@ -449,18 +449,30 @@ private fun FeedThreadCellContent(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 4.dp else 6.dp),
         ) {
-            Text(
-                text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
-                style =
-                    if (tabletLayout) {
-                        MaterialTheme.typography.bodyLarge
-                    } else {
-                        MaterialTheme.typography.titleSmall
-                    },
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
+                    style =
+                        if (tabletLayout) {
+                            MaterialTheme.typography.bodyLarge
+                        } else {
+                            MaterialTheme.typography.titleSmall
+                        },
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text(
+                    text = "/${thread.key.board.value}/",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
                 AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
