@@ -1,8 +1,7 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v33 (CM Draconis A)** with
-the **v34** additions noted. Settings are stored in an encrypted DataStore and take effect
-immediately — no restart required.
+A tour of every section of Orbin's Settings screen, current as of **v34 (Dippin)**. Settings
+are stored in an encrypted DataStore and take effect immediately — no restart required.
 
 ## Site
 

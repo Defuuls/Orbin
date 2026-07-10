@@ -102,9 +102,9 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
 3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
    mapping file, and checksums once the job completes.
 
-**Codenames:** since v30, milestones are named after the smallest known stars (Janus,
-Fomalhaut C, EQ Pegasi A, CM Draconis A, …). Pick names that are distinctive, short enough for
-changelog entries, and not already used.
+**Codenames:** every milestone gets a codename (v30–v33 used the smallest known stars — Janus,
+Fomalhaut C, EQ Pegasi A, CM Draconis A; v34 is "Dippin"). Pick names that are distinctive,
+short enough for changelog entries, and not already used.
 
 ## Contributing
 

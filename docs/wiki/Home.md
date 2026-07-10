@@ -13,10 +13,10 @@ supporting a new image board engine is a matter of implementing a single interfa
 
 | | |
 | --- | --- |
-| Current release | **v33 — CM Draconis A** (2026-07-09) |
-| In development | **v34** — Feed search, Internal updater setting |
+| Current release | **v34 — Dippin** (2026-07-09) |
+| Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile/target SDK 36 |
-| Codename scheme | Smallest-known-star names (since v30 "Janus") |
+| Codename scheme | Per-release codenames (v30–v33 used smallest-known-star names) |
 
 Orbin is under active development with regular signed releases. The architecture, build system,
 domain core, networking, media pipeline, encrypted data layer, and the reference provider are in
