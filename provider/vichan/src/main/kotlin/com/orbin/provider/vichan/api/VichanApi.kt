@@ -18,6 +18,12 @@ interface VichanApi {
         @Path("board") board: String,
     ): List<VichanCatalogPage>
 
+    /** OP numbers retained by 4chan's read-only archive for boards that enable it. */
+    @GET("{board}/archive.json")
+    suspend fun archive(
+        @Path("board") board: String,
+    ): List<Long>
+
     /** A single thread by its OP number. */
     @GET("{board}/thread/{no}.json")
     suspend fun thread(

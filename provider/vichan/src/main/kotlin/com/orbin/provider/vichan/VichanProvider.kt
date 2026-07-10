@@ -51,6 +51,7 @@ class VichanProvider(
             supportsCatalog = true,
             supportsThreads = true,
             supportsSearch = false,
+            supportsArchive = site.supportsArchive,
             // The catalog endpoint returns every page at once, so app-side paging slices that list.
             supportsCatalogPaging = true,
             supportedSortOptions =
