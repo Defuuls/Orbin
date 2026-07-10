@@ -200,11 +200,13 @@ class WakabaProvider(
                         .build(),
                 ).execute()
         response.use {
-            if (it.code == 404) throw ProviderException.NotFound("Resource not found")
+            if (it.code == HTTP_NOT_FOUND) throw ProviderException.NotFound("Resource not found")
             if (!it.isSuccessful) throw ProviderException.Http(it.code, it.message)
-            return it.body?.string() ?: throw ProviderException.Parse("Empty response")
+            return requireResponseBody(it.body?.string())
         }
     }
+
+    private fun requireResponseBody(body: String?): String = body ?: throw ProviderException.Parse("Empty response")
 
     private suspend fun <T> call(block: () -> T): T =
         withContext(ioDispatcher) {
@@ -214,7 +216,7 @@ class WakabaProvider(
                 throw e
             } catch (e: IOException) {
                 throw ProviderException.Network("Network error: ${e.message}", e)
-            } catch (e: RuntimeException) {
+            } catch (e: IllegalArgumentException) {
                 throw ProviderException.Parse("Failed to parse Tranchan", e)
             }
         }
@@ -228,6 +230,7 @@ class WakabaProvider(
         }.getOrDefault(0L)
 
     private companion object {
+        const val HTTP_NOT_FOUND = 404
         val ID = ProviderId("tranchan")
         const val BASE_URL = "https://www.tranchan.net"
         val BOARDS =
