@@ -80,6 +80,8 @@ data class AppSettings(
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
+    /** Reload the subscribed feed when returning to it, e.g. after backing out of a thread. */
+    val refreshFeedOnReturn: Boolean = true,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,

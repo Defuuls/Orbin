@@ -169,6 +169,10 @@ class FakeSettingsRepository(
         update { copy(hideTextOnlyThreads = enabled) }
     }
 
+    override suspend fun setRefreshFeedOnReturn(enabled: Boolean) {
+        update { copy(refreshFeedOnReturn = enabled) }
+    }
+
     override suspend fun setThemeMode(mode: AppThemeMode) {
         update { copy(themeMode = mode) }
     }
