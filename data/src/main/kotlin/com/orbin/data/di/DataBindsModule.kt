@@ -1,5 +1,6 @@
 package com.orbin.data.di
 
+import com.orbin.data.links.LinkVerificationRepositoryImpl
 import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
@@ -17,6 +18,7 @@ import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.LinkVerificationRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
@@ -71,6 +73,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds
+    @Singleton
+    fun bindsLinkVerificationRepository(impl: LinkVerificationRepositoryImpl): LinkVerificationRepository
 
     @Binds
     @Singleton

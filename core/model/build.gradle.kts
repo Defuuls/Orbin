@@ -4,4 +4,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinx.immutable)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
 }

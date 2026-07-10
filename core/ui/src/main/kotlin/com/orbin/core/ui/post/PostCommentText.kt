@@ -5,8 +5,13 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -18,9 +23,12 @@ import com.orbin.core.designsystem.theme.GreentextColor
 import com.orbin.core.designsystem.theme.QuoteLinkColor
 import com.orbin.core.designsystem.theme.SpoilerBackground
 import com.orbin.core.model.InlineStyle
+import com.orbin.core.model.LinkStatus
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
+import com.orbin.core.model.VerifiableLinkHosts
+import kotlinx.coroutines.launch
 
 private const val TAG_QUOTE = "quote"
 private const val TAG_LINK = "link"
@@ -46,10 +54,12 @@ fun PostCommentText(
     onClick: () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
+    val invalidLinkColor = MaterialTheme.colorScheme.error
+    val linkStatuses = rememberLinkStatuses(comment)
     val annotated =
-        remember(comment, onSurface) {
+        remember(comment, onSurface, invalidLinkColor, linkStatuses) {
             buildAnnotatedString {
-                comment.nodes.forEach { appendNode(it) }
+                comment.nodes.forEach { appendNode(it, linkStatuses, invalidLinkColor) }
             }
         }
 
@@ -72,6 +82,31 @@ fun PostCommentText(
             onClick = onClick,
         )
     }
+}
+
+/**
+ * Resolves [LinkStatus]es for the comment's verifiable file-host links via [LocalLinkVerifier].
+ * Statuses trickle in asynchronously; links stay unmarked until (and unless) a verdict arrives.
+ */
+@Composable
+private fun rememberLinkStatuses(comment: PostComment): Map<String, LinkStatus> {
+    val verifier = LocalLinkVerifier.current
+    val verifiableLinks =
+        remember(comment) {
+            comment.externalLinks.filter(VerifiableLinkHosts::isSupported).distinct()
+        }
+    var statuses by remember(comment) { mutableStateOf(emptyMap<String, LinkStatus>()) }
+    if (verifier != null && verifiableLinks.isNotEmpty()) {
+        LaunchedEffect(comment, verifier) {
+            verifiableLinks.forEach { url ->
+                launch {
+                    val status = verifier.verify(url)
+                    if (status != LinkStatus.UNKNOWN) statuses = statuses + (url to status)
+                }
+            }
+        }
+    }
+    return statuses
 }
 
 @Composable
@@ -102,12 +137,14 @@ private fun ClickablePostText(
 
 private fun AnnotatedString.Builder.appendNode(
     node: PostNode,
+    linkStatuses: Map<String, LinkStatus>,
+    invalidLinkColor: Color,
     linkifyPlainText: Boolean = true,
 ) {
     when (node) {
         is PostNode.Text -> {
             if (linkifyPlainText) {
-                appendPlainTextWithLinks(node.text)
+                appendPlainTextWithLinks(node.text, linkStatuses, invalidLinkColor)
             } else {
                 append(node.text)
             }
@@ -115,17 +152,23 @@ private fun AnnotatedString.Builder.appendNode(
         PostNode.LineBreak -> append('\n')
         is PostNode.QuoteLink -> appendQuoteLink(node)
         is PostNode.Link -> {
-            pushStringAnnotation(TAG_LINK, normalizePlainTextUrl(node.url))
+            val url = normalizePlainTextUrl(node.url)
+            pushStringAnnotation(TAG_LINK, url)
             withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)) {
-                node.children.forEach { appendNode(it, linkifyPlainText = false) }
+                node.children.forEach { appendNode(it, linkStatuses, invalidLinkColor, linkifyPlainText = false) }
             }
             pop()
+            appendLinkStatusMarker(linkStatuses[url], invalidLinkColor)
         }
-        is PostNode.Styled -> appendStyled(node, linkifyPlainText)
+        is PostNode.Styled -> appendStyled(node, linkStatuses, invalidLinkColor, linkifyPlainText)
     }
 }
 
-private fun AnnotatedString.Builder.appendPlainTextWithLinks(text: String) {
+private fun AnnotatedString.Builder.appendPlainTextWithLinks(
+    text: String,
+    linkStatuses: Map<String, LinkStatus>,
+    invalidLinkColor: Color,
+) {
     var nextStart = 0
     plainTextUrlRegex.findAll(text).forEach { match ->
         append(text.substring(nextStart, match.range.first))
@@ -134,16 +177,32 @@ private fun AnnotatedString.Builder.appendPlainTextWithLinks(text: String) {
         val displayUrl = trimTrailingUrlPunctuation(rawMatch)
         val trailing = rawMatch.substring(displayUrl.length)
 
-        pushStringAnnotation(TAG_LINK, normalizePlainTextUrl(displayUrl))
+        val url = normalizePlainTextUrl(displayUrl)
+        pushStringAnnotation(TAG_LINK, url)
         withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)) {
             append(displayUrl)
         }
         pop()
+        appendLinkStatusMarker(linkStatuses[url], invalidLinkColor)
         append(trailing)
 
         nextStart = match.range.last + 1
     }
     append(text.substring(nextStart))
+}
+
+/** A green check for verified links, a red cross for dead ones, nothing while undecided. */
+private fun AnnotatedString.Builder.appendLinkStatusMarker(
+    status: LinkStatus?,
+    invalidLinkColor: Color,
+) {
+    when (status) {
+        LinkStatus.VALID ->
+            withStyle(SpanStyle(color = GreentextColor, fontWeight = FontWeight.Bold)) { append(" ✓") }
+        LinkStatus.INVALID ->
+            withStyle(SpanStyle(color = invalidLinkColor, fontWeight = FontWeight.Bold)) { append(" ✗") }
+        LinkStatus.UNKNOWN, null -> Unit
+    }
 }
 
 private fun AnnotatedString.Builder.appendQuoteLink(node: PostNode.QuoteLink) {
@@ -165,6 +224,8 @@ private fun AnnotatedString.Builder.appendQuoteLink(node: PostNode.QuoteLink) {
 
 private fun AnnotatedString.Builder.appendStyled(
     node: PostNode.Styled,
+    linkStatuses: Map<String, LinkStatus>,
+    invalidLinkColor: Color,
     linkifyPlainText: Boolean,
 ) {
     val span =
@@ -180,7 +241,7 @@ private fun AnnotatedString.Builder.appendStyled(
             InlineStyle.HEADING -> SpanStyle(fontWeight = FontWeight.Bold)
         }
     withStyle(span) {
-        node.children.forEach { appendNode(it, linkifyPlainText = linkifyPlainText) }
+        node.children.forEach { appendNode(it, linkStatuses, invalidLinkColor, linkifyPlainText = linkifyPlainText) }
     }
 }
 
