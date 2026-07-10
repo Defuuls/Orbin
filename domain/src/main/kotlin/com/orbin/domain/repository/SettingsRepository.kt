@@ -26,6 +26,8 @@ interface SettingsRepository {
 
     suspend fun setHideTextOnlyThreads(enabled: Boolean)
 
+    suspend fun setRefreshFeedOnReturn(enabled: Boolean)
+
     suspend fun setThemeMode(mode: AppThemeMode)
 
     suspend fun setDynamicColor(enabled: Boolean)

@@ -73,6 +73,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.hideTextOnlyThreads] = enabled }
         }
 
+        override suspend fun setRefreshFeedOnReturn(enabled: Boolean) {
+            edit { it[Keys.refreshFeedOnReturn] = enabled }
+        }
+
         override suspend fun setThemeMode(mode: AppThemeMode) {
             edit { it[Keys.themeMode] = mode.name }
         }
@@ -234,6 +238,7 @@ class SettingsRepositoryImpl
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
+                refreshFeedOnReturn = this[Keys.refreshFeedOnReturn] ?: true,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
@@ -298,6 +303,7 @@ class SettingsRepositoryImpl
             val mutedTags = stringPreferencesKey("muted_tags")
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
+            val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val appIconVariant = stringPreferencesKey("app_icon_variant")

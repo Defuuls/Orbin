@@ -134,6 +134,14 @@ fun SettingsScreen(
                 settings.hideTextOnlyThreads,
                 viewModel::setHideTextOnlyThreads,
             )
+            SwitchRow(
+                "Refresh feed on return",
+                settings.refreshFeedOnReturn,
+                viewModel::setRefreshFeedOnReturn,
+                supporting =
+                    "Reload subscriptions and threads when coming back to the feed, " +
+                        "for example after reading a thread. Turn off to keep the feed as you left it.",
+            )
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSetup),
                 headlineContent = { Text("Run setup again") },

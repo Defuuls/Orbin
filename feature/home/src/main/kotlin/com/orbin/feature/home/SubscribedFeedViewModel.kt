@@ -91,8 +91,19 @@ class SubscribedFeedViewModel
                                 observeThreadLimitOverrides(provider, subscribedIds),
                                 settings,
                                 refreshRequests,
-                            ) { boards, limitOverrides, settings, _ ->
-                                loadSubscribedFeeds(provider, boards, subscribedIds, limitOverrides, settings)
+                            ) { boards, limitOverrides, settings, refreshCount ->
+                                val inputs =
+                                    FeedInputs(
+                                        provider.metadata.id.value,
+                                        subscribedIds,
+                                        boards,
+                                        limitOverrides,
+                                        settings,
+                                        refreshCount,
+                                    )
+                                loadOrReuseFeeds(inputs) {
+                                    loadSubscribedFeeds(provider, boards, subscribedIds, limitOverrides, settings)
+                                }
                             }
                         }
                 }.stateIn(
@@ -100,6 +111,28 @@ class SubscribedFeedViewModel
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                     SubscribedFeedUiState.Loading,
                 )
+
+        /**
+         * Leaving the feed for longer than [STOP_TIMEOUT_MS] (e.g. while reading a thread) stops
+         * the upstream flow, and returning restarts it with the same inputs. With "Refresh feed on
+         * return" disabled that restart should show the feed exactly as it was left, so the last
+         * successful load is kept and reused whenever the inputs are unchanged.
+         */
+        private var lastLoad: Pair<FeedInputs, SubscribedFeedUiState.Success>? = null
+
+        private suspend fun loadOrReuseFeeds(
+            inputs: FeedInputs,
+            load: suspend () -> SubscribedFeedUiState,
+        ): SubscribedFeedUiState {
+            if (!inputs.settings.refreshFeedOnReturn) {
+                lastLoad?.let { (cachedInputs, cachedState) ->
+                    if (cachedInputs == inputs) return cachedState
+                }
+            }
+            return load().also { state ->
+                if (state is SubscribedFeedUiState.Success) lastLoad = inputs to state
+            }
+        }
 
         init {
             activeProvider.onEach { refresh() }.launchIn(viewModelScope)
@@ -202,6 +235,20 @@ class SubscribedFeedViewModel
             const val MAX_CONCURRENT_BOARD_LOADS = 4
         }
     }
+
+/**
+ * Cache key for a subscribed-feed load: every local input that goes into it. Equal keys mean the
+ * flow merely restarted (nothing was subscribed, refreshed, or reconfigured in between), so the
+ * previous result can stand in for a re-fetch.
+ */
+private data class FeedInputs(
+    val providerId: String,
+    val subscribedIds: Set<BoardId>,
+    val boards: List<Board>,
+    val limitOverrides: Map<BoardId, FeedThreadLimit?>,
+    val settings: AppSettings,
+    val refreshCount: Int,
+)
 
 private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
     if (tokens.isEmpty()) return false

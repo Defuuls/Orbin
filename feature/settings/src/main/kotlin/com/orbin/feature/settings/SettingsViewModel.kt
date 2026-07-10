@@ -108,6 +108,8 @@ class SettingsViewModel
 
         fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
 
+        fun setRefreshFeedOnReturn(enabled: Boolean) = update { repository.setRefreshFeedOnReturn(enabled) }
+
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()
