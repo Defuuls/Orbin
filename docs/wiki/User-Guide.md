@@ -1,6 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v34 (Dippin)**.
+This guide covers day-to-day use of Orbin as of **v35 (Proxima Centauri)**.
 
 ## Getting started
 

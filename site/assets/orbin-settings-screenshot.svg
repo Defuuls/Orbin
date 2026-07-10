@@ -56,10 +56,10 @@
   <rect x="166" y="152" width="198" height="354" rx="28" fill="#FFFFFF"/>
   <text x="196" y="198" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#202431">Orbin</text>
   <text x="196" y="228" font-family="Inter, Arial, sans-serif" font-size="15" fill="#596171">Modern image board client</text>
-  <rect x="196" y="266" width="138" height="34" rx="17" fill="#DCE6FF"/>
-  <text x="216" y="288" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 23.9</text>
+  <rect x="196" y="266" width="112" height="34" rx="17" fill="#DCE6FF"/>
+  <text x="216" y="288" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 35</text>
   <rect x="196" y="328" width="138" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="196" y="352" width="106" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="196" y="376" width="148" height="12" rx="6" fill="#E5E9F2"/>
-  <text x="196" y="448" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Thule release</text>
+  <text x="196" y="448" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#3157B8">Proxima Centauri release</text>
 </svg>

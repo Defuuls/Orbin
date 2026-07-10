@@ -1,16 +1,23 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v30 through v34** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v30 through v35** in
 detail; the full record lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
 [Releases page](https://github.com/Defuuls/Orbin/releases).
 
-Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
-codenames used for v26–v29; v34 is "Dippin".
+Releases since v30 are codenamed after the **smallest known stars**, replacing the bear-family
+codenames used for v26–v29; v34 took a detour as "Dippin" before v35 returned to the scheme
+with "Proxima Centauri".
 
-## v34 — Dippin (2026-07-09)
+## v35 — Proxima Centauri (2026-07-10)
 
 *Current release.*
+
+- **Board labels:** the subscribed feed and search results show the board name (e.g. `/g/`)
+  next to the title of each post, so posts keep their board context even in full-screen mode
+  where board headers are hidden.
+
+## v34 — Dippin (2026-07-09)
 
 - **Feed search:** a search bar at the top of the subscribed feed filters your subscribed
   threads as you type, with a clear button and an inline "no subscribed threads match your

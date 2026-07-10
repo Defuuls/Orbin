@@ -13,14 +13,20 @@ supporting a new image board engine is a matter of implementing a single interfa
 
 | | |
 | --- | --- |
-| Current release | **v34 — Dippin** (2026-07-09) |
+| Current release | **v35 — Proxima Centauri** (2026-07-10) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile/target SDK 36 |
-| Codename scheme | Per-release codenames (v30–v33 used smallest-known-star names) |
+| Codename scheme | Per-release codenames (smallest-known-star names since v30) |
 
 Orbin is under active development with regular signed releases. The architecture, build system,
 domain core, networking, media pipeline, encrypted data layer, and the reference provider are in
 place; features continue to land incrementally.
+
+## Screenshots
+
+![Orbin thread viewer in thumbnail-grid mode, with encrypted-at-rest and biometric app-lock highlights](https://raw.githubusercontent.com/Defuuls/Orbin/main/docs/assets/orbin-hero-screenshot.svg)
+
+![Orbin settings screen showing content, appearance, media, network, privacy, and storage preferences](https://raw.githubusercontent.com/Defuuls/Orbin/main/docs/assets/orbin-settings-screenshot.svg)
 
 ## Highlights
 
@@ -42,7 +48,7 @@ place; features continue to land incrementally.
 | --- | --- |
 | [[User Guide\|User-Guide]] | Browsing, the subscribed feed, threads, gallery, downloads |
 | [[Settings Guide\|Settings-Guide]] | Every settings section and option, explained |
-| [[Release History\|Release-History]] | v30–v34 in detail, plus earlier release eras |
+| [[Release History\|Release-History]] | v30–v35 in detail, plus earlier release eras |
 | [[Developer Guide\|Developer-Guide]] | Building, toolchain, CI, and the release workflow |
 | [[Architecture and Modules\|Architecture-and-Modules]] | Layers, module graph, key design decisions |
 | [[Troubleshooting]] | Build problems and in-app behavior questions |
