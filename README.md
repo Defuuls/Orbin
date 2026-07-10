@@ -7,6 +7,8 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
+**Current release:** [v35 — Proxima Centauri](https://github.com/Defuuls/Orbin/releases/tag/v35-Proxima-Centauri)
+
 > **Status:** under active development, with regular signed releases. The architecture, build
 > system, domain core, networking, media pipeline, encrypted data layer, and the reference
 > provider are in place; features continue to land incrementally. See [CHANGELOG.md](CHANGELOG.md).
