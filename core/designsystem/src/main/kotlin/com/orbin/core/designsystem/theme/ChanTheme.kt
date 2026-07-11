@@ -37,7 +37,8 @@ data class ChanThemeSeeds(
 )
 
 /** Black or white, whichever reads better on [background]. */
-private fun onColorFor(background: Color): Color = if (background.luminance() > CONTRAST_THRESHOLD) Color.Black else Color.White
+private fun onColorFor(background: Color): Color =
+    if (background.luminance() > CONTRAST_THRESHOLD) Color.Black else Color.White
 
 /** Blends [this] toward [other] by [fraction] (0 = unchanged, 1 = [other]). */
 private fun Color.blend(

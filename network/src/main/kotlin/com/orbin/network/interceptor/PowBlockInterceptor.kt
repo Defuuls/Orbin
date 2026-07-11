@@ -71,11 +71,12 @@ class PowBlockInterceptor : Interceptor {
         disclaimerUrl: HttpUrl,
     ): Boolean {
         val base = disclaimerUrl.newBuilder().encodedPath(CONFIRM_PATH).query(null).build()
+        val referer = disclaimerUrl.newBuilder().encodedPath(DISCLAIMER_PATH).query(null).build()
         val request =
             Request
                 .Builder()
                 .url(base)
-                .header("Referer", disclaimerUrl.newBuilder().encodedPath(DISCLAIMER_PATH).query(null).build().toString())
+                .header("Referer", referer.toString())
                 .get()
                 .build()
         return runGate(chain, request)
