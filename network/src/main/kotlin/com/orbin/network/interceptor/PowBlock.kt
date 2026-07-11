@@ -29,11 +29,29 @@ internal object PowBlock {
 
     /** Parses a challenge out of an interstitial body, or null if the markers are absent/invalid. */
     fun parse(body: String): Challenge? {
-        val token = TOKEN_REGEX.find(body)?.groupValues?.get(1)?.trim() ?: return null
+        val token =
+            TOKEN_REGEX
+                .find(body)
+                ?.groupValues
+                ?.get(1)
+                ?.trim() ?: return null
         if (token.length < MIN_TOKEN_LENGTH) return null
-        val difficulty = DIFFICULTY_REGEX.find(body)?.groupValues?.get(1)?.trim()?.toIntOrNull() ?: DEFAULT_DIFFICULTY
+        val difficulty =
+            DIFFICULTY_REGEX
+                .find(body)
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.toIntOrNull() ?: DEFAULT_DIFFICULTY
         val algorithm =
-            when (ALGORITHM_REGEX.find(body)?.groupValues?.get(1)?.trim()?.toIntOrNull()) {
+            when (
+                ALGORITHM_REGEX
+                    .find(body)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.trim()
+                    ?.toIntOrNull()
+            ) {
                 SHA512_BITS -> "SHA-512"
                 else -> "SHA-256"
             }

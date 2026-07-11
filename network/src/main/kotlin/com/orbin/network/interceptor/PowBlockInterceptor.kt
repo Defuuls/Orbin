@@ -62,7 +62,14 @@ class PowBlockInterceptor : Interceptor {
                 .addQueryParameter("powblock", nonce.toString())
                 .addQueryParameter("pbchal", challenge.token)
                 .build()
-        return runGate(chain, Request.Builder().url(submitUrl).get().build())
+        return runGate(
+            chain,
+            Request
+                .Builder()
+                .url(submitUrl)
+                .get()
+                .build(),
+        )
     }
 
     /** Accepts the terms of service so subsequent requests stop redirecting to the disclaimer. */
@@ -70,8 +77,18 @@ class PowBlockInterceptor : Interceptor {
         chain: Interceptor.Chain,
         disclaimerUrl: HttpUrl,
     ): Boolean {
-        val base = disclaimerUrl.newBuilder().encodedPath(CONFIRM_PATH).query(null).build()
-        val referer = disclaimerUrl.newBuilder().encodedPath(DISCLAIMER_PATH).query(null).build()
+        val base =
+            disclaimerUrl
+                .newBuilder()
+                .encodedPath(CONFIRM_PATH)
+                .query(null)
+                .build()
+        val referer =
+            disclaimerUrl
+                .newBuilder()
+                .encodedPath(DISCLAIMER_PATH)
+                .query(null)
+                .build()
         val request =
             Request
                 .Builder()
