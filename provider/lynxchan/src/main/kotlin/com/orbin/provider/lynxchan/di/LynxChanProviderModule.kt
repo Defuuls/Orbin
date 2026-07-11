@@ -21,7 +21,7 @@ import retrofit2.Retrofit
 import javax.inject.Singleton
 
 /**
- * Registers the BBW Chan LynxChan instance into the app-wide `Set<ImageBoardProvider>` via Hilt
+ * Registers the bundled LynxChan instances into the app-wide `Set<ImageBoardProvider>` via Hilt
  * multibinding. To add another LynxChan site, contribute another `@IntoSet` provider for a
  * different [LynxChanSite] - no other module changes.
  */
@@ -35,8 +35,23 @@ object LynxChanProviderModule {
         @BaseOkHttp client: OkHttpClient,
         json: Json,
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
+    ): ImageBoardProvider = buildProvider(LynxChanSite.BbwChan, client, json, ioDispatcher)
+
+    @Provides
+    @IntoSet
+    @Singleton
+    fun providesEightChanProvider(
+        @BaseOkHttp client: OkHttpClient,
+        json: Json,
+        @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
+    ): ImageBoardProvider = buildProvider(LynxChanSite.EightChan, client, json, ioDispatcher)
+
+    private fun buildProvider(
+        site: LynxChanSite,
+        client: OkHttpClient,
+        json: Json,
+        ioDispatcher: CoroutineDispatcher,
     ): ImageBoardProvider {
-        val site = LynxChanSite.BbwChan
         val retrofit =
             Retrofit
                 .Builder()

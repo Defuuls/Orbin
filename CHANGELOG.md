@@ -6,6 +6,27 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [36-TRAPPIST-1] - 2026-07-11
+
+### Added
+- **8chan.moe:** added 8chan.moe as a selectable LynxChan provider. The network layer now clears
+  its POWBlock proof-of-work gate and terms-of-service redirect transparently, so browsing works
+  the same as any other site.
+- **8chan themes:** ported 8chan's palette skins (Yotsuba, Tomorrow, Miku, Lain, Penumbra,
+  Windows 95, and more) as selectable app color themes.
+
+### Changed
+- **Settings pickers:** appearance and content options (color theme, app icon, theme mode,
+  thumbnail size, feed limits, and the active site) are now compact drop-downs instead of
+  horizontally scrolling chip tiles, keeping the long theme list usable.
+- **Release:** prepare the v36 release for the TRAPPIST-1 milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
+
+### Known limitations
+- **7chan.org:** not added. 7chan runs KusabaX, which exposes no JSON API, and the site sits
+  behind a Cloudflare JS challenge that the app's HTTP client cannot pass, so it cannot currently
+  be supported as a functional provider.
+
 ## [35-Proxima Centauri] - 2026-07-10
 
 ### Added

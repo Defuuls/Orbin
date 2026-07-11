@@ -444,12 +444,10 @@ private fun AppThemeMode.toDesignSystem(): ThemeMode =
         AppThemeMode.DARK -> ThemeMode.DARK
     }
 
+// The two enums are kept name-for-name in sync (core:model persists the setting; the design
+// system owns the palettes), so map by name and fall back to Orbin if they ever diverge.
 private fun ColorTheme.toDesignSystem(): ColorSchemeVariant =
-    when (this) {
-        ColorTheme.ORBIN -> ColorSchemeVariant.ORBIN
-        ColorTheme.TOMORROW -> ColorSchemeVariant.TOMORROW
-        ColorTheme.TOMORROW_NIGHT -> ColorSchemeVariant.TOMORROW_NIGHT
-    }
+    runCatching { ColorSchemeVariant.valueOf(name) }.getOrDefault(ColorSchemeVariant.ORBIN)
 
 private fun shouldRequestNotificationPermission(
     ready: Boolean,
