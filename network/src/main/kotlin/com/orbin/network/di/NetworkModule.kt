@@ -4,6 +4,8 @@ import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
 import com.orbin.network.interceptor.HttpsOnlyInterceptor
+import com.orbin.network.interceptor.InMemoryCookieJar
+import com.orbin.network.interceptor.PowBlockInterceptor
 import com.orbin.network.interceptor.VideoRetryAfterInterceptor
 import dagger.Module
 import dagger.Provides
@@ -79,7 +81,11 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.RESTRICTED_TLS,
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
-            ).addInterceptor(HttpsOnlyInterceptor(configProvider))
+            ).cookieJar(InMemoryCookieJar())
+            .addInterceptor(HttpsOnlyInterceptor(configProvider))
+            // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
+            // configured User-Agent and Accept headers.
+            .addInterceptor(PowBlockInterceptor())
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
                 dns(DynamicDns(configProvider, bootstrap))

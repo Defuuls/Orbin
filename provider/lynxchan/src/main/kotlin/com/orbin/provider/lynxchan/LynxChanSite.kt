@@ -25,5 +25,19 @@ data class LynxChanSite(
                 siteUrl = "https://bbw-chan.link",
                 nsfwByDefault = true,
             )
+
+        /**
+         * 8chan.moe (a.k.a. 8kun's successor "8moe"). A LynxChan instance whose responses sit
+         * behind a POWBlock proof-of-work gate and a terms-of-service redirect; both are cleared
+         * transparently by the network layer's POWBlock interceptor, so no provider-side handling
+         * is required here.
+         */
+        val EightChan =
+            LynxChanSite(
+                providerId = ProviderId("eightchan"),
+                displayName = "8chan.moe",
+                siteUrl = "https://8chan.moe",
+                nsfwByDefault = true,
+            )
     }
 }

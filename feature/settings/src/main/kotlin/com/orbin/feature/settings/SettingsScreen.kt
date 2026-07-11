@@ -4,10 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,7 +19,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -427,6 +423,10 @@ private fun ThemeModeRow(
     )
 }
 
+/**
+ * A single-choice setting. Previously rendered as a horizontally scrolling row of chips; now a
+ * compact exposed dropdown so long option lists (e.g. the ported imageboard themes) stay usable.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T> ChoiceRow(
@@ -436,26 +436,13 @@ private fun <T> ChoiceRow(
     text: (T) -> String,
     onChange: (T) -> Unit,
 ) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    DropdownChoiceRow(
+        label = label,
+        values = values,
+        selected = selected,
+        text = text,
+        onChange = onChange,
     )
-    Row(
-        modifier =
-            Modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        values.forEach { value ->
-            FilterChip(
-                selected = selected == value,
-                onClick = { onChange(value) },
-                label = { Text(text(value)) },
-            )
-        }
-    }
 }
 
 private enum class FontScaleOption(

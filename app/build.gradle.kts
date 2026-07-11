@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 57
-        versionName = "35-Proxima Centauri"
+        versionCode = 58
+        versionName = "36-TRAPPIST-1"
     }
 
     signingConfigs {
