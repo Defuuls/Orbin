@@ -61,6 +61,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
+import com.orbin.core.ui.date.formatThreadDate
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.coroutines.launch
@@ -442,6 +443,9 @@ private fun MetadataRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        formatThreadDate(thread.originalPost.createdAtMillis)?.let { created ->
+            StatChip(created, onClick)
+        }
         StatChip("${thread.stats.replyCount} replies", onClick)
         StatChip("${thread.stats.imageCount} media", onClick)
         if (!compact && thread.stats.uniquePosterCount > 0) {

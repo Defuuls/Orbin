@@ -57,6 +57,7 @@ import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -425,6 +426,13 @@ private fun PostHeader(
             Text("ID:$it", style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.weight(1f))
+        formatPostDateTime(post.createdAtMillis)?.let { posted ->
+            Text(
+                text = posted,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = "No.${post.id.value}" + if (isCollapsed) "  [+]" else "",
             style = MaterialTheme.typography.labelSmall,
