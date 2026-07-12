@@ -42,10 +42,14 @@ if [ ! -x "$SDKMANAGER" ]; then
   rm -f "$tmp_zip"
 fi
 
-if [ ! -d "$SDK_DIR/platforms/android-$COMPILE_SDK" ]; then
+# The platform package is usually "android-<sdk>", but newer SDK levels use minor-versioned
+# platforms (e.g. android-37.0). Accept either when checking for / installing the platform.
+if ! compgen -G "$SDK_DIR/platforms/android-$COMPILE_SDK*" >/dev/null; then
   log "accepting licenses and installing platform-tools, android-$COMPILE_SDK, build-tools $BUILD_TOOLS"
   yes 2>/dev/null | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-  "$SDKMANAGER" "platform-tools" "platforms;android-$COMPILE_SDK" "build-tools;$BUILD_TOOLS" >/dev/null
+  "$SDKMANAGER" "platform-tools" "build-tools;$BUILD_TOOLS" >/dev/null
+  "$SDKMANAGER" "platforms;android-$COMPILE_SDK" >/dev/null 2>&1 ||
+    "$SDKMANAGER" "platforms;android-$COMPILE_SDK.0" >/dev/null
 else
   log "Android SDK already present ($SDK_DIR)"
 fi
