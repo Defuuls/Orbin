@@ -1,5 +1,6 @@
 package com.orbin.feature.gallery
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,11 +30,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +45,7 @@ import com.orbin.core.ui.state.EmptyView
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 /**
  * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
@@ -56,6 +61,8 @@ fun GalleryScreen(
     val media by viewModel.media.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     if (media.isEmpty()) {
         Scaffold { padding -> EmptyView("No media", Modifier.padding(padding)) }
@@ -103,7 +110,26 @@ fun GalleryScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.download(media[pagerState.currentPage]) }) {
+                        val currentItem = media[pagerState.currentPage]
+                        val isImage = currentItem.type == MediaType.IMAGE
+                        if (isImage) {
+                            IconButton(
+                                onClick = {
+                                    scope.launch {
+                                        val result = copyImageToClipboard(context, currentItem.sourceUrl)
+                                        val message =
+                                            when (result) {
+                                                ImageCopyResult.IMAGE -> "Image copied"
+                                                ImageCopyResult.URL -> "Image unavailable; URL copied"
+                                            }
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                            ) {
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copy image")
+                            }
+                        }
+                        IconButton(onClick = { viewModel.download(currentItem) }) {
                             Icon(Icons.Filled.Download, contentDescription = "Download")
                         }
                     },
