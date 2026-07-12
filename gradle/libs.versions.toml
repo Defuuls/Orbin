@@ -57,7 +57,7 @@ junit = "4.13.2"
 junitExt = "1.2.1"
 espresso = "3.6.1"
 turbine = "1.2.1"
-mockk = "1.13.13"
+mockk = "1.14.11"
 truth = "1.4.5"
 robolectric = "4.16.1"
 # 1.64.0 is the last release before roborazzi requires Kotlin 2.3; includes Gradle 9 input
