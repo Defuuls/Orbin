@@ -105,8 +105,6 @@ data class AppSettings(
     val hideTextOnlyThreads: Boolean = false,
     /** Reload the subscribed feed when returning to it, e.g. after backing out of a thread. */
     val refreshFeedOnReturn: Boolean = true,
-    /** Check gofile.io/fast-file.ru/mega.nz links in posts and mark them as alive or dead. */
-    val verifyFileHostLinks: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,

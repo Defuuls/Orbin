@@ -29,8 +29,6 @@ interface SettingsRepository {
 
     suspend fun setRefreshFeedOnReturn(enabled: Boolean)
 
-    suspend fun setVerifyFileHostLinks(enabled: Boolean)
-
     suspend fun setThemeMode(mode: AppThemeMode)
 
     suspend fun setDynamicColor(enabled: Boolean)

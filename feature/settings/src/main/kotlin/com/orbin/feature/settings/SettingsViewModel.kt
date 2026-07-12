@@ -114,8 +114,6 @@ class SettingsViewModel
 
         fun setRefreshFeedOnReturn(enabled: Boolean) = update { repository.setRefreshFeedOnReturn(enabled) }
 
-        fun setVerifyFileHostLinks(enabled: Boolean) = update { repository.setVerifyFileHostLinks(enabled) }
-
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()
