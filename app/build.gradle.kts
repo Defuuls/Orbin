@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 58
-        versionName = "36-TRAPPIST-1"
+        versionCode = 59
+        versionName = "37-Wolf 359"
     }
 
     signingConfigs {
