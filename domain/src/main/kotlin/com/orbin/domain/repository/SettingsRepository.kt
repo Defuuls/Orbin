@@ -45,6 +45,10 @@ interface SettingsRepository {
 
     suspend fun setMuteByDefault(enabled: Boolean)
 
+    suspend fun setFullscreenVideoPlayback(enabled: Boolean)
+
+    suspend fun setAutoRotateVideoFullscreen(enabled: Boolean)
+
     suspend fun setPreloadImages(enabled: Boolean)
 
     suspend fun setPreloadOption(option: PreloadOption)
