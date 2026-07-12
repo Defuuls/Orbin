@@ -71,6 +71,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.mutedTagTokens
+import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -474,6 +475,9 @@ private fun FeedThreadCellContent(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                formatPostDateTime(thread.originalPost.createdAtMillis)?.let { created ->
+                    AssistChip(onClick = onClick, label = { Text(created) })
+                }
                 AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
                 AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
                 if (isMuted) {
