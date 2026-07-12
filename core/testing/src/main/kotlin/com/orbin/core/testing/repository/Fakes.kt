@@ -173,10 +173,6 @@ class FakeSettingsRepository(
         update { copy(refreshFeedOnReturn = enabled) }
     }
 
-    override suspend fun setVerifyFileHostLinks(enabled: Boolean) {
-        update { copy(verifyFileHostLinks = enabled) }
-    }
-
     override suspend fun setThemeMode(mode: AppThemeMode) {
         update { copy(themeMode = mode) }
     }

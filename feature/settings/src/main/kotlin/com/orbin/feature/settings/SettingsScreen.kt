@@ -141,14 +141,6 @@ fun SettingsScreen(
                     "Reload subscriptions and threads when coming back to the feed, " +
                         "for example after reading a thread. Turn off to keep the feed as you left it.",
             )
-            SwitchRow(
-                "Verify file host links",
-                settings.verifyFileHostLinks,
-                viewModel::setVerifyFileHostLinks,
-                supporting =
-                    "Check gofile.io, fast-file.ru, and mega.nz links in posts and mark them " +
-                        "with a green check when they exist or a red cross when they are gone.",
-            )
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenSetup),
                 headlineContent = { Text("Run setup again") },
