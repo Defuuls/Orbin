@@ -5,12 +5,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 internal enum class ImageCopyResult {
     IMAGE,
