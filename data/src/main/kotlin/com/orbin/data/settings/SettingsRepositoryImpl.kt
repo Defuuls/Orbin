@@ -121,6 +121,14 @@ class SettingsRepositoryImpl
             edit { it[Keys.mute] = enabled }
         }
 
+        override suspend fun setFullscreenVideoPlayback(enabled: Boolean) {
+            edit { it[Keys.fullscreenVideoPlayback] = enabled }
+        }
+
+        override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
+            edit { it[Keys.autoRotateVideoFullscreen] = enabled }
+        }
+
         override suspend fun setPreloadImages(enabled: Boolean) {
             edit { it[Keys.preload] = enabled }
         }
@@ -260,6 +268,8 @@ class SettingsRepositoryImpl
                         ?: ThumbnailSize.MEDIUM,
                 autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
+                fullscreenVideoPlayback = this[Keys.fullscreenVideoPlayback] ?: false,
+                autoRotateVideoFullscreen = this[Keys.autoRotateVideoFullscreen] ?: false,
                 preloadImages = this[Keys.preload] ?: true,
                 preloadOption =
                     this[Keys.preloadOption]?.toEnumOrDefault(PreloadOption.IMAGES)
@@ -320,6 +330,8 @@ class SettingsRepositoryImpl
             val thumbnailSize = stringPreferencesKey("thumbnail_size")
             val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
+            val fullscreenVideoPlayback = booleanPreferencesKey("fullscreen_video_playback")
+            val autoRotateVideoFullscreen = booleanPreferencesKey("auto_rotate_video_fullscreen")
             val preload = booleanPreferencesKey("preload_images")
             val preloadOption = stringPreferencesKey("preload_option")
             val preloadThrottleMode = stringPreferencesKey("preload_throttle_mode")
