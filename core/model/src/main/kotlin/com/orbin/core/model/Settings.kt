@@ -117,6 +117,10 @@ data class AppSettings(
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
+    /** Play videos in an immersive full-screen presentation (hide system bars and app chrome). */
+    val fullscreenVideoPlayback: Boolean = false,
+    /** Rotate the screen to landscape automatically when a landscape video starts playing. */
+    val autoRotateVideoFullscreen: Boolean = false,
     val preloadImages: Boolean = true,
     val preloadOption: PreloadOption = PreloadOption.IMAGES,
     val preloadThrottleMode: PreloadThrottleMode = PreloadThrottleMode.MODERATE,

@@ -12,6 +12,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":network"))
 
+    implementation(libs.androidx.core.ktx)
+
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.gif)
