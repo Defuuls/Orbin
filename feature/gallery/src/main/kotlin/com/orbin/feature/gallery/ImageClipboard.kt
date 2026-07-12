@@ -48,7 +48,7 @@ private suspend fun cacheImageForClipboard(
 
         try {
             connection.connect()
-            check(connection.responseCode in 200..299) {
+            check(connection.responseCode in HTTP_SUCCESS_MIN..HTTP_SUCCESS_MAX) {
                 "Image request failed with HTTP ${connection.responseCode}"
             }
 
@@ -113,4 +113,6 @@ private fun String.sha256(): String =
 private const val CLIPBOARD_DIRECTORY = "clipboard_images"
 private const val CONNECT_TIMEOUT_MS = 15_000
 private const val READ_TIMEOUT_MS = 30_000
+private const val HTTP_SUCCESS_MIN = 200
+private const val HTTP_SUCCESS_MAX = 299
 private const val MAX_IMAGE_BYTES = 50L * 1024L * 1024L
