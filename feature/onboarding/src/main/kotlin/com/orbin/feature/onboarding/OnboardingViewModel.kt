@@ -50,7 +50,7 @@ sealed interface OnboardingBoardsState {
 class OnboardingViewModel
     @Inject
     constructor(
-        registry: ProviderRegistry,
+        private val registry: ProviderRegistry,
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
@@ -130,8 +130,12 @@ class OnboardingViewModel
 
         fun setSaveRecentSearches(enabled: Boolean) = update { settingsRepository.setSaveRecentSearches(enabled) }
 
-        /** Persist that setup is done so the wizard never auto-shows again. */
-        fun complete() = update { settingsRepository.setOnboardingCompleted(true) }
+        /** Persist that setup is done so the wizard never auto-shows again, and lock in the active provider. */
+        fun complete() =
+            update {
+                settingsRepository.setActiveProviderId(activeProvider.value.metadata.id)
+                settingsRepository.setOnboardingCompleted(true)
+            }
 
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }
