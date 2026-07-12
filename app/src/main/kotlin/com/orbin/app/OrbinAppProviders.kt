@@ -1,5 +1,6 @@
 package com.orbin.app
 
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -17,6 +18,7 @@ fun OrbinAppProviders(content: @Composable () -> Unit) {
 
     CompositionLocalProvider(
         LocalOrbinSnackbarHostState provides snackbarHostState,
-        content = content,
-    )
+    ) {
+        SelectionContainer(content = content)
+    }
 }
