@@ -6,6 +6,25 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [37-Wolf 359] - 2026-07-12
+
+### Added
+- **Fullscreen video:** a setting to play videos edge-to-edge in an immersive presentation
+  (hiding the status bar and app chrome), plus a fullscreen toggle button in the video controls.
+- **Auto-rotate video:** a setting to turn the screen to landscape automatically when a wide video
+  starts playing, for fullscreen viewing.
+
+### Changed
+- **Dependencies:** updated the toolchain and libraries in one coordinated bump — Kotlin 2.4.0,
+  Compose BOM 2026.06, compileSdk 37, OkHttp 5, Coil 3.5, Coroutines 1.11, and the AndroidX,
+  testing, and GitHub Actions groups.
+- **Release:** prepare the v37 release for the Wolf 359 milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
+
+### Removed
+- **File-host link checker:** removed the gofile.io/fast-file.ru/mega.nz link alive/dead
+  verification and its setting.
+
 ## [36-TRAPPIST-1] - 2026-07-11
 
 ### Added
@@ -449,7 +468,9 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v35-Proxima-Centauri...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v37-Wolf-359...HEAD
+[37-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v36-TRAPPIST-1...v37-Wolf-359
+[36-TRAPPIST-1]: https://github.com/Defuuls/Orbin/compare/v35-Proxima-Centauri...v36-TRAPPIST-1
 [35-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v34-Dippin...v35-Proxima-Centauri
 [34-Dippin]: https://github.com/Defuuls/Orbin/compare/v33-CM-Draconis-A...v34-Dippin
 [33-CM Draconis A]: https://github.com/Defuuls/Orbin/compare/v32-EQ-Pegasi-A...v33-CM-Draconis-A
