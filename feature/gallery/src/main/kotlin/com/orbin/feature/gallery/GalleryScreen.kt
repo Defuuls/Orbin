@@ -26,6 +26,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,34 +74,41 @@ fun GalleryScreen(
             .collect(onMediaPageChanged)
     }
 
+    // Hide the gallery chrome while a video plays in fullscreen; reset on every page change so a
+    // swipe away always brings the top bar back.
+    var videoFullscreen by remember { mutableStateOf(false) }
+    LaunchedEffect(pagerState.settledPage) { videoFullscreen = false }
+
     Scaffold(
         containerColor = Color.Black,
         topBar = {
-            TopAppBar(
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Black.copy(alpha = 0.4f),
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
-                        actionIconContentColor = Color.White,
-                    ),
-                title = { Text("${pagerState.currentPage + 1} / ${media.size}") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            onMediaPageChanged(pagerState.settledPage)
-                            onClose()
-                        },
-                    ) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.download(media[pagerState.currentPage]) }) {
-                        Icon(Icons.Filled.Download, contentDescription = "Download")
-                    }
-                },
-            )
+            if (!videoFullscreen) {
+                TopAppBar(
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Black.copy(alpha = 0.4f),
+                            titleContentColor = Color.White,
+                            navigationIconContentColor = Color.White,
+                            actionIconContentColor = Color.White,
+                        ),
+                    title = { Text("${pagerState.currentPage + 1} / ${media.size}") },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                onMediaPageChanged(pagerState.settledPage)
+                                onClose()
+                            },
+                        ) {
+                            Icon(Icons.Filled.Close, contentDescription = "Close")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.download(media[pagerState.currentPage]) }) {
+                            Icon(Icons.Filled.Download, contentDescription = "Download")
+                        }
+                    },
+                )
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -112,13 +122,18 @@ fun GalleryScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
+                        val isActive = page == pagerState.settledPage
                         VideoPlayer(
                             url = item.sourceUrl,
                             modifier = Modifier.fillMaxSize(),
                             autoPlay = settings.autoplayVideos,
                             muted = settings.muteByDefault,
                             // Only the settled page plays, so swiping away stops its audio.
-                            active = page == pagerState.settledPage,
+                            active = isActive,
+                            fullscreenByDefault = settings.fullscreenVideoPlayback,
+                            autoRotate = settings.autoRotateVideoFullscreen,
+                            // Only the active page controls the gallery chrome.
+                            onFullscreenChange = { if (isActive) videoFullscreen = it },
                         )
                     } else {
                         ZoomableImage(

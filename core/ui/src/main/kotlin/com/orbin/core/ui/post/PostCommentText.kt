@@ -27,7 +27,6 @@ import com.orbin.core.model.LinkStatus
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
-import com.orbin.core.model.VerifiableLinkHosts
 import kotlinx.coroutines.launch
 
 private const val TAG_QUOTE = "quote"
@@ -85,15 +84,16 @@ fun PostCommentText(
 }
 
 /**
- * Resolves [LinkStatus]es for the comment's verifiable file-host links via [LocalLinkVerifier].
- * Statuses trickle in asynchronously; links stay unmarked until (and unless) a verdict arrives.
+ * Resolves [LinkStatus]es for the comment's external links via [LocalLinkVerifier]. Statuses
+ * trickle in asynchronously; links stay unmarked until (and unless) a verdict arrives. Link
+ * verification is no longer performed in production, so links normally stay unmarked.
  */
 @Composable
 private fun rememberLinkStatuses(comment: PostComment): Map<String, LinkStatus> {
     val verifier = LocalLinkVerifier.current
     val verifiableLinks =
         remember(comment) {
-            comment.externalLinks.filter(VerifiableLinkHosts::isSupported).distinct()
+            comment.externalLinks.distinct()
         }
     var statuses by remember(comment) { mutableStateOf(emptyMap<String, LinkStatus>()) }
     if (verifier != null && verifiableLinks.isNotEmpty()) {
