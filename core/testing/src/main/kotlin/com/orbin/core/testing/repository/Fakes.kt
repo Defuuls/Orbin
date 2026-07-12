@@ -205,6 +205,14 @@ class FakeSettingsRepository(
         update { copy(muteByDefault = enabled) }
     }
 
+    override suspend fun setFullscreenVideoPlayback(enabled: Boolean) {
+        update { copy(fullscreenVideoPlayback = enabled) }
+    }
+
+    override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
+        update { copy(autoRotateVideoFullscreen = enabled) }
+    }
+
     override suspend fun setPreloadImages(enabled: Boolean) {
         update { copy(preloadImages = enabled) }
     }

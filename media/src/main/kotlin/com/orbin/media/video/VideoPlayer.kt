@@ -1,6 +1,9 @@
 package com.orbin.media.video
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -16,6 +19,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
@@ -30,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -46,9 +52,13 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -76,10 +86,15 @@ fun VideoPlayer(
     autoPlay: Boolean = false,
     muted: Boolean = true,
     active: Boolean = true,
+    fullscreenByDefault: Boolean = false,
+    autoRotate: Boolean = false,
+    onFullscreenChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val uriHandler = LocalUriHandler.current
+    val activity = remember(context) { context.findActivity() }
+    var videoIsLandscape by remember(url) { mutableStateOf(false) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
@@ -153,6 +168,18 @@ fun VideoPlayer(
         exoPlayer.volume = if (isMuted) 0f else 1f
     }
 
+    val fullscreen =
+        rememberVideoFullscreenState(
+            url = url,
+            activity = activity,
+            isPlaying = isPlaying,
+            active = active,
+            videoIsLandscape = videoIsLandscape,
+            fullscreenByDefault = fullscreenByDefault,
+            autoRotate = autoRotate,
+            onFullscreenChange = onFullscreenChange,
+        )
+
     LaunchedEffect(exoPlayer) {
         while (true) {
             positionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
@@ -179,6 +206,11 @@ fun VideoPlayer(
                 override fun onIsPlayingChanged(isPlayingNow: Boolean) {
                     isPlaying = isPlayingNow
                     if (!isPlayingNow) controlsVisible = true
+                }
+
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    // Ignore audio (0x0); rotation applies only to wider-than-tall video.
+                    videoSize.landscapeOrNull()?.let { videoIsLandscape = it }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -277,6 +309,7 @@ fun VideoPlayer(
             VideoControls(
                 isPlaying = isPlaying,
                 isMuted = isMuted,
+                isFullscreen = fullscreen.value,
                 progress = progress,
                 positionMs = positionMs,
                 durationMs = durationMs,
@@ -285,6 +318,7 @@ fun VideoPlayer(
                     if (!isPlaying) controlsVisible = false
                 },
                 onMuteToggle = { isMuted = !isMuted },
+                onFullscreenToggle = { fullscreen.value = !fullscreen.value },
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
                         exoPlayer.seekTo((durationMs * seekProgress).toLong())
@@ -296,15 +330,75 @@ fun VideoPlayer(
     }
 }
 
+/**
+ * Owns the video's fullscreen state and the side effects that drive it: auto-entering fullscreen
+ * when playback starts (per the fullscreen/auto-rotate settings), exiting when the page is no
+ * longer active, notifying the host, and applying/restoring the immersive + orientation
+ * presentation. Returns the fullscreen [MutableState] so the caller can also toggle it manually.
+ */
+@Composable
+private fun rememberVideoFullscreenState(
+    url: String,
+    activity: Activity?,
+    isPlaying: Boolean,
+    active: Boolean,
+    videoIsLandscape: Boolean,
+    fullscreenByDefault: Boolean,
+    autoRotate: Boolean,
+    onFullscreenChange: (Boolean) -> Unit,
+): MutableState<Boolean> {
+    // The orientation the activity had before this player forced one, restored on exit/dispose.
+    val originalOrientation =
+        remember(activity) { activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    val isFullscreen = rememberSaveable(url) { mutableStateOf(false) }
+    // Tracks the one-time auto-entry so a manual exit is not immediately overridden while playing.
+    var hasAutoFullscreened by remember(url) { mutableStateOf(false) }
+    val shouldAutoFullscreen = fullscreenByDefault || (autoRotate && videoIsLandscape)
+
+    LaunchedEffect(shouldAutoFullscreen, isPlaying) {
+        if (shouldAutoFullscreen && isPlaying && !hasAutoFullscreened) {
+            isFullscreen.value = true
+            hasAutoFullscreened = true
+        }
+    }
+
+    // Leaving this page (swipe/close) must never strand the activity locked or immersive.
+    LaunchedEffect(active) {
+        if (!active) {
+            isFullscreen.value = false
+            hasAutoFullscreened = false
+        }
+    }
+
+    LaunchedEffect(isFullscreen.value) { onFullscreenChange(isFullscreen.value) }
+
+    LaunchedEffect(activity, isFullscreen.value, autoRotate, videoIsLandscape) {
+        activity?.applyVideoFullscreen(
+            fullscreen = isFullscreen.value,
+            lockLandscape = autoRotate && videoIsLandscape,
+            originalOrientation = originalOrientation,
+        )
+    }
+
+    // Always restore the original system bars and orientation when the player leaves composition.
+    DisposableEffect(activity) {
+        onDispose { activity?.applyVideoFullscreen(fullscreen = false, lockLandscape = false, originalOrientation) }
+    }
+
+    return isFullscreen
+}
+
 @Composable
 private fun VideoControls(
     isPlaying: Boolean,
     isMuted: Boolean,
+    isFullscreen: Boolean,
     progress: Float,
     positionMs: Long,
     durationMs: Long,
     onPlayPause: () -> Unit,
     onMuteToggle: () -> Unit,
+    onFullscreenToggle: () -> Unit,
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -349,20 +443,32 @@ private fun VideoControls(
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                IconButton(
-                    onClick = onMuteToggle,
-                    modifier = Modifier.widthIn(min = 48.dp),
-                ) {
-                    Icon(
-                        imageVector =
-                            if (isMuted) {
-                                Icons.AutoMirrored.Filled.VolumeOff
-                            } else {
-                                Icons.AutoMirrored.Filled.VolumeUp
-                            },
-                        contentDescription = if (isMuted) "Unmute" else "Mute",
-                        tint = Color.White,
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onMuteToggle,
+                        modifier = Modifier.widthIn(min = 48.dp),
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (isMuted) {
+                                    Icons.AutoMirrored.Filled.VolumeOff
+                                } else {
+                                    Icons.AutoMirrored.Filled.VolumeUp
+                                },
+                            contentDescription = if (isMuted) "Unmute" else "Mute",
+                            tint = Color.White,
+                        )
+                    }
+                    IconButton(
+                        onClick = onFullscreenToggle,
+                        modifier = Modifier.widthIn(min = 48.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
+                            contentDescription = if (isFullscreen) "Exit fullscreen" else "Enter fullscreen",
+                            tint = Color.White,
+                        )
+                    }
                 }
             }
         }
@@ -378,6 +484,43 @@ private interface VideoPlayerEntryPoint {
 
 private fun Context.videoMediaDataSourceFactory(): DataSource.Factory =
     EntryPointAccessors.fromApplication(this, VideoPlayerEntryPoint::class.java).videoDataSourceFactory()
+
+/** True/false when this is real video (non-zero size), null for audio-only (0x0) tracks. */
+private fun VideoSize.landscapeOrNull(): Boolean? = if (width > 0 && height > 0) width > height else null
+
+/** Unwraps the hosting [Activity] from a (possibly wrapped) composition [Context], if any. */
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+
+/**
+ * Toggles immersive full-screen presentation on the activity: hides/shows the system bars and,
+ * when [lockLandscape] is set, forces sensor-landscape orientation. Exiting restores the system
+ * bars and [originalOrientation], so the activity is never left locked or immersive.
+ */
+private fun Activity.applyVideoFullscreen(
+    fullscreen: Boolean,
+    lockLandscape: Boolean,
+    originalOrientation: Int,
+) {
+    val controller = WindowCompat.getInsetsController(window, window.decorView)
+    if (fullscreen) {
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        requestedOrientation =
+            if (lockLandscape) {
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            } else {
+                originalOrientation
+            }
+    } else {
+        controller.show(WindowInsetsCompat.Type.systemBars())
+        requestedOrientation = originalOrientation
+    }
+}
 
 private fun Long.progressIn(durationMs: Long): Float =
     if (durationMs > 0L) {
