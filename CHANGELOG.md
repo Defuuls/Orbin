@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [38-Ross 128] - 2026-07-12
+
+### Added
+- **Post & thread dates:** the catalog shows each thread's creation date, and every post header in
+  the thread view shows the date and time it was posted.
+
+### Changed
+- **Release:** prepare the v38 release for the Ross 128 milestone.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
+
+### Removed
+- **Verify file host links:** removed the dormant setting and all remaining code behind the
+  file-host link verification feature.
+
 ## [37-Wolf 359] - 2026-07-12
 
 ### Added
@@ -468,7 +482,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v37-Wolf-359...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...HEAD
+[38-Ross 128]: https://github.com/Defuuls/Orbin/compare/v37-Wolf-359...v38-Ross-128
 [37-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v36-TRAPPIST-1...v37-Wolf-359
 [36-TRAPPIST-1]: https://github.com/Defuuls/Orbin/compare/v35-Proxima-Centauri...v36-TRAPPIST-1
 [35-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v34-Dippin...v35-Proxima-Centauri

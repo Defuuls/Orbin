@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v37 — Wolf 359](https://github.com/Defuuls/Orbin/releases/tag/v37-Wolf-359)
+**Current release:** [v38 — Ross 128](https://github.com/Defuuls/Orbin/releases/tag/v38-Ross-128)
 
 > **Status:** under active development, with regular signed releases. The architecture, build
 > system, domain core, networking, media pipeline, encrypted data layer, and the reference
