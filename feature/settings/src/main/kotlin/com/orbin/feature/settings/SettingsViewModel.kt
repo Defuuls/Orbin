@@ -82,6 +82,10 @@ class SettingsViewModel
 
         fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
 
+        fun setFullscreenVideoPlayback(enabled: Boolean) = update { repository.setFullscreenVideoPlayback(enabled) }
+
+        fun setAutoRotateVideoFullscreen(enabled: Boolean) = update { repository.setAutoRotateVideoFullscreen(enabled) }
+
         fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
 
         fun setPreloadOption(option: PreloadOption) = update { repository.setPreloadOption(option) }

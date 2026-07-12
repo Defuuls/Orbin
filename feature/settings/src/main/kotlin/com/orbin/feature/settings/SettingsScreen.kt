@@ -193,6 +193,18 @@ fun SettingsScreen(
             SectionHeader("Media")
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
             SwitchRow("Mute by default", settings.muteByDefault, viewModel::setMute)
+            SwitchRow(
+                "Fullscreen video",
+                settings.fullscreenVideoPlayback,
+                viewModel::setFullscreenVideoPlayback,
+                supporting = "Play videos edge-to-edge, hiding the status bar and app chrome.",
+            )
+            SwitchRow(
+                "Auto-rotate video",
+                settings.autoRotateVideoFullscreen,
+                viewModel::setAutoRotateVideoFullscreen,
+                supporting = "Turn the screen to landscape automatically when a wide video starts playing.",
+            )
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
             ChoiceRow(
                 label = "Preload content",
