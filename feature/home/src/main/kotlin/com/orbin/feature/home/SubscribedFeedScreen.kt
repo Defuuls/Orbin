@@ -269,13 +269,15 @@ private fun SubscribedFeedList(
                         feed = feed,
                         globalThreadLimit = globalThreadLimit,
                         isCollapsed = collapsedBoards.contains(feed.board.id.value),
-                        onToggleCollapse = { boardId ->
-                            collapsedBoards = if (collapsedBoards.contains(boardId)) {
-                                collapsedBoards - boardId
-                            } else {
-                                collapsedBoards + boardId
-                            }
-                        },
+                        onToggleCollapse =
+                            { boardId ->
+                                collapsedBoards =
+                                    if (collapsedBoards.contains(boardId)) {
+                                        collapsedBoards - boardId
+                                    } else {
+                                        collapsedBoards + boardId
+                                    }
+                            },
                         onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
                     )
                 }
@@ -350,9 +352,10 @@ private fun BoardFeedHeader(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Column(
-                modifier = Modifier.weight(1f).clickable {
-                    onToggleCollapse(feed.board.id.value)
-                },
+                modifier =
+                    Modifier.weight(1f).clickable {
+                        onToggleCollapse(feed.board.id.value)
+                    },
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
