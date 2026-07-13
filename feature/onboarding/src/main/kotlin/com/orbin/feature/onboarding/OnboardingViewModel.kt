@@ -10,7 +10,6 @@ import com.orbin.core.model.BoardId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,14 +50,17 @@ class OnboardingViewModel
     @Inject
     constructor(
         private val registry: ProviderRegistry,
-        observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
         private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
+        private val _selectedProvider = MutableStateFlow<ImageBoardProvider>(registry.default())
+        val selectedProvider: StateFlow<ImageBoardProvider> = _selectedProvider.asStateFlow()
+
+        val providers: ImmutableList<ImageBoardProvider> = registry.all().toImmutableList()
+
         private val activeProvider: StateFlow<ImageBoardProvider> =
-            observeActiveProvider()
-                .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
+            selectedProvider
 
         private val _boards = MutableStateFlow<OnboardingBoardsState>(OnboardingBoardsState.Loading)
         val boards: StateFlow<OnboardingBoardsState> = _boards.asStateFlow()
@@ -130,10 +132,14 @@ class OnboardingViewModel
 
         fun setSaveRecentSearches(enabled: Boolean) = update { settingsRepository.setSaveRecentSearches(enabled) }
 
-        /** Persist that setup is done so the wizard never auto-shows again, and lock in the active provider. */
+        fun setSelectedProvider(provider: ImageBoardProvider) {
+            _selectedProvider.value = provider
+        }
+
+        /** Persist that setup is done so the wizard never auto-shows again, and lock in the selected provider. */
         fun complete() =
             update {
-                settingsRepository.setActiveProviderId(activeProvider.value.metadata.id)
+                settingsRepository.setActiveProviderId(_selectedProvider.value.metadata.id)
                 settingsRepository.setOnboardingCompleted(true)
             }
 

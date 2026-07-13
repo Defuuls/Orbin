@@ -60,6 +60,8 @@ import com.orbin.core.model.Board
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import com.orbin.provider.api.ImageBoardProvider
+import kotlinx.collections.immutable.ImmutableList
 
 private enum class SetupStep(
     val title: String,
@@ -87,6 +89,7 @@ fun OnboardingScreen(
     val subscribed by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val favorites by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val selectedProvider by viewModel.selectedProvider.collectAsStateWithLifecycle()
 
     val steps = SetupStep.entries
     var index by rememberSaveable { mutableIntStateOf(0) }
@@ -140,7 +143,13 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when (step) {
-                SetupStep.START -> StartStep(settings)
+                SetupStep.START ->
+                    StartStep(
+                        settings,
+                        selectedProvider,
+                        viewModel.providers,
+                        viewModel::setSelectedProvider,
+                    )
                 SetupStep.BOARDS ->
                     BoardsStep(
                         state = boards,
@@ -231,14 +240,52 @@ private fun SetupBottomBar(
 }
 
 @Composable
-private fun StartStep(settings: AppSettings) {
+private fun StartStep(
+    settings: AppSettings,
+    selectedProvider: ImageBoardProvider,
+    providers: ImmutableList<ImageBoardProvider>,
+    onProviderSelected: (ImageBoardProvider) -> Unit,
+) {
     SetupPage {
         Text("Orbin setup", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
             text = "Choose boards to follow, tune playback, and lock down the defaults before browsing.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        ProviderSelector(providers, selectedProvider, onProviderSelected)
         SignalPanel(settings)
+    }
+}
+
+@Composable
+private fun ProviderSelector(
+    providers: ImmutableList<ImageBoardProvider>,
+    selectedProvider: ImageBoardProvider,
+    onProviderSelected: (ImageBoardProvider) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Select a site", style = MaterialTheme.typography.labelLarge)
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(6.dp))
+                    .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            providers.forEach { provider ->
+                FilterChip(
+                    selected = provider.metadata.id == selectedProvider.metadata.id,
+                    onClick = { onProviderSelected(provider) },
+                    label = { Text(provider.metadata.displayName, maxLines = 1) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 
