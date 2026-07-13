@@ -9,6 +9,8 @@ implementing a single interface.
 
 **Current release:** [v38 — Ross 128](https://github.com/Defuuls/Orbin/releases/tag/v38-Ross-128)
 
+**Available providers:** 4chan (Vichan), BBW Chan (LynxChan)
+
 > **Status:** under active development, with regular signed releases. The architecture, build
 > system, domain core, networking, media pipeline, encrypted data layer, and the reference
 > provider are in place; features continue to land incrementally. See [CHANGELOG.md](CHANGELOG.md).
@@ -22,9 +24,9 @@ implementing a single interface.
 ## Features
 
 **Browsing**
-- Multi-provider support through a clean provider abstraction (vichan/4chan-compatible engine
-  included; LynxChan, TinyIB, etc. can be added without touching app code).
-- Board list, catalog with sorting, and a rich thread viewer.
+- Multi-provider support through a clean provider abstraction (4chan via Vichan and BBW Chan via
+  LynxChan included; additional imageboards can be added without modifying app code).
+- Board list, catalog with sorting, and a rich thread viewer with post dates.
 - Subscribed feed with tap-to-top chrome, optional full-screen scrolling, and an adaptive
   tablet dock that keeps navigation close without crowding the feed.
 
@@ -36,10 +38,12 @@ implementing a single interface.
 
 **Media**
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
-  background preloading, autoplay + mute toggle, and a native download manager.
+  background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
+  native download manager.
 
 **Personalization**
-- Material 3 with dynamic color, light/dark, and AMOLED-black themes.
+- Material 3 with dynamic color, light/dark, and AMOLED-black themes, plus 20+ ported imageboard
+  color palettes (Yotsuba, Tomorrow, Miku, Lain, Penumbra, Windows 95, and more).
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
 - Tablet feed rows use an old-Reddit-style thumbnail-and-text layout for faster scanning on
   larger screens.
@@ -58,12 +62,12 @@ implementing a single interface.
 
 | Concern | Choice |
 | --- | --- |
-| Language | Kotlin 2.0 (K2), Coroutines, Flow/StateFlow, Serialization |
-| UI | Jetpack Compose, Material 3, Navigation Compose, Paging 3 |
+| Language | Kotlin 2.4.0 (K2), Coroutines 1.11, Flow/StateFlow, Serialization |
+| UI | Jetpack Compose (BOM 2026.06), Material 3, Navigation Compose, Paging 3 |
 | DI | Hilt |
 | Persistence | Room + SQLCipher, encrypted DataStore |
-| Networking | OkHttp + Retrofit, kotlinx.serialization |
-| Media | Coil 3 (images), Media3/ExoPlayer (video) |
+| Networking | OkHttp 5, Retrofit, kotlinx.serialization |
+| Media | Coil 3.5 (images), Media3/ExoPlayer (video) |
 | Background | WorkManager |
 | Quality | detekt, ktlint, JUnit, Turbine, MockK, Truth, Robolectric, Roborazzi |
 
@@ -85,7 +89,8 @@ Orbin/
 ├── media/                    # Coil 3 + Media3 integration, download manager
 ├── provider/
 │   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
-│   └── vichan/               # Reference provider (vichan/4chan-compatible JSON)
+│   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)
+│   └── lynxchan/             # BBW Chan provider (LynxChan JSON)
 └── feature/                  # home, board, thread, search, bookmarks, history,
                               # settings, gallery, downloads
 ```
