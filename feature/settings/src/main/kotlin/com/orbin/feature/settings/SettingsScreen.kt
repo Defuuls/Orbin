@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,10 +17,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -95,7 +95,7 @@ fun SettingsScreen(
         ) {
             if (viewModel.providers.size > 1) {
                 SectionHeader("Site")
-                DropdownChoiceRow(
+                ChipChoiceRow(
                     label = "Active provider",
                     values = viewModel.providers,
                     selected = activeProvider,
@@ -304,37 +304,23 @@ fun SettingsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun <T> DropdownChoiceRow(
+private fun <T> ChipChoiceRow(
     label: String,
     values: List<T>,
     selected: T,
     text: (T) -> String,
     onChange: (T) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        OutlinedTextField(
-            value = text(selected),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            values.forEach { value ->
-                DropdownMenuItem(
-                    text = { Text(text(value)) },
-                    onClick = {
-                        expanded = false
-                        onChange(value)
-                    },
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
+        LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            items(values) { value ->
+                FilterChip(
+                    selected = value == selected,
+                    onClick = { onChange(value) },
+                    label = { Text(text(value)) },
+                    modifier = Modifier.padding(end = 8.dp),
                 )
             }
         }
@@ -427,11 +413,6 @@ private fun ThemeModeRow(
     )
 }
 
-/**
- * A single-choice setting. Previously rendered as a horizontally scrolling row of chips; now a
- * compact exposed dropdown so long option lists (e.g. the ported imageboard themes) stay usable.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T> ChoiceRow(
     label: String,
@@ -440,7 +421,7 @@ private fun <T> ChoiceRow(
     text: (T) -> String,
     onChange: (T) -> Unit,
 ) {
-    DropdownChoiceRow(
+    ChipChoiceRow(
         label = label,
         values = values,
         selected = selected,
