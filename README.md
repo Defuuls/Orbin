@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v38 — Ross 128](https://github.com/Defuuls/Orbin/releases/tag/v38-Ross-128)
+**Current release:** [v46 — Epsilon Eridani](https://github.com/Defuuls/Orbin/releases/tag/v46-Epsilon-Eridani)
 
 **Available providers:** 4chan (Vichan), BBW Chan (LynxChan)
 
