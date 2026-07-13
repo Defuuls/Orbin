@@ -37,15 +37,6 @@ object LynxChanProviderModule {
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
     ): ImageBoardProvider = buildProvider(LynxChanSite.BbwChan, client, json, ioDispatcher)
 
-    @Provides
-    @IntoSet
-    @Singleton
-    fun providesEightChanProvider(
-        @BaseOkHttp client: OkHttpClient,
-        json: Json,
-        @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
-    ): ImageBoardProvider = buildProvider(LynxChanSite.EightChan, client, json, ioDispatcher)
-
     private fun buildProvider(
         site: LynxChanSite,
         client: OkHttpClient,
