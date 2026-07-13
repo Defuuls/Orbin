@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 66
-        versionName = "46-Epsilon Eridani"
+        versionCode = 67
+        versionName = "47-Proxima Centauri"
     }
 
     signingConfigs {

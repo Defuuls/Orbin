@@ -18,6 +18,14 @@ data class LynxChanSite(
     val apiBaseUrl: String get() = "$siteUrl/"
 
     companion object {
+        val EightKun =
+            LynxChanSite(
+                providerId = ProviderId("8kun"),
+                displayName = "8kun",
+                siteUrl = "https://8kun.top",
+                nsfwByDefault = true,
+            )
+
         val BbwChan =
             LynxChanSite(
                 providerId = ProviderId("bbwchan"),
