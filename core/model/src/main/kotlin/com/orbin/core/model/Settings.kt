@@ -7,36 +7,12 @@ enum class AppThemeMode {
     DARK,
 }
 
-/**
- * Color theme variant for the app. Beyond the built-in Orbin/Tomorrow schemes, this includes the
- * palette skins ported from 8chan; the design-system layer maps each entry to a Material scheme.
- */
 enum class ColorTheme(
     val label: String,
 ) {
-    ORBIN("Orbin"),
+    ORBIN("Default"),
     TOMORROW("Tomorrow"),
-    TOMORROW_NIGHT("Tomorrow Night"),
-    AVELLANA("Avellana"),
-    EVITA("Evita"),
-    HISPAPERRO("Hispaperro"),
-    HISPASEXY("Hispasexy"),
-    HISPITA("Hispita"),
-    LAIN("Lain"),
-    MIKU("Miku"),
-    MOEOS("MoeOS8"),
-    MOEPHEUS("Moephus"),
-    PENUMBRA("Penumbra"),
-    PENUMBRA_CLEAR("Penumbra (Clear)"),
-    REDCHANIT("Redchanit"),
-    ROYAL("Royal"),
-    SONIC3("Sonic 3 & Knuckles"),
-    VIVIAN("Vivian"),
-    WAROSU("Warosu"),
-    WIN95("Windows 95"),
-    YOTSUBA("Yotsuba"),
-    YOTSUBA_P("Yotsuba P"),
-    YUKKURI("Yukkuri"),
+    TOMORROW_NIGHT("Tomorrow Dark"),
 }
 
 /** App icon variant for home screen. */
