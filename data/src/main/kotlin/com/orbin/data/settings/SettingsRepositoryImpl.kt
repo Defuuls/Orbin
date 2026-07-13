@@ -177,6 +177,18 @@ class SettingsRepositoryImpl
             edit { it[Keys.activeProviderId] = id.value }
         }
 
+        suspend fun setConnectTimeoutSeconds(seconds: Long) {
+            edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
+        }
+
+        suspend fun setReadTimeoutSeconds(seconds: Long) {
+            edit { it[Keys.readTimeoutSeconds] = seconds.toString() }
+        }
+
+        suspend fun setDisableOcspChecking(disable: Boolean) {
+            edit { it[Keys.disableOcspChecking] = disable }
+        }
+
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
             dataStore.data.map { preferences ->
                 preferences[Keys.favoriteBoards(provider)].orEmpty().map(::BoardId).toSet()
@@ -283,6 +295,9 @@ class SettingsRepositoryImpl
                     this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
                         ?: DohProvider.CLOUDFLARE,
                 httpsOnly = true,
+                connectTimeoutSeconds = this[Keys.connectTimeoutSeconds]?.toLongOrNull() ?: 15,
+                readTimeoutSeconds = this[Keys.readTimeoutSeconds]?.toLongOrNull() ?: 30,
+                disableOcspChecking = this[Keys.disableOcspChecking] ?: true,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
@@ -295,6 +310,9 @@ class SettingsRepositoryImpl
                 userAgent = userAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT },
                 dnsOverHttps = if (dohEnabled) dohProvider.toDohConfig() else DohConfig.Disabled,
                 httpsOnly = httpsOnly,
+                connectTimeoutSeconds = connectTimeoutSeconds,
+                readTimeoutSeconds = readTimeoutSeconds,
+                disableOcspChecking = disableOcspChecking,
             )
 
         private fun DohProvider.toDohConfig(): DohConfig =
@@ -339,6 +357,9 @@ class SettingsRepositoryImpl
             val internalUpdater = booleanPreferencesKey("internal_updater")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
+            val connectTimeoutSeconds = stringPreferencesKey("connect_timeout_seconds")
+            val readTimeoutSeconds = stringPreferencesKey("read_timeout_seconds")
+            val disableOcspChecking = booleanPreferencesKey("disable_ocsp_checking")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("favorite_boards_${provider.value}")

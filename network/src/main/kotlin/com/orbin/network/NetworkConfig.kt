@@ -14,6 +14,7 @@ data class NetworkConfig(
     val httpsOnly: Boolean = true,
     val connectTimeoutSeconds: Long = 15,
     val readTimeoutSeconds: Long = 30,
+    val disableOcspChecking: Boolean = true,
     val enableHttpLogging: Boolean = false,
 ) {
     companion object {

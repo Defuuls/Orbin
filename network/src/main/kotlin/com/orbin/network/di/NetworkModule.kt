@@ -12,6 +12,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.CertificatePinner
 import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -62,11 +63,24 @@ object NetworkModule {
     fun providesOkHttpClient(configProvider: NetworkConfigProvider): OkHttpClient {
         val config = configProvider.current()
 
+        if (config.disableOcspChecking) {
+            System.setProperty("com.sun.security.enableCRLDP", "false")
+            System.setProperty("ocsp.enable", "false")
+        }
+
         // Bootstrap client used only to resolve the DoH endpoint itself.
         val bootstrap =
             OkHttpClient
                 .Builder()
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
+                .build()
+
+        // Certificate pinning for Tranchan to reduce validation overhead and improve reliability.
+        val certificatePinner =
+            CertificatePinner
+                .Builder()
+                .add("www.tranchan.net", "sha256/sPHsutjWs2l0gKPUDfF3oL8CNooecsFvF33t0ZAaWaQ=") // Let's Encrypt R3
+                .add("www.tranchan.net", "sha256/jQJTbIh0grw1fLW8hxjX24lnUjZic1J7SVQ6fNFn0DA=") // ISRG Root X1
                 .build()
 
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection
@@ -82,6 +96,7 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
             ).cookieJar(InMemoryCookieJar())
+            .certificatePinner(certificatePinner)
             .addInterceptor(HttpsOnlyInterceptor(configProvider))
             // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
             // configured User-Agent and Accept headers.
