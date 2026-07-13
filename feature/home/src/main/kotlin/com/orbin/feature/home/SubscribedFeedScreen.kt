@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -220,6 +222,8 @@ private fun SubscribedFeedList(
     showBoardHeaders: Boolean,
     tabletLayout: Boolean,
 ) {
+    var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
@@ -264,25 +268,35 @@ private fun SubscribedFeedList(
                     BoardFeedHeader(
                         feed = feed,
                         globalThreadLimit = globalThreadLimit,
+                        isCollapsed = collapsedBoards.contains(feed.board.id.value),
+                        onToggleCollapse = { boardId ->
+                            collapsedBoards = if (collapsedBoards.contains(boardId)) {
+                                collapsedBoards - boardId
+                            } else {
+                                collapsedBoards + boardId
+                            }
+                        },
                         onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
                     )
                 }
             }
-            items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
-                FeedThreadCell(
-                    thread = thread,
-                    mutedTags = mutedTags,
-                    thumbnailSizeDp = thumbnailSizeDp,
-                    tabletLayout = tabletLayout,
-                    onClick = {
-                        onOpenThread(
-                            providerId,
-                            feed.board.id.value,
-                            thread.key.thread.value,
-                            thread.originalPost.subject ?: "/${feed.board.id.value}/",
-                        )
-                    },
-                )
+            if (!collapsedBoards.contains(feed.board.id.value)) {
+                items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
+                    FeedThreadCell(
+                        thread = thread,
+                        mutedTags = mutedTags,
+                        thumbnailSizeDp = thumbnailSizeDp,
+                        tabletLayout = tabletLayout,
+                        onClick = {
+                            onOpenThread(
+                                providerId,
+                                feed.board.id.value,
+                                thread.key.thread.value,
+                                thread.originalPost.subject ?: "/${feed.board.id.value}/",
+                            )
+                        },
+                    )
+                }
             }
         }
     }
@@ -319,6 +333,8 @@ private fun SubscribedFeedSearchBar(
 private fun BoardFeedHeader(
     feed: SubscribedBoardFeed,
     globalThreadLimit: FeedThreadLimit,
+    isCollapsed: Boolean,
+    onToggleCollapse: (String) -> Unit,
     onSetThreadLimit: (FeedThreadLimit?) -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -333,14 +349,28 @@ private fun BoardFeedHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "/${feed.board.id.value}/ - ${feed.board.title}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            Column(
+                modifier = Modifier.weight(1f).clickable {
+                    onToggleCollapse(feed.board.id.value)
+                },
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+                        contentDescription = if (isCollapsed) "Expand board" else "Collapse board",
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = "/${feed.board.id.value}/ - ${feed.board.title}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 if (feed.board.description.isNotBlank()) {
                     Text(
                         text = feed.board.description,
