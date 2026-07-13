@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [39-Barnard's Star] - 2026-07-13
+
+### Removed
+- **Tranchan provider:** removed the WakabaProvider implementation and all Tranchan-specific code and
+  references (certificate pinning, module includes, dependencies). The app now supports 4chan (Vichan)
+  and BBW Chan (LynxChan).
+
+### Changed
+- **Documentation:** updated README to reflect available providers and recent feature additions
+  (fullscreen video, auto-rotate, post dates, 20+ imageboard color palettes).
+- **Release naming:** continue smallest-known-star codenames for release milestones.
+
 ## [38-Ross 128] - 2026-07-12
 
 ### Added
