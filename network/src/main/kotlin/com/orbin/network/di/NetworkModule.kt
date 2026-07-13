@@ -79,8 +79,8 @@ object NetworkModule {
         val certificatePinner =
             CertificatePinner
                 .Builder()
-                .add("www.tranchan.net", "sha256/sPHsutjWs2l0gKPUDfF3oL8CNooecsFvF33t0ZAaWaQ=") // Let's Encrypt R3
-                .add("www.tranchan.net", "sha256/jQJTbIh0grw1fLW8hxjX24lnUjZic1J7SVQ6fNFn0DA=") // ISRG Root X1
+                .add("www.tranchan.net", "sha256/y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=") // Let's Encrypt E7
+                .add("www.tranchan.net", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=") // ISRG Root X1
                 .build()
 
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection
