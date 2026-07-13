@@ -75,12 +75,10 @@ object NetworkModule {
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
                 .build()
 
-        // Certificate pinning for Tranchan to reduce validation overhead and improve reliability.
+        // Certificate pinning for well-known sites to reduce validation overhead and improve reliability.
         val certificatePinner =
             CertificatePinner
                 .Builder()
-                .add("www.tranchan.net", "sha256/y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=") // Let's Encrypt E7
-                .add("www.tranchan.net", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=") // ISRG Root X1
                 .build()
 
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection

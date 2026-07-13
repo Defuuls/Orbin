@@ -47,7 +47,6 @@ include(":media")
 include(":provider:api")
 include(":provider:vichan")
 include(":provider:lynxchan")
-include(":provider:wakaba")
 
 // Feature modules.
 include(":feature:home")
