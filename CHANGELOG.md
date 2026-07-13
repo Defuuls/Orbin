@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [48-Sirius B] - 2026-07-13
+
+### Added
+- **Board collapse:** users can now collapse/expand boards in the subscribed feed by clicking the
+  board name. A clickable collapse/expand icon (ExpandMore when collapsed, ExpandLess when expanded)
+  provides visual feedback. Collapse state is persisted across app navigation using rememberSaveable.
+
 ## [47-Proxima Centauri] - 2026-07-13
 
 ### Added
@@ -507,7 +514,10 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v48-Sirius-B...HEAD
+[48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
+[47-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v46-Epsilon-Eridani...v47-Proxima-Centauri
+[46-Epsilon Eridani]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...v46-Epsilon-Eridani
 [38-Ross 128]: https://github.com/Defuuls/Orbin/compare/v37-Wolf-359...v38-Ross-128
 [37-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v36-TRAPPIST-1...v37-Wolf-359
 [36-TRAPPIST-1]: https://github.com/Defuuls/Orbin/compare/v35-Proxima-Centauri...v36-TRAPPIST-1

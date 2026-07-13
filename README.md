@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v47 — Proxima Centauri](https://github.com/Defuuls/Orbin/releases/tag/v47-Proxima-Centauri)
+**Current release:** [v48 — Sirius B](https://github.com/Defuuls/Orbin/releases/tag/v48-Sirius-B)
 
 **Available providers:** 4chan (Vichan), BBW Chan (LynxChan), 8kun (LynxChan)
 
