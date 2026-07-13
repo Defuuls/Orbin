@@ -56,7 +56,8 @@ fun SubscriptionsScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val state = uiState) {
                 SubscriptionsUiState.Loading -> LoadingView()
-                is SubscriptionsUiState.Error -> ErrorView(state.message, onRetry = viewModel::load)
+                is SubscriptionsUiState.Error ->
+                    ErrorView("Failed to load boards: ${state.message}", onRetry = viewModel::load)
                 is SubscriptionsUiState.Success ->
                     if (state.boards.isEmpty()) {
                         EmptyView("No boards available")

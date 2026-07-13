@@ -67,6 +67,7 @@ class SubscriptionsViewModel
 
         init {
             activeProvider.onEach { load() }.launchIn(viewModelScope)
+            load()
         }
 
         fun load() {
