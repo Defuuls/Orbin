@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [47-Proxima Centauri] - 2026-07-13
+
+### Added
+- **8kun.top provider:** added support for 8kun.top as a new LynxChan instance, available in provider
+  selection during onboarding and board browsing. Marked as NSFW by default.
+
+### Changed
+- **Settings UI:** reverted all dropdown menus back to horizontally scrolling filter chips for a more
+  tactile selection experience. Includes provider selection, color themes, and all choice-based settings.
+- **Color themes:** simplified the palette from 24 entries to 3 core themes (Default, Tomorrow,
+  Tomorrow Dark) for a more focused and maintainable design system.
+- **Release naming:** continue smallest-known-star codenames for release milestones.
+
 ## [39-Barnard's Star] - 2026-07-13
 
 ### Removed
