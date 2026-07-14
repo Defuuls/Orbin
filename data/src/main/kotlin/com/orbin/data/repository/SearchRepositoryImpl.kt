@@ -11,8 +11,12 @@ import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
+import com.orbin.core.model.SavedSearch
 import com.orbin.data.database.dao.RecentSearchDao
+import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.entity.RecentSearchEntity
+import com.orbin.data.database.entity.SavedSearchEntity
+import com.orbin.data.database.entity.toEntity
 import com.orbin.data.util.runCatchingProvider
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.provider.api.ProviderRegistry
@@ -37,6 +41,7 @@ class SearchRepositoryImpl
     constructor(
         private val registry: ProviderRegistry,
         private val recentSearchDao: RecentSearchDao,
+        private val savedSearchDao: SavedSearchDao,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : SearchRepository {
         override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> =
@@ -75,6 +80,20 @@ class SearchRepositoryImpl
         }
 
         override suspend fun clearRecentQueries() = recentSearchDao.clear()
+
+        override fun observeSavedSearches(): Flow<List<SavedSearch>> =
+            savedSearchDao.observeAll().map { list -> list.map { it.toDomainModel() } }
+
+        override suspend fun saveSearch(search: SavedSearch): Long =
+            withContext(ioDispatcher) { savedSearchDao.save(search.toEntity()) }
+
+        override suspend fun deleteSearch(id: Long) {
+            withContext(ioDispatcher) { savedSearchDao.deleteById(id) }
+        }
+
+        override suspend fun clearSavedSearches() {
+            withContext(ioDispatcher) { savedSearchDao.clear() }
+        }
 
         private fun CatalogThread.matches(query: SearchQuery): Boolean {
             val needle = query.text.trim().lowercase()

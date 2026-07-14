@@ -46,3 +46,12 @@ data class SearchResult(
     val matchedPost: PostId,
     val thumbnailUrl: String? = null,
 )
+
+/** A saved search query for quick access to frequent searches. */
+data class SavedSearch(
+    val id: Long = 0,
+    val text: String,
+    val board: BoardId? = null,
+    val filters: SearchFilters = SearchFilters(),
+    val createdAtMillis: Long = System.currentTimeMillis(),
+)
