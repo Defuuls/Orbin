@@ -36,6 +36,8 @@ class DownloadsViewModel
 
         fun clear() = viewModelScope.launch { repository.clearHistory() }
 
+        fun retry(id: Long) = viewModelScope.launch { repository.retry(id) }
+
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
         }
