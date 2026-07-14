@@ -100,6 +100,7 @@ fun SubscribedFeedScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scope = rememberCoroutineScope()
     val scrollBehavior =
@@ -156,11 +157,53 @@ fun SubscribedFeedScreen(
                             onClick = { scope.launch { listState.animateScrollToItem(0) } },
                         ),
                     title = {
-                        Text("Subscribed")
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                                content = {},
+                            )
+                            Text("Orbin")
+                        }
                     },
                     actions = {
                         IconButton(onClick = viewModel::refresh) {
                             Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
+                        }
+                        IconButton(
+                            onClick = { collapsedBoards = emptySet() },
+                            enabled = collapsedBoards.isNotEmpty(),
+                        ) {
+                            Icon(Icons.Filled.ExpandLess, contentDescription = "Expand all boards")
+                        }
+                        IconButton(
+                            onClick = {
+                                val allBoardIds =
+                                    (uiState as? SubscribedFeedUiState.Success)
+                                        ?.boards
+                                        ?.map {
+                                            it.board.id.value
+                                        }?.toSet()
+                                        ?: emptySet()
+                                collapsedBoards = allBoardIds
+                            },
+                            enabled =
+                                run {
+                                    val allBoardIds =
+                                        (uiState as? SubscribedFeedUiState.Success)
+                                            ?.boards
+                                            ?.map {
+                                                it.board.id.value
+                                            }?.toSet()
+                                            ?: emptySet()
+                                    collapsedBoards.size < allBoardIds.size
+                                },
+                        ) {
+                            Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
                         }
                         IconButton(onClick = onOpenSettings) {
                             Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -199,6 +242,8 @@ fun SubscribedFeedScreen(
                             listState = listState,
                             showBoardHeaders = showBoardHeaders,
                             tabletLayout = tabletFeedLayout,
+                            collapsedBoards = collapsedBoards,
+                            onCollapsedBoardsChange = { collapsedBoards = it },
                         )
                     }
             }
@@ -221,9 +266,9 @@ private fun SubscribedFeedList(
     listState: LazyListState,
     showBoardHeaders: Boolean,
     tabletLayout: Boolean,
+    collapsedBoards: Set<String>,
+    onCollapsedBoardsChange: (Set<String>) -> Unit,
 ) {
-    var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
@@ -273,12 +318,13 @@ private fun SubscribedFeedList(
                         isCollapsed = isBoardCollapsed,
                         onToggleCollapse =
                             { boardId ->
-                                collapsedBoards =
+                                onCollapsedBoardsChange(
                                     if (collapsedBoards.contains(boardId)) {
                                         collapsedBoards - boardId
                                     } else {
                                         collapsedBoards + boardId
-                                    }
+                                    },
+                                )
                             },
                         onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
                     )
