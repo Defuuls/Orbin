@@ -8,6 +8,7 @@ import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.dao.RecentSearchDao
+import com.orbin.data.database.dao.SavedSearchDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,4 +56,7 @@ object DatabaseModule {
 
     @Provides
     fun providesDownloadDao(database: OrbinDatabase): DownloadDao = database.downloadDao()
+
+    @Provides
+    fun providesSavedSearchDao(database: OrbinDatabase): SavedSearchDao = database.savedSearchDao()
 }
