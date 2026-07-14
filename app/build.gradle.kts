@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 68
-        versionName = "48-Sirius B"
+        versionCode = 69
+        versionName = "49-Altair"
     }
 
     signingConfigs {
