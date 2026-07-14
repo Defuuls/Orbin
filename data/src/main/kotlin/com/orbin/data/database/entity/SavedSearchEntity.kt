@@ -33,9 +33,11 @@ data class SavedSearchEntity(
                         if (contentTypes.isEmpty()) {
                             emptySet()
                         } else {
-                            contentTypes.split(",").mapNotNull { name ->
-                                SearchContentType.entries.find { it.name == name }
-                            }.toSet()
+                            contentTypes
+                                .split(",")
+                                .mapNotNull { name ->
+                                    SearchContentType.entries.find { it.name == name }
+                                }.toSet()
                         },
                 ),
             createdAtMillis = createdAtMillis,

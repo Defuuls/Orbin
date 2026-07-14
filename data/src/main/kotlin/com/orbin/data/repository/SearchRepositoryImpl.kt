@@ -7,15 +7,14 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
-import com.orbin.core.model.SavedSearch
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.entity.RecentSearchEntity
-import com.orbin.data.database.entity.SavedSearchEntity
 import com.orbin.data.database.entity.toEntity
 import com.orbin.data.util.runCatchingProvider
 import com.orbin.domain.repository.SearchRepository
