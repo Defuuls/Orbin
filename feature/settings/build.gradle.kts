@@ -8,4 +8,7 @@ android {
 
 dependencies {
     implementation(project(":provider:api"))
+
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.junit)
 }
