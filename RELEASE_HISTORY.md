@@ -4,6 +4,14 @@ A comprehensive record of all releases for Orbin, a modern Android image board c
 
 ---
 
+## v50 — Fomalhaut (2026-07-14)
+
+### Added
+- **Collapse all / Expand all:** Added convenient toolbar buttons to collapse or expand all subscribed boards at once, for quickly toggling between full feed and collapsed board headers.
+- **Enhanced top bar:** The subscribed feed title bar now displays the app name "Orbin" with a colored indicator square showing the currently selected theme's primary color.
+
+---
+
 ## v49 — Altair (2026-07-14)
 
 ### Fixed

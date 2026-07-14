@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [50-Fomalhaut] - 2026-07-14
+
+### Added
+- **Collapse all / Expand all:** added convenient toolbar buttons to collapse or expand all
+  subscribed boards at once, for quickly toggling between full feed and collapsed board headers.
+- **Enhanced top bar:** the subscribed feed title bar now displays the app name "Orbin" with a
+  colored indicator square showing the currently selected theme's primary color.
+
 ## [49-Altair] - 2026-07-14
 
 ### Fixed
