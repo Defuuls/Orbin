@@ -14,6 +14,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
@@ -71,6 +72,8 @@ class FakeSearchRepository(
     private val results: List<SearchResult> = emptyList(),
 ) : SearchRepository {
     private val recents = MutableStateFlow<List<String>>(emptyList())
+    private val saved = MutableStateFlow<List<SavedSearch>>(emptyList())
+    private var nextSavedId = 1L
 
     override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> = OrbinResult.Success(results)
 
@@ -82,6 +85,23 @@ class FakeSearchRepository(
 
     override suspend fun clearRecentQueries() {
         recents.value = emptyList()
+    }
+
+    override fun observeSavedSearches(): Flow<List<SavedSearch>> = saved
+
+    override suspend fun saveSearch(search: SavedSearch): Long {
+        val id = nextSavedId++
+        val saved = search.copy(id = id)
+        this.saved.value = this.saved.value + saved
+        return id
+    }
+
+    override suspend fun deleteSearch(id: Long) {
+        saved.value = saved.value.filterNot { it.id == id }
+    }
+
+    override suspend fun clearSavedSearches() {
+        saved.value = emptyList()
     }
 }
 

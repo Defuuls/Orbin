@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.fold
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchFilters
 import com.orbin.core.model.SearchQuery
@@ -73,6 +74,12 @@ class SearchViewModel
                 .map { it.saveRecentSearches }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+        val savedSearches: StateFlow<ImmutableList<SavedSearch>> =
+            searchRepository
+                .observeSavedSearches()
+                .map { it.toImmutableList() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+
         private val _state = kotlinx.coroutines.flow.MutableStateFlow<SearchUiState>(SearchUiState.Idle)
         val state: StateFlow<SearchUiState> = _state
 
@@ -124,6 +131,74 @@ class SearchViewModel
         }
 
         fun clearRecents() = viewModelScope.launch { searchRepository.clearRecentQueries() }
+
+        fun saveCurrentSearch(
+            text: String,
+            board: String,
+            contentTypes: Set<SearchContentType>,
+            minReplies: Int? = null,
+            includeNsfw: Boolean = true,
+        ) = viewModelScope.launch {
+            val search =
+                SavedSearch(
+                    text = text,
+                    board = board.takeIf { it.isNotBlank() }?.let { BoardId(it) },
+                    filters =
+                        SearchFilters(
+                            mediaOnly =
+                                contentTypes.any {
+                                    it == SearchContentType.IMAGE ||
+                                        it == SearchContentType.VIDEO ||
+                                        it == SearchContentType.AUDIO
+                                },
+                            minReplies = minReplies,
+                            includeNsfw = includeNsfw,
+                            contentTypes = contentTypes,
+                        ),
+                )
+            searchRepository.saveSearch(search)
+        }
+
+        fun loadSavedSearch(search: SavedSearch) {
+            viewModelScope.launch {
+                _state.value = SearchUiState.Loading
+                if (saveRecentSearches.value) searchRepository.recordQuery(search.text)
+                val boardsToSearch =
+                    search.board?.let { listOf(it) }
+                        ?: subscribedBoards.value.map { it.id }
+
+                if (boardsToSearch.isEmpty()) {
+                    _state.value = SearchUiState.Error("Subscribe to boards before searching")
+                    return@launch
+                }
+
+                val results = mutableListOf<SearchResult>()
+                for (boardId in boardsToSearch) {
+                    val query =
+                        SearchQuery(
+                            provider = activeProvider.value.metadata.id,
+                            text = search.text,
+                            scope = SearchScope.BOARD_CATALOG,
+                            board = boardId,
+                            filters = search.filters,
+                        )
+                    val result = searchRepository.search(query)
+                    var shouldStop = false
+                    result.fold(
+                        onSuccess = { results += it },
+                        onFailure = {
+                            _state.value = SearchUiState.Error(it.message)
+                            shouldStop = true
+                        },
+                    )
+                    if (shouldStop) return@launch
+                }
+
+                _state.value = SearchUiState.Results(results.toImmutableList())
+            }
+        }
+
+        fun deleteSavedSearch(id: Long) = viewModelScope.launch { searchRepository.deleteSearch(id) }
 
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L

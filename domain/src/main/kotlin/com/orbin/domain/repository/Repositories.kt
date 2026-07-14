@@ -11,6 +11,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
@@ -138,4 +139,12 @@ interface SearchRepository {
     suspend fun recordQuery(text: String)
 
     suspend fun clearRecentQueries()
+
+    fun observeSavedSearches(): Flow<List<SavedSearch>>
+
+    suspend fun saveSearch(search: SavedSearch): Long
+
+    suspend fun deleteSearch(id: Long)
+
+    suspend fun clearSavedSearches()
 }
