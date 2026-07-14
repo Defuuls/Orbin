@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -98,6 +100,7 @@ fun SubscribedFeedScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scope = rememberCoroutineScope()
     val scrollBehavior =
@@ -154,11 +157,80 @@ fun SubscribedFeedScreen(
                             onClick = { scope.launch { listState.animateScrollToItem(0) } },
                         ),
                     title = {
-                        Text("Subscribed")
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                                content = {},
+                            )
+                            Column {
+                                Text(
+                                    text = "Orbin",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 1,
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text(
+                                        text = providerId,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
+                                    Text(
+                                        text = "•",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = settings.appIconVariant.label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
                     },
                     actions = {
                         IconButton(onClick = viewModel::refresh) {
                             Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
+                        }
+                        IconButton(
+                            onClick = { collapsedBoards = emptySet() },
+                            enabled = collapsedBoards.isNotEmpty(),
+                        ) {
+                            Icon(Icons.Filled.ExpandLess, contentDescription = "Expand all boards")
+                        }
+                        IconButton(
+                            onClick = {
+                                val allBoardIds =
+                                    (uiState as? SubscribedFeedUiState.Success)
+                                        ?.boards
+                                        ?.map {
+                                            it.board.id.value
+                                        }?.toSet()
+                                        ?: emptySet()
+                                collapsedBoards = allBoardIds
+                            },
+                            enabled =
+                                run {
+                                    val allBoardIds =
+                                        (uiState as? SubscribedFeedUiState.Success)
+                                            ?.boards
+                                            ?.map {
+                                                it.board.id.value
+                                            }?.toSet()
+                                            ?: emptySet()
+                                    collapsedBoards.size < allBoardIds.size
+                                },
+                        ) {
+                            Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
                         }
                         IconButton(onClick = onOpenSettings) {
                             Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -197,6 +269,8 @@ fun SubscribedFeedScreen(
                             listState = listState,
                             showBoardHeaders = showBoardHeaders,
                             tabletLayout = tabletFeedLayout,
+                            collapsedBoards = collapsedBoards,
+                            onCollapsedBoardsChange = { collapsedBoards = it },
                         )
                     }
             }
@@ -219,6 +293,8 @@ private fun SubscribedFeedList(
     listState: LazyListState,
     showBoardHeaders: Boolean,
     tabletLayout: Boolean,
+    collapsedBoards: Set<String>,
+    onCollapsedBoardsChange: (Set<String>) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -257,32 +333,47 @@ private fun SubscribedFeedList(
         }
 
         filteredFeeds.forEach { feed ->
+            val isBoardCollapsed = collapsedBoards.contains(feed.board.id.value)
             // In full-screen mode the pinned board headers are dropped entirely so nothing
             // stays fixed at the top and the threads flow as one uninterrupted list.
-            if (showBoardHeaders) {
+            // However, always show the header for collapsed boards so they can be expanded.
+            if (showBoardHeaders || isBoardCollapsed) {
                 stickyHeader(key = "header-${feed.board.id.value}") {
                     BoardFeedHeader(
                         feed = feed,
                         globalThreadLimit = globalThreadLimit,
+                        isCollapsed = isBoardCollapsed,
+                        onToggleCollapse =
+                            { boardId ->
+                                onCollapsedBoardsChange(
+                                    if (collapsedBoards.contains(boardId)) {
+                                        collapsedBoards - boardId
+                                    } else {
+                                        collapsedBoards + boardId
+                                    },
+                                )
+                            },
                         onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
                     )
                 }
             }
-            items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
-                FeedThreadCell(
-                    thread = thread,
-                    mutedTags = mutedTags,
-                    thumbnailSizeDp = thumbnailSizeDp,
-                    tabletLayout = tabletLayout,
-                    onClick = {
-                        onOpenThread(
-                            providerId,
-                            feed.board.id.value,
-                            thread.key.thread.value,
-                            thread.originalPost.subject ?: "/${feed.board.id.value}/",
-                        )
-                    },
-                )
+            if (!isBoardCollapsed) {
+                items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
+                    FeedThreadCell(
+                        thread = thread,
+                        mutedTags = mutedTags,
+                        thumbnailSizeDp = thumbnailSizeDp,
+                        tabletLayout = tabletLayout,
+                        onClick = {
+                            onOpenThread(
+                                providerId,
+                                feed.board.id.value,
+                                thread.key.thread.value,
+                                thread.originalPost.subject ?: "/${feed.board.id.value}/",
+                            )
+                        },
+                    )
+                }
             }
         }
     }
@@ -319,6 +410,8 @@ private fun SubscribedFeedSearchBar(
 private fun BoardFeedHeader(
     feed: SubscribedBoardFeed,
     globalThreadLimit: FeedThreadLimit,
+    isCollapsed: Boolean,
+    onToggleCollapse: (String) -> Unit,
     onSetThreadLimit: (FeedThreadLimit?) -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -333,14 +426,29 @@ private fun BoardFeedHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "/${feed.board.id.value}/ - ${feed.board.title}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            Column(
+                modifier =
+                    Modifier.weight(1f).clickable {
+                        onToggleCollapse(feed.board.id.value)
+                    },
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+                        contentDescription = if (isCollapsed) "Expand board" else "Collapse board",
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = "/${feed.board.id.value}/ - ${feed.board.title}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 if (feed.board.description.isNotBlank()) {
                     Text(
                         text = feed.board.description,

@@ -6,6 +6,28 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [50-Fomalhaut] - 2026-07-14
+
+### Added
+- **Collapse all / Expand all:** added convenient toolbar buttons to collapse or expand all
+  subscribed boards at once, for quickly toggling between full feed and collapsed board headers.
+- **Enhanced top bar:** the subscribed feed title bar now displays the app name "Orbin" with a
+  colored indicator square showing the currently selected theme's primary color.
+
+## [49-Altair] - 2026-07-14
+
+### Fixed
+- **Board collapse:** fixed an issue where collapsed boards had no clickable headers in full-screen mode,
+  making it impossible to expand them. Headers now always show when a board is collapsed, regardless of
+  full-screen setting.
+
+## [48-Sirius B] - 2026-07-13
+
+### Added
+- **Board collapse:** users can now collapse/expand boards in the subscribed feed by clicking the
+  board name. A clickable collapse/expand icon (ExpandMore when collapsed, ExpandLess when expanded)
+  provides visual feedback. Collapse state is persisted across app navigation using rememberSaveable.
+
 ## [47-Proxima Centauri] - 2026-07-13
 
 ### Added
@@ -19,16 +41,16 @@ All notable changes to Orbin are documented here. The format is based on
   Tomorrow Dark) for a more focused and maintainable design system.
 - **Release naming:** continue smallest-known-star codenames for release milestones.
 
-## [39-Barnard's Star] - 2026-07-13
+## [46-Epsilon Eridani] - 2026-07-13
 
 ### Removed
-- **Tranchan provider:** removed the WakabaProvider implementation and all Tranchan-specific code and
-  references (certificate pinning, module includes, dependencies). The app now supports 4chan (Vichan)
-  and BBW Chan (LynxChan).
+- **Tranchan provider:** removed the WakabaProvider implementation and all Tranchan-specific code,
+  references, and infrastructure. The app now exclusively supports 4chan (Vichan) and BBW Chan
+  (LynxChan).
 
 ### Changed
-- **Documentation:** updated README to reflect available providers and recent feature additions
-  (fullscreen video, auto-rotate, post dates, 20+ imageboard color palettes).
+- **Documentation:** updated README to reflect current providers and recent feature additions
+  (fullscreen video, auto-rotate, post dates, 20+ imageboard color palettes, updated tech stack).
 - **Release naming:** continue smallest-known-star codenames for release milestones.
 
 ## [38-Ross 128] - 2026-07-12
@@ -507,7 +529,10 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v48-Sirius-B...HEAD
+[48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
+[47-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v46-Epsilon-Eridani...v47-Proxima-Centauri
+[46-Epsilon Eridani]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...v46-Epsilon-Eridani
 [38-Ross 128]: https://github.com/Defuuls/Orbin/compare/v37-Wolf-359...v38-Ross-128
 [37-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v36-TRAPPIST-1...v37-Wolf-359
 [36-TRAPPIST-1]: https://github.com/Defuuls/Orbin/compare/v35-Proxima-Centauri...v36-TRAPPIST-1
