@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 67
-        versionName = "47-Proxima Centauri"
+        versionCode = 68
+        versionName = "48-Sirius B"
     }
 
     signingConfigs {
