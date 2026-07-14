@@ -273,6 +273,18 @@ class FakeSettingsRepository(
         update { copy(fullScreenFeedChrome = enabled) }
     }
 
+    override suspend fun setThreadWatchNotificationsEnabled(enabled: Boolean) {
+        update { copy(threadWatchNotificationsEnabled = enabled) }
+    }
+
+    override suspend fun setQuietHoursStart(time: String) {
+        update { copy(quietHoursStart = time) }
+    }
+
+    override suspend fun setQuietHoursEnd(time: String) {
+        update { copy(quietHoursEnd = time) }
+    }
+
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }
     }

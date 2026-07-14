@@ -78,4 +78,10 @@ interface SettingsRepository {
     suspend fun setAppIconVariant(variant: AppIconVariant)
 
     suspend fun setFullScreenFeedChrome(enabled: Boolean)
+
+    suspend fun setThreadWatchNotificationsEnabled(enabled: Boolean)
+
+    suspend fun setQuietHoursStart(time: String)
+
+    suspend fun setQuietHoursEnd(time: String)
 }

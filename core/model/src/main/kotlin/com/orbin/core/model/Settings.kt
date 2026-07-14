@@ -111,6 +111,11 @@ data class AppSettings(
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
     val internalUpdaterEnabled: Boolean = true,
+    val threadWatchNotificationsEnabled: Boolean = true,
+    /** Quiet hours start time in HH:MM format (24-hour), empty string = disabled. */
+    val quietHoursStart: String = "",
+    /** Quiet hours end time in HH:MM format (24-hour), empty string = disabled. */
+    val quietHoursEnd: String = "",
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
 ) {

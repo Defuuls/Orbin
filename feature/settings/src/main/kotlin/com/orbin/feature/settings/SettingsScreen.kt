@@ -155,6 +155,28 @@ fun SettingsScreen(
                 },
             )
 
+            SectionHeader("Notifications")
+            SwitchRow(
+                "Thread watch notifications",
+                settings.threadWatchNotificationsEnabled,
+                viewModel::setThreadWatchNotifications,
+                supporting = "Get notified when watched threads have new replies",
+            )
+            if (settings.threadWatchNotificationsEnabled) {
+                TextFieldRow(
+                    label = "Quiet hours start",
+                    value = settings.quietHoursStart,
+                    supporting = "HH:MM format (24-hour), leave empty to disable",
+                    onValueChange = viewModel::setQuietHoursStart,
+                )
+                TextFieldRow(
+                    label = "Quiet hours end",
+                    value = settings.quietHoursEnd,
+                    supporting = "HH:MM format (24-hour), leave empty to disable",
+                    onValueChange = viewModel::setQuietHoursEnd,
+                )
+            }
+
             SectionHeader("Appearance")
             ColorThemeRow(settings.colorTheme, viewModel::setColorTheme)
             AppIconVariantRow(settings.appIconVariant, viewModel::setAppIconVariant)

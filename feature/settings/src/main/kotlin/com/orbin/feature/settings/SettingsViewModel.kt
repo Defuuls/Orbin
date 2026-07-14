@@ -114,6 +114,13 @@ class SettingsViewModel
 
         fun setRefreshFeedOnReturn(enabled: Boolean) = update { repository.setRefreshFeedOnReturn(enabled) }
 
+        fun setThreadWatchNotifications(enabled: Boolean) =
+            update { repository.setThreadWatchNotificationsEnabled(enabled) }
+
+        fun setQuietHoursStart(time: String) = update { repository.setQuietHoursStart(time) }
+
+        fun setQuietHoursEnd(time: String) = update { repository.setQuietHoursEnd(time) }
+
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()
