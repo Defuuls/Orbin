@@ -18,8 +18,6 @@ class SettingsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val fakeSettingsRepository = FakeSettingsRepository()
-
     @Test
     fun threadWatchNotificationsToggleIsDisplayed() {
         composeTestRule.setContent {
