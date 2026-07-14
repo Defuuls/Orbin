@@ -4,6 +4,13 @@ A comprehensive record of all releases for Orbin, a modern Android image board c
 
 ---
 
+## v49 — Altair (2026-07-14)
+
+### Fixed
+- **Board collapse headers:** Fixed an issue where collapsed boards had no clickable headers in full-screen mode, making it impossible to expand them. Headers now always display when a board is collapsed.
+
+---
+
 ## v48 — Sirius B (2026-07-13)
 
 ### Added

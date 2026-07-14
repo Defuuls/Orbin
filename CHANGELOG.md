@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [49-Altair] - 2026-07-14
+
+### Fixed
+- **Board collapse:** fixed an issue where collapsed boards had no clickable headers in full-screen mode,
+  making it impossible to expand them. Headers now always show when a board is collapsed, regardless of
+  full-screen setting.
+
 ## [48-Sirius B] - 2026-07-13
 
 ### Added
