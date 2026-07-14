@@ -159,6 +159,44 @@ class DownloadRepositoryImpl
 
         override suspend fun clearHistory() = dao.clear()
 
+        override suspend fun retry(id: Long): Long =
+            withContext(ioDispatcher) {
+                val entity = dao.getById(id) ?: return@withContext SKIPPED_ID
+                val customFolderUri = settingsRepository.settings.first().downloadFolderUri
+                val uri = Uri.parse(entity.url)
+                if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
+
+                dao.updateStatus(id, DownloadStatus.QUEUED.name)
+                if (customFolderUri.isNotBlank()) {
+                    return@withContext downloadToFolder(uri, entity.fileName, customFolderUri)
+                }
+
+                val request =
+                    DownloadManager
+                        .Request(uri)
+                        .setTitle(entity.fileName)
+                        .setDescription("Orbin download")
+                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Orbin/${entity.fileName}")
+                        .setAllowedOverMetered(true)
+                        .setAllowedOverRoaming(true)
+
+                val newId = downloadManager.enqueue(request)
+                if (newId != id) {
+                    dao.delete(id)
+                    dao.upsert(
+                        DownloadEntity(
+                            id = newId,
+                            url = entity.url,
+                            fileName = entity.fileName,
+                            status = DownloadStatus.QUEUED.name,
+                            createdAtMillis = entity.createdAtMillis,
+                        ),
+                    )
+                }
+                newId
+            }
+
         override suspend fun writeTextFile(
             fileName: String,
             content: String,

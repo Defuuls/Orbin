@@ -177,6 +177,18 @@ class SettingsRepositoryImpl
             edit { it[Keys.activeProviderId] = id.value }
         }
 
+        override suspend fun setThreadWatchNotificationsEnabled(enabled: Boolean) {
+            edit { it[Keys.threadWatchNotifications] = enabled }
+        }
+
+        override suspend fun setQuietHoursStart(time: String) {
+            edit { it[Keys.quietHoursStart] = time }
+        }
+
+        override suspend fun setQuietHoursEnd(time: String) {
+            edit { it[Keys.quietHoursEnd] = time }
+        }
+
         suspend fun setConnectTimeoutSeconds(seconds: Long) {
             edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
         }
@@ -301,6 +313,9 @@ class SettingsRepositoryImpl
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
+                threadWatchNotificationsEnabled = this[Keys.threadWatchNotifications] ?: true,
+                quietHoursStart = this[Keys.quietHoursStart] ?: "",
+                quietHoursEnd = this[Keys.quietHoursEnd] ?: "",
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
@@ -357,6 +372,9 @@ class SettingsRepositoryImpl
             val internalUpdater = booleanPreferencesKey("internal_updater")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
+            val threadWatchNotifications = booleanPreferencesKey("thread_watch_notifications")
+            val quietHoursStart = stringPreferencesKey("quiet_hours_start")
+            val quietHoursEnd = stringPreferencesKey("quiet_hours_end")
             val connectTimeoutSeconds = stringPreferencesKey("connect_timeout_seconds")
             val readTimeoutSeconds = stringPreferencesKey("read_timeout_seconds")
             val disableOcspChecking = booleanPreferencesKey("disable_ocsp_checking")

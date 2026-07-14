@@ -22,6 +22,9 @@ interface DownloadRepository {
 
     suspend fun clearHistory()
 
+    /** Retry a failed download by its record id. */
+    suspend fun retry(id: Long): Long
+
     /**
      * Writes [content] as a text file named [fileName] into the user's configured download folder,
      * falling back to Downloads/Orbin when no custom folder is configured. Returns false if the

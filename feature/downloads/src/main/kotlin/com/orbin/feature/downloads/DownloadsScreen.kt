@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -58,6 +59,13 @@ fun DownloadsScreen(
                 ListItem(
                     headlineContent = { Text(record.fileName) },
                     supportingContent = { Text(record.status.label()) },
+                    trailingContent = {
+                        if (record.status == DownloadStatus.FAILED) {
+                            IconButton(onClick = { viewModel.retry(record.id) }) {
+                                Icon(Icons.Filled.Refresh, contentDescription = "Retry download")
+                            }
+                        }
+                    },
                 )
                 HorizontalDivider()
             }
