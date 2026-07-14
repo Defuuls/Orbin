@@ -5,8 +5,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.orbin.core.designsystem.theme.OrbinTheme
-import com.orbin.core.model.AppSettings
-import com.orbin.core.testing.repository.FakeSettingsRepository
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
