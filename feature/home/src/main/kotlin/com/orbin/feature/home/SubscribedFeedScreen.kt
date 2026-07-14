@@ -261,14 +261,16 @@ private fun SubscribedFeedList(
         }
 
         filteredFeeds.forEach { feed ->
+            val isBoardCollapsed = collapsedBoards.contains(feed.board.id.value)
             // In full-screen mode the pinned board headers are dropped entirely so nothing
             // stays fixed at the top and the threads flow as one uninterrupted list.
-            if (showBoardHeaders) {
+            // However, always show the header for collapsed boards so they can be expanded.
+            if (showBoardHeaders || isBoardCollapsed) {
                 stickyHeader(key = "header-${feed.board.id.value}") {
                     BoardFeedHeader(
                         feed = feed,
                         globalThreadLimit = globalThreadLimit,
-                        isCollapsed = collapsedBoards.contains(feed.board.id.value),
+                        isCollapsed = isBoardCollapsed,
                         onToggleCollapse =
                             { boardId ->
                                 collapsedBoards =
@@ -282,7 +284,7 @@ private fun SubscribedFeedList(
                     )
                 }
             }
-            if (!collapsedBoards.contains(feed.board.id.value)) {
+            if (!isBoardCollapsed) {
                 items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
                     FeedThreadCell(
                         thread = thread,
