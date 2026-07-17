@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#101524</color>
-    <color name="ic_launcher_stellar_background">#071F24</color>
-    <color name="splash_background">#101524</color>
+    <!-- Orbin-X design color scheme -->
+    <color name="orbinx_icon_background">#171717</color>
+    <color name="orbinx_status_bar">#212121</color>
+    <color name="orbinx_navigation_bar">#212121</color>
+    <color name="orbinx_window_background">#212121</color>
+
+    <!-- Legacy Orbin colors (maintained for compatibility) -->
+    <color name="ic_launcher_background">#171717</color>
+    <color name="ic_launcher_stellar_background">#212121</color>
+    <color name="splash_background">#171717</color>
 </resources>

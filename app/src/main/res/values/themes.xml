@@ -3,7 +3,12 @@
 
     <!-- Base application theme. Compose draws the UI; this only needs to be a no-action-bar
          theme. enableEdgeToEdge() handles system-bar appearance at runtime. -->
-    <style name="Theme.Orbin" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.Orbin" parent="android:Theme.Material.NoActionBar">
+        <!-- Orbin-X design system colors -->
+        <item name="android:statusBarColor">@color/orbinx_status_bar</item>
+        <item name="android:navigationBarColor">@color/orbinx_navigation_bar</item>
+        <item name="android:windowBackground">@color/orbinx_window_background</item>
+    </style>
 
     <!-- Splash screen theme (androidx.core:core-splashscreen). Hands off to Theme.Orbin once the
          first frame is ready. -->
