@@ -19,6 +19,11 @@ jobs:
   analyze-java-kotlin:
     name: Analyze (java-kotlin)
     runs-on: ubuntu-latest
+    env:
+      # CodeQL's Kotlin extractor trails new Kotlin releases and aborts compilation when the
+      # project's Kotlin is "too recent". Allow best-effort extraction so analysis doesn't fail
+      # purely because the toolchain is ahead of the bundled extractor.
+      CODEQL_EXTRACTOR_KOTLIN_OVERRIDE_MAXIMUM_VERSION_CHECK: "true"
     steps:
       - uses: actions/checkout@v7
 
