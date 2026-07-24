@@ -1,6 +1,8 @@
 [versions]
 # Android / Build
-agp = "9.2.1"
+agp = "9.3.0"
+# Held at 2.4.0 (not the 2.4.10 Dependabot bump) until CodeQL's Kotlin extractor supports 2.4.10;
+# 2.4.10 makes the java-kotlin CodeQL analysis hard-fail ("Kotlin version too recent").
 kotlin = "2.4.0"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.

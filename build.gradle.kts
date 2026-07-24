@@ -24,8 +24,8 @@ buildscript {
                     because("Dependabot reports Apache Commons Compress CVEs in the Gradle plugin classpath.")
                 }
 
-                requested.group == "org.apache.commons" && requested.name == "commons-io" -> {
-                    useVersion("2.18.0")
+                requested.group == "commons-io" && requested.name == "commons-io" -> {
+                    useVersion("2.20.0")
                     because("Dependabot reports an Apache Commons IO denial-of-service vulnerability.")
                 }
 
