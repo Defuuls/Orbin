@@ -6,6 +6,24 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Relative post times:** the thread viewer now shows each post's age as a compact relative time
+  ("just now", "5m", "3h", "2d"), falling back to the absolute date for posts older than a week.
+
+### Changed
+- **Post text rendering:** migrated the shared post renderer off the deprecated Compose
+  `ClickableText` to the modern `LinkAnnotation` API, so quote links and URLs are exposed to
+  accessibility services (announced as links by TalkBack). Catalog and feed cards now use a dedicated
+  non-interactive preview renderer, so tapping anywhere on a preview reliably opens the thread.
+- **Loading / empty / error states:** the shared placeholders share a single scaffold with clearer
+  iconography and an accessible loading label for a more consistent look across screens.
+- **Internal:** migrated all `hiltViewModel` call sites to `androidx.hilt.lifecycle.viewmodel.compose`,
+  clearing the framework deprecation warning.
+
+### Fixed
+- **Thread collapse persistence:** collapsed posts now stay collapsed across configuration changes
+  (e.g. screen rotation) instead of expanding again.
+
 ## [50-Fomalhaut] - 2026-07-14
 
 ### Added
