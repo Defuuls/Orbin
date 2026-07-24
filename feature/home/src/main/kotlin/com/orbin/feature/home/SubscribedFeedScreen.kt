@@ -74,7 +74,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatPostDateTime
-import com.orbin.core.ui.post.PostCommentText
+import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
@@ -593,12 +593,7 @@ private fun FeedThreadCellContent(
                 }
             }
             Box(modifier = Modifier.heightIn(max = if (tabletLayout) 72.dp else 64.dp)) {
-                PostCommentText(
-                    comment = thread.originalPost.comment,
-                    onQuoteClick = { onClick() },
-                    onLinkClick = { onClick() },
-                    onClick = onClick,
-                )
+                PostCommentPreviewText(comment = thread.originalPost.comment)
             }
         }
     }
