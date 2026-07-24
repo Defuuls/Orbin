@@ -62,7 +62,7 @@ import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
 import com.orbin.core.ui.date.formatThreadDate
-import com.orbin.core.ui.post.PostCommentText
+import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.coroutines.launch
 
@@ -287,12 +287,7 @@ private fun KurobaListThreadCell(
                     MetadataRow(thread = thread, compact = false, onClick = onClick)
 
                     Box(modifier = Modifier.heightIn(max = 76.dp)) {
-                        PostCommentText(
-                            comment = thread.originalPost.comment,
-                            onQuoteClick = { onClick() },
-                            onLinkClick = { onClick() },
-                            onClick = onClick,
-                        )
+                        PostCommentPreviewText(comment = thread.originalPost.comment)
                     }
                 }
             }
@@ -348,12 +343,7 @@ private fun KurobaGridThreadCell(
                 ThreadTitle(thread = thread, maxLines = 2)
                 MetadataRow(thread = thread, compact = true, onClick = onClick)
                 Box(modifier = Modifier.heightIn(max = 72.dp)) {
-                    PostCommentText(
-                        comment = thread.originalPost.comment,
-                        onQuoteClick = { onClick() },
-                        onLinkClick = { onClick() },
-                        onClick = onClick,
-                    )
+                    PostCommentPreviewText(comment = thread.originalPost.comment)
                 }
             }
         }
@@ -504,6 +494,7 @@ private fun PreviewReplyStrip(
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         thread.previewReplies.take(2).forEach { reply ->
             Surface(
+                onClick = onClick,
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(6.dp),
             ) {
@@ -517,12 +508,7 @@ private fun PreviewReplyStrip(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Box(modifier = Modifier.weight(1f).heightIn(max = 44.dp)) {
-                        PostCommentText(
-                            comment = reply.comment,
-                            onQuoteClick = { onClick() },
-                            onLinkClick = { onClick() },
-                            onClick = onClick,
-                        )
+                        PostCommentPreviewText(comment = reply.comment)
                     }
                 }
             }
