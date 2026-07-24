@@ -41,23 +41,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
-import com.orbin.core.ui.date.formatPostDateTime
+import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -251,7 +253,15 @@ private fun PostListContent(
                 }
             }
         }
-    val collapsed = remember { mutableStateMapOf<PostId, Boolean>() }
+    // Collapsed post ids, persisted across configuration changes and keyed to the thread so
+    // switching threads starts fresh. A list of Longs is trivially Saveable, unlike a map of PostId.
+    val collapsedIds =
+        rememberSaveable(
+            thread.key,
+            saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
+        ) {
+            mutableStateListOf<Long>()
+        }
     val listState =
         rememberSaveable(thread.key, saver = LazyListState.Saver) {
             LazyListState()
@@ -290,8 +300,10 @@ private fun PostListContent(
             val post = posts[index]
             PostCard(
                 post = post,
-                isCollapsed = collapsed[post.id] == true,
-                onToggleCollapse = { collapsed[post.id] = !(collapsed[post.id] ?: false) },
+                isCollapsed = post.id.value in collapsedIds,
+                onToggleCollapse = {
+                    if (!collapsedIds.remove(post.id.value)) collapsedIds.add(post.id.value)
+                },
                 onQuoteClick = onQuoteClick,
                 onLinkClick = onLinkClick,
                 onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
@@ -426,7 +438,7 @@ private fun PostHeader(
             Text("ID:$it", style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.weight(1f))
-        formatPostDateTime(post.createdAtMillis)?.let { posted ->
+        formatRelativeTime(post.createdAtMillis)?.let { posted ->
             Text(
                 text = posted,
                 style = MaterialTheme.typography.labelSmall,
