@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [52-Wolf 359] - 2026-07-25
+
 ### Added
 - **Relative post times:** the thread viewer now shows each post's age as a compact relative time
   ("just now", "5m", "3h", "2d"), falling back to the absolute date for posts older than a week.
@@ -17,12 +19,18 @@ All notable changes to Orbin are documented here. The format is based on
   non-interactive preview renderer, so tapping anywhere on a preview reliably opens the thread.
 - **Loading / empty / error states:** the shared placeholders share a single scaffold with clearer
   iconography and an accessible loading label for a more consistent look across screens.
+- **Build:** updated the Android Gradle Plugin to 9.3.0.
 - **Internal:** migrated all `hiltViewModel` call sites to `androidx.hilt.lifecycle.viewmodel.compose`,
   clearing the framework deprecation warning.
 
 ### Fixed
 - **Thread collapse persistence:** collapsed posts now stay collapsed across configuration changes
   (e.g. screen rotation) instead of expanding again.
+
+### Security
+- **Dependency hardening:** corrected the Commons IO dependency override (it matched the wrong Maven
+  group and never applied) so the patched `commons-io` 2.20.0 is enforced across all build
+  configurations.
 
 ## [50-Fomalhaut] - 2026-07-14
 
@@ -547,7 +555,8 @@ All notable changes to Orbin are documented here. The format is based on
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v48-Sirius-B...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v52-Wolf-359...HEAD
+[52-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v51-Rigel...v52-Wolf-359
 [48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
 [47-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v46-Epsilon-Eridani...v47-Proxima-Centauri
 [46-Epsilon Eridani]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...v46-Epsilon-Eridani
