@@ -91,6 +91,7 @@ fun ThreadScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
+    val mediaScrollEnabled by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
     val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
     // Lets the grid toggle temporarily override the persisted default for this session, without
@@ -315,6 +316,7 @@ private fun PostListContent(
                 onQuoteClick = onQuoteClick,
                 onLinkClick = onLinkClick,
                 onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
+                mediaScrollEnabled = mediaScrollEnabled,
             )
         }
     }
@@ -398,6 +400,7 @@ private fun PostCard(
     onQuoteClick: (PostId) -> Unit,
     onLinkClick: (String) -> Unit,
     onMediaClick: (String) -> Unit,
+    mediaScrollEnabled: Boolean = true,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -406,43 +409,60 @@ private fun PostCard(
             if (!isCollapsed) {
                 if (post.attachments.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
-                    val pagerState = remember { PagerState(pageCount = { post.attachments.size }) }
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(6.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-                            val attachment = post.attachments[page]
-                            MediaThumbnail(
-                                attachment = attachment,
-                                modifier = Modifier.fillMaxSize(),
-                                onClick = { onMediaClick(attachment.id) },
-                            )
-                        }
-
-                        if (post.attachments.size > 1) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .padding(8.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(Color.Black.copy(alpha = 0.62f))
-                                        .padding(
-                                            horizontal = 8.dp,
-                                            vertical = 4.dp,
-                                        ),
-                            ) {
-                                Text(
-                                    text = "${pagerState.settledPage + 1}/${post.attachments.size}",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall,
+                    if (mediaScrollEnabled) {
+                        val pagerState = remember { PagerState(pageCount = { post.attachments.size }) }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                                val attachment = post.attachments[page]
+                                MediaThumbnail(
+                                    attachment = attachment,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onClick = { onMediaClick(attachment.id) },
                                 )
                             }
+
+                            if (post.attachments.size > 1) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(8.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color.Black.copy(alpha = 0.62f))
+                                            .padding(
+                                                horizontal = 8.dp,
+                                                vertical = 4.dp,
+                                            ),
+                                ) {
+                                    Text(
+                                        text = "${pagerState.settledPage + 1}/${post.attachments.size}",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            MediaThumbnail(
+                                attachment = post.attachments[0],
+                                modifier = Modifier.fillMaxSize(),
+                                onClick = { onMediaClick(post.attachments[0].id) },
+                            )
                         }
                     }
                 }

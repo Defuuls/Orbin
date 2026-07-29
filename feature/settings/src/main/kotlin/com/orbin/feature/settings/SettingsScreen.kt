@@ -219,6 +219,18 @@ fun SettingsScreen(
                 viewModel::setAutoRotateVideoFullscreen,
                 supporting = "Turn the screen to landscape automatically when a wide video starts playing.",
             )
+            SwitchRow(
+                "Media scroll in thread",
+                settings.mediaScrollThreadView,
+                viewModel::setMediaScrollThreadView,
+                supporting = "Swipe to scroll through multiple attachments in thread view.",
+            )
+            SwitchRow(
+                "Media scroll in board",
+                settings.mediaScrollBoardView,
+                viewModel::setMediaScrollBoardView,
+                supporting = "Swipe to scroll through multiple attachments in board view.",
+            )
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
             ChoiceRow(
                 label = "Preload content",

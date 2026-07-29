@@ -118,6 +118,8 @@ data class AppSettings(
     val quietHoursEnd: String = "",
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
+    val mediaScrollThreadView: Boolean = true,
+    val mediaScrollBoardView: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()

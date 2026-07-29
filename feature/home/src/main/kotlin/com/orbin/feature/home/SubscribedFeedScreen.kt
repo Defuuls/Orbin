@@ -2,6 +2,8 @@ package com.orbin.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -266,6 +268,7 @@ fun SubscribedFeedScreen(
                             mutedTags = remember(settings.mutedTags) { settings.mutedTagTokens() },
                             thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,
                             globalThreadLimit = settings.feedThreadLimit,
+                            mediaScrollEnabled = settings.mediaScrollBoardView,
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                             listState = listState,
@@ -290,6 +293,7 @@ private fun SubscribedFeedList(
     mutedTags: Set<String>,
     thumbnailSizeDp: Dp,
     globalThreadLimit: FeedThreadLimit,
+    mediaScrollEnabled: Boolean,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     listState: LazyListState,
@@ -366,6 +370,7 @@ private fun SubscribedFeedList(
                         mutedTags = mutedTags,
                         thumbnailSizeDp = thumbnailSizeDp,
                         tabletLayout = tabletLayout,
+                        mediaScrollEnabled = mediaScrollEnabled,
                         onClick = {
                             onOpenThread(
                                 providerId,
@@ -507,6 +512,7 @@ private fun FeedThreadCell(
     mutedTags: Set<String>,
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
+    mediaScrollEnabled: Boolean = false,
     onClick: () -> Unit,
 ) {
     val isMuted = thread.matchesAny(mutedTags)
@@ -523,6 +529,7 @@ private fun FeedThreadCell(
                 isMuted = isMuted,
                 thumbnailSizeDp = 108.dp,
                 tabletLayout = true,
+                mediaScrollEnabled = mediaScrollEnabled,
                 onClick = onClick,
             )
         }
@@ -537,6 +544,7 @@ private fun FeedThreadCell(
                 isMuted = isMuted,
                 thumbnailSizeDp = thumbnailSizeDp,
                 tabletLayout = false,
+                mediaScrollEnabled = mediaScrollEnabled,
                 onClick = onClick,
             )
         }
@@ -549,13 +557,14 @@ private fun FeedThreadCellContent(
     isMuted: Boolean,
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
+    mediaScrollEnabled: Boolean = false,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = if (tabletLayout) 8.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(if (tabletLayout) 12.dp else 10.dp),
     ) {
-        FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp))
+        FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp), mediaScrollEnabled = mediaScrollEnabled)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 4.dp else 6.dp),
@@ -605,35 +614,76 @@ private fun FeedThreadCellContent(
 private fun FeedThumbnail(
     thread: CatalogThread,
     modifier: Modifier = Modifier,
+    mediaScrollEnabled: Boolean = false,
 ) {
-    val attachment = thread.originalPost.attachments.firstOrNull()
+    val attachments = thread.originalPost.attachments
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         shape = RoundedCornerShape(6.dp),
         modifier = modifier,
     ) {
-        if (attachment != null) {
-            OrbinAsyncImage(
-                url = attachment.thumbnailUrl,
-                contentDescription = attachment.originalFileName,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-            if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
-                            tint = Color.White,
-                            modifier = Modifier.padding(8.dp).size(24.dp),
-                        )
+        if (attachments.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("OP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+        } else if (mediaScrollEnabled && attachments.size > 1) {
+            val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { attachments.size })
+            Box(modifier = Modifier.fillMaxSize()) {
+                androidx.compose.foundation.pager.HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                    val attachment = attachments[page]
+                    OrbinAsyncImage(
+                        url = attachment.thumbnailUrl,
+                        contentDescription = attachment.originalFileName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                                    tint = Color.White,
+                                    modifier = Modifier.padding(8.dp).size(24.dp),
+                                )
+                            }
+                        }
                     }
+                }
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color.Black.copy(alpha = 0.7f),
+                ) {
+                    Text(
+                        "${pagerState.settledPage + 1} / ${attachments.size}",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(4.dp),
+                    )
                 }
             }
         } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("OP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            val attachment = attachments.firstOrNull()!!
+            Box(modifier = Modifier.fillMaxSize()) {
+                OrbinAsyncImage(
+                    url = attachment.thumbnailUrl,
+                    contentDescription = attachment.originalFileName,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                                tint = Color.White,
+                                modifier = Modifier.padding(8.dp).size(24.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }

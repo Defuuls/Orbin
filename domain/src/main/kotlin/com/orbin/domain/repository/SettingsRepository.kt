@@ -84,4 +84,8 @@ interface SettingsRepository {
     suspend fun setQuietHoursStart(time: String)
 
     suspend fun setQuietHoursEnd(time: String)
+
+    suspend fun setMediaScrollThreadView(enabled: Boolean)
+
+    suspend fun setMediaScrollBoardView(enabled: Boolean)
 }

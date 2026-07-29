@@ -121,6 +121,10 @@ class SettingsViewModel
 
         fun setQuietHoursEnd(time: String) = update { repository.setQuietHoursEnd(time) }
 
+        fun setMediaScrollThreadView(enabled: Boolean) = update { repository.setMediaScrollThreadView(enabled) }
+
+        fun setMediaScrollBoardView(enabled: Boolean) = update { repository.setMediaScrollBoardView(enabled) }
+
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()
