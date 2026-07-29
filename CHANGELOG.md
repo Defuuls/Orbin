@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [54-Canopus] - 2026-07-29
+
+### Added
+- **Video indicators:** replaced "VID" text labels with Material3 PlayArrow icons in the subscribed
+  feed and gallery views, making video and audio attachments more visually distinctive.
+- **Media carousel:** posts with multiple attachments in thread view now support horizontal scrolling
+  with swipe gestures. A page counter badge displays the current position (e.g., "2/5").
+
+## [53-Sirius] - 2026-07-28
+
 ## [52-Wolf 359] - 2026-07-25
 
 ### Added

@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 73
-        versionName = "53-Sirius"
+        versionCode = 74
+        versionName = "54-Canopus"
     }
 
     signingConfigs {

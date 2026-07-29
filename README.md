@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v50 — Fomalhaut](https://github.com/Defuuls/Orbin/releases/tag/v50-Fomalhaut)
+**Current release:** [v54 — Canopus](https://github.com/Defuuls/Orbin/releases/tag/v54-Canopus)
 
 **Available providers:** 4chan (Vichan), BBW Chan (LynxChan), 8kun (LynxChan)
 
