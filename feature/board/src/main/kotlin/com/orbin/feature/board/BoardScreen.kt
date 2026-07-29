@@ -20,10 +20,13 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -43,6 +46,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -355,7 +359,7 @@ private fun CatalogThumbnail(
     thread: CatalogThread,
     modifier: Modifier = Modifier,
 ) {
-    val attachment = thread.originalPost.attachments.firstOrNull()
+    val attachments = thread.originalPost.attachments
     Box(
         modifier =
             modifier
@@ -363,31 +367,59 @@ private fun CatalogThumbnail(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
-        if (attachment == null) {
+        if (attachments.isEmpty()) {
             Text(
                 text = "No image",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            OrbinAsyncImage(
-                url = attachment.thumbnailUrl,
-                contentDescription = attachment.originalFileName,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            if (attachment.isSpoiler) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)))
-                Icon(Icons.Filled.VisibilityOff, contentDescription = "Spoiler", tint = Color.White)
-            } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
-                Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
-                    Text(
-                        text = if (attachment.type == MediaType.AUDIO) "AUDIO" else "VIDEO",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            val pagerState =
+                remember { PagerState(pageCount = { attachments.size }) }
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                val attachment = attachments[page]
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    OrbinAsyncImage(
+                        url = attachment.thumbnailUrl,
+                        contentDescription = attachment.originalFileName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
                     )
+
+                    if (attachment.isSpoiler) {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)))
+                        Icon(Icons.Filled.VisibilityOff, contentDescription = "Spoiler", tint = Color.White)
+                    } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+                        Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                                tint = Color.White,
+                                modifier = Modifier.padding(8.dp).size(24.dp),
+                            )
+                        }
+                    }
+
+                    if (attachments.size > 1) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.Black.copy(alpha = 0.62f))
+                                    .padding(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp,
+                                    ),
+                        ) {
+                            Text(
+                                text = "${page + 1}/${attachments.size}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
                 }
             }
         }
