@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -59,6 +60,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -617,9 +619,16 @@ private fun FeedThumbnail(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
-            if (attachment.type == MediaType.VIDEO) {
+            if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("VID", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                            tint = Color.White,
+                            modifier = Modifier.padding(8.dp).size(24.dp),
+                        )
+                    }
                 }
             }
         } else {

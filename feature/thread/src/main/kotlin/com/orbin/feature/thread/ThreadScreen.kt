@@ -1,7 +1,9 @@
 package com.orbin.feature.thread
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -12,6 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -35,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -49,7 +55,11 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -396,9 +406,46 @@ private fun PostCard(
             PostHeader(post = post, isCollapsed = isCollapsed, onClick = onToggleCollapse)
 
             if (!isCollapsed) {
-                post.attachments.firstOrNull()?.let { media ->
+                if (post.attachments.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
-                    MediaThumbnail(attachment = media, onClick = { onMediaClick(media.id) })
+                    val pagerState = remember { PagerState(pageCount = { post.attachments.size }) }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                            val attachment = post.attachments[page]
+                            MediaThumbnail(
+                                attachment = attachment,
+                                modifier = Modifier.fillMaxSize(),
+                                onClick = { onMediaClick(attachment.id) },
+                            )
+                        }
+
+                        if (post.attachments.size > 1) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.Black.copy(alpha = 0.62f))
+                                        .padding(
+                                            horizontal = 8.dp,
+                                            vertical = 4.dp,
+                                        ),
+                            ) {
+                                Text(
+                                    text = "${pagerState.settledPage + 1}/${post.attachments.size}",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                        }
+                    }
                 }
                 if (post.comment.nodes.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))

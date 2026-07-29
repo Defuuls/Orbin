@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -340,12 +342,12 @@ private fun MediaTile(
             modifier = Modifier.fillMaxSize(),
         )
         if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
-            Surface(color = Color.Black.copy(alpha = 0.64f), shape = RoundedCornerShape(999.dp)) {
-                Text(
-                    text = if (attachment.type == MediaType.AUDIO) "AUDIO" else "VIDEO",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                    tint = Color.White,
+                    modifier = Modifier.padding(8.dp).size(24.dp),
                 )
             }
         }
