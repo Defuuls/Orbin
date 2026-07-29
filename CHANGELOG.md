@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [55-Polaris] - 2026-07-29
+
+### Added
+- **Media scroll settings:** added optional settings to enable/disable media carousel independently
+  for thread view and board view. Thread view is enabled by default; board view is disabled by default.
+  Toggle "Media scroll in thread" and "Media scroll in board" in Settings > Media to control behavior.
+- **Board view media carousel:** subscribed feed thread preview cards now support horizontal scrolling
+  through multiple attachments when media scroll is enabled, with swipe gestures and page counter badge.
+
+### Changed
+- **Media carousel UX:** enhanced carousel implementation with consistent page counter styling and
+  improved attachment navigation across all views (thread and board feeds).
+
 ## [54-Canopus] - 2026-07-29
 
 ### Added
