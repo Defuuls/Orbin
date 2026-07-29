@@ -133,7 +133,8 @@ fun OrbinApp(
                         TabletFeedDock(
                             topLevel = topLevel,
                             currentDestinationMatches = { destination ->
-                                currentDestination?.hasRoute(destination.route::class) == true
+                                currentDestination != null &&
+                                    currentDestination.hasRoute(destination.route::class) == true
                             },
                             compact = compactTabletDock,
                             onNavigate = navController::navigateToTopLevel,
@@ -145,7 +146,8 @@ fun OrbinApp(
                         TabletNavigationDock(
                             topLevel = topLevel,
                             currentDestinationMatches = { destination ->
-                                currentDestination?.hasRoute(destination.route::class) == true
+                                currentDestination != null &&
+                                    currentDestination.hasRoute(destination.route::class) == true
                             },
                             onNavigate = navController::navigateToTopLevel,
                         )
@@ -153,7 +155,8 @@ fun OrbinApp(
                         PhoneNavigationBar(
                             topLevel = topLevel,
                             currentDestinationMatches = { destination ->
-                                currentDestination?.hasRoute(destination.route::class) == true
+                                currentDestination != null &&
+                                    currentDestination.hasRoute(destination.route::class) == true
                             },
                             onNavigate = navController::navigateToTopLevel,
                         )
