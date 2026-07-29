@@ -190,6 +190,7 @@ fun ThreadScreen(
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
                     scrollToTopRequest = scrollToTopRequest,
+                    mediaScrollEnabled = mediaScrollEnabled,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -205,6 +206,7 @@ private fun ThreadContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    mediaScrollEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     when (layoutMode) {
@@ -215,6 +217,7 @@ private fun ThreadContent(
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
                 scrollToTopRequest = scrollToTopRequest,
+                mediaScrollEnabled = mediaScrollEnabled,
                 modifier = modifier,
             )
         ThreadLayoutMode.ThumbnailGrid ->
@@ -237,6 +240,7 @@ private fun PostListContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    mediaScrollEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread) { thread.allPosts }
