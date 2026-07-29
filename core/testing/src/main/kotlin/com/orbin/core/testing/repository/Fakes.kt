@@ -305,6 +305,14 @@ class FakeSettingsRepository(
         update { copy(quietHoursEnd = time) }
     }
 
+    override suspend fun setMediaScrollThreadView(enabled: Boolean) {
+        update { copy(mediaScrollThreadView = enabled) }
+    }
+
+    override suspend fun setMediaScrollBoardView(enabled: Boolean) {
+        update { copy(mediaScrollBoardView = enabled) }
+    }
+
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }
     }
