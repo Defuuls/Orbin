@@ -21,7 +21,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -374,7 +374,8 @@ private fun CatalogThumbnail(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            val pagerState = remember { androidx.compose.foundation.pager.PagerState(pageCount = { attachments.size }) }
+            val pagerState =
+                remember { PagerState(pageCount = { attachments.size }) }
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 val attachment = attachments[page]
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -401,12 +402,16 @@ private fun CatalogThumbnail(
 
                     if (attachments.size > 1) {
                         Box(
-                            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).clip(
-                                RoundedCornerShape(4.dp)
-                            ).background(Color.Black.copy(alpha = 0.62f)).padding(
-                                horizontal = 8.dp,
-                                vertical = 4.dp,
-                            ),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.Black.copy(alpha = 0.62f))
+                                    .padding(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp,
+                                    ),
                         ) {
                             Text(
                                 text = "${page + 1}/${attachments.size}",
