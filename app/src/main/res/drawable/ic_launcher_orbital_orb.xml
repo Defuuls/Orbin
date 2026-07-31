@@ -3,15 +3,6 @@
     android:height="108dp"
     android:viewportWidth="256"
     android:viewportHeight="256">
-    <defs>
-        <radialGradient
-            android:id="orbGradient"
-            android:centerX="40%"
-            android:centerY="40%">
-            <item android:offset="0%" android:color="#7C3AED" />
-            <item android:offset="100%" android:color="#4338CA" />
-        </radialGradient>
-    </defs>
     <!-- Outer orbital ring -->
     <path
         android:strokeColor="#3B82F6"
