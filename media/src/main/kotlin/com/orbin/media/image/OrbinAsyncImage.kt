@@ -47,12 +47,13 @@ fun OrbinAsyncImage(
     var loadFailed by remember(url) { mutableStateOf(false) }
     var failureMessage by remember(url) { mutableStateOf<String?>(null) }
 
-    val imageRequest = remember(url) {
-        ImageRequest.Builder(context)
-            .data(url)
-            .size(Size(1024, 1024))
-            .build()
-    }
+    val imageRequest =
+        remember(url) {
+            ImageRequest.Builder(context)
+                .data(url)
+                .size(Size(1024, 1024))
+                .build()
+        }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         AsyncImage(

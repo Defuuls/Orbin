@@ -17,11 +17,11 @@ class AppIconManager
             runCatching {
                 val aliasNames =
                     mapOf(
-                        AppIconVariant.DEFAULT to "com.orbin.app.DefaultIconAlias",
-                        AppIconVariant.MINIMALIST to "com.orbin.app.MinimalistIconAlias",
-                        AppIconVariant.GRADIENT to "com.orbin.app.GradientIconAlias",
-                        AppIconVariant.NEON to "com.orbin.app.NeonIconAlias",
-                        AppIconVariant.RETRO to "com.orbin.app.RetroIconAlias",
+                        AppIconVariant.DEFAULT to "com.orbin.app.OrbitalOrbIconAlias",
+                        AppIconVariant.NESTED_RINGS to "com.orbin.app.NestedRingsIconAlias",
+                        AppIconVariant.ABSTRACT_FLOW to "com.orbin.app.AbstractFlowIconAlias",
+                        AppIconVariant.MINIMALIST_ESSENCE to "com.orbin.app.MinimalistEssenceIconAlias",
+                        AppIconVariant.DUAL_GRADIENT to "com.orbin.app.DualGradientIconAlias",
                     )
 
                 val pm = context.packageManager
