@@ -1,9 +1,16 @@
 package com.orbin.core.designsystem.component
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,8 +25,8 @@ fun ModernCard(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    shape: androidx.compose.material3.Shapes = MaterialTheme.shapes,
-    elevation: androidx.compose.material3.CardElevation = CardDefaults.elevatedCardElevation(
+    shape: Shapes = MaterialTheme.shapes,
+    elevation: CardElevation = CardDefaults.elevatedCardElevation(
         defaultElevation = 4.dp,
         pressedElevation = 8.dp,
         focusedElevation = 4.dp,
@@ -60,17 +67,17 @@ fun ModernButton(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
 ) {
-    androidx.compose.material3.Button(
+    Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
+        contentPadding = ButtonDefaults.ContentPadding,
         shape = MaterialTheme.shapes.medium,
         content = {
             if (leadingIcon != null) {
                 leadingIcon()
             }
-            androidx.compose.material3.Text(label)
+            Text(label)
         },
     )
 }
@@ -86,12 +93,12 @@ fun ModernTonalButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    androidx.compose.material3.FilledTonalButton(
+    FilledTonalButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
-        content = { androidx.compose.material3.Text(label) },
+        content = { Text(label) },
     )
 }
 
@@ -106,11 +113,11 @@ fun ModernOutlinedButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    androidx.compose.material3.OutlinedButton(
+    OutlinedButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
-        content = { androidx.compose.material3.Text(label) },
+        content = { Text(label) },
     )
 }

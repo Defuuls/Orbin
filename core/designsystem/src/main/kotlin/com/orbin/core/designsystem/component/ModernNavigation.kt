@@ -2,7 +2,10 @@ package com.orbin.core.designsystem.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Alignment
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,12 +15,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,7 +95,7 @@ fun ModernNavigationRail(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    androidx.compose.material3.NavigationRail(
+    NavigationRail(
         modifier = modifier
             .clip(MaterialTheme.shapes.large),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -108,13 +115,13 @@ fun ModernNavigationRailItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    androidx.compose.material3.NavigationRailItem(
+    NavigationRailItem(
         icon = { Icon(icon, contentDescription = label) },
         label = { Text(label) },
         selected = selected,
         onClick = onClick,
         modifier = modifier,
-        colors = androidx.compose.material3.NavigationRailItemDefaults.colors(
+        colors = NavigationRailItemDefaults.colors(
             selectedIconColor = MaterialTheme.colorScheme.primary,
             selectedTextColor = MaterialTheme.colorScheme.primary,
             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -154,7 +161,7 @@ fun ModernDrawerHeader(
     subtitle: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    androidx.compose.foundation.layout.Column(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primaryContainer)
@@ -200,11 +207,11 @@ fun ModernDrawerItem(
             .clip(MaterialTheme.shapes.medium)
             .background(
                 if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.transparent,
+                else MaterialTheme.colorScheme.surfaceContainerLowest,
             )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = icon,

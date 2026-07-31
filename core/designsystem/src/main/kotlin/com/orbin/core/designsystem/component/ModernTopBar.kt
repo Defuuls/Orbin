@@ -1,17 +1,24 @@
 package com.orbin.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -133,12 +140,12 @@ fun ModernMediumTopAppBar(
 ) {
     MediumTopAppBar(
         title = {
-            androidx.compose.foundation.layout.Column {
+            Column {
                 Text(title, fontWeight = FontWeight.Bold)
                 if (subtitle != null) {
                     Text(
                         subtitle,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -187,7 +194,7 @@ fun ModernSearchTopAppBar(
 ) {
     TopAppBar(
         title = {
-            androidx.compose.material3.SearchBar(
+            SearchBar(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange,
                 onSearch = {},
@@ -197,14 +204,14 @@ fun ModernSearchTopAppBar(
                 placeholder = { Text("Search") },
                 leadingIcon = {
                     Icon(
-                        androidx.compose.material.icons.filled.Search,
+                        Icons.Filled.Search,
                         contentDescription = "Search",
                     )
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
                         IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
                         }
                     }
                 } else {
@@ -238,10 +245,8 @@ fun ModernFloatingActionBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .androidx.compose.foundation.background(
-                androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh,
-            )
-            .androidx.compose.foundation.layout.padding(16.dp),
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,

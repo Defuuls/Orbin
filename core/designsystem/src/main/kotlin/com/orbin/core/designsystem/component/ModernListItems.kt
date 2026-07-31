@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -212,12 +213,12 @@ fun ModernDivider(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+            HorizontalDivider(modifier = Modifier.weight(1f))
             Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-            androidx.compose.material3.HorizontalDivider(modifier = Modifier.weight(1f))
+            HorizontalDivider(modifier = Modifier.weight(1f))
         }
     } else {
-        androidx.compose.material3.HorizontalDivider(
+        HorizontalDivider(
             modifier = modifier,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         )

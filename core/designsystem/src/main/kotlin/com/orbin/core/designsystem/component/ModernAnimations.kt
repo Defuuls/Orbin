@@ -2,7 +2,7 @@ package com.orbin.core.designsystem.component
 
 import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.InfiniteRepeatableSpec
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -32,8 +33,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SkeletonLoader(
     modifier: Modifier = Modifier,
-    width: androidx.compose.ui.unit.Dp = 200.dp,
-    height: androidx.compose.ui.unit.Dp = 16.dp,
+    width: Dp = 200.dp,
+    height: Dp = 16.dp,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
     val alpha by infiniteTransition.animateFloat(
@@ -41,7 +42,7 @@ fun SkeletonLoader(
         targetValue = 0.9f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = EaseInOutCubic),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "skeleton_alpha",
     )
@@ -73,7 +74,7 @@ fun PulsingDotLoader(
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(600, delayMillis = 0),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "dot1_alpha",
     )
@@ -83,7 +84,7 @@ fun PulsingDotLoader(
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(600, delayMillis = 200),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "dot2_alpha",
     )
@@ -93,7 +94,7 @@ fun PulsingDotLoader(
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(600, delayMillis = 400),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "dot3_alpha",
     )
@@ -139,7 +140,7 @@ fun ScalingProgressIndicator(
         targetValue = 1.2f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "scale",
     )
