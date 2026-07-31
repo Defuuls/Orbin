@@ -11,8 +11,6 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.InputChip
-import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
@@ -66,7 +64,6 @@ fun ModernFilterChip(
             ),
     )
 }
-
 
 /**
  * Modern Material Design 3 assist chip for actions and suggestions.
