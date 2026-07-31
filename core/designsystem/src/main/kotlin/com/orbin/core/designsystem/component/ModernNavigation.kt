@@ -2,6 +2,7 @@ package com.orbin.core.designsystem.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Alignment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -205,6 +206,7 @@ fun ModernDrawerItem(
             .fillMaxWidth()
             .alpha(selectedAlpha)
             .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
             .background(
                 if (selected) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surfaceContainerLowest,
