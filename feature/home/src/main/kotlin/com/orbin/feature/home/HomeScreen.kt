@@ -1,10 +1,15 @@
 package com.orbin.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -16,13 +21,11 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -31,17 +34,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.designsystem.component.ModernCardListItem
+import com.orbin.core.designsystem.component.ModernCenterTopAppBar
+import com.orbin.core.designsystem.component.ModernDivider
+import com.orbin.core.designsystem.component.ModernListItemHeader
 import com.orbin.core.model.Board
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import kotlinx.coroutines.launch
 
-/** Home screen: the board list for the active provider. Tapping a board opens its catalog. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -54,23 +62,19 @@ fun HomeScreen(
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.centerAlignedTopAppBarScrollBehavior(rememberTopAppBarState())
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scope = rememberCoroutineScope()
-    val openBoard: (Board) -> Unit = { board ->
-        onOpenBoard(providerId, board.id.value, board.title)
-    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                modifier =
-                    Modifier.clickable(
-                        onClickLabel = "Scroll to top",
-                        onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                    ),
-                title = { Text("Orbin") },
+            ModernCenterTopAppBar(
+                title = "Boards",
+                modifier = Modifier.clickable(
+                    onClickLabel = "Scroll to top",
+                    onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                ),
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -88,13 +92,13 @@ fun HomeScreen(
                     BoardList(
                         boards = state.boards,
                         personalizedHomeFeed = settings.personalizedHomeFeed,
-                        // Parse once per raw value: a fresh Set each recomposition would defeat
-                        // Compose skipping for the whole list subtree.
                         hiddenTags = remember(settings.hiddenTags) { settings.hiddenTagTokens() },
                         hideNsfwBoards = settings.hideNsfwBoards,
                         favoriteBoardIds = favoriteBoardIds,
                         subscribedBoardIds = subscribedBoardIds,
-                        onBoardClick = openBoard,
+                        onBoardClick = { board ->
+                            onOpenBoard(providerId, board.id.value, board.title)
+                        },
                         onFavoriteChange = viewModel::setFavorite,
                         onSubscriptionChange = viewModel::setSubscribed,
                         listState = listState,
@@ -117,73 +121,126 @@ private fun BoardList(
     onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
     listState: LazyListState,
 ) {
-    val filteredBoards =
-        boards
-            .filterNot { board -> hideNsfwBoards && board.isNsfw }
-            .filterNot { board -> board.matchesAny(hiddenTags) }
-            .let { visibleBoards ->
-                if (!personalizedHomeFeed) {
-                    visibleBoards
-                } else {
-                    visibleBoards.sortedWith(
-                        compareByDescending<Board> { it.id.value in favoriteBoardIds }
-                            .thenByDescending { it.id.value in subscribedBoardIds }
-                            .thenBy { it.id.value },
+    val filteredBoards = boards
+        .filterNot { board -> hideNsfwBoards && board.isNsfw }
+        .filterNot { board -> board.matchesAny(hiddenTags) }
+        .let { visibleBoards ->
+            if (!personalizedHomeFeed) {
+                visibleBoards
+            } else {
+                visibleBoards.sortedWith(
+                    compareByDescending<Board> { it.id.value in favoriteBoardIds }
+                        .thenByDescending { it.id.value in subscribedBoardIds }
+                        .thenBy { it.id.value },
+                )
+            }
+        }
+
+    val favoriteBoards = filteredBoards.filter { it.id.value in favoriteBoardIds }
+    val subscribedBoards = filteredBoards.filter { it.id.value in subscribedBoardIds && it.id.value !in favoriteBoardIds }
+    val otherBoards = filteredBoards.filter { it.id.value !in favoriteBoardIds && it.id.value !in subscribedBoardIds }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (favoriteBoards.isNotEmpty()) {
+            item {
+                ModernListItemHeader(title = "Favorites")
+            }
+            items(favoriteBoards, key = { it.id.value }) { board ->
+                BoardItemCard(
+                    board = board,
+                    isFavorite = true,
+                    isSubscribed = board.id.value in subscribedBoardIds,
+                    onBoardClick = { onBoardClick(board) },
+                    onFavoriteChange = { onFavoriteChange(board.id.value, it) },
+                    onSubscriptionChange = { onSubscriptionChange(board.id.value, it) },
+                )
+            }
+        }
+
+        if (subscribedBoards.isNotEmpty()) {
+            item {
+                ModernListItemHeader(title = "Subscribed")
+            }
+            items(subscribedBoards, key = { it.id.value }) { board ->
+                BoardItemCard(
+                    board = board,
+                    isFavorite = false,
+                    isSubscribed = true,
+                    onBoardClick = { onBoardClick(board) },
+                    onFavoriteChange = { onFavoriteChange(board.id.value, it) },
+                    onSubscriptionChange = { onSubscriptionChange(board.id.value, it) },
+                )
+            }
+        }
+
+        if (otherBoards.isNotEmpty()) {
+            item {
+                ModernListItemHeader(title = "All Boards")
+            }
+            items(otherBoards, key = { it.id.value }) { board ->
+                BoardItemCard(
+                    board = board,
+                    isFavorite = false,
+                    isSubscribed = false,
+                    onBoardClick = { onBoardClick(board) },
+                    onFavoriteChange = { onFavoriteChange(board.id.value, it) },
+                    onSubscriptionChange = { onSubscriptionChange(board.id.value, it) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoardItemCard(
+    board: Board,
+    isFavorite: Boolean,
+    isSubscribed: Boolean,
+    onBoardClick: () -> Unit,
+    onFavoriteChange: (Boolean) -> Unit,
+    onSubscriptionChange: (Boolean) -> Unit,
+) {
+    ModernCardListItem(
+        title = "/${board.id.value}/ - ${board.title}",
+        description = board.description.takeIf { it.isNotBlank() },
+        trailing = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                AnimatedVisibility(visible = board.isNsfw, enter = fadeIn(), exit = fadeOut()) {
+                    Text(
+                        "NSFW",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                }
+                IconButton(onClick = { onSubscriptionChange(!isSubscribed) }, modifier = Modifier.padding(4.dp)) {
+                    Icon(
+                        imageVector = if (isSubscribed) Icons.Filled.Notifications else Icons.Outlined.NotificationsNone,
+                        contentDescription = if (isSubscribed) "Unsubscribe" else "Subscribe",
+                        tint = if (isSubscribed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = { onFavoriteChange(!isFavorite) }, modifier = Modifier.padding(4.dp)) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = if (isFavorite) "Remove favorite" else "Favorite",
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-
-    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-        items(filteredBoards, key = { it.id.value }) { board ->
-            val isFavorite = board.id.value in favoriteBoardIds
-            val isSubscribed = board.id.value in subscribedBoardIds
-            ListItem(
-                modifier = Modifier.clickable { onBoardClick(board) },
-                headlineContent = { Text("/${board.id.value}/ - ${board.title}") },
-                supportingContent = {
-                    if (board.description.isNotBlank()) Text(board.description)
-                },
-                trailingContent = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (board.isNsfw) Text("NSFW")
-                        IconButton(onClick = { onSubscriptionChange(board.id.value, !isSubscribed) }) {
-                            Icon(
-                                imageVector =
-                                    if (isSubscribed) {
-                                        Icons.Filled.Notifications
-                                    } else {
-                                        Icons.Outlined.NotificationsNone
-                                    },
-                                contentDescription =
-                                    if (isSubscribed) {
-                                        "Unsubscribe board"
-                                    } else {
-                                        "Subscribe board"
-                                    },
-                            )
-                        }
-                        IconButton(onClick = { onFavoriteChange(board.id.value, !isFavorite) }) {
-                            Icon(
-                                imageVector =
-                                    if (isFavorite) {
-                                        Icons.Filled.Star
-                                    } else {
-                                        Icons.Outlined.StarBorder
-                                    },
-                                contentDescription =
-                                    if (isFavorite) {
-                                        "Remove favorite"
-                                    } else {
-                                        "Favorite board"
-                                    },
-                            )
-                        }
-                    }
-                },
-            )
-            HorizontalDivider()
-        }
-    }
+        },
+        onClick = onBoardClick,
+    )
 }
 
 private fun Board.matchesAny(tokens: Set<String>): Boolean {
