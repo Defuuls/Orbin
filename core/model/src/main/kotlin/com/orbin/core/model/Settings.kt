@@ -19,11 +19,11 @@ enum class ColorTheme(
 enum class AppIconVariant(
     val label: String,
 ) {
-    DEFAULT("Default"),
-    MINIMALIST("Minimalist"),
-    GRADIENT("Gradient"),
-    NEON("Neon"),
-    RETRO("Retro"),
+    DEFAULT("Orbital Orb"),
+    NESTED_RINGS("Nested Rings"),
+    ABSTRACT_FLOW("Abstract Flow"),
+    MINIMALIST_ESSENCE("Minimalist Essence"),
+    DUAL_GRADIENT("Dual Gradient"),
 }
 
 private const val FEED_LIMIT_SIX = 6

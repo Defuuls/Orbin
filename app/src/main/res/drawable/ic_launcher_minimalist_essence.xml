@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- Single elegant orbit arc -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M80,128 A48,48 0 0,1 176,128"
+        android:strokeAlpha="0.4"
+        android:strokeLineCap="round" />
+    <!-- Core sphere -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="40"
+        android:fillColor="#7C3AED" />
+    <!-- Gradient overlay for depth -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="38"
+        android:fillColor="#4338CA"
+        android:fillAlpha="0.3" />
+    <!-- Simple highlight -->
+    <circle
+        android:cx="118"
+        android:cy="115"
+        android:r="14"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.1" />
+    <!-- Single accent point -->
+    <circle
+        android:cx="176"
+        android:cy="128"
+        android:r="4"
+        android:fillColor="#22D3EE"
+        android:fillAlpha="0.9" />
+</vector>

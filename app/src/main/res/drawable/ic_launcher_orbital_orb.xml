@@ -1,0 +1,66 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <defs>
+        <radialGradient
+            android:id="orbGradient"
+            android:centerX="40%"
+            android:centerY="40%">
+            <item android:offset="0%" android:color="#7C3AED" />
+            <item android:offset="100%" android:color="#4338CA" />
+        </radialGradient>
+    </defs>
+    <!-- Outer orbital ring -->
+    <path
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M128,33 a95,95 0 0,1 0,190 a95,95 0 0,1 0,-190"
+        android:strokeAlpha="0.3" />
+    <!-- Inner orbital path -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M128,50 A78,78 0 0,1 185,150 A78,78 0 0,1 128,206"
+        android:strokeAlpha="0.4"
+        android:strokeLineCap="round" />
+    <!-- Central orb -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="48"
+        android:fillColor="#7C3AED" />
+    <!-- Inner highlight -->
+    <circle
+        android:cx="115"
+        android:cy="110"
+        android:r="18"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.12" />
+    <!-- Accent node on orbital path -->
+    <circle
+        android:cx="185"
+        android:cy="150"
+        android:r="6"
+        android:fillColor="#22D3EE"
+        android:fillAlpha="0.9" />
+    <!-- Outer accent ring -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="48"
+        android:fillColor="#00000000"
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.2" />
+    <!-- Secondary accent node -->
+    <circle
+        android:cx="70"
+        android:cy="155"
+        android:r="4"
+        android:fillColor="#3B82F6"
+        android:fillAlpha="0.6" />
+</vector>

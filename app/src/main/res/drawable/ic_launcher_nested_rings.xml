@@ -1,0 +1,62 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- Outer ring -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="100"
+        android:fillColor="#00000000"
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.2" />
+    <!-- Middle ring -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="75"
+        android:fillColor="#00000000"
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="2.5"
+        android:strokeAlpha="0.35" />
+    <!-- Inner ring -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="50"
+        android:fillColor="#00000000"
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.5" />
+    <!-- Central orb -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="38"
+        android:fillColor="#7C3AED" />
+    <!-- Gradient overlay for depth -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="35"
+        android:fillColor="#4338CA"
+        android:fillAlpha="0.4" />
+    <!-- Concentric accent -->
+    <circle
+        android:cx="128"
+        android:cy="128"
+        android:r="28"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.15" />
+    <!-- Pulse node -->
+    <circle
+        android:cx="128"
+        android:cy="70"
+        android:r="4"
+        android:fillColor="#22D3EE"
+        android:fillAlpha="0.9" />
+</vector>
