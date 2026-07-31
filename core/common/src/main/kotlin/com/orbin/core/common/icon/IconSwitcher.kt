@@ -1,4 +1,4 @@
-package com.orbin.app
+package com.orbin.core.common.icon
 
 import android.content.ComponentName
 import android.content.Context
@@ -39,11 +39,11 @@ class IconSwitcher(private val context: Context) {
         ComponentName(
             context,
             when (variant) {
-                AppIconVariant.DEFAULT -> ".OrbitalOrbIconAlias"
-                AppIconVariant.NESTED_RINGS -> ".NestedRingsIconAlias"
-                AppIconVariant.ABSTRACT_FLOW -> ".AbstractFlowIconAlias"
-                AppIconVariant.MINIMALIST_ESSENCE -> ".MinimalistEssenceIconAlias"
-                AppIconVariant.DUAL_GRADIENT -> ".DualGradientIconAlias"
+                AppIconVariant.DEFAULT -> "com.orbin.app.OrbitalOrbIconAlias"
+                AppIconVariant.NESTED_RINGS -> "com.orbin.app.NestedRingsIconAlias"
+                AppIconVariant.ABSTRACT_FLOW -> "com.orbin.app.AbstractFlowIconAlias"
+                AppIconVariant.MINIMALIST_ESSENCE -> "com.orbin.app.MinimalistEssenceIconAlias"
+                AppIconVariant.DUAL_GRADIENT -> "com.orbin.app.DualGradientIconAlias"
             },
         )
 

@@ -3,7 +3,7 @@ package com.orbin.feature.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.orbin.app.IconSwitcher
+import com.orbin.core.common.icon.IconSwitcher
 import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
