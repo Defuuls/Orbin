@@ -25,9 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.size.Size
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 
@@ -39,13 +42,21 @@ fun OrbinAsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
+    val context = LocalContext.current
     // remember(url) already resets both states when the URL changes; no effect needed.
     var loadFailed by remember(url) { mutableStateOf(false) }
     var failureMessage by remember(url) { mutableStateOf<String?>(null) }
 
+    val imageRequest = remember(url) {
+        ImageRequest.Builder(context)
+            .data(url)
+            .size(Size(1024, 1024))
+            .build()
+    }
+
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         AsyncImage(
-            model = url,
+            model = imageRequest,
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
             contentScale = contentScale,
