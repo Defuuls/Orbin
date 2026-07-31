@@ -8,6 +8,7 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.AppSettings
+import com.orbin.media.ImagePreloader
 import com.orbin.network.di.BaseOkHttp
 import dagger.Module
 import dagger.Provides
@@ -56,4 +57,11 @@ object ImageLoaderModule {
                     .build()
             }.crossfade(true)
             .build()
+
+    @Provides
+    @Singleton
+    fun providesImagePreloader(
+        @ApplicationContext context: Context,
+        imageLoader: ImageLoader,
+    ): ImagePreloader = ImagePreloader(context, imageLoader)
 }
