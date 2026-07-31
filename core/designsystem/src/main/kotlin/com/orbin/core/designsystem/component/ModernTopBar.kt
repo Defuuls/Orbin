@@ -21,7 +21,6 @@ import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,15 +46,16 @@ fun ModernCenterTopAppBar(
     CenterAlignedTopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         modifier = modifier,
-        navigationIcon = if (navigationIcon != null && onNavigationClick != null) {
-            {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(navigationIcon, contentDescription = "Navigate back")
+        navigationIcon =
+            if (navigationIcon != null && onNavigationClick != null) {
+                {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(navigationIcon, contentDescription = "Navigate back")
+                    }
                 }
-            }
-        } else {
-            {}
-        },
+            } else {
+                {}
+            },
         actions = actions,
         scrollBehavior = scrollBehavior,
     )
@@ -78,15 +78,16 @@ fun ModernSmallTopAppBar(
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.SemiBold) },
         modifier = modifier,
-        navigationIcon = if (navigationIcon != null && onNavigationClick != null) {
-            {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(navigationIcon, contentDescription = "Navigate back")
+        navigationIcon =
+            if (navigationIcon != null && onNavigationClick != null) {
+                {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(navigationIcon, contentDescription = "Navigate back")
+                    }
                 }
-            }
-        } else {
-            {}
-        },
+            } else {
+                {}
+            },
         actions = actions,
         scrollBehavior = scrollBehavior,
     )
@@ -109,15 +110,16 @@ fun ModernLargeTopAppBar(
     LargeTopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         modifier = modifier,
-        navigationIcon = if (navigationIcon != null && onNavigationClick != null) {
-            {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(navigationIcon, contentDescription = "Navigate back")
+        navigationIcon =
+            if (navigationIcon != null && onNavigationClick != null) {
+                {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(navigationIcon, contentDescription = "Navigate back")
+                    }
                 }
-            }
-        } else {
-            {}
-        },
+            } else {
+                {}
+            },
         actions = actions,
         scrollBehavior = scrollBehavior,
     )
@@ -151,15 +153,16 @@ fun ModernMediumTopAppBar(
             }
         },
         modifier = modifier,
-        navigationIcon = if (navigationIcon != null && onNavigationClick != null) {
-            {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(navigationIcon, contentDescription = "Navigate back")
+        navigationIcon =
+            if (navigationIcon != null && onNavigationClick != null) {
+                {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(navigationIcon, contentDescription = "Navigate back")
+                    }
                 }
-            }
-        } else {
-            {}
-        },
+            } else {
+                {}
+            },
         actions = actions,
         scrollBehavior = scrollBehavior,
     )
@@ -208,27 +211,29 @@ fun ModernSearchTopAppBar(
                         contentDescription = "Search",
                     )
                 },
-                trailingIcon = if (searchQuery.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                trailingIcon =
+                    if (searchQuery.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                            }
                         }
-                    }
-                } else {
-                    null
-                },
+                    } else {
+                        null
+                    },
             )
         },
         modifier = modifier,
-        navigationIcon = if (onNavigationClick != null) {
-            {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+        navigationIcon =
+            if (onNavigationClick != null) {
+                {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
+                    }
                 }
-            }
-        } else {
-            {}
-        },
+            } else {
+                {}
+            },
         actions = actions,
     )
 }
@@ -243,10 +248,11 @@ fun ModernFloatingActionBar(
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,

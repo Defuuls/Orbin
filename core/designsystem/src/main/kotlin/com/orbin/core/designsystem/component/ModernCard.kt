@@ -26,12 +26,13 @@ fun ModernCard(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     shape: Shapes = MaterialTheme.shapes,
-    elevation: CardElevation = CardDefaults.elevatedCardElevation(
-        defaultElevation = 4.dp,
-        pressedElevation = 8.dp,
-        focusedElevation = 4.dp,
-        hoveredElevation = 8.dp,
-    ),
+    elevation: CardElevation =
+        CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp,
+            focusedElevation = 4.dp,
+            hoveredElevation = 8.dp,
+        ),
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {

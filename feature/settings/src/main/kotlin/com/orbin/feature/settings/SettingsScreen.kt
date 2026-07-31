@@ -3,7 +3,6 @@ package com.orbin.feature.settings
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +34,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.designsystem.component.ModernBackButton
 import com.orbin.core.designsystem.component.ModernFilterChip
 import com.orbin.core.designsystem.component.ModernListItem
 import com.orbin.core.designsystem.component.ModernSmallTopAppBar
@@ -89,11 +87,12 @@ fun SettingsScreen(
         },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp),
         ) {
             if (viewModel.providers.size > 1) {
                 SectionHeader("Site")
@@ -421,17 +420,19 @@ private fun TextFieldRow(
     onValueChange: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-            .fillMaxWidth(),
+        modifier =
+            Modifier
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .fillMaxWidth(),
     ) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             supportingText = { Text(supporting) },
             singleLine = false,
             shape = MaterialTheme.shapes.medium,

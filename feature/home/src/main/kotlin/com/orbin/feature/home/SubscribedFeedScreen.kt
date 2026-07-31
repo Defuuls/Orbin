@@ -2,8 +2,6 @@ package com.orbin.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -564,7 +564,11 @@ private fun FeedThreadCellContent(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = if (tabletLayout) 8.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(if (tabletLayout) 12.dp else 10.dp),
     ) {
-        FeedThumbnail(thread = thread, modifier = Modifier.size(thumbnailSizeDp), mediaScrollEnabled = mediaScrollEnabled)
+        FeedThumbnail(
+            thread = thread,
+            modifier = Modifier.size(thumbnailSizeDp),
+            mediaScrollEnabled = mediaScrollEnabled,
+        )
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(if (tabletLayout) 4.dp else 6.dp),
@@ -627,9 +631,14 @@ private fun FeedThumbnail(
                 Text("OP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         } else if (mediaScrollEnabled && attachments.size > 1) {
-            val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { attachments.size })
+            val pagerState =
+                androidx.compose.foundation.pager
+                    .rememberPagerState(pageCount = { attachments.size })
             Box(modifier = Modifier.fillMaxSize()) {
-                androidx.compose.foundation.pager.HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
                     val attachment = attachments[page]
                     OrbinAsyncImage(
                         url = attachment.thumbnailUrl,

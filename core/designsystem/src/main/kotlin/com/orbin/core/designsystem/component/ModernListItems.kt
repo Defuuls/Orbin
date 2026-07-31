@@ -37,12 +37,13 @@ fun ModernListItem(
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(backgroundColor)
-            .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(backgroundColor)
+                .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
+                .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -87,11 +88,12 @@ fun ModernCompactListItem(
     onClick: (() -> Unit)? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.small)
-            .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
-            .padding(12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.small)
+                .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
+                .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -133,9 +135,10 @@ fun ModernCardListItem(
         onClick = onClick,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -187,9 +190,10 @@ fun ModernListItemHeader(
 ) {
     Text(
         title,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.primary,
@@ -207,9 +211,10 @@ fun ModernDivider(
 ) {
     if (label != null) {
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

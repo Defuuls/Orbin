@@ -111,9 +111,10 @@ private fun BoardTile(
     val letter = boardId.take(1).uppercase()
     Card(
         shape = MaterialTheme.shapes.large,
-        modifier = Modifier
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .aspectRatio(1f)
+                .clickable(onClick = onClick),
     ) {
         Box(modifier = Modifier.fillMaxSize().background(base)) {
             // Large letter "avatar" stands in for board artwork.

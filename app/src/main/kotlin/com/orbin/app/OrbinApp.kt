@@ -30,8 +30,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.orbin.core.designsystem.component.ModernNavigationBar
-import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
@@ -46,7 +44,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +57,8 @@ import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.TopLevelDestination
+import com.orbin.core.designsystem.component.ModernNavigationBar
+import com.orbin.core.designsystem.component.ModernNavigationBarItem
 
 /**
  * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level

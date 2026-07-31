@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.dp
  */
 val OrbinShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(8.dp),  // Increased from 4dp
-        small = RoundedCornerShape(12.dp),      // Increased from 8dp
-        medium = RoundedCornerShape(16.dp),     // Increased from 12dp
-        large = RoundedCornerShape(20.dp),      // Increased from 16dp
+        extraSmall = RoundedCornerShape(8.dp), // Increased from 4dp
+        small = RoundedCornerShape(12.dp), // Increased from 8dp
+        medium = RoundedCornerShape(16.dp), // Increased from 12dp
+        large = RoundedCornerShape(20.dp), // Increased from 16dp
         extraLarge = RoundedCornerShape(28.dp), // Increased from 24dp
     )
 

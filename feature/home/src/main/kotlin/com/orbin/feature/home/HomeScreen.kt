@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,7 +40,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernCardListItem
 import com.orbin.core.designsystem.component.ModernCenterTopAppBar
-import com.orbin.core.designsystem.component.ModernDivider
 import com.orbin.core.designsystem.component.ModernListItemHeader
 import com.orbin.core.model.Board
 import com.orbin.core.model.hiddenTagTokens
@@ -71,10 +68,11 @@ fun HomeScreen(
         topBar = {
             ModernCenterTopAppBar(
                 title = "Boards",
-                modifier = Modifier.clickable(
-                    onClickLabel = "Scroll to top",
-                    onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                ),
+                modifier =
+                    Modifier.clickable(
+                        onClickLabel = "Scroll to top",
+                        onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                    ),
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
@@ -121,29 +119,35 @@ private fun BoardList(
     onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
     listState: LazyListState,
 ) {
-    val filteredBoards = boards
-        .filterNot { board -> hideNsfwBoards && board.isNsfw }
-        .filterNot { board -> board.matchesAny(hiddenTags) }
-        .let { visibleBoards ->
-            if (!personalizedHomeFeed) {
-                visibleBoards
-            } else {
-                visibleBoards.sortedWith(
-                    compareByDescending<Board> { it.id.value in favoriteBoardIds }
-                        .thenByDescending { it.id.value in subscribedBoardIds }
-                        .thenBy { it.id.value },
-                )
+    val filteredBoards =
+        boards
+            .filterNot { board -> hideNsfwBoards && board.isNsfw }
+            .filterNot { board -> board.matchesAny(hiddenTags) }
+            .let { visibleBoards ->
+                if (!personalizedHomeFeed) {
+                    visibleBoards
+                } else {
+                    visibleBoards.sortedWith(
+                        compareByDescending<Board> { it.id.value in favoriteBoardIds }
+                            .thenByDescending { it.id.value in subscribedBoardIds }
+                            .thenBy { it.id.value },
+                    )
+                }
             }
-        }
 
     val favoriteBoards = filteredBoards.filter { it.id.value in favoriteBoardIds }
-    val subscribedBoards = filteredBoards.filter { it.id.value in subscribedBoardIds && it.id.value !in favoriteBoardIds }
+    val subscribedBoards =
+        filteredBoards.filter {
+            it.id.value in subscribedBoardIds && it.id.value !in favoriteBoardIds
+        }
     val otherBoards = filteredBoards.filter { it.id.value !in favoriteBoardIds && it.id.value !in subscribedBoardIds }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        contentPadding =
+            androidx.compose.foundation.layout
+                .PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (favoriteBoards.isNotEmpty()) {
@@ -223,18 +227,45 @@ private fun BoardItemCard(
                         modifier = Modifier.padding(end = 8.dp),
                     )
                 }
-                IconButton(onClick = { onSubscriptionChange(!isSubscribed) }, modifier = Modifier.padding(4.dp)) {
+                IconButton(
+                    onClick = { onSubscriptionChange(!isSubscribed) },
+                    modifier = Modifier.padding(4.dp),
+                ) {
+                    val notificationIcon =
+                        if (isSubscribed) {
+                            Icons.Filled.Notifications
+                        } else {
+                            Icons.Outlined.NotificationsNone
+                        }
+                    val notificationDesc = if (isSubscribed) "Unsubscribe" else "Subscribe"
+                    val notificationTint =
+                        if (isSubscribed) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     Icon(
-                        imageVector = if (isSubscribed) Icons.Filled.Notifications else Icons.Outlined.NotificationsNone,
-                        contentDescription = if (isSubscribed) "Unsubscribe" else "Subscribe",
-                        tint = if (isSubscribed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector = notificationIcon,
+                        contentDescription = notificationDesc,
+                        tint = notificationTint,
                     )
                 }
-                IconButton(onClick = { onFavoriteChange(!isFavorite) }, modifier = Modifier.padding(4.dp)) {
+                IconButton(
+                    onClick = { onFavoriteChange(!isFavorite) },
+                    modifier = Modifier.padding(4.dp),
+                ) {
+                    val starIcon = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder
+                    val starDesc = if (isFavorite) "Remove favorite" else "Favorite"
+                    val starTint =
+                        if (isFavorite) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        contentDescription = if (isFavorite) "Remove favorite" else "Favorite",
-                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector = starIcon,
+                        contentDescription = starDesc,
+                        tint = starTint,
                     )
                 }
             }

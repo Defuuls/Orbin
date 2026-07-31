@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.ChipColors
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -42,26 +41,29 @@ fun ModernFilterChip(
         label = { Text(label) },
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        leadingIcon = if (leadingIcon != null) {
-            { Icon(leadingIcon, contentDescription = null, modifier = Modifier.padding(end = 4.dp)) }
-        } else {
-            null
-        },
-        trailingIcon = if (selected && trailingIcon == null) {
-            { Icon(Icons.Filled.Close, contentDescription = "Clear") }
-        } else if (trailingIcon != null) {
-            { Icon(trailingIcon, contentDescription = null) }
-        } else {
-            null
-        },
-        colors = FilterChipDefaults.filterChipColors(
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
-        ),
+        leadingIcon =
+            if (leadingIcon != null) {
+                { Icon(leadingIcon, contentDescription = null, modifier = Modifier.padding(end = 4.dp)) }
+            } else {
+                null
+            },
+        trailingIcon =
+            if (selected && trailingIcon == null) {
+                { Icon(Icons.Filled.Close, contentDescription = "Clear") }
+            } else if (trailingIcon != null) {
+                { Icon(trailingIcon, contentDescription = null) }
+            } else {
+                null
+            },
+        colors =
+            FilterChipDefaults.filterChipColors(
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+            ),
     )
 }
 
@@ -82,18 +84,20 @@ fun ModernInputChip(
         label = { Text(label) },
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        leadingIcon = if (leadingIcon != null) {
-            { Icon(leadingIcon, contentDescription = null) }
-        } else {
-            null
-        },
+        leadingIcon =
+            if (leadingIcon != null) {
+                { Icon(leadingIcon, contentDescription = null) }
+            } else {
+                null
+            },
         trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Remove") },
         onRemove = onRemove,
-        colors = InputChipDefaults.inputChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        colors =
+            InputChipDefaults.inputChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
     )
 }
 
@@ -114,22 +118,25 @@ fun ModernAssistChip(
         label = { Text(label) },
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        leadingIcon = if (leadingIcon != null) {
-            { Icon(leadingIcon, contentDescription = null) }
-        } else {
-            null
-        },
-        trailingIcon = if (trailingIcon != null) {
-            { Icon(trailingIcon, contentDescription = null) }
-        } else {
-            null
-        },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            leadingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            trailingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        leadingIcon =
+            if (leadingIcon != null) {
+                { Icon(leadingIcon, contentDescription = null) }
+            } else {
+                null
+            },
+        trailingIcon =
+            if (trailingIcon != null) {
+                { Icon(trailingIcon, contentDescription = null) }
+            } else {
+                null
+            },
+        colors =
+            AssistChipDefaults.assistChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                leadingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                trailingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
     )
 }
 
@@ -149,16 +156,18 @@ fun ModernSuggestionChip(
         label = { Text(label) },
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        icon = if (leadingIcon != null) {
-            { Icon(leadingIcon, contentDescription = null) }
-        } else {
-            null
-        },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        icon =
+            if (leadingIcon != null) {
+                { Icon(leadingIcon, contentDescription = null) }
+            } else {
+                null
+            },
+        colors =
+            SuggestionChipDefaults.suggestionChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
     )
 }
 

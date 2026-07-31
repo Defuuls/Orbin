@@ -40,21 +40,22 @@ fun SkeletonLoader(
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutCubic),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = EaseInOutCubic),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "skeleton_alpha",
     )
 
     Box(
-        modifier = modifier
-            .size(width = width, height = height)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = MaterialTheme.shapes.small,
-            )
-            .alpha(alpha),
+        modifier =
+            modifier
+                .size(width = width, height = height)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.small,
+                ).alpha(alpha),
     )
 }
 
@@ -72,30 +73,33 @@ fun PulsingDotLoader(
     val dot1Alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(600, delayMillis = 0),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(600, delayMillis = 0),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "dot1_alpha",
     )
 
     val dot2Alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(600, delayMillis = 200),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(600, delayMillis = 200),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "dot2_alpha",
     )
 
     val dot3Alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(600, delayMillis = 400),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(600, delayMillis = 400),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "dot3_alpha",
     )
 
@@ -105,22 +109,25 @@ fun PulsingDotLoader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(dotColor, CircleShape)
-                .alpha(dot1Alpha),
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .background(dotColor, CircleShape)
+                    .alpha(dot1Alpha),
         )
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(dotColor, CircleShape)
-                .alpha(dot2Alpha),
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .background(dotColor, CircleShape)
+                    .alpha(dot2Alpha),
         )
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(dotColor, CircleShape)
-                .alpha(dot3Alpha),
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .background(dotColor, CircleShape)
+                    .alpha(dot3Alpha),
         )
     }
 }
@@ -138,17 +145,19 @@ fun ScalingProgressIndicator(
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.8f,
         targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "scale",
     )
 
     Box(
-        modifier = modifier
-            .size(size)
-            .scale(scale),
+        modifier =
+            modifier
+                .size(size)
+                .scale(scale),
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
@@ -185,9 +194,7 @@ fun LoadingSkeletonList(
  * Shows circular progress indicator in a FAB-sized container.
  */
 @Composable
-fun FloatingActionButtonLoader(
-    modifier: Modifier = Modifier,
-) {
+fun FloatingActionButtonLoader(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.size(56.dp),
         contentAlignment = Alignment.Center,
