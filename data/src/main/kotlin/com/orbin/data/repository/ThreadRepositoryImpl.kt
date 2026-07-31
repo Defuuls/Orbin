@@ -37,8 +37,10 @@ class ThreadRepositoryImpl
             val thread: Thread,
             val cachedAtMillis: Long,
         ) {
-            fun isStale(nowMillis: Long, ttlMillis: Long = CACHE_TTL_MILLIS): Boolean =
-                nowMillis - cachedAtMillis > ttlMillis
+            fun isStale(
+                nowMillis: Long,
+                ttlMillis: Long = CACHE_TTL_MILLIS,
+            ): Boolean = nowMillis - cachedAtMillis > ttlMillis
         }
 
         private val threadCache = mutableMapOf<ThreadKey, CachedThreadEntry>()

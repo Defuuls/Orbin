@@ -202,14 +202,16 @@ private fun CatalogList(
     listState: LazyListState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val memoizedPadding = remember(contentPadding, layoutDirection) {
-        PaddingValues(
-            start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 8.dp,
-        )
-    }
+    val memoizedPadding =
+        remember(contentPadding, layoutDirection) {
+            PaddingValues(
+                start =
+                    contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            )
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -241,14 +243,16 @@ private fun CatalogGrid(
     gridState: LazyGridState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val memoizedPadding = remember(contentPadding, layoutDirection) {
-        PaddingValues(
-            start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
-            bottom = contentPadding.calculateBottomPadding() + 8.dp,
-        )
-    }
+    val memoizedPadding =
+        remember(contentPadding, layoutDirection) {
+            PaddingValues(
+                start =
+                    contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            )
+        }
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(168.dp),
