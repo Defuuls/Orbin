@@ -67,39 +67,6 @@ fun ModernFilterChip(
     )
 }
 
-/**
- * Modern Material Design 3 input chip for user selections with removal option.
- * Used for tags, selected items, and user inputs.
- */
-@Composable
-fun ModernInputChip(
-    label: String,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-) {
-    InputChip(
-        selected = true,
-        onClick = {},
-        label = { Text(label) },
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        leadingIcon =
-            if (leadingIcon != null) {
-                { Icon(leadingIcon, contentDescription = null) }
-            } else {
-                null
-            },
-        trailingIcon = { Icon(Icons.Filled.Close, contentDescription = "Remove") },
-        onRemove = onRemove,
-        colors =
-            InputChipDefaults.inputChipColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                labelColor = MaterialTheme.colorScheme.onSurface,
-                trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-    )
-}
 
 /**
  * Modern Material Design 3 assist chip for actions and suggestions.

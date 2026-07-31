@@ -101,9 +101,9 @@ fun ModernNavigationRail(
             modifier
                 .clip(MaterialTheme.shapes.large),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 8.dp,
-        content = content,
-    )
+    ) {
+        content()
+    }
 }
 
 /**

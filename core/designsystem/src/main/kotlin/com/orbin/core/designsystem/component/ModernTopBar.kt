@@ -183,62 +183,6 @@ fun ModernBackButton(
 }
 
 /**
- * Modern search top app bar with search field.
- * Used for filterable lists and search screens.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ModernSearchTopAppBar(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onNavigationClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit = {},
-) {
-    TopAppBar(
-        title = {
-            SearchBar(
-                query = searchQuery,
-                onQueryChange = onSearchQueryChange,
-                onSearch = {},
-                active = false,
-                onActiveChange = {},
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Filled.Search,
-                        contentDescription = "Search",
-                    )
-                },
-                trailingIcon =
-                    if (searchQuery.isNotEmpty()) {
-                        {
-                            IconButton(onClick = { onSearchQueryChange("") }) {
-                                Icon(Icons.Filled.Clear, contentDescription = "Clear search")
-                            }
-                        }
-                    } else {
-                        null
-                    },
-            )
-        },
-        modifier = modifier,
-        navigationIcon =
-            if (onNavigationClick != null) {
-                {
-                    IconButton(onClick = onNavigationClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back")
-                    }
-                }
-            } else {
-                {}
-            },
-        actions = actions,
-    )
-}
-
-/**
  * Modern floating action bar positioned at the bottom.
  * Used for contextual actions in lists with visibility control.
  */
