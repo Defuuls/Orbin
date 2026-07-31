@@ -39,6 +39,10 @@ annotation class BaseOkHttp
 @Retention(AnnotationRetention.BINARY)
 annotation class VideoOkHttp
 
+private const val HTTP_CACHE_SIZE_MB = 50L
+private const val BYTES_PER_KB = 1024L
+private const val KB_PER_MB = 1024L
+
 /**
  * Provides the shared networking primitives: the lenient [Json] parser, and an [OkHttpClient]
  * configured for secure defaults (HTTPS-only, modern TLS), optional DNS-over-HTTPS, the
@@ -91,7 +95,7 @@ object NetworkModule {
         // HTTP disk cache for API responses (catalog, threads, board metadata).
         // Sized at 50MB by default; respects Cache-Control headers so fresh data is always used.
         val cacheDir = File(context.cacheDir, "http-cache")
-        val httpCache = Cache(cacheDir, 50L * 1024L * 1024L) // 50MB
+        val httpCache = Cache(cacheDir, HTTP_CACHE_SIZE_MB * KB_PER_MB * BYTES_PER_KB)
 
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection
         // specs so HTTPS-only remains a hard privacy boundary.
