@@ -5,7 +5,7 @@ buildscript {
         resolutionStrategy.eachDependency {
             when {
                 requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                    useVersion("4.1.135.Final")
+                    useVersion("4.1.139.Final")
                     because("Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.")
                 }
 
@@ -88,7 +88,7 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
     eachDependency {
         when {
             requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                useVersion("4.1.135.Final")
+                useVersion("4.1.139.Final")
                 because("Dependabot reports multiple Netty CVEs in the Android Gradle Plugin transitive classpath.")
             }
 
