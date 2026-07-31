@@ -30,8 +30,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import com.orbin.core.designsystem.component.ModernNavigationBar
+import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
@@ -186,7 +186,7 @@ private fun PhoneNavigationBar(
     currentDestinationMatches: (TopLevelDestination) -> Boolean,
     onNavigate: (TopLevelDestination) -> Unit,
 ) {
-    NavigationBar {
+    ModernNavigationBar {
         TopLevelNavigationItems(
             topLevel = topLevel,
             currentDestinationMatches = currentDestinationMatches,
@@ -202,7 +202,7 @@ private fun TabletNavigationDock(
     onNavigate: (TopLevelDestination) -> Unit,
 ) {
     FloatingDockSurface {
-        NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) {
+        ModernNavigationBar(modifier = Modifier.fillMaxWidth()) {
             TopLevelNavigationItems(
                 topLevel = topLevel,
                 currentDestinationMatches = currentDestinationMatches,
@@ -231,7 +231,7 @@ private fun TabletFeedDock(
                     onRefresh = onRefresh,
                     onOpenSettings = onOpenSettings,
                 )
-                NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) {
+                ModernNavigationBar(modifier = Modifier.fillMaxWidth()) {
                     TopLevelNavigationItems(
                         topLevel = topLevel,
                         currentDestinationMatches = currentDestinationMatches,
@@ -251,10 +251,8 @@ private fun TabletFeedDock(
                     onRefresh = onRefresh,
                     onOpenSettings = onOpenSettings,
                 )
-                NavigationBar(
+                ModernNavigationBar(
                     modifier = Modifier.weight(1.28f),
-                    containerColor = Color.Transparent,
-                    tonalElevation = 0.dp,
                 ) {
                     TopLevelNavigationItems(
                         topLevel = topLevel,
@@ -319,11 +317,11 @@ private fun RowScope.TopLevelNavigationItems(
     onNavigate: (TopLevelDestination) -> Unit,
 ) {
     topLevel.forEach { dest ->
-        NavigationBarItem(
+        ModernNavigationBarItem(
+            icon = dest.icon,
+            label = dest.label,
             selected = currentDestinationMatches(dest),
             onClick = { onNavigate(dest) },
-            icon = { Icon(dest.icon, contentDescription = dest.label) },
-            label = { Text(dest.label) },
         )
     }
 }
