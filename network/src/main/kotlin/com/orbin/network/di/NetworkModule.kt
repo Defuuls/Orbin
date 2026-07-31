@@ -1,5 +1,6 @@
 package com.orbin.network.di
 
+import android.content.Context
 import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.interceptor.HeadersInterceptor
@@ -11,13 +12,16 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.CertificatePinner
 import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.dnsoverhttps.DnsOverHttps
 import okhttp3.logging.HttpLoggingInterceptor
+import java.io.File
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
@@ -60,7 +64,10 @@ object NetworkModule {
     @Provides
     @Singleton
     @BaseOkHttp
-    fun providesOkHttpClient(configProvider: NetworkConfigProvider): OkHttpClient {
+    fun providesOkHttpClient(
+        @ApplicationContext context: Context,
+        configProvider: NetworkConfigProvider,
+    ): OkHttpClient {
         val config = configProvider.current()
 
         if (config.disableOcspChecking) {
@@ -81,6 +88,11 @@ object NetworkModule {
                 .Builder()
                 .build()
 
+        // HTTP disk cache for API responses (catalog, threads, board metadata).
+        // Sized at 50MB by default; respects Cache-Control headers so fresh data is always used.
+        val cacheDir = File(context.cacheDir, "http-cache")
+        val httpCache = Cache(cacheDir, 50L * 1024L * 1024L) // 50MB
+
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection
         // specs so HTTPS-only remains a hard privacy boundary.
         return OkHttpClient
@@ -95,6 +107,7 @@ object NetworkModule {
                 ),
             ).cookieJar(InMemoryCookieJar())
             .certificatePinner(certificatePinner)
+            .cache(httpCache)
             .addInterceptor(HttpsOnlyInterceptor(configProvider))
             // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
             // configured User-Agent and Accept headers.
