@@ -59,7 +59,7 @@ fun HomeScreen(
     val subscribedBoardIds by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.centerAlignedTopAppBarScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scope = rememberCoroutineScope()
 
