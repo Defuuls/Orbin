@@ -19,33 +19,25 @@
         android:pathData="M190,128 Q200,160 170,190 Q120,210 70,190"
         android:strokeAlpha="0.35"
         android:strokeLineCap="round" />
-    <!-- Central core -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="42"
-        android:fillColor="#7C3AED" />
+    <!-- Central core circle -->
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,86 a42,42 0 1,0 0.01,0 Z" />
     <!-- Gradient overlay for depth -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="40"
+    <path
         android:fillColor="#4338CA"
-        android:fillAlpha="0.3" />
+        android:fillAlpha="0.3"
+        android:pathData="M128,88 a40,40 0 1,0 0.01,0 Z" />
     <!-- Internal flow pattern -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="25"
-        android:fillColor="#00000000"
+    <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="1.5"
-        android:strokeAlpha="0.1" />
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.1"
+        android:pathData="M128,103 a25,25 0 1,0 0.01,0 Z" />
     <!-- Flow accent -->
-    <circle
-        android:cx="128"
-        android:cy="75"
-        android:r="5"
+    <path
         android:fillColor="#22D3EE"
-        android:fillAlpha="0.85" />
+        android:fillAlpha="0.85"
+        android:pathData="M128,70 a5,5 0 1,0 0.01,0 Z" />
 </vector>

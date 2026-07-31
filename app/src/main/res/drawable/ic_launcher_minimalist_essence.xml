@@ -12,30 +12,22 @@
         android:strokeAlpha="0.4"
         android:strokeLineCap="round" />
     <!-- Core sphere -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="40"
-        android:fillColor="#7C3AED" />
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,88 a40,40 0 1,0 0.01,0 Z" />
     <!-- Gradient overlay for depth -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="38"
+    <path
         android:fillColor="#4338CA"
-        android:fillAlpha="0.3" />
+        android:fillAlpha="0.3"
+        android:pathData="M128,90 a38,38 0 1,0 0.01,0 Z" />
     <!-- Simple highlight -->
-    <circle
-        android:cx="118"
-        android:cy="115"
-        android:r="14"
+    <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.1" />
+        android:fillAlpha="0.1"
+        android:pathData="M118,101 a14,14 0 1,0 0.01,0 Z" />
     <!-- Single accent point -->
-    <circle
-        android:cx="176"
-        android:cy="128"
-        android:r="4"
+    <path
         android:fillColor="#22D3EE"
-        android:fillAlpha="0.9" />
+        android:fillAlpha="0.9"
+        android:pathData="M176,124 a4,4 0 1,0 0.01,0 Z" />
 </vector>

@@ -4,14 +4,12 @@
     android:viewportWidth="256"
     android:viewportHeight="256">
     <!-- Outer gradient ring -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="90"
-        android:fillColor="#00000000"
+    <path
         android:strokeColor="#22D3EE"
         android:strokeWidth="3"
-        android:strokeAlpha="0.4" />
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.4"
+        android:pathData="M128,38 a90,90 0 1,0 0.01,0 Z" />
     <!-- Inner division line -->
     <path
         android:strokeColor="#7C3AED"
@@ -19,30 +17,22 @@
         android:pathData="M128,45 L128,115"
         android:strokeAlpha="0.3" />
     <!-- Core gradient ball -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="42"
-        android:fillColor="#7C3AED" />
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,86 a42,42 0 1,0 0.01,0 Z" />
     <!-- Secondary core overlay -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="40"
+    <path
         android:fillColor="#4338CA"
-        android:fillAlpha="0.4" />
+        android:fillAlpha="0.4"
+        android:pathData="M128,88 a40,40 0 1,0 0.01,0 Z" />
     <!-- Top accent node -->
-    <circle
-        android:cx="128"
-        android:cy="68"
-        android:r="4"
+    <path
         android:fillColor="#22D3EE"
-        android:fillAlpha="0.9" />
+        android:fillAlpha="0.9"
+        android:pathData="M128,64 a4,4 0 1,0 0.01,0 Z" />
     <!-- Bottom accent node -->
-    <circle
-        android:cx="128"
-        android:cy="190"
-        android:r="4"
+    <path
         android:fillColor="#3B82F6"
-        android:fillAlpha="0.8" />
+        android:fillAlpha="0.8"
+        android:pathData="M128,186 a4,4 0 1,0 0.01,0 Z" />
 </vector>

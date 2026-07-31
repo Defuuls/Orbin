@@ -28,39 +28,29 @@
         android:strokeAlpha="0.4"
         android:strokeLineCap="round" />
     <!-- Central orb -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="48"
-        android:fillColor="#7C3AED" />
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,80 a48,48 0 1,0 0.01,0 Z" />
     <!-- Inner highlight -->
-    <circle
-        android:cx="115"
-        android:cy="110"
-        android:r="18"
+    <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.12" />
+        android:fillAlpha="0.12"
+        android:pathData="M115,92 a18,18 0 1,0 0.01,0 Z" />
     <!-- Accent node on orbital path -->
-    <circle
-        android:cx="185"
-        android:cy="150"
-        android:r="6"
+    <path
         android:fillColor="#22D3EE"
-        android:fillAlpha="0.9" />
+        android:fillAlpha="0.9"
+        android:pathData="M185,144 a6,6 0 1,0 0.01,0 Z" />
     <!-- Outer accent ring -->
-    <circle
-        android:cx="128"
-        android:cy="128"
-        android:r="48"
-        android:fillColor="#00000000"
+    <path
         android:strokeColor="#7C3AED"
         android:strokeWidth="1"
-        android:strokeAlpha="0.2" />
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.2"
+        android:pathData="M128,80 a48,48 0 1,0 0.01,0 Z" />
     <!-- Secondary accent node -->
-    <circle
-        android:cx="70"
-        android:cy="155"
-        android:r="4"
+    <path
         android:fillColor="#3B82F6"
-        android:fillAlpha="0.6" />
+        android:fillAlpha="0.6"
+        android:pathData="M70,151 a4,4 0 1,0 0.01,0 Z" />
 </vector>
