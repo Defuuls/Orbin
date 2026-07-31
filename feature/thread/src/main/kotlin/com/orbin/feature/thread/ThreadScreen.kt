@@ -243,19 +243,19 @@ private fun PostListContent(
     mediaScrollEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    val posts = remember(thread) { thread.allPosts }
+    val posts = remember(thread.key) { thread.allPosts }
     val indexById =
-        remember(posts) {
+        remember(thread.key) {
             posts.withIndex().associate { (index, post) -> post.id to index + 1 } // +1 for the header item
         }
     // Flattened media index across the whole thread, so a tapped attachment opens at the right page.
     val mediaIndexById =
-        remember(posts) {
+        remember(thread.key) {
             posts.flatMap { it.attachments }.withIndex().associate { (index, media) -> media.id to index }
         }
     // Reverse lookup from the gallery page to the owning post row in this LazyColumn.
     val postIndexByMediaIndex =
-        remember(posts) {
+        remember(thread.key) {
             buildMap {
                 var mediaIndex = 0
                 posts.forEachIndexed { postIndex, post ->
@@ -336,7 +336,7 @@ private fun ThumbnailGridContent(
     scrollToTopRequest: Int,
     modifier: Modifier = Modifier,
 ) {
-    val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
+    val attachments = remember(thread.key) { thread.allPosts.flatMap { it.attachments } }
     val gridState =
         rememberSaveable(thread.key, saver = LazyGridState.Saver) {
             LazyGridState()
@@ -414,7 +414,7 @@ private fun PostCard(
                 if (post.attachments.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
                     if (mediaScrollEnabled) {
-                        val pagerState = remember { PagerState(pageCount = { post.attachments.size }) }
+                        val pagerState = remember(post.id) { PagerState(pageCount = { post.attachments.size }) }
                         Box(
                             modifier =
                                 Modifier
@@ -494,6 +494,7 @@ private fun PostHeader(
     isCollapsed: Boolean,
     onClick: () -> Unit,
 ) {
+    val postedTime = remember(post.createdAtMillis) { formatRelativeTime(post.createdAtMillis) }
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -508,7 +509,7 @@ private fun PostHeader(
             Text("ID:$it", style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.weight(1f))
-        formatRelativeTime(post.createdAtMillis)?.let { posted ->
+        postedTime?.let { posted ->
             Text(
                 text = posted,
                 style = MaterialTheme.typography.labelSmall,

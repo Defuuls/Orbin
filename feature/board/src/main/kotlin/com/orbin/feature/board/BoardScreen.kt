@@ -202,17 +202,21 @@ private fun CatalogList(
     listState: LazyListState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
+    val memoizedPadding =
+        remember(contentPadding, layoutDirection) {
+            PaddingValues(
+                start =
+                    contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            )
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         state = listState,
-        contentPadding =
-            PaddingValues(
-                start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
-                top = contentPadding.calculateTopPadding() + 8.dp,
-                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
-                bottom = contentPadding.calculateBottomPadding() + 8.dp,
-            ),
+        contentPadding = memoizedPadding,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(count = itemCount, key = itemKey) { index ->
@@ -239,18 +243,22 @@ private fun CatalogGrid(
     gridState: LazyGridState,
 ) {
     val layoutDirection = LocalLayoutDirection.current
+    val memoizedPadding =
+        remember(contentPadding, layoutDirection) {
+            PaddingValues(
+                start =
+                    contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            )
+        }
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(168.dp),
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         state = gridState,
-        contentPadding =
-            PaddingValues(
-                start = contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
-                top = contentPadding.calculateTopPadding() + 8.dp,
-                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
-                bottom = contentPadding.calculateBottomPadding() + 8.dp,
-            ),
+        contentPadding = memoizedPadding,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
