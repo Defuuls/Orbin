@@ -25,12 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.size.Size
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 
@@ -42,20 +39,13 @@ fun OrbinAsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
-    val context = LocalContext.current
     // remember(url) already resets both states when the URL changes; no effect needed.
     var loadFailed by remember(url) { mutableStateOf(false) }
     var failureMessage by remember(url) { mutableStateOf<String?>(null) }
 
-    val imageRequest =
-        remember(url) {
-            val builder = ImageRequest.Builder(context)
-            builder.data(url).size(Size(1024, 1024)).build()
-        }
-
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         AsyncImage(
-            model = imageRequest,
+            model = url,
             contentDescription = contentDescription,
             modifier = Modifier.fillMaxSize(),
             contentScale = contentScale,
@@ -106,6 +96,16 @@ fun MediaThumbnail(
     modifier: Modifier = Modifier.size(120.dp),
     onClick: () -> Unit = {},
 ) {
+    // Server thumbnails are only ~250px wide and look soft once a grid cell renders them at full
+    // width, so still images pull their full-resolution source instead. AsyncImage sizes the
+    // request from the layout constraints, so the bitmap is still downsampled to the cell.
+    val imageUrl =
+        if (attachment.type == MediaType.IMAGE && attachment.sourceUrl.isNotBlank()) {
+            attachment.sourceUrl
+        } else {
+            attachment.thumbnailUrl
+        }
+
     Box(
         modifier =
             modifier
@@ -114,7 +114,7 @@ fun MediaThumbnail(
         contentAlignment = Alignment.Center,
     ) {
         OrbinAsyncImage(
-            url = attachment.thumbnailUrl,
+            url = imageUrl,
             contentDescription = attachment.originalFileName,
             modifier = Modifier.fillMaxSize(),
         )

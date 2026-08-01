@@ -3,12 +3,15 @@ package com.orbin.core.common.icon
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import com.orbin.core.model.AppIconVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Manages dynamic icon switching by enabling/disabling activity aliases. */
-class IconSwitcher(private val context: Context) {
+class IconSwitcher(
+    private val context: Context,
+) {
     private val packageManager = context.packageManager
 
     suspend fun switchIcon(variant: AppIconVariant) =
@@ -16,7 +19,7 @@ class IconSwitcher(private val context: Context) {
             val enableComponentName = getComponentName(variant)
             val disableComponentNames = getOtherComponentNames(variant)
 
-            try {
+            runCatching {
                 packageManager.setComponentEnabledSetting(
                     enableComponentName,
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -30,8 +33,9 @@ class IconSwitcher(private val context: Context) {
                         PackageManager.DONT_KILL_APP,
                     )
                 }
-            } catch (e: Exception) {
-                // Icon switching may fail on some devices; log but don't crash.
+            }.onFailure { error ->
+                // Alias toggling is unsupported on some OEM launchers; stay on the old icon.
+                Log.w(TAG, "Failed to switch app icon to $variant", error)
             }
         }
 
@@ -53,6 +57,8 @@ class IconSwitcher(private val context: Context) {
             .map { getComponentName(it) }
 
     companion object {
+        private const val TAG = "IconSwitcher"
+
         fun initialize(context: Context) = IconSwitcher(context)
     }
 }
