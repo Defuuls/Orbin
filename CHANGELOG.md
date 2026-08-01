@@ -6,6 +6,39 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [57-Arcturus] - 2026-08-01
+
+### Added
+- **Selectable app icons:** five launcher icon options — Orbital Orb, Nested Rings, Abstract Flow,
+  Minimalist Essence and Dual Gradient — chosen from Settings and applied without a restart.
+
+### Fixed
+- **Blurry media thumbnails:** thumbnails rendered the provider's ~250px preview even in layouts that
+  display it far larger, so the image was stretched well past its native resolution. Still images now
+  load their full-resolution source in the FILL and LARGE grid sizes and in the full-width post
+  layouts, while the compact and medium sizes keep the smaller preview, which is already sharp at
+  those dimensions. Video, audio and animated attachments are unaffected.
+- **Silent app icon failures:** icon switching logs when a launcher rejects the change instead of
+  discarding the error.
+
+### Changed
+- **Netty upgraded to 4.1.139.Final,** resolving 9 CVEs covering ByteBuf leaks, infinite loops, SPDY
+  vulnerabilities, CORS bypasses and injection attacks.
+- **Single icon-switching path:** removed the duplicate `IconSwitcher`, leaving `AppIconManager` as
+  the one implementation, which reapplies the icon from the persisted setting on every launch.
+
+## [56-Vega] - 2026-07-31
+
+### Added
+- **Material Design 3 component library:** a shared set of modernized components, with the settings,
+  board gallery and subscriptions screens and the app navigation rebuilt on top of it.
+
+### Changed
+- **Startup and scrolling performance:** WorkManager initialization moved off the main thread,
+  thread caching and image preloading added, and ThreadScreen recomposition reduced by correcting
+  `remember` dependencies and memoizing expensive work.
+- **Network efficiency:** HTTP disk caching added to the shared OkHttp client.
+
 ## [55-Polaris] - 2026-07-29
 
 ### Added
