@@ -1,9 +1,7 @@
 package com.orbin.feature.settings
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.orbin.core.common.icon.IconSwitcher
 import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
@@ -21,7 +19,6 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,10 +38,8 @@ class SettingsViewModel
         private val historyRepository: HistoryRepository,
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
-        @ApplicationContext private val context: Context,
         registry: ProviderRegistry,
     ) : ViewModel() {
-        private val iconSwitcher = IconSwitcher.initialize(context)
         val settings: StateFlow<AppSettings> =
             repository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
@@ -113,11 +108,7 @@ class SettingsViewModel
 
         fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
 
-        fun setAppIconVariant(variant: AppIconVariant) =
-            update {
-                repository.setAppIconVariant(variant)
-                iconSwitcher.switchIcon(variant)
-            }
+        fun setAppIconVariant(variant: AppIconVariant) = update { repository.setAppIconVariant(variant) }
 
         fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
 
