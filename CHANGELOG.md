@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [58-Capella] - 2026-08-01
+
+### Fixed
+- **App would not open from the launcher:** tapping the icon opened App Info instead of the app.
+  Switching icons could disable the alias the launcher had pinned, and could leave the package with
+  no enabled launcher entry at all. There is now exactly one alias per icon variant, the selected
+  one is enabled before the others are disabled, and no variant can go unmanaged.
+
+  Installs already left without a launcher entry cannot be repaired by an update, because Android
+  persists per-component enable-state across updates — those need an uninstall and reinstall.
+- **Duplicate launcher icon:** the app could appear twice in the launcher after selecting an icon.
+
 ## [57-Arcturus] - 2026-08-01
 
 ### Added
