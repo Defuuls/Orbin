@@ -1,0 +1,43 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- Flowing ribbon paths - top arc -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M65,128 Q90,80 128,75 Q166,80 190,128"
+        android:strokeAlpha="0.4"
+        android:strokeLineCap="round" />
+    <!-- Flowing ribbon paths - bottom arc -->
+    <path
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M190,128 Q200,160 170,190 Q120,210 70,190"
+        android:strokeAlpha="0.35"
+        android:strokeLineCap="round" />
+    <!-- Central core circle -->
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,86 a42,42 0 1,0 0.01,0 Z" />
+    <!-- Gradient overlay for depth -->
+    <path
+        android:fillColor="#4338CA"
+        android:fillAlpha="0.3"
+        android:pathData="M128,88 a40,40 0 1,0 0.01,0 Z" />
+    <!-- Internal flow pattern -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.1"
+        android:pathData="M128,103 a25,25 0 1,0 0.01,0 Z" />
+    <!-- Flow accent -->
+    <path
+        android:fillColor="#22D3EE"
+        android:fillAlpha="0.85"
+        android:pathData="M128,70 a5,5 0 1,0 0.01,0 Z" />
+</vector>

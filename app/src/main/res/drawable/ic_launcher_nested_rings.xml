@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- Outer ring -->
+    <path
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.2"
+        android:pathData="M128,28 a100,100 0 1,0 0.01,0 Z" />
+    <!-- Middle ring -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.35"
+        android:pathData="M128,53 a75,75 0 1,0 0.01,0 Z" />
+    <!-- Inner ring -->
+    <path
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.5"
+        android:pathData="M128,78 a50,50 0 1,0 0.01,0 Z" />
+    <!-- Central orb -->
+    <path
+        android:fillColor="#7C3AED"
+        android:pathData="M128,90 a38,38 0 1,0 0.01,0 Z" />
+    <!-- Gradient overlay for depth -->
+    <path
+        android:fillColor="#4338CA"
+        android:fillAlpha="0.4"
+        android:pathData="M128,93 a35,35 0 1,0 0.01,0 Z" />
+    <!-- Concentric accent -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:strokeAlpha="0.15"
+        android:pathData="M128,100 a28,28 0 1,0 0.01,0 Z" />
+    <!-- Pulse node -->
+    <path
+        android:fillColor="#22D3EE"
+        android:fillAlpha="0.9"
+        android:pathData="M128,66 a4,4 0 1,0 0.01,0 Z" />
+</vector>
