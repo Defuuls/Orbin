@@ -1,7 +1,9 @@
 package com.orbin.feature.thread
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
@@ -49,7 +54,10 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -83,6 +91,7 @@ fun ThreadScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
+    val mediaScrollEnabled by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
     val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
     // Lets the grid toggle temporarily override the persisted default for this session, without
@@ -181,6 +190,7 @@ fun ThreadScreen(
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
                     scrollToTopRequest = scrollToTopRequest,
+                    mediaScrollEnabled = mediaScrollEnabled,
                     modifier = Modifier.fillMaxSize().padding(padding),
                 )
         }
@@ -196,6 +206,7 @@ private fun ThreadContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    mediaScrollEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     when (layoutMode) {
@@ -206,6 +217,7 @@ private fun ThreadContent(
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
                 scrollToTopRequest = scrollToTopRequest,
+                mediaScrollEnabled = mediaScrollEnabled,
                 modifier = modifier,
             )
         ThreadLayoutMode.ThumbnailGrid ->
@@ -228,21 +240,22 @@ private fun PostListContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    mediaScrollEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    val posts = remember(thread) { thread.allPosts }
+    val posts = remember(thread.key) { thread.allPosts }
     val indexById =
-        remember(posts) {
+        remember(thread.key) {
             posts.withIndex().associate { (index, post) -> post.id to index + 1 } // +1 for the header item
         }
     // Flattened media index across the whole thread, so a tapped attachment opens at the right page.
     val mediaIndexById =
-        remember(posts) {
+        remember(thread.key) {
             posts.flatMap { it.attachments }.withIndex().associate { (index, media) -> media.id to index }
         }
     // Reverse lookup from the gallery page to the owning post row in this LazyColumn.
     val postIndexByMediaIndex =
-        remember(posts) {
+        remember(thread.key) {
             buildMap {
                 var mediaIndex = 0
                 posts.forEachIndexed { postIndex, post ->
@@ -307,6 +320,7 @@ private fun PostListContent(
                 onQuoteClick = onQuoteClick,
                 onLinkClick = onLinkClick,
                 onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
+                mediaScrollEnabled = mediaScrollEnabled,
             )
         }
     }
@@ -322,7 +336,7 @@ private fun ThumbnailGridContent(
     scrollToTopRequest: Int,
     modifier: Modifier = Modifier,
 ) {
-    val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
+    val attachments = remember(thread.key) { thread.allPosts.flatMap { it.attachments } }
     val gridState =
         rememberSaveable(thread.key, saver = LazyGridState.Saver) {
             LazyGridState()
@@ -358,6 +372,7 @@ private fun ThumbnailGridContent(
                     } else {
                         Modifier.size(thumbnailSize.sizeDp.dp)
                     },
+                fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
                 onClick = { onOpenMedia(index) },
             )
         }
@@ -390,15 +405,73 @@ private fun PostCard(
     onQuoteClick: (PostId) -> Unit,
     onLinkClick: (String) -> Unit,
     onMediaClick: (String) -> Unit,
+    mediaScrollEnabled: Boolean = true,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             PostHeader(post = post, isCollapsed = isCollapsed, onClick = onToggleCollapse)
 
             if (!isCollapsed) {
-                post.attachments.firstOrNull()?.let { media ->
+                if (post.attachments.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
-                    MediaThumbnail(attachment = media, onClick = { onMediaClick(media.id) })
+                    if (mediaScrollEnabled) {
+                        val pagerState = remember(post.id) { PagerState(pageCount = { post.attachments.size }) }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                                val attachment = post.attachments[page]
+                                MediaThumbnail(
+                                    attachment = attachment,
+                                    modifier = Modifier.fillMaxSize(),
+                                    fullResolution = true,
+                                    onClick = { onMediaClick(attachment.id) },
+                                )
+                            }
+
+                            if (post.attachments.size > 1) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(8.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color.Black.copy(alpha = 0.62f))
+                                            .padding(
+                                                horizontal = 8.dp,
+                                                vertical = 4.dp,
+                                            ),
+                                ) {
+                                    Text(
+                                        text = "${pagerState.settledPage + 1}/${post.attachments.size}",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            MediaThumbnail(
+                                attachment = post.attachments[0],
+                                modifier = Modifier.fillMaxSize(),
+                                fullResolution = true,
+                                onClick = { onMediaClick(post.attachments[0].id) },
+                            )
+                        }
+                    }
                 }
                 if (post.comment.nodes.isNotEmpty()) {
                     Spacer(Modifier.padding(top = 8.dp))
@@ -424,6 +497,7 @@ private fun PostHeader(
     isCollapsed: Boolean,
     onClick: () -> Unit,
 ) {
+    val postedTime = remember(post.createdAtMillis) { formatRelativeTime(post.createdAtMillis) }
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -438,7 +512,7 @@ private fun PostHeader(
             Text("ID:$it", style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.weight(1f))
-        formatRelativeTime(post.createdAtMillis)?.let { posted ->
+        postedTime?.let { posted ->
             Text(
                 text = posted,
                 style = MaterialTheme.typography.labelSmall,

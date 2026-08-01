@@ -78,6 +78,11 @@ class ThreadViewModel
                 .map { it.thumbnailSize }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
 
+        val mediaScrollEnabled: StateFlow<Boolean> =
+            settingsRepository.settings
+                .map { it.mediaScrollThreadView }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
+
         fun toggleBookmark() {
             viewModelScope.launch {
                 if (isBookmarked.value) {

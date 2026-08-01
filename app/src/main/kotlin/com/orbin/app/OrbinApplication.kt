@@ -8,6 +8,9 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.orbin.data.worker.WatchScheduler
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -39,7 +42,10 @@ class OrbinApplication :
 
     override fun onCreate() {
         super.onCreate()
-        watchScheduler.ensureScheduled()
+        // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
+        CoroutineScope(Dispatchers.Default).launch {
+            watchScheduler.ensureScheduled()
+        }
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader = imageLoader

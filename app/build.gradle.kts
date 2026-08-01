@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 72
-        versionName = "52-Wolf 359"
+        versionCode = 78
+        versionName = "58-Capella"
     }
 
     signingConfigs {

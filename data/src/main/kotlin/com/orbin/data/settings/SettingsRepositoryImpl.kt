@@ -189,6 +189,14 @@ class SettingsRepositoryImpl
             edit { it[Keys.quietHoursEnd] = time }
         }
 
+        override suspend fun setMediaScrollThreadView(enabled: Boolean) {
+            edit { it[Keys.mediaScrollThreadView] = enabled }
+        }
+
+        override suspend fun setMediaScrollBoardView(enabled: Boolean) {
+            edit { it[Keys.mediaScrollBoardView] = enabled }
+        }
+
         suspend fun setConnectTimeoutSeconds(seconds: Long) {
             edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
         }
@@ -318,6 +326,8 @@ class SettingsRepositoryImpl
                 quietHoursEnd = this[Keys.quietHoursEnd] ?: "",
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
+                mediaScrollThreadView = this[Keys.mediaScrollThreadView] ?: true,
+                mediaScrollBoardView = this[Keys.mediaScrollBoardView] ?: false,
             )
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
@@ -378,6 +388,8 @@ class SettingsRepositoryImpl
             val connectTimeoutSeconds = stringPreferencesKey("connect_timeout_seconds")
             val readTimeoutSeconds = stringPreferencesKey("read_timeout_seconds")
             val disableOcspChecking = booleanPreferencesKey("disable_ocsp_checking")
+            val mediaScrollThreadView = booleanPreferencesKey("media_scroll_thread_view")
+            val mediaScrollBoardView = booleanPreferencesKey("media_scroll_board_view")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("favorite_boards_${provider.value}")
