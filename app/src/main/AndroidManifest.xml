@@ -26,23 +26,13 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.Orbin.Starting" />
 
-        <activity-alias
-            android:name=".DefaultIconAlias"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
+        <!-- Exactly one alias per AppIconVariant, and exactly one enabled at a time. This one is
+             enabled in the manifest because it backs AppIconVariant.DEFAULT, so a fresh install
+             always has a launcher entry. Adding an alias here means adding it to AppIconManager:
+             an unmanaged alias stays enabled forever and shows up as a duplicate launcher icon. -->
         <activity-alias
             android:name=".OrbitalOrbIconAlias"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
             android:icon="@drawable/ic_launcher_orbital_orb"
             android:label="@string/app_name"
