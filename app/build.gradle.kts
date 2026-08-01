@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 77
-        versionName = "57-Arcturus"
+        versionCode = 78
+        versionName = "58-Capella"
     }
 
     signingConfigs {
