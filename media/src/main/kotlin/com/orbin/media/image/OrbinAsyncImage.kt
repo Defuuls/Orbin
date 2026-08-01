@@ -94,13 +94,16 @@ fun OrbinAsyncImage(
 fun MediaThumbnail(
     attachment: MediaAttachment,
     modifier: Modifier = Modifier.size(120.dp),
+    fullResolution: Boolean = false,
     onClick: () -> Unit = {},
 ) {
-    // Server thumbnails are only ~250px wide and look soft once a grid cell renders them at full
-    // width, so still images pull their full-resolution source instead. AsyncImage sizes the
-    // request from the layout constraints, so the bitmap is still downsampled to the cell.
+    // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
+    // callers pass [fullResolution] to pull the original file instead; AsyncImage sizes the
+    // request from the layout constraints, so the bitmap is still downsampled to the cell and
+    // memory stays bounded by display size. Small cells keep the cheap thumbnail, where the
+    // ~250px source is already sharp and the full file would only cost bandwidth.
     val imageUrl =
-        if (attachment.type == MediaType.IMAGE && attachment.sourceUrl.isNotBlank()) {
+        if (fullResolution && attachment.type == MediaType.IMAGE && attachment.sourceUrl.isNotBlank()) {
             attachment.sourceUrl
         } else {
             attachment.thumbnailUrl

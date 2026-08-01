@@ -372,6 +372,7 @@ private fun ThumbnailGridContent(
                     } else {
                         Modifier.size(thumbnailSize.sizeDp.dp)
                     },
+                fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
                 onClick = { onOpenMedia(index) },
             )
         }
@@ -428,6 +429,7 @@ private fun PostCard(
                                 MediaThumbnail(
                                     attachment = attachment,
                                     modifier = Modifier.fillMaxSize(),
+                                    fullResolution = true,
                                     onClick = { onMediaClick(attachment.id) },
                                 )
                             }
@@ -465,6 +467,7 @@ private fun PostCard(
                             MediaThumbnail(
                                 attachment = post.attachments[0],
                                 modifier = Modifier.fillMaxSize(),
+                                fullResolution = true,
                                 onClick = { onMediaClick(post.attachments[0].id) },
                             )
                         }
