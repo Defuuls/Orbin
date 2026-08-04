@@ -47,24 +47,10 @@ class AppIconManager
             }
         }
 
-        /**
-         * Exhaustive by design: a `when` over the enum makes the compiler reject a new
-         * [AppIconVariant] that has no alias, rather than letting it silently go unmanaged.
-         */
-        private fun componentFor(variant: AppIconVariant): ComponentName {
-            val alias =
-                when (variant) {
-                    AppIconVariant.DEFAULT -> "OrbitalOrbIconAlias"
-                    AppIconVariant.NESTED_RINGS -> "NestedRingsIconAlias"
-                    AppIconVariant.ABSTRACT_FLOW -> "AbstractFlowIconAlias"
-                    AppIconVariant.MINIMALIST_ESSENCE -> "MinimalistEssenceIconAlias"
-                    AppIconVariant.DUAL_GRADIENT -> "DualGradientIconAlias"
-                }
-            return ComponentName(context, "$ALIAS_PACKAGE.$alias")
-        }
+        private fun componentFor(variant: AppIconVariant): ComponentName =
+            ComponentName(context, AppIconAliases.qualifiedName(variant))
 
         private companion object {
             const val TAG = "AppIconManager"
-            const val ALIAS_PACKAGE = "com.orbin.app"
         }
     }
