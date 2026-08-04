@@ -1,6 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v34 (Dippin)**.
+This guide covers day-to-day use of Orbin as of **v58 (Capella)**.
 
 ## Getting started
 
@@ -36,6 +36,10 @@ Feed behaviors worth knowing:
   contributes to the feed (6, 12, 18, or all).
 - **Hidden and muted tags:** threads with hidden tags are removed from the feed; muted tags stay
   visible but de-emphasized (Settings → Content).
+- **Collapse all / Expand all (v50):** toolbar buttons collapse or expand every subscribed board
+  at once; tapping a board name collapses it individually.
+- **Watched threads (v51):** watched threads can notify you when new replies arrive, with
+  configurable quiet hours under **Settings → Notifications**.
 
 ### Tablet layout
 
@@ -55,6 +59,11 @@ catalogs load smoothly.
   reply tree — no raw HTML. Greentext and spoilers are styled natively.
 - **Inline media:** images and video play inline; replies are collapsible; thread stats are
   shown.
+- **Media carousel (v54):** posts with several attachments scroll horizontally with a swipe, and
+  a badge shows your position (e.g. "2/5"). The board feed gained the same treatment in v55, and
+  each view can be toggled independently under **Settings → Media**.
+- **Video indicators (v54):** video and audio attachments are marked with a play icon rather
+  than a "VID" text label.
 - **Thumbnail grid:** a thumbnail-only grid view shows every attachment in the thread at a
   glance.
 - **Reading history:** threads you read are tracked (locally, encrypted) with unread indicators
@@ -88,6 +97,7 @@ Watched threads are checked in the background (WorkManager) and can notify you o
 ## Search
 
 - **Feed search (v34):** filter your subscribed feed directly from the Feed tab.
+- **Saved searches (v51):** search queries can be saved and reused.
 - **Board search:** search threads with content-type filters for posts, images, videos, audio,
   and URLs, scoped to your subscribed boards. Recent-search history is **opt-in**
   (Settings → Network & privacy → Save recent searches).

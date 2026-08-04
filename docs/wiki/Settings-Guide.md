@@ -1,6 +1,6 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v34 (Dippin)**. Settings
+A tour of every section of Orbin's Settings screen, current as of **v58 (Capella)**. Settings
 are stored in an encrypted DataStore and take effect immediately — no restart required.
 
 ## Site
@@ -21,14 +21,22 @@ Shown only when more than one provider is installed.
 | Muted tags | Comma-separated tags; matching threads **stay visible but are de-emphasized** in the feed. |
 | Hide NSFW boards | Hides NSFW boards from board lists and pickers (including the gallery's board picker since v33). |
 | Hide text-only threads | Hides threads that have no media. |
+| Refresh feed on return | Reloads the subscribed feed when you return to it, e.g. after backing out of a thread. On by default. |
 | Run setup again | Re-runs the first-launch wizard (subscriptions, preferences, privacy). |
+
+## Notifications
+
+| Setting | What it does |
+| --- | --- |
+| Thread watch notifications *(v51)* | "Get notified when watched threads have new replies." On by default. |
+| Quiet hours start / end *(v51)* | Suppresses watch notifications between the two times, in 24-hour `HH:MM` format. Leave either empty to disable quiet hours. |
 
 ## Appearance
 
 | Setting | What it does |
 | --- | --- |
 | Color theme | Picks the app color theme. |
-| App icon | Picks an app icon variant. |
+| App icon *(v57)* | Picks the launcher icon: Orbital Orb, Nested Rings, Abstract Flow, Minimalist Essence, or Dual Gradient. Applied immediately, without restarting the app. |
 | Theme mode | Light, dark, or follow system. |
 | Dynamic color | Uses Material You dynamic color from your wallpaper. |
 | AMOLED black | Pure-black dark theme for OLED screens. |
@@ -55,6 +63,10 @@ Introduced in v30 and refined through v32:
 | --- | --- |
 | Autoplay videos | Starts videos automatically. |
 | Mute by default | Videos start muted. |
+| Fullscreen video | Plays videos edge-to-edge, hiding the system bars and app chrome. |
+| Auto-rotate video | Rotates to landscape automatically when a landscape video starts playing. |
+| Media scroll in thread *(v55)* | "Swipe to scroll through multiple attachments in thread view." On by default. |
+| Media scroll in board *(v55)* | "Swipe to scroll through multiple attachments in board view." Off by default. |
 | Preload images | Preloads images in the background. |
 | Preload content | What to preload. |
 | Preload speed | How aggressively preloading runs. |

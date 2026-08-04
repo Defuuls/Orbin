@@ -7,7 +7,7 @@ in-repo docs under [`docs/`](https://github.com/Defuuls/Orbin/tree/main/docs).
 ## Prerequisites
 
 - **JDK 17** (the build targets JVM 17) — verify with `java -version`.
-- **Android SDK** with platform **API 36** (`compileSdk`/`targetSdk` 36, `minSdk` 35).
+- **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 35).
 - **Android Studio Ladybug (2024.2)** or newer recommended; the command line works too.
 - Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`.
 
@@ -92,15 +92,20 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
 
 1. Run the **New Version** workflow (or bump `versionName`/`versionCode` in
    `app/build.gradle.kts` and update `CHANGELOG.md` by hand) and merge the release PR.
-2. Tag and push:
+2. Tag and push. Tags are `v<number>-<Codename>`, and the tag must be **annotated** — the
+   release job reads its message as the GitHub Release title:
 
    ```bash
-   git tag v34
-   git push origin v34
+   git tag -a v58-Capella -m "Capella: fixes the app not opening from the launcher"
+   git push origin v58-Capella
    ```
 
 3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
    mapping file, and checksums once the job completes.
+
+If pushing a tag is not possible, run **Release** via `workflow_dispatch` instead, supplying
+`tag` and `tag_message`. The job creates and pushes the annotated tag itself, producing an
+identical result.
 
 **Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
 naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella.
