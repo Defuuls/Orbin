@@ -8,6 +8,11 @@ detail; the full record lives in
 Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
 codenames used for v26–v29; v34 is "Dippin".
 
+The star theme has held since, but the selection shifted: v37–v48 stayed with nearby or dim
+stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
+are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
+Arcturus, Capella.
+
 ## v34 — Dippin (2026-07-09)
 
 *Current release.*

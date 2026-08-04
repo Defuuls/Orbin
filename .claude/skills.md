@@ -53,7 +53,9 @@
 
 ## Release & Version Management
 
-- Version naming: smallest-known-star codenames (e.g., Sirius B, Proxima Centauri)
+- Version naming: star codenames. Since v49 these are prominent naked-eye stars (Altair,
+  Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella); v30-v48 used nearby or dim stars
+  (Proxima Centauri, Sirius B, Ross 128). Pick a star not already used by an existing tag.
 - versionCode increments by 1 for each release
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections
 - README.md kept current with latest release version
