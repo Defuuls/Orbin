@@ -6,6 +6,24 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [59-Betelgeuse] - 2026-08-04
+
+A maintenance release. No user-facing behaviour changes; the launcher fix from 58-Capella is
+included, so this is equally safe as a fresh install.
+
+### Changed
+- **Build toolchain:** Android Gradle Plugin 9.3.0 → 9.3.1 and Kotlin 2.4.0 → 2.4.10. Kotlin had
+  been held at 2.4.0 because CodeQL's Kotlin extractor did not support the newer release; CodeQL
+  now analyses 2.4.10 successfully.
+- **CI:** `actions/setup-java` 5 → 5.6.0.
+
+### Documentation
+- **Wiki brought current with v58,** after drifting 24 releases: release history extended through
+  v58, the settings guide gained the Notifications section and the media settings added since
+  v34, and two errors in the developer guide were corrected (`compileSdk` is 37, and release tags
+  must be annotated).
+- **Release codename scheme documented as practised** — prominent naked-eye stars since v49.
+
 ## [58-Capella] - 2026-08-01
 
 ### Fixed
