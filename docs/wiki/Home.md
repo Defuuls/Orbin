@@ -16,7 +16,7 @@ supporting a new image board engine is a matter of implementing a single interfa
 | Current release | **v34 — Dippin** (2026-07-09) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile/target SDK 36 |
-| Codename scheme | Per-release codenames (v30–v33 used smallest-known-star names) |
+| Codename scheme | Per-release star codenames (prominent naked-eye stars since v49; nearby or dim stars for v30–v48) |
 
 Orbin is under active development with regular signed releases. The architecture, build system,
 domain core, networking, media pipeline, encrypted data layer, and the reference provider are in

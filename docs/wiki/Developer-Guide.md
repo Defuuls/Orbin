@@ -102,9 +102,14 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
 3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
    mapping file, and checksums once the job completes.
 
-**Codenames:** every milestone gets a codename (v30–v33 used the smallest known stars — Janus,
-Fomalhaut C, EQ Pegasi A, CM Draconis A; v34 is "Dippin"). Pick names that are distinctive,
-short enough for changelog entries, and not already used.
+**Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
+naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella.
+Earlier releases drew on nearby or dim stars instead: v30–v33 used the smallest known stars
+(Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", and
+v37–v48 returned to nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B.
+
+Pick names that are distinctive, short enough for changelog entries, and not already used —
+`git tag --list 'v*'` is the authoritative list of what is taken.
 
 ## Contributing
 
