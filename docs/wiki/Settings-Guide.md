@@ -1,6 +1,6 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v62 (Hadar)**. Settings
+A tour of every section of Orbin's Settings screen, current as of **v63 (Acrux)**. Settings
 are stored in an encrypted DataStore and take effect immediately, with one exception: the image
 cache limit applies on the next app start.
 
