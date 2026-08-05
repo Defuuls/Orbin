@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [61-Achernar] - 2026-08-05
+
+### Added
+- **Saved searches are included in backups,** alongside settings, boards and bookmarks.
+
+### Fixed
+- **The database would have destroyed your data on the next schema change.** It was configured to
+  recreate itself rather than migrate — a leftover from before the first release that survived
+  sixty of them. Any future schema change would have silently dropped bookmarks, history,
+  downloads, recent searches and saved searches, with no Android backup to recover from. Schema
+  changes now migrate properly, and a missing migration fails loudly instead of deleting anything.
+
+### Changed
+- **Internal:** first unit tests for the settings module, covering the backup round trip; all
+  compiler deprecation warnings cleared.
+
 ## [60-Procyon] - 2026-08-05
 
 ### Added

@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v54 — Canopus](https://github.com/Defuuls/Orbin/releases/tag/v54-Canopus)
+**Current release:** [v61 — Achernar](https://github.com/Defuuls/Orbin/releases/tag/v61-Achernar)
 
 **Available providers:** 4chan (Vichan), BBW Chan (LynxChan), 8kun (LynxChan)
 
@@ -56,7 +56,12 @@ implementing a single interface.
 - **Biometric app-lock** gated on a Keystore-backed cryptographic operation (not just the prompt
   callback), plus `FLAG_SECURE` to keep locked content out of the recents preview.
 - HTTPS-only networking enforced end-to-end, optional DNS-over-HTTPS, and a configurable
-  user-agent. Cloud backup and device-transfer of local data are disabled.
+  user-agent. Cloud backup and device-transfer of local data are disabled, so nothing leaves the
+  device implicitly.
+- **Backup and restore** as the deliberate alternative to that: export settings, subscribed and
+  favourite boards, bookmarks and saved searches to a file you choose, and import it after a
+  reinstall. Importing merges rather than replaces, so a restore cannot destroy an existing
+  setup. The file is plain JSON and is not encrypted — keep it somewhere you trust.
 
 ## Tech stack
 
