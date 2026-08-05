@@ -105,7 +105,11 @@ class BackupService
                 setPreloadOption(settings.preloadOption)
                 setPreloadThrottleMode(settings.preloadThrottleMode)
                 setFeedThreadLimit(settings.feedThreadLimit)
+                setImageCacheLimitMb(settings.imageCacheLimitMb)
                 setUserAgent(settings.userAgent)
+                setConnectTimeoutSeconds(settings.connectTimeoutSeconds)
+                setReadTimeoutSeconds(settings.readTimeoutSeconds)
+                setDisableOcspChecking(settings.disableOcspChecking)
                 setDohEnabled(settings.dohEnabled)
                 setDohProvider(settings.dohProvider)
                 setBiometricLockEnabled(settings.biometricLockEnabled)
@@ -121,6 +125,8 @@ class BackupService
                 }
                 // Skip onboarding for a restored install — the user has already been through it.
                 setOnboardingCompleted(settings.onboardingCompleted)
+                // httpsOnly has no setter by design — it is always enforced, so there is nothing
+                // to restore and a backup can never weaken it.
                 // downloadFolderUri is deliberately not restored: a SAF permission grant belongs to
                 // the install that requested it, so the path would be unreadable after a reinstall.
                 // The user re-picks the folder, which re-grants access.
