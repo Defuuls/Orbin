@@ -22,7 +22,7 @@ Shown only when more than one provider is installed.
 | Muted tags | Comma-separated tags; matching threads **stay visible but are de-emphasized** in the feed. |
 | Hide NSFW boards | Hides NSFW boards from board lists and pickers (including the gallery's board picker since v33). |
 | Hide text-only threads | Hides threads that have no media. |
-| Refresh feed on return | Reloads the subscribed feed when you return to it, e.g. after backing out of a thread. On by default. |
+| Refresh feed on return | How stale the feed may be before returning to it reloads it: **Always**, 1, 5, 15 or 30 minutes, or **Never**. Was an on/off switch before; *Always* and *Never* are what those two positions meant, and an existing preference carries over to the matching end. |
 | Threads per board | Caps how many threads each board contributes to the subscribed feed: 6, 12, 18, or all. |
 | Run setup again | Re-runs the first-launch wizard (subscriptions, preferences, privacy). |
 
@@ -42,6 +42,7 @@ Shown only when more than one provider is installed.
 | Theme mode | Light, dark, or follow system. |
 | Dynamic color | Uses Material You dynamic color from your wallpaper. |
 | AMOLED black | Pure-black dark theme for OLED screens. |
+| Open threads as | **Page** pushes the thread and takes the feed with it — ordinary Android forward navigation, and the default. **Slide over** lays the thread on top instead, leaving the feed in place underneath so going back reveals it rather than sliding it back. |
 | Full-screen feed | Hides the board headers, feed bars, and system bars so the feed fills the whole screen (see below). |
 | Font size | Global font scale. |
 | Thumbnail size | Thumbnail size used in feeds and catalogs. |

@@ -16,10 +16,12 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -74,8 +76,12 @@ class SettingsRepositoryImpl
             edit { it[Keys.hideTextOnlyThreads] = enabled }
         }
 
-        override suspend fun setRefreshFeedOnReturn(enabled: Boolean) {
-            edit { it[Keys.refreshFeedOnReturn] = enabled }
+        override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
+            edit { it[Keys.feedRefreshInterval] = interval.name }
+        }
+
+        override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
+            edit { it[Keys.threadPresentation] = presentation.name }
         }
 
         override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -279,7 +285,11 @@ class SettingsRepositoryImpl
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
-                refreshFeedOnReturn = this[Keys.refreshFeedOnReturn] ?: true,
+                feedRefreshInterval =
+                    resolveFeedRefreshInterval(this[Keys.feedRefreshInterval], this[Keys.refreshFeedOnReturn]),
+                threadPresentation =
+                    this[Keys.threadPresentation]?.toEnumOrDefault(ThreadPresentation.PAGE)
+                        ?: ThreadPresentation.PAGE,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
@@ -358,6 +368,8 @@ class SettingsRepositoryImpl
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
             val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
+            val feedRefreshInterval = stringPreferencesKey("feed_refresh_interval")
+            val threadPresentation = stringPreferencesKey("thread_presentation")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val appIconVariant = stringPreferencesKey("app_icon_variant")
@@ -404,3 +416,22 @@ class SettingsRepositoryImpl
             ): Preferences.Key<String> = stringPreferencesKey("feed_thread_limit_${provider.value}_${board.value}")
         }
     }
+
+/**
+ * Resolves the feed refresh interval, falling back to the boolean setting it replaced.
+ *
+ * "Refresh feed on return" was on/off; the interval expresses those same two ends plus what lies
+ * between them. Reading the old key when the new one is absent means anyone who had deliberately
+ * turned refreshing off keeps that behaviour, instead of silently getting refreshes back on their
+ * next launch — a setting quietly reverting itself is the kind of thing users notice and cannot
+ * explain.
+ */
+internal fun resolveFeedRefreshInterval(
+    stored: String?,
+    legacyRefreshOnReturn: Boolean?,
+): FeedRefreshInterval {
+    stored?.let { name ->
+        FeedRefreshInterval.entries.firstOrNull { it.name == name }?.let { return it }
+    }
+    return if (legacyRefreshOnReturn == false) FeedRefreshInterval.NEVER else FeedRefreshInterval.ALWAYS
+}

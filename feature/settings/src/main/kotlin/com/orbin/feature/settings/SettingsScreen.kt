@@ -46,9 +46,11 @@ import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.UpdateStatus
 import com.orbin.provider.api.ProviderMetadata
@@ -201,13 +203,17 @@ fun SettingsScreen(
                 settings.hideTextOnlyThreads,
                 viewModel::setHideTextOnlyThreads,
             )
-            SwitchRow(
-                "Refresh feed on return",
-                settings.refreshFeedOnReturn,
-                viewModel::setRefreshFeedOnReturn,
-                supporting =
-                    "Reload subscriptions and threads when coming back to the feed, " +
-                        "for example after reading a thread. Turn off to keep the feed as you left it.",
+            ChoiceRow(
+                label = "Refresh feed on return",
+                values = FeedRefreshInterval.entries,
+                selected = settings.feedRefreshInterval,
+                text = { it.label },
+                onChange = viewModel::setFeedRefreshInterval,
+            )
+            SupportingNote(
+                "How stale the feed may be before coming back to it reloads it — after reading a " +
+                    "thread, say. \"Always\" reloads every time; \"Never\" keeps the feed exactly " +
+                    "as you left it.",
             )
             ChoiceRow(
                 label = "Threads per board",
@@ -257,6 +263,18 @@ fun SettingsScreen(
             ThemeModeRow(settings.themeMode, viewModel::setThemeMode)
             SwitchRow("Dynamic color", settings.dynamicColor, viewModel::setDynamicColor)
             SwitchRow("AMOLED black", settings.amoled, viewModel::setAmoled)
+            ChoiceRow(
+                label = "Open threads as",
+                values = ThreadPresentation.entries,
+                selected = settings.threadPresentation,
+                text = { it.label },
+                onChange = viewModel::setThreadPresentation,
+            )
+            SupportingNote(
+                "\"Page\" pushes the thread and takes the feed with it. \"Slide over\" lays the " +
+                    "thread on top, leaving the feed in place underneath so going back reveals it " +
+                    "rather than sliding it back.",
+            )
             SwitchRow(
                 "Full-screen feed",
                 settings.fullScreenFeedChrome,

@@ -9,10 +9,12 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DownloadRepository
@@ -147,7 +149,11 @@ class SettingsViewModel
 
         fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
 
-        fun setRefreshFeedOnReturn(enabled: Boolean) = update { repository.setRefreshFeedOnReturn(enabled) }
+        fun setFeedRefreshInterval(interval: FeedRefreshInterval) =
+            update { repository.setFeedRefreshInterval(interval) }
+
+        fun setThreadPresentation(presentation: ThreadPresentation) =
+            update { repository.setThreadPresentation(presentation) }
 
         fun setThreadWatchNotifications(enabled: Boolean) =
             update { repository.setThreadWatchNotificationsEnabled(enabled) }

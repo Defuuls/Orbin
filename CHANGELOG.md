@@ -7,6 +7,19 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- **"Refresh feed on return" is a timeframe, not a switch.** Choose how stale the feed may be
+  before coming back to it reloads it: Always, 1, 5, 15 or 30 minutes, or Never. *Always* and
+  *Never* are exactly what the old on and off positions did, and an existing preference carries
+  over to the matching end rather than resetting.
+- **Settings slides in over the screen behind it** instead of pushing it aside. The screen you came
+  from stays where it was and is revealed again on the way back.
+
+### Added
+- **Open threads as** (Settings → Appearance): threads can open as a **Page**, the ordinary push
+  that takes the feed with it, or **Slide over**, laying the thread on top with the feed left in
+  place underneath. Page remains the default.
+
+### Changed
 - **Encrypted DNS is no longer a toggle.** DNS over HTTPS could be switched off, and shipped off
   by default, so the protection was absent for anyone who never went looking for it. It is now
   always on and the setting is *which* resolver answers your lookups — Cloudflare, OpenDNS or

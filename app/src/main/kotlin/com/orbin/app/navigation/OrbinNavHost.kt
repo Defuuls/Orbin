@@ -1,15 +1,22 @@
 package com.orbin.app.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
 import com.orbin.feature.gallery.GalleryBrowserScreen
@@ -29,9 +36,15 @@ private const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 private const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 
 /**
- * The single navigation graph for the app. Slide + fade transitions give a smooth, native feel;
- * predictive back is enabled at the manifest level so the system back gesture animates these
- * destinations.
+ * The single navigation graph for the app. Predictive back is enabled at the manifest level so the
+ * system back gesture animates these destinations.
+ *
+ * Two transition styles are in play. Most destinations *push*: the outgoing screen slides away with
+ * the incoming one, the usual Android forward navigation. Settings — and threads, when the user
+ * picks that — instead slide in *over* the screen behind, which stays where it is and is revealed
+ * again on the way back. NavHost gives the entering destination a higher z-index on push and the
+ * departing one a higher z-index on pop, so the overlay is drawn on top in both directions without
+ * any extra layering.
  */
 @Composable
 fun OrbinNavHost(
@@ -44,6 +57,7 @@ fun OrbinNavHost(
     tabletSubscribedFeedLayout: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
     subscribedFeedRefreshRequest: Int = 0,
+    threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onFeedChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
@@ -55,16 +69,33 @@ fun OrbinNavHost(
         startDestination = startDestination,
         modifier = modifier,
         enterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+            if (targetState.destination.slidesOver(threadPresentation)) {
+                slideInHorizontally(tween(TRANSITION_MS)) { width -> width }
+            } else {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+            }
         },
         exitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+            // Nothing: an overlay slides on top of this screen, so it must stay put underneath.
+            if (targetState.destination.slidesOver(threadPresentation)) {
+                ExitTransition.None
+            } else {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
+            }
         },
         popEnterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+            if (initialState.destination.slidesOver(threadPresentation)) {
+                EnterTransition.None
+            } else {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+            }
         },
         popExitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+            if (initialState.destination.slidesOver(threadPresentation)) {
+                slideOutHorizontally(tween(TRANSITION_MS)) { width -> width }
+            } else {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
+            }
         },
     ) {
         composable<Route.Home> {
@@ -180,3 +211,13 @@ fun OrbinNavHost(
         }
     }
 }
+
+/**
+ * Whether this destination lays itself over the screen behind rather than pushing it aside.
+ *
+ * Settings always does. Threads do only when the user has asked for it — the default stays the
+ * ordinary push, which is what Android users expect of a forward navigation.
+ */
+private fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
+    hasRoute(Route.Settings::class) ||
+        (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))

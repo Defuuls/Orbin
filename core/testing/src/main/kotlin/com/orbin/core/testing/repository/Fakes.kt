@@ -10,6 +10,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
@@ -19,6 +20,7 @@ import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -189,8 +191,12 @@ class FakeSettingsRepository(
         update { copy(hideTextOnlyThreads = enabled) }
     }
 
-    override suspend fun setRefreshFeedOnReturn(enabled: Boolean) {
-        update { copy(refreshFeedOnReturn = enabled) }
+    override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
+        update { copy(feedRefreshInterval = interval) }
+    }
+
+    override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
+        update { copy(threadPresentation = presentation) }
     }
 
     override suspend fun setThemeMode(mode: AppThemeMode) {
