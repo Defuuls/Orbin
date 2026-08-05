@@ -106,7 +106,7 @@ to those three take effect the next time Orbin starts. The user agent is the exc
 | Downloads | Opens the download history screen. |
 | Saved media folder | Picks the folder downloads are saved to; defaults to `Downloads/Orbin`. Thread-link exports also go here. |
 | Image cache limit *(v60)* | How much disk the image cache may use: 128, 256, 512 or 1024 MB. Applies on the next app start. |
-| Export data *(v60)* | Writes settings, subscribed and favourite boards, and bookmarks to a file you choose. |
+| Export data *(v60)* | Writes settings, subscribed and favourite boards, bookmarks and saved searches to a file you choose. |
 | Import data *(v60)* | Restores a previously exported file. Boards and bookmarks are **added**, never removed, so importing cannot destroy an existing setup. The saved media folder is not restored — re-pick it to re-grant access. |
 
 ## Where the rest of your privacy lives

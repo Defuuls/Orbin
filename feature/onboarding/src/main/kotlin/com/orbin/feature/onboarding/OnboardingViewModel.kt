@@ -15,6 +15,7 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +46,7 @@ sealed interface OnboardingBoardsState {
  * exposes the live [AppSettings] for the preference steps, and persists the "onboarding completed"
  * flag when the user finishes. Reuses the same repositories as home/settings.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class OnboardingViewModel
     @Inject

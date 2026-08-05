@@ -26,6 +26,7 @@ data class BackupDocument(
     val subscribedBoards: List<BackupBoardRef> = emptyList(),
     val favoriteBoards: List<BackupBoardRef> = emptyList(),
     val bookmarks: List<BackupBookmark> = emptyList(),
+    val savedSearches: List<BackupSavedSearch> = emptyList(),
 ) {
     companion object {
         /** Bump only for a change old builds cannot safely read; additive fields do not need it. */
@@ -61,4 +62,21 @@ data class BackupBookmark(
     val createdAtMillis: Long = 0,
     val isWatched: Boolean = false,
     val lastSeenReplyCount: Int = 0,
+)
+
+/**
+ * A saved search, flattened away from [SavedSearch] and its nested filters.
+ *
+ * `id` is not carried: it is a local autoincrement key, and reusing it on import would collide
+ * with rows the destination install already has. Restored searches get fresh ids.
+ */
+@Serializable
+data class BackupSavedSearch(
+    val text: String,
+    val boardId: String? = null,
+    val mediaOnly: Boolean = false,
+    val minReplies: Int? = null,
+    val includeNsfw: Boolean = true,
+    val contentTypes: List<String> = emptyList(),
+    val createdAtMillis: Long = 0,
 )

@@ -13,6 +13,7 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +44,7 @@ sealed interface SubscriptionsUiState {
  * subscribed set plus a toggle action. Mirrors the board-preferences wiring used on home so the
  * subscribe controls can live under Settings rather than the board-setup overlay.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SubscriptionsViewModel
     @Inject
