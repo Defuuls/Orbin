@@ -104,6 +104,14 @@ class SettingsViewModel
 
         fun setImageCacheLimitMb(megabytes: Int) = update { repository.setImageCacheLimitMb(megabytes) }
 
+        fun setUserAgent(userAgent: String) = update { repository.setUserAgent(userAgent) }
+
+        fun setConnectTimeout(seconds: Long) = update { repository.setConnectTimeoutSeconds(seconds) }
+
+        fun setReadTimeout(seconds: Long) = update { repository.setReadTimeoutSeconds(seconds) }
+
+        fun setCertificateRevocationChecks(enabled: Boolean) = update { repository.setDisableOcspChecking(!enabled) }
+
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
 
         fun setDoh(enabled: Boolean) = update { repository.setDohEnabled(enabled) }

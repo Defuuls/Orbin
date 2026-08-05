@@ -202,15 +202,15 @@ class SettingsRepositoryImpl
             edit { it[Keys.mediaScrollBoardView] = enabled }
         }
 
-        suspend fun setConnectTimeoutSeconds(seconds: Long) {
+        override suspend fun setConnectTimeoutSeconds(seconds: Long) {
             edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
         }
 
-        suspend fun setReadTimeoutSeconds(seconds: Long) {
+        override suspend fun setReadTimeoutSeconds(seconds: Long) {
             edit { it[Keys.readTimeoutSeconds] = seconds.toString() }
         }
 
-        suspend fun setDisableOcspChecking(disable: Boolean) {
+        override suspend fun setDisableOcspChecking(disable: Boolean) {
             edit { it[Keys.disableOcspChecking] = disable }
         }
 

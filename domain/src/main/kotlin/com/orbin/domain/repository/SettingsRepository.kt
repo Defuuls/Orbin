@@ -71,6 +71,13 @@ interface SettingsRepository {
 
     suspend fun setUserAgent(userAgent: String)
 
+    suspend fun setConnectTimeoutSeconds(seconds: Long)
+
+    suspend fun setReadTimeoutSeconds(seconds: Long)
+
+    /** True disables OCSP revocation checking, which is the default for reliability. */
+    suspend fun setDisableOcspChecking(disable: Boolean)
+
     suspend fun setOnboardingCompleted(completed: Boolean)
 
     suspend fun setActiveProviderId(id: ProviderId)
