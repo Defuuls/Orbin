@@ -249,6 +249,18 @@ class FakeSettingsRepository(
         update { copy(imageCacheLimitMb = megabytes) }
     }
 
+    override suspend fun setConnectTimeoutSeconds(seconds: Long) {
+        update { copy(connectTimeoutSeconds = seconds) }
+    }
+
+    override suspend fun setReadTimeoutSeconds(seconds: Long) {
+        update { copy(readTimeoutSeconds = seconds) }
+    }
+
+    override suspend fun setDisableOcspChecking(disable: Boolean) {
+        update { copy(disableOcspChecking = disable) }
+    }
+
     override suspend fun setDownloadFolderUri(uri: String) {
         update { copy(downloadFolderUri = uri) }
     }

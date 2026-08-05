@@ -84,6 +84,21 @@ Introduced in v30 and refined through v32:
 | HTTPS only | Always enforced — shown for transparency, not toggleable. |
 | DNS over HTTPS | Resolves DNS over HTTPS; when enabled, a **DNS provider** picker appears (Cloudflare, OpenDNS, NextDNS). |
 
+## Advanced *(unreleased)*
+
+Network internals. The defaults suit almost everyone; these exist for constrained or unusual
+connections.
+
+| Setting | What it does |
+| --- | --- |
+| Custom user agent | Sent with every request. Leave empty to use Orbin's default. Applies immediately — the header is read per request. |
+| Connect timeout | How long to wait establishing a connection: 10, 15, 30 or 60 seconds. |
+| Read timeout | How long to wait for data once connected: 15, 30, 60 or 120 seconds. |
+| Check certificate revocation | Asks each certificate authority whether a site's certificate has been revoked. **Off by default**: the check is slow and many networks block it, which surfaces as sites failing to load rather than as a warning. |
+
+Timeouts and revocation checking are baked into the network client when it is built, so changes
+to those three take effect the next time Orbin starts. The user agent is the exception.
+
 ## Storage
 
 | Setting | What it does |

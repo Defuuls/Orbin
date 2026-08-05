@@ -53,6 +53,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private val IMAGE_CACHE_LIMITS_MB = listOf(128, 256, 512, 1024)
+private val CONNECT_TIMEOUTS_SECONDS = listOf(10L, 15L, 30L, 60L)
+private val READ_TIMEOUTS_SECONDS = listOf(15L, 30L, 60L, 120L)
 
 private const val DEFAULT_BACKUP_FILE_NAME = "orbin-backup.json"
 private const val FONT_SCALE_SMALL = 0.9f
@@ -339,6 +341,41 @@ fun SettingsScreen(
                 )
             }
 
+            SectionHeader("Advanced")
+            TextFieldRow(
+                label = "Custom user agent",
+                value = settings.userAgent,
+                supporting = "Sent with every request. Leave empty to use Orbin's default.",
+                onValueChange = viewModel::setUserAgent,
+            )
+            ChipChoiceRow(
+                label = "Connect timeout",
+                values = CONNECT_TIMEOUTS_SECONDS,
+                selected = settings.connectTimeoutSeconds,
+                text = { "$it s" },
+                onChange = viewModel::setConnectTimeout,
+            )
+            ChipChoiceRow(
+                label = "Read timeout",
+                values = READ_TIMEOUTS_SECONDS,
+                selected = settings.readTimeoutSeconds,
+                text = { "$it s" },
+                onChange = viewModel::setReadTimeout,
+            )
+            SwitchRow(
+                "Check certificate revocation",
+                !settings.disableOcspChecking,
+                viewModel::setCertificateRevocationChecks,
+                supporting =
+                    "Asks each certificate authority whether a site's certificate has been revoked. " +
+                        "Off by default: the check is slow and many networks block it, which shows up " +
+                        "as sites failing to load rather than as a warning.",
+            )
+            SupportingNote(
+                "Timeouts and revocation checking are applied when the network client is built, " +
+                    "so changes to them take effect the next time Orbin starts.",
+            )
+
             SectionHeader("Storage")
             ModernListItem(
                 title = "Downloads",
@@ -454,6 +491,16 @@ private fun SectionHeader(text: String) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+    )
+}
+
+@Composable
+private fun SupportingNote(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
