@@ -38,8 +38,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 79
-        versionName = "59-Betelgeuse"
+        versionCode = 80
+        versionName = "60-Procyon"
     }
 
     signingConfigs {
