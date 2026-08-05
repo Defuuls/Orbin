@@ -55,6 +55,8 @@ interface SettingsRepository {
 
     suspend fun setFeedThreadLimit(limit: FeedThreadLimit)
 
+    suspend fun setImageCacheLimitMb(megabytes: Int)
+
     suspend fun setDownloadFolderUri(uri: String)
 
     suspend fun setDohEnabled(enabled: Boolean)

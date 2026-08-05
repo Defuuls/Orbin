@@ -10,6 +10,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":domain"))
     implementation(project(":network"))
 
     implementation(libs.androidx.core.ktx)

@@ -8,6 +8,7 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.AppSettings
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.media.ImagePreloader
 import com.orbin.network.di.BaseOkHttp
 import dagger.Module
@@ -15,6 +16,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import javax.inject.Singleton
@@ -37,6 +40,7 @@ object ImageLoaderModule {
     fun providesImageLoader(
         @ApplicationContext context: Context,
         @BaseOkHttp okHttpClient: OkHttpClient,
+        settingsRepository: SettingsRepository,
     ): ImageLoader =
         ImageLoader
             .Builder(context)
@@ -53,7 +57,10 @@ object ImageLoaderModule {
                 DiskCache
                     .Builder()
                     .directory(context.cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizeBytes(AppSettings.Default.imageCacheLimitMb * BYTES_PER_MB)
+                    // Coil resolves this lazily, off the main thread, on first disk-cache use,
+                    // so reading the persisted value here does not block startup. The size is
+                    // fixed for the process lifetime — a change applies on next launch.
+                    .maxSizeBytes(runBlocking { settingsRepository.settings.first() }.imageCacheLimitMb * BYTES_PER_MB)
                     .build()
             }.crossfade(true)
             .build()
