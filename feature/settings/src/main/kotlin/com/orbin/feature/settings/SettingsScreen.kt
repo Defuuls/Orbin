@@ -60,7 +60,11 @@ private const val FONT_SCALE_DEFAULT = 1f
 private const val FONT_SCALE_LARGE = 1.1f
 private const val FONT_SCALE_EXTRA_LARGE = 1.2f
 
-/** Settings screen covering appearance, media, and network/privacy sections. */
+/**
+ * Settings screen. Sections follow what a setting *affects*, not which subsystem implements it:
+ * Site, Content (what the feed shows), Notifications, Appearance, Media (playback and preloading),
+ * Network & privacy, and Storage (bytes on disk, and getting them in or out).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -181,6 +185,13 @@ fun SettingsScreen(
                     "Reload subscriptions and threads when coming back to the feed, " +
                         "for example after reading a thread. Turn off to keep the feed as you left it.",
             )
+            ChoiceRow(
+                label = "Threads per board",
+                values = FeedThreadLimit.entries,
+                selected = settings.feedThreadLimit,
+                text = { it.label },
+                onChange = viewModel::setFeedThreadLimit,
+            )
             ModernListItem(
                 title = "Run setup again",
                 subtitle = "Subscriptions, preferences, and privacy",
@@ -285,20 +296,6 @@ fun SettingsScreen(
                 text = { it.label },
                 onChange = viewModel::setPreloadThrottleMode,
             )
-            ChoiceRow(
-                label = "Threads per board",
-                values = FeedThreadLimit.entries,
-                selected = settings.feedThreadLimit,
-                text = { it.label },
-                onChange = viewModel::setFeedThreadLimit,
-            )
-            ChipChoiceRow(
-                label = "Image cache limit",
-                values = IMAGE_CACHE_LIMITS_MB,
-                selected = settings.imageCacheLimitMb,
-                text = { "$it MB" },
-                onChange = viewModel::setImageCacheLimitMb,
-            )
 
             SectionHeader("Network & privacy")
             SwitchRow(
@@ -352,6 +349,13 @@ fun SettingsScreen(
                 title = "Saved media folder",
                 subtitle = settings.downloadFolderUri.ifBlank { "Downloads/Orbin" },
                 onClick = { folderPicker.launch(null) },
+            )
+            ChipChoiceRow(
+                label = "Image cache limit",
+                values = IMAGE_CACHE_LIMITS_MB,
+                selected = settings.imageCacheLimitMb,
+                text = { "$it MB" },
+                onChange = viewModel::setImageCacheLimitMb,
             )
             ModernListItem(
                 title = "Export data",

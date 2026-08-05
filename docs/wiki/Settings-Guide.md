@@ -1,7 +1,8 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v58 (Capella)**. Settings
-are stored in an encrypted DataStore and take effect immediately — no restart required.
+A tour of every section of Orbin's Settings screen, tracking `main` as of **v59 (Betelgeuse)**
+plus the rows marked *(unreleased)*. Settings are stored in an encrypted DataStore and take
+effect immediately, with one exception: the image cache limit applies on the next app start.
 
 ## Site
 
@@ -22,6 +23,7 @@ Shown only when more than one provider is installed.
 | Hide NSFW boards | Hides NSFW boards from board lists and pickers (including the gallery's board picker since v33). |
 | Hide text-only threads | Hides threads that have no media. |
 | Refresh feed on return | Reloads the subscribed feed when you return to it, e.g. after backing out of a thread. On by default. |
+| Threads per board | Caps how many threads each board contributes to the subscribed feed: 6, 12, 18, or all. |
 | Run setup again | Re-runs the first-launch wizard (subscriptions, preferences, privacy). |
 
 ## Notifications
@@ -70,7 +72,6 @@ Introduced in v30 and refined through v32:
 | Preload images | Preloads images in the background. |
 | Preload content | What to preload. |
 | Preload speed | How aggressively preloading runs. |
-| Threads per board | Caps how many threads each board contributes to the subscribed feed: 6, 12, 18, or all. |
 
 ## Network & privacy
 
@@ -89,6 +90,9 @@ Introduced in v30 and refined through v32:
 | --- | --- |
 | Downloads | Opens the download history screen. |
 | Saved media folder | Picks the folder downloads are saved to; defaults to `Downloads/Orbin`. Thread-link exports also go here. |
+| Image cache limit *(unreleased)* | How much disk the image cache may use: 128, 256, 512 or 1024 MB. Applies on the next app start. |
+| Export data *(unreleased)* | Writes settings, subscribed and favourite boards, and bookmarks to a file you choose. |
+| Import data *(unreleased)* | Restores a previously exported file. Boards and bookmarks are **added**, never removed, so importing cannot destroy an existing setup. The saved media folder is not restored — re-pick it to re-grant access. |
 
 ## Where the rest of your privacy lives
 
@@ -97,5 +101,8 @@ Some protections are structural rather than settings:
 - The local database (history, bookmarks, downloads, recent searches) is encrypted with
   SQLCipher, and settings with an encrypted DataStore; both keys are hardware-backed and never
   leave the TEE/StrongBox.
-- Cloud backup and device-transfer of local data are disabled at the manifest level.
+- Cloud backup and device-transfer of local data are disabled at the manifest level, so nothing
+  syncs off the device implicitly. **Export data** is the deliberate alternative: it moves the
+  same data only when you ask, to a file you choose. That file is plain JSON and is *not*
+  encrypted, so keep it somewhere you trust.
 - Downloads only accept HTTPS URLs, and remote file names are sanitized before being written.
