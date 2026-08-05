@@ -2,10 +2,15 @@ package com.orbin.feature.settings
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BackupBoardRef
+import com.orbin.core.model.BackupBookmark
 import com.orbin.core.model.BackupDocument
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BoardPreferencesRepository
+import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.flow.first
@@ -18,6 +23,7 @@ class BackupService
     constructor(
         private val settingsRepository: SettingsRepository,
         private val boardPreferences: BoardPreferencesRepository,
+        private val bookmarkRepository: BookmarkRepository,
         private val registry: ProviderRegistry,
     ) {
         suspend fun exportToJson(appVersionName: String): String {
@@ -29,6 +35,7 @@ class BackupService
                     settings = settingsRepository.settings.first(),
                     subscribedBoards = providers.flatMap { it.refs(subscribed = true) },
                     favoriteBoards = providers.flatMap { it.refs(subscribed = false) },
+                    bookmarks = bookmarkRepository.observeBookmarks().first().map { it.toBackup() },
                 )
             return json.encodeToString(BackupDocument.serializer(), document)
         }
@@ -53,10 +60,13 @@ class BackupService
                     boardPreferences.setFavoriteBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
                 }
 
+                document.bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+
                 BackupSummary(
                     exportedAt = document.exportedAt,
                     subscribedBoards = document.subscribedBoards.size,
                     favoriteBoards = document.favoriteBoards.size,
+                    bookmarks = document.bookmarks.size,
                 )
             }
 
@@ -116,6 +126,28 @@ class BackupService
                 // The user re-picks the folder, which re-grants access.
             }
 
+        private fun Bookmark.toBackup(): BackupBookmark =
+            BackupBookmark(
+                providerId = key.provider.value,
+                boardId = key.board.value,
+                threadId = key.thread.value,
+                title = title,
+                thumbnailUrl = thumbnailUrl,
+                createdAtMillis = createdAtMillis,
+                isWatched = isWatched,
+                lastSeenReplyCount = lastSeenReplyCount,
+            )
+
+        private fun BackupBookmark.toBookmark(): Bookmark =
+            Bookmark(
+                key = ThreadKey(ProviderId(providerId), BoardId(boardId), ThreadId(threadId)),
+                title = title,
+                thumbnailUrl = thumbnailUrl,
+                createdAtMillis = createdAtMillis,
+                isWatched = isWatched,
+                lastSeenReplyCount = lastSeenReplyCount,
+            )
+
         private fun timestamp(): String =
             java.time.Instant
                 .now()
@@ -136,4 +168,5 @@ data class BackupSummary(
     val exportedAt: String,
     val subscribedBoards: Int,
     val favoriteBoards: Int,
+    val bookmarks: Int,
 )

@@ -25,6 +25,7 @@ data class BackupDocument(
     val settings: AppSettings = AppSettings(),
     val subscribedBoards: List<BackupBoardRef> = emptyList(),
     val favoriteBoards: List<BackupBoardRef> = emptyList(),
+    val bookmarks: List<BackupBookmark> = emptyList(),
 ) {
     companion object {
         /** Bump only for a change old builds cannot safely read; additive fields do not need it. */
@@ -37,4 +38,27 @@ data class BackupDocument(
 data class BackupBoardRef(
     val providerId: String,
     val boardId: String,
+)
+
+/**
+ * A bookmarked thread, flattened away from [ThreadKey] and the id value classes.
+ *
+ * Unlike [AppSettings], which is serialized as-is because a hand-written mirror of forty
+ * defaulted fields would drift, a bookmark is small enough to map explicitly — and that keeps the
+ * file format from being pinned to the internal key type, which is free to be refactored.
+ *
+ * Reply counters are intentionally partial: [lastSeenReplyCount] is what unread math needs, while
+ * the latest count and liveness are re-fetched on the next refresh. Restoring a stale "latest"
+ * would show invented unread badges until the thread was opened.
+ */
+@Serializable
+data class BackupBookmark(
+    val providerId: String,
+    val boardId: String,
+    val threadId: Long,
+    val title: String = "",
+    val thumbnailUrl: String? = null,
+    val createdAtMillis: Long = 0,
+    val isWatched: Boolean = false,
+    val lastSeenReplyCount: Int = 0,
 )

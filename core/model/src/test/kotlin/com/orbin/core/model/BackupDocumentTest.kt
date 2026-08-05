@@ -36,6 +36,20 @@ class BackupDocumentTest {
                 ),
             subscribedBoards = listOf(BackupBoardRef("vichan", "g"), BackupBoardRef("lynxchan", "tech")),
             favoriteBoards = listOf(BackupBoardRef("vichan", "a")),
+            bookmarks =
+                listOf(
+                    BackupBookmark(
+                        providerId = "vichan",
+                        boardId = "g",
+                        threadId = 123_456L,
+                        title = "Daily programming thread",
+                        thumbnailUrl = "https://example.invalid/thumb.jpg",
+                        createdAtMillis = 1_770_000_000_000L,
+                        isWatched = true,
+                        lastSeenReplyCount = 42,
+                    ),
+                    BackupBookmark(providerId = "lynxchan", boardId = "tech", threadId = 99L),
+                ),
         )
 
     @Test
@@ -90,6 +104,39 @@ class BackupDocumentTest {
         val restored = json.decodeFromString(BackupDocument.serializer(), encode(populated))
 
         assertThat(restored.subscribedBoards.map { it.providerId }).containsExactly("vichan", "lynxchan")
+    }
+
+    @Test
+    fun bookmarksSurviveWithWatchStateAndUnreadAnchor() {
+        val restored = json.decodeFromString(BackupDocument.serializer(), encode(populated))
+        val watched = restored.bookmarks.single { it.isWatched }
+
+        assertThat(restored.bookmarks).hasSize(2)
+        assertThat(watched.threadId).isEqualTo(123_456L)
+        assertThat(watched.lastSeenReplyCount).isEqualTo(42)
+        assertThat(watched.title).isEqualTo("Daily programming thread")
+    }
+
+    /** A bookmark maps onto ThreadKey's three parts, so none of them may be dropped in transit. */
+    @Test
+    fun bookmarksKeepEveryPartOfTheThreadKey() {
+        val restored = json.decodeFromString(BackupDocument.serializer(), encode(populated))
+
+        assertThat(restored.bookmarks.map { Triple(it.providerId, it.boardId, it.threadId) })
+            .containsExactly(
+                Triple("vichan", "g", 123_456L),
+                Triple("lynxchan", "tech", 99L),
+            )
+    }
+
+    /** Bookmarks arrived after the first format version, so older files simply have none. */
+    @Test
+    fun aBackupWithoutBookmarksStillImports() {
+        val noBookmarks = """{ "exportedAt": "2026-08-04T12:00:00Z", "formatVersion": 1 }"""
+
+        val restored = json.decodeFromString(BackupDocument.serializer(), noBookmarks)
+
+        assertThat(restored.bookmarks).isEmpty()
     }
 
     private fun encode(document: BackupDocument): String = json.encodeToString(BackupDocument.serializer(), document)

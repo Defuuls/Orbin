@@ -346,12 +346,12 @@ fun SettingsScreen(
             )
             ModernListItem(
                 title = "Export data",
-                subtitle = "Save settings and subscribed boards to a file",
+                subtitle = "Save settings, boards and bookmarks to a file",
                 onClick = { backupExporter.launch(DEFAULT_BACKUP_FILE_NAME) },
             )
             ModernListItem(
                 title = "Import data",
-                subtitle = "Restore settings and subscribed boards from a backup",
+                subtitle = "Restore settings, boards and bookmarks from a backup",
                 onClick = { backupImporter.launch(arrayOf("application/json", "*/*")) },
             )
         }
@@ -539,7 +539,7 @@ private fun BackupStatus.message(): String =
     when (this) {
         BackupStatus.Exported -> "Backup saved"
         is BackupStatus.Imported ->
-            "Restored ${summary.subscribedBoards} subscribed and ${summary.favoriteBoards} favorite boards"
+            "Restored ${summary.subscribedBoards} boards and ${summary.bookmarks} bookmarks"
         is BackupStatus.Failed -> message
     }
 
