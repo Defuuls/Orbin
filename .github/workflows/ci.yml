@@ -91,6 +91,12 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
 
+      # Compiles the androidTest sources in app, feature:settings and feature:downloads. They are
+      # not executed here — that needs an emulator — but without this they are built nowhere in CI
+      # and can rot silently against the code they are meant to guard.
+      - name: Compile instrumentation tests
+        run: ./gradlew assembleDebugAndroidTest
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
