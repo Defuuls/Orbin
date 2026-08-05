@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [62-Hadar] - 2026-08-05
+
 ### Added
 - **Check for updates,** in Settings → Network & privacy. It asks GitHub for the newest published
   release, compares it with the running build, and links to the release page when there is one.
@@ -696,7 +698,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v52-Wolf-359...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...HEAD
+[62-Hadar]: https://github.com/Defuuls/Orbin/compare/v61-Achernar...v62-Hadar
 [52-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v51-Rigel...v52-Wolf-359
 [48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
 [47-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v46-Epsilon-Eridani...v47-Proxima-Centauri
