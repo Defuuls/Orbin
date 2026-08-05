@@ -128,8 +128,6 @@ class OnboardingViewModel
 
         fun setPreload(enabled: Boolean) = update { settingsRepository.setPreloadImages(enabled) }
 
-        fun setDoh(enabled: Boolean) = update { settingsRepository.setDohEnabled(enabled) }
-
         fun setBiometricLock(enabled: Boolean) = update { settingsRepository.setBiometricLockEnabled(enabled) }
 
         fun setSaveRecentSearches(enabled: Boolean) = update { settingsRepository.setSaveRecentSearches(enabled) }

@@ -265,10 +265,6 @@ class FakeSettingsRepository(
         update { copy(downloadFolderUri = uri) }
     }
 
-    override suspend fun setDohEnabled(enabled: Boolean) {
-        update { copy(dohEnabled = enabled) }
-    }
-
     override suspend fun setDohProvider(provider: DohProvider) {
         update { copy(dohProvider = provider) }
     }

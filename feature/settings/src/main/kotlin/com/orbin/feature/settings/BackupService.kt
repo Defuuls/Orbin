@@ -119,7 +119,6 @@ class BackupService
                 setConnectTimeoutSeconds(settings.connectTimeoutSeconds)
                 setReadTimeoutSeconds(settings.readTimeoutSeconds)
                 setDisableOcspChecking(settings.disableOcspChecking)
-                setDohEnabled(settings.dohEnabled)
                 setDohProvider(settings.dohProvider)
                 setBiometricLockEnabled(settings.biometricLockEnabled)
                 setSaveRecentSearches(settings.saveRecentSearches)

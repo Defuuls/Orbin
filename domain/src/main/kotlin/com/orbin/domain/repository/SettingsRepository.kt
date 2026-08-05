@@ -59,8 +59,6 @@ interface SettingsRepository {
 
     suspend fun setDownloadFolderUri(uri: String)
 
-    suspend fun setDohEnabled(enabled: Boolean)
-
     suspend fun setDohProvider(provider: DohProvider)
 
     suspend fun setBiometricLockEnabled(enabled: Boolean)

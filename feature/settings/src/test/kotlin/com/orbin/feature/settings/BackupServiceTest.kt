@@ -65,7 +65,6 @@ class BackupServiceTest {
             imageCacheLimitMb = 512,
             feedThreadLimit = FeedThreadLimit.ALL,
             userAgent = "OrbinTest/1.0",
-            dohEnabled = true,
             dohProvider = DohProvider.NEXTDNS,
             connectTimeoutSeconds = 30,
             readTimeoutSeconds = 60,

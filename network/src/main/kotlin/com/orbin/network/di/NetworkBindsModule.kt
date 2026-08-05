@@ -1,7 +1,9 @@
 package com.orbin.network.di
 
+import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.network.NetworkMonitor
 import com.orbin.network.ConnectivityNetworkMonitor
+import com.orbin.network.DohFallbackTracker
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,4 +17,8 @@ interface NetworkBindsModule {
     @Binds
     @Singleton
     fun bindsNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
+
+    @Binds
+    @Singleton
+    fun bindsDnsPrivacyMonitor(impl: DohFallbackTracker): DnsPrivacyMonitor
 }
