@@ -150,10 +150,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.downloadFolderUri] = uri }
         }
 
-        override suspend fun setDohEnabled(enabled: Boolean) {
-            edit { it[Keys.doh] = enabled }
-        }
-
         override suspend fun setDohProvider(provider: DohProvider) {
             edit { it[Keys.dohProvider] = provider.name }
         }
@@ -316,7 +312,6 @@ class SettingsRepositoryImpl
                 imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 userAgent = this[Keys.userAgent] ?: "",
-                dohEnabled = this[Keys.doh] ?: false,
                 dohProvider =
                     this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
                         ?: DohProvider.CLOUDFLARE,
@@ -339,7 +334,7 @@ class SettingsRepositoryImpl
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
             NetworkConfig(
                 userAgent = userAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT },
-                dnsOverHttps = if (dohEnabled) dohProvider.toDohConfig() else DohConfig.Disabled,
+                dnsOverHttps = dohProvider.toDohConfig(),
                 httpsOnly = httpsOnly,
                 connectTimeoutSeconds = connectTimeoutSeconds,
                 readTimeoutSeconds = readTimeoutSeconds,
@@ -382,7 +377,6 @@ class SettingsRepositoryImpl
             val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val userAgent = stringPreferencesKey("user_agent")
-            val doh = booleanPreferencesKey("doh_enabled")
             val dohProvider = stringPreferencesKey("doh_provider")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")

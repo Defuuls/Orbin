@@ -1,8 +1,9 @@
 package com.orbin.network.di
 
 import android.content.Context
-import com.orbin.network.DohConfig
+import com.orbin.network.DohFallbackTracker
 import com.orbin.network.NetworkConfigProvider
+import com.orbin.network.dns.DynamicDns
 import com.orbin.network.interceptor.HeadersInterceptor
 import com.orbin.network.interceptor.HttpsOnlyInterceptor
 import com.orbin.network.interceptor.InMemoryCookieJar
@@ -16,15 +17,9 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.CertificatePinner
-import okhttp3.Dns
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
-import okhttp3.dnsoverhttps.DnsOverHttps
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
-import java.net.InetAddress
-import java.net.UnknownHostException
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -45,7 +40,7 @@ private const val KB_PER_MB = 1024L
 
 /**
  * Provides the shared networking primitives: the lenient [Json] parser, and an [OkHttpClient]
- * configured for secure defaults (HTTPS-only, modern TLS), optional DNS-over-HTTPS, the
+ * configured for secure defaults (HTTPS-only, modern TLS, always-on DNS-over-HTTPS), the
  * user-agent interceptor and opt-in logging.
  *
  * A [NetworkConfigProvider] binding must be supplied by the app/data layer; :data provides one
@@ -71,6 +66,7 @@ object NetworkModule {
     fun providesOkHttpClient(
         @ApplicationContext context: Context,
         configProvider: NetworkConfigProvider,
+        dohFallbackTracker: DohFallbackTracker,
     ): OkHttpClient {
         val config = configProvider.current()
 
@@ -118,7 +114,13 @@ object NetworkModule {
             .addInterceptor(PowBlockInterceptor())
             .addInterceptor(HeadersInterceptor(configProvider))
             .apply {
-                dns(DynamicDns(configProvider, bootstrap))
+                dns(
+                    DynamicDns(
+                        configProvider = configProvider,
+                        fallbackTracker = dohFallbackTracker,
+                        encryptedDnsFactory = DynamicDns.encryptedDnsFactory(bootstrap),
+                    ),
+                )
                 if (config.enableHttpLogging) {
                     addInterceptor(
                         HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC },
@@ -154,29 +156,4 @@ object NetworkModule {
                 chain.proceed(req)
             }.addInterceptor(VideoRetryAfterInterceptor())
             .build()
-
-    private class DynamicDns(
-        private val configProvider: NetworkConfigProvider,
-        private val bootstrap: OkHttpClient,
-    ) : Dns {
-        private val dohCache = ConcurrentHashMap<DohConfig.Enabled, Dns>()
-
-        @Throws(UnknownHostException::class)
-        override fun lookup(hostname: String): List<InetAddress> =
-            when (val doh = configProvider.current().dnsOverHttps) {
-                DohConfig.Disabled -> Dns.SYSTEM.lookup(hostname)
-                is DohConfig.Enabled -> dohCache.getOrPut(doh) { doh.toDns() }.lookup(hostname)
-            }
-
-        private fun DohConfig.Enabled.toDns(): Dns =
-            DnsOverHttps
-                .Builder()
-                .client(bootstrap)
-                .url(resolverUrl.toHttpUrl())
-                .apply {
-                    if (bootstrapIps.isNotEmpty()) {
-                        bootstrapDnsHosts(bootstrapIps.map { InetAddress.getByName(it) })
-                    }
-                }.build()
-    }
 }

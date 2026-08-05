@@ -2,6 +2,7 @@ package com.orbin.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
@@ -45,6 +46,7 @@ class SettingsViewModel
         private val downloadRepository: DownloadRepository,
         private val backupService: BackupService,
         private val updateRepository: UpdateRepository,
+        dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
@@ -55,6 +57,15 @@ class SettingsViewModel
 
         /** Result of the last export or import, for a snackbar. Cleared by [clearBackupStatus]. */
         val backupStatus: StateFlow<BackupStatus?> = _backupStatus.asStateFlow()
+
+        /**
+         * True while DNS lookups are going through the system resolver because the chosen DoH
+         * resolver is unreachable. Encrypted DNS cannot be switched off, so this is the only way a
+         * user learns their lookups have stopped being private.
+         */
+        val dnsFallbackActive: StateFlow<Boolean> =
+            dnsPrivacyMonitor.usingSystemFallback
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
         val settings: StateFlow<AppSettings> =
             repository.settings
@@ -121,8 +132,6 @@ class SettingsViewModel
         fun setCertificateRevocationChecks(enabled: Boolean) = update { repository.setDisableOcspChecking(!enabled) }
 
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
-
-        fun setDoh(enabled: Boolean) = update { repository.setDohEnabled(enabled) }
 
         fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 

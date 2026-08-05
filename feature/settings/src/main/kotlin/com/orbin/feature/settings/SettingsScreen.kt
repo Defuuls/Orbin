@@ -95,6 +95,7 @@ fun SettingsScreen(
         }
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
+    val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     val backupExporter =
@@ -364,16 +365,24 @@ fun SettingsScreen(
                 subtitle = "Always enforced",
                 trailing = { Switch(checked = true, onCheckedChange = null) },
             )
-            SwitchRow("DNS over HTTPS", settings.dohEnabled, viewModel::setDoh)
-            if (settings.dohEnabled) {
-                ChoiceRow(
-                    label = "DNS provider",
-                    values = DohProvider.entries,
-                    selected = settings.dohProvider,
-                    text = { it.label },
-                    onChange = viewModel::setDohProvider,
-                )
-            }
+            ChoiceRow(
+                label = "DNS over HTTPS",
+                values = DohProvider.entries,
+                selected = settings.dohProvider,
+                text = { it.label },
+                onChange = viewModel::setDohProvider,
+            )
+            SupportingNote(
+                if (dnsFallbackActive) {
+                    "This network is blocking ${settings.dohProvider.label}, so lookups are going " +
+                        "through the system resolver and your DNS is not private right now. Try " +
+                        "another resolver above, or another network."
+                } else {
+                    "Encrypted DNS is always on — choose which resolver answers your lookups. " +
+                        "If a network blocks the one you pick, Orbin falls back to the system " +
+                        "resolver and says so here rather than failing to load."
+                },
+            )
 
             SectionHeader("Advanced")
             TextFieldRow(

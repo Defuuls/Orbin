@@ -171,7 +171,6 @@ fun OnboardingScreen(
                 SetupStep.PRIVACY ->
                     PrivacyStep(
                         settings,
-                        viewModel::setDoh,
                         viewModel::setBiometricLock,
                         viewModel::setSaveRecentSearches,
                     )
@@ -515,7 +514,6 @@ private fun MediaStep(
 @Composable
 private fun PrivacyStep(
     settings: AppSettings,
-    onDoh: (Boolean) -> Unit,
     onBiometricLock: (Boolean) -> Unit,
     onSaveRecentSearches: (Boolean) -> Unit,
 ) {
@@ -530,9 +528,9 @@ private fun PrivacyStep(
             )
             PreferenceSwitch(
                 "DNS over HTTPS",
-                "Resolve through the app's secure DNS setting",
-                settings.dohEnabled,
-                onDoh,
+                "Always on — pick a resolver in Settings",
+                true,
+                {},
             )
             PreferenceSwitch(
                 "Lock with biometrics",

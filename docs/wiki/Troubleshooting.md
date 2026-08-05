@@ -62,6 +62,18 @@ The **Internal updater** toggle dates from v34, but until now it had nothing att
 there was no update-checking code in the app at all. The toggle now genuinely gates the row
 above.
 
+### "Why can't I turn off DNS over HTTPS?"
+Because a protection you can switch off protects you only until something persuades you to
+switch it off. Encrypted DNS is now a property of the app rather than a preference: the
+setting is which resolver answers your lookups, and `DohConfig` has no "disabled" case for
+any code path to fall into.
+
+Networks do sometimes block the well-known DoH resolvers. When that happens Orbin resolves
+through the system resolver instead of failing to load anything, and the DNS section of
+Settings tells you it has done so — your lookups are not private on that network. Switching
+resolvers sometimes clears it; otherwise the network itself is the cause. The notice clears
+on its own once an encrypted lookup succeeds again, with no restart.
+
 ### "Where do downloads and exported thread links go?"
 To your **Saved media folder** (Settings → Storage), which defaults to `Downloads/Orbin`.
 Since v25.2.1, exported thread links follow the same folder setting.

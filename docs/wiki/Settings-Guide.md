@@ -1,6 +1,6 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v60 (Procyon)**. Settings
+A tour of every section of Orbin's Settings screen, current as of **v62 (Hadar)**. Settings
 are stored in an encrypted DataStore and take effect immediately, with one exception: the image
 cache limit applies on the next app start.
 
@@ -83,7 +83,7 @@ Introduced in v30 and refined through v32:
 | Check for updates | Asks GitHub for the newest published release and compares it with the running build. Only release *metadata* is fetched — Orbin never downloads or installs an APK, so when an update exists the row offers a link to the release page, where the signed APK and its checksum are. Appears only while **Internal updater** is on. |
 | Clear local activity | Deletes browsing history, recent searches, and download history stored on this device (with a confirmation dialog). |
 | HTTPS only | Always enforced — shown for transparency, not toggleable. |
-| DNS over HTTPS | Resolves DNS over HTTPS; when enabled, a **DNS provider** picker appears (Cloudflare, OpenDNS, NextDNS). |
+| DNS over HTTPS | **Always on** — the setting is *which* resolver answers your lookups (Cloudflare, OpenDNS, NextDNS), not whether they are encrypted. There is no off switch. If a network blocks the resolver you pick, Orbin resolves through the system resolver so the app keeps working, and says so beneath the picker rather than downgrading you silently. |
 
 ## Advanced *(v60)*
 

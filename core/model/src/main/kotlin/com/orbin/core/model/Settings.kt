@@ -111,7 +111,6 @@ data class AppSettings(
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
     val downloadFolderUri: String = "",
     val userAgent: String = "",
-    val dohEnabled: Boolean = false,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val httpsOnly: Boolean = true,
     val connectTimeoutSeconds: Long = 15,

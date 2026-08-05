@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Encrypted DNS is no longer a toggle.** DNS over HTTPS could be switched off, and shipped off
+  by default, so the protection was absent for anyone who never went looking for it. It is now
+  always on and the setting is *which* resolver answers your lookups — Cloudflare, OpenDNS or
+  NextDNS. `DohConfig` has no "disabled" case at all, so plaintext resolution is not a state the
+  app can be in rather than a state it merely avoids. The DoH switch is gone from first-run setup
+  too.
+
+### Added
+- **A visible notice when a network blocks your resolver.** Removing the off switch removed an
+  escape hatch: some networks block the well-known DoH endpoints, and refusing to resolve would
+  have left the app unable to load anything with no in-app remedy. Lookups now fall back to the
+  system resolver in that case, and Settings says so — being quietly downgraded is worse than the
+  toggle that was removed. The notice clears itself once an encrypted lookup succeeds again.
+
 ## [62-Hadar] - 2026-08-05
 
 ### Added
