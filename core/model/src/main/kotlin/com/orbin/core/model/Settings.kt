@@ -1,12 +1,16 @@
 package com.orbin.core.model
 
+import kotlinx.serialization.Serializable
+
 /** Theme preference independent of any UI framework type (mapped to the design-system enum in app). */
+@Serializable
 enum class AppThemeMode {
     SYSTEM,
     LIGHT,
     DARK,
 }
 
+@Serializable
 enum class ColorTheme(
     val label: String,
 ) {
@@ -16,6 +20,7 @@ enum class ColorTheme(
 }
 
 /** App icon variant for home screen. */
+@Serializable
 enum class AppIconVariant(
     val label: String,
 ) {
@@ -34,6 +39,7 @@ private const val THUMBNAIL_SIZE_MEDIUM_DP = 96
 private const val THUMBNAIL_SIZE_LARGE_DP = 120
 private const val THUMBNAIL_SIZE_FILL_DP = 240
 
+@Serializable
 enum class FeedThreadLimit(
     val count: Int?,
     val label: String,
@@ -44,6 +50,7 @@ enum class FeedThreadLimit(
     ALL(null, "All"),
 }
 
+@Serializable
 enum class DohProvider(
     val label: String,
 ) {
@@ -52,6 +59,7 @@ enum class DohProvider(
     NEXTDNS("NextDNS"),
 }
 
+@Serializable
 enum class ThumbnailSize(
     val label: String,
     val sizeDp: Int,
@@ -73,6 +81,7 @@ enum class ThumbnailSize(
  * sections (appearance / media / network) and exposed as one immutable snapshot so the UI observes
  * a single stable object.
  */
+@Serializable
 data class AppSettings(
     val personalizedHomeFeed: Boolean = true,
     val hiddenTags: String = "",
@@ -131,6 +140,7 @@ data class AppSettings(
  * safety against server-side rate limits; [UNLIMITED] removes all client-side pacing (no
  * delays, no per-minute cap) and preloads many files in parallel for uninterrupted browsing.
  */
+@Serializable
 enum class PreloadThrottleMode(
     val label: String,
 ) {

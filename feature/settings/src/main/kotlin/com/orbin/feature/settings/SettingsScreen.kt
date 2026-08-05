@@ -22,9 +22,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +49,10 @@ import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.provider.api.ProviderMetadata
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
+private const val DEFAULT_BACKUP_FILE_NAME = "orbin-backup.json"
 private const val FONT_SCALE_SMALL = 0.9f
 private const val FONT_SCALE_DEFAULT = 1f
 private const val FONT_SCALE_LARGE = 1.1f
@@ -76,8 +82,39 @@ fun SettingsScreen(
                 viewModel.setDownloadFolderUri(uri.toString())
             }
         }
+    val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val backupExporter =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri != null) {
+                viewModel.exportBackup(appVersionName(context)) { backupJson ->
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openOutputStream(uri)?.use { it.write(backupJson.toByteArray()) }
+                            ?: error("Could not open the selected file for writing")
+                    }
+                }
+            }
+        }
+    val backupImporter =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                viewModel.importBackup {
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                            ?: error("Could not open the selected file for reading")
+                    }
+                }
+            }
+        }
+
+    LaunchedEffect(backupStatus) {
+        val status = backupStatus ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(status.message())
+        viewModel.clearBackupStatus()
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             ModernSmallTopAppBar(
                 title = "Settings",
@@ -307,6 +344,16 @@ fun SettingsScreen(
                 subtitle = settings.downloadFolderUri.ifBlank { "Downloads/Orbin" },
                 onClick = { folderPicker.launch(null) },
             )
+            ModernListItem(
+                title = "Export data",
+                subtitle = "Save settings, boards and bookmarks to a file",
+                onClick = { backupExporter.launch(DEFAULT_BACKUP_FILE_NAME) },
+            )
+            ModernListItem(
+                title = "Import data",
+                subtitle = "Restore settings, boards and bookmarks from a backup",
+                onClick = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+            )
         }
     }
 
@@ -487,3 +534,19 @@ private enum class FontScaleOption(
             entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
     }
 }
+
+private fun BackupStatus.message(): String =
+    when (this) {
+        BackupStatus.Exported -> "Backup saved"
+        is BackupStatus.Imported ->
+            "Restored ${summary.subscribedBoards} boards and ${summary.bookmarks} bookmarks"
+        is BackupStatus.Failed -> message
+    }
+
+private fun appVersionName(context: android.content.Context): String =
+    runCatching {
+        context.packageManager
+            .getPackageInfo(context.packageName, 0)
+            .versionName
+            .orEmpty()
+    }.getOrDefault("")
