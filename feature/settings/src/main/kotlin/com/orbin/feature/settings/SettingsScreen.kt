@@ -52,6 +52,8 @@ import com.orbin.provider.api.ProviderMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+private val IMAGE_CACHE_LIMITS_MB = listOf(128, 256, 512, 1024)
+
 private const val DEFAULT_BACKUP_FILE_NAME = "orbin-backup.json"
 private const val FONT_SCALE_SMALL = 0.9f
 private const val FONT_SCALE_DEFAULT = 1f
@@ -289,6 +291,13 @@ fun SettingsScreen(
                 selected = settings.feedThreadLimit,
                 text = { it.label },
                 onChange = viewModel::setFeedThreadLimit,
+            )
+            ChipChoiceRow(
+                label = "Image cache limit",
+                values = IMAGE_CACHE_LIMITS_MB,
+                selected = settings.imageCacheLimitMb,
+                text = { "$it MB" },
+                onChange = viewModel::setImageCacheLimitMb,
             )
 
             SectionHeader("Network & privacy")

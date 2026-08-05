@@ -245,6 +245,10 @@ class FakeSettingsRepository(
         update { copy(feedThreadLimit = limit) }
     }
 
+    override suspend fun setImageCacheLimitMb(megabytes: Int) {
+        update { copy(imageCacheLimitMb = megabytes) }
+    }
+
     override suspend fun setDownloadFolderUri(uri: String) {
         update { copy(downloadFolderUri = uri) }
     }

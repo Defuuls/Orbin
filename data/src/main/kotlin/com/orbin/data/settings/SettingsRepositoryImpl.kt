@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.common.dispatchers.ApplicationScope
@@ -139,6 +140,10 @@ class SettingsRepositoryImpl
 
         override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
             edit { it[Keys.feedThreadLimit] = limit.name }
+        }
+
+        override suspend fun setImageCacheLimitMb(megabytes: Int) {
+            edit { it[Keys.imageCacheLimitMb] = megabytes }
         }
 
         override suspend fun setDownloadFolderUri(uri: String) {
@@ -308,6 +313,7 @@ class SettingsRepositoryImpl
                     this[Keys.feedThreadLimit]
                         ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
                         ?: FeedThreadLimit.TWELVE,
+                imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 userAgent = this[Keys.userAgent] ?: "",
                 dohEnabled = this[Keys.doh] ?: false,
@@ -373,6 +379,7 @@ class SettingsRepositoryImpl
             val preloadOption = stringPreferencesKey("preload_option")
             val preloadThrottleMode = stringPreferencesKey("preload_throttle_mode")
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
+            val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val userAgent = stringPreferencesKey("user_agent")
             val doh = booleanPreferencesKey("doh_enabled")

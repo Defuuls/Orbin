@@ -102,6 +102,8 @@ class SettingsViewModel
 
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
 
+        fun setImageCacheLimitMb(megabytes: Int) = update { repository.setImageCacheLimitMb(megabytes) }
+
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
 
         fun setDoh(enabled: Boolean) = update { repository.setDohEnabled(enabled) }
