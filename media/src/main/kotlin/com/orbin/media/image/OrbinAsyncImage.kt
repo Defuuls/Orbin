@@ -31,19 +31,38 @@ import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 
-/** Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics. */
+/**
+ * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.
+ *
+ * [placeholderUrl] names a cheaper image to paint underneath while [url] loads. Without it a cell
+ * showing a full-resolution source stays blank for the whole fetch, which is a slower first paint
+ * than the low-resolution thumbnail it replaced — noticeably so on a poor connection. The
+ * placeholder is dropped once the real image succeeds, so nothing is retained behind it.
+ */
 @Composable
 fun OrbinAsyncImage(
     url: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    placeholderUrl: String? = null,
 ) {
-    // remember(url) already resets both states when the URL changes; no effect needed.
+    // remember(url) already resets these when the URL changes; no effect needed.
     var loadFailed by remember(url) { mutableStateOf(false) }
     var failureMessage by remember(url) { mutableStateOf<String?>(null) }
+    var loaded by remember(url) { mutableStateOf(false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (placeholderUrl != null && placeholderUrl != url && !loaded) {
+            AsyncImage(
+                model = placeholderUrl,
+                // Described by the image drawn over it; announcing both would duplicate it.
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = contentScale,
+            )
+        }
+
         AsyncImage(
             model = url,
             contentDescription = contentDescription,
@@ -52,6 +71,7 @@ fun OrbinAsyncImage(
             onSuccess = {
                 loadFailed = false
                 failureMessage = null
+                loaded = true
             },
             onError = { state ->
                 val throwable = state.result.throwable
@@ -120,6 +140,9 @@ fun MediaThumbnail(
             url = imageUrl,
             contentDescription = attachment.originalFileName,
             modifier = Modifier.fillMaxSize(),
+            // Only meaningful when imageUrl is the full-resolution source; otherwise it is the
+            // same URL and the placeholder is skipped.
+            placeholderUrl = attachment.thumbnailUrl,
         )
 
         if (attachment.isSpoiler) {
