@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.orbin.android.application)
     alias(libs.plugins.orbin.android.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -25,7 +26,20 @@ val hasReleaseSigning =
         !signingValue("KEY_ALIAS").isNullOrBlank() &&
         !signingValue("KEY_PASSWORD").isNullOrBlank()
 
-if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
+// Only guard tasks that produce a shippable artifact. Matching every task name containing
+// "Release" also caught things like `generateReleaseBaselineProfile`, which needs a
+// release-*shaped* build but never leaves the machine — failing it for missing release secrets
+// is a confusing answer to a question the developer did not ask.
+val buildsShippableRelease =
+    gradle.startParameter.taskNames.any { task ->
+        val name = task.substringAfterLast(':')
+        (name.startsWith("assemble") || name.startsWith("bundle")) &&
+            name.contains("Release", ignoreCase = true) &&
+            !name.contains("NonMinified", ignoreCase = true) &&
+            !name.contains("Benchmark", ignoreCase = true)
+    }
+
+if (buildsShippableRelease) {
     check(hasReleaseSigning) {
         "Release signing is not configured. Set ORBIN_KEYSTORE_FILE, " +
             "ORBIN_KEYSTORE_PASSWORD, ORBIN_KEY_ALIAS, and ORBIN_KEY_PASSWORD, " +
@@ -49,6 +63,13 @@ android {
                 storePassword = signingValue("KEYSTORE_PASSWORD")
                 keyAlias = signingValue("KEY_ALIAS")
                 keyPassword = signingValue("KEY_PASSWORD")
+            } else {
+                // The developer guide has long promised that release builds fall back to debug
+                // signing when secrets are absent; nothing implemented it, so the config was
+                // simply empty and AGP failed later with a less helpful message. Borrowing the
+                // debug key is what makes baseline profile generation work on a machine that has
+                // no release secrets — which is every machine except CI.
+                initWith(getByName("debug"))
             }
         }
     }
@@ -115,6 +136,10 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.hilt.work)
     implementation(libs.kotlinx.serialization.json)
+
+    // Applies the baseline profile on devices without Play's profile delivery.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":benchmark"))
 
     debugImplementation(libs.compose.ui.tooling)
 

@@ -31,8 +31,12 @@ fun ZoomableImage(
     var scale by remember { mutableFloatStateOf(MIN_SCALE) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
+    // The four-argument overload; the three-argument one is deprecated. The leading centroid is
+    // the point a gesture is anchored on, which would let zoom track the pinch rather than the
+    // image's centre — a nicer gesture, but a different one, so it is deliberately unused here and
+    // the behaviour is unchanged by this migration.
     val transformableState =
-        rememberTransformableState { zoomChange, panChange, _ ->
+        rememberTransformableState { _, zoomChange, panChange, _ ->
             scale = (scale * zoomChange).coerceIn(MIN_SCALE, MAX_SCALE)
             offset = if (scale > MIN_SCALE) offset + panChange else Offset.Zero
         }

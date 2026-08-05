@@ -31,6 +31,7 @@ cd Orbin
 | Instrumented tests | `./gradlew connectedDebugAndroidTest` |
 | Screenshot tests | `./gradlew verifyRoborazziDebug` |
 | Record screenshots | `./gradlew recordRoborazziDebug` |
+| Baseline profile (needs a device) | `./gradlew :app:generateReleaseBaselineProfile` |
 | Lint/format | `./gradlew ktlintCheck` / `./gradlew ktlintFormat` |
 | Static analysis | `./gradlew detekt` |
 | Compose compiler metrics | add `-Porbin.enableComposeCompilerReports=true` |
@@ -72,8 +73,26 @@ export ORBIN_KEY_PASSWORD=...
 ```
 
 A git-ignored `keystore.properties` is still supported for emergency local use. When signing
-material is absent, `assembleRelease` falls back to the debug signing config, so local release
-builds work without secrets.
+material is absent the release signing config borrows the debug key, so release-shaped local
+builds — including baseline profile generation — work without secrets. `assembleRelease` and
+`bundleRelease` still fail fast if release signing is missing, since those produce artifacts
+meant to leave the machine.
+
+## Baseline profiles
+
+`:benchmark` is a `com.android.test` module that records the classes on Orbin's startup and
+subscribed-feed path, so ART compiles them ahead of time rather than interpreting them on first
+launch.
+
+```bash
+./gradlew :app:generateReleaseBaselineProfile
+```
+
+This needs **real hardware** — a rooted emulator or an unlocked physical device — so it has no CI
+path and is not wired into any workflow. The generated profile lands in
+`app/src/release/generated/baselineProfiles/` and is **committed**, because nothing regenerates it
+automatically. Re-record it when startup or the feed changes shape; a stale profile is not
+harmful, only progressively less useful.
 
 ## CI workflows
 
@@ -81,7 +100,8 @@ builds work without secrets.
 | --- | --- | --- |
 | `ci.yml` | every push to `main` and every PR | `ktlintCheck` + `detekt`, unit tests, then a debug APK build (uploaded as an artifact). Superseded runs are cancelled. |
 | `codeql.yml` | scheduled/push | Manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of GitHub's autobuild. |
-| `screenshots.yml` | PRs touching UI | Roborazzi screenshot verification. |
+| `screenshots.yml` | PRs touching UI | Records Roborazzi screenshots and uploads them as artifacts. |
+| `instrumentation.yml` | every push to `main` and every PR | Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest`. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version name, `versionCode`, codename, base branch, draft flag. Bumps `app/build.gradle.kts` and `CHANGELOG.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 

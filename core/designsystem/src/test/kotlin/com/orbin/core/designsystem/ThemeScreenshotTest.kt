@@ -9,7 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -48,6 +48,10 @@ class ThemeScreenshotTest {
                 Surface { Sample() }
             }
         }
+        // The v2 rule queues composition on a StandardTestDispatcher instead of running it
+        // immediately, so the tree is not necessarily settled when setContent returns. Capturing
+        // without this would silently record a half-composed frame rather than fail.
+        composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
     }
 }

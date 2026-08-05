@@ -1,11 +1,18 @@
 // Top-level build file. Convention plugins live in `build-logic` and are applied per-module.
 // Apply security overrides to the plugin classpath before the `plugins` block resolves.
+// Was pinned to a nonexistent "4.1.139.Final", which never failed only because nothing resolved a
+// Netty artifact through these configurations; the first dependency that did (UTP, via the
+// benchmark module) broke the build outright. Sourced from gradle.properties so the buildscript
+// block and the project-level patches below cannot drift apart.
+val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
+
 buildscript {
+    val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
     configurations.classpath {
         resolutionStrategy.eachDependency {
             when {
                 requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                    useVersion("4.1.139.Final")
+                    useVersion(nettyVersion)
                     because("Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.")
                 }
 
@@ -88,7 +95,7 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
     eachDependency {
         when {
             requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                useVersion("4.1.139.Final")
+                useVersion(nettyVersion)
                 because("Dependabot reports multiple Netty CVEs in the Android Gradle Plugin transitive classpath.")
             }
 
