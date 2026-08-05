@@ -13,6 +13,7 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ import javax.inject.Inject
  * Loads the board list for the active provider. Errors surface as a retryable [HomeUiState.Error]
  * rather than being swallowed, so connectivity problems are visible and recoverable.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel
     @Inject

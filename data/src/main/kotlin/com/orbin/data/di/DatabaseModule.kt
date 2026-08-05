@@ -3,6 +3,7 @@ package com.orbin.data.di
 import android.content.Context
 import androidx.room.Room
 import com.orbin.data.crypto.DatabasePassphrase
+import com.orbin.data.database.MIGRATION_2_3
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
@@ -40,8 +41,11 @@ object DatabaseModule {
         return Room
             .databaseBuilder(context, OrbinDatabase::class.java, OrbinDatabase.NAME)
             .openHelperFactory(SupportOpenHelperFactory(passphrase))
-            // Pre-1.0 schema churn: recreate on version bumps. Real migrations land before release.
-            .fallbackToDestructiveMigration()
+            .addMigrations(MIGRATION_2_3)
+            // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
+            // recreated. Every version from 2 on migrates: a missing migration now fails loudly
+            // at open time instead of silently dropping the user's bookmarks and history.
+            .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
             .build()
     }
 

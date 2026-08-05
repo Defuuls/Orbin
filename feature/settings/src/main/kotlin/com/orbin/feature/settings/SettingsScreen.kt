@@ -599,7 +599,8 @@ private fun BackupStatus.message(): String =
     when (this) {
         BackupStatus.Exported -> "Backup saved"
         is BackupStatus.Imported ->
-            "Restored ${summary.subscribedBoards} boards and ${summary.bookmarks} bookmarks"
+            "Restored ${summary.subscribedBoards} boards, ${summary.bookmarks} bookmarks and " +
+                "${summary.savedSearches} saved searches"
         is BackupStatus.Failed -> message
     }
 

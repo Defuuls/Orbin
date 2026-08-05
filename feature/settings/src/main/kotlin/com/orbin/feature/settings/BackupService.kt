@@ -4,13 +4,18 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BackupBoardRef
 import com.orbin.core.model.BackupBookmark
 import com.orbin.core.model.BackupDocument
+import com.orbin.core.model.BackupSavedSearch
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SavedSearch
+import com.orbin.core.model.SearchContentType
+import com.orbin.core.model.SearchFilters
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.flow.first
@@ -24,6 +29,7 @@ class BackupService
         private val settingsRepository: SettingsRepository,
         private val boardPreferences: BoardPreferencesRepository,
         private val bookmarkRepository: BookmarkRepository,
+        private val searchRepository: SearchRepository,
         private val registry: ProviderRegistry,
     ) {
         suspend fun exportToJson(appVersionName: String): String {
@@ -36,6 +42,7 @@ class BackupService
                     subscribedBoards = providers.flatMap { it.refs(subscribed = true) },
                     favoriteBoards = providers.flatMap { it.refs(subscribed = false) },
                     bookmarks = bookmarkRepository.observeBookmarks().first().map { it.toBackup() },
+                    savedSearches = searchRepository.observeSavedSearches().first().map { it.toBackup() },
                 )
             return json.encodeToString(BackupDocument.serializer(), document)
         }
@@ -61,12 +68,14 @@ class BackupService
                 }
 
                 document.bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+                document.savedSearches.forEach { searchRepository.saveSearch(it.toSavedSearch()) }
 
                 BackupSummary(
                     exportedAt = document.exportedAt,
                     subscribedBoards = document.subscribedBoards.size,
                     favoriteBoards = document.favoriteBoards.size,
                     bookmarks = document.bookmarks.size,
+                    savedSearches = document.savedSearches.size,
                 )
             }
 
@@ -132,6 +141,37 @@ class BackupService
                 // The user re-picks the folder, which re-grants access.
             }
 
+        private fun SavedSearch.toBackup(): BackupSavedSearch =
+            BackupSavedSearch(
+                text = text,
+                boardId = board?.value,
+                mediaOnly = filters.mediaOnly,
+                minReplies = filters.minReplies,
+                includeNsfw = filters.includeNsfw,
+                contentTypes = filters.contentTypes.map { it.name },
+                createdAtMillis = createdAtMillis,
+            )
+
+        private fun BackupSavedSearch.toSavedSearch(): SavedSearch =
+            SavedSearch(
+                text = text,
+                board = boardId?.let(::BoardId),
+                filters =
+                    SearchFilters(
+                        mediaOnly = mediaOnly,
+                        minReplies = minReplies,
+                        includeNsfw = includeNsfw,
+                        // Drop any content type this build does not know, rather than failing the
+                        // whole import over one unrecognised value from a newer backup.
+                        contentTypes =
+                            contentTypes
+                                .mapNotNull { name ->
+                                    SearchContentType.entries.firstOrNull { it.name == name }
+                                }.toSet(),
+                    ),
+                createdAtMillis = createdAtMillis,
+            )
+
         private fun Bookmark.toBackup(): BackupBookmark =
             BackupBookmark(
                 providerId = key.provider.value,
@@ -175,4 +215,5 @@ data class BackupSummary(
     val subscribedBoards: Int,
     val favoriteBoards: Int,
     val bookmarks: Int,
+    val savedSearches: Int,
 )

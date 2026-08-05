@@ -29,6 +29,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -237,7 +238,7 @@ private fun BoardDropdown(
         onExpandedChange = { if (enabled) expanded = it },
     ) {
         OutlinedTextField(
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             value = selected?.let { "/${it.id.value}/ - ${it.title}" }.orEmpty(),
             onValueChange = {},
             readOnly = true,
@@ -273,7 +274,7 @@ private fun ThreadDropdown(
         onExpandedChange = { if (enabled) expanded = it },
     ) {
         OutlinedTextField(
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             value = selected?.label().orEmpty(),
             onValueChange = {},
             readOnly = true,

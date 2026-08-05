@@ -19,6 +19,7 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +56,7 @@ data class SubscribedBoardFeed(
     val threadLimitOverride: FeedThreadLimit?,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SubscribedFeedViewModel
     @Inject

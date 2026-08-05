@@ -118,7 +118,7 @@ class DownloadRepositoryImpl
                     .execute()
                     .use { response ->
                         if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
-                        val body = response.body ?: error("Download body was empty")
+                        val body = response.body
                         context.contentResolver.openOutputStream(target)?.use { output ->
                             body.byteStream().use { input -> input.copyTo(output) }
                         } ?: error("Unable to open selected folder")
