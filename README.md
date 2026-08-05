@@ -7,7 +7,7 @@ implementing a single interface.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v62 — Hadar](https://github.com/Defuuls/Orbin/releases/tag/v62-Hadar)
+**Current release:** [v63 — Acrux](https://github.com/Defuuls/Orbin/releases/tag/v63-Acrux)
 
 **Available providers:** 4chan (Vichan), BBW Chan (LynxChan), 8kun (LynxChan)
 

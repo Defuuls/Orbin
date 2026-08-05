@@ -6,18 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- **"Refresh feed on return" is a timeframe, not a switch.** Choose how stale the feed may be
-  before coming back to it reloads it: Always, 1, 5, 15 or 30 minutes, or Never. *Always* and
-  *Never* are exactly what the old on and off positions did, and an existing preference carries
-  over to the matching end rather than resetting.
-- **Settings slides in over the screen behind it** instead of pushing it aside. The screen you came
-  from stays where it was and is revealed again on the way back.
+## [63-Acrux] - 2026-08-05
 
-### Added
-- **Open threads as** (Settings → Appearance): threads can open as a **Page**, the ordinary push
-  that takes the feed with it, or **Slide over**, laying the thread on top with the feed left in
-  place underneath. Page remains the default.
+Two settings stop being on/off switches, for different reasons. "Refresh feed on return" gains
+range: both ends of the old switch are still reachable, with intervals between them. Encrypted DNS
+loses its off position outright — that one is the point.
 
 ### Changed
 - **Encrypted DNS is no longer a toggle.** DNS over HTTPS could be switched off, and shipped off
@@ -26,6 +19,12 @@ All notable changes to Orbin are documented here. The format is based on
   NextDNS. `DohConfig` has no "disabled" case at all, so plaintext resolution is not a state the
   app can be in rather than a state it merely avoids. The DoH switch is gone from first-run setup
   too.
+- **"Refresh feed on return" is a timeframe, not a switch.** Choose how stale the feed may be
+  before coming back to it reloads it: Always, 1, 5, 15 or 30 minutes, or Never. *Always* and
+  *Never* are exactly what the old on and off positions did, and an existing preference carries
+  over to the matching end rather than resetting.
+- **Settings slides in over the screen behind it** instead of pushing it aside. The screen you came
+  from stays where it was and is revealed again on the way back.
 
 ### Added
 - **A visible notice when a network blocks your resolver.** Removing the off switch removed an
@@ -33,6 +32,9 @@ All notable changes to Orbin are documented here. The format is based on
   have left the app unable to load anything with no in-app remedy. Lookups now fall back to the
   system resolver in that case, and Settings says so — being quietly downgraded is worse than the
   toggle that was removed. The notice clears itself once an encrypted lookup succeeds again.
+- **Open threads as** (Settings → Appearance): threads can open as a **Page**, the ordinary push
+  that takes the feed with it, or **Slide over**, laying the thread on top with the feed left in
+  place underneath. Page remains the default.
 
 ## [62-Hadar] - 2026-08-05
 
@@ -726,7 +728,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...HEAD
+[63-Acrux]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...v63-Acrux
 [62-Hadar]: https://github.com/Defuuls/Orbin/compare/v61-Achernar...v62-Hadar
 [52-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v51-Rigel...v52-Wolf-359
 [48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
