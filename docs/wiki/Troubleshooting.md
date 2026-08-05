@@ -50,9 +50,17 @@ rejected. Update to v23.1 or later.
 
 ### "How do I update the app?"
 Signed APKs are published on the
-[Releases page](https://github.com/Defuuls/Orbin/releases) with SHA-256 checksums. From v34,
-the **Internal updater** setting (on by default) lets Orbin check for updates inside the app;
-turn it off under Settings → Network & privacy if you prefer manual updates.
+[Releases page](https://github.com/Defuuls/Orbin/releases) with SHA-256 checksums.
+
+Settings → Network & privacy has a **Check for updates** row (shown while the **Internal
+updater** toggle is on) that asks GitHub whether a newer release exists and, if so, links
+straight to it. Installing is still a deliberate manual step: Orbin fetches release metadata
+only and never downloads or installs an APK, so you always land on the release page where the
+checksum is published.
+
+The **Internal updater** toggle dates from v34, but until now it had nothing attached to it —
+there was no update-checking code in the app at all. The toggle now genuinely gates the row
+above.
 
 ### "Where do downloads and exported thread links go?"
 To your **Saved media folder** (Settings → Storage), which defaults to `Downloads/Orbin`.
