@@ -8,6 +8,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
@@ -17,6 +18,7 @@ import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchFilters
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
@@ -46,7 +48,8 @@ class BackupServiceTest {
             mutedTags = "wip",
             hideNsfwBoards = true,
             hideTextOnlyThreads = true,
-            refreshFeedOnReturn = false,
+            feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
+            threadPresentation = ThreadPresentation.OVERLAY,
             themeMode = AppThemeMode.DARK,
             colorTheme = ColorTheme.TOMORROW_NIGHT,
             dynamicColor = false,

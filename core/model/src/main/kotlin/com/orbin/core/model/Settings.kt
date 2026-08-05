@@ -31,6 +31,11 @@ enum class AppIconVariant(
     DUAL_GRADIENT("Dual Gradient"),
 }
 
+private const val MILLIS_PER_MINUTE = 60_000L
+private const val FIVE_MINUTES_MS = 5 * MILLIS_PER_MINUTE
+private const val FIFTEEN_MINUTES_MS = 15 * MILLIS_PER_MINUTE
+private const val THIRTY_MINUTES_MS = 30 * MILLIS_PER_MINUTE
+
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
@@ -57,6 +62,37 @@ enum class DohProvider(
     CLOUDFLARE("Cloudflare"),
     OPENDNS("OpenDNS"),
     NEXTDNS("NextDNS"),
+}
+
+/**
+ * How stale the subscribed feed may be before returning to it triggers a reload.
+ *
+ * [staleAfterMillis] is the age past which the cached feed is discarded: zero always reloads, and
+ * null never does. The two ends are what the old on/off setting used to express.
+ */
+@Serializable
+enum class FeedRefreshInterval(
+    val label: String,
+    val staleAfterMillis: Long?,
+) {
+    ALWAYS("Always", 0),
+    ONE_MINUTE("1 min", MILLIS_PER_MINUTE),
+    FIVE_MINUTES("5 min", FIVE_MINUTES_MS),
+    FIFTEEN_MINUTES("15 min", FIFTEEN_MINUTES_MS),
+    THIRTY_MINUTES("30 min", THIRTY_MINUTES_MS),
+    NEVER("Never", null),
+}
+
+/** How a tapped thread is presented. */
+@Serializable
+enum class ThreadPresentation(
+    val label: String,
+) {
+    /** Pushes as a page: the feed slides away with it, the usual Android forward navigation. */
+    PAGE("Page"),
+
+    /** Slides in over the feed, which stays in place underneath and is revealed on the way back. */
+    OVERLAY("Slide over"),
 }
 
 @Serializable
@@ -88,8 +124,8 @@ data class AppSettings(
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
-    /** Reload the subscribed feed when returning to it, e.g. after backing out of a thread. */
-    val refreshFeedOnReturn: Boolean = true,
+    /** How stale the subscribed feed may be before returning to it reloads it. */
+    val feedRefreshInterval: FeedRefreshInterval = FeedRefreshInterval.ALWAYS,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,
@@ -97,6 +133,7 @@ data class AppSettings(
     val fontScale: Float = 1f,
     val appIconVariant: AppIconVariant = AppIconVariant.DEFAULT,
     val fullScreenFeedChrome: Boolean = false,
+    val threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,

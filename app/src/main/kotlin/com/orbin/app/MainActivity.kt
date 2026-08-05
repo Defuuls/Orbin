@@ -372,6 +372,7 @@ private fun AppContent(
                         OrbinApp(
                             startWithOnboarding = !settings.onboardingCompleted,
                             fullScreenFeedChrome = settings.fullScreenFeedChrome,
+                            threadPresentation = settings.threadPresentation,
                         )
                     }
                 }

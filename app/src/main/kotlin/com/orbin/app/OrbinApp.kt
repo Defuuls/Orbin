@@ -59,6 +59,7 @@ import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.TopLevelDestination
 import com.orbin.core.designsystem.component.ModernNavigationBar
 import com.orbin.core.designsystem.component.ModernNavigationBarItem
+import com.orbin.core.model.ThreadPresentation
 
 /**
  * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level
@@ -69,6 +70,7 @@ fun OrbinApp(
     navController: NavHostController = rememberNavController(),
     startWithOnboarding: Boolean = false,
     fullScreenFeedChrome: Boolean = false,
+    threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val tabletFeedChrome = maxWidth >= TABLET_MIN_WIDTH && maxHeight >= TABLET_MIN_HEIGHT
@@ -173,6 +175,7 @@ fun OrbinApp(
                 tabletSubscribedFeedLayout = useTabletFeedDock,
                 subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
                 subscribedFeedRefreshRequest = feedRefreshRequest,
+                threadPresentation = threadPresentation,
                 onFeedChromeVisibleChange = { feedChromeVisible = it },
             )
         }

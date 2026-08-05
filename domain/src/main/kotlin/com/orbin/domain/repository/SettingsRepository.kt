@@ -5,10 +5,12 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import kotlinx.coroutines.flow.Flow
 
@@ -27,7 +29,9 @@ interface SettingsRepository {
 
     suspend fun setHideTextOnlyThreads(enabled: Boolean)
 
-    suspend fun setRefreshFeedOnReturn(enabled: Boolean)
+    suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval)
+
+    suspend fun setThreadPresentation(presentation: ThreadPresentation)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 

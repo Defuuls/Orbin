@@ -7,6 +7,7 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -116,23 +117,26 @@ class SubscribedFeedViewModel
 
         /**
          * Leaving the feed for longer than [STOP_TIMEOUT_MS] (e.g. while reading a thread) stops
-         * the upstream flow, and returning restarts it with the same inputs. With "Refresh feed on
-         * return" disabled that restart should show the feed exactly as it was left, so the last
-         * successful load is kept and reused whenever the inputs are unchanged.
+         * the upstream flow, and returning restarts it with the same inputs. "Refresh feed on
+         * return" decides whether that restart reloads: the last successful load is kept, and
+         * reused when the inputs are unchanged and it is still within the chosen interval.
          */
-        private var lastLoad: Pair<FeedInputs, SubscribedFeedUiState.Success>? = null
+        private var lastLoad: CachedFeed? = null
 
         private suspend fun loadOrReuseFeeds(
             inputs: FeedInputs,
             load: suspend () -> SubscribedFeedUiState,
         ): SubscribedFeedUiState {
-            if (!inputs.settings.refreshFeedOnReturn) {
-                lastLoad?.let { (cachedInputs, cachedState) ->
-                    if (cachedInputs == inputs) return cachedState
+            lastLoad?.let { cached ->
+                val age = System.currentTimeMillis() - cached.loadedAtMillis
+                if (cached.inputs == inputs && inputs.settings.feedRefreshInterval.allowsReuse(age)) {
+                    return cached.state
                 }
             }
             return load().also { state ->
-                if (state is SubscribedFeedUiState.Success) lastLoad = inputs to state
+                if (state is SubscribedFeedUiState.Success) {
+                    lastLoad = CachedFeed(inputs, state, System.currentTimeMillis())
+                }
             }
         }
 
@@ -256,4 +260,22 @@ private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
     if (tokens.isEmpty()) return false
     val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
     return tokens.any(haystack::contains)
+}
+
+/** A feed load kept for reuse, with the moment it was loaded so its age can be judged. */
+private data class CachedFeed(
+    val inputs: FeedInputs,
+    val state: SubscribedFeedUiState.Success,
+    val loadedAtMillis: Long,
+)
+
+/**
+ * Whether a cached feed [ageMillis] old is still fresh enough to show instead of reloading.
+ *
+ * The two ends carry the behaviour of the on/off setting this replaced: `ALWAYS` has a staleness
+ * bound of zero, so nothing is ever fresh enough, and `NEVER` has none at all, so everything is.
+ */
+internal fun FeedRefreshInterval.allowsReuse(ageMillis: Long): Boolean {
+    val staleAfter = staleAfterMillis ?: return true
+    return ageMillis < staleAfter
 }
