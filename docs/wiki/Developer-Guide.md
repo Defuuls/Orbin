@@ -108,7 +108,8 @@ If pushing a tag is not possible, run **Release** via `workflow_dispatch` instea
 identical result.
 
 **Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
-naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella.
+naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella,
+Betelgeuse, Procyon, Achernar, Hadar.
 Earlier releases drew on nearby or dim stars instead: v30–v33 used the smallest known stars
 (Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", and
 v37–v48 returned to nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B.
