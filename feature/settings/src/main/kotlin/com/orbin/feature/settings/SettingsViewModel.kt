@@ -2,6 +2,7 @@ package com.orbin.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
@@ -12,10 +13,12 @@ import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.UpdateRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,9 +44,14 @@ class SettingsViewModel
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
         private val backupService: BackupService,
+        private val updateRepository: UpdateRepository,
         registry: ProviderRegistry,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
+        private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
+
+        /** State of a manual update check, for the button and its result message. */
+        val updateCheck: StateFlow<UpdateCheckState> = _updateCheck.asStateFlow()
 
         /** Result of the last export or import, for a snackbar. Cleared by [clearBackupStatus]. */
         val backupStatus: StateFlow<BackupStatus?> = _backupStatus.asStateFlow()
@@ -178,6 +186,17 @@ class SettingsViewModel
                         )
             }
 
+        /** Asks GitHub whether a newer release exists. [currentVersionName] is the running build. */
+        fun checkForUpdate(currentVersionName: String) =
+            update {
+                _updateCheck.value = UpdateCheckState.Checking
+                _updateCheck.value =
+                    when (val result = updateRepository.checkForUpdate(currentVersionName)) {
+                        is OrbinResult.Success -> UpdateCheckState.Result(result.data)
+                        is OrbinResult.Failure -> UpdateCheckState.Failed(result.error.message)
+                    }
+            }
+
         fun clearBackupStatus() {
             _backupStatus.value = null
         }
@@ -202,4 +221,19 @@ sealed interface BackupStatus {
     data class Failed(
         val message: String,
     ) : BackupStatus
+}
+
+/** Progress and outcome of a manual update check. */
+sealed interface UpdateCheckState {
+    data object Idle : UpdateCheckState
+
+    data object Checking : UpdateCheckState
+
+    data class Result(
+        val status: UpdateStatus,
+    ) : UpdateCheckState
+
+    data class Failed(
+        val message: String,
+    ) : UpdateCheckState
 }

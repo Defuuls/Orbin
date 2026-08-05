@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,6 +50,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.UpdateStatus
 import com.orbin.provider.api.ProviderMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -91,6 +94,8 @@ fun SettingsScreen(
             }
         }
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
+    val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     val backupExporter =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -119,6 +124,22 @@ fun SettingsScreen(
         val status = backupStatus ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(status.message())
         viewModel.clearBackupStatus()
+    }
+
+    // The row itself shows progress; the snackbar exists to carry the "Open release" action, so it
+    // is only worth raising once the check has actually finished.
+    LaunchedEffect(updateCheck) {
+        val available = updateCheck.availableRelease()
+        val message = updateCheck.snackbarMessage() ?: return@LaunchedEffect
+        val result =
+            snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = available?.let { "Open" },
+                withDismissAction = true,
+            )
+        if (result == SnackbarResult.ActionPerformed && available != null) {
+            uriHandler.openUri(available.url)
+        }
     }
 
     Scaffold(
@@ -316,6 +337,19 @@ fun SettingsScreen(
                 viewModel::setInternalUpdater,
                 supporting = "Check for Orbin updates inside the app",
             )
+            if (settings.internalUpdaterEnabled) {
+                ModernListItem(
+                    title = "Check for updates",
+                    subtitle = updateCheck.rowSubtitle(appVersionName(context)),
+                    // A null onClick makes the row unclickable, which is what a check in flight wants.
+                    onClick =
+                        if (updateCheck is UpdateCheckState.Checking) {
+                            null
+                        } else {
+                            { viewModel.checkForUpdate(appVersionName(context)) }
+                        },
+                )
+            }
             ModernListItem(
                 title = "Clear local activity",
                 subtitle = "Delete history, recent searches, and download history",
@@ -602,6 +636,34 @@ private fun BackupStatus.message(): String =
             "Restored ${summary.subscribedBoards} boards, ${summary.bookmarks} bookmarks and " +
                 "${summary.savedSearches} saved searches"
         is BackupStatus.Failed -> message
+    }
+
+/** The newer release this check found, or null when there is nothing to offer. */
+private fun UpdateCheckState.availableRelease(): UpdateStatus.Available? =
+    (this as? UpdateCheckState.Result)?.status as? UpdateStatus.Available
+
+/** Null while the check is still in flight or has not been run: there is nothing to announce yet. */
+private fun UpdateCheckState.snackbarMessage(): String? =
+    when (this) {
+        UpdateCheckState.Idle, UpdateCheckState.Checking -> null
+        is UpdateCheckState.Failed -> "Could not check for updates: $message"
+        is UpdateCheckState.Result ->
+            when (status) {
+                UpdateStatus.UpToDate -> "Orbin is up to date"
+                is UpdateStatus.Available -> "${status.name} is available"
+            }
+    }
+
+private fun UpdateCheckState.rowSubtitle(currentVersionName: String): String =
+    when (this) {
+        UpdateCheckState.Idle -> "You are running ${currentVersionName.ifBlank { "an unknown build" }}"
+        UpdateCheckState.Checking -> "Checking GitHub…"
+        is UpdateCheckState.Failed -> "Check failed — tap to try again"
+        is UpdateCheckState.Result ->
+            when (status) {
+                UpdateStatus.UpToDate -> "Up to date — tap to check again"
+                is UpdateStatus.Available -> "${status.tag} is available on GitHub"
+            }
     }
 
 private fun appVersionName(context: android.content.Context): String =

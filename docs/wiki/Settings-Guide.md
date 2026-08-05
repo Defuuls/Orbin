@@ -79,7 +79,8 @@ Introduced in v30 and refined through v32:
 | --- | --- |
 | Lock with biometrics | Requires biometric/device-credential unlock; re-arms after backgrounding and keeps content out of the recents preview. |
 | Save recent searches | **Opt-in** recent-search history; off by default. |
-| Internal updater *(v34)* | "Check for Orbin updates inside the app." On by default; turn it off if you prefer to update manually from GitHub Releases. |
+| Internal updater *(v34)* | Shows the **Check for updates** row below it. On by default; turn it off if you prefer to update manually from GitHub Releases. |
+| Check for updates | Asks GitHub for the newest published release and compares it with the running build. Only release *metadata* is fetched — Orbin never downloads or installs an APK, so when an update exists the row offers a link to the release page, where the signed APK and its checksum are. Appears only while **Internal updater** is on. |
 | Clear local activity | Deletes browsing history, recent searches, and download history stored on this device (with a confirmation dialog). |
 | HTTPS only | Always enforced — shown for transparency, not toggleable. |
 | DNS over HTTPS | Resolves DNS over HTTPS; when enabled, a **DNS provider** picker appears (Cloudflare, OpenDNS, NextDNS). |

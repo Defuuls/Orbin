@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Check for updates,** in Settings → Network & privacy. It asks GitHub for the newest published
+  release, compares it with the running build, and links to the release page when there is one.
+  Only release metadata is fetched — Orbin does not download or install an APK, so the signed
+  build and its checksum stay a deliberate manual step.
+
+### Fixed
+- **The "Internal updater" toggle now does something.** It shipped in v34 and has been inert ever
+  since: no part of the app read it, and there was no update-checking code to read it. It now
+  gates the new **Check for updates** row.
+
 ## [61-Achernar] - 2026-08-05
 
 ### Added
