@@ -6,6 +6,34 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [60-Procyon] - 2026-08-05
+
+### Added
+- **Backup and restore:** Settings → Storage can export your settings, subscribed and favourite
+  boards, and bookmarks to a file you choose, and restore them afterwards. Orbin keeps everything
+  encrypted on device and opts out of Android's cloud backup, so a reinstall used to lose all of
+  it; this is the deliberate alternative. Importing **adds** boards and bookmarks rather than
+  replacing them, so restoring cannot wipe an existing setup. The exported file is plain,
+  unencrypted JSON — keep it somewhere you trust.
+- **Image cache limit:** choose how much disk the image cache may use — 128, 256, 512 or 1024 MB,
+  under Settings → Storage. Applies on the next app start.
+- **Advanced network settings:** a custom user agent, connect and read timeouts, and a
+  certificate-revocation toggle, under Settings → Advanced. Revocation checking stays off by
+  default: it is slow and widely blocked, and when it fails it looks like sites being broken
+  rather than a warning.
+
+### Changed
+- **Thumbnails appear sooner:** the small preview is painted immediately while the
+  full-resolution image loads over it, instead of the cell staying blank for the whole fetch.
+- **Settings are filed by what they affect:** *Threads per board* moved to Content, and *Image
+  cache limit* to Storage.
+- **App icon switching moved off the main thread** and now skips work when the icon has not
+  changed, so it no longer costs frames on every launch.
+
+### Fixed
+- **Backups silently dropped some settings on import.** The image cache limit and the three
+  network settings were written to the backup file but discarded when restoring it.
+
 ## [59-Betelgeuse] - 2026-08-04
 
 A maintenance release. No user-facing behaviour changes; the launcher fix from 58-Capella is
