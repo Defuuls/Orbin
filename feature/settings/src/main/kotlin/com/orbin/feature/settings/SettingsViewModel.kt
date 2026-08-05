@@ -21,8 +21,10 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,8 +40,14 @@ class SettingsViewModel
         private val historyRepository: HistoryRepository,
         private val searchRepository: SearchRepository,
         private val downloadRepository: DownloadRepository,
+        private val backupService: BackupService,
         registry: ProviderRegistry,
     ) : ViewModel() {
+        private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
+
+        /** Result of the last export or import, for a snackbar. Cleared by [clearBackupStatus]. */
+        val backupStatus: StateFlow<BackupStatus?> = _backupStatus.asStateFlow()
+
         val settings: StateFlow<AppSettings> =
             repository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
@@ -132,6 +140,38 @@ class SettingsViewModel
                 downloadRepository.clearHistory()
             }
 
+        /**
+         * Writes a backup through [sink], which receives the JSON and performs the actual file IO.
+         * Keeping the IO in the caller keeps `ContentResolver` and SAF URIs out of the ViewModel.
+         */
+        fun exportBackup(
+            appVersionName: String,
+            sink: suspend (String) -> Unit,
+        ) = update {
+            _backupStatus.value =
+                runCatching { sink(backupService.exportToJson(appVersionName)) }
+                    .fold(
+                        onSuccess = { BackupStatus.Exported },
+                        onFailure = { BackupStatus.Failed(it.message ?: "Could not write the backup file") },
+                    )
+        }
+
+        /** Restores a backup produced by [exportBackup]; [source] reads the chosen file. */
+        fun importBackup(source: suspend () -> String) =
+            update {
+                _backupStatus.value =
+                    runCatching { source() }
+                        .mapCatching { backupService.importFromJson(it).getOrThrow() }
+                        .fold(
+                            onSuccess = { BackupStatus.Imported(it) },
+                            onFailure = { BackupStatus.Failed(it.message ?: "That file is not a valid Orbin backup") },
+                        )
+            }
+
+        fun clearBackupStatus() {
+            _backupStatus.value = null
+        }
+
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }
         }
@@ -140,3 +180,16 @@ class SettingsViewModel
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
+
+/** Outcome of the most recent backup export or import. */
+sealed interface BackupStatus {
+    data object Exported : BackupStatus
+
+    data class Imported(
+        val summary: BackupSummary,
+    ) : BackupStatus
+
+    data class Failed(
+        val message: String,
+    ) : BackupStatus
+}

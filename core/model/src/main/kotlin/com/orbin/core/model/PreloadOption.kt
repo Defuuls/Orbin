@@ -1,9 +1,12 @@
 package com.orbin.core.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Preload mode configuration. Controls which types of media are preloaded from the CDN.
  * Used in conjunction with throttling to avoid rate limiting.
  */
+@Serializable
 enum class PreloadOption(
     val label: String,
 ) {
