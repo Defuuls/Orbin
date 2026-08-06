@@ -1,11 +1,16 @@
 package com.orbin.app
 
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.orbin.core.model.AppIconVariant
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,16 +28,7 @@ private const val READY_TIMEOUT_MS = 20_000L
  * It asserts on the first-run wizard, which is what a fresh settings store produces and which needs
  * no network.
  *
- * **Ignored: `MainActivity` produces no Compose hierarchy under instrumentation.** Every run fails
- * with "No compose hierarchies found in the app", and the app logs no crash to go with it, so the
- * activity starts but its content never attaches. Two contributing faults were found and fixed
- * along the way — a DataStore built repeatedly over one file across per-test Hilt components, and
- * WorkManager left unconfigured because replacing the application class removes the only
- * `Configuration.Provider` (see [WorkManagerAwareTestApplication]) — but neither was the cause.
- *
- * What remains is likely the splash screen or the activity's async readiness gate, and finding out
- * means iterating against a device in seconds rather than eight-minute CI cycles. Ignored rather
- * than deleted: the scaffolding around it works, and this is a test worth having.
+ * [pinLauncherAliases] is what makes this runnable at all — see its comment.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -42,6 +38,50 @@ class OrbinAppTest {
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    companion object {
+        /**
+         * Pins the launcher aliases before anything launches the activity.
+         *
+         * `MainActivity` applies the selected icon from a `LaunchedEffect` on every start.
+         * `AppIconManager` skips the work when the aliases already match, but a fresh install
+         * reports `COMPONENT_ENABLED_STATE_DEFAULT` rather than `ENABLED`, so the first run always
+         * writes. Those writes make PackageManager broadcast a package change, and that tears down
+         * the activity under test:
+         *
+         * ```
+         * Displayed com.orbin.app.debug/com.orbin.app.MainActivity: +517ms
+         * PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.orbin.app.debug]
+         * MainActivity in: STOPPED  ->  DESTROYED
+         * ```
+         *
+         * Every instrumentation run is a fresh install, so this fired every time and surfaced as
+         * "No compose hierarchies found in the app" — the activity had launched and then gone.
+         * Writing the same state here first makes the app's own call a no-op.
+         *
+         * `@BeforeClass` rather than a rule: it has to happen before the Compose rule launches the
+         * activity, and rules cannot be ordered ahead of that reliably.
+         */
+        @JvmStatic
+        @BeforeClass
+        fun pinLauncherAliases() {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val pm = context.packageManager
+            AppIconVariant.entries.forEach { variant ->
+                val state =
+                    if (variant == AppIconVariant.DEFAULT) {
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    } else {
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    }
+                pm.setComponentEnabledSetting(
+                    ComponentName(context, AppIconAliases.qualifiedName(variant)),
+                    state,
+                    PackageManager.DONT_KILL_APP,
+                )
+            }
+        }
+    }
 
     @Test
     fun theAppLaunchesAndShowsFirstRunSetup() {
