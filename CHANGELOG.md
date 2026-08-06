@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [64-Aldebaran] - 2026-08-06
+
 ### Added
 - **Baseline profiles.** A `:benchmark` module records the classes used on the startup and feed
   path so ART compiles them ahead of time instead of interpreting them on first launch. Generating
@@ -41,7 +43,6 @@ All notable changes to Orbin are documented here. The format is based on
   back to debug signing without secrets; nothing implemented it, and the signing guard fired on any
   task whose name contained "Release" — including baseline profile generation, which never leaves
   the machine.
-
 - **CI never enforced warnings-as-errors.** The developer guide said `orbin.warningsAsErrors=true`
   is what CI uses; no workflow set it. Six warnings had accumulated behind that gap despite an
   earlier release claiming they were all cleared. They are fixed and the flag is now actually
@@ -774,7 +775,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v64-Aldebaran...HEAD
+[64-Aldebaran]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...v64-Aldebaran
 [63-Acrux]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...v63-Acrux
 [62-Hadar]: https://github.com/Defuuls/Orbin/compare/v61-Achernar...v62-Hadar
 [52-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v51-Rigel...v52-Wolf-359

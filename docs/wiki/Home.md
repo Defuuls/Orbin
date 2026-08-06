@@ -13,7 +13,7 @@ supporting a new image board engine is a matter of implementing a single interfa
 
 | | |
 | --- | --- |
-| Current release | **v63 — Acrux** (2026-08-05) |
+| Current release | **v64 — Aldebaran** (2026-08-06) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile SDK 37, target SDK 36 |
 | Codename scheme | Per-release star codenames (prominent naked-eye stars since v49; nearby or dim stars for v30–v48) |
