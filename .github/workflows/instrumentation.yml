@@ -85,7 +85,18 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           # Compose tests wait on idleness, which never arrives while animations run.
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --continue
+          # Only the modules that actually have androidTest sources. A blanket
+          # `connectedDebugAndroidTest` also builds, installs and runs an empty instrumentation APK
+          # for every other module — which fails outright, since the convention plugin declares
+          # AndroidJUnitRunner for all of them but only these provide the dependency. Discovering
+          # the list keeps it correct as modules gain and lose test sources.
+          script: |
+            TASKS=$(find . -type d -path '*/src/androidTest' -not -path './build/*' \
+              | sed 's|^\./||; s|/src/androidTest$||; s|/|:|g; s|^|:|; s|$|:connectedDebugAndroidTest|' \
+              | sort | tr '\n' ' ')
+            echo "Running: $TASKS"
+            test -n "$TASKS" || { echo "No androidTest sources found"; exit 1; }
+            ./gradlew $TASKS --continue
 
       - name: Upload instrumentation reports
         if: always()

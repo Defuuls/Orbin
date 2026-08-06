@@ -35,9 +35,15 @@ All notable changes to Orbin are documented here. The format is based on
   task whose name contained "Release" — including baseline profile generation, which never leaves
   the machine.
 
+- **CI never enforced warnings-as-errors.** The developer guide said `orbin.warningsAsErrors=true`
+  is what CI uses; no workflow set it. Six warnings had accumulated behind that gap despite an
+  earlier release claiming they were all cleared. They are fixed and the flag is now actually
+  passed, so the next one fails the build instead of joining them.
+
 ### Changed
-- **Internal:** migrated off the deprecated `rememberTransformableState` overload and cleared the
-  two remaining compiler warnings.
+- **Internal:** migrated off the deprecated `rememberTransformableState`, `TabRow`,
+  `Modifier.menuAnchor()` and `MenuAnchorType` APIs, and removed two conditions the compiler could
+  already prove.
 
 ## [63-Acrux] - 2026-08-05
 

@@ -62,7 +62,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run JVM unit tests
-        run: ./gradlew test --continue
+        run: ./gradlew test --continue -Porbin.warningsAsErrors=true
 
       - name: Upload test reports
         if: always()
@@ -89,13 +89,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Assemble debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug -Porbin.warningsAsErrors=true
 
       # Compiles the androidTest sources in app, feature:settings and feature:downloads. They are
       # not executed here — that needs an emulator — but without this they are built nowhere in CI
       # and can rot silently against the code they are meant to guard.
       - name: Compile instrumentation tests
-        run: ./gradlew assembleDebugAndroidTest
+        run: ./gradlew assembleDebugAndroidTest -Porbin.warningsAsErrors=true
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
