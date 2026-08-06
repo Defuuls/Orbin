@@ -14,10 +14,12 @@ All notable changes to Orbin are documented here. The format is based on
 - **Instrumentation tests actually run in CI, and actually test something.** The `androidTest`
   sources were compiled but never executed — and had never worked: every test called Compose
   assertion APIs *inside* the composition lambda, asserting against an empty tree because the
-  screen under test was never composed. All three files are rewritten to compose the real screen
-  over in-memory repositories and assert real behaviour, including that toggles write through and
-  that the DNS-fallback notice reflects the monitor. A new workflow boots an emulator and runs them
-  on every push and PR.
+  screen under test was never composed. The two feature-screen files are rewritten to compose the
+  real screen over in-memory repositories and assert real behaviour — that toggles write through,
+  that quiet hours are gated on watch notifications, that retry appears only on failed downloads,
+  and that the DNS-fallback notice follows the privacy monitor. A new workflow boots an emulator
+  and runs them on every push and PR. The app-launch smoke test is rewritten but `@Ignore`d:
+  `MainActivity` renders no Compose hierarchy under instrumentation for a reason not yet found.
 
 ### Fixed
 - **The protobuf security pin broke instrumentation tests.** `com.google.protobuf:protobuf-*` was
