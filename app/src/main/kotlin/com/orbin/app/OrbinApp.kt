@@ -75,6 +75,7 @@ fun OrbinApp(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val tabletFeedChrome = maxWidth >= TABLET_MIN_WIDTH && maxHeight >= TABLET_MIN_HEIGHT
         val compactTabletDock = maxWidth < COMPACT_TABLET_DOCK_WIDTH
+        val twoPaneBoardDetail = maxWidth >= TWO_PANE_MIN_WIDTH
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = backStackEntry?.destination
         val snackbarHostState = LocalOrbinSnackbarHostState.current
@@ -169,6 +170,7 @@ fun OrbinApp(
                 subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
                 hideSubscribedFeedTopBar = useTabletFeedDock,
                 tabletSubscribedFeedLayout = useTabletFeedDock,
+                twoPaneBoardDetail = twoPaneBoardDetail,
                 subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
                 subscribedFeedRefreshRequest = feedRefreshRequest,
                 threadPresentation = threadPresentation,
@@ -343,3 +345,12 @@ private fun NavHostController.navigateToTopLevel(destination: TopLevelDestinatio
 private val TABLET_MIN_WIDTH = 600.dp
 private val TABLET_MIN_HEIGHT = 480.dp
 private val COMPACT_TABLET_DOCK_WIDTH = 720.dp
+
+/**
+ * Width at which the catalog and a thread are shown side by side.
+ *
+ * Material's expanded breakpoint, and higher than [TABLET_MIN_WIDTH] on purpose: 600dp is enough
+ * to justify a roomier dock but not to split into two readable columns. Height is not part of the
+ * test — two columns work in landscape on a short viewport, where the tablet feed chrome does not.
+ */
+private val TWO_PANE_MIN_WIDTH = 840.dp
