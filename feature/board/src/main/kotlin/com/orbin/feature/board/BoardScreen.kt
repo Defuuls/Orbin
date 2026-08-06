@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -54,13 +55,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
@@ -86,6 +90,7 @@ fun BoardScreen(
     val listState = rememberSaveable(boardKey, saver = LazyListState.Saver) { LazyListState() }
     val gridState = rememberSaveable(boardKey, saver = LazyGridState.Saver) { LazyGridState() }
     val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
 
     val openThread: (CatalogThread) -> Unit = { thread ->
         onOpenThread(
@@ -162,30 +167,40 @@ fun BoardScreen(
             )
         },
     ) { padding ->
-        when (layoutMode) {
-            BoardLayoutMode.List ->
-                CatalogList(
-                    contentPadding = padding,
-                    itemCount = threads.itemCount,
-                    itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
-                    threadAt = { threads[it] },
-                    watchedThreadIds = watchedThreadIds,
-                    onToggleSubscription = viewModel::toggleThreadSubscription,
-                    onOpenThread = openThread,
-                    listState = listState,
-                )
+        // The catalog had no refresh affordance at all: Paging only reloads when its own invalidation
+        // fires, so a stale catalog stayed stale until the screen was left and re-entered.
+        PullToRefreshBox(
+            isRefreshing = threads.loadState.refresh is LoadState.Loading,
+            onRefresh = {
+                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                threads.refresh()
+            },
+        ) {
+            when (layoutMode) {
+                BoardLayoutMode.List ->
+                    CatalogList(
+                        contentPadding = padding,
+                        itemCount = threads.itemCount,
+                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                        threadAt = { threads[it] },
+                        watchedThreadIds = watchedThreadIds,
+                        onToggleSubscription = viewModel::toggleThreadSubscription,
+                        onOpenThread = openThread,
+                        listState = listState,
+                    )
 
-            BoardLayoutMode.Grid ->
-                CatalogGrid(
-                    contentPadding = padding,
-                    itemCount = threads.itemCount,
-                    itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
-                    threadAt = { threads[it] },
-                    watchedThreadIds = watchedThreadIds,
-                    onToggleSubscription = viewModel::toggleThreadSubscription,
-                    onOpenThread = openThread,
-                    gridState = gridState,
-                )
+                BoardLayoutMode.Grid ->
+                    CatalogGrid(
+                        contentPadding = padding,
+                        itemCount = threads.itemCount,
+                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                        threadAt = { threads[it] },
+                        watchedThreadIds = watchedThreadIds,
+                        onToggleSubscription = viewModel::toggleThreadSubscription,
+                        onOpenThread = openThread,
+                        gridState = gridState,
+                    )
+            }
         }
     }
 }

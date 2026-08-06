@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -109,11 +110,22 @@ class SubscribedFeedViewModel
                                 }
                             }
                         }
-                }.stateIn(
+                }.onEach { _isRefreshing.value = false }
+                .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                     SubscribedFeedUiState.Loading,
                 )
+
+        private val _isRefreshing = MutableStateFlow(false)
+
+        /**
+         * Drives the pull-to-refresh indicator. Cleared when [uiState] next emits rather than when
+         * [refresh] returns: refresh only bumps [refreshRequests], and the load it provokes happens
+         * downstream, so clearing it at the call site would retract the spinner before the feed
+         * had actually reloaded.
+         */
+        val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
         /**
          * Leaving the feed for longer than [STOP_TIMEOUT_MS] (e.g. while reading a thread) stops
@@ -145,6 +157,7 @@ class SubscribedFeedViewModel
         }
 
         fun refresh() {
+            _isRefreshing.value = true
             viewModelScope.launch {
                 boardRepository.refreshBoards(activeProvider.value.metadata.id)
                 refreshRequests.value += 1

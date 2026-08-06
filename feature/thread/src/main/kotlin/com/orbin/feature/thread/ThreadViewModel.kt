@@ -23,9 +23,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,15 +57,36 @@ class ThreadViewModel
         /** One-shot status message for the last [exportLinks] call; cleared via [consumeExportMessage]. */
         val exportMessage: StateFlow<String?> = _exportMessage.asStateFlow()
 
+        /** Incremented by [refresh]; every value past the first is a user-initiated reload. */
+        private val reloads = MutableStateFlow(0)
+
+        private val _isRefreshing = MutableStateFlow(false)
+
+        /** Drives the pull-to-refresh indicator; false again once the reload settles. */
+        val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
         val uiState: StateFlow<ThreadUiState> =
-            observeThread(provider, board, threadId)
-                .onEach { result -> if (result is OrbinResult.Success) onThreadLoaded(result.data) }
-                .map { result ->
+            reloads
+                .flatMapLatest { attempt ->
+                    // The initial load may serve the cache for instant display. A reload must not:
+                    // the reader is asking whether there are new replies, and the answer cannot be
+                    // the snapshot they are already looking at.
+                    observeThread(provider, board, threadId, forceRefresh = attempt > 0)
+                }.onEach { result ->
+                    if (result is OrbinResult.Success) onThreadLoaded(result.data)
+                    _isRefreshing.value = false
+                }.map { result ->
                     result.fold(
                         onSuccess = { ThreadUiState.Success(it) },
                         onFailure = { ThreadUiState.Error(it.message) },
                     )
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
+
+        /** Reloads the thread from the network, bypassing the cache. */
+        fun refresh() {
+            _isRefreshing.value = true
+            reloads.update { it + 1 }
+        }
 
         val isBookmarked: StateFlow<Boolean> =
             bookmarkRepository

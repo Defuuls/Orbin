@@ -304,7 +304,10 @@ private fun MediaGrid(
     onOpenMedia: (Int) -> Unit,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        // Adaptive rather than Fixed(3): three columns is right for a phone in portrait and
+        // absurd on a tablet or in landscape, where the tiles stretch to fill the width. Every
+        // other grid in the app sizes itself the same way.
+        columns = GridCells.Adaptive(minSize = MEDIA_TILE_MIN_SIZE),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -359,3 +362,10 @@ private fun CatalogThread.label(): String = originalPost.subject?.takeIf { it.is
 
 private const val BROWSE_TAB = 0
 private const val BOOKMARKS_TAB = 1
+
+/**
+ * Minimum media tile edge. Chosen so a 360dp-wide phone in portrait still lays out three columns
+ * (360 − 16 padding − 12 spacing = 332, which fits 3 × 110), while wider viewports gain columns
+ * instead of stretching the tiles.
+ */
+private val MEDIA_TILE_MIN_SIZE = 110.dp

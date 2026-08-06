@@ -509,7 +509,10 @@ private fun <T> ChipChoiceRow(
     Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
         LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            items(values) { value ->
+            // Keyed on the rendered label rather than the value: T is unconstrained here, so it
+            // carries no guarantee of being a usable (Parcelable/primitive) key, whereas the label
+            // is a String and is unique within a choice row by construction.
+            items(values, key = text) { value ->
                 ModernFilterChip(
                     label = text(value),
                     selected = value == selected,
