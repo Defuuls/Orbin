@@ -6,6 +6,29 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Pull to refresh** on the subscribed feed, the board catalog and a thread. The catalog had no
+  refresh affordance at all — Paging only reloads on its own invalidation, so a stale catalog
+  stayed stale until the screen was left and re-entered.
+- **Spoilers reveal on tap.** They were blacked out permanently, so spoilered post text was simply
+  unreadable. Each span reveals on its own; while hidden, a quote link inside a spoiler is inert,
+  because it would otherwise take the tap meant to reveal it and navigate the reader to a post they
+  could not yet see they were offered.
+- **Haptic feedback** on the pull-to-refresh threshold, spoiler reveals and post collapsing. There
+  was none anywhere in the app before.
+
+### Fixed
+- **A thread could not actually be refreshed.** `ThreadRepositoryImpl` caches for 30 minutes with
+  no way to bust it, so asking for new replies returned the snapshot already on screen for the rest
+  of that window. `observeThread`/`refreshThread` take a `forceRefresh` flag.
+- **Backlink chips were below the minimum touch target.** A bare `clickable` on `labelSmall` text
+  is roughly a 16dp target against a 48dp minimum; the touch bounds now expand without inflating
+  the glyphs, so the dense catalog look is unchanged.
+- **The thread media grid did not reflow.** It was pinned to three columns, right on a phone in
+  portrait and stretched absurdly on a tablet or in landscape. It now sizes adaptively like every
+  other grid in the app.
+- The settings chip row was the one lazy list of eighteen without a stable item key.
+
 ## [64-Aldebaran] - 2026-08-06
 
 ### Added
