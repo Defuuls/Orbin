@@ -15,6 +15,11 @@ All notable changes to Orbin are documented here. The format is based on
   executed; a new workflow boots an emulator and runs them on every push and PR.
 
 ### Fixed
+- **The protobuf security pin broke instrumentation tests.** `com.google.protobuf:protobuf-*` was
+  forced to `3.25.5`, which carries the CVE-2024-7254 fix but predates the `RuntimeVersion` class
+  AGP's Unified Test Platform requires — so every instrumentation test died with
+  `NoClassDefFoundError` the moment one actually ran. Nothing had run them, so nothing noticed.
+  Raised to 4.35.1, which carries the same CVE fix and the class.
 - **The Netty security pin referenced a version that does not exist.** Both the plugin classpath
   and project configurations forced `io.netty:netty-*` to `4.1.139.Final`; the newest release on
   that line is `4.1.136.Final`. Nothing had failed only because no resolved dependency pulled in

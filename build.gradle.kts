@@ -5,9 +5,11 @@
 // benchmark module) broke the build outright. Sourced from gradle.properties so the buildscript
 // block and the project-level patches below cannot drift apart.
 val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
+val protobufVersion: String = providers.gradleProperty("orbin.protobufVersion").get()
 
 buildscript {
     val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
+    val protobufVersion: String = providers.gradleProperty("orbin.protobufVersion").get()
     configurations.classpath {
         resolutionStrategy.eachDependency {
             when {
@@ -42,7 +44,7 @@ buildscript {
                 }
 
                 requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
-                    useVersion("3.25.5")
+                    useVersion(protobufVersion)
                     because("Dependabot reports protobuf denial-of-service vulnerabilities.")
                 }
 
@@ -125,7 +127,7 @@ fun ResolutionStrategy.applySecurityDependencyPatches() {
             }
 
             requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
-                useVersion("3.25.5")
+                useVersion(protobufVersion)
                 because("Dependabot reports protobuf denial-of-service vulnerabilities.")
             }
 
