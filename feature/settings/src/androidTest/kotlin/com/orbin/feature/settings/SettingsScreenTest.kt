@@ -2,6 +2,7 @@ package com.orbin.feature.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -52,7 +53,7 @@ class SettingsScreenTest {
     fun togglingAnOptionWritesItThrough() {
         setContent()
 
-        composeTestRule.onNodeWithText("Thread watch notifications").performScrollTo().performClick()
+        toggle("Thread watch notifications")
 
         composeTestRule.waitForIdle()
         assertThat(settingsRepository.current.threadWatchNotificationsEnabled).isFalse()
@@ -65,7 +66,7 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithText("Quiet hours start").performScrollTo().assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Thread watch notifications").performScrollTo().performClick()
+        toggle("Thread watch notifications")
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Quiet hours start").assertDoesNotExist()
@@ -108,10 +109,16 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithText("Check for updates").performScrollTo().assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Internal updater").performScrollTo().performClick()
+        toggle("Internal updater")
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Check for updates").assertDoesNotExist()
+    }
+
+    /** Flips the switch in the row titled [label]; the row title itself is not clickable. */
+    private fun toggle(label: String) {
+        composeTestRule.onNodeWithTag(switchTagFor(label)).performScrollTo().performClick()
+        composeTestRule.waitForIdle()
     }
 
     private fun setContent(initial: AppSettings = AppSettings.Default) {
