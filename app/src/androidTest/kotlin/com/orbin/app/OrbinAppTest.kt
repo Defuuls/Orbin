@@ -6,7 +6,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +34,6 @@ private const val READY_TIMEOUT_MS = 20_000L
  * means iterating against a device in seconds rather than eight-minute CI cycles. Ignored rather
  * than deleted: the scaffolding around it works, and this is a test worth having.
  */
-@Ignore("MainActivity produces no Compose hierarchy under instrumentation - see the KDoc above")
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class OrbinAppTest {

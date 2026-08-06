@@ -107,6 +107,25 @@ jobs:
           disable-animations: true
           script: ./gradlew $INSTRUMENTATION_TASKS --continue
 
+      # Instrumentation failures often say only that a test failed; the reason is in logcat, and
+      # without this it is thrown away with the emulator. Captured on failure only, since a passing
+      # run's logcat is noise.
+      - name: Capture logcat
+        if: failure()
+        run: |
+          adb logcat -d > logcat-api-${{ matrix.api-level }}.txt 2>&1 || true
+          echo "--- app and test process lines ---"
+          grep -iE "orbin|AndroidRuntime|FATAL|ActivityManager.*com\.orbin" \
+            "logcat-api-${{ matrix.api-level }}.txt" | tail -200 || true
+
+      - name: Upload logcat
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logcat-api-${{ matrix.api-level }}
+          path: logcat-api-${{ matrix.api-level }}.txt
+          if-no-files-found: ignore
+
       - name: Upload instrumentation reports
         if: always()
         uses: actions/upload-artifact@v7

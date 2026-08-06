@@ -88,11 +88,14 @@ launch.
 ./gradlew :app:generateReleaseBaselineProfile
 ```
 
-This needs **real hardware** — a rooted emulator or an unlocked physical device — so it has no CI
-path and is not wired into any workflow. The generated profile lands in
-`app/src/release/generated/baselineProfiles/` and is **committed**, because nothing regenerates it
-automatically. Re-record it when startup or the feed changes shape; a stale profile is not
-harmful, only progressively less useful.
+This needs a **rooted** device — a `google_apis` emulator or an unlocked handset. That rules out
+running it on every push, but not CI: the **Baseline profile** workflow (`workflow_dispatch`) boots
+such an emulator, records the profile, and opens a draft PR with the result. Run it locally with the
+command above if you have a device to hand.
+
+The profile lands in `app/src/release/generated/baselineProfiles/` and is **committed**, because
+nothing regenerates it automatically. Re-record it when startup or the feed changes shape; a stale
+profile is not harmful, only progressively less useful.
 
 ## CI workflows
 
@@ -102,6 +105,7 @@ harmful, only progressively less useful.
 | `codeql.yml` | scheduled/push | Manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of GitHub's autobuild. |
 | `screenshots.yml` | PRs touching UI | Records Roborazzi screenshots and uploads them as artifacts. |
 | `instrumentation.yml` | every push to `main` and every PR | Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
+| `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, and opens a draft PR with it. |
 | `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version name, `versionCode`, codename, base branch, draft flag. Bumps `app/build.gradle.kts` and `CHANGELOG.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 
