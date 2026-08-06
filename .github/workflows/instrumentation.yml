@@ -105,15 +105,19 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           # Compose tests wait on idleness, which never arrives while animations run.
           disable-animations: true
-          script: ./gradlew $INSTRUMENTATION_TASKS --continue
+          # Logcat has to be pulled here, not in a later step: the action tears the emulator down
+          # when this step ends, and `adb logcat -d` against no device blocks rather than failing.
+          script: |
+            set +e
+            ./gradlew $INSTRUMENTATION_TASKS --continue
+            GRADLE_STATUS=$?
+            timeout 60 adb logcat -d > logcat-api-${{ matrix.api-level }}.txt 2>&1
+            exit $GRADLE_STATUS
 
-      # Instrumentation failures often say only that a test failed; the reason is in logcat, and
-      # without this it is thrown away with the emulator. Captured on failure only, since a passing
-      # run's logcat is noise.
-      - name: Capture logcat
+      # Instrumentation failures usually report only that a test failed; the reason is in logcat.
+      - name: Summarise logcat
         if: failure()
         run: |
-          adb logcat -d > logcat-api-${{ matrix.api-level }}.txt 2>&1 || true
           echo "--- app and test process lines ---"
           grep -iE "orbin|AndroidRuntime|FATAL|ActivityManager.*com\.orbin" \
             "logcat-api-${{ matrix.api-level }}.txt" | tail -200 || true
