@@ -51,7 +51,7 @@ class PowBlockTest {
                     .build()
 
             val response = client.newCall(Request.Builder().url(server.url("/boards.js?json=1")).build()).execute()
-            val body = response.use { it.body!!.string() }
+            val body = response.use { it.body.string() }
 
             assertThat(body).isEqualTo("""{"status":"ok"}""")
             // First hit (challenge), the pow submission, the tos-gated retry that 302s to the

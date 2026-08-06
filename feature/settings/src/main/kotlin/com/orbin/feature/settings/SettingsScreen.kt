@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +61,9 @@ import kotlinx.coroutines.withContext
 private val IMAGE_CACHE_LIMITS_MB = listOf(128, 256, 512, 1024)
 private val CONNECT_TIMEOUTS_SECONDS = listOf(10L, 15L, 30L, 60L)
 private val READ_TIMEOUTS_SECONDS = listOf(15L, 30L, 60L, 120L)
+
+/** Test tag for the switch in the row titled [label]. Shared with the instrumentation tests. */
+internal fun switchTagFor(label: String): String = "settings:switch:$label"
 
 private const val DEFAULT_BACKUP_FILE_NAME = "orbin-backup.json"
 private const val FONT_SCALE_SMALL = 0.9f
@@ -575,7 +579,15 @@ private fun SwitchRow(
     ModernListItem(
         title = label,
         subtitle = supporting,
-        trailing = { Switch(checked = checked, onCheckedChange = onChange) },
+        trailing = {
+            // The row itself is not clickable, so the switch is the only thing a test can drive.
+            // Tagging it by label makes that addressable without asserting on the layout's shape.
+            Switch(
+                checked = checked,
+                onCheckedChange = onChange,
+                modifier = Modifier.testTag(switchTagFor(label)),
+            )
+        },
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     )
 }

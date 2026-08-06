@@ -6,6 +6,52 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Baseline profiles.** A `:benchmark` module records the classes used on the startup and feed
+  path so ART compiles them ahead of time instead of interpreting them on first launch. Generating
+  a profile needs real hardware, so it is a deliberate manual step
+  (`./gradlew :app:generateReleaseBaselineProfile`) with the result committed.
+- **Instrumentation tests actually run in CI, and actually test something.** The `androidTest`
+  sources were compiled but never executed — and had never worked: every test called Compose
+  assertion APIs *inside* the composition lambda, asserting against an empty tree because the
+  screen under test was never composed. The two feature-screen files are rewritten to compose the
+  real screen over in-memory repositories and assert real behaviour — that toggles write through,
+  that quiet hours are gated on watch notifications, that retry appears only on failed downloads,
+  and that the DNS-fallback notice follows the privacy monitor. A new workflow boots an emulator
+  and runs them on every push and PR. The app-launch smoke test is rewritten but `@Ignore`d:
+  `MainActivity` renders no Compose hierarchy under instrumentation for a reason not yet found.
+
+### Fixed
+- **The protobuf security pin broke instrumentation tests.** `com.google.protobuf:protobuf-*` was
+  forced to `3.25.5`, which carries the CVE-2024-7254 fix but predates the `RuntimeVersion` class
+  AGP's Unified Test Platform requires — so every instrumentation test died with
+  `NoClassDefFoundError` the moment one actually ran. Nothing had run them, so nothing noticed.
+  Raised to 4.35.1, which carries the same CVE fix and the class.
+- **The Netty security pin referenced a version that does not exist.** Both the plugin classpath
+  and project configurations forced `io.netty:netty-*` to `4.1.139.Final`; the newest release on
+  that line is `4.1.136.Final`. Nothing had failed only because no resolved dependency pulled in
+  Netty — the first one that did broke the build outright. The v57 note claiming Netty was
+  "upgraded to 4.1.139.Final, resolving 9 CVEs" was therefore never accurate.
+- **Screenshot tests recorded nothing and passed.** A filter meant to keep them out of the
+  aggregate `test` task matched by task name, and the Roborazzi record and verify tasks *are* that
+  task with extra properties — so the tasks that exist to run screenshot tests excluded them.
+  They were the only tests in the module, so both reported success having captured and compared
+  nothing.
+- **Release-signing fallback now exists.** The developer guide promised local release builds fall
+  back to debug signing without secrets; nothing implemented it, and the signing guard fired on any
+  task whose name contained "Release" — including baseline profile generation, which never leaves
+  the machine.
+
+- **CI never enforced warnings-as-errors.** The developer guide said `orbin.warningsAsErrors=true`
+  is what CI uses; no workflow set it. Six warnings had accumulated behind that gap despite an
+  earlier release claiming they were all cleared. They are fixed and the flag is now actually
+  passed, so the next one fails the build instead of joining them.
+
+### Changed
+- **Internal:** migrated off the deprecated `rememberTransformableState`, `TabRow`,
+  `Modifier.menuAnchor()` and `MenuAnchorType` APIs, and removed two conditions the compiler could
+  already prove.
+
 ## [63-Acrux] - 2026-08-05
 
 Two settings stop being on/off switches, for different reasons. "Refresh feed on return" gains

@@ -331,6 +331,9 @@ class FakeSettingsRepository(
         update { copy(mediaScrollBoardView = enabled) }
     }
 
+    /** The settings as they stand now, for asserting that a screen wrote through. */
+    val current: AppSettings get() = state.value
+
     private fun update(block: AppSettings.() -> AppSettings) {
         state.update { it.block() }
     }

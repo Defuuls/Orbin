@@ -170,8 +170,7 @@ class GalleryBrowserViewModel
                                 preloadingThread = false,
                                 progressMessage = null,
                                 progressValue = 0f,
-                                message =
-                                    result.error.message ?: "Unable to preload thread",
+                                message = result.error.message,
                             )
                         }
                 }

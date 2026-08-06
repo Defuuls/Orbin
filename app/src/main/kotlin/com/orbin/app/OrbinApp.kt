@@ -87,6 +87,11 @@ fun OrbinApp(
         var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
         val bottomBarVisible = showBottomBar && (!feedChromeHidesOnScroll || feedChromeVisible)
+        // All three navigation surfaces ask the same question; the null-safe call also drops a
+        // redundant guard the compiler could already prove true in the tablet-dock branch.
+        val destinationMatches: (TopLevelDestination) -> Boolean = { destination ->
+            currentDestination?.hasRoute(destination.route::class) == true
+        }
         val useTabletDock = showBottomBar && tabletFeedChrome
         val useTabletFeedDock = isSubscribedFeed && tabletFeedChrome
 
@@ -133,10 +138,7 @@ fun OrbinApp(
                     if (useTabletFeedDock) {
                         TabletFeedDock(
                             topLevel = topLevel,
-                            currentDestinationMatches = { destination ->
-                                currentDestination != null &&
-                                    currentDestination.hasRoute(destination.route::class) == true
-                            },
+                            currentDestinationMatches = destinationMatches,
                             compact = compactTabletDock,
                             onNavigate = navController::navigateToTopLevel,
                             onScrollToTop = { feedScrollToTopRequest++ },
@@ -146,19 +148,13 @@ fun OrbinApp(
                     } else if (useTabletDock) {
                         TabletNavigationDock(
                             topLevel = topLevel,
-                            currentDestinationMatches = { destination ->
-                                currentDestination != null &&
-                                    currentDestination.hasRoute(destination.route::class) == true
-                            },
+                            currentDestinationMatches = destinationMatches,
                             onNavigate = navController::navigateToTopLevel,
                         )
                     } else {
                         PhoneNavigationBar(
                             topLevel = topLevel,
-                            currentDestinationMatches = { destination ->
-                                currentDestination != null &&
-                                    currentDestination.hasRoute(destination.route::class) == true
-                            },
+                            currentDestinationMatches = destinationMatches,
                             onNavigate = navController::navigateToTopLevel,
                         )
                     }

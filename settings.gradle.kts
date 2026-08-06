@@ -29,6 +29,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 // Application
 include(":app")
+include(":benchmark")
 
 // Core layers
 include(":core:common")
