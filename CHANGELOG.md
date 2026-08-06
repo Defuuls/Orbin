@@ -11,8 +11,13 @@ All notable changes to Orbin are documented here. The format is based on
   path so ART compiles them ahead of time instead of interpreting them on first launch. Generating
   a profile needs real hardware, so it is a deliberate manual step
   (`./gradlew :app:generateReleaseBaselineProfile`) with the result committed.
-- **Instrumentation tests actually run in CI.** The `androidTest` sources were compiled but never
-  executed; a new workflow boots an emulator and runs them on every push and PR.
+- **Instrumentation tests actually run in CI, and actually test something.** The `androidTest`
+  sources were compiled but never executed — and had never worked: every test called Compose
+  assertion APIs *inside* the composition lambda, asserting against an empty tree because the
+  screen under test was never composed. All three files are rewritten to compose the real screen
+  over in-memory repositories and assert real behaviour, including that toggles write through and
+  that the DNS-fallback notice reflects the monitor. A new workflow boots an emulator and runs them
+  on every push and PR.
 
 ### Fixed
 - **The protobuf security pin broke instrumentation tests.** `com.google.protobuf:protobuf-*` was

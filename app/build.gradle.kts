@@ -54,6 +54,7 @@ android {
         applicationId = "com.orbin.app"
         versionCode = 83
         versionName = "63-Acrux"
+        testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 
     signingConfigs {
@@ -146,6 +147,9 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.compose.ui.test.manifest)
 }
