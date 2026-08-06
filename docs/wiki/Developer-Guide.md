@@ -101,7 +101,7 @@ harmful, only progressively less useful.
 | `ci.yml` | every push to `main` and every PR | `ktlintCheck` + `detekt`, unit tests, then a debug APK build (uploaded as an artifact). Superseded runs are cancelled. |
 | `codeql.yml` | scheduled/push | Manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of GitHub's autobuild. |
 | `screenshots.yml` | PRs touching UI | Records Roborazzi screenshots and uploads them as artifacts. |
-| `instrumentation.yml` | every push to `main` and every PR | Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest`. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
+| `instrumentation.yml` | every push to `main` and every PR | Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version name, `versionCode`, codename, base branch, draft flag. Bumps `app/build.gradle.kts` and `CHANGELOG.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 
@@ -129,7 +129,7 @@ identical result.
 
 **Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
 naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella,
-Betelgeuse, Procyon, Achernar, Hadar, Acrux.
+Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran.
 Earlier releases drew on nearby or dim stars instead: v30–v33 used the smallest known stars
 (Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", and
 v37–v48 returned to nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B.
