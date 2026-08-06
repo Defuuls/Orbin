@@ -78,6 +78,11 @@ builds — including baseline profile generation — work without secrets. `asse
 `bundleRelease` still fail fast if release signing is missing, since those produce artifacts
 meant to leave the machine.
 
+That fallback borrows the debug keystore's *path*, and AGP only creates `debug.keystore` when it
+first signs a debug build. On a machine that has never built one — a fresh CI runner, say — a
+release-shaped build fails with "Keystore file ... not found". Run `./gradlew :app:assembleDebug`
+once first; the Baseline profile workflow does exactly that.
+
 ## Baseline profiles
 
 `:benchmark` is a `com.android.test` module that records the classes on Orbin's startup and
