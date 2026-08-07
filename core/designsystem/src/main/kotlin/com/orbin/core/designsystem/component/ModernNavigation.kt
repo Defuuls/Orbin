@@ -14,9 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -78,53 +75,6 @@ fun RowScope.ModernNavigationBarItem(
         modifier = modifier,
         colors =
             NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-            ),
-    )
-}
-
-/**
- * Modern navigation rail for tablet/landscape layouts.
- * Used for vertical navigation with enhanced Material Design 3 styling.
- */
-@Composable
-fun ModernNavigationRail(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    NavigationRail(
-        modifier =
-            modifier
-                .clip(MaterialTheme.shapes.large),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ) {
-        content()
-    }
-}
-
-/**
- * Modern navigation rail item with Material Design 3 styling.
- */
-@Composable
-fun ModernNavigationRailItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    NavigationRailItem(
-        icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label) },
-        selected = selected,
-        onClick = onClick,
-        modifier = modifier,
-        colors =
-            NavigationRailItemDefaults.colors(
                 selectedIconColor = MaterialTheme.colorScheme.primary,
                 selectedTextColor = MaterialTheme.colorScheme.primary,
                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
