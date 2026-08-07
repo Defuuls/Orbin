@@ -46,24 +46,31 @@ class ThreadRepositoryImpl
         private val threadCache = mutableMapOf<ThreadKey, CachedThreadEntry>()
         private val cacheMutex = Mutex()
 
-        override fun observeThread(key: ThreadKey): Flow<OrbinResult<Thread>> =
+        override fun observeThread(
+            key: ThreadKey,
+            forceRefresh: Boolean,
+        ): Flow<OrbinResult<Thread>> =
             flow {
-                emit(refreshThread(key.provider, key.board, key.thread))
+                emit(refreshThread(key.provider, key.board, key.thread, forceRefresh))
             }
 
         override suspend fun refreshThread(
             provider: ProviderId,
             board: BoardId,
             thread: ThreadId,
+            forceRefresh: Boolean,
         ): OrbinResult<Thread> =
             withContext(ioDispatcher) {
                 val key = ThreadKey(provider, board, thread)
 
-                // Try cache first (fast path for repeated navigation).
-                cacheMutex.withLock {
-                    val cached = threadCache[key]
-                    if (cached != null && !cached.isStale(System.currentTimeMillis())) {
-                        return@withContext OrbinResult.Success(cached.thread)
+                // Try cache first (fast path for repeated navigation) unless the caller has asked
+                // for the network explicitly, which is what a pull-to-refresh does.
+                if (!forceRefresh) {
+                    cacheMutex.withLock {
+                        val cached = threadCache[key]
+                        if (cached != null && !cached.isStale(System.currentTimeMillis())) {
+                            return@withContext OrbinResult.Success(cached.thread)
+                        }
                     }
                 }
 

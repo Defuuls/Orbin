@@ -27,7 +27,8 @@ class ObserveThreadUseCase
             provider: ProviderId,
             board: BoardId,
             thread: ThreadId,
-        ): Flow<OrbinResult<Thread>> = threadRepository.observeThread(ThreadKey(provider, board, thread))
+            forceRefresh: Boolean = false,
+        ): Flow<OrbinResult<Thread>> = threadRepository.observeThread(ThreadKey(provider, board, thread), forceRefresh)
     }
 
 /**

@@ -80,13 +80,21 @@ interface ThreadRepository {
     /**
      * Loads a thread, returning a stream so the UI updates when a background refresh brings new
      * replies. The first emission may come from cache for instant display.
+     *
+     * Set [forceRefresh] to skip the cache and go to the network. A thread accumulates replies
+     * continuously, so a reader who explicitly asks for new posts must not be served the same
+     * snapshot back for the remainder of the cache lifetime.
      */
-    fun observeThread(key: ThreadKey): Flow<OrbinResult<Thread>>
+    fun observeThread(
+        key: ThreadKey,
+        forceRefresh: Boolean = false,
+    ): Flow<OrbinResult<Thread>>
 
     suspend fun refreshThread(
         provider: ProviderId,
         board: BoardId,
         thread: ThreadId,
+        forceRefresh: Boolean = false,
     ): OrbinResult<Thread>
 }
 

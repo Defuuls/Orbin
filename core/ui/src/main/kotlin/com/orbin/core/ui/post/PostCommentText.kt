@@ -6,9 +6,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -32,6 +37,9 @@ import com.orbin.core.model.PostNode
 private val quoteLinkStyle = SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)
 private val quoteLinkStyles = TextLinkStyles(style = quoteLinkStyle)
 
+/** Text painted in its own background colour: present for layout and selection, but unreadable. */
+private val blackedOutSpoilerStyle = SpanStyle(color = SpoilerBackground, background = SpoilerBackground)
+
 private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
 private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
 
@@ -44,10 +52,12 @@ private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', '
  * Uses [LinkAnnotation] so links are exposed to accessibility services (TalkBack announces them as
  * links) and honour the platform's link handling, replacing the deprecated `ClickableText`.
  *
+ * Spoilers start blacked out and reveal individually on tap; see [CommentRenderContext] for how a
+ * span keeps its identity across the rebuild that reveals it. Reveals are per-composition, so
+ * scrolling a post out of view and back re-hides it.
+ *
  * For non-interactive previews (catalog cards, feed rows) use [PostCommentPreviewText] instead, so
  * taps fall through to the enclosing card.
- *
- * TODO(spoiler-reveal): spoilers currently render blacked-out; add tap-to-reveal per span.
  */
 @Composable
 fun PostCommentText(
@@ -62,17 +72,26 @@ fun PostCommentText(
     val currentOnQuoteClick by rememberUpdatedState(onQuoteClick)
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
 
+    // Keyed on the comment so a recycled row showing a different post starts fully hidden rather
+    // than inheriting the previous post's reveals.
+    var revealedSpoilers by remember(comment) { mutableStateOf(emptySet<Int>()) }
+    val haptics = LocalHapticFeedback.current
+    val revealedSpoilerBackground = MaterialTheme.colorScheme.surfaceVariant
+
     val annotated =
-        remember(comment) {
-            buildAnnotatedString {
-                comment.nodes.forEach {
-                    appendNode(
-                        node = it,
-                        onQuoteClick = { id -> currentOnQuoteClick(id) },
-                        onLinkClick = { url -> currentOnLinkClick(url) },
-                    )
-                }
-            }
+        remember(comment, revealedSpoilers, revealedSpoilerBackground) {
+            val context =
+                CommentRenderContext(
+                    onQuoteClick = { id -> currentOnQuoteClick(id) },
+                    onLinkClick = { url -> currentOnLinkClick(url) },
+                    revealedSpoilers = revealedSpoilers,
+                    onSpoilerClick = { id ->
+                        haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                        revealedSpoilers = revealedSpoilers + id
+                    },
+                    revealedSpoilerBackground = revealedSpoilerBackground,
+                )
+            buildCommentText(comment, context)
         }
 
     val text =
@@ -104,9 +123,7 @@ fun PostCommentPreviewText(
 ) {
     val annotated =
         remember(comment) {
-            buildAnnotatedString {
-                comment.nodes.forEach { appendNode(node = it, interactive = false) }
-            }
+            buildCommentText(comment, CommentRenderContext(), interactive = false)
         }
     Text(
         text = annotated,
@@ -117,42 +134,79 @@ fun PostCommentPreviewText(
     )
 }
 
+/**
+ * Everything the node walk needs that does not vary between sibling nodes: the click callbacks and
+ * the spoiler reveal state.
+ *
+ * Spoiler spans are identified by their position in document order, handed out by [nextSpoilerId]
+ * as the tree is walked. The walk is deterministic for a given [PostComment], so an id denotes the
+ * same span every time — which is what lets a span that was revealed stay revealed across the
+ * rebuild that its own reveal triggers. A fresh context (and therefore a fresh counter) is created
+ * per build for exactly that reason.
+ */
+internal class CommentRenderContext(
+    val onQuoteClick: (PostId) -> Unit = {},
+    val onLinkClick: (String) -> Unit = {},
+    val revealedSpoilers: Set<Int> = emptySet(),
+    val onSpoilerClick: (Int) -> Unit = {},
+    val revealedSpoilerBackground: Color = Color.Unspecified,
+) {
+    private var assignedSpoilers = 0
+
+    fun nextSpoilerId(): Int = assignedSpoilers++
+}
+
+/**
+ * Builds the rendered string for [comment] under [ctx].
+ *
+ * Separate from the composables so the rendering rules — which ranges are blacked out, which are
+ * tappable, what a reveal changes — can be asserted as plain values on the JVM. The Compose test
+ * API offers no way to click an individual link inside a text run, so driving this through a
+ * composable could not observe a reveal at all.
+ */
+internal fun buildCommentText(
+    comment: PostComment,
+    ctx: CommentRenderContext,
+    interactive: Boolean = true,
+): AnnotatedString =
+    buildAnnotatedString {
+        comment.nodes.forEach { appendNode(node = it, ctx = ctx, interactive = interactive) }
+    }
+
 private fun AnnotatedString.Builder.appendNode(
     node: PostNode,
+    ctx: CommentRenderContext,
     interactive: Boolean = true,
     linkifyPlainText: Boolean = true,
-    onQuoteClick: (PostId) -> Unit = {},
-    onLinkClick: (String) -> Unit = {},
 ) {
     when (node) {
         is PostNode.Text ->
             if (linkifyPlainText) {
-                appendPlainTextWithLinks(node.text, interactive, onLinkClick)
+                appendPlainTextWithLinks(node.text, interactive, ctx.onLinkClick)
             } else {
                 append(node.text)
             }
         PostNode.LineBreak -> append('\n')
-        is PostNode.QuoteLink -> appendQuoteLink(node, interactive, onQuoteClick)
-        is PostNode.Link -> appendLink(node, interactive, onQuoteClick, onLinkClick)
-        is PostNode.Styled -> appendStyled(node, interactive, linkifyPlainText, onQuoteClick, onLinkClick)
+        is PostNode.QuoteLink -> appendQuoteLink(node, interactive, ctx.onQuoteClick)
+        is PostNode.Link -> appendLink(node, ctx, interactive)
+        is PostNode.Styled -> appendStyled(node, ctx, interactive, linkifyPlainText)
     }
 }
 
 private fun AnnotatedString.Builder.appendLink(
     node: PostNode.Link,
+    ctx: CommentRenderContext,
     interactive: Boolean,
-    onQuoteClick: (PostId) -> Unit,
-    onLinkClick: (String) -> Unit,
 ) {
     val url = normalizePlainTextUrl(node.url)
     // Link children are never re-linkified: they already sit inside an anchor.
     val children: AnnotatedString.Builder.() -> Unit = {
         node.children.forEach {
-            appendNode(it, interactive, linkifyPlainText = false, onQuoteClick, onLinkClick)
+            appendNode(it, ctx, interactive, linkifyPlainText = false)
         }
     }
     if (interactive) {
-        withLink(clickableLink { onLinkClick(url) }, children)
+        withLink(clickableLink { ctx.onLinkClick(url) }, children)
     } else {
         withStyle(quoteLinkStyle, children)
     }
@@ -205,33 +259,83 @@ private fun AnnotatedString.Builder.appendQuoteLink(
 
 private fun AnnotatedString.Builder.appendStyled(
     node: PostNode.Styled,
+    ctx: CommentRenderContext,
     interactive: Boolean,
     linkifyPlainText: Boolean,
-    onQuoteClick: (PostId) -> Unit,
-    onLinkClick: (String) -> Unit,
 ) {
+    // Spoilers are the one style whose rendering depends on state rather than on the node alone.
+    if (node.style == InlineStyle.SPOILER) {
+        appendSpoiler(node, ctx, interactive, linkifyPlainText)
+        return
+    }
     val span =
         when (node.style) {
             InlineStyle.GREENTEXT -> SpanStyle(color = GreentextColor)
             InlineStyle.QUOTE_TEXT -> SpanStyle(color = GreentextColor)
-            InlineStyle.SPOILER -> SpanStyle(color = SpoilerBackground, background = SpoilerBackground)
             InlineStyle.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
             InlineStyle.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
             InlineStyle.UNDERLINE -> SpanStyle(textDecoration = TextDecoration.Underline)
             InlineStyle.STRIKETHROUGH -> SpanStyle(textDecoration = TextDecoration.LineThrough)
             InlineStyle.CODE -> SpanStyle(fontFamily = FontFamily.Monospace)
             InlineStyle.HEADING -> SpanStyle(fontWeight = FontWeight.Bold)
+            // Handled above; listed so the when stays exhaustive without an else branch.
+            InlineStyle.SPOILER -> SpanStyle()
         }
     withStyle(span) {
         node.children.forEach {
-            appendNode(it, interactive, linkifyPlainText, onQuoteClick, onLinkClick)
+            appendNode(it, ctx, interactive, linkifyPlainText)
         }
+    }
+}
+
+/**
+ * Renders one spoiler span, blacked out until tapped.
+ *
+ * While hidden, the children are rendered **non-interactively** even in an otherwise interactive
+ * comment. A quote link inside a spoiler would otherwise sit on top of the reveal target and take
+ * the tap, so the first tap would navigate away to a post the reader cannot yet see they were
+ * offered. Once revealed, the children regain their normal behaviour.
+ */
+private fun AnnotatedString.Builder.appendSpoiler(
+    node: PostNode.Styled,
+    ctx: CommentRenderContext,
+    interactive: Boolean,
+    linkifyPlainText: Boolean,
+) {
+    val id = ctx.nextSpoilerId()
+    val children: (Boolean) -> AnnotatedString.Builder.() -> Unit = { childrenInteractive ->
+        {
+            node.children.forEach {
+                appendNode(it, ctx, childrenInteractive, linkifyPlainText)
+            }
+        }
+    }
+
+    when {
+        id in ctx.revealedSpoilers ->
+            // Revealed: readable, but on a tinted ground so it stays visibly a spoiler.
+            withStyle(SpanStyle(background = ctx.revealedSpoilerBackground), children(interactive))
+
+        interactive ->
+            withLink(spoilerLink { ctx.onSpoilerClick(id) }) {
+                withStyle(blackedOutSpoilerStyle, children(false))
+            }
+
+        // Previews are not tappable, so a spoiler there simply stays hidden.
+        else -> withStyle(blackedOutSpoilerStyle, children(false))
     }
 }
 
 /** Builds a styled, clickable link annotation that runs [onClick] when tapped. */
 private fun clickableLink(onClick: () -> Unit): LinkAnnotation.Clickable =
     LinkAnnotation.Clickable(tag = "link", styles = quoteLinkStyles) { onClick() }
+
+/**
+ * A clickable annotation carrying no styles of its own — the blackout span supplies the appearance,
+ * and link colouring would defeat the point of hiding the text.
+ */
+private fun spoilerLink(onClick: () -> Unit): LinkAnnotation.Clickable =
+    LinkAnnotation.Clickable(tag = "spoiler", styles = null) { onClick() }
 
 private fun trimTrailingUrlPunctuation(url: String): String {
     var end = url.length

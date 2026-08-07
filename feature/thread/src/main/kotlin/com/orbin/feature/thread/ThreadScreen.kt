@@ -42,6 +42,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,6 +60,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,6 +93,8 @@ fun ThreadScreen(
     viewModel: ThreadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val haptics = LocalHapticFeedback.current
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val mediaScrollEnabled by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
@@ -178,21 +184,30 @@ fun ThreadScreen(
             )
         },
     ) { padding ->
-        when (val state = uiState) {
-            ThreadUiState.Loading -> LoadingView(Modifier.padding(padding))
-            is ThreadUiState.Error -> ErrorView(state.message, Modifier.padding(padding))
-            is ThreadUiState.Success ->
-                ThreadContent(
-                    thread = state.thread,
-                    layoutMode = layoutMode,
-                    thumbnailSize = thumbnailSize,
-                    onOpenMedia = onOpenMedia,
-                    mediaScrollIndex = mediaScrollIndex,
-                    onMediaScrollConsumed = onMediaScrollConsumed,
-                    scrollToTopRequest = scrollToTopRequest,
-                    mediaScrollEnabled = mediaScrollEnabled,
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                )
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                viewModel.refresh()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
+            when (val state = uiState) {
+                ThreadUiState.Loading -> LoadingView()
+                is ThreadUiState.Error -> ErrorView(state.message, onRetry = viewModel::refresh)
+                is ThreadUiState.Success ->
+                    ThreadContent(
+                        thread = state.thread,
+                        layoutMode = layoutMode,
+                        thumbnailSize = thumbnailSize,
+                        onOpenMedia = onOpenMedia,
+                        mediaScrollIndex = mediaScrollIndex,
+                        onMediaScrollConsumed = onMediaScrollConsumed,
+                        scrollToTopRequest = scrollToTopRequest,
+                        mediaScrollEnabled = mediaScrollEnabled,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+            }
         }
     }
 }
@@ -281,6 +296,7 @@ private fun PostListContent(
         }
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
+    val haptics = LocalHapticFeedback.current
 
     val onQuoteClick: (PostId) -> Unit = { id ->
         indexById[id]?.let { target -> scope.launch { listState.animateScrollToItem(target) } }
@@ -315,7 +331,13 @@ private fun PostListContent(
                 post = post,
                 isCollapsed = post.id.value in collapsedIds,
                 onToggleCollapse = {
-                    if (!collapsedIds.remove(post.id.value)) collapsedIds.add(post.id.value)
+                    val collapsing = !collapsedIds.remove(post.id.value)
+                    if (collapsing) collapsedIds.add(post.id.value)
+                    // Collapsing removes what the reader was looking at, so the tick confirms the
+                    // tap landed on the header rather than on something inside the post.
+                    haptics.performHapticFeedback(
+                        if (collapsing) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff,
+                    )
                 },
                 onQuoteClick = onQuoteClick,
                 onLinkClick = onLinkClick,
@@ -534,13 +556,23 @@ private fun Backlinks(
     onQuoteClick: (PostId) -> Unit,
 ) {
     HorizontalDivider(Modifier.padding(bottom = 4.dp))
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         backlinks.forEach { id ->
             Text(
                 text = ">>${id.value}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { onQuoteClick(id) },
+                // A bare clickable on labelSmall text is roughly a 16dp tap target, well under the
+                // 48dp minimum. minimumInteractiveComponentSize expands the touch bounds without
+                // inflating the glyphs, which is what keeps the dense catalog look intact; the
+                // padding inside the clickable widens the hit area and gives the ripple a shape
+                // to fill.
+                modifier =
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(onClickLabel = "Jump to post ${id.value}") { onQuoteClick(id) }
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
             )
         }
     }

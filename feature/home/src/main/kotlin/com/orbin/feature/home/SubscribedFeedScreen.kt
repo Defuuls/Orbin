@@ -49,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,8 +64,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -103,6 +106,8 @@ fun SubscribedFeedScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val haptics = LocalHapticFeedback.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
@@ -250,7 +255,14 @@ fun SubscribedFeedScreen(
             }
         },
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                viewModel.refresh()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
             when (val state = uiState) {
                 SubscribedFeedUiState.Loading -> LoadingView()
                 is SubscribedFeedUiState.Error -> ErrorView(state.message, onRetry = viewModel::refresh)
