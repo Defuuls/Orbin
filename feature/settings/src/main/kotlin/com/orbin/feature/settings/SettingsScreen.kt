@@ -602,6 +602,8 @@ private fun TextFieldRow(
     supporting: String,
     onValueChange: (String) -> Unit,
 ) {
+    var localValue by remember(value) { mutableStateOf(value) }
+
     Column(
         modifier =
             Modifier
@@ -610,8 +612,11 @@ private fun TextFieldRow(
     ) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+            value = localValue,
+            onValueChange = { newValue ->
+                localValue = newValue
+                onValueChange(newValue)
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()
