@@ -6,6 +6,27 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [66-Rigel] - 2026-08-07
+
+### Fixed
+- **Typed text in the muted/hidden tags field appeared reversed.** The field was bound directly to
+  settings state that updates asynchronously, so the cursor reset to the start after every
+  keystroke and each new character landed before the last. Typing is now backed by local field
+  state that syncs to storage in the background instead of driving the field directly.
+- **14 lint errors in the media module.** Unstable Media3 cache/playback APIs were used without the
+  required opt-in, and a thumbnail composable's default `Modifier` value didn't follow Compose's
+  modifier-parameter convention.
+- A disabled row (e.g. Settings' always-on "HTTPS only" display) was announced to screen readers as
+  a disabled button. Rows built from `ModernListItem`/`ModernCompactListItem` with no `onClick` no
+  longer attach a clickable modifier at all.
+- `ModernCardListItem` attached its own `clickable` on top of the click handling `ModernCard`
+  already provides, doubling the touch target and gesture handling for every card list item.
+
+### Added
+- A contrast regression test for the 20 ported imageboard skins, checking body text against WCAG AA
+  (4.5:1). Existing low-contrast skins are authentic to their source CSS and kept for that reason;
+  the test catches any new skin falling short by accident.
+
 ## [65-Antares] - 2026-08-07
 
 ### Added
