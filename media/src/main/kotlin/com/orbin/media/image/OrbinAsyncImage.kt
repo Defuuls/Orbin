@@ -113,10 +113,11 @@ fun OrbinAsyncImage(
 @Composable
 fun MediaThumbnail(
     attachment: MediaAttachment,
-    modifier: Modifier = Modifier.size(120.dp),
+    modifier: Modifier = Modifier,
     fullResolution: Boolean = false,
     onClick: () -> Unit = {},
 ) {
+    val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
     // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
     // callers pass [fullResolution] to pull the original file instead; AsyncImage sizes the
     // request from the layout constraints, so the bitmap is still downsampled to the cell and
@@ -131,7 +132,7 @@ fun MediaThumbnail(
 
     Box(
         modifier =
-            modifier
+            finalModifier
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,

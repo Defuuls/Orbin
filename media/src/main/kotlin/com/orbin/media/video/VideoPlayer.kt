@@ -79,6 +79,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * the initial mute state are driven from settings by the caller; tapping the video reveals compact
  * controls without permanently covering playing media.
  */
+@Suppress("UnsafeOptInUsageError")
 @Composable
 fun VideoPlayer(
     url: String,

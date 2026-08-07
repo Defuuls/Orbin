@@ -25,6 +25,7 @@ annotation class VideoMediaDataSource
 
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("UnsafeOptInUsageError")
 object VideoMediaModule {
     @Provides
     @Singleton
