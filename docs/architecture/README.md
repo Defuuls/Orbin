@@ -23,20 +23,20 @@ Android dependency leaks into them, which keeps the boundary honest.
 ```mermaid
 graph TD
     app --> feature_home & feature_board & feature_thread & feature_search
-    app --> feature_bookmarks & feature_history & feature_settings & feature_gallery & feature_downloads
+    app --> feature_history & feature_settings & feature_gallery & feature_downloads & feature_onboarding
     app --> data
-    app --> provider_vichan
+    app --> provider_vichan & provider_lynxchan
 
     subgraph Presentation
       feature_home[feature:home]
       feature_board[feature:board]
       feature_thread[feature:thread]
       feature_search[feature:search]
-      feature_bookmarks[feature:bookmarks]
       feature_history[feature:history]
       feature_settings[feature:settings]
-      feature_gallery[feature:gallery]
+      feature_gallery["feature:gallery (incl. bookmarks)"]
       feature_downloads[feature:downloads]
+      feature_onboarding[feature:onboarding]
     end
 
     feature_home --> domain
@@ -57,6 +57,8 @@ graph TD
 
     provider_vichan[provider:vichan] --> provider_api
     provider_vichan --> network
+    provider_lynxchan[provider:lynxchan] --> provider_api
+    provider_lynxchan --> network
     provider_api --> core_model
     media --> core_model
     network --> core_common
@@ -68,7 +70,9 @@ graph TD
 ### The provider seam
 All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). The app
 holds a `Set<ImageBoardProvider>` (Hilt multibinding) and a `ProviderRegistry` resolves the active
-one. Adding LynxChan/TinyIB/etc. means adding a `provider:*` module — **nothing else changes**.
+one. `provider:vichan` (4chan) and `provider:lynxchan` (BBW Chan, 8kun) are the two engines
+shipped today; adding TinyIB/etc. means adding another `provider:*` module — **nothing else
+changes**. See [`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).
 
 ### Repository pattern with `OrbinResult`
 Repositories return `OrbinResult<T>` (or `Flow<OrbinResult<T>>`) carrying a typed `DataError`,
@@ -101,4 +105,6 @@ HTML in the presentation layer. Backlinks are computed by inverting forward quot
 | UI | Compose UI test, Hilt test runner | `feature:*/src/androidTest` |
 | Screenshot | Roborazzi | `core:designsystem`, `feature:*` |
 
-See [adr/](adr) for individual architecture decision records.
+Individual design decisions and their rationale are recorded chronologically in
+[CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
+ADR files — this document is the current-state summary.

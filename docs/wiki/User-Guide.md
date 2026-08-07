@@ -1,6 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v58 (Capella)**.
+This guide covers day-to-day use of Orbin as of **v66 (Spica)**.
 
 ## Getting started
 
@@ -40,6 +40,8 @@ Feed behaviors worth knowing:
   at once; tapping a board name collapses it individually.
 - **Watched threads (v51):** watched threads can notify you when new replies arrive, with
   configurable quiet hours under **Settings → Notifications**.
+- **Pull to refresh (v65):** pull down on the feed, a board catalog, or a thread to force a
+  reload past the normal cache window, with haptic feedback at the release threshold.
 
 ### Tablet layout
 
@@ -47,27 +49,39 @@ On larger screens (introduced in v30) the feed switches to a tablet layout with 
 combined subscribed-feed controls, auto-hiding chrome, and old-Reddit-style thumbnail-and-text
 rows for faster scanning.
 
+**Two-pane catalog and thread (v65):** on screens ≥840dp wide, opening a thread from a board
+catalog no longer replaces the catalog — the two sit side by side, so you keep your place in the
+list while reading. The open thread has its own back stack in the detail pane, and rotating the
+device across the 840dp threshold promotes it to a full screen (or demotes a full-screen thread
+back into the pane) without losing which thread was open.
+
 ## Boards and catalogs
 
 The board gallery presents boards as large, tappable tiles. Favorites stay on the home list, and
 subscriptions are managed under Settings. Board catalogs support sorting and use paging, so long
-catalogs load smoothly.
+catalogs load smoothly. Pull down on the catalog to force a refresh (v65).
 
 ## The thread viewer
 
 - **Structured replies:** quote links, quote previews, and backlinks are rendered as a proper
-  reply tree — no raw HTML. Greentext and spoilers are styled natively.
+  reply tree — no raw HTML. Greentext is styled natively.
 - **Inline media:** images and video play inline; replies are collapsible; thread stats are
   shown.
+- **Tap-to-reveal spoilers (v65):** spoilered text is blacked out until you tap it, then reveals
+  in place. If a spoiler hides a quote link, that link is inert while hidden — the tap reveals
+  the spoiler first, rather than accidentally jumping to the quoted post before you could see
+  there was a link there at all.
 - **Media carousel (v54):** posts with several attachments scroll horizontally with a swipe, and
   a badge shows your position (e.g. "2/5"). The board feed gained the same treatment in v55, and
   each view can be toggled independently under **Settings → Media**.
 - **Video indicators (v54):** video and audio attachments are marked with a play icon rather
   than a "VID" text label.
 - **Thumbnail grid:** a thumbnail-only grid view shows every attachment in the thread at a
-  glance.
+  glance, and reflows to fit the screen width instead of a fixed column count (v65).
 - **Reading history:** threads you read are tracked (locally, encrypted) with unread indicators
   and scroll-position restore.
+- **Pull to refresh (v65):** pull down to fetch new replies immediately, bypassing the normal
+  cache window.
 
 ## Gallery and bookmarks
 

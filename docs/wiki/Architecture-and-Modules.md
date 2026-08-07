@@ -25,6 +25,7 @@ Android dependency leaks into them, which keeps the boundary honest.
 ```
 Orbin/
 ├── app/                      # Application, MainActivity, navigation host, DI aggregation
+├── benchmark/                # Baseline profile generation (startup + feed path)
 ├── build-logic/              # Gradle convention plugins (the build's backbone)
 ├── core/
 │   ├── common/               # Result types, dispatchers, NetworkMonitor
@@ -38,10 +39,14 @@ Orbin/
 ├── media/                    # Coil 3 + Media3 integration, download manager
 ├── provider/
 │   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
-│   └── vichan/               # Reference provider (vichan/4chan-compatible JSON)
-└── feature/                  # home, board, thread, search, gallery, history,
-                              # settings, downloads, onboarding
+│   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)
+│   └── lynxchan/             # BBW Chan / 8kun provider (LynxChan JSON)
+└── feature/                  # home, board, thread, search, history, settings, gallery
+                              # (includes bookmarks), downloads, onboarding
 ```
+
+There is no separate `feature:bookmarks` module — bookmarks live inside `feature:gallery` as a
+tab, sharing its screen and ViewModel rather than a standalone feature.
 
 ## Key design decisions
 
@@ -89,5 +94,8 @@ transfer of local data are disabled.
 | UI | Compose UI test, Hilt test runner | `feature:*/src/androidTest` |
 | Screenshot | Roborazzi | `core:designsystem`, `feature:*` |
 
-Architecture decision records live in
-[`docs/architecture/adr/`](https://github.com/Defuuls/Orbin/tree/main/docs/architecture).
+Individual design decisions and their rationale are recorded chronologically in
+[CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
+ADR files — this page and
+[`docs/architecture/README.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/README.md)
+are the current-state summary.
