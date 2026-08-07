@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [67-Pollux] - 2026-08-07
+
 ### Removed
 - **8kun support.** The 8kun.top LynxChan instance (added in v46–v48) is no longer bundled. It
   drops out of the Site provider picker in Settings automatically, since the provider seam has no
