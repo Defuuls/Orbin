@@ -6,7 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [65-Antares] - 2026-08-07
+
 ### Added
+- **The catalog and a thread side by side on wide screens.** Above 840dp, opening a thread no
+  longer replaces the catalog — a tablet reader keeps the list they are working through. Rotating
+  across the threshold promotes the open thread to a full screen rather than losing it.
 - **Pull to refresh** on the subscribed feed, the board catalog and a thread. The catalog had no
   refresh affordance at all — Paging only reloads on its own invalidation, so a stale catalog
   stayed stale until the screen was left and re-entered.
