@@ -52,8 +52,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 86
-        versionName = "66-Spica"
+        versionCode = 87
+        versionName = "67-Pollux"
         testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 

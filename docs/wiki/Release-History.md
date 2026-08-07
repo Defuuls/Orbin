@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v66** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v67** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -12,11 +12,20 @@ codenames used for v26–v29; v34 is "Dippin".
 The star theme has held since, but the selection shifted: v37–v48 stayed with nearby or dim
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
-Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica.
+Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux.
+
+## v67 — Pollux (2026-08-07)
+
+*Current release.*
+
+- **Removed 8kun support.** The 8kun.top LynxChan instance is no longer bundled; it drops out of
+  the Site provider picker in Settings automatically once its Hilt registration is gone, since
+  nothing else in the app names a provider directly. BBW Chan (LynxChan) and 4chan (Vichan) are
+  unaffected.
 
 ## v66 — Spica (2026-08-07)
 
-*Current release.* Bug fixes and a design-system accessibility pass.
+Bug fixes and a design-system accessibility pass.
 
 - **Typed text in the muted/hidden tags field appeared reversed.** The field was bound directly
   to settings state that updates asynchronously, so the cursor reset to the start after every
