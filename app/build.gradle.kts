@@ -53,7 +53,7 @@ android {
     defaultConfig {
         applicationId = "com.orbin.app"
         versionCode = 86
-        versionName = "66-Rigel"
+        versionName = "66-Spica"
         testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 
