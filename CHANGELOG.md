@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Removed
+- **8kun support.** The 8kun.top LynxChan instance (added in v46–v48) is no longer bundled. It
+  drops out of the Site provider picker in Settings automatically, since the provider seam has no
+  other place that names it — see `LynxChanProviderModule`. BBW Chan (LynxChan) and 4chan
+  (Vichan) are unaffected.
+
 ## [66-Spica] - 2026-08-07
 
 ### Fixed

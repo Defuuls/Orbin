@@ -40,7 +40,7 @@ Orbin/
 ├── provider/
 │   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
 │   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)
-│   └── lynxchan/             # BBW Chan / 8kun provider (LynxChan JSON)
+│   └── lynxchan/             # BBW Chan provider (LynxChan JSON)
 └── feature/                  # home, board, thread, search, history, settings, gallery
                               # (includes bookmarks), downloads, onboarding
 ```
