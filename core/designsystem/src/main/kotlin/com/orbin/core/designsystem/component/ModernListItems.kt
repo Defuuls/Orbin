@@ -20,7 +20,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+/**
+ * A fixed-size slot for a leading/trailing icon or control in a list row. Centralizes the sizing
+ * shared by the `Modern*ListItem` family so their icon slots stay in lockstep instead of drifting
+ * independently.
+ */
+@Composable
+private fun IconSlot(
+    size: Dp,
+    content: @Composable () -> Unit,
+) {
+    Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
+        content()
+    }
+}
+
+private val ListItemIconSlotSize = 40.dp
+private val CompactListItemIconSlotSize = 36.dp
+private val CardListItemLeadingSlotSize = 56.dp
 
 /**
  * Modern list item with title, subtitle, and optional leading/trailing icons.
@@ -42,15 +62,13 @@ fun ModernListItem(
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .background(backgroundColor)
-                .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
                 .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (leading != null) {
-            Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                leading()
-            }
+            IconSlot(size = ListItemIconSlotSize, content = leading)
         }
 
         Column(
@@ -68,9 +86,7 @@ fun ModernListItem(
         }
 
         if (trailing != null) {
-            Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                trailing()
-            }
+            IconSlot(size = ListItemIconSlotSize, content = trailing)
         }
     }
 }
@@ -92,7 +108,7 @@ fun ModernCompactListItem(
             modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.small)
-                .clickable(enabled = onClick != null, onClick = { onClick?.invoke() })
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -109,9 +125,7 @@ fun ModernCompactListItem(
         )
 
         if (trailing != null) {
-            Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                trailing()
-            }
+            IconSlot(size = CompactListItemIconSlotSize, content = trailing)
         }
     }
 }
@@ -130,8 +144,11 @@ fun ModernCardListItem(
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
+    // ModernCard already wires click handling (and its ripple) through Card(onClick = ...) when
+    // onClick is non-null, so no clickable modifier is attached here — doing so would double up
+    // the touch target and gesture handling.
     ModernCard(
-        modifier = modifier.fillMaxWidth().clickable(enabled = onClick != null, onClick = { onClick?.invoke() }),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
         Row(
@@ -143,9 +160,7 @@ fun ModernCardListItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (leading != null) {
-                Box(modifier = Modifier.size(56.dp), contentAlignment = Alignment.Center) {
-                    leading()
-                }
+                IconSlot(size = CardListItemLeadingSlotSize, content = leading)
             }
 
             Column(
@@ -171,9 +186,7 @@ fun ModernCardListItem(
             }
 
             if (trailing != null) {
-                Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                    trailing()
-                }
+                IconSlot(size = ListItemIconSlotSize, content = trailing)
             }
         }
     }

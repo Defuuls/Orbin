@@ -190,6 +190,8 @@ private val RoyalSeeds =
         surface = Color(0xFF3C212A),
         surfaceAlt = Color(0xFF472732),
         onSurface = Color(0xFFC5B184),
+        // primary and primaryVariant are intentionally identical: the source CSS theme has no
+        // separate link-hover color, so its --link-hover-color falls back to --link-color.
         primary = Color(0xFFF9C440),
         primaryVariant = Color(0xFFF9C440),
         outline = Color(0xFF888888),
