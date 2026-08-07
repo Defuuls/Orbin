@@ -19,6 +19,7 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +33,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Observes a thread, records reading history, and toggles bookmarking. */
+// flatMapLatest, used to restart the load on refresh, is still experimental. Opted in at the class
+// level, matching SubscribedFeedViewModel and the other ViewModels that switch streams this way.
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ThreadViewModel
     @Inject
