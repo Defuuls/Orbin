@@ -7,7 +7,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
@@ -32,8 +37,11 @@ import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
 
 private const val TRANSITION_MS = 300
-private const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
-private const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
+
+// Internal rather than private: the two-pane catalog reads the same key, because the gallery
+// writes its page back to the catalog's entry when the thread is a pane rather than a destination.
+internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
+internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 
 /**
  * The single navigation graph for the app. Predictive back is enabled at the manifest level so the
@@ -55,6 +63,8 @@ fun OrbinNavHost(
     subscribedFeedShowBoardHeaders: Boolean = true,
     hideSubscribedFeedTopBar: Boolean = false,
     tabletSubscribedFeedLayout: Boolean = false,
+    /** Show the catalog and the selected thread side by side instead of one replacing the other. */
+    twoPaneBoardDetail: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
     subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
@@ -144,8 +154,37 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Board> {
-            BoardScreen(onOpenThread = openThread, onBack = navController::navigateUp)
+        composable<Route.Board> { backStackEntry ->
+            // Hoisted above the two-pane/one-pane branch so it survives the switch. A 10" tablet is
+            // around 1280dp in landscape and 800dp in portrait, so an ordinary rotation crosses the
+            // threshold — without this the open thread would just vanish when the panes collapse.
+            var paneThread by
+                rememberSaveable(stateSaver = threadRouteSaver) { mutableStateOf<Route.Thread?>(null) }
+
+            LaunchedEffect(twoPaneBoardDetail) {
+                if (!twoPaneBoardDetail) {
+                    // Collapsed: promote whatever the detail pane held to a destination of its own,
+                    // so the reader keeps the thread and Back returns them to the catalog.
+                    paneThread?.let { thread ->
+                        paneThread = null
+                        navController.navigate(thread)
+                    }
+                }
+            }
+
+            if (twoPaneBoardDetail) {
+                BoardDetailTwoPane(
+                    boardEntry = backStackEntry,
+                    selectedThread = paneThread,
+                    onThreadSelected = { paneThread = it },
+                    onOpenGallery = { provider, board, thread, index ->
+                        navController.navigate(Route.Gallery(provider, board, thread, index))
+                    },
+                    onBack = navController::navigateUp,
+                )
+            } else {
+                BoardScreen(onOpenThread = openThread, onBack = navController::navigateUp)
+            }
         }
 
         composable<Route.Thread> { backStackEntry ->
@@ -221,3 +260,29 @@ fun OrbinNavHost(
 private fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
     hasRoute(Route.Settings::class) ||
         (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))
+
+/**
+ * Saves the thread open in the detail pane across configuration changes.
+ *
+ * [Route.Thread] is `@Serializable` for navigation, not `Parcelable`, so it cannot go into a
+ * Bundle as-is; its four fields all can.
+ *
+ * "No thread selected" is encoded as the empty list, which `listSaver` turns into a *null saved
+ * value* — nothing is written, and `rememberSaveable` re-runs its initialiser on the way back,
+ * which yields null. So [restore] is only ever handed a populated list; it does not need, and must
+ * not pretend to have, an empty case.
+ */
+internal val threadRouteSaver =
+    listSaver<Route.Thread?, Any>(
+        save = { thread ->
+            thread?.let { listOf(it.provider, it.board, it.thread, it.title) } ?: emptyList()
+        },
+        restore = { fields ->
+            Route.Thread(
+                provider = fields[0] as String,
+                board = fields[1] as String,
+                thread = fields[2] as Long,
+                title = fields[3] as String,
+            )
+        },
+    )
