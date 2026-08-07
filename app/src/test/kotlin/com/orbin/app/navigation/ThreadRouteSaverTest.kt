@@ -34,9 +34,9 @@ class ThreadRouteSaverTest {
     @Test
     fun fieldsDoNotSwapPlaces() {
         // Provider and board are both short lowercase strings and are the easiest pair to confuse.
-        val restored = roundTrip(Route.Thread(provider = "8kun", board = "b", thread = 1L, title = "t"))!!
+        val restored = roundTrip(Route.Thread(provider = "bbwchan", board = "b", thread = 1L, title = "t"))!!
 
-        assertThat(restored.provider).isEqualTo("8kun")
+        assertThat(restored.provider).isEqualTo("bbwchan")
         assertThat(restored.board).isEqualTo("b")
     }
 

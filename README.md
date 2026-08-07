@@ -12,8 +12,7 @@ reply, or create threads.
 
 **Current release:** [v66 — Spica](https://github.com/Defuuls/Orbin/releases/tag/v66-Spica)
 
-**Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan),
-8kun (LynxChan)
+**Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
 > **Status:** under active development, with regular signed releases. The architecture, build
 > system, domain core, networking, media pipeline, encrypted data layer, and two reference
@@ -29,9 +28,8 @@ reply, or create threads.
 ## Features
 
 **Browsing**
-- Multi-provider support through a clean provider abstraction (4chan via Vichan and BBW Chan /
-  8kun via LynxChan included; additional imageboard engines can be added without modifying app
-  code).
+- Multi-provider support through a clean provider abstraction (4chan via Vichan and BBW Chan via
+  LynxChan included; additional imageboard engines can be added without modifying app code).
 - Board list, catalog with sorting, and a rich thread viewer with post dates.
 - Subscribed feed with tap-to-top chrome, optional full-screen scrolling, and an adaptive
   tablet dock that keeps navigation close without crowding the feed.
@@ -113,7 +111,7 @@ Orbin/
 ├── provider/
 │   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
 │   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)
-│   └── lynxchan/             # BBW Chan / 8kun provider (LynxChan JSON)
+│   └── lynxchan/             # BBW Chan provider (LynxChan JSON)
 └── feature/                  # home, board, thread, search, history, settings, gallery
                               # (includes bookmarks), downloads, onboarding
 ```

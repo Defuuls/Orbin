@@ -18,7 +18,7 @@ create threads.
 | Current release | **v66 — Spica** (2026-08-07) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile SDK 37, target SDK 36 |
-| Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan), 8kun (LynxChan) |
+| Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
 | Codename scheme | Per-release star codenames (prominent naked-eye stars since v49; nearby or dim stars for v30–v48) |
 
 Orbin is under active development with regular signed releases. The architecture, build system,

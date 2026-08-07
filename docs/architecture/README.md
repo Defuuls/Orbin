@@ -70,9 +70,9 @@ graph TD
 ### The provider seam
 All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). The app
 holds a `Set<ImageBoardProvider>` (Hilt multibinding) and a `ProviderRegistry` resolves the active
-one. `provider:vichan` (4chan) and `provider:lynxchan` (BBW Chan, 8kun) are the two engines
-shipped today; adding TinyIB/etc. means adding another `provider:*` module — **nothing else
-changes**. See [`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).
+one. `provider:vichan` (4chan) and `provider:lynxchan` (BBW Chan) are the two engines shipped
+today; adding TinyIB/etc. means adding another `provider:*` module — **nothing else changes**.
+See [`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).
 
 ### Repository pattern with `OrbinResult`
 Repositories return `OrbinResult<T>` (or `Flow<OrbinResult<T>>`) carrying a typed `DataError`,
