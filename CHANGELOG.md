@@ -6,7 +6,7 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-## [66-Rigel] - 2026-08-07
+## [66-Spica] - 2026-08-07
 
 ### Fixed
 - **Typed text in the muted/hidden tags field appeared reversed.** The field was bound directly to
