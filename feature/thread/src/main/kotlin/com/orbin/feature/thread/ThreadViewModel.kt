@@ -32,9 +32,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Observes a thread, records reading history, and toggles bookmarking. */
-// flatMapLatest, used to restart the load on refresh, is still experimental. Opted in at the class
-// level, matching SubscribedFeedViewModel and the other ViewModels that switch streams this way.
+/**
+ * Observes a thread, records reading history, and toggles bookmarking.
+ *
+ * [flatMapLatest], which restarts the load on refresh, is still experimental. The opt-in sits at
+ * class level to match `SubscribedFeedViewModel` and the other ViewModels that switch streams the
+ * same way.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ThreadViewModel
