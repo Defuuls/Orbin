@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v58** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v66** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -12,11 +12,95 @@ codenames used for v26–v29; v34 is "Dippin".
 The star theme has held since, but the selection shifted: v37–v48 stayed with nearby or dim
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
-Arcturus, Capella.
+Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica.
+
+## v66 — Spica (2026-08-07)
+
+*Current release.* Bug fixes and a design-system accessibility pass.
+
+- **Typed text in the muted/hidden tags field appeared reversed.** The field was bound directly
+  to settings state that updates asynchronously, so the cursor reset to the start after every
+  keystroke and each new character landed before the last. Typing is now backed by local field
+  state that syncs to storage in the background instead of driving the field directly.
+- **14 lint errors in the media module,** covering unstable Media3 API opt-ins and a Compose
+  modifier-parameter convention violation.
+- A disabled row (e.g. Settings' always-on "HTTPS only" display) was announced to screen readers
+  as a disabled button. Non-interactive list rows no longer attach a clickable modifier at all.
+- A card-based list item attached its own click handling on top of the click handling its
+  container already provided, doubling the touch target and gesture handling.
+- **Added:** a contrast regression test for the 20 ported imageboard skins, checking body text
+  against WCAG AA (4.5:1).
+
+## v65 — Antares (2026-08-07)
+
+- **The catalog and a thread side by side on wide screens.** Above 840dp, opening a thread no
+  longer replaces the catalog — a tablet reader keeps the list they are working through. Rotating
+  across the threshold promotes the open thread to a full screen rather than losing it.
+- **Pull to refresh** on the subscribed feed, the board catalog and a thread. The catalog had no
+  refresh affordance at all — Paging only reloads on its own invalidation, so a stale catalog
+  stayed stale until the screen was left and re-entered.
+- **Spoilers reveal on tap.** They were blacked out permanently, so spoilered post text was simply
+  unreadable. Each span reveals on its own; while hidden, a quote link inside a spoiler is inert,
+  because it would otherwise take the tap meant to reveal it and navigate the reader to a post they
+  could not yet see they were offered.
+- **Haptic feedback** on the pull-to-refresh threshold, spoiler reveals and post collapsing.
+- **Fixed:** a thread could not actually be refreshed (the 30-minute cache had no bypass);
+  backlink chips were below the minimum touch target; the thread media grid was pinned to three
+  columns instead of reflowing; the settings chip row lacked a stable item key.
+
+## v64 — Aldebaran (2026-08-06)
+
+- **Baseline profiles.** A `:benchmark` module records the classes used on the startup and feed
+  path so ART compiles them ahead of time instead of interpreting them on first launch.
+- **Instrumentation tests actually run in CI, and actually test something,** after a rewrite —
+  the previous versions asserted against an empty Compose tree and had never caught a real
+  regression. A new workflow boots an emulator and runs them on every push and PR.
+- **Fixed:** a protobuf security pin that broke every instrumentation test with
+  `NoClassDefFoundError`; a Netty security pin referencing a version that did not exist;
+  screenshot tests that recorded and verified nothing while reporting success; a missing
+  release-signing fallback; CI not actually enforcing warnings-as-errors despite documentation
+  claiming it did.
+
+## v63 — Acrux (2026-08-05)
+
+- **Encrypted DNS is no longer a toggle.** It is now always on; the setting is *which* resolver
+  answers your lookups. A visible notice appears when a network blocks the chosen resolver and
+  Orbin falls back to the system resolver, rather than failing silently or failing closed.
+- **"Refresh feed on return" is a timeframe, not a switch:** Always, 1, 5, 15 or 30 minutes, or
+  Never.
+- **Open threads as** (Settings → Appearance): **Page** (default) or **Slide over**.
+- Settings now slides in over the screen behind it instead of pushing it aside.
+
+## v62 — Hadar (2026-08-05)
+
+- **Check for updates,** in Settings → Network & privacy. Fetches only release metadata from
+  GitHub and links to the release page — Orbin never downloads or installs an APK itself.
+- **Fixed:** the "Internal updater" toggle, present since v34, finally gates something.
+
+## v61 — Achernar (2026-08-05)
+
+- **Saved searches included in backups**, alongside settings, boards and bookmarks.
+- **Fixed:** the database was configured to recreate itself rather than migrate on a schema
+  change — a leftover from before the first release that would have silently dropped all local
+  data on the next migration. Schema changes now migrate properly.
+
+## v60 — Procyon (2026-08-05)
+
+- **Backup and restore:** Settings → Storage can export settings, subscribed/favourite boards,
+  and bookmarks to a file, and restore them afterward. Importing **adds** rather than replaces,
+  so restoring cannot wipe an existing setup.
+- **Image cache limit** (128–1024 MB) and **advanced network settings** (custom user agent,
+  timeouts, certificate-revocation checking), under Settings → Storage / Advanced.
+- **Fixed:** backups silently dropped the image cache limit and network settings on import.
+
+## v59 — Betelgeuse (2026-08-04)
+
+A maintenance release: toolchain bumps (AGP 9.3.0 → 9.3.1, Kotlin 2.4.0 → 2.4.10) and a wiki
+pass bringing the docs current after a long drift.
 
 ## v58 — Capella (2026-08-01)
 
-*Current release.* Hotfix for a launcher bug introduced in v57.
+Hotfix for a launcher bug introduced in v57.
 
 - **App would not open from the launcher:** tapping the icon opened App Info instead of the
   app. Switching icons could disable the alias the launcher had pinned, and could leave the

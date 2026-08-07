@@ -82,7 +82,7 @@ Since v25.2.1, exported thread links follow the same folder setting.
 
 ### `SDK location not found`
 Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`. You need
-platform **API 36** installed.
+platform **API 37** installed (`compileSdk`; `targetSdk` is 36, `minSdk` is 35).
 
 ### Configuration-cache errors after editing build logic
 Run once with `--no-configuration-cache`, or delete `.gradle/configuration-cache`.
@@ -99,8 +99,11 @@ build falls back to the **debug** signing config. Real releases are signed in CI
 repository secrets — see the [[Developer Guide|Developer-Guide]].
 
 ### Toolchain mismatches after the AGP 9 upgrade (July 2026)
-The build now requires **JDK 17**, **Gradle 9.4.1**, **AGP 9.2.1**, and **Kotlin 2.2.21**.
-Older Android Studio versions or a stale Gradle daemon can produce confusing sync errors —
-update Studio, then `./gradlew --stop` and re-sync. Component-specific pitfalls (KSP, Room,
-Hilt, Roborazzi version floors) are documented in
-[`docs/agp-9-upgrade.md`](https://github.com/Defuuls/Orbin/blob/main/docs/agp-9-upgrade.md).
+The build now requires **JDK 17**, **Gradle 9.6.1**, **AGP 9.3.1**, and **Kotlin 2.4.10** — see
+`gradle/libs.versions.toml` and `gradle/wrapper/gradle-wrapper.properties` for the exact pinned
+versions, which move forward independently of this page. Older Android Studio versions or a
+stale Gradle daemon can produce confusing sync errors — update Studio, then `./gradlew --stop`
+and re-sync. Component-specific pitfalls (KSP, Room, Hilt, Roborazzi version floors) from the
+original upgrade are documented in
+[`docs/agp-9-upgrade.md`](https://github.com/Defuuls/Orbin/blob/main/docs/agp-9-upgrade.md); see
+the [[Developer Guide|Developer-Guide]] for the current version table.

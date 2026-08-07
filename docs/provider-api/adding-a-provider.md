@@ -5,14 +5,14 @@ through adding a new provider end to end. No changes to the domain, data, or UI 
 
 ## 1. Create the module
 
-Add a module under `provider/`, e.g. `provider/lynxchan`, and register it in
+Add a module under `provider/`, e.g. `provider/tinyib`, and register it in
 `settings.gradle.kts`:
 
 ```kotlin
-include(":provider:lynxchan")
+include(":provider:tinyib")
 ```
 
-`provider/lynxchan/build.gradle.kts`:
+`provider/tinyib/build.gradle.kts`:
 
 ```kotlin
 plugins {
@@ -21,7 +21,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-android { namespace = "com.orbin.provider.lynxchan" }
+android { namespace = "com.orbin.provider.tinyib" }
 
 dependencies {
     api(project(":provider:api"))
@@ -47,16 +47,16 @@ Write a mapper from DTOs to `core:model` types (`Board`, `CatalogThread`, `Threa
 ## 4. Implement `ImageBoardProvider`
 
 ```kotlin
-class LynxChanProvider(
-    private val api: LynxChanApi,
+class TinyIbProvider(
+    private val api: TinyIbApi,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ImageBoardProvider {
 
     override val metadata = ProviderMetadata(
-        id = ProviderId("lynxchan-example"),
-        displayName = "Example LynxChan",
+        id = ProviderId("tinyib-example"),
+        displayName = "Example TinyIB",
         baseUrl = "https://example.org",
-        engine = EngineKind.LYNXCHAN,
+        engine = EngineKind.TINYIB,
     )
 
     override val capabilities = ProviderCapabilities(
@@ -82,7 +82,7 @@ class LynxChanProvider(
 ```kotlin
 @Module
 @InstallIn(SingletonComponent::class)
-object LynxChanProviderModule {
+object TinyIbProviderModule {
 
     @Provides
     @IntoSet
@@ -97,7 +97,7 @@ object LynxChanProviderModule {
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-        return LynxChanProvider(retrofit.create(LynxChanApi::class.java), io)
+        return TinyIbProvider(retrofit.create(TinyIbApi::class.java), io)
     }
 }
 ```

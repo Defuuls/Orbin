@@ -1,26 +1,61 @@
 # CI/CD
 
-Orbin uses GitHub Actions for continuous integration and automated, tag-driven releases.
+Orbin uses GitHub Actions for continuous integration, automated tag-driven releases, and
+publishing its wiki and landing page. All workflows live in
+[`.github/workflows/`](https://github.com/Defuuls/Orbin/tree/main/.github/workflows).
 
 ## Workflows
 
 ### `ci.yml` — on every push to `main` and every PR
-Three parallel/gated jobs:
+Three jobs, the last gated on the first two:
 1. **static-analysis** — `ktlintCheck` + `detekt`, uploads reports.
-2. **unit-tests** — `./gradlew test`, uploads HTML test reports.
-3. **build-debug** — assembles the debug APK (after the first two pass) and uploads it as an
-   artifact.
+2. **unit-tests** — `./gradlew test -Porbin.warningsAsErrors=true`, uploads HTML test reports.
+3. **build-debug** — assembles the debug APK and compiles (but does not run) instrumentation
+   test sources, then uploads the APK as an artifact.
 
 Runs are cancelled when superseded on the same ref (`concurrency`).
 
-### `release.yml` — on every `v*` tag
+### `instrumentation.yml` — on every push to `main` and every PR
+Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the
+modules that have `androidTest` sources, discovered per run. Kept separate from `ci.yml` because
+an emulator boot plus a test run is minutes of wall clock.
+
+### `codeql.yml` — scheduled and on push
+A manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of
+GitHub's autobuild, which does not understand this project's Gradle convention plugins.
+
+### `screenshots.yml` — on PRs touching UI modules
+Records Roborazzi screenshots (`recordRoborazziDebug`) and uploads them as artifacts so goldens
+can be reviewed before committing. Verification (`verifyRoborazziDebug`) runs as part of the
+regular unit test suite once goldens are checked in.
+
+### `baseline-profile.yml` — manual (`workflow_dispatch`)
+Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, and opens a
+draft PR with the result. Baseline profile generation needs real (or rooted-emulator) hardware,
+so it cannot run on every push.
+
+### `new-version.yml` — manual (`workflow_dispatch`)
+Prepares a release PR from inputs (version name, `versionCode`, codename, base branch, draft
+flag), bumping `app/build.gradle.kts` and `CHANGELOG.md`.
+
+### `release.yml` — on every `v*` tag (or manual dispatch with a tag name)
 A single job that produces a complete, verifiable release:
 1. Checks out full history (for release-note diffs).
-2. Decodes the signing keystore from `RELEASE_KEYSTORE_BASE64`.
-3. Builds a **signed** release APK (`assembleRelease`).
-4. Stages the APK and the R8 `mapping.txt`, computing **SHA-256** checksums for each.
-5. Generates release notes from the commit log since the previous tag.
-6. Publishes a GitHub Release with the APK, mapping file, and `.sha256` checksums attached.
+2. On manual dispatch, creates and pushes the annotated tag itself.
+3. Decodes the signing keystore from `RELEASE_KEYSTORE_BASE64`.
+4. Builds a **signed** release APK (`assembleRelease`).
+5. Stages the APK and the R8 `mapping.txt`, computing **SHA-256** checksums for each.
+6. Generates release notes from the commit log since the previous tag.
+7. Publishes a GitHub Release with the APK, mapping file, and `.sha256` checksums attached.
+
+### `wiki-sync.yml` — on push to `main` touching `docs/wiki/**` (or manual)
+Mirrors `docs/wiki/` onto the repository's GitHub wiki with `rsync --delete`. `docs/wiki` is the
+source of truth — pages removed there are removed from the wiki too, and the wiki itself is
+never edited directly.
+
+### `pages.yml` — on push to `main` touching `site/**` (or manual)
+Deploys the static landing page in `site/` to GitHub Pages
+(https://defuuls.github.io/Orbin/).
 
 ## Required repository secrets
 
@@ -38,16 +73,24 @@ works without secrets.
 
 ## Release codenames
 
-Release milestones use mythical cities as codenames. Prefer names that are distinctive, short
-enough for changelog entries, and not already used by a previous release. Examples include
-Atlantis, El Dorado, Shambhala, Ys, Kitezh, and Agartha.
+Release milestones use star names as codenames, not mythical cities. Since v49 the scheme has
+been **prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
+Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica.
+Earlier eras used smaller/dimmer stars and, briefly, bear families — see the wiki's
+[[Release History|Release-History]] for the full lineage.
+
+Pick a name that is distinctive, short enough for a changelog heading, and — check
+`git tag --list 'v*'`, not memory or an existing doc — **not already taken**.
 
 ## Cutting a release
 
 ```bash
 # bump versionName/versionCode in app/build.gradle.kts, update CHANGELOG.md, commit
-git tag v1.2.0
-git push origin v1.2.0
+git tag -a v67-<Codename> -m "<Codename>"
+git push origin v67-<Codename>
 ```
 
-The tag push triggers `release.yml`; the GitHub Release appears once the job completes.
+The tag push triggers `release.yml`; the GitHub Release appears once the job completes. If
+pushing a tag directly isn't possible, run `release.yml` via `workflow_dispatch` instead,
+supplying `tag` and `tag_message` — it creates and pushes the annotated tag itself. See the
+wiki's [[Developer Guide|Developer-Guide]] for the full walkthrough.
