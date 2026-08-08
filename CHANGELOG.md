@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **The subscribed feed (the app's home screen) gets the same List/Grid/image-only layout
+  toggle** already shipped for the single-board catalog in v72. Board grouping, per-board
+  collapse/expand, and per-board thread-count overrides all keep working in every mode; grid
+  modes just lose the sticky pin on board headers, since Compose's grid doesn't support that.
+  The v72 board-catalog change didn't touch this screen, which is what most people mean by
+  "board view" day to day — this was the actual gap.
+
 ## [72-Alnair] - 2026-08-08
 
 ### Added

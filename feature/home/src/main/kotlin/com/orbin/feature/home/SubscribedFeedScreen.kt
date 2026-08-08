@@ -2,6 +2,7 @@ package com.orbin.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -17,6 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -29,10 +35,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -64,6 +73,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -82,14 +92,19 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.material.icons.filled.Image as ImageIcon
 import com.orbin.core.designsystem.R as DesignSystemR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,6 +130,10 @@ fun SubscribedFeedScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    var layoutMode by rememberSaveable { mutableStateOf(FeedLayoutMode.List) }
+    var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
+    val thumbnailSize = thumbnailSizeOverride ?: settings.thumbnailSize
     val scope = rememberCoroutineScope()
     val scrollBehavior =
         if (showTopBar && chromeHidesOnScroll) {
@@ -123,25 +142,23 @@ fun SubscribedFeedScreen(
             null
         }
 
-    LaunchedEffect(chromeHidesOnScroll, listState) {
+    LaunchedEffect(chromeHidesOnScroll, layoutMode, listState, gridState) {
         if (!chromeHidesOnScroll) {
             onChromeVisibleChange(true)
             return@LaunchedEffect
         }
 
-        var previous = listState.scrollPositionKey()
-        snapshotFlow { listState.scrollPositionKey() }
-            .collect { current ->
-                val scrollingUp = current < previous
-                onChromeVisibleChange(current == 0 || scrollingUp)
-                previous = current
-            }
+        val positionKeyFlow = feedScrollPositionKeyFlow(layoutMode, listState, gridState)
+        var previous = feedScrollPositionKey(layoutMode, listState, gridState)
+        positionKeyFlow.collect { current ->
+            val scrollingUp = current < previous
+            onChromeVisibleChange(current == 0 || scrollingUp)
+            previous = current
+        }
     }
 
     LaunchedEffect(scrollToTopRequest) {
-        if (scrollToTopRequest > 0) {
-            listState.animateScrollToItem(0)
-        }
+        if (scrollToTopRequest > 0) scrollFeedToTop(layoutMode, listState, gridState)
     }
 
     LaunchedEffect(refreshRequest) {
@@ -167,7 +184,7 @@ fun SubscribedFeedScreen(
                     modifier =
                         Modifier.clickable(
                             onClickLabel = "Scroll to top",
-                            onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                            onClick = { scope.launch { scrollFeedToTop(layoutMode, listState, gridState) } },
                         ),
                     title = {
                         Row(
@@ -250,6 +267,30 @@ fun SubscribedFeedScreen(
                         ) {
                             Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
                         }
+                        if (layoutMode == FeedLayoutMode.ThumbnailGrid) {
+                            IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
+                                Icon(
+                                    Icons.Filled.PhotoSizeSelectLarge,
+                                    contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                )
+                            }
+                        }
+                        IconButton(onClick = { layoutMode = layoutMode.next() }) {
+                            Icon(
+                                imageVector =
+                                    when (layoutMode) {
+                                        FeedLayoutMode.List -> Icons.Filled.GridView
+                                        FeedLayoutMode.Grid -> Icons.Filled.ImageIcon
+                                        FeedLayoutMode.ThumbnailGrid -> Icons.Filled.ViewAgenda
+                                    },
+                                contentDescription =
+                                    when (layoutMode) {
+                                        FeedLayoutMode.List -> "Show grid feed"
+                                        FeedLayoutMode.Grid -> "Show image-only feed"
+                                        FeedLayoutMode.ThumbnailGrid -> "Show list feed"
+                                    },
+                            )
+                        }
                         IconButton(onClick = onOpenSettings) {
                             Icon(Icons.Filled.Settings, contentDescription = "Settings")
                         }
@@ -293,6 +334,9 @@ fun SubscribedFeedScreen(
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                             listState = listState,
+                            gridState = gridState,
+                            layoutMode = layoutMode,
+                            gridThumbnailSize = thumbnailSize,
                             showBoardHeaders = showBoardHeaders,
                             tabletLayout = tabletFeedLayout,
                             collapsedBoards = collapsedBoards,
@@ -318,11 +362,32 @@ private fun SubscribedFeedList(
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     listState: LazyListState,
+    gridState: LazyGridState,
+    layoutMode: FeedLayoutMode,
+    gridThumbnailSize: ThumbnailSize,
     showBoardHeaders: Boolean,
     tabletLayout: Boolean,
     collapsedBoards: Set<String>,
     onCollapsedBoardsChange: (Set<String>) -> Unit,
 ) {
+    if (layoutMode != FeedLayoutMode.List) {
+        SubscribedFeedGrid(
+            providerId = providerId,
+            feeds = feeds,
+            searchQuery = searchQuery,
+            onSearchQueryChange = onSearchQueryChange,
+            layoutMode = layoutMode,
+            thumbnailSize = gridThumbnailSize,
+            globalThreadLimit = globalThreadLimit,
+            onSetBoardThreadLimit = onSetBoardThreadLimit,
+            onOpenThread = onOpenThread,
+            gridState = gridState,
+            collapsedBoards = collapsedBoards,
+            onCollapsedBoardsChange = onCollapsedBoardsChange,
+        )
+        return
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
@@ -403,6 +468,186 @@ private fun SubscribedFeedList(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Grid/image-only presentation for the subscribed feed, mirroring the board catalog's own
+ * List/Grid/image-only split. Board headers are full-width items rather than sticky ones — Compose
+ * grids don't support pinned headers the way [LazyColumn.stickyHeader] does — but collapse/expand
+ * and per-board thread limits work exactly as they do in list mode.
+ */
+@Composable
+private fun SubscribedFeedGrid(
+    providerId: String,
+    feeds: List<SubscribedBoardFeed>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    layoutMode: FeedLayoutMode,
+    thumbnailSize: ThumbnailSize,
+    globalThreadLimit: FeedThreadLimit,
+    onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
+    onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    gridState: LazyGridState,
+    collapsedBoards: Set<String>,
+    onCollapsedBoardsChange: (Set<String>) -> Unit,
+) {
+    val fill = layoutMode == FeedLayoutMode.ThumbnailGrid && thumbnailSize == ThumbnailSize.FILL
+    val columns =
+        when {
+            fill -> GridCells.Fixed(1)
+            layoutMode == FeedLayoutMode.ThumbnailGrid -> GridCells.Adaptive(thumbnailSize.sizeDp.dp)
+            else -> GridCells.Adaptive(168.dp)
+        }
+
+    LazyVerticalGrid(
+        columns = columns,
+        modifier = Modifier.fillMaxSize(),
+        state = gridState,
+        contentPadding = PaddingValues(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (layoutMode == FeedLayoutMode.ThumbnailGrid) 4.dp else 8.dp),
+        verticalArrangement = Arrangement.spacedBy(if (layoutMode == FeedLayoutMode.ThumbnailGrid) 4.dp else 8.dp),
+    ) {
+        item(key = "subscribed-search", span = { GridItemSpan(maxLineSpan) }) {
+            SubscribedFeedSearchBar(query = searchQuery, onQueryChange = onSearchQueryChange)
+        }
+
+        val filteredFeeds = feeds.filterBySearchQuery(searchQuery)
+        if (filteredFeeds.isEmpty() && searchQuery.isNotBlank()) {
+            item(key = "subscribed-search-empty", span = { GridItemSpan(maxLineSpan) }) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "No subscribed threads match your search.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+        }
+
+        filteredFeeds.forEach { feed ->
+            val isBoardCollapsed = collapsedBoards.contains(feed.board.id.value)
+            item(key = "header-${feed.board.id.value}", span = { GridItemSpan(maxLineSpan) }) {
+                BoardFeedHeader(
+                    feed = feed,
+                    globalThreadLimit = globalThreadLimit,
+                    isCollapsed = isBoardCollapsed,
+                    onToggleCollapse =
+                        { boardId ->
+                            onCollapsedBoardsChange(
+                                if (collapsedBoards.contains(boardId)) {
+                                    collapsedBoards - boardId
+                                } else {
+                                    collapsedBoards + boardId
+                                },
+                            )
+                        },
+                    onSetThreadLimit = { limit -> onSetBoardThreadLimit(feed.board.id, limit) },
+                )
+            }
+            if (!isBoardCollapsed) {
+                gridItems(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
+                    val onClick = {
+                        onOpenThread(
+                            providerId,
+                            feed.board.id.value,
+                            thread.key.thread.value,
+                            thread.originalPost.subject ?: "/${feed.board.id.value}/",
+                        )
+                    }
+                    if (layoutMode == FeedLayoutMode.ThumbnailGrid) {
+                        FeedThumbnailOnlyCell(
+                            thread = thread,
+                            onClick = onClick,
+                            fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
+                            modifier =
+                                if (fill) {
+                                    Modifier.fillMaxWidth().aspectRatio(1f)
+                                } else {
+                                    Modifier.size(thumbnailSize.sizeDp.dp)
+                                },
+                        )
+                    } else {
+                        FeedGridThreadCell(thread = thread, onClick = onClick)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedGridThreadCell(
+    thread: CatalogThread,
+    onClick: () -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            FeedThumbnail(
+                thread = thread,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1.15f),
+            )
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "/${thread.key.board.value}/ · ${thread.stats.replyCount} replies",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedThumbnailOnlyCell(
+    thread: CatalogThread,
+    onClick: () -> Unit,
+    fullResolution: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val attachment = thread.originalPost.attachments.firstOrNull()
+    Box(modifier = modifier.clip(RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
+        if (attachment == null) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "OP",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            MediaThumbnail(
+                attachment = attachment,
+                modifier = Modifier.fillMaxSize(),
+                fullResolution = fullResolution,
+                onClick = onClick,
+            )
         }
     }
 }
@@ -757,10 +1002,54 @@ private fun AppIconVariant.drawableRes(): Int =
         AppIconVariant.DUAL_GRADIENT -> DesignSystemR.drawable.ic_launcher_dual_gradient
     }
 
+private enum class FeedLayoutMode {
+    List,
+    Grid,
+    ThumbnailGrid,
+}
+
+private fun FeedLayoutMode.next(): FeedLayoutMode {
+    val values = FeedLayoutMode.entries
+    return values[(values.indexOf(this) + 1) % values.size]
+}
+
+private fun ThumbnailSize.next(): ThumbnailSize {
+    val values = ThumbnailSize.entries
+    return values[(values.indexOf(this) + 1) % values.size]
+}
+
 private fun LazyListState.scrollPositionKey(): Int =
     firstVisibleItemIndex * SCROLL_POSITION_INDEX_WEIGHT + firstVisibleItemScrollOffset
 
+private fun LazyGridState.scrollPositionKey(): Int =
+    firstVisibleItemIndex * SCROLL_POSITION_INDEX_WEIGHT + firstVisibleItemScrollOffset
+
 private const val SCROLL_POSITION_INDEX_WEIGHT = 100_000
+
+private suspend fun scrollFeedToTop(
+    layoutMode: FeedLayoutMode,
+    listState: LazyListState,
+    gridState: LazyGridState,
+) {
+    if (layoutMode == FeedLayoutMode.List) listState.animateScrollToItem(0) else gridState.animateScrollToItem(0)
+}
+
+private fun feedScrollPositionKey(
+    layoutMode: FeedLayoutMode,
+    listState: LazyListState,
+    gridState: LazyGridState,
+): Int = if (layoutMode == FeedLayoutMode.List) listState.scrollPositionKey() else gridState.scrollPositionKey()
+
+private fun feedScrollPositionKeyFlow(
+    layoutMode: FeedLayoutMode,
+    listState: LazyListState,
+    gridState: LazyGridState,
+): Flow<Int> =
+    if (layoutMode == FeedLayoutMode.List) {
+        snapshotFlow { listState.scrollPositionKey() }
+    } else {
+        snapshotFlow { gridState.scrollPositionKey() }
+    }
 
 private fun List<SubscribedBoardFeed>.filterBySearchQuery(query: String): List<SubscribedBoardFeed> {
     val token = query.trim().lowercase()
