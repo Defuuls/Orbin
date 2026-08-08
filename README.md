@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v72 — Alnair](https://github.com/Defuuls/Orbin/releases/tag/v72-Alnair)
+**Current release:** [v73 — Peacock](https://github.com/Defuuls/Orbin/releases/tag/v73-Peacock)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 

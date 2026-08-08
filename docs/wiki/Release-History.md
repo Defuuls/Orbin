@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v72** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v73** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,19 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair.
+Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock.
 
-## v72 — Alnair (2026-08-08)
+## v73 — Peacock (2026-08-08)
 
 *Current release.*
+
+- **The subscribed feed (the app's home screen) gets the same List/Grid/image-only layout
+  toggle** already shipped for the single-board catalog in v72. Board grouping, per-board
+  collapse/expand, and per-board thread-count overrides all keep working in every mode. This is
+  the screen most people actually mean by "board view" day to day — the v72 change alone missed
+  it.
+
+## v72 — Alnair (2026-08-08)
 
 - **Board catalog gets a third layout: image-only, no text.** It joins List and Grid, mirroring
   the thread viewer's own text/image split — cycle through all three from the same top-bar icon.
