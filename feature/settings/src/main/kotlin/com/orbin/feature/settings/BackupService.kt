@@ -129,6 +129,7 @@ class BackupService
                 setQuietHoursEnd(settings.quietHoursEnd)
                 setMediaScrollThreadView(settings.mediaScrollThreadView)
                 setMediaScrollBoardView(settings.mediaScrollBoardView)
+                setAutoplayVideosInFeed(settings.autoplayVideosInFeed)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

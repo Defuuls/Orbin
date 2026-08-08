@@ -331,6 +331,10 @@ class FakeSettingsRepository(
         update { copy(mediaScrollBoardView = enabled) }
     }
 
+    override suspend fun setAutoplayVideosInFeed(enabled: Boolean) {
+        update { copy(autoplayVideosInFeed = enabled) }
+    }
+
     /** The settings as they stand now, for asserting that a screen wrote through. */
     val current: AppSettings get() = state.value
 

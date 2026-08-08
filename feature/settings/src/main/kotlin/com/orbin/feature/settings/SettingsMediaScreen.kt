@@ -71,6 +71,14 @@ fun SettingsMediaScreen(
                 viewModel::setMediaScrollBoardView,
                 supporting = "Swipe to scroll through multiple attachments in board view.",
             )
+            SwitchRow(
+                "Autoplay videos in feed",
+                settings.autoplayVideosInFeed,
+                viewModel::setAutoplayVideosInFeed,
+                supporting =
+                    "Play each thread's first video automatically as it scrolls into view in the " +
+                        "subscribed feed, muted per \"Mute by default\" above. Nothing else about the thread opens.",
+            )
             SwitchRow("Preload images", settings.preloadImages, viewModel::setPreload)
             ChoiceRow(
                 label = "Preload content",

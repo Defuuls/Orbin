@@ -165,6 +165,12 @@ data class AppSettings(
     val onboardingCompleted: Boolean = false,
     val mediaScrollThreadView: Boolean = true,
     val mediaScrollBoardView: Boolean = false,
+    /**
+     * Autoplay each thread's first attachment inline in the subscribed feed when it's a video,
+     * muted per [muteByDefault], while its row is on screen. Other attachments stay static
+     * thumbnails until the thread is opened.
+     */
+    val autoplayVideosInFeed: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()

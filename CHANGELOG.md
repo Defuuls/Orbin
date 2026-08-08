@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **New setting: autoplay videos in the subscribed feed** (Settings → Media & Playback). When on,
+  each thread's *first* attachment plays inline, muted per "Mute by default", as its row scrolls
+  into view in List or Grid feed layout — no need to open the thread. Playback starts and stops
+  automatically as rows enter and leave the screen, and only ever the first attachment; a video
+  behind a swipe (with "Media scroll in board" also on) still needs a tap to open. Off by default.
+
 ## [73-Peacock] - 2026-08-08
 
 ### Added

@@ -204,6 +204,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.mediaScrollBoardView] = enabled }
         }
 
+        override suspend fun setAutoplayVideosInFeed(enabled: Boolean) {
+            edit { it[Keys.autoplayVideosInFeed] = enabled }
+        }
+
         override suspend fun setConnectTimeoutSeconds(seconds: Long) {
             edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
         }
@@ -339,6 +343,7 @@ class SettingsRepositoryImpl
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
                 mediaScrollThreadView = this[Keys.mediaScrollThreadView] ?: true,
                 mediaScrollBoardView = this[Keys.mediaScrollBoardView] ?: false,
+                autoplayVideosInFeed = this[Keys.autoplayVideosInFeed] ?: false,
             )
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
@@ -403,6 +408,7 @@ class SettingsRepositoryImpl
             val disableOcspChecking = booleanPreferencesKey("disable_ocsp_checking")
             val mediaScrollThreadView = booleanPreferencesKey("media_scroll_thread_view")
             val mediaScrollBoardView = booleanPreferencesKey("media_scroll_board_view")
+            val autoplayVideosInFeed = booleanPreferencesKey("autoplay_videos_in_feed")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("favorite_boards_${provider.value}")
