@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v70 — Bellatrix](https://github.com/Defuuls/Orbin/releases/tag/v70-Bellatrix)
+**Current release:** [v71 — Elnath](https://github.com/Defuuls/Orbin/releases/tag/v71-Elnath)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
