@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v71** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v72** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,19 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath.
+Deneb, Regulus, Bellatrix, Elnath, Alnair.
 
-## v71 — Elnath (2026-08-08)
+## v72 — Alnair (2026-08-08)
 
 *Current release.*
+
+- **Board catalog gets a third layout: image-only, no text.** It joins List and Grid, mirroring
+  the thread viewer's own text/image split — cycle through all three from the same top-bar icon.
+  It has an adjustable thumbnail size (Medium/Large/Fill) with its own size-cycle icon, and only
+  pulls full-resolution images at Large/Fill to avoid the same bandwidth-contention regression
+  fixed in the thread grid.
+
+## v71 — Elnath (2026-08-08)
 
 - **Reverted the v70 thumbnail change — it made grid-view blur worse, not better.** Fetching the
   full-resolution source for every tile in the thread's thumbnail grid (which can hold hundreds of
