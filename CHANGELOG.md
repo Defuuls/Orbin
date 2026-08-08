@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Board catalog and thread viewer are less cluttered.** The thread bar's five unlabeled icons
+  are now three: Download all media and Export links move into a "More" (⋮) menu, since both take
+  a moment to run and neither is reached for on every visit. Catalog cards no longer render reply
+  count, media count, poster count, and closed/archived status as bordered `AssistChip`s that each
+  duplicated the card's own tap-to-open action — they're now plain tonal labels, since a fact about
+  a thread isn't a fifth or sixth button that does the exact same thing as tapping anywhere else on
+  the card. Preview-reply rows lost the same redundant per-row click target. A collapsed post's
+  header shows a real expand/collapse icon instead of a "[+]" text suffix, and long usernames
+  ellipsize instead of crowding the post number and timestamp off the row.
+
 ## [68-Deneb] - 2026-08-07
 
 ### Changed

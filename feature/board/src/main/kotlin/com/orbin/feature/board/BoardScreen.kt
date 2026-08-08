@@ -311,7 +311,7 @@ private fun KurobaListThreadCell(
                         WatchButton(isSubscribed = isSubscribed, onClick = onToggleSubscription)
                     }
 
-                    MetadataRow(thread = thread, compact = false, onClick = onClick)
+                    MetadataRow(thread = thread, compact = false)
 
                     Box(modifier = Modifier.heightIn(max = 76.dp)) {
                         PostCommentPreviewText(comment = thread.originalPost.comment)
@@ -320,7 +320,7 @@ private fun KurobaListThreadCell(
             }
 
             if (thread.previewReplies.isNotEmpty()) {
-                PreviewReplyStrip(thread, onClick = onClick)
+                PreviewReplyStrip(thread)
             }
         }
     }
@@ -368,7 +368,7 @@ private fun KurobaGridThreadCell(
 
             Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 ThreadTitle(thread = thread, maxLines = 2)
-                MetadataRow(thread = thread, compact = true, onClick = onClick)
+                MetadataRow(thread = thread, compact = true)
                 Box(modifier = Modifier.heightIn(max = 72.dp)) {
                     PostCommentPreviewText(comment = thread.originalPost.comment)
                 }
@@ -478,43 +478,52 @@ private fun ThreadTitle(
     }
 }
 
+/**
+ * Reply count, media count, and the rest are facts about the thread, not separate actions — the
+ * whole card already opens it. Rendering them as plain tonal labels rather than [AssistChip]s
+ * drops the borders, minimum touch targets, and per-chip ripples that implied six different
+ * buttons doing the exact same thing.
+ */
 @Composable
 private fun MetadataRow(
     thread: CatalogThread,
     compact: Boolean,
-    onClick: () -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         formatThreadDate(thread.originalPost.createdAtMillis)?.let { created ->
-            StatChip(created, onClick)
+            StatLabel(created)
         }
-        StatChip("${thread.stats.replyCount} replies", onClick)
-        StatChip("${thread.stats.imageCount} media", onClick)
+        StatLabel("${thread.stats.replyCount} replies")
+        StatLabel("${thread.stats.imageCount} media")
         if (!compact && thread.stats.uniquePosterCount > 0) {
-            StatChip("${thread.stats.uniquePosterCount} posters", onClick)
+            StatLabel("${thread.stats.uniquePosterCount} posters")
         }
         if (thread.stats.isClosed) {
-            StatChip("closed", onClick)
+            StatLabel("closed")
         }
         if (thread.stats.isArchived) {
-            StatChip("archived", onClick)
+            StatLabel("archived")
         }
     }
 }
 
 @Composable
-private fun StatChip(
-    text: String,
-    onClick: () -> Unit,
-) {
-    AssistChip(
-        onClick = onClick,
-        label = { Text(text, maxLines = 1) },
-        modifier = Modifier.heightIn(min = 28.dp),
-    )
+private fun StatLabel(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(6.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
 }
 
 @Composable
@@ -541,15 +550,13 @@ private fun WatchButton(
     }
 }
 
+/** Each row previews a reply already inside the card's own clickable bounds, so it stays static
+ * rather than repeating the card's "open thread" action as its own separately-focusable target. */
 @Composable
-private fun PreviewReplyStrip(
-    thread: CatalogThread,
-    onClick: () -> Unit,
-) {
+private fun PreviewReplyStrip(thread: CatalogThread) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         thread.previewReplies.take(2).forEach { reply ->
             Surface(
-                onClick = onClick,
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(6.dp),
             ) {

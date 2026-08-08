@@ -26,12 +26,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,6 +69,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -163,12 +169,6 @@ fun ThreadScreen(
                             )
                         }
                     }
-                    IconButton(onClick = viewModel::downloadAllMedia) {
-                        Icon(Icons.Filled.Download, contentDescription = "Download all media")
-                    }
-                    IconButton(onClick = viewModel::exportLinks) {
-                        Icon(Icons.Filled.Link, contentDescription = "Export links")
-                    }
                     IconButton(onClick = viewModel::toggleBookmark) {
                         Icon(
                             imageVector =
@@ -180,6 +180,10 @@ fun ThreadScreen(
                             contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark",
                         )
                     }
+                    ThreadOverflowMenu(
+                        onDownloadAllMedia = viewModel::downloadAllMedia,
+                        onExportLinks = viewModel::exportLinks,
+                    )
                 },
             )
         },
@@ -208,6 +212,42 @@ fun ThreadScreen(
                         modifier = Modifier.fillMaxSize(),
                     )
             }
+        }
+    }
+}
+
+/**
+ * Download and export are the two actions in the thread bar that aren't a glance-and-tap toggle —
+ * both take a moment to run and neither is reached for on every visit. Folding them into one menu
+ * keeps the bar from turning into a row of unlabeled icons a reader has to decode one at a time.
+ */
+@Composable
+private fun ThreadOverflowMenu(
+    onDownloadAllMedia: () -> Unit,
+    onExportLinks: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "More thread actions")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("Download all media") },
+                leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onDownloadAllMedia()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Export links") },
+                leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onExportLinks()
+                },
+            )
         }
     }
 }
@@ -523,15 +563,19 @@ private fun PostHeader(
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = post.poster.name ?: "Anonymous",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
         )
         post.poster.posterId?.let {
-            Text("ID:$it", style = MaterialTheme.typography.labelSmall)
+            Text("ID:$it", style = MaterialTheme.typography.labelSmall, maxLines = 1)
         }
         Spacer(Modifier.weight(1f))
         postedTime?.let { posted ->
@@ -539,12 +583,22 @@ private fun PostHeader(
                 text = posted,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
         Text(
-            text = "No.${post.id.value}" + if (isCollapsed) "  [+]" else "",
+            text = "No.${post.id.value}",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        // A text "[+]" suffix reads as a hack; the same collapsed/expanded state a reader already
+        // knows from the post body being hidden gets a real Material affordance here instead.
+        Icon(
+            imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+            contentDescription = if (isCollapsed) "Expand post" else "Collapse post",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
         )
     }
 }
