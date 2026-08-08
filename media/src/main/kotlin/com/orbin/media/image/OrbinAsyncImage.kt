@@ -118,10 +118,12 @@ fun MediaThumbnail(
     onClick: () -> Unit = {},
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
-    // Provider thumbnails are only ~250px wide, so they look soft once display density pushes a
-    // cell past that. Callers pass [fullResolution] to pull the original file instead; AsyncImage
-    // sizes the request from the layout constraints, so the bitmap is still downsampled to the
-    // cell and memory stays bounded by display size — the cost is bandwidth, not memory.
+    // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
+    // callers pass [fullResolution] to pull the original file instead; AsyncImage sizes the
+    // request from the layout constraints, so the bitmap is still downsampled to the cell and
+    // memory stays bounded by display size. Small/many-tile layouts keep the cheap thumbnail —
+    // fetching full originals for dozens of concurrently-visible tiles costs more in network and
+    // decode contention than the extra sharpness is worth.
     val imageUrl =
         if (fullResolution && attachment.type == MediaType.IMAGE && attachment.sourceUrl.isNotBlank()) {
             attachment.sourceUrl

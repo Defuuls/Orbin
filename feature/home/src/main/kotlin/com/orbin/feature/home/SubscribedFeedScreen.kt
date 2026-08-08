@@ -1,6 +1,7 @@
 package com.orbin.feature.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,6 +69,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,6 +77,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
@@ -87,6 +90,7 @@ import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
+import com.orbin.core.designsystem.R as DesignSystemR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,11 +175,16 @@ fun SubscribedFeedScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
                                 modifier = Modifier.size(24.dp),
-                                content = {},
-                            )
+                            ) {
+                                Image(
+                                    painter = painterResource(settings.appIconVariant.drawableRes()),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().padding(2.dp),
+                                )
+                            }
                             Column {
                                 Text(
                                     text = "Orbin",
@@ -738,6 +747,15 @@ private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
     val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
     return tokens.any(haystack::contains)
 }
+
+private fun AppIconVariant.drawableRes(): Int =
+    when (this) {
+        AppIconVariant.DEFAULT -> DesignSystemR.drawable.ic_launcher_orbital_orb
+        AppIconVariant.NESTED_RINGS -> DesignSystemR.drawable.ic_launcher_nested_rings
+        AppIconVariant.ABSTRACT_FLOW -> DesignSystemR.drawable.ic_launcher_abstract_flow
+        AppIconVariant.MINIMALIST_ESSENCE -> DesignSystemR.drawable.ic_launcher_minimalist_essence
+        AppIconVariant.DUAL_GRADIENT -> DesignSystemR.drawable.ic_launcher_dual_gradient
+    }
 
 private fun LazyListState.scrollPositionKey(): Int =
     firstVisibleItemIndex * SCROLL_POSITION_INDEX_WEIGHT + firstVisibleItemScrollOffset
