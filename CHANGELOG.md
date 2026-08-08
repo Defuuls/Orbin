@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Thread grid-view thumbnails were reverted back to blurry — actually worse.** v70-Bellatrix
+  made every grid tile fetch the full-resolution source, but the grid can hold hundreds of
+  attachments at once; fetching originals for all of them contends for bandwidth and decode time
+  while scrolling, so more tiles ended up stuck on the low-res placeholder than before the change
+  even shipped. Medium is back to the small provider thumbnail; only Large and Fill pull full
+  resolution, as before v70.
+
+### Changed
+- **The feed top bar's icon box now shows your selected app icon**, not a plain colored square.
+  All five launcher-icon variants moved from `:app` into `core:designsystem` so feature modules
+  can render them directly.
+
 ## [70-Bellatrix] - 2026-08-08
 
 ### Fixed

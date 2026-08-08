@@ -434,11 +434,13 @@ private fun ThumbnailGridContent(
                     } else {
                         Modifier.size(thumbnailSize.sizeDp.dp)
                     },
-                // Provider thumbnails are ~250px, which upscales visibly at any tier once
-                // display density passes ~2.6x — Medium (96dp) included — so always pull the
-                // full-resolution source here; Coil downsamples the decode to the grid cell,
-                // so this doesn't cost extra memory, only bandwidth.
-                fullResolution = true,
+                // Large/Fill pull the full-resolution source since the ~250px provider
+                // thumbnail visibly upscales at those sizes. Medium stays on the cheap
+                // thumbnail: this grid can hold hundreds of attachments, and fetching the
+                // full original for every tile while scrolling causes real network/decode
+                // contention, which paradoxically leaves *more* tiles stuck on a blurry
+                // placeholder than the small thumbnail ever was on its own.
+                fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
                 onClick = { onOpenMedia(index) },
             )
         }
