@@ -11,8 +11,10 @@ import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
+import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,6 +35,7 @@ class BoardViewModel
         savedStateHandle: SavedStateHandle,
         catalogRepository: CatalogRepository,
         private val bookmarkRepository: BookmarkRepository,
+        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
@@ -55,6 +58,13 @@ class BoardViewModel
                         }.map { it.key.thread.value }
                         .toSet()
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+
+        // The default for this session, from Settings. The grid's size toggle can temporarily
+        // override it without changing the persisted preference.
+        val thumbnailSize: StateFlow<ThumbnailSize> =
+            settingsRepository.settings
+                .map { it.thumbnailSize }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
 
         fun toggleThreadSubscription(thread: CatalogThread) {
             viewModelScope.launch {
