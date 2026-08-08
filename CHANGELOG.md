@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Settings is a hub, not one long scroll.** The single Settings screen held eight sections and
+  35+ options in one column. It now lists six categories — Content & Feed, Notifications,
+  Appearance, Media & Playback, Privacy & Network, Storage & Backup — each opening its own screen,
+  with Advanced nested one level under Privacy & Network since it's the one page most people never
+  open. Every option kept its exact label, default, and behavior; only where it lives changed.
+
 ## [67-Pollux] - 2026-08-07
 
 ### Removed

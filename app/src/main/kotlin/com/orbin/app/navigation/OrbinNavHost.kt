@@ -32,7 +32,14 @@ import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.home.SubscribedFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
+import com.orbin.feature.settings.SettingsAdvancedScreen
+import com.orbin.feature.settings.SettingsAppearanceScreen
+import com.orbin.feature.settings.SettingsContentScreen
+import com.orbin.feature.settings.SettingsMediaScreen
+import com.orbin.feature.settings.SettingsNotificationsScreen
+import com.orbin.feature.settings.SettingsPrivacyScreen
 import com.orbin.feature.settings.SettingsScreen
+import com.orbin.feature.settings.SettingsStorageScreen
 import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
 
@@ -225,9 +232,50 @@ fun OrbinNavHost(
         composable<Route.Settings> {
             SettingsScreen(
                 onBack = navController::navigateUp,
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenContent = { navController.navigate(Route.SettingsContent) },
+                onOpenNotifications = { navController.navigate(Route.SettingsNotifications) },
+                onOpenAppearance = { navController.navigate(Route.SettingsAppearance) },
+                onOpenMedia = { navController.navigate(Route.SettingsMedia) },
+                onOpenPrivacy = { navController.navigate(Route.SettingsPrivacy) },
+                onOpenStorage = { navController.navigate(Route.SettingsStorage) },
+            )
+        }
+
+        composable<Route.SettingsContent> {
+            SettingsContentScreen(
+                onBack = navController::navigateUp,
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
                 onOpenSetup = { navController.navigate(Route.Onboarding) },
+            )
+        }
+
+        composable<Route.SettingsNotifications> {
+            SettingsNotificationsScreen(onBack = navController::navigateUp)
+        }
+
+        composable<Route.SettingsAppearance> {
+            SettingsAppearanceScreen(onBack = navController::navigateUp)
+        }
+
+        composable<Route.SettingsMedia> {
+            SettingsMediaScreen(onBack = navController::navigateUp)
+        }
+
+        composable<Route.SettingsPrivacy> {
+            SettingsPrivacyScreen(
+                onBack = navController::navigateUp,
+                onOpenAdvanced = { navController.navigate(Route.SettingsAdvanced) },
+            )
+        }
+
+        composable<Route.SettingsAdvanced> {
+            SettingsAdvancedScreen(onBack = navController::navigateUp)
+        }
+
+        composable<Route.SettingsStorage> {
+            SettingsStorageScreen(
+                onBack = navController::navigateUp,
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
             )
         }
 

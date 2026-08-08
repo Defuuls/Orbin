@@ -1,18 +1,25 @@
 # Settings Guide
 
-A tour of every section of Orbin's Settings screen, current as of **v66 (Spica)**. Settings
-are stored in an encrypted DataStore and take effect immediately, with one exception: the image
-cache limit applies on the next app start.
+A tour of every option in Orbin's Settings, current as of **v67 (Pollux)**. Settings are stored
+in an encrypted DataStore and take effect immediately, with one exception: the image cache limit
+applies on the next app start.
+
+**Settings is a hub, not one long page** *(v67)*: tapping Settings opens a short list of
+categories, and each opens its own screen. This page still groups options the same way, one
+`##` heading per category below — each heading names the screen you land on, not a scroll
+position on a single page.
 
 ## Site
 
-Shown only when more than one provider is installed.
+Shown only when more than one provider is installed. Sits directly on the Settings hub, above
+the category list — the only setting that does, since one control does not earn a page of its
+own.
 
 | Setting | What it does |
 | --- | --- |
 | Active provider | Chooses which image board engine (provider) the app browses. |
 
-## Content
+## Content & Feed
 
 | Setting | What it does |
 | --- | --- |
@@ -60,7 +67,7 @@ Introduced in v30 and refined through v32:
   fixed at the top and boards are no longer listed between threads, so the feed is a total
   full-screen view.
 
-## Media
+## Media & Playback
 
 | Setting | What it does |
 | --- | --- |
@@ -74,7 +81,7 @@ Introduced in v30 and refined through v32:
 | Preload content | What to preload. |
 | Preload speed | How aggressively preloading runs. |
 
-## Network & privacy
+## Privacy & Network
 
 | Setting | What it does |
 | --- | --- |
@@ -86,10 +93,12 @@ Introduced in v30 and refined through v32:
 | HTTPS only | Always enforced — shown for transparency, not toggleable. |
 | DNS over HTTPS | **Always on** — the setting is *which* resolver answers your lookups (Cloudflare, OpenDNS, NextDNS), not whether they are encrypted. There is no off switch. If a network blocks the resolver you pick, Orbin resolves through the system resolver so the app keeps working, and says so beneath the picker rather than downgrading you silently. |
 
-## Advanced *(v60)*
+## Advanced *(v60, its own page since v67)*
 
 Network internals. The defaults suit almost everyone; these exist for constrained or unusual
-connections.
+connections. Reached from a row at the bottom of **Privacy & Network** rather than from the
+Settings hub directly — one nesting level deeper, since it's the one category most people never
+open.
 
 | Setting | What it does |
 | --- | --- |
@@ -101,7 +110,7 @@ connections.
 Timeouts and revocation checking are baked into the network client when it is built, so changes
 to those three take effect the next time Orbin starts. The user agent is the exception.
 
-## Storage
+## Storage & Backup
 
 | Setting | What it does |
 | --- | --- |
