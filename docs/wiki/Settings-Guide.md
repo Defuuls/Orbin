@@ -1,10 +1,10 @@
 # Settings Guide
 
-A tour of every option in Orbin's Settings, current as of **v67 (Pollux)**. Settings are stored
+A tour of every option in Orbin's Settings, current as of **v68 (Deneb)**. Settings are stored
 in an encrypted DataStore and take effect immediately, with one exception: the image cache limit
 applies on the next app start.
 
-**Settings is a hub, not one long page** *(v67)*: tapping Settings opens a short list of
+**Settings is a hub, not one long page** *(v68)*: tapping Settings opens a short list of
 categories, and each opens its own screen. This page still groups options the same way, one
 `##` heading per category below — each heading names the screen you land on, not a scroll
 position on a single page.
@@ -93,7 +93,7 @@ Introduced in v30 and refined through v32:
 | HTTPS only | Always enforced — shown for transparency, not toggleable. |
 | DNS over HTTPS | **Always on** — the setting is *which* resolver answers your lookups (Cloudflare, OpenDNS, NextDNS), not whether they are encrypted. There is no off switch. If a network blocks the resolver you pick, Orbin resolves through the system resolver so the app keeps working, and says so beneath the picker rather than downgrading you silently. |
 
-## Advanced *(v60, its own page since v67)*
+## Advanced *(v60, its own page since v68)*
 
 Network internals. The defaults suit almost everyone; these exist for constrained or unusual
 connections. Reached from a row at the bottom of **Privacy & Network** rather than from the

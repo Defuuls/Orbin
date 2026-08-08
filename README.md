@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v67 — Pollux](https://github.com/Defuuls/Orbin/releases/tag/v67-Pollux)
+**Current release:** [v68 — Deneb](https://github.com/Defuuls/Orbin/releases/tag/v68-Deneb)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 

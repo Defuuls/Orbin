@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [68-Deneb] - 2026-08-07
+
 ### Changed
 - **Settings is a hub, not one long scroll.** The single Settings screen held eight sections and
   35+ options in one column. It now lists six categories — Content & Feed, Notifications,
