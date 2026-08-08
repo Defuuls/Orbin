@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [74-Avior] - 2026-08-08
+
 ### Added
 - **New setting: autoplay videos in the subscribed feed** (Settings → Media & Playback). When on,
   each thread's *first* attachment plays inline, muted per "Mute by default", as its row scrolls
