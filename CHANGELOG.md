@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Failsafe lock button in the subscribed feed's top bar.** Tapping the lock icon, centered at
+  the top of the feed, instantly covers the app and demands re-authentication — no need to
+  background and re-open it to trigger a re-lock. Only shown when biometric app-lock is enabled,
+  since there is nothing to lock otherwise.
+
 ## [74-Avior] - 2026-08-08
 
 ### Added

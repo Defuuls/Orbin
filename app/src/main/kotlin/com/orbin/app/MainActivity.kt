@@ -41,6 +41,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
+import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
@@ -57,6 +58,9 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
     @Inject
     lateinit var appIconManager: AppIconManager
+
+    @Inject
+    lateinit var appLockController: AppLockController
 
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
@@ -112,6 +116,13 @@ class MainActivity : FragmentActivity() {
 
             LaunchedEffect(settings.appIconVariant) {
                 appIconManager.setIconVariant(settings.appIconVariant)
+            }
+
+            // A "lock now" request from anywhere in the UI (e.g. the feed's failsafe button)
+            // reuses the exact same re-lock path a background/foreground cycle takes: requesting
+            // it when biometric lock isn't enabled is a no-op, same as it would be on resume.
+            LaunchedEffect(Unit) {
+                appLockController.lockRequests.collect { relockOnResume = true }
             }
 
             // BiometricPrompt silently fails to appear (no callback, no exception - just no

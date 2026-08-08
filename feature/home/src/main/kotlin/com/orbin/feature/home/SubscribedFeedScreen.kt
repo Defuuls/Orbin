@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -89,6 +90,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.AppIconVariant
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
@@ -190,50 +192,14 @@ fun SubscribedFeedScreen(
                             onClick = { scope.launch { scrollFeedToTop(layoutMode, listState, gridState) } },
                         ),
                     title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Image(
-                                    painter = painterResource(settings.appIconVariant.drawableRes()),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize().padding(2.dp),
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "Orbin",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Text(
-                                        text = providerId,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                    )
-                                    Text(
-                                        text = "•",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Text(
-                                        text = settings.appIconVariant.label,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                    )
-                                }
-                            }
-                        }
+                        SubscribedFeedTopBarTitle(
+                            settings = settings,
+                            providerId = providerId,
+                            onLockNow = {
+                                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                viewModel.lockNow()
+                            },
+                        )
                     },
                     actions = {
                         IconButton(onClick = viewModel::refresh) {
@@ -348,6 +314,66 @@ fun SubscribedFeedScreen(
                             onCollapsedBoardsChange = { collapsedBoards = it },
                         )
                     }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscribedFeedTopBarTitle(
+    settings: AppSettings,
+    providerId: String,
+    onLockNow: () -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(24.dp),
+            ) {
+                Image(
+                    painter = painterResource(settings.appIconVariant.drawableRes()),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(2.dp),
+                )
+            }
+            Column {
+                Text(
+                    text = "Orbin",
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = providerId,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = settings.appIconVariant.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        // Failsafe: instantly cover the app and demand re-authentication, without waiting for a
+        // background/foreground cycle. Only shown when there is actually a lock to trigger.
+        if (settings.biometricLockEnabled) {
+            IconButton(onClick = onLockNow, modifier = Modifier.align(Alignment.Center)) {
+                Icon(Icons.Filled.Lock, contentDescription = "Lock Orbin now")
             }
         }
     }
