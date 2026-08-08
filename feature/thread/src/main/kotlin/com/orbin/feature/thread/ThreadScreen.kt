@@ -434,7 +434,11 @@ private fun ThumbnailGridContent(
                     } else {
                         Modifier.size(thumbnailSize.sizeDp.dp)
                     },
-                fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
+                // Provider thumbnails are ~250px, which upscales visibly at any tier once
+                // display density passes ~2.6x — Medium (96dp) included — so always pull the
+                // full-resolution source here; Coil downsamples the decode to the grid cell,
+                // so this doesn't cost extra memory, only bandwidth.
+                fullResolution = true,
                 onClick = { onOpenMedia(index) },
             )
         }
