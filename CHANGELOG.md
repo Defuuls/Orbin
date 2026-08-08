@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [69-Regulus] - 2026-08-08
+
 ### Changed
 - **Board catalog and thread viewer are less cluttered.** The thread bar's five unlabeled icons
   are now three: Download all media and Export links move into a "More" (⋮) menu, since both take

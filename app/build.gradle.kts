@@ -52,8 +52,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 88
-        versionName = "68-Deneb"
+        versionCode = 89
+        versionName = "69-Regulus"
         testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 

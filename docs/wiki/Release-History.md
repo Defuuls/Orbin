@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v68** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v69** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,21 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb.
+Deneb, Regulus.
 
-## v68 — Deneb (2026-08-07)
+## v69 — Regulus (2026-08-08)
 
 *Current release.*
+
+- **Board catalog and thread viewer are less cluttered.** The thread bar's five unlabeled icons
+  are now three: Download all media and Export links move into a "More" (⋮) menu. Catalog cards no
+  longer render reply count, media count, poster count, and closed/archived status as bordered
+  chips that each duplicated the card's own tap-to-open action — they're now plain tonal labels.
+  Preview-reply rows lost the same redundant per-row click target. A collapsed post's header shows
+  a real expand/collapse icon instead of a "[+]" text suffix, and long usernames ellipsize instead
+  of crowding the post number and timestamp off the row.
+
+## v68 — Deneb (2026-08-07)
 
 - **Settings is a hub, not one long scroll.** The single Settings screen held eight sections and
   35+ options in one column. It now lists six categories — Content & Feed, Notifications,
