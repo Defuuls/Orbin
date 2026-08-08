@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v73** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v74** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,17 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock.
+Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior.
 
-## v73 — Peacock (2026-08-08)
+## v74 — Avior (2026-08-08)
 
 *Current release.*
+
+- **New setting: autoplay videos in the subscribed feed** (Settings → Media & Playback). Each
+  thread's first attachment plays inline and muted as its row scrolls into view in List or Grid
+  feed layout, and stops when it scrolls away — no need to open the thread. Off by default.
+
+## v73 — Peacock (2026-08-08)
 
 - **The subscribed feed (the app's home screen) gets the same List/Grid/image-only layout
   toggle** already shipped for the single-board catalog in v72. Board grouping, per-board
