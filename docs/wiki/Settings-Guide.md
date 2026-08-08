@@ -1,6 +1,6 @@
 # Settings Guide
 
-A tour of every option in Orbin's Settings, current as of **v68 (Deneb)**. Settings are stored
+A tour of every option in Orbin's Settings, current as of **v74 (Avior)**. Settings are stored
 in an encrypted DataStore and take effect immediately, with one exception: the image cache limit
 applies on the next app start.
 
@@ -77,6 +77,7 @@ Introduced in v30 and refined through v32:
 | Auto-rotate video | Rotates to landscape automatically when a landscape video starts playing. |
 | Media scroll in thread *(v55)* | "Swipe to scroll through multiple attachments in thread view." On by default. |
 | Media scroll in board *(v55)* | "Swipe to scroll through multiple attachments in board view." Off by default. |
+| Autoplay videos in feed *(v74)* | Plays each thread's first video inline and muted (per **Mute by default** above) as its row scrolls into view in the subscribed feed, stopping as it scrolls away — no need to open the thread. Only ever the first attachment; a video reached by swiping (with **Media scroll in board** also on) still needs a tap. Off by default. |
 | Preload images | Preloads images in the background. |
 | Preload content | What to preload. |
 | Preload speed | How aggressively preloading runs. |

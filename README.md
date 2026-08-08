@@ -33,6 +33,9 @@ reply, or create threads.
 - Board list, catalog with sorting, and a rich thread viewer with post dates.
 - Subscribed feed with tap-to-top chrome, optional full-screen scrolling, and an adaptive
   tablet dock that keeps navigation close without crowding the feed.
+- **List / Grid / image-only layouts:** the subscribed feed and every board catalog switch
+  between three layouts from the same top-bar icon — the usual text-and-thumbnail list, a denser
+  card grid, or a pure image-only grid with an adjustable thumbnail size (Medium/Large/Fill).
 - **Pull-to-refresh** on the subscribed feed, board catalog, and thread view, with haptic
   feedback on the refresh threshold.
 - **Two-pane layout** on wide screens (≥840dp): opening a thread from a board catalog keeps the
@@ -42,7 +45,10 @@ reply, or create threads.
 **Thread viewer**
 - Structured reply tree with quote links, quote previews, and backlinks.
 - Inline images and video, collapsible replies, and thread stats.
-- A thumbnail-only grid view that shows every attachment in the thread at a glance.
+- A thumbnail-only grid view that shows every attachment in the thread at a glance, with the
+  same adjustable thumbnail sizing as the board/feed image-only layouts.
+- A "More" overflow menu keeps less-frequent actions (download all media, export links) out of
+  the main toolbar, alongside a real expand/collapse icon on collapsed posts.
 - **Tap-to-reveal spoilers:** spoilered text stays blacked out until tapped, then reveals in
   place; a quote link hidden inside a spoiler is inert until revealed, so the tap that would
   navigate away can't be taken by accident.
@@ -52,11 +58,18 @@ reply, or create threads.
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
   native download manager.
+- **Autoplay in feed:** optionally, each thread's first video plays inline and muted directly in
+  the subscribed feed as its row scrolls into view, and stops as it scrolls away — no need to
+  open the thread first.
 
 **Personalization**
 - Material 3 with dynamic color, light/dark, and AMOLED-black themes, plus 20+ ported imageboard
   color palettes (Yotsuba, Tomorrow, Miku, Lain, Penumbra, Windows 95, and more), checked in CI
   against a WCAG AA contrast baseline.
+- **Settings as a category hub:** Content & Feed, Notifications, Appearance, Media & Playback,
+  Privacy & Network, and Storage & Backup each get their own screen instead of one long scroll
+  through 35+ options.
+- Selectable app icons (five launcher variants), shown correctly in the feed's top bar.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
 - Tablet feed rows use an old-Reddit-style thumbnail-and-text layout for faster scanning on
   larger screens.
