@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [70-Bellatrix] - 2026-08-08
+
+### Fixed
+- **Blurry thumbnails in the thread's grid view.** Grid mode only fetched the full-resolution
+  source image at the Large and Fill sizes; the default Medium size (96dp) used the provider's
+  ~250px thumbnail, which upscales visibly on most modern phones. It now always requests full
+  resolution, matching the reply-list view, which already did this — Coil still downsamples the
+  decode to the cell, so this costs bandwidth, not memory.
+
 ## [69-Regulus] - 2026-08-08
 
 ### Changed

@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v69** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v70** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,18 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus.
+Deneb, Regulus, Bellatrix.
 
-## v69 — Regulus (2026-08-08)
+## v70 — Bellatrix (2026-08-08)
 
 *Current release.*
+
+- **Fixed blurry thumbnails in the thread's grid view.** Grid mode only fetched the
+  full-resolution source image at the Large and Fill sizes; the default Medium size (96dp) used
+  the provider's ~250px thumbnail, which upscales visibly on most modern phones. It now always
+  requests full resolution, matching the reply-list view, which already did this.
+
+## v69 — Regulus (2026-08-08)
 
 - **Board catalog and thread viewer are less cluttered.** The thread bar's five unlabeled icons
   are now three: Download all media and Export links move into a "More" (⋮) menu. Catalog cards no
