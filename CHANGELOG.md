@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [73-Peacock] - 2026-08-08
+
 ### Added
 - **The subscribed feed (the app's home screen) gets the same List/Grid/image-only layout
   toggle** already shipped for the single-board catalog in v72. Board grouping, per-board
