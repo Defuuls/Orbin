@@ -166,6 +166,8 @@ class SettingsViewModel
 
         fun setMediaScrollBoardView(enabled: Boolean) = update { repository.setMediaScrollBoardView(enabled) }
 
+        fun setAutoplayVideosInFeed(enabled: Boolean) = update { repository.setAutoplayVideosInFeed(enabled) }
+
         fun clearLocalActivity() =
             update {
                 historyRepository.clear()

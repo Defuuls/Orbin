@@ -99,4 +99,6 @@ interface SettingsRepository {
     suspend fun setMediaScrollThreadView(enabled: Boolean)
 
     suspend fun setMediaScrollBoardView(enabled: Boolean)
+
+    suspend fun setAutoplayVideosInFeed(enabled: Boolean)
 }

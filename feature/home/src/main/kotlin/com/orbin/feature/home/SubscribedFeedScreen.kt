@@ -63,6 +63,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,6 +92,7 @@ import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.mutedTagTokens
@@ -100,6 +102,7 @@ import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
+import com.orbin.media.video.VideoPlayer
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -331,6 +334,8 @@ fun SubscribedFeedScreen(
                             thumbnailSizeDp = settings.thumbnailSize.sizeDp.dp,
                             globalThreadLimit = settings.feedThreadLimit,
                             mediaScrollEnabled = settings.mediaScrollBoardView,
+                            autoplayVideosInFeed = settings.autoplayVideosInFeed,
+                            muteByDefault = settings.muteByDefault,
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                             listState = listState,
@@ -359,6 +364,8 @@ private fun SubscribedFeedList(
     thumbnailSizeDp: Dp,
     globalThreadLimit: FeedThreadLimit,
     mediaScrollEnabled: Boolean,
+    autoplayVideosInFeed: Boolean,
+    muteByDefault: Boolean,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     listState: LazyListState,
@@ -379,6 +386,8 @@ private fun SubscribedFeedList(
             layoutMode = layoutMode,
             thumbnailSize = gridThumbnailSize,
             globalThreadLimit = globalThreadLimit,
+            autoplayVideosInFeed = autoplayVideosInFeed,
+            muteByDefault = muteByDefault,
             onSetBoardThreadLimit = onSetBoardThreadLimit,
             onOpenThread = onOpenThread,
             gridState = gridState,
@@ -386,6 +395,10 @@ private fun SubscribedFeedList(
             onCollapsedBoardsChange = onCollapsedBoardsChange,
         )
         return
+    }
+
+    val visibleKeys by remember(listState) {
+        derivedStateOf { listState.layoutInfo.visibleItemsInfo.mapTo(mutableSetOf()) { it.key } }
     }
 
     LazyColumn(
@@ -451,12 +464,15 @@ private fun SubscribedFeedList(
             }
             if (!isBoardCollapsed) {
                 items(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
+                    val itemKey = "${feed.board.id.value}-${thread.key.thread.value}"
                     FeedThreadCell(
                         thread = thread,
                         mutedTags = mutedTags,
                         thumbnailSizeDp = thumbnailSizeDp,
                         tabletLayout = tabletLayout,
                         mediaScrollEnabled = mediaScrollEnabled,
+                        autoplayVideo = autoplayVideosInFeed && itemKey in visibleKeys,
+                        muted = muteByDefault,
                         onClick = {
                             onOpenThread(
                                 providerId,
@@ -487,6 +503,8 @@ private fun SubscribedFeedGrid(
     layoutMode: FeedLayoutMode,
     thumbnailSize: ThumbnailSize,
     globalThreadLimit: FeedThreadLimit,
+    autoplayVideosInFeed: Boolean,
+    muteByDefault: Boolean,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     gridState: LazyGridState,
@@ -500,6 +518,9 @@ private fun SubscribedFeedGrid(
             layoutMode == FeedLayoutMode.ThumbnailGrid -> GridCells.Adaptive(thumbnailSize.sizeDp.dp)
             else -> GridCells.Adaptive(168.dp)
         }
+    val visibleKeys by remember(gridState) {
+        derivedStateOf { gridState.layoutInfo.visibleItemsInfo.mapTo(mutableSetOf()) { it.key } }
+    }
 
     LazyVerticalGrid(
         columns = columns,
@@ -553,6 +574,7 @@ private fun SubscribedFeedGrid(
             }
             if (!isBoardCollapsed) {
                 gridItems(feed.threads, key = { "${feed.board.id.value}-${it.key.thread.value}" }) { thread ->
+                    val itemKey = "${feed.board.id.value}-${thread.key.thread.value}"
                     val onClick = {
                         onOpenThread(
                             providerId,
@@ -574,7 +596,12 @@ private fun SubscribedFeedGrid(
                                 },
                         )
                     } else {
-                        FeedGridThreadCell(thread = thread, onClick = onClick)
+                        FeedGridThreadCell(
+                            thread = thread,
+                            onClick = onClick,
+                            autoplayVideo = autoplayVideosInFeed && itemKey in visibleKeys,
+                            muted = muteByDefault,
+                        )
                     }
                 }
             }
@@ -586,6 +613,8 @@ private fun SubscribedFeedGrid(
 private fun FeedGridThreadCell(
     thread: CatalogThread,
     onClick: () -> Unit,
+    autoplayVideo: Boolean = false,
+    muted: Boolean = true,
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -596,6 +625,8 @@ private fun FeedGridThreadCell(
             FeedThumbnail(
                 thread = thread,
                 modifier = Modifier.fillMaxWidth().aspectRatio(1.15f),
+                autoplayVideo = autoplayVideo,
+                muted = muted,
             )
             Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -779,6 +810,8 @@ private fun FeedThreadCell(
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
     mediaScrollEnabled: Boolean = false,
+    autoplayVideo: Boolean = false,
+    muted: Boolean = true,
     onClick: () -> Unit,
 ) {
     val isMuted = thread.matchesAny(mutedTags)
@@ -796,6 +829,8 @@ private fun FeedThreadCell(
                 thumbnailSizeDp = 108.dp,
                 tabletLayout = true,
                 mediaScrollEnabled = mediaScrollEnabled,
+                autoplayVideo = autoplayVideo,
+                muted = muted,
                 onClick = onClick,
             )
         }
@@ -811,6 +846,8 @@ private fun FeedThreadCell(
                 thumbnailSizeDp = thumbnailSizeDp,
                 tabletLayout = false,
                 mediaScrollEnabled = mediaScrollEnabled,
+                autoplayVideo = autoplayVideo,
+                muted = muted,
                 onClick = onClick,
             )
         }
@@ -824,6 +861,8 @@ private fun FeedThreadCellContent(
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
     mediaScrollEnabled: Boolean = false,
+    autoplayVideo: Boolean = false,
+    muted: Boolean = true,
     onClick: () -> Unit,
 ) {
     Row(
@@ -834,6 +873,8 @@ private fun FeedThreadCellContent(
             thread = thread,
             modifier = Modifier.size(thumbnailSizeDp),
             mediaScrollEnabled = mediaScrollEnabled,
+            autoplayVideo = autoplayVideo,
+            muted = muted,
         )
         Column(
             modifier = Modifier.weight(1f),
@@ -885,6 +926,8 @@ private fun FeedThumbnail(
     thread: CatalogThread,
     modifier: Modifier = Modifier,
     mediaScrollEnabled: Boolean = false,
+    autoplayVideo: Boolean = false,
+    muted: Boolean = true,
 ) {
     val attachments = thread.originalPost.attachments
     Surface(
@@ -905,25 +948,13 @@ private fun FeedThumbnail(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
-                    val attachment = attachments[page]
-                    OrbinAsyncImage(
-                        url = attachment.thumbnailUrl,
-                        contentDescription = attachment.originalFileName,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
+                    // Only the thread's first attachment autoplays; later pages stay static
+                    // thumbnails until the thread is opened.
+                    FeedAttachmentPreview(
+                        attachment = attachments[page],
+                        autoplayVideo = page == 0 && autoplayVideo,
+                        muted = muted,
                     )
-                    if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
-                                Icon(
-                                    imageVector = Icons.Filled.PlayArrow,
-                                    contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
-                                    tint = Color.White,
-                                    modifier = Modifier.padding(8.dp).size(24.dp),
-                                )
-                            }
-                        }
-                    }
                 }
                 Surface(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
@@ -939,25 +970,53 @@ private fun FeedThumbnail(
                 }
             }
         } else {
-            val attachment = attachments.firstOrNull()!!
-            Box(modifier = Modifier.fillMaxSize()) {
-                OrbinAsyncImage(
-                    url = attachment.thumbnailUrl,
-                    contentDescription = attachment.originalFileName,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
-                                tint = Color.White,
-                                modifier = Modifier.padding(8.dp).size(24.dp),
-                            )
-                        }
-                    }
+            FeedAttachmentPreview(
+                attachment = attachments.first(),
+                autoplayVideo = autoplayVideo,
+                muted = muted,
+            )
+        }
+    }
+}
+
+/**
+ * A single attachment preview: an actively-playing muted [VideoPlayer] when [autoplayVideo] is
+ * set on a video attachment, otherwise the usual static thumbnail with a play-icon overlay for
+ * video/audio. [autoplayVideo] is only ever true while the row is on screen — scrolling it away
+ * flips this back to the static branch, which disposes the player rather than merely pausing it.
+ */
+@Composable
+private fun FeedAttachmentPreview(
+    attachment: MediaAttachment,
+    autoplayVideo: Boolean,
+    muted: Boolean,
+) {
+    if (autoplayVideo && attachment.type == MediaType.VIDEO) {
+        VideoPlayer(
+            url = attachment.sourceUrl,
+            modifier = Modifier.fillMaxSize(),
+            autoPlay = true,
+            muted = muted,
+        )
+        return
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        OrbinAsyncImage(
+            url = attachment.thumbnailUrl,
+            contentDescription = attachment.originalFileName,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+        if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                        tint = Color.White,
+                        modifier = Modifier.padding(8.dp).size(24.dp),
+                    )
                 }
             }
         }
