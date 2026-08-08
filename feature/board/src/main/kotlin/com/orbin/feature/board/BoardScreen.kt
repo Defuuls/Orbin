@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -47,6 +49,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -69,8 +72,10 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatThreadDate
 import com.orbin.core.ui.post.PostCommentPreviewText
+import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.coroutines.launch
 
@@ -84,7 +89,10 @@ fun BoardScreen(
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
     val watchedThreadIds by viewModel.watchedThreadIds.collectAsStateWithLifecycle()
-    var layoutMode by rememberSaveable { androidx.compose.runtime.mutableStateOf(BoardLayoutMode.List) }
+    var layoutMode by rememberSaveable { mutableStateOf(BoardLayoutMode.List) }
+    val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
+    var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
+    val thumbnailSize = thumbnailSizeOverride ?: defaultThumbnailSize
 
     val boardKey = "${viewModel.providerId}/${viewModel.boardId}"
     val listState = rememberSaveable(boardKey, saver = LazyListState.Saver) { LazyListState() }
@@ -112,7 +120,8 @@ fun BoardScreen(
                             scope.launch {
                                 when (layoutMode) {
                                     BoardLayoutMode.List -> listState.animateScrollToItem(0)
-                                    BoardLayoutMode.Grid -> gridState.animateScrollToItem(0)
+                                    BoardLayoutMode.Grid, BoardLayoutMode.ThumbnailGrid ->
+                                        gridState.animateScrollToItem(0)
                                 }
                             }
                         },
@@ -133,28 +142,27 @@ fun BoardScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            layoutMode =
-                                if (layoutMode == BoardLayoutMode.List) {
-                                    BoardLayoutMode.Grid
-                                } else {
-                                    BoardLayoutMode.List
-                                }
-                        },
-                    ) {
+                    if (layoutMode == BoardLayoutMode.ThumbnailGrid) {
+                        IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
+                            Icon(
+                                Icons.Filled.PhotoSizeSelectLarge,
+                                contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                            )
+                        }
+                    }
+                    IconButton(onClick = { layoutMode = layoutMode.next() }) {
                         Icon(
                             imageVector =
-                                if (layoutMode == BoardLayoutMode.List) {
-                                    Icons.Filled.GridView
-                                } else {
-                                    Icons.Filled.ViewAgenda
+                                when (layoutMode) {
+                                    BoardLayoutMode.List -> Icons.Filled.GridView
+                                    BoardLayoutMode.Grid -> Icons.Filled.Image
+                                    BoardLayoutMode.ThumbnailGrid -> Icons.Filled.ViewAgenda
                                 },
                             contentDescription =
-                                if (layoutMode == BoardLayoutMode.List) {
-                                    "Show grid catalog"
-                                } else {
-                                    "Show list catalog"
+                                when (layoutMode) {
+                                    BoardLayoutMode.List -> "Show grid catalog"
+                                    BoardLayoutMode.Grid -> "Show image-only catalog"
+                                    BoardLayoutMode.ThumbnailGrid -> "Show list catalog"
                                 },
                         )
                     }
@@ -199,6 +207,19 @@ fun BoardScreen(
                         onToggleSubscription = viewModel::toggleThreadSubscription,
                         onOpenThread = openThread,
                         gridState = gridState,
+                    )
+
+                BoardLayoutMode.ThumbnailGrid ->
+                    CatalogThumbnailGrid(
+                        contentPadding = padding,
+                        itemCount = threads.itemCount,
+                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                        threadAt = { threads[it] },
+                        watchedThreadIds = watchedThreadIds,
+                        onToggleSubscription = viewModel::toggleThreadSubscription,
+                        onOpenThread = openThread,
+                        gridState = gridState,
+                        thumbnailSize = thumbnailSize,
                     )
             }
         }
@@ -284,6 +305,117 @@ private fun CatalogGrid(
                 isSubscribed = thread.key.thread.value in watchedThreadIds,
                 onToggleSubscription = { onToggleSubscription(thread) },
                 onClick = { onOpenThread(thread) },
+            )
+        }
+    }
+}
+
+/** Full-image, no-text catalog view — mirrors the thread viewer's thumbnail-grid mode. */
+@Composable
+private fun CatalogThumbnailGrid(
+    contentPadding: PaddingValues,
+    itemCount: Int,
+    itemKey: (Int) -> Any,
+    threadAt: (Int) -> CatalogThread?,
+    watchedThreadIds: Set<Long>,
+    onToggleSubscription: (CatalogThread) -> Unit,
+    onOpenThread: (CatalogThread) -> Unit,
+    gridState: LazyGridState,
+    thumbnailSize: ThumbnailSize,
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val memoizedPadding =
+        remember(contentPadding, layoutDirection) {
+            PaddingValues(
+                start =
+                    contentPadding.calculateStartPadding(layoutDirection) + 8.dp,
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                end = contentPadding.calculateEndPadding(layoutDirection) + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 8.dp,
+            )
+        }
+    val fill = thumbnailSize == ThumbnailSize.FILL
+
+    LazyVerticalGrid(
+        columns = if (fill) GridCells.Fixed(1) else GridCells.Adaptive(thumbnailSize.sizeDp.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        state = gridState,
+        contentPadding = memoizedPadding,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        items(count = itemCount, key = itemKey) { index ->
+            val thread = threadAt(index) ?: return@items
+            ThumbnailOnlyCell(
+                thread = thread,
+                isSubscribed = thread.key.thread.value in watchedThreadIds,
+                onToggleSubscription = { onToggleSubscription(thread) },
+                onClick = { onOpenThread(thread) },
+                // Large/Fill pull the full-resolution source since the ~250px provider
+                // thumbnail visibly upscales at those sizes; Medium stays on the cheap
+                // thumbnail — this grid can hold every thread on the board at once.
+                fullResolution = fill || thumbnailSize == ThumbnailSize.LARGE,
+                modifier =
+                    if (fill) {
+                        Modifier.fillMaxWidth().aspectRatio(1f)
+                    } else {
+                        Modifier.size(thumbnailSize.sizeDp.dp)
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThumbnailOnlyCell(
+    thread: CatalogThread,
+    isSubscribed: Boolean,
+    onToggleSubscription: () -> Unit,
+    onClick: () -> Unit,
+    fullResolution: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.clip(RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
+        val attachment = thread.originalPost.attachments.firstOrNull()
+        if (attachment == null) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Image,
+                    contentDescription = thread.originalPost.subject ?: "/${thread.key.board.value}/",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            MediaThumbnail(
+                attachment = attachment,
+                modifier = Modifier.fillMaxSize(),
+                fullResolution = fullResolution,
+                onClick = onClick,
+            )
+        }
+
+        FilledTonalIconButton(
+            onClick = onToggleSubscription,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Notifications,
+                contentDescription =
+                    if (isSubscribed) "Unsubscribe from thread" else "Subscribe to thread",
+                tint =
+                    if (isSubscribed) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                modifier = Modifier.size(16.dp),
             )
         }
     }
@@ -581,4 +713,15 @@ private fun PreviewReplyStrip(thread: CatalogThread) {
 private enum class BoardLayoutMode {
     List,
     Grid,
+    ThumbnailGrid,
+}
+
+private fun BoardLayoutMode.next(): BoardLayoutMode {
+    val values = BoardLayoutMode.entries
+    return values[(values.indexOf(this) + 1) % values.size]
+}
+
+private fun ThumbnailSize.next(): ThumbnailSize {
+    val values = ThumbnailSize.entries
+    return values[(values.indexOf(this) + 1) % values.size]
 }

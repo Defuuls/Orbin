@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Board catalog gets a third layout: image-only, no text.** It joins the existing List and Grid
+  views, mirroring the thread viewer's own text/image split — cycle through all three from the
+  same top-bar icon. Like the thread grid, it has an adjustable thumbnail size (Medium/Large/Fill)
+  with its own size-cycle icon, and only pulls full-resolution images at Large/Fill to avoid the
+  same bandwidth-contention regression fixed in the thread grid.
+
 ## [71-Elnath] - 2026-08-08
 
 ### Fixed
