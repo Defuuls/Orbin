@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v70** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v71** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,20 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix.
+Deneb, Regulus, Bellatrix, Elnath.
 
-## v70 — Bellatrix (2026-08-08)
+## v71 — Elnath (2026-08-08)
 
 *Current release.*
+
+- **Reverted the v70 thumbnail change — it made grid-view blur worse, not better.** Fetching the
+  full-resolution source for every tile in the thread's thumbnail grid (which can hold hundreds of
+  attachments) contends for bandwidth and decode time while scrolling, leaving more tiles stuck on
+  the low-res placeholder than the small thumbnail ever was on its own. Medium is back to the
+  cheap provider thumbnail; only Large and Fill pull full resolution, as before v70.
+- **The feed top bar's icon box now shows your selected app icon**, not a plain colored square.
+
+## v70 — Bellatrix (2026-08-08)
 
 - **Fixed blurry thumbnails in the thread's grid view.** Grid mode only fetched the
   full-resolution source image at the Large and Fill sizes; the default Medium size (96dp) used

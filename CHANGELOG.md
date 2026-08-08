@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [71-Elnath] - 2026-08-08
+
 ### Fixed
 - **Thread grid-view thumbnails were reverted back to blurry — actually worse.** v70-Bellatrix
   made every grid tile fetch the full-resolution source, but the grid can hold hundreds of
