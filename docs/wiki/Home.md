@@ -15,7 +15,7 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v71 — Elnath** (2026-08-08) |
+| Current release | **v72 — Alnair** (2026-08-08) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |

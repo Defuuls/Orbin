@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [72-Alnair] - 2026-08-08
+
 ### Added
 - **Board catalog gets a third layout: image-only, no text.** It joins the existing List and Grid
   views, mirroring the thread viewer's own text/image split — cycle through all three from the
