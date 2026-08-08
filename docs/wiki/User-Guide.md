@@ -1,6 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v66 (Spica)**.
+This guide covers day-to-day use of Orbin as of **v74 (Avior)**.
 
 ## Getting started
 
@@ -42,6 +42,13 @@ Feed behaviors worth knowing:
   configurable quiet hours under **Settings → Notifications**.
 - **Pull to refresh (v65):** pull down on the feed, a board catalog, or a thread to force a
   reload past the normal cache window, with haptic feedback at the release threshold.
+- **List / Grid / image-only layouts (v73):** the top-bar layout icon cycles the feed between
+  the usual text-and-thumbnail list, a denser card grid, and a pure image-only grid with an
+  adjustable thumbnail size (Medium/Large/Fill) — the board catalog got the same three layouts
+  and icon in v72.
+- **Autoplay videos in feed (v74):** an opt-in setting (Settings → Media & Playback) plays each
+  thread's first video inline and muted as its row scrolls into view, and stops as it scrolls
+  away — no need to open the thread to see what's playing. Off by default.
 
 ### Tablet layout
 
@@ -61,6 +68,11 @@ The board gallery presents boards as large, tappable tiles. Favorites stay on th
 subscriptions are managed under Settings. Board catalogs support sorting and use paging, so long
 catalogs load smoothly. Pull down on the catalog to force a refresh (v65).
 
+**List / Grid / image-only layouts (v72):** the catalog's top-bar icon cycles between a
+text-and-thumbnail list, a denser card grid, and a pure image-only grid with an adjustable
+thumbnail size (Medium/Large/Fill) — the same three layouts and icon pattern as the thread
+viewer's grid toggle and the subscribed feed.
+
 ## The thread viewer
 
 - **Structured replies:** quote links, quote previews, and backlinks are rendered as a proper
@@ -77,7 +89,11 @@ catalogs load smoothly. Pull down on the catalog to force a refresh (v65).
 - **Video indicators (v54):** video and audio attachments are marked with a play icon rather
   than a "VID" text label.
 - **Thumbnail grid:** a thumbnail-only grid view shows every attachment in the thread at a
-  glance, and reflows to fit the screen width instead of a fixed column count (v65).
+  glance, reflows to fit the screen width instead of a fixed column count (v65), and has an
+  adjustable thumbnail size (Medium/Large/Fill) via its own top-bar icon.
+- **Less toolbar clutter (v69):** download-all-media and export-links live in a "More" (⋮)
+  overflow menu instead of separate icons, and collapsed posts show a real expand/collapse icon
+  rather than a "[+]" suffix.
 - **Reading history:** threads you read are tracked (locally, encrypted) with unread indicators
   and scroll-position restore.
 - **Pull to refresh (v65):** pull down to fetch new replies immediately, bypassing the normal
