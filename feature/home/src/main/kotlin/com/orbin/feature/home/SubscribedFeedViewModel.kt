@@ -2,6 +2,7 @@ package com.orbin.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
@@ -68,6 +69,7 @@ class SubscribedFeedViewModel
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
         settingsRepository: SettingsRepository,
+        private val appLockController: AppLockController,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -162,6 +164,11 @@ class SubscribedFeedViewModel
                 boardRepository.refreshBoards(activeProvider.value.metadata.id)
                 refreshRequests.value += 1
             }
+        }
+
+        /** Failsafe: lock the app immediately, regardless of the background/foreground cycle. */
+        fun lockNow() {
+            appLockController.requestLock()
         }
 
         fun setBoardThreadLimit(

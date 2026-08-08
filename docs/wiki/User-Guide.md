@@ -137,6 +137,8 @@ Watched threads are checked in the background (WorkManager) and can notify you o
 - All local data (history, bookmarks, downloads, recent searches, settings) is **encrypted at
   rest**; the key never leaves the device's TEE/StrongBox.
 - Optional **biometric app-lock** keeps the app gated and its content out of the recents screen.
+  When it's on, a lock icon appears centered in the subscribed feed's top bar as a failsafe —
+  tap it to lock the app immediately, rather than backgrounding it to trigger a re-lock.
 - Networking is **HTTPS-only**, with optional DNS-over-HTTPS.
 - Cloud backup and device-transfer of local data are disabled.
 
