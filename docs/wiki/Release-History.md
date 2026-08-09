@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v75** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v76** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,17 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid.
+Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak.
 
-## v75 — Alkaid (2026-08-08)
+## v76 — Mirfak (2026-08-09)
 
 *Current release.*
+
+- **Fixed the v75 failsafe lock button's centering.** It was centered within the title slot's own
+  width instead of the top bar as a whole, so it could land on top of the "Orbin" branding text.
+  It now centers on the bar's actual full width.
+
+## v75 — Alkaid (2026-08-08)
 
 - **Failsafe lock button in the subscribed feed's top bar.** Tapping the lock icon, centered at
   the top of the feed, instantly covers the app and demands re-authentication — no need to

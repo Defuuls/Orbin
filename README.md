@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v75 — Alkaid](https://github.com/Defuuls/Orbin/releases/tag/v75-Alkaid)
+**Current release:** [v76 — Mirfak](https://github.com/Defuuls/Orbin/releases/tag/v76-Mirfak)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 

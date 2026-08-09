@@ -52,8 +52,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 95
-        versionName = "75-Alkaid"
+        versionCode = 96
+        versionName = "76-Mirfak"
         testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 

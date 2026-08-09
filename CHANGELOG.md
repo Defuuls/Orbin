@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [76-Mirfak] - 2026-08-09
+
+### Fixed
+- **The v75 failsafe lock button was centered on the wrong element.** It was centered within the
+  title slot's own allocated width instead of the top bar as a whole, so on narrower title slots
+  it landed on top of the "Orbin" branding text rather than the true middle of the bar. It's now
+  centered on the bar's actual full width regardless of how much space the branding or action
+  icons end up taking.
+
 ## [75-Alkaid] - 2026-08-08
 
 ### Added
