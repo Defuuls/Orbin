@@ -145,6 +145,11 @@ private fun BackupStatus.message(): String =
         BackupStatus.Exported -> "Backup saved"
         is BackupStatus.Imported ->
             "Restored ${summary.subscribedBoards} boards, ${summary.bookmarks} bookmarks and " +
-                "${summary.savedSearches} saved searches"
+                "${summary.savedSearches} saved searches" +
+                if (summary.skippedUnknownProvider > 0) {
+                    " (skipped ${summary.skippedUnknownProvider} from a provider this build doesn't support)"
+                } else {
+                    ""
+                }
         is BackupStatus.Failed -> message
     }

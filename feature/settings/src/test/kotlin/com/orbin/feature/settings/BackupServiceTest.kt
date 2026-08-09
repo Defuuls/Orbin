@@ -21,6 +21,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
+import com.orbin.core.testing.repository.FakeImageBoardProvider
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
@@ -151,6 +152,35 @@ class BackupServiceTest {
                 .containsExactly(1L, 2L)
         }
 
+    /**
+     * A backup can reference a provider the destination build doesn't ship (a plugin was removed,
+     * or the file came from a fork with extra providers). Those refs must be skipped rather than
+     * crashing the whole import or being restored against a provider that doesn't exist.
+     */
+    @Test
+    fun bookmarksFromAnUnregisteredProviderAreSkippedOnImport() =
+        runTest {
+            val exported =
+                service(FakeSettingsRepository(), bookmarks = FakeBookmarkRepository(listOf(bookmark("g", 1L))))
+                    .exportToJson("test")
+
+            val destination = FakeBookmarkRepository()
+            val summary =
+                BackupService(
+                    FakeSettingsRepository(),
+                    FakeBoardPreferencesRepository(),
+                    destination,
+                    FakeSearchRepository(),
+                    FakeProviderRegistry(FakeImageBoardProvider(id = "someOtherProvider")),
+                ).importFromJson(exported).getOrThrow()
+
+            assertThat(destination.observeBookmarks().first()).isEmpty()
+            assertThat(summary.bookmarks).isEqualTo(0)
+            // The bookmark plus the "fake" provider's default subscribed board ("g"), both
+            // referencing a provider this registry doesn't know.
+            assertThat(summary.skippedUnknownProvider).isEqualTo(2)
+        }
+
     @Test
     fun aBackupFromANewerFormatIsRejected() =
         runTest {
@@ -163,7 +193,13 @@ class BackupServiceTest {
         settings: FakeSettingsRepository,
         bookmarks: BookmarkRepository = FakeBookmarkRepository(),
         searches: FakeSearchRepository = FakeSearchRepository(),
-    ) = BackupService(settings, FakeBoardPreferencesRepository(), bookmarks, searches, FakeProviderRegistry())
+    ) = BackupService(
+        settings,
+        FakeBoardPreferencesRepository(),
+        bookmarks,
+        searches,
+        FakeProviderRegistry(FakeImageBoardProvider(id = "fake")),
+    )
 
     private fun bookmark(
         board: String,

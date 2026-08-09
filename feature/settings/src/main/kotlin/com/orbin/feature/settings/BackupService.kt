@@ -60,22 +60,34 @@ class BackupService
                 }
 
                 restoreSettings(document.settings)
-                document.subscribedBoards.forEach { ref ->
+
+                val (subscribedBoards, unknownSubscribed) =
+                    document.subscribedBoards.partition { registry.get(ProviderId(it.providerId)) != null }
+                subscribedBoards.forEach { ref ->
                     boardPreferences.setSubscribedBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
                 }
-                document.favoriteBoards.forEach { ref ->
+                val (favoriteBoards, unknownFavorite) =
+                    document.favoriteBoards.partition { registry.get(ProviderId(it.providerId)) != null }
+                favoriteBoards.forEach { ref ->
                     boardPreferences.setFavoriteBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
                 }
 
-                document.bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+                val (bookmarks, unknownBookmarks) =
+                    document.bookmarks.partition { registry.get(ProviderId(it.providerId)) != null }
+                bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+
+                // Saved searches carry only a board id, not a provider id (a search isn't scoped to
+                // one provider the way a bookmark or subscription is), so there is nothing to
+                // validate against the registry here.
                 document.savedSearches.forEach { searchRepository.saveSearch(it.toSavedSearch()) }
 
                 BackupSummary(
                     exportedAt = document.exportedAt,
-                    subscribedBoards = document.subscribedBoards.size,
-                    favoriteBoards = document.favoriteBoards.size,
-                    bookmarks = document.bookmarks.size,
+                    subscribedBoards = subscribedBoards.size,
+                    favoriteBoards = favoriteBoards.size,
+                    bookmarks = bookmarks.size,
                     savedSearches = document.savedSearches.size,
+                    skippedUnknownProvider = unknownSubscribed.size + unknownFavorite.size + unknownBookmarks.size,
                 )
             }
 
@@ -218,4 +230,6 @@ data class BackupSummary(
     val favoriteBoards: Int,
     val bookmarks: Int,
     val savedSearches: Int,
+    /** Board refs and bookmarks skipped because their provider is no longer registered in this build. */
+    val skippedUnknownProvider: Int = 0,
 )
