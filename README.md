@@ -173,8 +173,8 @@ CI workflows, and how releases are cut.
 
 Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [development setup](docs/development-setup.md). By contributing you agree your work is licensed
-under the project's MIT license.
+under the project's AGPLv3 license.
 
 ## License
 
-Orbin is released under the [MIT License](LICENSE).
+Orbin is released under the [GNU Affero General Public License v3.0](LICENSE).

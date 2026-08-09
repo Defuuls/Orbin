@@ -71,4 +71,4 @@ a Hilt `@IntoSet` binding. No changes to domain, data, or UI are required.
 ## License
 
 By contributing, you agree that your contributions are licensed under the
-[MIT License](LICENSE).
+[GNU Affero General Public License v3.0](LICENSE).
