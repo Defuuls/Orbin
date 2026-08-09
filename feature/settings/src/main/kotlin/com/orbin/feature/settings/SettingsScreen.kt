@@ -15,9 +15,11 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -48,6 +50,7 @@ fun SettingsScreen(
     onOpenMedia: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenStorage: () -> Unit,
+    onOpenSearch: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val activeProvider by viewModel.activeProvider.collectAsStateWithLifecycle()
@@ -58,6 +61,11 @@ fun SettingsScreen(
                 title = "Settings",
                 navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 onNavigationClick = onBack,
+                actions = {
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search settings")
+                    }
+                },
             )
         },
     ) { padding ->
