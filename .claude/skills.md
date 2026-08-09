@@ -59,7 +59,8 @@
 - versionCode increments by 1 for each release
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections
 - README.md kept current with latest release version
-- RELEASE_HISTORY.md maintained as comprehensive historical record
+- docs/wiki/Release-History.md maintained as the comprehensive historical record (root-level
+  RELEASE_HISTORY.md and DESIGN_SYSTEM.md were retired — superseded by docs/wiki/ and stale)
 - Git tags created for all releases (v{version}-{codename})
 
 ## Build & CI/CD

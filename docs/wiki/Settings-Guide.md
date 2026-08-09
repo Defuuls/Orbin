@@ -1,6 +1,6 @@
 # Settings Guide
 
-A tour of every option in Orbin's Settings, current as of **v74 (Avior)**. Settings are stored
+A tour of every option in Orbin's Settings, current as of **v78 (Alioth)**. Settings are stored
 in an encrypted DataStore and take effect immediately, with one exception: the image cache limit
 applies on the next app start.
 
@@ -117,6 +117,7 @@ to those three take effect the next time Orbin starts. The user agent is the exc
 | --- | --- |
 | Downloads | Opens the download history screen. |
 | Saved media folder | Picks the folder downloads are saved to; defaults to `Downloads/Orbin`. Thread-link exports also go here. |
+| Download folder structure *(v78)* | How downloaded media is organized within the saved media folder: **Flat** (everything in one folder, the default), **By board**, **By board, then thread**, or **By thread**. A file already saved keeps its folder even if you change this afterward — only new downloads pick up the new structure. |
 | Image cache limit *(v60)* | How much disk the image cache may use: 128, 256, 512 or 1024 MB. Applies on the next app start. |
 | Export data *(v60)* | Writes settings, subscribed and favourite boards, bookmarks and saved searches to a file you choose. |
 | Import data *(v60)* | Restores a previously exported file. Boards and bookmarks are **added**, never removed, so importing cannot destroy an existing setup. The saved media folder is not restored — re-pick it to re-grant access. |

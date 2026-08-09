@@ -3,7 +3,8 @@
 ## Prerequisites
 
 - **JDK 17** (the build targets JVM 17). Verify with `java -version`.
-- **Android SDK** with platform **API 35** and build-tools 35.
+- **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 35) and
+  matching build-tools.
 - **Android Studio Ladybug (2024.2)** or newer is recommended; the CLI works too.
 
 Set `ANDROID_HOME` (or create `local.properties` with `sdk.dir=/path/to/Android/sdk`).

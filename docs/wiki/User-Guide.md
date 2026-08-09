@@ -1,6 +1,6 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v74 (Avior)**.
+This guide covers day-to-day use of Orbin as of **v78 (Alioth)**.
 
 ## Getting started
 
@@ -94,8 +94,10 @@ viewer's grid toggle and the subscribed feed.
 - **Less toolbar clutter (v69):** download-all-media and export-links live in a "More" (⋮)
   overflow menu instead of separate icons, and collapsed posts show a real expand/collapse icon
   rather than a "[+]" suffix.
-- **Reading history:** threads you read are tracked (locally, encrypted) with unread indicators
-  and scroll-position restore.
+- **Reading history:** threads you read are tracked (locally, encrypted). Reopening a thread —
+  even after fully closing the app — resumes exactly where you left off, down to the pixel
+  (v77). Already-read thread titles also dim in the board catalog and subscribed feed, so a
+  returning glance can tell new threads apart from ones you've already opened (v77).
 - **Pull to refresh (v65):** pull down to fetch new replies immediately, bypassing the normal
   cache window.
 
@@ -112,6 +114,10 @@ Since **v33**:
   actions.
 
 Watched threads are checked in the background (WorkManager) and can notify you of new replies.
+
+Swiping through media — whether opened from a thread or from the Gallery's own **Browse** tab —
+keeps the grid you opened it from in sync: closing the viewer scrolls back to whichever image or
+video you were actually looking at, not wherever the grid happened to be when you opened it.
 
 ## Media playback and downloads
 
