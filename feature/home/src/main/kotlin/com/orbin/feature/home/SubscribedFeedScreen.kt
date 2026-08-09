@@ -1083,9 +1083,6 @@ private fun FeedAttachmentPreview(
             modifier = Modifier.fillMaxSize(),
             autoPlay = true,
             muted = muted,
-            // Feed autoplay is ambient background motion, not a video the user chose to watch —
-            // it must never surprise them with audio, so unmuting isn't offered here at all.
-            muteLocked = true,
         )
         return
     }

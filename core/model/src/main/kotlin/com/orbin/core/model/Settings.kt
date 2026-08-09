@@ -184,9 +184,9 @@ data class AppSettings(
     /**
      * Autoplay each thread's first attachment inline in the subscribed feed when it's a video,
      * while its row is on screen. Other attachments stay static thumbnails until the thread is
-     * opened. Always muted, independent of [muteByDefault] — feed autoplay is ambient background
-     * motion the user didn't choose to watch, so it never surprises them with audio, and there is
-     * no in-feed control to unmute it.
+     * opened. Always starts muted, independent of [muteByDefault] — feed autoplay is ambient
+     * background motion the user didn't choose to watch, so it never surprises them with audio —
+     * but tapping the video reveals the usual controls to unmute it, same as anywhere else.
      */
     val autoplayVideosInFeed: Boolean = false,
 ) {

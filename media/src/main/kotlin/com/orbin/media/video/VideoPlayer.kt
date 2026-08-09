@@ -86,8 +86,6 @@ fun VideoPlayer(
     modifier: Modifier = Modifier,
     autoPlay: Boolean = false,
     muted: Boolean = true,
-    /** When true, playback is always muted and the mute control is hidden rather than disabled. */
-    muteLocked: Boolean = false,
     active: Boolean = true,
     fullscreenByDefault: Boolean = false,
     autoRotate: Boolean = false,
@@ -99,7 +97,7 @@ fun VideoPlayer(
     val activity = remember(context) { context.findActivity() }
     var videoIsLandscape by remember(url) { mutableStateOf(false) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
-    var isMuted by rememberSaveable(url) { mutableStateOf(startMuted(muted, muteLocked)) }
+    var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
@@ -123,7 +121,7 @@ fun VideoPlayer(
                 .build()
                 .apply {
                     repeatMode = Player.REPEAT_MODE_ONE
-                    volume = if (startMuted(muted, muteLocked)) 0f else 1f
+                    volume = if (muted) 0f else 1f
                     playWhenReady = active && autoPlay
                 }
         }
@@ -320,7 +318,7 @@ fun VideoPlayer(
                     exoPlayer.playWhenReady = !isPlaying
                     if (!isPlaying) controlsVisible = false
                 },
-                onMuteToggle = { isMuted = !isMuted }.takeUnless { muteLocked },
+                onMuteToggle = { isMuted = !isMuted },
                 onFullscreenToggle = { fullscreen.value = !fullscreen.value },
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
@@ -400,8 +398,7 @@ private fun VideoControls(
     positionMs: Long,
     durationMs: Long,
     onPlayPause: () -> Unit,
-    /** Null hides the mute control entirely — used when the caller has locked playback muted. */
-    onMuteToggle: (() -> Unit)?,
+    onMuteToggle: () -> Unit,
     onFullscreenToggle: () -> Unit,
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -448,22 +445,20 @@ private fun VideoControls(
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (onMuteToggle != null) {
-                        IconButton(
-                            onClick = onMuteToggle,
-                            modifier = Modifier.widthIn(min = 48.dp),
-                        ) {
-                            Icon(
-                                imageVector =
-                                    if (isMuted) {
-                                        Icons.AutoMirrored.Filled.VolumeOff
-                                    } else {
-                                        Icons.AutoMirrored.Filled.VolumeUp
-                                    },
-                                contentDescription = if (isMuted) "Unmute" else "Mute",
-                                tint = Color.White,
-                            )
-                        }
+                    IconButton(
+                        onClick = onMuteToggle,
+                        modifier = Modifier.widthIn(min = 48.dp),
+                    ) {
+                        Icon(
+                            imageVector =
+                                if (isMuted) {
+                                    Icons.AutoMirrored.Filled.VolumeOff
+                                } else {
+                                    Icons.AutoMirrored.Filled.VolumeUp
+                                },
+                            contentDescription = if (isMuted) "Unmute" else "Mute",
+                            tint = Color.White,
+                        )
                     }
                     IconButton(
                         onClick = onFullscreenToggle,
@@ -493,11 +488,6 @@ private fun Context.videoMediaDataSourceFactory(): DataSource.Factory =
 
 /** True/false when this is real video (non-zero size), null for audio-only (0x0) tracks. */
 private fun VideoSize.landscapeOrNull(): Boolean? = if (width > 0 && height > 0) width > height else null
-
-private fun startMuted(
-    muted: Boolean,
-    muteLocked: Boolean,
-): Boolean = muted || muteLocked
 
 /** Unwraps the hosting [Activity] from a (possibly wrapped) composition [Context], if any. */
 private tailrec fun Context.findActivity(): Activity? =
