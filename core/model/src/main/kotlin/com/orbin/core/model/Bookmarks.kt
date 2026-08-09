@@ -28,4 +28,6 @@ data class HistoryEntry(
     val lastVisitedMillis: Long,
     /** Scroll anchor (post id) to restore the reading position. */
     val lastReadPostId: PostId? = null,
+    /** Pixel offset of [lastReadPostId]'s row from the top of the list, for a precise restore. */
+    val lastReadOffsetPx: Int = 0,
 )

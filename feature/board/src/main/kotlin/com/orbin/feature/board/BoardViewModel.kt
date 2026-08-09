@@ -14,6 +14,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
+import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,7 @@ class BoardViewModel
         savedStateHandle: SavedStateHandle,
         catalogRepository: CatalogRepository,
         private val bookmarkRepository: BookmarkRepository,
+        historyRepository: HistoryRepository,
         settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
@@ -57,6 +59,16 @@ class BoardViewModel
                                 it.key.board.value == boardId
                         }.map { it.key.thread.value }
                         .toSet()
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+
+        /** Thread ids on this board already present in reading history, for "already read" title styling. */
+        val visitedThreadIds: StateFlow<Set<Long>> =
+            historyRepository
+                .observeVisitedKeys()
+                .map { keys ->
+                    keys
+                        .filter { it.provider.value == providerId && it.board.value == boardId }
+                        .mapTo(mutableSetOf()) { it.thread.value }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         // The default for this session, from Settings. The grid's size toggle can temporarily

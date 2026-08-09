@@ -8,6 +8,7 @@ import com.orbin.core.common.result.fold
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
@@ -59,6 +60,19 @@ class ThreadViewModel
         private val key = ThreadKey(provider, board, threadId)
 
         private var loadedThread: Thread? = null
+
+        private val _initialScrollPosition = MutableStateFlow<ThreadScrollPosition?>(null)
+
+        /** Where the reader left off last time, loaded once when the thread is opened. */
+        val initialScrollPosition: StateFlow<ThreadScrollPosition?> = _initialScrollPosition.asStateFlow()
+
+        init {
+            viewModelScope.launch {
+                val existing = historyRepository.getEntry(key)
+                _initialScrollPosition.value =
+                    existing?.lastReadPostId?.let { ThreadScrollPosition(it, existing.lastReadOffsetPx) }
+            }
+        }
 
         private val _exportMessage = MutableStateFlow<String?>(null)
 
@@ -162,9 +176,21 @@ class ThreadViewModel
             _exportMessage.value = null
         }
 
+        /** Persists where the reader has scrolled to, so reopening this thread resumes there. */
+        fun saveScrollPosition(
+            postId: PostId,
+            offsetPx: Int,
+        ) {
+            viewModelScope.launch {
+                historyRepository.updateScrollPosition(key, postId, offsetPx)
+            }
+        }
+
         private fun onThreadLoaded(thread: Thread) {
             loadedThread = thread
             viewModelScope.launch {
+                // record() preserves any existing scroll anchor; only metadata (title, thumbnail,
+                // last-visited time) is refreshed here.
                 historyRepository.record(
                     HistoryEntry(
                         key = key,
@@ -209,3 +235,9 @@ class ThreadViewModel
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
+
+/** A saved reading position: the last post the reader had scrolled to, and its pixel offset. */
+data class ThreadScrollPosition(
+    val postId: PostId,
+    val offsetPx: Int,
+)

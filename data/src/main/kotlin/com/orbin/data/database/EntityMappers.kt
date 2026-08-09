@@ -45,6 +45,7 @@ internal fun HistoryEntity.toDomain(): HistoryEntry =
         thumbnailUrl = thumbnailUrl,
         lastVisitedMillis = lastVisitedMillis,
         lastReadPostId = lastReadPostId?.let(::PostId),
+        lastReadOffsetPx = lastReadOffsetPx,
     )
 
 internal fun HistoryEntry.toEntity(): HistoryEntity =
@@ -56,4 +57,5 @@ internal fun HistoryEntry.toEntity(): HistoryEntity =
         thumbnailUrl = thumbnailUrl,
         lastVisitedMillis = lastVisitedMillis,
         lastReadPostId = lastReadPostId?.value,
+        lastReadOffsetPx = lastReadOffsetPx,
     )

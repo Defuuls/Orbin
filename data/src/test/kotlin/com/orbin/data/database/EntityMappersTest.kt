@@ -53,6 +53,7 @@ class EntityMappersTest {
                 thumbnailUrl = null,
                 lastVisitedMillis = 42,
                 lastReadPostId = PostId(456),
+                lastReadOffsetPx = 240,
             )
         assertThat(entry.toEntity().toDomain()).isEqualTo(entry)
     }

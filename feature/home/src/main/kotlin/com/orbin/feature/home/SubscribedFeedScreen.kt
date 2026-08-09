@@ -96,6 +96,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatPostDateTime
@@ -130,6 +131,7 @@ fun SubscribedFeedScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    val visitedThreadKeys by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -301,6 +303,7 @@ fun SubscribedFeedScreen(
                         SubscribedFeedList(
                             providerId = providerId,
                             feeds = state.boards,
+                            visitedThreadKeys = visitedThreadKeys,
                             searchQuery = searchQuery,
                             onSearchQueryChange = { searchQuery = it },
                             // Parse once per raw value: a fresh Set each recomposition would
@@ -399,6 +402,7 @@ private fun LockNowButton(
 private fun SubscribedFeedList(
     providerId: String,
     feeds: List<SubscribedBoardFeed>,
+    visitedThreadKeys: Set<ThreadKey>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     mutedTags: Set<String>,
@@ -422,6 +426,7 @@ private fun SubscribedFeedList(
         SubscribedFeedGrid(
             providerId = providerId,
             feeds = feeds,
+            visitedThreadKeys = visitedThreadKeys,
             searchQuery = searchQuery,
             onSearchQueryChange = onSearchQueryChange,
             layoutMode = layoutMode,
@@ -508,6 +513,7 @@ private fun SubscribedFeedList(
                     val itemKey = "${feed.board.id.value}-${thread.key.thread.value}"
                     FeedThreadCell(
                         thread = thread,
+                        isVisited = thread.key in visitedThreadKeys,
                         mutedTags = mutedTags,
                         thumbnailSizeDp = thumbnailSizeDp,
                         tabletLayout = tabletLayout,
@@ -539,6 +545,7 @@ private fun SubscribedFeedList(
 private fun SubscribedFeedGrid(
     providerId: String,
     feeds: List<SubscribedBoardFeed>,
+    visitedThreadKeys: Set<ThreadKey>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     layoutMode: FeedLayoutMode,
@@ -639,6 +646,7 @@ private fun SubscribedFeedGrid(
                     } else {
                         FeedGridThreadCell(
                             thread = thread,
+                            isVisited = thread.key in visitedThreadKeys,
                             onClick = onClick,
                             autoplayVideo = autoplayVideosInFeed && itemKey in visibleKeys,
                             muted = muteByDefault,
@@ -654,6 +662,7 @@ private fun SubscribedFeedGrid(
 private fun FeedGridThreadCell(
     thread: CatalogThread,
     onClick: () -> Unit,
+    isVisited: Boolean = false,
     autoplayVideo: Boolean = false,
     muted: Boolean = true,
 ) {
@@ -674,6 +683,13 @@ private fun FeedGridThreadCell(
                     text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
+                    // Already-read threads dim like a visited link.
+                    color =
+                        if (isVisited) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -850,6 +866,7 @@ private fun FeedThreadCell(
     mutedTags: Set<String>,
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
+    isVisited: Boolean = false,
     mediaScrollEnabled: Boolean = false,
     autoplayVideo: Boolean = false,
     muted: Boolean = true,
@@ -867,6 +884,7 @@ private fun FeedThreadCell(
             FeedThreadCellContent(
                 thread = thread,
                 isMuted = isMuted,
+                isVisited = isVisited,
                 thumbnailSizeDp = 108.dp,
                 tabletLayout = true,
                 mediaScrollEnabled = mediaScrollEnabled,
@@ -884,6 +902,7 @@ private fun FeedThreadCell(
             FeedThreadCellContent(
                 thread = thread,
                 isMuted = isMuted,
+                isVisited = isVisited,
                 thumbnailSizeDp = thumbnailSizeDp,
                 tabletLayout = false,
                 mediaScrollEnabled = mediaScrollEnabled,
@@ -901,6 +920,7 @@ private fun FeedThreadCellContent(
     isMuted: Boolean,
     thumbnailSizeDp: Dp,
     tabletLayout: Boolean,
+    isVisited: Boolean = false,
     mediaScrollEnabled: Boolean = false,
     autoplayVideo: Boolean = false,
     muted: Boolean = true,
@@ -934,6 +954,13 @@ private fun FeedThreadCellContent(
                             MaterialTheme.typography.titleSmall
                         },
                     fontWeight = FontWeight.Bold,
+                    // Already-read threads dim like a visited link.
+                    color =
+                        if (isVisited) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),

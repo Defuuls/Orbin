@@ -89,6 +89,7 @@ fun BoardScreen(
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
     val watchedThreadIds by viewModel.watchedThreadIds.collectAsStateWithLifecycle()
+    val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(BoardLayoutMode.List) }
     val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
     var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
@@ -192,6 +193,7 @@ fun BoardScreen(
                         itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
                         threadAt = { threads[it] },
                         watchedThreadIds = watchedThreadIds,
+                        visitedThreadIds = visitedThreadIds,
                         onToggleSubscription = viewModel::toggleThreadSubscription,
                         onOpenThread = openThread,
                         listState = listState,
@@ -204,6 +206,7 @@ fun BoardScreen(
                         itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
                         threadAt = { threads[it] },
                         watchedThreadIds = watchedThreadIds,
+                        visitedThreadIds = visitedThreadIds,
                         onToggleSubscription = viewModel::toggleThreadSubscription,
                         onOpenThread = openThread,
                         gridState = gridState,
@@ -233,6 +236,7 @@ private fun CatalogList(
     itemKey: (Int) -> Any,
     threadAt: (Int) -> CatalogThread?,
     watchedThreadIds: Set<Long>,
+    visitedThreadIds: Set<Long>,
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
     listState: LazyListState,
@@ -260,6 +264,7 @@ private fun CatalogList(
             KurobaListThreadCell(
                 thread = thread,
                 isSubscribed = thread.key.thread.value in watchedThreadIds,
+                isVisited = thread.key.thread.value in visitedThreadIds,
                 onToggleSubscription = { onToggleSubscription(thread) },
                 onClick = { onOpenThread(thread) },
             )
@@ -274,6 +279,7 @@ private fun CatalogGrid(
     itemKey: (Int) -> Any,
     threadAt: (Int) -> CatalogThread?,
     watchedThreadIds: Set<Long>,
+    visitedThreadIds: Set<Long>,
     onToggleSubscription: (CatalogThread) -> Unit,
     onOpenThread: (CatalogThread) -> Unit,
     gridState: LazyGridState,
@@ -303,6 +309,7 @@ private fun CatalogGrid(
             KurobaGridThreadCell(
                 thread = thread,
                 isSubscribed = thread.key.thread.value in watchedThreadIds,
+                isVisited = thread.key.thread.value in visitedThreadIds,
                 onToggleSubscription = { onToggleSubscription(thread) },
                 onClick = { onOpenThread(thread) },
             )
@@ -425,6 +432,7 @@ private fun ThumbnailOnlyCell(
 private fun KurobaListThreadCell(
     thread: CatalogThread,
     isSubscribed: Boolean,
+    isVisited: Boolean,
     onToggleSubscription: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -439,7 +447,7 @@ private fun KurobaListThreadCell(
 
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        ThreadTitle(thread = thread, modifier = Modifier.weight(1f))
+                        ThreadTitle(thread = thread, isVisited = isVisited, modifier = Modifier.weight(1f))
                         WatchButton(isSubscribed = isSubscribed, onClick = onToggleSubscription)
                     }
 
@@ -462,6 +470,7 @@ private fun KurobaListThreadCell(
 private fun KurobaGridThreadCell(
     thread: CatalogThread,
     isSubscribed: Boolean,
+    isVisited: Boolean,
     onToggleSubscription: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -499,7 +508,7 @@ private fun KurobaGridThreadCell(
             }
 
             Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                ThreadTitle(thread = thread, maxLines = 2)
+                ThreadTitle(thread = thread, isVisited = isVisited, maxLines = 2)
                 MetadataRow(thread = thread, compact = true)
                 Box(modifier = Modifier.heightIn(max = 72.dp)) {
                     PostCommentPreviewText(comment = thread.originalPost.comment)
@@ -584,6 +593,7 @@ private fun CatalogThumbnail(
 @Composable
 private fun ThreadTitle(
     thread: CatalogThread,
+    isVisited: Boolean = false,
     modifier: Modifier = Modifier,
     maxLines: Int = 1,
 ) {
@@ -604,6 +614,9 @@ private fun ThreadTitle(
             text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
+            // Already-read threads dim like a visited link, so a returning glance at the catalog
+            // can tell new threads apart from ones already opened.
+            color = if (isVisited) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
         )
