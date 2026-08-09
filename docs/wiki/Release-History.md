@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v77** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v78** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,21 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe.
+Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth.
 
-## v77 — Dubhe (2026-08-09)
+## v78 — Alioth (2026-08-09)
 
 *Current release.*
+
+- **Fixed: a single dead or pruned subscribed board could wipe out the entire subscribed feed**
+  with a blanket "Resource not found" error. Each board's catalog now loads and fails
+  independently, so a dead board just comes back empty instead of taking down the rest of the
+  feed.
+- **New setting: download folder structure** (Settings → Storage & Backup) — Flat, By board, By
+  board then thread, or By thread, for both the default downloads folder and a custom saved-media
+  folder.
+
+## v77 — Dubhe (2026-08-09)
 
 - **Thread scroll position is now saved.** Reopening a thread — even after fully closing the
   app — resumes at the post you were last reading instead of jumping back to the top. The
