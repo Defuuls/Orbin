@@ -25,7 +25,7 @@ import com.orbin.data.database.entity.SavedSearchEntity
         DownloadEntity::class,
         SavedSearchEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class OrbinDatabase : RoomDatabase() {

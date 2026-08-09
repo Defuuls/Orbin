@@ -84,7 +84,14 @@ class GalleryViewModel
                         label = buildProgressMessage(1, 1, attachment.originalFileName),
                         progressValue = 0.2f,
                     )
-                runCatching { downloadRepository.enqueue(attachment.sourceUrl, attachment.originalFileName) }
+                runCatching {
+                    downloadRepository.enqueue(
+                        url = attachment.sourceUrl,
+                        fileName = attachment.originalFileName,
+                        boardId = board.value,
+                        threadId = threadId.value,
+                    )
+                }
                 _downloadState.value = GalleryDownloadUiState()
             }
         }

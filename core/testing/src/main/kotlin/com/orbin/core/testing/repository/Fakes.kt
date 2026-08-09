@@ -10,6 +10,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -269,6 +270,10 @@ class FakeSettingsRepository(
 
     override suspend fun setDownloadFolderUri(uri: String) {
         update { copy(downloadFolderUri = uri) }
+    }
+
+    override suspend fun setDownloadOrganization(organization: DownloadOrganization) {
+        update { copy(downloadOrganization = organization) }
     }
 
     override suspend fun setDohProvider(provider: DohProvider) {

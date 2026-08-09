@@ -42,3 +42,14 @@ internal val MIGRATION_3_4 =
             )
         }
     }
+
+internal val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v5 records the subfolder (if any) a download was saved under, so a retry lands in
+            // the same place even if the download organization setting changes in between.
+            db.execSQL(
+                "ALTER TABLE `downloads` ADD COLUMN `relativeDir` TEXT NOT NULL DEFAULT ''",
+            )
+        }
+    }

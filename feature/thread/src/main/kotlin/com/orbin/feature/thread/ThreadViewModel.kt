@@ -140,6 +140,7 @@ class ThreadViewModel
 
         fun downloadAllMedia() {
             val thread = loadedThread ?: return
+            val threadTitle = title.ifBlank { thread.subject }
             viewModelScope.launch {
                 thread.allPosts
                     .flatMap { it.attachments }
@@ -147,6 +148,9 @@ class ThreadViewModel
                         downloadRepository.enqueue(
                             url = attachment.sourceUrl,
                             fileName = attachment.downloadFileName(),
+                            boardId = board.value,
+                            threadId = threadId.value,
+                            threadTitle = threadTitle,
                         )
                     }
             }

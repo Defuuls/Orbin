@@ -95,6 +95,21 @@ enum class ThreadPresentation(
     OVERLAY("Slide over"),
 }
 
+/**
+ * How downloaded media files are organized on disk, layered under the Orbin downloads folder
+ * (or the user's chosen SAF folder). Filenames themselves are unaffected — this only controls
+ * what subfolders, if any, a download lands in.
+ */
+@Serializable
+enum class DownloadOrganization(
+    val label: String,
+) {
+    FLAT("Flat (single folder)"),
+    BY_BOARD("By board"),
+    BY_BOARD_THEN_THREAD("By board, then thread"),
+    BY_THREAD("By thread"),
+}
+
 @Serializable
 enum class ThumbnailSize(
     val label: String,
@@ -147,6 +162,7 @@ data class AppSettings(
     val imageCacheLimitMb: Int = 256,
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
     val downloadFolderUri: String = "",
+    val downloadOrganization: DownloadOrganization = DownloadOrganization.FLAT,
     val userAgent: String = "",
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val httpsOnly: Boolean = true,
