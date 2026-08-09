@@ -2,6 +2,7 @@ package com.orbin.feature.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -45,6 +46,16 @@ class SettingsScreenTest {
         assertThat(opened).isTrue()
     }
 
+    @Test
+    fun tappingSearchOpensSettingsSearch() {
+        var opened = false
+        setContent(onOpenSearch = { opened = true })
+
+        composeTestRule.onNodeWithContentDescription("Search settings").performClick()
+
+        assertThat(opened).isTrue()
+    }
+
     private fun setContent(
         onOpenContent: () -> Unit = {},
         onOpenNotifications: () -> Unit = {},
@@ -52,6 +63,7 @@ class SettingsScreenTest {
         onOpenMedia: () -> Unit = {},
         onOpenPrivacy: () -> Unit = {},
         onOpenStorage: () -> Unit = {},
+        onOpenSearch: () -> Unit = {},
     ) {
         val viewModel = testSettingsViewModel(fakeSettingsRepository())
         composeTestRule.setContent {
@@ -64,6 +76,7 @@ class SettingsScreenTest {
                     onOpenMedia = onOpenMedia,
                     onOpenPrivacy = onOpenPrivacy,
                     onOpenStorage = onOpenStorage,
+                    onOpenSearch = onOpenSearch,
                     viewModel = viewModel,
                 )
             }

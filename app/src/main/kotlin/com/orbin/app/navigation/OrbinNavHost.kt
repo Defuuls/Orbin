@@ -39,6 +39,8 @@ import com.orbin.feature.settings.SettingsMediaScreen
 import com.orbin.feature.settings.SettingsNotificationsScreen
 import com.orbin.feature.settings.SettingsPrivacyScreen
 import com.orbin.feature.settings.SettingsScreen
+import com.orbin.feature.settings.SettingsSearchScreen
+import com.orbin.feature.settings.SettingsSection
 import com.orbin.feature.settings.SettingsStorageScreen
 import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.ThreadScreen
@@ -250,6 +252,14 @@ fun OrbinNavHost(
                 onOpenMedia = { navController.navigate(Route.SettingsMedia) },
                 onOpenPrivacy = { navController.navigate(Route.SettingsPrivacy) },
                 onOpenStorage = { navController.navigate(Route.SettingsStorage) },
+                onOpenSearch = { navController.navigate(Route.SettingsSearch) },
+            )
+        }
+
+        composable<Route.SettingsSearch> {
+            SettingsSearchScreen(
+                onBack = navController::navigateUp,
+                onOpenSection = { section -> navController.navigate(section.toRoute()) },
             )
         }
 
@@ -310,6 +320,21 @@ fun OrbinNavHost(
         }
     }
 }
+
+/**
+ * Where a settings search result deep-links to. [SettingsSection] is feature:settings' own type,
+ * so it can't reference [Route] itself.
+ */
+private fun SettingsSection.toRoute(): Route =
+    when (this) {
+        SettingsSection.CONTENT -> Route.SettingsContent
+        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
+        SettingsSection.APPEARANCE -> Route.SettingsAppearance
+        SettingsSection.MEDIA -> Route.SettingsMedia
+        SettingsSection.PRIVACY -> Route.SettingsPrivacy
+        SettingsSection.ADVANCED -> Route.SettingsAdvanced
+        SettingsSection.STORAGE -> Route.SettingsStorage
+    }
 
 /**
  * Whether this destination lays itself over the screen behind rather than pushing it aside.
