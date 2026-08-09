@@ -11,10 +11,19 @@ interface DownloadRepository {
     /** Observe download history, most recent first. */
     fun observeDownloads(): Flow<List<DownloadRecord>>
 
-    /** Enqueue a download of [url] saved as [fileName]. Returns the platform download id. */
+    /**
+     * Enqueue a download of [url] saved as [fileName]. Returns the platform download id.
+     *
+     * [boardId], [threadId] and [threadTitle] are optional context used to place the file into a
+     * subfolder per the user's download-organization setting; omit them (or pass none) for a
+     * download with no thread context, which always lands in the flat downloads folder.
+     */
     suspend fun enqueue(
         url: String,
         fileName: String,
+        boardId: String? = null,
+        threadId: Long? = null,
+        threadTitle: String? = null,
     ): Long
 
     /** Mark a recorded download with the latest known [com.orbin.core.model.DownloadStatus]. */

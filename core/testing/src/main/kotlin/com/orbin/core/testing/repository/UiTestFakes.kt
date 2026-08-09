@@ -31,6 +31,9 @@ class FakeDownloadRepository(
     override suspend fun enqueue(
         url: String,
         fileName: String,
+        boardId: String?,
+        threadId: Long?,
+        threadTitle: String?,
     ): Long = 0L
 
     override suspend fun refreshStatuses() = Unit

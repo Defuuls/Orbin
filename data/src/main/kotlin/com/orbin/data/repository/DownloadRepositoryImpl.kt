@@ -3,12 +3,14 @@ package com.orbin.data.repository
 import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
+import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
@@ -52,6 +54,9 @@ class DownloadRepositoryImpl
         override suspend fun enqueue(
             url: String,
             fileName: String,
+            boardId: String?,
+            threadId: Long?,
+            threadTitle: String?,
         ): Long =
             withContext(ioDispatcher) {
                 val uri = Uri.parse(url)
@@ -60,9 +65,11 @@ class DownloadRepositoryImpl
                 // The file name comes from the remote post; sanitise it so it can never escape the
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)
-                val customFolderUri = settingsRepository.settings.first().downloadFolderUri
+                val settings = settingsRepository.settings.first()
+                val relativeDir = buildRelativeDir(settings.downloadOrganization, boardId, threadId, threadTitle)
+                val customFolderUri = settings.downloadFolderUri
                 if (customFolderUri.isNotBlank()) {
-                    return@withContext downloadToFolder(uri, safeName, customFolderUri)
+                    return@withContext downloadToFolder(uri, safeName, customFolderUri, relativeDir)
                 }
 
                 val request =
@@ -71,8 +78,10 @@ class DownloadRepositoryImpl
                         .setTitle(safeName)
                         .setDescription("Orbin download")
                         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Orbin/$safeName")
-                        .setAllowedOverMetered(true)
+                        .setDestinationInExternalPublicDir(
+                            Environment.DIRECTORY_DOWNLOADS,
+                            "Orbin/$relativeDir$safeName",
+                        ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
 
                 val id = downloadManager.enqueue(request)
@@ -83,6 +92,7 @@ class DownloadRepositoryImpl
                         fileName = safeName,
                         status = DownloadStatus.QUEUED.name,
                         createdAtMillis = System.currentTimeMillis(),
+                        relativeDir = relativeDir,
                     ),
                 )
                 id
@@ -92,6 +102,7 @@ class DownloadRepositoryImpl
             uri: Uri,
             safeName: String,
             folderUri: String,
+            relativeDir: String,
         ): Long {
             val id = -System.currentTimeMillis()
             dao.upsert(
@@ -101,13 +112,15 @@ class DownloadRepositoryImpl
                     fileName = safeName,
                     status = DownloadStatus.RUNNING.name,
                     createdAtMillis = System.currentTimeMillis(),
+                    relativeDir = relativeDir,
                 ),
             )
 
+            val parentDirUri = resolveTargetDirectory(folderUri.toParentDocumentUri(), relativeDir)
             val target =
                 DocumentsContract.createDocument(
                     context.contentResolver,
-                    folderUri.toParentDocumentUri(),
+                    parentDirUri,
                     MIME_OCTET_STREAM,
                     safeName,
                 ) ?: return id.also { dao.updateStatus(id, DownloadStatus.FAILED.name) }
@@ -129,6 +142,63 @@ class DownloadRepositoryImpl
                 dao.updateStatus(id, DownloadStatus.FAILED.name)
             }
             return id
+        }
+
+        /**
+         * Walks [relativeDir]'s segments under [rootUri], creating each subdirectory (via SAF) the
+         * first time it's needed and reusing it on every later download into the same board/thread.
+         */
+        private fun resolveTargetDirectory(
+            rootUri: Uri,
+            relativeDir: String,
+        ): Uri {
+            if (relativeDir.isBlank()) return rootUri
+            return relativeDir
+                .trim('/')
+                .split('/')
+                .fold(rootUri) { parent, segment -> findOrCreateDirectory(parent, segment) ?: parent }
+        }
+
+        private fun findOrCreateDirectory(
+            parentUri: Uri,
+            name: String,
+        ): Uri? {
+            val existingId = findChildDirectoryId(parentUri, name)
+            if (existingId != null) return DocumentsContract.buildDocumentUriUsingTree(parentUri, existingId)
+            return DocumentsContract.createDocument(
+                context.contentResolver,
+                parentUri,
+                DocumentsContract.Document.MIME_TYPE_DIR,
+                name,
+            )
+        }
+
+        private fun findChildDirectoryId(
+            parentUri: Uri,
+            name: String,
+        ): String? {
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(parentUri, DocumentsContract.getDocumentId(parentUri))
+            val projection =
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                )
+            return runCatching {
+                context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+                    cursor.firstMatchingDirectoryId(name)
+                }
+            }.getOrNull()
+        }
+
+        private fun Cursor.firstMatchingDirectoryId(name: String): String? {
+            while (moveToNext()) {
+                val mime = getString(2)
+                val displayName = getString(1)
+                if (mime == DocumentsContract.Document.MIME_TYPE_DIR && displayName == name) return getString(0)
+            }
+            return null
         }
 
         private fun String.toParentDocumentUri(): Uri {
@@ -168,7 +238,7 @@ class DownloadRepositoryImpl
 
                 dao.updateStatus(id, DownloadStatus.QUEUED.name)
                 if (customFolderUri.isNotBlank()) {
-                    return@withContext downloadToFolder(uri, entity.fileName, customFolderUri)
+                    return@withContext downloadToFolder(uri, entity.fileName, customFolderUri, entity.relativeDir)
                 }
 
                 val request =
@@ -177,8 +247,10 @@ class DownloadRepositoryImpl
                         .setTitle(entity.fileName)
                         .setDescription("Orbin download")
                         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Orbin/${entity.fileName}")
-                        .setAllowedOverMetered(true)
+                        .setDestinationInExternalPublicDir(
+                            Environment.DIRECTORY_DOWNLOADS,
+                            "Orbin/${entity.relativeDir}${entity.fileName}",
+                        ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
 
                 val newId = downloadManager.enqueue(request)
@@ -191,6 +263,7 @@ class DownloadRepositoryImpl
                             fileName = entity.fileName,
                             status = DownloadStatus.QUEUED.name,
                             createdAtMillis = entity.createdAtMillis,
+                            relativeDir = entity.relativeDir,
                         ),
                     )
                 }
@@ -276,3 +349,44 @@ class DownloadRepositoryImpl
             val ALLOWED_SCHEMES = setOf("https")
         }
     }
+
+private const val MAX_PATH_SEGMENT_LENGTH = 80
+
+/** Same cleanup as filename sanitizing, but keeps the front of the name (an id/board is there). */
+internal fun sanitizePathSegment(raw: String): String {
+    val cleaned =
+        raw
+            .filterNot { it.isISOControl() }
+            .replace(Regex("""[/\\:*?"<>|]"""), "_")
+            .replace("..", "_")
+            .trim(' ', '.')
+            .take(MAX_PATH_SEGMENT_LENGTH)
+    return cleaned.ifBlank { "misc" }
+}
+
+/**
+ * Builds the subfolder path (empty when [organization] is [DownloadOrganization.FLAT], or when
+ * the needed context wasn't supplied) a download should land in, relative to the downloads root.
+ * Always ends with a trailing slash when non-empty.
+ */
+internal fun buildRelativeDir(
+    organization: DownloadOrganization,
+    boardId: String?,
+    threadId: Long?,
+    threadTitle: String?,
+): String {
+    val boardSegment = boardId?.takeIf { it.isNotBlank() }?.let(::sanitizePathSegment)
+    val threadSegment =
+        threadId?.let { id ->
+            val title = threadTitle?.trim().orEmpty()
+            sanitizePathSegment(if (title.isNotBlank()) "$id - $title" else id.toString())
+        }
+    val segments =
+        when (organization) {
+            DownloadOrganization.FLAT -> emptyList()
+            DownloadOrganization.BY_BOARD -> listOfNotNull(boardSegment)
+            DownloadOrganization.BY_BOARD_THEN_THREAD -> listOfNotNull(boardSegment, threadSegment)
+            DownloadOrganization.BY_THREAD -> listOfNotNull(threadSegment)
+        }
+    return if (segments.isEmpty()) "" else segments.joinToString("/", postfix = "/")
+}

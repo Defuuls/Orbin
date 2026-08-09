@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernListItem
 import com.orbin.core.designsystem.component.ModernSmallTopAppBar
+import com.orbin.core.model.DownloadOrganization
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -110,6 +111,13 @@ fun SettingsStorageScreen(
                 title = "Saved media folder",
                 subtitle = settings.downloadFolderUri.ifBlank { "Downloads/Orbin" },
                 onClick = { folderPicker.launch(null) },
+            )
+            ChoiceRow(
+                label = "Download folder structure",
+                values = DownloadOrganization.entries,
+                selected = settings.downloadOrganization,
+                text = { it.label },
+                onChange = viewModel::setDownloadOrganization,
             )
             ChipChoiceRow(
                 label = "Image cache limit",

@@ -16,6 +16,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -154,6 +155,10 @@ class SettingsRepositoryImpl
 
         override suspend fun setDownloadFolderUri(uri: String) {
             edit { it[Keys.downloadFolderUri] = uri }
+        }
+
+        override suspend fun setDownloadOrganization(organization: DownloadOrganization) {
+            edit { it[Keys.downloadOrganization] = organization.name }
         }
 
         override suspend fun setDohProvider(provider: DohProvider) {
@@ -325,6 +330,9 @@ class SettingsRepositoryImpl
                         ?: FeedThreadLimit.TWELVE,
                 imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
+                downloadOrganization =
+                    this[Keys.downloadOrganization]?.toEnumOrDefault(DownloadOrganization.FLAT)
+                        ?: DownloadOrganization.FLAT,
                 userAgent = this[Keys.userAgent] ?: "",
                 dohProvider =
                     this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
@@ -393,6 +401,7 @@ class SettingsRepositoryImpl
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
             val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
+            val downloadOrganization = stringPreferencesKey("download_organization")
             val userAgent = stringPreferencesKey("user_agent")
             val dohProvider = stringPreferencesKey("doh_provider")
             val biometricLock = booleanPreferencesKey("biometric_lock")

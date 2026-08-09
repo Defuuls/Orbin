@@ -57,4 +57,10 @@ data class DownloadEntity(
     /** [com.orbin.core.model.DownloadStatus] name. */
     val status: String,
     val createdAtMillis: Long,
+    /**
+     * The subfolder path (if any) this file was saved under, e.g. "g/123456 - Thread title/".
+     * Recorded at enqueue time so a retry lands in the same place even if the download
+     * organization setting changes in between.
+     */
+    val relativeDir: String = "",
 )

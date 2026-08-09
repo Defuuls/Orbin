@@ -5,6 +5,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -62,6 +63,8 @@ interface SettingsRepository {
     suspend fun setImageCacheLimitMb(megabytes: Int)
 
     suspend fun setDownloadFolderUri(uri: String)
+
+    suspend fun setDownloadOrganization(organization: DownloadOrganization)
 
     suspend fun setDohProvider(provider: DohProvider)
 

@@ -9,6 +9,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.PreloadOption
@@ -134,6 +135,9 @@ class SettingsViewModel
         fun setCertificateRevocationChecks(enabled: Boolean) = update { repository.setDisableOcspChecking(!enabled) }
 
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
+
+        fun setDownloadOrganization(organization: DownloadOrganization) =
+            update { repository.setDownloadOrganization(organization) }
 
         fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 

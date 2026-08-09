@@ -130,6 +130,7 @@ class BackupService
                 setMediaScrollThreadView(settings.mediaScrollThreadView)
                 setMediaScrollBoardView(settings.mediaScrollBoardView)
                 setAutoplayVideosInFeed(settings.autoplayVideosInFeed)
+                setDownloadOrganization(settings.downloadOrganization)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }
