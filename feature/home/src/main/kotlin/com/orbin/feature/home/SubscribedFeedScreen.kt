@@ -9,14 +9,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -80,6 +84,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -273,10 +278,11 @@ fun SubscribedFeedScreen(
                     )
                     // Overlaid on the whole bar rather than centered within the title slot, so it
                     // sits in the true middle of the top bar regardless of how wide the branding
-                    // (start) or action icons (end) end up being.
+                    // (start) or action icons (end) end up being. Nudged down by cutoutClearance()
+                    // so it doesn't land on a center-mounted punch-hole camera's touch dead zone.
                     LockNowButton(
                         visible = settings.biometricLockEnabled,
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier.align(Alignment.Center).offset(y = cutoutClearance()),
                         onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                             viewModel.lockNow()
@@ -378,6 +384,23 @@ private fun SubscribedFeedTopBarTitle(
                 )
             }
         }
+    }
+}
+
+/**
+ * How far to nudge the [LockNowButton] down from dead-center. A center-mounted punch-hole camera
+ * can sit lower than the status bar height the top bar already clears, landing the button right
+ * at the edge of the cutout's touch dead zone. This is the amount the display cutout exceeds the
+ * status bar on this specific device — zero on the common case where the status bar already
+ * clears the cutout, so it's a no-op there.
+ */
+@Composable
+private fun cutoutClearance(): Dp {
+    val density = LocalDensity.current
+    return with(density) {
+        (WindowInsets.displayCutout.getTop(density) - WindowInsets.statusBars.getTop(density))
+            .coerceAtLeast(0)
+            .toDp()
     }
 }
 
