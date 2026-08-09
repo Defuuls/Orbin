@@ -74,6 +74,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatThreadDate
+import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.media.image.MediaThumbnail
@@ -740,14 +741,4 @@ private enum class BoardLayoutMode {
     List,
     Grid,
     ThumbnailGrid,
-}
-
-private fun BoardLayoutMode.next(): BoardLayoutMode {
-    val values = BoardLayoutMode.entries
-    return values[(values.indexOf(this) + 1) % values.size]
-}
-
-private fun ThumbnailSize.next(): ThumbnailSize {
-    val values = ThumbnailSize.entries
-    return values[(values.indexOf(this) + 1) % values.size]
 }

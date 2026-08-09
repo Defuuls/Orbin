@@ -79,6 +79,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -678,8 +679,3 @@ private enum class ThreadLayoutMode {
 
 /** How long to wait after scrolling stops before persisting the reading position. */
 private const val SCROLL_SAVE_DEBOUNCE_MS = 600L
-
-private fun ThumbnailSize.next(): ThumbnailSize {
-    val values = ThumbnailSize.entries
-    return values[(values.indexOf(this) + 1) % values.size]
-}

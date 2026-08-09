@@ -100,6 +100,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatPostDateTime
+import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -1133,16 +1134,6 @@ private enum class FeedLayoutMode {
     List,
     Grid,
     ThumbnailGrid,
-}
-
-private fun FeedLayoutMode.next(): FeedLayoutMode {
-    val values = FeedLayoutMode.entries
-    return values[(values.indexOf(this) + 1) % values.size]
-}
-
-private fun ThumbnailSize.next(): ThumbnailSize {
-    val values = ThumbnailSize.entries
-    return values[(values.indexOf(this) + 1) % values.size]
 }
 
 private fun LazyListState.scrollPositionKey(): Int =
