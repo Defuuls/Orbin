@@ -18,9 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.ui.state.EmptyView
 
@@ -32,6 +36,7 @@ fun DownloadsScreen(
     viewModel: DownloadsViewModel = hiltViewModel(),
 ) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
+    var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -43,7 +48,7 @@ fun DownloadsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = viewModel::clear) {
+                    IconButton(onClick = { showClearDialog = true }) {
                         Icon(Icons.Filled.Delete, contentDescription = "Clear")
                     }
                 },
@@ -70,6 +75,18 @@ fun DownloadsScreen(
                 HorizontalDivider()
             }
         }
+    }
+
+    if (showClearDialog) {
+        ModernConfirmDialog(
+            title = "Clear download history?",
+            text = "This removes every entry from the list below. It doesn't delete the files themselves.",
+            onConfirm = {
+                viewModel.clear()
+                showClearDialog = false
+            },
+            onDismiss = { showClearDialog = false },
+        )
     }
 }
 
