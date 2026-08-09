@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v76 — Mirfak](https://github.com/Defuuls/Orbin/releases/tag/v76-Mirfak)
+**Current release:** [v77 — Dubhe](https://github.com/Defuuls/Orbin/releases/tag/v77-Dubhe)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -36,6 +36,8 @@ reply, or create threads.
 - **List / Grid / image-only layouts:** the subscribed feed and every board catalog switch
   between three layouts from the same top-bar icon — the usual text-and-thumbnail list, a denser
   card grid, or a pure image-only grid with an adjustable thumbnail size (Medium/Large/Fill).
+- **Already-read threads are dimmed** in the board catalog and subscribed feed (List/Grid
+  layouts), so a returning glance can tell new threads apart from ones already opened.
 - **Pull-to-refresh** on the subscribed feed, board catalog, and thread view, with haptic
   feedback on the refresh threshold.
 - **Two-pane layout** on wide screens (≥840dp): opening a thread from a board catalog keeps the
@@ -52,7 +54,9 @@ reply, or create threads.
 - **Tap-to-reveal spoilers:** spoilered text stays blacked out until tapped, then reveals in
   place; a quote link hidden inside a spoiler is inert until revealed, so the tap that would
   navigate away can't be taken by accident.
-- Reading history with unread indicators and scroll-position restore.
+- **Scroll-position restore:** reopening a thread — even after fully closing the app — resumes at
+  the post you were last reading rather than jumping back to the top. The position is saved as
+  part of reading history and updates automatically as you scroll.
 
 **Media**
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,

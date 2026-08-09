@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [77-Dubhe] - 2026-08-09
+
+### Added
+- **Thread scroll position is now saved.** Reopening a thread — even after fully closing the app —
+  resumes at the post you were last reading instead of jumping back to the top. The reading
+  position (last-read post plus its exact scroll offset) is stored per thread as part of reading
+  history and updates automatically as you scroll.
+- **Already-read threads are now visually distinct.** Thread titles in the board catalog and the
+  subscribed feed dim once a thread has been opened, in both the List and Grid layouts — a
+  visited-link-style cue for spotting new threads at a glance.
+
 ## [76-Mirfak] - 2026-08-09
 
 ### Fixed
