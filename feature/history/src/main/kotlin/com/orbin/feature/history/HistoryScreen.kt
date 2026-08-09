@@ -17,9 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.ui.state.EmptyView
 
 /** Reading-history screen. Tapping an entry reopens the thread; the toolbar clears history. */
@@ -30,13 +34,14 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val history by viewModel.history.collectAsStateWithLifecycle()
+    var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("History") },
                 actions = {
-                    IconButton(onClick = viewModel::clear) {
+                    IconButton(onClick = { showClearDialog = true }) {
                         Icon(Icons.Filled.Delete, contentDescription = "Clear history")
                     }
                 },
@@ -65,5 +70,17 @@ fun HistoryScreen(
                 HorizontalDivider()
             }
         }
+    }
+
+    if (showClearDialog) {
+        ModernConfirmDialog(
+            title = "Clear reading history?",
+            text = "This removes every thread from your reading history on this device.",
+            onConfirm = {
+                viewModel.clear()
+                showClearDialog = false
+            },
+            onDismiss = { showClearDialog = false },
+        )
     }
 }

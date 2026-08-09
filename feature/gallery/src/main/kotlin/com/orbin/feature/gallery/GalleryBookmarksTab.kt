@@ -17,9 +17,13 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.ui.state.EmptyView
@@ -31,6 +35,7 @@ fun GalleryBookmarksTab(
     viewModel: GalleryBookmarksViewModel = hiltViewModel(),
 ) {
     val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
+    var pendingRemove by remember { mutableStateOf<Bookmark?>(null) }
 
     if (bookmarks.isEmpty()) {
         EmptyView("No bookmarks yet", Modifier.fillMaxSize())
@@ -49,10 +54,23 @@ fun GalleryBookmarksTab(
                     )
                 },
                 onToggleWatch = { viewModel.toggleWatched(bookmark.key, !bookmark.isWatched) },
-                onRemove = { viewModel.remove(bookmark.key) },
+                onRemove = { pendingRemove = bookmark },
             )
             HorizontalDivider()
         }
+    }
+
+    pendingRemove?.let { bookmark ->
+        ModernConfirmDialog(
+            title = "Remove bookmark?",
+            text = "This removes \"${bookmark.title}\" from your bookmarks.",
+            confirmLabel = "Remove",
+            onConfirm = {
+                viewModel.remove(bookmark.key)
+                pendingRemove = null
+            },
+            onDismiss = { pendingRemove = null },
+        )
     }
 }
 

@@ -71,13 +71,34 @@ class DownloadsScreenTest {
     }
 
     @Test
-    fun clearingRemovesEveryDownload() {
+    fun clearingAsksForConfirmationFirst() {
         setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
 
         composeTestRule.onNodeWithContentDescription("Clear").performClick()
 
+        composeTestRule.onNodeWithText("Clear download history?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("clip.webm").assertIsDisplayed()
+    }
+
+    @Test
+    fun clearingRemovesEveryDownload() {
+        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+
+        composeTestRule.onNodeWithContentDescription("Clear").performClick()
+        composeTestRule.onNodeWithText("Delete").performClick()
+
         composeTestRule.onNodeWithText("No downloads yet").assertIsDisplayed()
         composeTestRule.onNodeWithText("clip.webm").assertDoesNotExist()
+    }
+
+    @Test
+    fun dismissingTheConfirmationKeepsTheDownload() {
+        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+
+        composeTestRule.onNodeWithContentDescription("Clear").performClick()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        composeTestRule.onNodeWithText("clip.webm").assertIsDisplayed()
     }
 
     private fun setContent(vararg records: DownloadRecord) {

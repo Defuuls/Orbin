@@ -38,6 +38,9 @@
  * - ModernListItemHeader: Section header
  * - ModernDivider: Separator with optional label
  *
+ * **Dialogs**
+ * - ModernConfirmDialog: Confirmation dialog for irreversible actions
+ *
  * **Animations & Loading**
  * - SkeletonLoader: Animated placeholder
  * - PulsingDotLoader: Three-dot pulse animation

@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.Board
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -360,6 +361,8 @@ private fun SavedSearchesTabContent(
     onDeleteSearch: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var pendingDelete by remember { mutableStateOf<SavedSearch?>(null) }
+
     Column(modifier = modifier) {
         if (savedSearches.isEmpty()) {
             EmptyView("No saved searches")
@@ -386,7 +389,7 @@ private fun SavedSearchesTabContent(
                             }
                         },
                         trailingContent = {
-                            IconButton(onClick = { onDeleteSearch(search.id) }) {
+                            IconButton(onClick = { pendingDelete = search }) {
                                 Icon(Icons.Outlined.Delete, contentDescription = "Delete")
                             }
                         },
@@ -395,6 +398,18 @@ private fun SavedSearchesTabContent(
                 }
             }
         }
+    }
+
+    pendingDelete?.let { search ->
+        ModernConfirmDialog(
+            title = "Delete saved search?",
+            text = "This deletes \"${search.text}\" from your saved searches.",
+            onConfirm = {
+                onDeleteSearch(search.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
     }
 }
 
