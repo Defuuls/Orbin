@@ -1,5 +1,6 @@
 package com.orbin.feature.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.lock.AppLockController
@@ -22,6 +23,7 @@ import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -224,31 +226,30 @@ class SubscribedFeedViewModel
                 return SubscribedFeedUiState.Success(emptyList<SubscribedBoardFeed>().toImmutableList())
             }
 
-            return try {
-                val requestLimit = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
-                val feeds =
-                    kotlinx.coroutines.coroutineScope {
-                        subscribedBoards
-                            .map { board ->
-                                async {
-                                    val override = limitOverrides[board.id]
-                                    val threads =
+            val requestLimit = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
+            val feeds =
+                kotlinx.coroutines.coroutineScope {
+                    subscribedBoards
+                        .map { board ->
+                            async {
+                                val override = limitOverrides[board.id]
+                                // Isolated per board: one dead/pruned board 404ing must not cancel
+                                // the sibling loads and wipe out every other board's feed with a
+                                // blanket error. It just comes back with no threads this refresh.
+                                val threads =
+                                    try {
                                         requestLimit.withPermit {
-                                            loadBoardThreads(
-                                                provider,
-                                                board,
-                                                override,
-                                                settings,
-                                            )
+                                            loadBoardThreads(provider, board, override, settings)
                                         }
-                                    SubscribedBoardFeed(board, threads, override)
-                                }
-                            }.map { it.await() }
-                    }
-                SubscribedFeedUiState.Success(feeds.toImmutableList())
-            } catch (e: ProviderException) {
-                SubscribedFeedUiState.Error(e.message ?: "Unable to load subscribed boards")
-            }
+                                    } catch (e: ProviderException) {
+                                        Log.w(TAG, "Failed to load catalog for /${board.id.value}/", e)
+                                        persistentListOf()
+                                    }
+                                SubscribedBoardFeed(board, threads, override)
+                            }
+                        }.map { it.await() }
+                }
+            return SubscribedFeedUiState.Success(feeds.toImmutableList())
         }
 
         private suspend fun loadBoardThreads(
@@ -266,6 +267,7 @@ class SubscribedFeedViewModel
         }
 
         private companion object {
+            const val TAG = "SubscribedFeedViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
             const val MAX_CONCURRENT_BOARD_LOADS = 4
         }
