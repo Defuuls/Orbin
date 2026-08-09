@@ -6,6 +6,27 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [79-Mizar] - 2026-08-09
+
+### Fixed
+- **The board catalog showed a blank screen when its catalog failed to load.** A failed refresh
+  now shows a retry view with the failure message instead of leaving the screen empty with no way
+  to recover short of leaving and coming back.
+- **Backup import silently accepted entries from a provider the build doesn't ship**, writing
+  subscription and bookmark rows keyed to a provider id nothing could resolve. Those entries are
+  now skipped, and the import summary reports how many were skipped.
+
+### Added
+- **Confirmation before destructive actions.** Clearing reading history, clearing download
+  history, deleting a saved search, and removing a bookmark now ask for confirmation before
+  applying, instead of taking effect on the first tap.
+- **Offline banner.** A banner now appears across the app whenever the device loses its network
+  connection, and clears automatically once connectivity is back.
+- **Settings search.** A search icon on the Settings hub finds any individual setting by name (or
+  by its section) across all seven sub-screens and jumps straight to it.
+- The onboarding privacy step now mentions that local data (history, bookmarks, downloads,
+  settings) is encrypted at rest, alongside the existing HTTPS-only and DNS-over-HTTPS signals.
+
 ## [78-Alioth] - 2026-08-09
 
 ### Fixed
