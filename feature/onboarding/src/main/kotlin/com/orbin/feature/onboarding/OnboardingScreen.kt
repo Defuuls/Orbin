@@ -521,6 +521,13 @@ private fun PrivacyStep(
         PreferenceHeader(Icons.Filled.Security, "Privacy & network", "Transport security and local access")
         SurfacePanel {
             PreferenceSwitch(
+                "Data encrypted at rest",
+                "History, bookmarks, downloads, and settings are encrypted on this device with " +
+                    "SQLCipher and an encrypted DataStore, both keyed by the Android Keystore",
+                true,
+                {},
+            )
+            PreferenceSwitch(
                 "HTTPS only",
                 "Always enforced for board traffic and downloads",
                 true,
