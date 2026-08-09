@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v78 — Alioth](https://github.com/Defuuls/Orbin/releases/tag/v78-Alioth)
+**Current release:** [v79 — Mizar](https://github.com/Defuuls/Orbin/releases/tag/v79-Mizar)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -40,6 +40,8 @@ reply, or create threads.
   layouts), so a returning glance can tell new threads apart from ones already opened.
 - **Pull-to-refresh** on the subscribed feed, board catalog, and thread view, with haptic
   feedback on the refresh threshold.
+- **Offline banner:** a banner appears across the app whenever the device loses its network
+  connection, and clears automatically once it's back.
 - **Two-pane layout** on wide screens (≥840dp): opening a thread from a board catalog keeps the
   catalog visible alongside it instead of replacing it, and the open thread survives rotating
   across the width threshold.
@@ -75,7 +77,7 @@ reply, or create threads.
   against a WCAG AA contrast baseline.
 - **Settings as a category hub:** Content & Feed, Notifications, Appearance, Media & Playback,
   Privacy & Network, and Storage & Backup each get their own screen instead of one long scroll
-  through 35+ options.
+  through 35+ options, with a search icon on the hub to jump straight to any setting by name.
 - Selectable app icons (five launcher variants), shown correctly in the feed's top bar.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
 - Tablet feed rows use an old-Reddit-style thumbnail-and-text layout for faster scanning on
