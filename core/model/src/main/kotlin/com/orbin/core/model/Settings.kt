@@ -183,8 +183,10 @@ data class AppSettings(
     val mediaScrollBoardView: Boolean = false,
     /**
      * Autoplay each thread's first attachment inline in the subscribed feed when it's a video,
-     * muted per [muteByDefault], while its row is on screen. Other attachments stay static
-     * thumbnails until the thread is opened.
+     * while its row is on screen. Other attachments stay static thumbnails until the thread is
+     * opened. Always muted, independent of [muteByDefault] — feed autoplay is ambient background
+     * motion the user didn't choose to watch, so it never surprises them with audio, and there is
+     * no in-feed control to unmute it.
      */
     val autoplayVideosInFeed: Boolean = false,
 ) {

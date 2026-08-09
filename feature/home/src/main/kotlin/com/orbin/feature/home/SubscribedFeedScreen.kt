@@ -320,7 +320,6 @@ fun SubscribedFeedScreen(
                             globalThreadLimit = settings.feedThreadLimit,
                             mediaScrollEnabled = settings.mediaScrollBoardView,
                             autoplayVideosInFeed = settings.autoplayVideosInFeed,
-                            muteByDefault = settings.muteByDefault,
                             onSetBoardThreadLimit = viewModel::setBoardThreadLimit,
                             onOpenThread = onOpenThread,
                             listState = listState,
@@ -434,7 +433,6 @@ private fun SubscribedFeedList(
     globalThreadLimit: FeedThreadLimit,
     mediaScrollEnabled: Boolean,
     autoplayVideosInFeed: Boolean,
-    muteByDefault: Boolean,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     listState: LazyListState,
@@ -457,7 +455,6 @@ private fun SubscribedFeedList(
             thumbnailSize = gridThumbnailSize,
             globalThreadLimit = globalThreadLimit,
             autoplayVideosInFeed = autoplayVideosInFeed,
-            muteByDefault = muteByDefault,
             onSetBoardThreadLimit = onSetBoardThreadLimit,
             onOpenThread = onOpenThread,
             gridState = gridState,
@@ -543,7 +540,6 @@ private fun SubscribedFeedList(
                         tabletLayout = tabletLayout,
                         mediaScrollEnabled = mediaScrollEnabled,
                         autoplayVideo = autoplayVideosInFeed && itemKey in visibleKeys,
-                        muted = muteByDefault,
                         onClick = {
                             onOpenThread(
                                 providerId,
@@ -576,7 +572,6 @@ private fun SubscribedFeedGrid(
     thumbnailSize: ThumbnailSize,
     globalThreadLimit: FeedThreadLimit,
     autoplayVideosInFeed: Boolean,
-    muteByDefault: Boolean,
     onSetBoardThreadLimit: (BoardId, FeedThreadLimit?) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     gridState: LazyGridState,
@@ -673,7 +668,6 @@ private fun SubscribedFeedGrid(
                             isVisited = thread.key in visitedThreadKeys,
                             onClick = onClick,
                             autoplayVideo = autoplayVideosInFeed && itemKey in visibleKeys,
-                            muted = muteByDefault,
                         )
                     }
                 }
@@ -1089,6 +1083,9 @@ private fun FeedAttachmentPreview(
             modifier = Modifier.fillMaxSize(),
             autoPlay = true,
             muted = muted,
+            // Feed autoplay is ambient background motion, not a video the user chose to watch —
+            // it must never surprise them with audio, so unmuting isn't offered here at all.
+            muteLocked = true,
         )
         return
     }
