@@ -29,7 +29,7 @@ class SettingsSearchScreenTest {
         var opened: SettingsSection? = null
         setContent(onOpenSection = { opened = it })
 
-        composeTestRule.onNodeWithText("Search settings").performTextInput("biometric")
+        composeTestRule.onNodeWithText("Search").performTextInput("biometric")
 
         composeTestRule.onNodeWithText("Lock with biometrics").assertIsDisplayed()
         composeTestRule.onNodeWithText("Lock with biometrics").performClick()
@@ -40,7 +40,7 @@ class SettingsSearchScreenTest {
     fun unmatchedQueryShowsNoResultsMessage() {
         setContent()
 
-        composeTestRule.onNodeWithText("Search settings").performTextInput("xyzzy")
+        composeTestRule.onNodeWithText("Search").performTextInput("xyzzy")
 
         composeTestRule.onNodeWithText("No settings match \"xyzzy\"").assertIsDisplayed()
     }
