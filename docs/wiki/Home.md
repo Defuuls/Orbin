@@ -15,7 +15,7 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v76 — Mirfak** (2026-08-09) |
+| Current release | **v77 — Dubhe** (2026-08-09) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 15+ (`minSdk` 35), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
@@ -31,9 +31,10 @@ domain core, networking, media pipeline, encrypted data layer, and two reference
   engines (TinyIB, …) can be added without touching app code.
 - **Subscribed feed** — a continuous feed of your followed boards with tap-to-top chrome,
   an optional true full-screen mode, in-feed search, pull-to-refresh, and an adaptive tablet
-  layout.
+  layout. Already-read thread titles dim in both the feed and every board catalog.
 - **Rich thread viewer** — structured reply tree with quote links and backlinks, inline media,
-  tap-to-reveal spoilers, a thumbnail-only grid view, and reading history with scroll restore.
+  tap-to-reveal spoilers, a thumbnail-only grid view, and reading history with scroll-position
+  restore that resumes right where you left off, even after fully closing the app.
 - **Wide-screen two-pane layout** — above 840dp, opening a thread keeps the board catalog
   visible alongside it instead of replacing it, and survives rotating across the threshold.
 - **Gallery & bookmarks** — a pinch-zoom swipe gallery; bookmarks live in a tab inside the
