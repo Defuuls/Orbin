@@ -44,7 +44,7 @@ serializationConverter = "1.0.0"
 # Networking
 okhttp = "5.4.0"
 retrofit = "3.0.0"
-jsoup = "1.22.2"
+jsoup = "1.23.1"
 
 # Media
 coil = "3.5.0"
