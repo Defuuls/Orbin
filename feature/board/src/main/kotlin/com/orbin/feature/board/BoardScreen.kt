@@ -75,6 +75,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatThreadDate
 import com.orbin.core.ui.post.PostCommentPreviewText
+import com.orbin.core.ui.state.ErrorView
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.coroutines.launch
@@ -185,45 +186,57 @@ fun BoardScreen(
                 threads.refresh()
             },
         ) {
-            when (layoutMode) {
-                BoardLayoutMode.List ->
-                    CatalogList(
-                        contentPadding = padding,
-                        itemCount = threads.itemCount,
-                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
-                        threadAt = { threads[it] },
-                        watchedThreadIds = watchedThreadIds,
-                        visitedThreadIds = visitedThreadIds,
-                        onToggleSubscription = viewModel::toggleThreadSubscription,
-                        onOpenThread = openThread,
-                        listState = listState,
-                    )
+            // A failed initial/refresh load with nothing already on screen previously left the
+            // catalog permanently blank, with no message and no visible retry — the pull-to-refresh
+            // gesture was the only (undiscoverable) recovery. Existing items stay on screen if a
+            // later refresh fails; only an empty catalog blocks on the error.
+            val refreshError = threads.loadState.refresh as? LoadState.Error
+            if (refreshError != null && threads.itemCount == 0) {
+                ErrorView(
+                    message = refreshError.error.message ?: "Couldn't load this board's catalog",
+                    onRetry = threads::retry,
+                )
+            } else {
+                when (layoutMode) {
+                    BoardLayoutMode.List ->
+                        CatalogList(
+                            contentPadding = padding,
+                            itemCount = threads.itemCount,
+                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            threadAt = { threads[it] },
+                            watchedThreadIds = watchedThreadIds,
+                            visitedThreadIds = visitedThreadIds,
+                            onToggleSubscription = viewModel::toggleThreadSubscription,
+                            onOpenThread = openThread,
+                            listState = listState,
+                        )
 
-                BoardLayoutMode.Grid ->
-                    CatalogGrid(
-                        contentPadding = padding,
-                        itemCount = threads.itemCount,
-                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
-                        threadAt = { threads[it] },
-                        watchedThreadIds = watchedThreadIds,
-                        visitedThreadIds = visitedThreadIds,
-                        onToggleSubscription = viewModel::toggleThreadSubscription,
-                        onOpenThread = openThread,
-                        gridState = gridState,
-                    )
+                    BoardLayoutMode.Grid ->
+                        CatalogGrid(
+                            contentPadding = padding,
+                            itemCount = threads.itemCount,
+                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            threadAt = { threads[it] },
+                            watchedThreadIds = watchedThreadIds,
+                            visitedThreadIds = visitedThreadIds,
+                            onToggleSubscription = viewModel::toggleThreadSubscription,
+                            onOpenThread = openThread,
+                            gridState = gridState,
+                        )
 
-                BoardLayoutMode.ThumbnailGrid ->
-                    CatalogThumbnailGrid(
-                        contentPadding = padding,
-                        itemCount = threads.itemCount,
-                        itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
-                        threadAt = { threads[it] },
-                        watchedThreadIds = watchedThreadIds,
-                        onToggleSubscription = viewModel::toggleThreadSubscription,
-                        onOpenThread = openThread,
-                        gridState = gridState,
-                        thumbnailSize = thumbnailSize,
-                    )
+                    BoardLayoutMode.ThumbnailGrid ->
+                        CatalogThumbnailGrid(
+                            contentPadding = padding,
+                            itemCount = threads.itemCount,
+                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            threadAt = { threads[it] },
+                            watchedThreadIds = watchedThreadIds,
+                            onToggleSubscription = viewModel::toggleThreadSubscription,
+                            onOpenThread = openThread,
+                            gridState = gridState,
+                            thumbnailSize = thumbnailSize,
+                        )
+                }
             }
         }
     }
