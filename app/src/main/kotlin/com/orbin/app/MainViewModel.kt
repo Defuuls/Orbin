@@ -2,6 +2,7 @@ package com.orbin.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.network.NetworkMonitor
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,7 @@ class MainViewModel
     @Inject
     constructor(
         settingsRepository: SettingsRepository,
+        networkMonitor: NetworkMonitor,
     ) : ViewModel() {
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
@@ -31,4 +33,9 @@ class MainViewModel
             settingsRepository.settings
                 .map { true }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+        /** Starts `true` so a fresh launch never flashes an offline banner before the first callback. */
+        val isOnline: StateFlow<Boolean> =
+            networkMonitor.isOnline
+                .stateIn(viewModelScope, SharingStarted.Eagerly, true)
     }

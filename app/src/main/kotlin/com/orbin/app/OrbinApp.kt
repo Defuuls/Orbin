@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -71,6 +72,7 @@ fun OrbinApp(
     startWithOnboarding: Boolean = false,
     fullScreenFeedChrome: Boolean = false,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
+    isOnline: Boolean = true,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val tabletFeedChrome = maxWidth >= TABLET_MIN_WIDTH && maxHeight >= TABLET_MIN_HEIGHT
@@ -125,58 +127,84 @@ fun OrbinApp(
             }
         }
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            // Each destination owns its insets via its own top bar / scaffold; applying the
-            // default insets here as well double-pads content with status/navigation-bar strips.
-            contentWindowInsets = WindowInsets(0),
-            bottomBar = {
-                AnimatedVisibility(
-                    visible = bottomBarVisible,
-                    enter = slideInVertically { it } + fadeIn(),
-                    exit = slideOutVertically { it } + fadeOut(),
-                ) {
-                    if (useTabletFeedDock) {
-                        TabletFeedDock(
-                            topLevel = topLevel,
-                            currentDestinationMatches = destinationMatches,
-                            compact = compactTabletDock,
-                            onNavigate = navController::navigateToTopLevel,
-                            onScrollToTop = { feedScrollToTopRequest++ },
-                            onRefresh = { feedRefreshRequest++ },
-                            onOpenSettings = { navController.navigate(Route.Settings) },
-                        )
-                    } else if (useTabletDock) {
-                        TabletNavigationDock(
-                            topLevel = topLevel,
-                            currentDestinationMatches = destinationMatches,
-                            onNavigate = navController::navigateToTopLevel,
-                        )
-                    } else {
-                        PhoneNavigationBar(
-                            topLevel = topLevel,
-                            currentDestinationMatches = destinationMatches,
-                            onNavigate = navController::navigateToTopLevel,
-                        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            AnimatedVisibility(
+                visible = !isOnline,
+                enter = fadeIn() + slideInVertically(),
+                exit = slideOutVertically() + fadeOut(),
+            ) {
+                OfflineBanner()
+            }
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                // Each destination owns its insets via its own top bar / scaffold; applying the
+                // default insets here as well double-pads content with status/navigation-bar strips.
+                contentWindowInsets = WindowInsets(0),
+                bottomBar = {
+                    AnimatedVisibility(
+                        visible = bottomBarVisible,
+                        enter = slideInVertically { it } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut(),
+                    ) {
+                        if (useTabletFeedDock) {
+                            TabletFeedDock(
+                                topLevel = topLevel,
+                                currentDestinationMatches = destinationMatches,
+                                compact = compactTabletDock,
+                                onNavigate = navController::navigateToTopLevel,
+                                onScrollToTop = { feedScrollToTopRequest++ },
+                                onRefresh = { feedRefreshRequest++ },
+                                onOpenSettings = { navController.navigate(Route.Settings) },
+                            )
+                        } else if (useTabletDock) {
+                            TabletNavigationDock(
+                                topLevel = topLevel,
+                                currentDestinationMatches = destinationMatches,
+                                onNavigate = navController::navigateToTopLevel,
+                            )
+                        } else {
+                            PhoneNavigationBar(
+                                topLevel = topLevel,
+                                currentDestinationMatches = destinationMatches,
+                                onNavigate = navController::navigateToTopLevel,
+                            )
+                        }
                     }
-                }
-            },
-        ) { padding ->
-            OrbinNavHost(
-                navController = navController,
-                modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
-                startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
-                subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
-                subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
-                hideSubscribedFeedTopBar = useTabletFeedDock,
-                tabletSubscribedFeedLayout = useTabletFeedDock,
-                twoPaneBoardDetail = twoPaneBoardDetail,
-                subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
-                subscribedFeedRefreshRequest = feedRefreshRequest,
-                threadPresentation = threadPresentation,
-                onFeedChromeVisibleChange = { feedChromeVisible = it },
-            )
+                },
+            ) { padding ->
+                OrbinNavHost(
+                    navController = navController,
+                    modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
+                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
+                    subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
+                    subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
+                    hideSubscribedFeedTopBar = useTabletFeedDock,
+                    tabletSubscribedFeedLayout = useTabletFeedDock,
+                    twoPaneBoardDetail = twoPaneBoardDetail,
+                    subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
+                    subscribedFeedRefreshRequest = feedRefreshRequest,
+                    threadPresentation = threadPresentation,
+                    onFeedChromeVisibleChange = { feedChromeVisible = it },
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun OfflineBanner() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+    ) {
+        Text(
+            text = "You're offline",
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
