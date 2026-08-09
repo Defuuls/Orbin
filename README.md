@@ -171,6 +171,7 @@ CI workflows, and how releases are cut.
 | [Architecture and Modules](https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules) | Layers, module graph, key design decisions |
 | [Troubleshooting](https://github.com/Defuuls/Orbin/wiki/Troubleshooting) | Build problems and in-app behavior questions |
 | [CHANGELOG.md](CHANGELOG.md) | Every release, in detail |
+| [SECURITY.md](SECURITY.md) | Supported versions and how to report a vulnerability privately |
 
 ## Contributing
 
