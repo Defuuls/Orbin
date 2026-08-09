@@ -168,6 +168,9 @@ androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", vers
 # The convention plugins name AndroidJUnitRunner as the instrumentation runner for every
 # module, but androidx.test.ext:junit does not bring it — it has to be asked for directly.
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "testRunner" }
+# InstrumentationRegistry for Room's MigrationTestHelper under Robolectric; androidx.test:core
+# ships in lockstep with androidx.test:runner, so it shares the same version.
+androidx-test-core = { module = "androidx.test:core", version.ref = "testRunner" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }

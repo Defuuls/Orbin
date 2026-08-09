@@ -1,4 +1,5 @@
 import androidx.room.gradle.RoomExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.google.devtools.ksp.gradle.KspExtension
 import com.orbin.buildlogic.libs
 import org.gradle.api.Plugin
@@ -20,6 +21,12 @@ class AndroidRoomConventionPlugin : Plugin<Project> {
         extensions.configure<RoomExtension> {
             // Schemas are versioned in-repo so migrations can be tested deterministically.
             schemaDirectory("$projectDir/schemas")
+        }
+
+        // MigrationTestHelper loads exported schemas as Android assets, not classpath resources,
+        // even for a JVM/Robolectric test — so the schema directory has to be wired in explicitly.
+        extensions.configure<LibraryExtension> {
+            sourceSets.getByName("test") { assets.srcDir("$projectDir/schemas") }
         }
 
         extensions.configure<KspExtension> {
