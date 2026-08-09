@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [75-Alkaid] - 2026-08-08
+
 ### Added
 - **Failsafe lock button in the subscribed feed's top bar.** Tapping the lock icon, centered at
   the top of the feed, instantly covers the app and demands re-authentication — no need to
