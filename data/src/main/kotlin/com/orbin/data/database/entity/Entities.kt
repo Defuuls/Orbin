@@ -31,6 +31,14 @@ data class HistoryEntity(
     val thumbnailUrl: String?,
     val lastVisitedMillis: Long,
     val lastReadPostId: Long?,
+    val lastReadOffsetPx: Int = 0,
+)
+
+/** Lightweight projection of [HistoryEntity]'s key columns, for "has this thread been visited" checks. */
+data class HistoryKeyRow(
+    val provider: String,
+    val board: String,
+    val thread: Long,
 )
 
 @Entity(tableName = "recent_searches", primaryKeys = ["provider", "query"])

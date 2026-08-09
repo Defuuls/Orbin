@@ -32,3 +32,13 @@ internal val MIGRATION_2_3 =
             )
         }
     }
+
+internal val MIGRATION_3_4 =
+    object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v4 adds a scroll-restore offset alongside history's existing lastReadPostId anchor.
+            db.execSQL(
+                "ALTER TABLE `history` ADD COLUMN `lastReadOffsetPx` INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+    }

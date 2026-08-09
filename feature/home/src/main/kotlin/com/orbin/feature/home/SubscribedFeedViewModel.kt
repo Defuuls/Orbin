@@ -10,9 +10,11 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
+import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
@@ -69,6 +71,7 @@ class SubscribedFeedViewModel
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
         settingsRepository: SettingsRepository,
+        historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
@@ -85,6 +88,12 @@ class SubscribedFeedViewModel
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+
+        /** Threads already present in reading history, for "already read" title styling in the feed. */
+        val visitedThreadKeys: StateFlow<Set<ThreadKey>> =
+            historyRepository
+                .observeVisitedKeys()
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val uiState: StateFlow<SubscribedFeedUiState> =
             activeProvider

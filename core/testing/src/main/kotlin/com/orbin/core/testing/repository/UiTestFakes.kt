@@ -12,6 +12,7 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.UpdateRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 /**
  * In-memory repositories for driving screens under test.
@@ -53,14 +54,32 @@ class FakeHistoryRepository(
 
     override fun observeHistory(): Flow<List<HistoryEntry>> = state
 
+    override fun observeVisitedKeys(): Flow<Set<ThreadKey>> =
+        state.map { entries -> entries.mapTo(mutableSetOf()) { it.key } }
+
+    override suspend fun getEntry(key: ThreadKey): HistoryEntry? = state.value.find { it.key == key }
+
     override suspend fun record(entry: HistoryEntry) {
-        state.value = state.value + entry
+        val existing = state.value.find { it.key == entry.key }
+        val merged =
+            if (existing != null) {
+                entry.copy(lastReadPostId = existing.lastReadPostId, lastReadOffsetPx = existing.lastReadOffsetPx)
+            } else {
+                entry
+            }
+        state.value = state.value.filterNot { it.key == entry.key } + merged
     }
 
-    override suspend fun updateLastRead(
+    override suspend fun updateScrollPosition(
         key: ThreadKey,
         postId: PostId,
-    ) = Unit
+        offsetPx: Int,
+    ) {
+        state.value =
+            state.value.map {
+                if (it.key == key) it.copy(lastReadPostId = postId, lastReadOffsetPx = offsetPx) else it
+            }
+    }
 
     override suspend fun clear() {
         state.value = emptyList()

@@ -60,6 +60,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,6 +83,7 @@ import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.MediaThumbnail
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 /**
@@ -104,6 +106,7 @@ fun ThreadScreen(
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val mediaScrollEnabled by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
+    val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(ThreadLayoutMode.Posts) }
     val defaultThumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
     // Lets the grid toggle temporarily override the persisted default for this session, without
@@ -209,6 +212,8 @@ fun ThreadScreen(
                         onMediaScrollConsumed = onMediaScrollConsumed,
                         scrollToTopRequest = scrollToTopRequest,
                         mediaScrollEnabled = mediaScrollEnabled,
+                        initialScrollPosition = initialScrollPosition,
+                        onScrollPositionChanged = viewModel::saveScrollPosition,
                         modifier = Modifier.fillMaxSize(),
                     )
             }
@@ -262,6 +267,8 @@ private fun ThreadContent(
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
     mediaScrollEnabled: Boolean = true,
+    initialScrollPosition: ThreadScrollPosition? = null,
+    onScrollPositionChanged: (PostId, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     when (layoutMode) {
@@ -273,6 +280,8 @@ private fun ThreadContent(
                 onMediaScrollConsumed = onMediaScrollConsumed,
                 scrollToTopRequest = scrollToTopRequest,
                 mediaScrollEnabled = mediaScrollEnabled,
+                initialScrollPosition = initialScrollPosition,
+                onScrollPositionChanged = onScrollPositionChanged,
                 modifier = modifier,
             )
         ThreadLayoutMode.ThumbnailGrid ->
@@ -288,6 +297,7 @@ private fun ThreadContent(
     }
 }
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
 private fun PostListContent(
     thread: Thread,
@@ -296,6 +306,8 @@ private fun PostListContent(
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
     mediaScrollEnabled: Boolean = true,
+    initialScrollPosition: ThreadScrollPosition? = null,
+    onScrollPositionChanged: (PostId, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val posts = remember(thread.key) { thread.allPosts }
@@ -353,6 +365,27 @@ private fun PostListContent(
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    }
+
+    // Applied once per thread: later recompositions (e.g. a pull-to-refresh reload) must not keep
+    // snapping the reader back to where they were when the thread was first opened.
+    var hasRestoredScrollPosition by rememberSaveable(thread.key) { mutableStateOf(false) }
+    LaunchedEffect(thread.key, initialScrollPosition) {
+        if (hasRestoredScrollPosition) return@LaunchedEffect
+        val target = initialScrollPosition ?: return@LaunchedEffect
+        val itemIndex = indexById[target.postId] ?: return@LaunchedEffect
+        listState.scrollToItem(itemIndex, target.offsetPx)
+        hasRestoredScrollPosition = true
+    }
+
+    LaunchedEffect(thread.key) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .debounce(SCROLL_SAVE_DEBOUNCE_MS)
+            .collect { (index, offsetPx) ->
+                // Index 0 is the header item ("stats"), not a post; posts start at 1.
+                val postId = posts.getOrNull(index - 1)?.id ?: return@collect
+                onScrollPositionChanged(postId, offsetPx)
+            }
     }
 
     LazyColumn(
@@ -642,6 +675,9 @@ private enum class ThreadLayoutMode {
     Posts,
     ThumbnailGrid,
 }
+
+/** How long to wait after scrolling stops before persisting the reading position. */
+private const val SCROLL_SAVE_DEBOUNCE_MS = 600L
 
 private fun ThumbnailSize.next(): ThumbnailSize {
     val values = ThumbnailSize.entries

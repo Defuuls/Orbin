@@ -129,11 +129,19 @@ interface BookmarkRepository {
 interface HistoryRepository {
     fun observeHistory(): Flow<List<HistoryEntry>>
 
+    /** Every visited thread key, for "already read" styling in catalogs and feeds. */
+    fun observeVisitedKeys(): Flow<Set<ThreadKey>>
+
+    suspend fun getEntry(key: ThreadKey): HistoryEntry?
+
+    /** Records a visit. Preserves any existing scroll position rather than resetting it. */
     suspend fun record(entry: HistoryEntry)
 
-    suspend fun updateLastRead(
+    /** Persists where the reader last scrolled to, so reopening the thread can resume there. */
+    suspend fun updateScrollPosition(
         key: ThreadKey,
         postId: PostId,
+        offsetPx: Int,
     )
 
     suspend fun clear()
