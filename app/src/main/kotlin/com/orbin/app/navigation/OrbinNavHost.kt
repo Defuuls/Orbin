@@ -45,8 +45,10 @@ import com.orbin.feature.thread.ThreadScreen
 
 private const val TRANSITION_MS = 300
 
-// Internal rather than private: the two-pane catalog reads the same key, because the gallery
-// writes its page back to the catalog's entry when the thread is a pane rather than a destination.
+// Internal rather than private: every screen that can open the full-screen gallery reads this same
+// key from its own back stack entry, since Route.Gallery always writes the page it's on back to
+// whichever entry precedes it — the two-pane catalog (when the thread is a pane, not a
+// destination) and the standalone gallery browser both read it themselves.
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 
@@ -152,12 +154,22 @@ fun OrbinNavHost(
 
         composable<Route.History> { HistoryScreen(onOpenThread = openThread) }
 
-        composable<Route.GalleryBrowser> {
+        composable<Route.GalleryBrowser> { backStackEntry ->
+            val mediaScrollIndex by
+                backStackEntry.savedStateHandle
+                    .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
+                    .collectAsStateWithLifecycle()
+
             GalleryBrowserScreen(
                 onOpenMedia = { provider, board, thread, index ->
                     navController.navigate(Route.Gallery(provider, board, thread, index))
                 },
                 onOpenThread = openThread,
+                mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                onMediaScrollConsumed = {
+                    backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                        NO_THREAD_MEDIA_SCROLL_INDEX
+                },
             )
         }
 

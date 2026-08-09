@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
@@ -38,6 +40,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +68,8 @@ import com.orbin.media.image.OrbinAsyncImage
 fun GalleryBrowserScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, startIndex: Int) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     viewModel: GalleryBrowserViewModel = hiltViewModel(),
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(BROWSE_TAB) }
@@ -104,7 +109,12 @@ fun GalleryBrowserScreen(
                 )
             }
             if (selectedTab == BROWSE_TAB) {
-                GalleryBrowseTab(onOpenMedia = onOpenMedia, viewModel = viewModel)
+                GalleryBrowseTab(
+                    onOpenMedia = onOpenMedia,
+                    viewModel = viewModel,
+                    mediaScrollIndex = mediaScrollIndex,
+                    onMediaScrollConsumed = onMediaScrollConsumed,
+                )
             } else {
                 GalleryBookmarksTab(onOpenThread = onOpenThread)
             }
@@ -116,8 +126,19 @@ fun GalleryBrowserScreen(
 private fun GalleryBrowseTab(
     onOpenMedia: (provider: String, board: String, thread: Long, startIndex: Int) -> Unit,
     viewModel: GalleryBrowserViewModel,
+    mediaScrollIndex: Int?,
+    onMediaScrollConsumed: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val gridState = rememberLazyGridState()
+
+    // Returning from the full-screen gallery lands back on whatever tile was scrolled to there,
+    // instead of wherever the grid happened to be when it was opened.
+    LaunchedEffect(mediaScrollIndex) {
+        val target = mediaScrollIndex ?: return@LaunchedEffect
+        if (target in state.media.indices) gridState.scrollToItem(target)
+        onMediaScrollConsumed()
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -142,6 +163,7 @@ private fun GalleryBrowseTab(
             else ->
                 MediaGrid(
                     media = state.media,
+                    gridState = gridState,
                     onOpenMedia = { index ->
                         val thread = state.selectedThread ?: return@MediaGrid
                         onOpenMedia(
@@ -301,6 +323,7 @@ private fun ThreadDropdown(
 @Composable
 private fun MediaGrid(
     media: List<MediaAttachment>,
+    gridState: LazyGridState,
     onOpenMedia: (Int) -> Unit,
 ) {
     LazyVerticalGrid(
@@ -308,6 +331,7 @@ private fun MediaGrid(
         // absurd on a tablet or in landscape, where the tiles stretch to fill the width. Every
         // other grid in the app sizes itself the same way.
         columns = GridCells.Adaptive(minSize = MEDIA_TILE_MIN_SIZE),
+        state = gridState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
