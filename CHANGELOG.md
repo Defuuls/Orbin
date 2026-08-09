@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [78-Alioth] - 2026-08-09
+
+### Fixed
+- **A single dead or pruned subscribed board could wipe out the entire subscribed feed.** Any
+  settings change forces a fresh network fetch of every subscribed board's catalog, and those
+  fetches ran concurrently: one board 404ing cancelled every other board's load and replaced the
+  whole feed with a blanket "Resource not found" error. Each board's catalog now loads and fails
+  independently — a dead board just comes back empty, and the rest of the feed loads normally.
+
+### Added
+- **New setting: download folder structure** (Settings → Storage & Backup). Downloaded media can
+  now be organized Flat (unchanged default), By board, By board then thread, or By thread, for
+  both the default downloads folder and a custom saved-media folder. A retry always reuses the
+  folder a download was originally saved to, even if the setting changes afterward.
+
 ## [77-Dubhe] - 2026-08-09
 
 ### Added

@@ -1,7 +1,7 @@
 # Developer Guide
 
 How to build Orbin, what the toolchain looks like after the July 2026 AGP 9 upgrade, and how CI
-and releases work. Current as of **v77 (Dubhe)**. See also
+and releases work. Current as of **v78 (Alioth)**. See also
 [[Architecture and Modules|Architecture-and-Modules]] and the in-repo docs under
 [`docs/`](https://github.com/Defuuls/Orbin/tree/main/docs).
 
@@ -131,8 +131,8 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
    release job reads its message as the GitHub Release title:
 
    ```bash
-   git tag -a v77-Dubhe -m "Dubhe"
-   git push origin v77-Dubhe
+   git tag -a v78-Alioth -m "Alioth"
+   git push origin v78-Alioth
    ```
 
 3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
@@ -145,7 +145,7 @@ identical result.
 **Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
 naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella,
 Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux, Deneb, Regulus,
-Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe.
+Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth.
 Earlier releases drew on nearby or dim stars instead: v30–v33 used the smallest known stars
 (Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", and
 v37–v48 returned to nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B.

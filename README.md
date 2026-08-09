@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v77 — Dubhe](https://github.com/Defuuls/Orbin/releases/tag/v77-Dubhe)
+**Current release:** [v78 — Alioth](https://github.com/Defuuls/Orbin/releases/tag/v78-Alioth)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -62,6 +62,9 @@ reply, or create threads.
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
   native download manager.
+- **Configurable download folder structure:** downloaded media can be saved Flat, By board, By
+  board then thread, or By thread, for both the default downloads folder and a custom saved-media
+  folder.
 - **Autoplay in feed:** optionally, each thread's first video plays inline and muted directly in
   the subscribed feed as its row scrolls into view, and stops as it scrolls away — no need to
   open the thread first.
