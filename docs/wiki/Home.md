@@ -9,7 +9,7 @@ create threads.
 - **Repository:** https://github.com/Defuuls/Orbin
 - **Releases:** https://github.com/Defuuls/Orbin/releases
 - **Changelog:** https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md
-- **License:** MIT
+- **License:** AGPLv3
 
 ## Status
 
