@@ -63,7 +63,7 @@ jobs:
           find app/src/release/generated -name '*.txt' -print -exec wc -l {} \; || true
 
       - name: Open a pull request with the profile
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: claude/baseline-profile-generated
           add-paths: app/src/release/generated/**
