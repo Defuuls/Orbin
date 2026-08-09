@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [80-Merak] - 2026-08-09
+
+### Fixed
+- **The subscribed feed's failsafe lock button could sit right at the edge of a center-mounted
+  punch-hole camera's touch dead zone**, making it hard to tap on some devices. It's now nudged
+  down by however much the display cutout exceeds the status bar on that specific device — a
+  no-op on the common case where the status bar already clears the cutout.
+
+### Changed
+- **Video autoplay in the subscribed feed now always starts muted**, regardless of the "Mute by
+  default" setting — ambient background motion the user didn't choose to watch no longer starts
+  playing with sound. Tapping the video still reveals the usual controls to unmute it.
+
 ## [79-Mizar] - 2026-08-09
 
 ### Fixed

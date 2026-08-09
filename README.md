@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v79 — Mizar](https://github.com/Defuuls/Orbin/releases/tag/v79-Mizar)
+**Current release:** [v80 — Merak](https://github.com/Defuuls/Orbin/releases/tag/v80-Merak)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
