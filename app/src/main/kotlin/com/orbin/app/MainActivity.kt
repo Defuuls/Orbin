@@ -78,6 +78,7 @@ class MainActivity : FragmentActivity() {
             val viewModel: MainViewModel = hiltViewModel()
             val settings by viewModel.settings.collectAsStateWithLifecycle()
             val ready by viewModel.ready.collectAsStateWithLifecycle()
+            val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
             val shouldLock = ready && settings.biometricLockEnabled && settings.onboardingCompleted
             var unlocked by remember { mutableStateOf(false) }
             var unlockMessage by remember { mutableStateOf<String?>(null) }
@@ -159,6 +160,7 @@ class MainActivity : FragmentActivity() {
             AppContent(
                 settings = settings,
                 ready = ready,
+                isOnline = isOnline,
                 shouldLock = shouldLock,
                 unlocked = unlocked,
                 unlockMessage = unlockMessage,
@@ -356,6 +358,7 @@ private fun RequestNotificationPermissionWhenUnlocked(
 private fun AppContent(
     settings: AppSettings,
     ready: Boolean,
+    isOnline: Boolean,
     shouldLock: Boolean,
     unlocked: Boolean,
     unlockMessage: String?,
@@ -384,6 +387,7 @@ private fun AppContent(
                             startWithOnboarding = !settings.onboardingCompleted,
                             fullScreenFeedChrome = settings.fullScreenFeedChrome,
                             threadPresentation = settings.threadPresentation,
+                            isOnline = isOnline,
                         )
                     }
                 }
