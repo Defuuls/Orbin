@@ -185,45 +185,31 @@ fun SubscribedFeedScreen(
             ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
         topBar = {
             if (showTopBar) {
-                TopAppBar(
-                    modifier =
-                        Modifier.clickable(
-                            onClickLabel = "Scroll to top",
-                            onClick = { scope.launch { scrollFeedToTop(layoutMode, listState, gridState) } },
-                        ),
-                    title = {
-                        SubscribedFeedTopBarTitle(
-                            settings = settings,
-                            providerId = providerId,
-                            onLockNow = {
-                                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                viewModel.lockNow()
-                            },
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = viewModel::refresh) {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
-                        }
-                        IconButton(
-                            onClick = { collapsedBoards = emptySet() },
-                            enabled = collapsedBoards.isNotEmpty(),
-                        ) {
-                            Icon(Icons.Filled.ExpandLess, contentDescription = "Expand all boards")
-                        }
-                        IconButton(
-                            onClick = {
-                                val allBoardIds =
-                                    (uiState as? SubscribedFeedUiState.Success)
-                                        ?.boards
-                                        ?.map {
-                                            it.board.id.value
-                                        }?.toSet()
-                                        ?: emptySet()
-                                collapsedBoards = allBoardIds
-                            },
-                            enabled =
-                                run {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    TopAppBar(
+                        modifier =
+                            Modifier.clickable(
+                                onClickLabel = "Scroll to top",
+                                onClick = { scope.launch { scrollFeedToTop(layoutMode, listState, gridState) } },
+                            ),
+                        title = {
+                            SubscribedFeedTopBarTitle(
+                                settings = settings,
+                                providerId = providerId,
+                            )
+                        },
+                        actions = {
+                            IconButton(onClick = viewModel::refresh) {
+                                Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
+                            }
+                            IconButton(
+                                onClick = { collapsedBoards = emptySet() },
+                                enabled = collapsedBoards.isNotEmpty(),
+                            ) {
+                                Icon(Icons.Filled.ExpandLess, contentDescription = "Expand all boards")
+                            }
+                            IconButton(
+                                onClick = {
                                     val allBoardIds =
                                         (uiState as? SubscribedFeedUiState.Success)
                                             ?.boards
@@ -231,46 +217,69 @@ fun SubscribedFeedScreen(
                                                 it.board.id.value
                                             }?.toSet()
                                             ?: emptySet()
-                                    collapsedBoards.size < allBoardIds.size
+                                    collapsedBoards = allBoardIds
                                 },
-                        ) {
-                            Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
-                        }
-                        if (layoutMode == FeedLayoutMode.ThumbnailGrid) {
-                            IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
+                                enabled =
+                                    run {
+                                        val allBoardIds =
+                                            (uiState as? SubscribedFeedUiState.Success)
+                                                ?.boards
+                                                ?.map {
+                                                    it.board.id.value
+                                                }?.toSet()
+                                                ?: emptySet()
+                                        collapsedBoards.size < allBoardIds.size
+                                    },
+                            ) {
+                                Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
+                            }
+                            if (layoutMode == FeedLayoutMode.ThumbnailGrid) {
+                                IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
+                                    Icon(
+                                        Icons.Filled.PhotoSizeSelectLarge,
+                                        contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { layoutMode = layoutMode.next() }) {
                                 Icon(
-                                    Icons.Filled.PhotoSizeSelectLarge,
-                                    contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                    imageVector =
+                                        when (layoutMode) {
+                                            FeedLayoutMode.List -> Icons.Filled.GridView
+                                            FeedLayoutMode.Grid -> Icons.Filled.ImageIcon
+                                            FeedLayoutMode.ThumbnailGrid -> Icons.Filled.ViewAgenda
+                                        },
+                                    contentDescription =
+                                        when (layoutMode) {
+                                            FeedLayoutMode.List -> "Show grid feed"
+                                            FeedLayoutMode.Grid -> "Show image-only feed"
+                                            FeedLayoutMode.ThumbnailGrid -> "Show list feed"
+                                        },
                                 )
                             }
-                        }
-                        IconButton(onClick = { layoutMode = layoutMode.next() }) {
-                            Icon(
-                                imageVector =
-                                    when (layoutMode) {
-                                        FeedLayoutMode.List -> Icons.Filled.GridView
-                                        FeedLayoutMode.Grid -> Icons.Filled.ImageIcon
-                                        FeedLayoutMode.ThumbnailGrid -> Icons.Filled.ViewAgenda
-                                    },
-                                contentDescription =
-                                    when (layoutMode) {
-                                        FeedLayoutMode.List -> "Show grid feed"
-                                        FeedLayoutMode.Grid -> "Show image-only feed"
-                                        FeedLayoutMode.ThumbnailGrid -> "Show list feed"
-                                    },
-                            )
-                        }
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                        }
-                    },
-                    colors =
-                        TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                        ),
-                    scrollBehavior = scrollBehavior,
-                )
+                            IconButton(onClick = onOpenSettings) {
+                                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                            }
+                        },
+                        colors =
+                            TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                            ),
+                        scrollBehavior = scrollBehavior,
+                    )
+                    // Overlaid on the whole bar rather than centered within the title slot, so it
+                    // sits in the true middle of the top bar regardless of how wide the branding
+                    // (start) or action icons (end) end up being.
+                    LockNowButton(
+                        visible = settings.biometricLockEnabled,
+                        modifier = Modifier.align(Alignment.Center),
+                        onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                            viewModel.lockNow()
+                        },
+                    )
+                }
             }
         },
     ) { padding ->
@@ -323,58 +332,64 @@ fun SubscribedFeedScreen(
 private fun SubscribedFeedTopBarTitle(
     settings: AppSettings,
     providerId: String,
-    onLockNow: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.align(Alignment.CenterStart),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(24.dp),
         ) {
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(24.dp),
-            ) {
-                Image(
-                    painter = painterResource(settings.appIconVariant.drawableRes()),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(2.dp),
-                )
-            }
-            Column {
+            Image(
+                painter = painterResource(settings.appIconVariant.drawableRes()),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().padding(2.dp),
+            )
+        }
+        Column {
+            Text(
+                text = "Orbin",
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Orbin",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = providerId,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = providerId,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                    Text(
-                        text = "•",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = settings.appIconVariant.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
+                Text(
+                    text = "•",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = settings.appIconVariant.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
             }
         }
-        // Failsafe: instantly cover the app and demand re-authentication, without waiting for a
-        // background/foreground cycle. Only shown when there is actually a lock to trigger.
-        if (settings.biometricLockEnabled) {
-            IconButton(onClick = onLockNow, modifier = Modifier.align(Alignment.Center)) {
-                Icon(Icons.Filled.Lock, contentDescription = "Lock Orbin now")
-            }
+    }
+}
+
+/**
+ * Failsafe: instantly covers the app and demands re-authentication, without waiting for a
+ * background/foreground cycle. Only shown when there is actually a lock to trigger.
+ */
+@Composable
+private fun LockNowButton(
+    visible: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (visible) {
+        IconButton(onClick = onClick, modifier = modifier) {
+            Icon(Icons.Filled.Lock, contentDescription = "Lock Orbin now")
         }
     }
 }
