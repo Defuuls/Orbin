@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v79** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v80** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -13,11 +13,20 @@ The star theme has held since, but the selection shifted: v37–v48 stayed with 
 stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar.
+Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar,
+Merak.
 
-## v79 — Mizar (2026-08-09)
+## v80 — Merak (2026-08-09)
 
 *Current release.*
+
+- **Fixed: the subscribed feed's failsafe lock button could sit at the edge of a center-mounted
+  punch-hole camera's touch dead zone**, making it hard to tap on some devices. It's now nudged
+  clear of the cutout using the device's own reported inset.
+- **Video autoplay in the subscribed feed now always starts muted**, regardless of the "Mute by
+  default" setting — tapping the video still offers the usual unmute control.
+
+## v79 — Mizar (2026-08-09)
 
 - **Fixed: the board catalog showed a blank screen when its catalog failed to load** — now shows
   a retry view with the failure message.
