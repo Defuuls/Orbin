@@ -93,10 +93,6 @@ class MainActivity : FragmentActivity() {
                         allowContinueWithoutLock = false
                         unlocked = true
                     },
-                    onAuthenticationUnavailable = { message ->
-                        unlockMessage = message
-                        allowContinueWithoutLock = true
-                    },
                     onAuthenticationError = { message ->
                         unlockMessage = message
                     },
@@ -195,7 +191,6 @@ class MainActivity : FragmentActivity() {
 
     private fun authenticateToUnlock(
         onUnlocked: () -> Unit,
-        onAuthenticationUnavailable: (String) -> Unit,
         onAuthenticationError: (String) -> Unit,
         onAuthenticationFailed: () -> Unit,
     ) {
@@ -390,9 +385,6 @@ class MainActivity : FragmentActivity() {
         private const val AUTHENTICATION_ERROR_MESSAGE = "Unlock was canceled. Try again."
         private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
         private const val AUTHENTICATION_TIMEOUT_MESSAGE = "Unlock timed out. Try again."
-        private const val AUTHENTICATION_UNAVAILABLE_MESSAGE =
-            "Biometric unlock is unavailable. Enroll a fingerprint or face unlock in Android " +
-                "Settings, or continue without app lock."
         private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
     }
 }

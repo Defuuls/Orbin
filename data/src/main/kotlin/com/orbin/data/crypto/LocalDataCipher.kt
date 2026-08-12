@@ -2,6 +2,7 @@ package com.orbin.data.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -60,7 +61,7 @@ internal object LocalDataCipher {
                     .build()
             } catch (
                 @Suppress("SwallowedException")
-                e: Exception,
+                e: InvalidAlgorithmParameterException,
             ) {
                 // StrongBox not available; fall back to TEE
                 KeyGenParameterSpec
