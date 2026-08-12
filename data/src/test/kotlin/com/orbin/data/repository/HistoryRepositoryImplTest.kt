@@ -23,17 +23,18 @@ class HistoryRepositoryImplTest {
     @Test
     fun `record preserves an existing scroll position instead of resetting it`() =
         runTest {
-            coEvery { dao.getEntry("fourchan", "g", 123) } returns
-                HistoryEntity(
-                    provider = "fourchan",
-                    board = "g",
-                    thread = 123,
-                    title = "old title",
-                    thumbnailUrl = null,
-                    lastVisitedMillis = 1,
-                    lastReadPostId = 999,
-                    lastReadOffsetPx = 480,
-                )
+            val existing = HistoryEntity(
+                provider = "fourchan",
+                board = "g",
+                thread = 123,
+                title = "old title",
+                thumbnailUrl = null,
+                lastVisitedMillis = 1,
+                lastReadPostId = 999,
+                lastReadOffsetPx = 480,
+            )
+            coEvery { dao.getEntry("fourchan", "g", 123) } returns existing
+            coEvery { dao.upsert(any()) } returns Unit
 
             repository.record(
                 HistoryEntry(
@@ -65,6 +66,7 @@ class HistoryRepositoryImplTest {
     fun `record on a first-ever visit stores the given scroll anchor unchanged`() =
         runTest {
             coEvery { dao.getEntry("fourchan", "g", 123) } returns null
+            coEvery { dao.upsert(any()) } returns Unit
 
             repository.record(
                 HistoryEntry(

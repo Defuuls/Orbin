@@ -255,4 +255,7 @@ private class FakeBookmarkRepository(
         latestReplyCount: Int,
         isThreadDead: Boolean,
     ) = Unit
+
+    override suspend fun getBookmark(key: ThreadKey): Bookmark? =
+        state.value.firstOrNull { it.key == key }
 }
