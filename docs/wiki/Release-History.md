@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v80** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v81** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -14,11 +14,17 @@ stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward 
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
 Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar,
-Merak.
+Merak, Phecda.
 
-## v80 — Merak (2026-08-09)
+## v81 — Phecda (2026-08-09)
 
 *Current release.*
+
+- **Removed dead certificate-pinning scaffolding from the network layer** — an empty
+  `CertificatePinner` that was wired in but never had any pins configured, a no-op that didn't
+  change how connections are validated but whose comment misleadingly implied it was active.
+
+## v80 — Merak (2026-08-09)
 
 - **Fixed: the subscribed feed's failsafe lock button could sit at the edge of a center-mounted
   punch-hole camera's touch dead zone**, making it hard to tap on some devices. It's now nudged

@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [81-Phecda] - 2026-08-09
+
+### Changed
+- **Removed dead certificate-pinning scaffolding from the network layer.** An empty
+  `CertificatePinner` was wired into the shared OkHttp client with no pins ever configured — a
+  no-op that changed nothing about how connections are validated, but whose comment misleadingly
+  implied pinning was active. The app's actual TLS behavior (system trust-store validation over
+  modern TLS, HTTPS-only) is unchanged.
+
 ## [80-Merak] - 2026-08-09
 
 ### Fixed
