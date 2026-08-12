@@ -58,7 +58,10 @@ internal object LocalDataCipher {
                     .setKeySize(KEY_SIZE_BITS)
                     .setIsStrongBoxBacked(true)
                     .build()
-            } catch (@Suppress("SwallowedException") e: Exception) {
+            } catch (
+                @Suppress("SwallowedException")
+                e: Exception,
+            ) {
                 // StrongBox not available; fall back to TEE
                 KeyGenParameterSpec
                     .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)

@@ -226,7 +226,9 @@ class MainActivity : FragmentActivity() {
                 // (requires a device with neither fingerprint/face nor PIN/pattern/password),
                 // so we fail the authentication attempt entirely instead of allowing bypass.
                 finishAuthentication(session)
-                onAuthenticationError("Device lock (PIN/pattern/password) required but not configured. Please set up a device lock in Settings.")
+                onAuthenticationError(
+                    "Device lock (PIN/pattern/password) required but not configured. Please set up a device lock in Settings.",
+                )
             }
             return
         }
