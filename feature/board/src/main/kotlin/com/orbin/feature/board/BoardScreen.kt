@@ -77,6 +77,7 @@ import com.orbin.core.ui.date.formatThreadDate
 import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentPreviewText
 import com.orbin.core.ui.state.ErrorView
+import com.orbin.core.ui.thread.summaryLabels
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
 import kotlinx.coroutines.launch
@@ -648,6 +649,7 @@ private fun MetadataRow(
     thread: CatalogThread,
     compact: Boolean,
 ) {
+    val labels = thread.stats.summaryLabels()
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -655,16 +657,10 @@ private fun MetadataRow(
         formatThreadDate(thread.originalPost.createdAtMillis)?.let { created ->
             StatLabel(created)
         }
-        StatLabel("${thread.stats.replyCount} replies")
-        StatLabel("${thread.stats.imageCount} media")
-        if (!compact && thread.stats.uniquePosterCount > 0) {
-            StatLabel("${thread.stats.uniquePosterCount} posters")
-        }
-        if (thread.stats.isClosed) {
-            StatLabel("closed")
-        }
-        if (thread.stats.isArchived) {
-            StatLabel("archived")
+        labels.forEachIndexed { index, label ->
+            if (!compact || index < 2) {
+                StatLabel(label)
+            }
         }
     }
 }

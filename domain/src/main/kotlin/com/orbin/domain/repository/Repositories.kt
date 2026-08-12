@@ -30,11 +30,6 @@ interface BoardRepository {
     fun observeBoards(provider: ProviderId): Flow<List<Board>>
 
     suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>>
-
-    suspend fun getBoard(
-        provider: ProviderId,
-        board: BoardId,
-    ): OrbinResult<Board>
 }
 
 interface BoardPreferencesRepository {
@@ -103,6 +98,8 @@ interface BookmarkRepository {
 
     fun observeBookmark(key: ThreadKey): Flow<Bookmark?>
 
+    suspend fun getBookmark(key: ThreadKey): Bookmark?
+
     suspend fun addBookmark(bookmark: Bookmark)
 
     suspend fun removeBookmark(key: ThreadKey)
@@ -161,6 +158,4 @@ interface SearchRepository {
     suspend fun saveSearch(search: SavedSearch): Long
 
     suspend fun deleteSearch(id: Long)
-
-    suspend fun clearSavedSearches()
 }

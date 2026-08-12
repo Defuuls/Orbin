@@ -102,10 +102,6 @@ class FakeSearchRepository(
     override suspend fun deleteSearch(id: Long) {
         saved.value = saved.value.filterNot { it.id == id }
     }
-
-    override suspend fun clearSavedSearches() {
-        saved.value = emptyList()
-    }
 }
 
 class FakeBoardRepository(
@@ -114,18 +110,6 @@ class FakeBoardRepository(
     override fun observeBoards(provider: ProviderId): Flow<List<Board>> = flowOf(boards)
 
     override suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>> = OrbinResult.Success(boards)
-
-    override suspend fun getBoard(
-        provider: ProviderId,
-        board: BoardId,
-    ): OrbinResult<Board> =
-        boards
-            .firstOrNull { it.id == board }
-            ?.let { OrbinResult.Success(it) }
-            ?: OrbinResult.Failure(
-                com.orbin.core.common.result.DataError
-                    .NotFound("Board not found"),
-            )
 }
 
 class FakeBoardPreferencesRepository(

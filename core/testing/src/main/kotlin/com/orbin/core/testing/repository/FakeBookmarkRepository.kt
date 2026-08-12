@@ -17,6 +17,8 @@ class FakeBookmarkRepository(
 
     override fun observeBookmark(key: ThreadKey): Flow<Bookmark?> = state.map { it[key] }
 
+    override suspend fun getBookmark(key: ThreadKey): Bookmark? = state.value[key]
+
     override suspend fun addBookmark(bookmark: Bookmark) {
         state.value = state.value + (bookmark.key to bookmark)
     }

@@ -90,10 +90,6 @@ class SearchRepositoryImpl
             withContext(ioDispatcher) { savedSearchDao.deleteById(id) }
         }
 
-        override suspend fun clearSavedSearches() {
-            withContext(ioDispatcher) { savedSearchDao.clear() }
-        }
-
         private fun CatalogThread.matches(query: SearchQuery): Boolean {
             val needle = query.text.trim().lowercase()
             val subject = originalPost.subject?.lowercase().orEmpty()

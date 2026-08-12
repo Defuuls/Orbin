@@ -38,20 +38,9 @@ class HistoryRepositoryImpl
             dao.getEntry(key.provider.value, key.board.value, key.thread.value)?.toDomain()
 
         override suspend fun record(entry: HistoryEntry) {
-            // A plain @Upsert would overwrite an existing row's scroll position with this call's
-            // defaults every time the thread is (re)loaded. Carry the prior scroll anchor forward
-            // so opening a thread never clobbers where the reader last left off.
-            val existing = dao.getEntry(entry.key.provider.value, entry.key.board.value, entry.key.thread.value)
-            val merged =
-                if (existing != null) {
-                    entry.toEntity().copy(
-                        lastReadPostId = existing.lastReadPostId,
-                        lastReadOffsetPx = existing.lastReadOffsetPx,
-                    )
-                } else {
-                    entry.toEntity()
-                }
-            dao.upsert(merged)
+            // Wrapped in @Transaction to prevent lost-update races between record() and
+            // updateScrollPosition() when both run concurrently (e.g. pull-to-refresh while scrolling).
+            dao.recordEntry(entry.toEntity())
         }
 
         override suspend fun updateScrollPosition(

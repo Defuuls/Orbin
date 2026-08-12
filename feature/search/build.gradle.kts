@@ -5,7 +5,3 @@ plugins {
 android {
     namespace = "com.orbin.feature.search"
 }
-
-dependencies {
-    implementation(project(":provider:api"))
-}

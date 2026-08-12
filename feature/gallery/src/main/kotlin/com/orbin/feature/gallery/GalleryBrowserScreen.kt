@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -61,6 +60,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.ui.state.EmptyView
+import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,9 +153,7 @@ private fun GalleryBrowseTab(
 
         when {
             state.loadingBoards || state.loadingThreads ->
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                LoadingView(Modifier.fillMaxSize())
 
             state.media.isEmpty() ->
                 EmptyView(state.message ?: "No media in this thread", Modifier.fillMaxSize())

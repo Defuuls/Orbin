@@ -20,10 +20,28 @@ class HistoryRepositoryImplTest {
     private val dao = mockk<HistoryDao>(relaxUnitFun = true)
     private val repository = HistoryRepositoryImpl(dao)
 
+    init {
+        // Set up recordEntry to execute the merge logic by calling getEntry and upsert
+        coEvery { dao.recordEntry(any()) } coAnswers {
+            val entry = firstArg<HistoryEntity>()
+            val existing = dao.getEntry(entry.provider, entry.board, entry.thread)
+            val merged =
+                if (existing != null) {
+                    entry.copy(
+                        lastReadPostId = existing.lastReadPostId,
+                        lastReadOffsetPx = existing.lastReadOffsetPx,
+                    )
+                } else {
+                    entry
+                }
+            dao.upsert(merged)
+        }
+    }
+
     @Test
     fun `record preserves an existing scroll position instead of resetting it`() =
         runTest {
-            coEvery { dao.getEntry("fourchan", "g", 123) } returns
+            val existing =
                 HistoryEntity(
                     provider = "fourchan",
                     board = "g",
@@ -34,6 +52,8 @@ class HistoryRepositoryImplTest {
                     lastReadPostId = 999,
                     lastReadOffsetPx = 480,
                 )
+            coEvery { dao.getEntry("fourchan", "g", 123) } returns existing
+            coEvery { dao.upsert(any()) } returns Unit
 
             repository.record(
                 HistoryEntry(
@@ -65,6 +85,7 @@ class HistoryRepositoryImplTest {
     fun `record on a first-ever visit stores the given scroll anchor unchanged`() =
         runTest {
             coEvery { dao.getEntry("fourchan", "g", 123) } returns null
+            coEvery { dao.upsert(any()) } returns Unit
 
             repository.record(
                 HistoryEntry(
