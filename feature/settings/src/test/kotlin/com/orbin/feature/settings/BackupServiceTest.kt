@@ -256,6 +256,5 @@ private class FakeBookmarkRepository(
         isThreadDead: Boolean,
     ) = Unit
 
-    override suspend fun getBookmark(key: ThreadKey): Bookmark? =
-        state.value.firstOrNull { it.key == key }
+    override suspend fun getBookmark(key: ThreadKey): Bookmark? = state.value.firstOrNull { it.key == key }
 }
