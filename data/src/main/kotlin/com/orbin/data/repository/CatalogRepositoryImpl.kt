@@ -36,11 +36,12 @@ class CatalogRepositoryImpl
             sort: CatalogSort,
         ): Flow<PagingData<CatalogThread>> =
             Pager(
-                config = PagingConfig(
-                    pageSize = PAGE_SIZE,
-                    initialLoadSize = PAGE_SIZE,
-                    enablePlaceholders = false,
-                ),
+                config =
+                    PagingConfig(
+                        pageSize = PAGE_SIZE,
+                        initialLoadSize = PAGE_SIZE,
+                        enablePlaceholders = false,
+                    ),
                 pagingSourceFactory = {
                     CatalogPagingSource(registry, CatalogRequest(provider, board, sort = sort))
                 },
