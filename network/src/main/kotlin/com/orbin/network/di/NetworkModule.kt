@@ -16,7 +16,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
-import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
@@ -82,12 +81,6 @@ object NetworkModule {
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
                 .build()
 
-        // Certificate pinning for well-known sites to reduce validation overhead and improve reliability.
-        val certificatePinner =
-            CertificatePinner
-                .Builder()
-                .build()
-
         // HTTP disk cache for API responses (catalog, threads, board metadata).
         // Sized at 50MB by default; respects Cache-Control headers so fresh data is always used.
         val cacheDir = File(context.cacheDir, "http-cache")
@@ -106,7 +99,6 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
             ).cookieJar(InMemoryCookieJar())
-            .certificatePinner(certificatePinner)
             .cache(httpCache)
             .addInterceptor(HttpsOnlyInterceptor(configProvider))
             // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
