@@ -83,6 +83,7 @@ import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import com.orbin.core.ui.thread.summaryLabels
 import com.orbin.media.image.MediaThumbnail
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
@@ -483,15 +484,8 @@ private fun ThumbnailGridContent(
 
 @Composable
 private fun ThreadStatsHeader(thread: Thread) {
-    val stats = thread.stats
     Text(
-        text =
-            buildString {
-                append("${stats.replyCount} replies · ${stats.imageCount} images")
-                if (stats.uniquePosterCount > 0) append(" · ${stats.uniquePosterCount} posters")
-                if (stats.isClosed) append(" · closed")
-                if (stats.isArchived) append(" · archived")
-            },
+        text = thread.stats.summaryLabels().joinToString(" · "),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),

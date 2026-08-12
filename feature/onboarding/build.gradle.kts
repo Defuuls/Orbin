@@ -6,6 +6,3 @@ android {
     namespace = "com.orbin.feature.onboarding"
 }
 
-dependencies {
-    implementation(project(":provider:api"))
-}

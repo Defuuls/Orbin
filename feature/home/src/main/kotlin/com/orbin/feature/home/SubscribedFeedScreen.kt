@@ -141,9 +141,9 @@ fun SubscribedFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var collapsedBoards by rememberSaveable { mutableStateOf(setOf<String>()) }
-    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
-    val gridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    var collapsedBoards by rememberSaveable(providerId) { mutableStateOf(setOf<String>()) }
+    val listState = rememberSaveable(providerId, saver = LazyListState.Saver) { LazyListState() }
+    val gridState = rememberSaveable(providerId, saver = LazyGridState.Saver) { LazyGridState() }
     var layoutMode by rememberSaveable { mutableStateOf(FeedLayoutMode.List) }
     var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
     val thumbnailSize = thumbnailSizeOverride ?: settings.thumbnailSize

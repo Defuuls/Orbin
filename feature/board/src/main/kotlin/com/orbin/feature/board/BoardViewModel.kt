@@ -84,7 +84,12 @@ class BoardViewModel
                 if (thread.key.thread.value in watchedThreadIds.value) {
                     bookmarkRepository.setWatched(key, false)
                 } else {
-                    bookmarkRepository.addBookmark(thread.toWatchedBookmark())
+                    val existing = bookmarkRepository.getBookmark(key)
+                    if (existing != null) {
+                        bookmarkRepository.setWatched(key, true)
+                    } else {
+                        bookmarkRepository.addBookmark(thread.toWatchedBookmark())
+                    }
                 }
             }
         }

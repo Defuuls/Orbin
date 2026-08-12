@@ -209,8 +209,25 @@ class MainActivity : FragmentActivity() {
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-            finishAuthentication(session)
-            onAuthenticationUnavailable(AUTHENTICATION_UNAVAILABLE_MESSAGE)
+            // Biometric unavailable (e.g., deleted enrollment). Fall back to device credential
+            // (PIN/pattern/password) to maintain the app-lock second-factor guarantee.
+            val deviceCredentialAvailable =
+                BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL) ==
+                    BiometricManager.BIOMETRIC_SUCCESS
+            if (deviceCredentialAvailable) {
+                authenticateWithDeviceCredential(
+                    session = session,
+                    onUnlocked = onUnlocked,
+                    onError = onAuthenticationError,
+                    onFailed = onAuthenticationFailed,
+                )
+            } else {
+                // Neither biometric nor device credential available — this should be rare
+                // (requires a device with neither fingerprint/face nor PIN/pattern/password),
+                // so we fail the authentication attempt entirely instead of allowing bypass.
+                finishAuthentication(session)
+                onAuthenticationError("Device lock (PIN/pattern/password) required but not configured. Please set up a device lock in Settings.")
+            }
             return
         }
 
@@ -289,6 +306,57 @@ class MainActivity : FragmentActivity() {
                 mainHandler.removeCallbacks(timeout)
                 if (finishAuthentication(session)) {
                     onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                }
+            }
+    }
+
+    private fun authenticateWithDeviceCredential(
+        session: Int,
+        onUnlocked: () -> Unit,
+        onError: (String) -> Unit,
+        onFailed: () -> Unit,
+    ) {
+        // Device credential (PIN/pattern/password) auth doesn't use a CryptoObject, so we can't
+        // cryptographically verify like we do with biometric. Instead, successful device credential
+        // auth itself is proof enough of identity, since the OS gates that behind the user's
+        // OS-level security setup.
+        val prompt =
+            BiometricPrompt(
+                this,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        if (finishAuthentication(session)) {
+                            onUnlocked()
+                        }
+                    }
+
+                    override fun onAuthenticationError(
+                        errorCode: Int,
+                        errString: CharSequence,
+                    ) {
+                        if (finishAuthentication(session)) {
+                            onError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
+                        }
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        onFailed()
+                    }
+                },
+            )
+        activeBiometricPrompt = prompt
+        val promptInfo =
+            BiometricPrompt.PromptInfo
+                .Builder()
+                .setTitle("Unlock Orbin")
+                .setSubtitle("Use your device lock (PIN/pattern/password)")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build()
+
+        runCatching { prompt.authenticate(promptInfo) }
+            .onFailure {
+                if (finishAuthentication(session)) {
+                    onError(AUTHENTICATION_ERROR_MESSAGE)
                 }
             }
     }

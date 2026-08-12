@@ -2,6 +2,7 @@ package com.orbin.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.orbin.data.database.entity.HistoryEntity
 import com.orbin.data.database.entity.HistoryKeyRow
@@ -27,6 +28,21 @@ interface HistoryDao {
 
     @Upsert
     suspend fun upsert(entry: HistoryEntity)
+
+    @Transaction
+    suspend fun recordEntry(entry: HistoryEntity) {
+        val existing = getEntry(entry.provider, entry.board, entry.thread)
+        val merged =
+            if (existing != null) {
+                entry.copy(
+                    lastReadPostId = existing.lastReadPostId,
+                    lastReadOffsetPx = existing.lastReadOffsetPx,
+                )
+            } else {
+                entry
+            }
+        upsert(merged)
+    }
 
     @Query(
         "UPDATE history SET lastReadPostId = :postId, lastReadOffsetPx = :offsetPx " +

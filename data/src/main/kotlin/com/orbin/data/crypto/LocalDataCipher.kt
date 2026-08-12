@@ -48,14 +48,25 @@ internal object LocalDataCipher {
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
-        generator.init(
+        // Try StrongBox first (the strongest hardware), then fall back to TEE.
+        val spec = try {
             KeyGenParameterSpec
                 .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(KEY_SIZE_BITS)
-                .build(),
-        )
+                .setIsStrongBoxBacked(true)
+                .build()
+        } catch (@Suppress("SwallowedException") e: Exception) {
+            // StrongBox not available; fall back to TEE
+            KeyGenParameterSpec
+                .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(KEY_SIZE_BITS)
+                .build()
+        }
+        generator.init(spec)
         return generator.generateKey()
     }
 }

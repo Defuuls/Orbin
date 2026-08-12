@@ -21,6 +21,15 @@ interface BookmarkDao {
         thread: Long,
     ): Flow<BookmarkEntity?>
 
+    @Query(
+        "SELECT * FROM bookmarks WHERE provider = :provider AND board = :board AND thread = :thread LIMIT 1",
+    )
+    suspend fun getOne(
+        provider: String,
+        board: String,
+        thread: Long,
+    ): BookmarkEntity?
+
     @Upsert
     suspend fun upsert(bookmark: BookmarkEntity)
 

@@ -62,7 +62,9 @@ class VichanMapper(
         response: VichanThreadResponse,
     ): Thread {
         val posts = response.posts
-        require(posts.isNotEmpty()) { "Thread response had no posts" }
+        if (posts.isEmpty()) {
+            throw com.orbin.provider.api.ProviderException.NotFound("Thread response had no posts (thread was likely pruned or deleted)")
+        }
         val opDto = posts.first()
         val threadId = ThreadId(opDto.no)
         val op = mapPost(board, threadId, opDto, isOp = true)

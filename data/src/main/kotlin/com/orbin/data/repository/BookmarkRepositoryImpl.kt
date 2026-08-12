@@ -28,6 +28,9 @@ class BookmarkRepositoryImpl
                 .observeOne(key.provider.value, key.board.value, key.thread.value)
                 .map { it?.toDomain() }
 
+        override suspend fun getBookmark(key: ThreadKey): Bookmark? =
+            dao.getOne(key.provider.value, key.board.value, key.thread.value)?.toDomain()
+
         override suspend fun addBookmark(bookmark: Bookmark) = dao.upsert(bookmark.toEntity())
 
         override suspend fun removeBookmark(key: ThreadKey) =

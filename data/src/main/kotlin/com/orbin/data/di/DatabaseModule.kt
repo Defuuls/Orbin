@@ -40,7 +40,7 @@ object DatabaseModule {
             // the database is (re)created encrypted with the fresh passphrase.
             context.deleteDatabase(OrbinDatabase.NAME)
         }
-        return Room
+        val database = Room
             .databaseBuilder(context, OrbinDatabase::class.java, OrbinDatabase.NAME)
             .openHelperFactory(SupportOpenHelperFactory(passphrase))
             .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
@@ -49,6 +49,9 @@ object DatabaseModule {
             // at open time instead of silently dropping the user's bookmarks and history.
             .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
             .build()
+        // Zero the passphrase from the heap after SQLCipher has consumed it.
+        passphrase.fill(0)
+        return database
     }
 
     @Provides

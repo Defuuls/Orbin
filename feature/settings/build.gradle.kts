@@ -7,8 +7,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":provider:api"))
-
     testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
