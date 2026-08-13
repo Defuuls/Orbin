@@ -52,8 +52,8 @@ android {
 
     defaultConfig {
         applicationId = "com.orbin.app"
-        versionCode = 103
-        versionName = "82-Alioth-p1"
+        versionCode = 104
+        versionName = "82-Alioth-p2"
         testInstrumentationRunner = "com.orbin.app.HiltTestRunner"
     }
 
