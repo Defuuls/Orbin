@@ -8,8 +8,10 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.filteredBy
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
@@ -75,7 +77,24 @@ class GalleryBrowserViewModel
             MutableStateFlow(GalleryBrowserUiState(provider = activeProvider.value.metadata.id))
         val uiState: StateFlow<GalleryBrowserUiState> = _uiState.asStateFlow()
 
+        private val mediaFilter: StateFlow<MediaFilter> =
+            settingsRepository.settings
+                .map { it.mediaFilter }
+                .distinctUntilChanged()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
+
+        /**
+         * Everything the selected thread has, before [mediaFilter] is applied. Kept so changing the
+         * filter re-filters the thread already on screen instead of needing it reselected.
+         */
+        private var unfilteredMedia: List<MediaAttachment> = emptyList()
+
         init {
+            mediaFilter
+                .onEach { filter ->
+                    _uiState.update { it.copy(media = unfilteredMedia.visibleUnder(filter)) }
+                }.launchIn(viewModelScope)
+
             activeProvider
                 .flatMapLatest { provider ->
                     boardPreferencesRepository
@@ -84,6 +103,7 @@ class GalleryBrowserViewModel
                         .map { subscribedIds -> provider to subscribedIds }
                 }.onEach { (provider, subscribedIds) ->
                     threadJob?.cancel()
+                    unfilteredMedia = emptyList()
                     _uiState.value = GalleryBrowserUiState(provider = provider.metadata.id)
                     loadBoards(provider, subscribedIds)
                 }.launchIn(viewModelScope)
@@ -91,6 +111,7 @@ class GalleryBrowserViewModel
 
         fun selectBoard(board: Board) {
             if (_uiState.value.selectedBoard?.id == board.id) return
+            unfilteredMedia = emptyList()
             _uiState.update {
                 it.copy(
                     selectedBoard = board,
@@ -106,8 +127,9 @@ class GalleryBrowserViewModel
 
         fun selectThread(thread: CatalogThread) {
             if (_uiState.value.selectedThread?.key == thread.key) return
+            val media = rememberMedia(thread.originalPost.attachments)
             _uiState.update {
-                it.copy(selectedThread = thread, media = thread.originalPost.attachments, message = null)
+                it.copy(selectedThread = thread, media = media, message = null)
             }
             observeSelectedThread(thread.key)
         }
@@ -126,12 +148,13 @@ class GalleryBrowserViewModel
                 val providerId = activeProvider.value.metadata.id
                 when (val result = threadRepository.refreshThread(providerId, thread.key.board, thread.key.thread)) {
                     is OrbinResult.Success -> {
+                        // Only the media on screen is warmed: preloading what the filter hides
+                        // would spend the user's data on files they have chosen not to see.
                         val media =
-                            result.data.allPosts
-                                .flatMap { post -> post.attachments }
+                            rememberMedia(result.data.allPosts.flatMap { post -> post.attachments })
                         _uiState.update {
                             it.copy(
-                                media = media.toImmutableList(),
+                                media = media,
                                 progressMessage = buildProgressMessage(1, media.size.coerceAtLeast(1), "media"),
                                 progressValue = PRELOAD_START_PROGRESS,
                             )
@@ -222,13 +245,22 @@ class GalleryBrowserViewModel
             viewModelScope.launch {
                 runCatching { provider.getCatalog(CatalogRequest(provider.metadata.id, board.id)) }
                     .onSuccess { threads ->
+                        // Opens on a thread that has something to show under the current filter.
+                        val filter = mediaFilter.value
                         val selected =
-                            threads.firstOrNull { it.originalPost.attachments.isNotEmpty() } ?: threads.firstOrNull()
+                            threads.firstOrNull {
+                                it.originalPost.attachments
+                                    .filteredBy(filter)
+                                    .isNotEmpty()
+                            }
+                                ?: threads.firstOrNull { it.originalPost.attachments.isNotEmpty() }
+                                ?: threads.firstOrNull()
+                        val media = rememberMedia(selected?.originalPost?.attachments ?: persistentListOf())
                         _uiState.update {
                             it.copy(
                                 threads = threads.toImmutableList(),
                                 selectedThread = selected,
-                                media = selected?.originalPost?.attachments ?: persistentListOf(),
+                                media = media,
                                 loadingThreads = false,
                                 message =
                                     if (selected ==
@@ -256,19 +288,21 @@ class GalleryBrowserViewModel
                     threadRepository.observeThread(key).collectLatest { result ->
                         if (_uiState.value.selectedThread?.key != key) return@collectLatest
                         if (result is OrbinResult.Success) {
-                            _uiState.update {
-                                it.copy(
-                                    media =
-                                        result.data.allPosts
-                                            .flatMap { post ->
-                                                post.attachments
-                                            }.toImmutableList(),
-                                )
-                            }
+                            val media = rememberMedia(result.data.allPosts.flatMap { post -> post.attachments })
+                            _uiState.update { it.copy(media = media) }
                         }
                     }
                 }
         }
+
+        /** Records [media] as the selected thread's full set and returns what the filter shows. */
+        private fun rememberMedia(media: List<MediaAttachment>): ImmutableList<MediaAttachment> {
+            unfilteredMedia = media
+            return media.visibleUnder(mediaFilter.value)
+        }
+
+        private fun List<MediaAttachment>.visibleUnder(filter: MediaFilter): ImmutableList<MediaAttachment> =
+            filteredBy(filter).toImmutableList()
 
         private companion object {
             const val PRELOAD_START_PROGRESS = 0.1f

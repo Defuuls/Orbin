@@ -12,6 +12,7 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -97,6 +98,8 @@ class SettingsViewModel
         fun setHideNsfwBoards(enabled: Boolean) = update { repository.setHideNsfwBoards(enabled) }
 
         fun setHideTextOnlyThreads(enabled: Boolean) = update { repository.setHideTextOnlyThreads(enabled) }
+
+        fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 

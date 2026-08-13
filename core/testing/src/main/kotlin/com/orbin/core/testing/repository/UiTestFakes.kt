@@ -25,6 +25,10 @@ class FakeDownloadRepository(
     initial: List<DownloadRecord> = emptyList(),
 ) : DownloadRepository {
     private val state = MutableStateFlow(initial)
+    private val enqueued = mutableListOf<String>()
+
+    /** URLs passed to [enqueue], in call order, for asserting on what a screen downloaded. */
+    val enqueuedUrls: List<String> get() = enqueued.toList()
 
     override fun observeDownloads(): Flow<List<DownloadRecord>> = state
 
@@ -34,7 +38,10 @@ class FakeDownloadRepository(
         boardId: String?,
         threadId: Long?,
         threadTitle: String?,
-    ): Long = 0L
+    ): Long {
+        enqueued += url
+        return 0L
+    }
 
     override suspend fun refreshStatuses() = Unit
 

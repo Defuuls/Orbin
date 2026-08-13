@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernSmallTopAppBar
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 
@@ -45,6 +46,18 @@ fun SettingsMediaScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 12.dp),
         ) {
+            ChoiceRow(
+                label = "Show media",
+                values = MediaFilter.entries,
+                selected = settings.mediaFilter,
+                text = { it.label },
+                onChange = viewModel::setMediaFilter,
+            )
+            SupportingNote(
+                "Applies everywhere media is shown — the subscribed feed, board catalogs, thread " +
+                    "view and the galleries. Attachments of the other kind are hidden, and threads " +
+                    "left with nothing to show drop out of the feed and catalogs.",
+            )
             SwitchRow("Autoplay videos", settings.autoplayVideos, viewModel::setAutoplay)
             SwitchRow("Mute by default", settings.muteByDefault, viewModel::setMute)
             SwitchRow(

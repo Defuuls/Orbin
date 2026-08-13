@@ -10,6 +10,7 @@ import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -49,6 +50,7 @@ class BackupServiceTest {
             mutedTags = "wip",
             hideNsfwBoards = true,
             hideTextOnlyThreads = true,
+            mediaFilter = MediaFilter.VIDEOS,
             feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
             threadPresentation = ThreadPresentation.OVERLAY,
             themeMode = AppThemeMode.DARK,

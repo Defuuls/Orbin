@@ -5,13 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
+import androidx.paging.map
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.filteredBy
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -20,6 +24,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,10 +49,19 @@ class BoardViewModel
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
+        private val mediaFilter: Flow<MediaFilter> =
+            settingsRepository.settings.map { it.mediaFilter }.distinctUntilChanged()
+
+        /**
+         * The catalog as the grid shows it: cached pages, filtered per collection. Filtering after
+         * [cachedIn] means changing the setting re-filters the pages already loaded instead of
+         * re-fetching the board.
+         */
         val catalog: Flow<PagingData<CatalogThread>> =
             catalogRepository
                 .catalogStream(ProviderId(providerId), BoardId(boardId), CatalogSort.BUMP_ORDER)
                 .cachedIn(viewModelScope)
+                .filteredBy(mediaFilter)
 
         val watchedThreadIds: StateFlow<Set<Long>> =
             bookmarkRepository
@@ -108,5 +123,21 @@ class BoardViewModel
 
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
+        }
+    }
+
+/**
+ * Applies the reader's [filters] to a catalog stream: each thread keeps only the media its filter
+ * allows, and threads left with none drop out — a catalog cell is its OP's thumbnail, so a thread
+ * with nothing to show would be an empty tile.
+ */
+internal fun Flow<PagingData<CatalogThread>>.filteredBy(filters: Flow<MediaFilter>): Flow<PagingData<CatalogThread>> =
+    combine(this, filters) { pagingData, filter ->
+        if (!filter.isActive) {
+            pagingData
+        } else {
+            pagingData
+                .map { thread -> thread.filteredBy(filter) }
+                .filter { thread -> thread.originalPost.attachments.isNotEmpty() }
         }
     }

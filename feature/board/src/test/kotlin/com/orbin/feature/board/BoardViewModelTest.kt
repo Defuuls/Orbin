@@ -2,6 +2,7 @@ package com.orbin.feature.board
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.paging.PagingData
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
@@ -10,6 +11,9 @@ import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -22,6 +26,7 @@ import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.CatalogRepository
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -83,6 +88,42 @@ class BoardViewModelTest {
         }
 
     @Test
+    fun `the catalog keeps every thread when no media filter is set`() =
+        runTest {
+            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.ALL)).asSnapshot()
+
+            assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L, 3L).inOrder()
+        }
+
+    @Test
+    fun `videos-only drops catalog threads whose OP has no video`() =
+        runTest {
+            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.VIDEOS)).asSnapshot()
+
+            assertThat(threads.map { it.key.thread.value }).containsExactly(1L)
+            assertThat(
+                threads
+                    .single()
+                    .originalPost.attachments
+                    .map { it.id },
+            ).containsExactly("webm")
+        }
+
+    @Test
+    fun `images-only keeps the image threads and strips their videos`() =
+        runTest {
+            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.IMAGES)).asSnapshot()
+
+            assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L).inOrder()
+            assertThat(
+                threads
+                    .first()
+                    .originalPost.attachments
+                    .map { it.id },
+            ).containsExactly("jpg")
+        }
+
+    @Test
     fun `toggling subscription on an unwatched thread bookmarks and watches it`() =
         runTest {
             val bookmarks = FakeBookmarkRepository()
@@ -116,9 +157,10 @@ class BoardViewModelTest {
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
+        catalogRepository: CatalogRepository = FakeCatalogRepository,
     ) = BoardViewModel(
         savedStateHandle = SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title")),
-        catalogRepository = FakeCatalogRepository,
+        catalogRepository = catalogRepository,
         bookmarkRepository = bookmarkRepository,
         historyRepository = historyRepository,
         settingsRepository = settingsRepository,
@@ -147,6 +189,7 @@ class BoardViewModelTest {
     private fun catalogThread(
         board: String,
         thread: Long,
+        attachments: List<MediaAttachment> = emptyList(),
     ) = CatalogThread(
         key = ThreadKey(ProviderId(PROVIDER), BoardId(board), ThreadId(thread)),
         originalPost =
@@ -155,12 +198,44 @@ class BoardViewModelTest {
                 board = BoardId(board),
                 threadId = ThreadId(thread),
                 isOriginalPost = true,
+                attachments = attachments.toPersistentList(),
             ),
         stats = ThreadStats(replyCount = 3),
     )
+
+    /** One thread with both kinds, one with only an image, and one with nothing attached. */
+    private fun catalogFlow(): Flow<PagingData<CatalogThread>> =
+        flowOf(
+            PagingData.from(
+                listOf(
+                    catalogThread(
+                        BOARD,
+                        1L,
+                        listOf(attachment("webm", MediaType.VIDEO), attachment("jpg", MediaType.IMAGE)),
+                    ),
+                    catalogThread(BOARD, 2L, listOf(attachment("png", MediaType.IMAGE))),
+                    catalogThread(BOARD, 3L),
+                ),
+            ),
+        )
+
+    private fun attachment(
+        id: String,
+        type: MediaType,
+    ) = MediaAttachment(
+        id = id,
+        originalFileName = "$id.file",
+        extension = "file",
+        type = type,
+        sourceUrl = "https://example.org/$id",
+        thumbnailUrl = "https://example.org/$id/thumb",
+    )
 }
 
-/** No test exercises paging content itself; BoardViewModel's own logic is in the derived flows above. */
+/**
+ * The catalog's own paging content is covered by the [filteredBy] tests above, which drive the
+ * stream directly; BoardViewModel's remaining logic is in the derived flows.
+ */
 private object FakeCatalogRepository : CatalogRepository {
     override fun catalogStream(
         provider: ProviderId,

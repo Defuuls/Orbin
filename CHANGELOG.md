@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Browse images only or videos only.** A new **Show media** setting under Settings → Media &
+  Playback restricts every view that shows post media — the subscribed feed, board catalogs, thread
+  view, the thread gallery and the gallery browser — to one kind of attachment. Threads left with
+  nothing to show drop out of the feed and catalogs rather than appearing as blank tiles, since a
+  catalog cell is its OP's thumbnail. GIFs and APNGs count as images; audio and unrecognised files
+  are hidden by either filter. The choice also governs what "download all media" pulls from a
+  thread and what the gallery browser preloads, so neither spends data on files that are not being
+  shown. Defaults to all media, and is included in backups.
+
 ### Changed
 - **Orbin now runs on Android 12 and newer, instead of Android 15 and newer.** Nothing in the app
   required Android 15: the entire codebase contained a single SDK-level check, and it guarded for
