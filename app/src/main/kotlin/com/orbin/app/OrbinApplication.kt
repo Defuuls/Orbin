@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.worker.WatchScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,9 @@ class OrbinApplication :
     @Inject
     lateinit var watchScheduler: WatchScheduler
 
+    @Inject
+    lateinit var diagnosticsRepository: DiagnosticsRepositoryImpl
+
     override val workManagerConfiguration: Configuration
         get() =
             Configuration
@@ -42,6 +46,9 @@ class OrbinApplication :
 
     override fun onCreate() {
         super.onCreate()
+        // Before anything else that could throw: an uncaught exception during startup is exactly
+        // the case this records, and a handler installed later would miss it.
+        diagnosticsRepository.install()
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
         CoroutineScope(Dispatchers.Default).launch {
             watchScheduler.ensureScheduled()

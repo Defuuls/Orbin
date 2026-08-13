@@ -51,9 +51,5 @@ internal fun Project.configureLint(commonExtension: CommonExtension) {
                 "AndroidGradlePluginVersion",
             ),
         )
-
-        htmlReport = true
-        sarifReport = true
-        textReport = false
     }
 }
