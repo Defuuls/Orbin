@@ -1,7 +1,7 @@
 # Orbin
 
 A modern, fast, and beautiful open-source **Android image board client**, built with Kotlin,
-Jetpack Compose, and Material 3. Orbin targets **Android 15+ (API 35+)** and is engineered around
+Jetpack Compose, and Material 3. Orbin targets **Android 12+ (API 31+)** and is engineered around
 a strict, modular Clean Architecture so that supporting a new image board engine is a matter of
 implementing a single interface.
 
@@ -146,7 +146,7 @@ add a new engine.
 
 **Requirements**
 - JDK 17+
-- Android SDK with API 37 (`compileSdk` 37, `targetSdk` 36, `minSdk` 35)
+- Android SDK with API 37 (`compileSdk` 37, `targetSdk` 36, `minSdk` 31)
 - Android Studio Ladybug+ (or the command line below)
 
 **Common tasks**

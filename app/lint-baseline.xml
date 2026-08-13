@@ -2,6 +2,17 @@
 <issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
 
     <issue
+        id="InlinedApi"
+        message="Field requires API level 33 (current min is 31): `android.Manifest.permission#POST_NOTIFICATIONS`"
+        errorLine1="            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/orbin/app/MainActivity.kt"
+            line="414"
+            column="39"/>
+    </issue>
+
+    <issue
         id="OldTargetApi"
         message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
         errorLine1="targetSdk = &quot;36&quot;"
@@ -10,6 +21,17 @@
             file="../gradle/libs.versions.toml"
             line="10"
             column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedAttribute"
+        message="Attribute `enableOnBackInvokedCallback` is only used in API level 33 and higher (current min is 31)"
+        errorLine1="        android:enableOnBackInvokedCallback=&quot;true&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="20"
+            column="9"/>
     </issue>
 
     <issue
@@ -25,7 +47,7 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 35. Merge all the resources in this folder into `mipmap-anydpi`.">
+        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 31. Merge all the resources in this folder into `mipmap-anydpi`.">
         <location
             file="src/main/res/mipmap-anydpi-v26"/>
     </issue>

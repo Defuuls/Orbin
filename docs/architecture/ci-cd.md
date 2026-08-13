@@ -16,7 +16,7 @@ Three jobs, the last gated on the first two:
 Runs are cancelled when superseded on the same ref (`concurrency`).
 
 ### `instrumentation.yml` — on every push to `main` and every PR
-Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the
+Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the
 modules that have `androidTest` sources, discovered per run. Kept separate from `ci.yml` because
 an emulator boot plus a test run is minutes of wall clock.
 

@@ -15,9 +15,8 @@ import org.gradle.api.Project
  * fixed in one sweep; anything new fails the build. Delete a baseline entry (or the file) once its
  * findings are cleaned up — a baseline that is never shrunk is just a suppression list.
  *
- * Two baselined `ObsoleteSdkInt` findings are deliberately *not* cleaned up: the API 33 guard in
- * the notifier and the `mipmap-anydpi-v26` folder are dead only while `minSdk` is 35. Lowering it
- * makes both load-bearing again, so deleting them now would mean writing them back later.
+ * `NewApi` is the reason this landed before the `minSdk` drop rather than after: it is the check
+ * that proves no call site reaches past the floor once the floor moves.
  */
 internal fun Project.configureLint(commonExtension: CommonExtension) {
     // AGP 9 exposes `lint` as a property rather than a block-taking function.
@@ -31,6 +30,12 @@ internal fun Project.configureLint(commonExtension: CommonExtension) {
 
         // Dead compatibility branches: code guarded for API levels below minSdk can never run.
         // This is a warning by default, and the kind of thing that quietly accumulates.
+        //
+        // One baselined instance is not actually fixable: lint wants `mipmap-anydpi-v26` merged
+        // into `mipmap-anydpi` now that minSdk is past 26, but those files are `<adaptive-icon>`
+        // XML, and without the v26 qualifier AAPT2 fails to link them at all — "resource
+        // mipmap/ic_launcher not found". The qualifier is load-bearing for resource versioning,
+        // not just an SDK gate.
         this.error.add("ObsoleteSdkInt")
 
         this.disable.addAll(

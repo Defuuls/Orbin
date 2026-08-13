@@ -11,7 +11,7 @@ Be respectful and constructive. Harassment of any kind is not tolerated.
 
 1. Fork and clone the repository.
 2. Install JDK 17+ and the Android SDK with platform **API 37** (`compileSdk` 37, `targetSdk` 36,
-   `minSdk` 35).
+   `minSdk` 31).
 3. Open in Android Studio (Ladybug or newer) or build from the command line.
 4. Verify your environment:
    ```bash

@@ -2,17 +2,6 @@
 <issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
 
     <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is never &lt; 35"
-        errorLine1="                Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.TIRAMISU ||"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/orbin/data/notification/AndroidThreadNotifier.kt"
-            line="57"
-            column="17"/>
-    </issue>
-
-    <issue
         id="UseKtx"
         message="Use the KTX extension function `SharedPreferences.edit` instead?"
         errorLine1="            prefs.edit().putString(KEY_PASSPHRASE, wrapped).apply()"
