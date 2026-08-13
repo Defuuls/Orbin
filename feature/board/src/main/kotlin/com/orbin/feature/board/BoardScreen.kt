@@ -62,6 +62,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -444,7 +446,7 @@ private fun ThumbnailOnlyCell(
 }
 
 @Composable
-private fun KurobaListThreadCell(
+internal fun KurobaListThreadCell(
     thread: CatalogThread,
     isSubscribed: Boolean,
     isVisited: Boolean,
@@ -452,7 +454,12 @@ private fun KurobaListThreadCell(
     onClick: () -> Unit,
 ) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                // A visited thread is only dimmer to the eye; say it for TalkBack.
+                .semantics { if (isVisited) stateDescription = "Already read" }
+                .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -482,7 +489,7 @@ private fun KurobaListThreadCell(
 }
 
 @Composable
-private fun KurobaGridThreadCell(
+internal fun KurobaGridThreadCell(
     thread: CatalogThread,
     isSubscribed: Boolean,
     isVisited: Boolean,
@@ -490,7 +497,12 @@ private fun KurobaGridThreadCell(
     onClick: () -> Unit,
 ) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                // A visited thread is only dimmer to the eye; say it for TalkBack.
+                .semantics { if (isVisited) stateDescription = "Already read" }
+                .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {

@@ -72,6 +72,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -621,7 +623,17 @@ private fun PostHeader(
 ) {
     val postedTime = remember(post.createdAtMillis) { formatRelativeTime(post.createdAtMillis) }
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                // The chevron shows collapse state to the eye; TalkBack needs it said. The click
+                // label names the action, the state description names the current state, and the
+                // chevron itself stays undescribed so neither is announced twice.
+                .semantics { stateDescription = if (isCollapsed) "Collapsed" else "Expanded" }
+                .clickable(
+                    onClickLabel = if (isCollapsed) "Expand post" else "Collapse post",
+                    onClick = onClick,
+                ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -656,7 +668,7 @@ private fun PostHeader(
         // knows from the post body being hidden gets a real Material affordance here instead.
         Icon(
             imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
-            contentDescription = if (isCollapsed) "Expand post" else "Collapse post",
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp),
         )

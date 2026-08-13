@@ -7,6 +7,12 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Thread and catalog state that was only visible is now spoken.** TalkBack now announces whether
+  a post is collapsed or expanded (and what tapping its header will do), whether a feed thread is
+  muted, and whether a thread in the feed or a board catalog has already been read — all states
+  that previously existed only as dimming or a chevron. One limitation is recorded rather than
+  hidden: a blacked-out spoiler is still spoken immediately by screen readers, because the
+  tap-to-reveal masking is purely visual; fixing that requires restructuring how comments render.
 - **Hidden tags now apply where you actually read.** They filtered the subscribed feed and the
   board list, but board catalogs and thread replies ignored them entirely — so a keyword you had
   hidden vanished from the feed and reappeared the moment you opened the board it was posted on.

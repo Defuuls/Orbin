@@ -87,6 +87,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -895,7 +897,18 @@ private fun FeedThreadCell(
 
     if (tabletLayout) {
         Surface(
-            modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .alpha(if (isMuted) 0.62f else 1f)
+                    // Dimming is the only visual signal for both states; say them for TalkBack.
+                    .semantics {
+                        if (isMuted) {
+                            stateDescription = "Muted"
+                        } else if (isVisited) {
+                            stateDescription = "Already read"
+                        }
+                    }.clickable(onClick = onClick),
             shape = RoundedCornerShape(6.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 1.dp,
@@ -914,7 +927,17 @@ private fun FeedThreadCell(
         }
     } else {
         ElevatedCard(
-            modifier = Modifier.fillMaxWidth().alpha(if (isMuted) 0.62f else 1f).clickable(onClick = onClick),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .alpha(if (isMuted) 0.62f else 1f)
+                    .semantics {
+                        if (isMuted) {
+                            stateDescription = "Muted"
+                        } else if (isVisited) {
+                            stateDescription = "Already read"
+                        }
+                    }.clickable(onClick = onClick),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
