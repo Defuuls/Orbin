@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [85-Tania] - 2026-08-13
+
 ### Added
 - **Browse images only or videos only.** A new **Show media** setting under Settings → Media &
   Playback restricts every view that shows post media — the subscribed feed, board catalogs, thread
