@@ -30,9 +30,14 @@ can be reviewed before committing. Verification (`verifyRoborazziDebug`) runs as
 regular unit test suite once goldens are checked in.
 
 ### `baseline-profile.yml` — manual (`workflow_dispatch`)
-Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, and opens a
-draft PR with the result. Baseline profile generation needs real (or rooted-emulator) hardware,
-so it cannot run on every push.
+Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, uploads it as
+the `baseline-profile` artifact, and then opens a draft PR with the result. Baseline profile
+generation needs real (or rooted-emulator) hardware, so it cannot run on every push.
+
+The PR step needs **Settings → Actions → General → "Allow GitHub Actions to create and approve
+pull requests"**. Without it that step fails and the run warns saying so; the profile is still
+uploaded as an artifact, because the upload deliberately happens first — every run before that
+ordering recorded a profile successfully and then threw it away.
 
 ### `new-version.yml` — manual (`workflow_dispatch`)
 Prepares a release PR from inputs (version name, `versionCode`, codename, base branch, draft

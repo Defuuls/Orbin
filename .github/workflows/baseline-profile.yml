@@ -62,7 +62,19 @@ jobs:
         run: |
           find app/src/release/generated -name '*.txt' -print -exec wc -l {} \; || true
 
+      # Uploaded before the pull request is attempted, not after. Every run of this workflow so far
+      # recorded a profile successfully and then discarded it, because opening the PR is the step
+      # that fails and it was the only thing carrying the result off the runner.
+      - name: Upload the recorded profile
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-profile
+          path: app/src/release/generated/**
+          if-no-files-found: error
+
       - name: Open a pull request with the profile
+        id: profile_pr
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v8
         with:
           branch: claude/baseline-profile-generated
@@ -79,3 +91,14 @@ jobs:
             Re-record this when startup or the feed changes shape. A stale profile is not harmful,
             only progressively less useful.
           draft: true
+
+      # Creating a pull request from a workflow needs "Allow GitHub Actions to create and approve
+      # pull requests" (Settings -> Actions -> General). Without it this step fails in seconds, so
+      # say which setting is missing rather than leaving a red run and no explanation. The profile
+      # itself is already uploaded above, so the run has still produced what it exists to produce.
+      - name: Explain a failed pull request
+        if: steps.profile_pr.outcome != 'success'
+        run: |
+          echo "::warning::Could not open a pull request with the profile. Enable" \
+            "'Allow GitHub Actions to create and approve pull requests' in Settings -> Actions ->" \
+            "General, or download the 'baseline-profile' artifact from this run and commit it by hand."
