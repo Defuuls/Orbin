@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Hidden tags now apply where you actually read.** They filtered the subscribed feed and the
+  board list, but board catalogs and thread replies ignored them entirely — so a keyword you had
+  hidden vanished from the feed and reappeared the moment you opened the board it was posted on.
+  Catalogs now drop matching threads and threads now drop matching replies. An opening post is
+  never hidden inside a thread you opened deliberately.
+- **Some hidden tags matched every thread in the feed.** The filter compared your tags against a
+  debug rendering of the post rather than its text, so tags like `raw`, `nodes` or `quotelink`
+  matched everything and emptied the feed. Matching now uses the comment's own text.
+
+### Added
+- **Hide by who posted, not just what was posted.** A hidden or muted tag prefixed with `name:`,
+  `cap:`, `trip:` or `id:` matches the poster instead of the post. Names and capcodes match as
+  substrings; tripcodes and per-thread poster ids must match in full, since a partial match on an
+  opaque identifier would quietly catch unrelated posters.
+
 ## [85-Tania] - 2026-08-13
 
 ### Added

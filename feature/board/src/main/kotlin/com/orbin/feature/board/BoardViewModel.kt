@@ -16,6 +16,8 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.filteredBy
+import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -53,6 +55,14 @@ class BoardViewModel
             settingsRepository.settings.map { it.mediaFilter }.distinctUntilChanged()
 
         /**
+         * The reader's hidden keywords. The subscribed feed has always applied these; the board
+         * catalog never did, so a keyword you had hidden reappeared the moment you opened the
+         * board it was posted on — which is where you actually read.
+         */
+        private val hiddenTokens: Flow<Set<String>> =
+            settingsRepository.settings.map { it.hiddenTagTokens() }.distinctUntilChanged()
+
+        /**
          * The catalog as the grid shows it: cached pages, filtered per collection. Filtering after
          * [cachedIn] means changing the setting re-filters the pages already loaded instead of
          * re-fetching the board.
@@ -61,6 +71,7 @@ class BoardViewModel
             catalogRepository
                 .catalogStream(ProviderId(providerId), BoardId(boardId), CatalogSort.BUMP_ORDER)
                 .cachedIn(viewModelScope)
+                .hidingMatches(hiddenTokens)
                 .filteredBy(mediaFilter)
 
         val watchedThreadIds: StateFlow<Set<Long>> =
@@ -126,11 +137,22 @@ class BoardViewModel
         }
     }
 
+/** Drops threads whose opening post matches one of the reader's hidden keywords. */
+internal fun Flow<PagingData<CatalogThread>>.hidingMatches(tokens: Flow<Set<String>>): Flow<PagingData<CatalogThread>> =
+    combine(this, tokens) { pagingData, hidden ->
+        if (hidden.isEmpty()) {
+            pagingData
+        } else {
+            pagingData.filter { thread -> !thread.matchesFilterTokens(hidden) }
+        }
+    }
+
 /**
  * Applies the reader's [filters] to a catalog stream: each thread keeps only the media its filter
  * allows, and threads left with none drop out — a catalog cell is its OP's thumbnail, so a thread
  * with nothing to show would be an empty tile.
  */
+
 internal fun Flow<PagingData<CatalogThread>>.filteredBy(filters: Flow<MediaFilter>): Flow<PagingData<CatalogThread>> =
     combine(this, filters) { pagingData, filter ->
         if (!filter.isActive) {

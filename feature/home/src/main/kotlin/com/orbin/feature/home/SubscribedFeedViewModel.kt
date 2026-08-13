@@ -14,6 +14,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredCatalogBy
 import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -262,7 +263,7 @@ class SubscribedFeedViewModel
             val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
             val effectiveLimit = limitOverride ?: settings.feedThreadLimit
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
-                .filterNot { thread -> thread.matchesAny(settings.hiddenTagTokens()) }
+                .filterNot { thread -> thread.matchesFilterTokens(settings.hiddenTagTokens()) }
                 .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
                 // Media filtering comes last so it acts on what the feed would otherwise show:
                 // threads left with no matching attachment drop out rather than showing a blank cell.
@@ -290,12 +291,6 @@ private data class FeedInputs(
     val settings: AppSettings,
     val refreshCount: Int,
 )
-
-private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
-    if (tokens.isEmpty()) return false
-    val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
-    return tokens.any(haystack::contains)
-}
 
 /** A feed load kept for reuse, with the moment it was loaded so its age can be judged. */
 private data class CachedFeed(

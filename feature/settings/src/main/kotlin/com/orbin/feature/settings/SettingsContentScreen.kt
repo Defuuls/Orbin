@@ -62,7 +62,10 @@ fun SettingsContentScreen(
             TextFieldRow(
                 label = "Hidden tags",
                 value = settings.hiddenTags,
-                supporting = "Hidden tags are removed from feeds. Separate tags with commas.",
+                supporting =
+                    "Hidden tags are removed from the feed, board catalogs and thread replies. " +
+                        "Separate tags with commas. Prefix with name:, cap:, trip: or id: to hide " +
+                        "by who posted instead of what was posted.",
                 onValueChange = viewModel::setHiddenTags,
             )
             TextFieldRow(

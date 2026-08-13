@@ -16,12 +16,15 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.filteredBy
+import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -99,6 +102,15 @@ class ThreadViewModel
                 .map { it.mediaFilter }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
 
+        /**
+         * The reader's hidden keywords. The catalog hides whole threads that match; inside a
+         * thread the same keywords hide individual replies, which is the half that never existed.
+         */
+        private val hiddenTokens: StateFlow<Set<String>> =
+            settingsRepository.settings
+                .map { it.hiddenTagTokens() }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
         val uiState: StateFlow<ThreadUiState> =
             combine(
                 reloads
@@ -114,9 +126,10 @@ class ThreadViewModel
                         _isRefreshing.value = false
                     },
                 mediaFilter,
-            ) { result, filter ->
+                hiddenTokens,
+            ) { result, filter, hidden ->
                 result.fold(
-                    onSuccess = { ThreadUiState.Success(it.filteredBy(filter)) },
+                    onSuccess = { ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden)) },
                     onFailure = { ThreadUiState.Error(it.message) },
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
@@ -265,3 +278,18 @@ data class ThreadScrollPosition(
     val postId: PostId,
     val offsetPx: Int,
 )
+
+/**
+ * Drops replies matching the reader's hidden keywords.
+ *
+ * The opening post is deliberately never dropped: the catalog already hides threads whose OP
+ * matches, so a thread opened from anywhere else was opened on purpose, and blanking its first
+ * post would leave an unexplained empty shell. Quote links pointing at a hidden reply are left
+ * alone — they resolve to nothing, the same as a quote of a post pruned upstream.
+ */
+internal fun Thread.hidingMatches(tokens: Set<String>): Thread =
+    if (tokens.isEmpty()) {
+        this
+    } else {
+        copy(replies = replies.filterNot { reply -> reply.matchesFilterTokens(tokens) }.toImmutableList())
+    }

@@ -103,6 +103,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.core.ui.next
@@ -890,7 +891,7 @@ private fun FeedThreadCell(
     muted: Boolean = true,
     onClick: () -> Unit,
 ) {
-    val isMuted = thread.matchesAny(mutedTags)
+    val isMuted = thread.matchesFilterTokens(mutedTags)
 
     if (tabletLayout) {
         Surface(
@@ -1130,12 +1131,6 @@ private fun EmptySubscribedFeed(
             OutlinedButton(onClick = onOpenSettings) { Text("Settings") }
         }
     }
-}
-
-private fun CatalogThread.matchesAny(tokens: Set<String>): Boolean {
-    if (tokens.isEmpty()) return false
-    val haystack = listOfNotNull(originalPost.subject, originalPost.comment).joinToString(" ").lowercase()
-    return tokens.any(haystack::contains)
 }
 
 private fun AppIconVariant.drawableRes(): Int =
