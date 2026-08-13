@@ -33,4 +33,11 @@ dependencies {
     testImplementation(libs.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+
+    // SQLCipher's native library cannot load under Robolectric, so the encrypted-open path is
+    // only reachable from an instrumentation test on a real device or emulator.
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

@@ -1,6 +1,7 @@
 import com.android.build.api.dsl.LibraryExtension
 import com.orbin.buildlogic.configureJava
 import com.orbin.buildlogic.configureKotlinAndroid
+import com.orbin.buildlogic.configureLint
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -18,6 +19,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this)
+            configureLint(this)
             compileOptions {
                 configureJava()
             }

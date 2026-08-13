@@ -1,8 +1,6 @@
 [versions]
 # Android / Build
 agp = "9.3.1"
-# Held at 2.4.0 (not the 2.4.10 Dependabot bump) until CodeQL's Kotlin extractor supports 2.4.10;
-# 2.4.10 makes the java-kotlin CodeQL analysis hard-fail ("Kotlin version too recent").
 kotlin = "2.4.10"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
@@ -19,10 +17,10 @@ splashscreen = "1.2.0"
 biometric = "1.4.0-alpha07"
 
 # Compose
-composeBom = "2026.06.01"
+composeBom = "2026.08.00"
 navigationCompose = "2.9.8"
-paging = "3.5.0"
-pagingCompose = "3.5.0"
+paging = "3.5.1"
+pagingCompose = "3.5.1"
 
 # DI
 # 2.59 is the first Hilt release whose Gradle plugin supports (and requires) AGP 9;
@@ -38,7 +36,7 @@ sqlcipher = "4.17.0"
 
 # Async / Serialization
 coroutines = "1.11.0"
-serialization = "1.7.3"
+serialization = "1.11.0"
 serializationConverter = "1.0.0"
 
 # Networking
@@ -48,7 +46,7 @@ jsoup = "1.23.1"
 
 # Media
 coil = "3.5.0"
-media3 = "1.10.1"
+media3 = "1.11.0"
 
 # Work
 work = "2.11.2"
@@ -63,13 +61,12 @@ turbine = "1.2.1"
 mockk = "1.14.11"
 truth = "1.4.5"
 robolectric = "4.16.1"
-# 1.4.1 is the newest stable, but predates AGP 9; 1.5.0-beta01 is the first release that supports it.
-benchmark = "1.5.0-beta01"
+# The newest stable (1.4.1) predates AGP 9; the 1.5.0 line is the first that supports it, so this
+# tracks its prereleases until 1.5.0 goes stable.
+benchmark = "1.5.0-rc01"
 uiautomator = "2.4.0"
 profileinstaller = "1.4.1"
-# 1.64.0 is the last release before roborazzi requires Kotlin 2.3; includes Gradle 9 input
-# validation fixes (1.63/1.64).
-roborazzi = "1.70.0"
+roborazzi = "1.71.0"
 
 # Quality
 detekt = "1.23.8"
