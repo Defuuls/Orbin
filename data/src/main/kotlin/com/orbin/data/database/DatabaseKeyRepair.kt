@@ -21,11 +21,12 @@ import java.io.File
 internal class DatabaseKeyRepair(
     private val context: Context,
     private val passphrase: ByteArray,
+    private val databaseName: String = OrbinDatabase.NAME,
 ) {
     fun repair() {
-        val databaseFile = context.getDatabasePath(OrbinDatabase.NAME)
+        val databaseFile = context.getDatabasePath(databaseName)
         if (databaseFile.exists() && rekeyFromLegacyPassphrase(databaseFile)) return
-        context.deleteDatabase(OrbinDatabase.NAME)
+        context.deleteDatabase(databaseName)
     }
 
     private fun rekeyFromLegacyPassphrase(databaseFile: File): Boolean =

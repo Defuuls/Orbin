@@ -53,3 +53,30 @@ internal val MIGRATION_4_5 =
             )
         }
     }
+
+internal val MIGRATION_5_6 =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v6 caches each provider's board list so it survives process death and reads offline.
+            // Statement copied from the exported v6 schema so the result is byte-identical to a
+            // freshly created database, which is what Room validates. Nothing is backfilled: an
+            // empty table reads as "never cached" and the first observer refreshes it.
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `boards` (" +
+                    "`provider` TEXT NOT NULL, " +
+                    "`id` TEXT NOT NULL, " +
+                    "`title` TEXT NOT NULL, " +
+                    "`description` TEXT NOT NULL, " +
+                    "`category` TEXT NOT NULL, " +
+                    "`isNsfw` INTEGER NOT NULL, " +
+                    "`pageCount` INTEGER, " +
+                    "`bumpLimit` INTEGER, " +
+                    "`imageLimit` INTEGER, " +
+                    "`maxCommentChars` INTEGER, " +
+                    "`supportsMedia` INTEGER NOT NULL, " +
+                    "`sortIndex` INTEGER NOT NULL, " +
+                    "`cachedAtMillis` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`provider`, `id`))",
+            )
+        }
+    }

@@ -6,6 +6,28 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The board list survives closing the app and is readable offline.** It was cached in memory for
+  the lifetime of the process only, so the offline banner would appear over an empty board list
+  after a restart with no connection. Each provider's boards are now stored in the encrypted
+  database, in the order the provider returned them, and refreshed in the background when the cache
+  is empty or more than a day old. A failed refresh keeps showing the stored list rather than
+  emptying it.
+
+### Changed
+- **Android Lint now runs in CI.** ktlint and detekt both read Kotlin as a language; neither knows
+  what an API level, a manifest or a resource is, so that entire category of check had never run.
+  Existing findings are recorded in per-module baselines and new ones fail the build.
+- Updated kotlinx.serialization, Compose, Media3, Paging, Roborazzi and Benchmark to current
+  releases.
+
+### Added
+- **An on-device test for the encrypted database open path**, covering the failure that shipped in
+  82-Alioth: reopening with the same passphrase, opening a second pooled connection, recovering a
+  database written under the old zeroed key, and recreating a file that cannot be decrypted at all.
+  SQLCipher's native library cannot load under Robolectric, so this path was previously untestable
+  and untested.
+
 ## [82-Alioth-p2] - 2026-08-13
 
 ### Fixed

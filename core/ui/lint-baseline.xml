@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
+
+    <issue
+        id="ConstantLocale"
+        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
+        errorLine1="private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(&quot;d MMM yyyy, HH:mm&quot;, Locale.getDefault())"
+        errorLine2="                                                                                                    ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/orbin/core/ui/date/DateFormatting.kt"
+            line="8"
+            column="101"/>
+    </issue>
+
+    <issue
+        id="ConstantLocale"
+        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
+        errorLine1="private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(&quot;d MMM yyyy&quot;, Locale.getDefault())"
+        errorLine2="                                                                                         ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/com/orbin/core/ui/date/DateFormatting.kt"
+            line="9"
+            column="90"/>
+    </issue>
+
+</issues>

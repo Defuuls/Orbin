@@ -1,5 +1,6 @@
 package com.orbin.data.database
 
+import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
@@ -7,6 +8,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.data.database.entity.BoardEntity
 import com.orbin.data.database.entity.BookmarkEntity
 import com.orbin.data.database.entity.HistoryEntity
 
@@ -58,4 +60,39 @@ internal fun HistoryEntry.toEntity(): HistoryEntity =
         lastVisitedMillis = lastVisitedMillis,
         lastReadPostId = lastReadPostId?.value,
         lastReadOffsetPx = lastReadOffsetPx,
+    )
+
+internal fun BoardEntity.toDomain(): Board =
+    Board(
+        id = BoardId(id),
+        title = title,
+        description = description,
+        category = category,
+        isNsfw = isNsfw,
+        pageCount = pageCount,
+        bumpLimit = bumpLimit,
+        imageLimit = imageLimit,
+        maxCommentChars = maxCommentChars,
+        supportsMedia = supportsMedia,
+    )
+
+internal fun Board.toEntity(
+    provider: ProviderId,
+    sortIndex: Int,
+    cachedAtMillis: Long,
+): BoardEntity =
+    BoardEntity(
+        provider = provider.value,
+        id = id.value,
+        title = title,
+        description = description,
+        category = category,
+        isNsfw = isNsfw,
+        pageCount = pageCount,
+        bumpLimit = bumpLimit,
+        imageLimit = imageLimit,
+        maxCommentChars = maxCommentChars,
+        supportsMedia = supportsMedia,
+        sortIndex = sortIndex,
+        cachedAtMillis = cachedAtMillis,
     )

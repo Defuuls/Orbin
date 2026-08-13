@@ -2,11 +2,13 @@ package com.orbin.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
+import com.orbin.data.database.entity.BoardEntity
 import com.orbin.data.database.entity.BookmarkEntity
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.data.database.entity.HistoryEntity
@@ -24,11 +26,14 @@ import com.orbin.data.database.entity.SavedSearchEntity
         RecentSearchEntity::class,
         DownloadEntity::class,
         SavedSearchEntity::class,
+        BoardEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class OrbinDatabase : RoomDatabase() {
+    abstract fun boardDao(): BoardDao
+
     abstract fun bookmarkDao(): BookmarkDao
 
     abstract fun historyDao(): HistoryDao

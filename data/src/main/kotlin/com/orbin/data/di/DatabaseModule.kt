@@ -7,8 +7,10 @@ import com.orbin.data.database.DatabaseKeyRepair
 import com.orbin.data.database.MIGRATION_2_3
 import com.orbin.data.database.MIGRATION_3_4
 import com.orbin.data.database.MIGRATION_4_5
+import com.orbin.data.database.MIGRATION_5_6
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.SelfHealingOpenHelperFactory
+import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
@@ -55,13 +57,16 @@ object DatabaseModule {
                     delegate = SupportOpenHelperFactory(passphrase),
                     repair = DatabaseKeyRepair(context, passphrase)::repair,
                 ),
-            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
             // recreated. Every version from 2 on migrates: a missing migration now fails loudly
             // at open time instead of silently dropping the user's bookmarks and history.
             .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
             .build()
     }
+
+    @Provides
+    fun providesBoardDao(database: OrbinDatabase): BoardDao = database.boardDao()
 
     @Provides
     fun providesBookmarkDao(database: OrbinDatabase): BookmarkDao = database.bookmarkDao()

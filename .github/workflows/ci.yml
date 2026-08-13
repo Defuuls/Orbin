@@ -36,6 +36,12 @@ jobs:
       - name: detekt
         run: ./gradlew detekt --continue
 
+      # ktlint and detekt read Kotlin as a language; only Android Lint knows about API levels,
+      # manifests and resources. Existing findings are recorded in per-module lint-baseline.xml,
+      # so this gates new ones.
+      - name: Android Lint
+        run: ./gradlew lint --continue
+
       - name: Upload analysis reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -44,6 +50,8 @@ jobs:
           path: |
             **/build/reports/detekt/**
             **/build/reports/ktlint/**
+            **/build/reports/lint-results-*.html
+            **/build/reports/lint-results-*.sarif
           if-no-files-found: ignore
 
   unit-tests:

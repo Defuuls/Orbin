@@ -41,6 +41,31 @@ data class HistoryKeyRow(
     val thread: Long,
 )
 
+/**
+ * A provider's board list, cached so it survives process death and is readable offline.
+ *
+ * [sortIndex] preserves the order the provider returned — board lists are curated, not
+ * alphabetical, and re-sorting them locally would show a different list than the site does.
+ * [cachedAtMillis] is uniform across a provider's rows because they are always written as one
+ * batch, and is what the repository ages out against.
+ */
+@Entity(tableName = "boards", primaryKeys = ["provider", "id"])
+data class BoardEntity(
+    val provider: String,
+    val id: String,
+    val title: String,
+    val description: String,
+    val category: String,
+    val isNsfw: Boolean,
+    val pageCount: Int?,
+    val bumpLimit: Int?,
+    val imageLimit: Int?,
+    val maxCommentChars: Int?,
+    val supportsMedia: Boolean,
+    val sortIndex: Int,
+    val cachedAtMillis: Long,
+)
+
 @Entity(tableName = "recent_searches", primaryKeys = ["provider", "query"])
 data class RecentSearchEntity(
     val provider: String,
