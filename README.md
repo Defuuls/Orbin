@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [v81 — Phecda](https://github.com/Defuuls/Orbin/releases/tag/v81-Phecda)
+**Current release:** [86 — Alula](https://github.com/Defuuls/Orbin/releases/tag/86-Alula)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -103,7 +103,7 @@ reply, or create threads.
 | Concern | Choice |
 | --- | --- |
 | Language | Kotlin 2.4.10 (K2), Coroutines, Flow/StateFlow, Serialization |
-| UI | Jetpack Compose (BOM 2026.06.01), Material 3, Navigation Compose, Paging 3 |
+| UI | Jetpack Compose (BOM 2026.08.00), Material 3, Navigation Compose, Paging 3 |
 | DI | Hilt |
 | Persistence | Room + SQLCipher, encrypted DataStore |
 | Networking | OkHttp, Retrofit, kotlinx.serialization |
