@@ -117,10 +117,13 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        safeMode = diagnosticsRepository.isCrashLooping()
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // After super.onCreate: Hilt field injection for an @AndroidEntryPoint activity happens
+        // there, so reading an injected dependency any earlier throws. Still before setContent,
+        // which is all safe mode needs.
+        safeMode = diagnosticsRepository.isCrashLooping()
 
         setContent {
             // Before the view model, the theme or anything else that reads local state: a crash
