@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [83-Megrez] - 2026-08-13
+
 ### Fixed
 - **The board list survives closing the app and is readable offline.** It was cached in memory for
   the lifetime of the process only, so the offline banner would appear over an empty board list
