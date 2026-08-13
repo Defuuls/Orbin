@@ -27,9 +27,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The app's minSdk is 35, so there is nothing below it to test against. A second, higher
-        # level can be added here when one is worth the minutes.
-        api-level: [35]
+        # Both ends of the supported range. 31 is minSdk and the one that earns its minutes:
+        # it is where predictive back is absent, the notification-permission branch is live, and
+        # edge-to-edge is opt-in rather than enforced. A green run on 35 alone says nothing about
+        # the devices minSdk 31 admits.
+        api-level: [31, 35]
 
     steps:
       - uses: actions/checkout@v7

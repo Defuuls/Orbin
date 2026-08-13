@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Orbin now runs on Android 12 and newer, instead of Android 15 and newer.** Nothing in the app
+  required Android 15: the entire codebase contained a single SDK-level check, and it guarded for
+  Android 13 and below — a branch that could never run at the old floor. Lowering `minSdk` to 31
+  keeps every feature intact, since Material You dynamic color and the app's other Android 12-era
+  foundations start there. Two behaviours degrade gracefully below Android 13, as the platform
+  intends: predictive back gestures don't engage, and the notification-permission prompt doesn't
+  apply because those versions grant it at install time. Instrumentation tests now run against both
+  ends of the supported range rather than only the top.
+
 ## [83-Megrez] - 2026-08-13
 
 ### Fixed

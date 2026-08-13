@@ -8,7 +8,7 @@ and releases work. Current as of **v81 (Phecda)**. See also
 ## Prerequisites
 
 - **JDK 17** (the build targets JVM 17) — verify with `java -version`.
-- **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 35).
+- **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 31).
 - **Android Studio Ladybug (2024.2)** or newer recommended; the command line works too.
 - Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`.
 
@@ -113,7 +113,7 @@ profile is not harmful, only progressively less useful.
 | `ci.yml` | every push to `main` and every PR | `ktlintCheck` + `detekt`, unit tests, then a debug APK build (uploaded as an artifact). Superseded runs are cancelled. |
 | `codeql.yml` | scheduled/push | Manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of GitHub's autobuild. |
 | `screenshots.yml` | PRs touching UI | Records Roborazzi screenshots and uploads them as artifacts. |
-| `instrumentation.yml` | every push to `main` and every PR | Boots an API 35 emulator (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
+| `instrumentation.yml` | every push to `main` and every PR | Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Both ends of the supported range are covered, because a pass on 35 says nothing about the devices `minSdk` 31 admits. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, and opens a draft PR with it. |
 | `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version name, `versionCode`, codename, base branch, draft flag. Bumps `app/build.gradle.kts` and `CHANGELOG.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
