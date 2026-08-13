@@ -726,7 +726,7 @@ private fun FeedGridThreadCell(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "/${thread.key.board.value}/ · ${thread.stats.replyCount} replies",
+                    text = "/${thread.key.board.value}/ · ${stringResource(R.string.feed_media_count, thread.stats.imageCount)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
