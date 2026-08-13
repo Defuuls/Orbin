@@ -1,4 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Orbin</string>
+
+    <!-- Safe mode: shown when consecutive launches crashed during startup. -->
+    <string name="safe_mode_title">Orbin didn\'t start</string>
+    <string name="safe_mode_explanation">The last two launches stopped before the app was usable, so it\'s starting in safe mode instead of trying again.</string>
+    <string name="safe_mode_save_first">Saving the crash details first is worth doing even if you plan to reset — it\'s the only record of what went wrong, and it stays on your device until you share it.</string>
+    <string name="safe_mode_save_crash_details">Save crash details</string>
+    <string name="safe_mode_reset">Reset local data</string>
+    <string name="safe_mode_try_normally">Try starting normally</string>
+    <string name="safe_mode_reset_dialog_title">Reset local data?</string>
+    <string name="safe_mode_reset_dialog_text">Deletes bookmarks, reading history, saved searches and download history from this device. Your settings are kept. This cannot be undone.</string>
+    <string name="safe_mode_reset_confirm">Reset</string>
+    <string name="safe_mode_cancel">Cancel</string>
+
+    <!-- App lock. -->
+    <string name="lock_title">Orbin is locked</string>
+    <string name="lock_authenticate_hint">Authenticate to continue.</string>
+    <string name="lock_unlocking">Unlocking…</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_continue_without">Continue without app lock</string>
+    <string name="lock_biometric_unavailable">Biometric authentication is required but not available. Please enroll a biometric or reconfigure app lock in Settings.</string>
+    <string name="lock_prompt_title">Unlock Orbin</string>
+    <string name="lock_prompt_subtitle">Use fingerprint or face unlock</string>
+    <string name="lock_prompt_cancel">Cancel</string>
+    <string name="lock_error_canceled">Unlock was canceled. Try again.</string>
+    <string name="lock_error_not_recognized">Authentication was not recognized. Try again.</string>
+    <string name="lock_error_timeout">Unlock timed out. Try again.</string>
 </resources>

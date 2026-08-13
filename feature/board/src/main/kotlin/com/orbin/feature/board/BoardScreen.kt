@@ -62,6 +62,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -106,12 +107,14 @@ fun BoardScreen(
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
 
+    // Resolved here rather than in the click lambda, which is not a composable context.
+    val boardSlug = stringResource(R.string.board_slug, viewModel.boardId)
     val openThread: (CatalogThread) -> Unit = { thread ->
         onOpenThread(
             viewModel.providerId,
             viewModel.boardId,
             thread.key.thread.value,
-            thread.originalPost.subject ?: "/${viewModel.boardId}/",
+            thread.originalPost.subject ?: boardSlug,
         )
     }
 
@@ -121,7 +124,7 @@ fun BoardScreen(
             TopAppBar(
                 modifier =
                     Modifier.clickable(
-                        onClickLabel = "Scroll to top",
+                        onClickLabel = stringResource(R.string.board_scroll_to_top),
                         onClick = {
                             scope.launch {
                                 when (layoutMode) {
@@ -134,9 +137,9 @@ fun BoardScreen(
                     ),
                 title = {
                     Column {
-                        Text(viewModel.title.ifBlank { "/${viewModel.boardId}/" })
+                        Text(viewModel.title.ifBlank { stringResource(R.string.board_slug, viewModel.boardId) })
                         Text(
-                            text = "Catalog",
+                            text = stringResource(R.string.board_catalog_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -144,7 +147,10 @@ fun BoardScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.board_back),
+                        )
                     }
                 },
                 actions = {
@@ -152,7 +158,7 @@ fun BoardScreen(
                         IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
                             Icon(
                                 Icons.Filled.PhotoSizeSelectLarge,
-                                contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                contentDescription = stringResource(R.string.board_thumbnail_size, thumbnailSize.label),
                             )
                         }
                     }
@@ -166,9 +172,9 @@ fun BoardScreen(
                                 },
                             contentDescription =
                                 when (layoutMode) {
-                                    BoardLayoutMode.List -> "Show grid catalog"
-                                    BoardLayoutMode.Grid -> "Show image-only catalog"
-                                    BoardLayoutMode.ThumbnailGrid -> "Show list catalog"
+                                    BoardLayoutMode.List -> stringResource(R.string.board_show_grid_catalog)
+                                    BoardLayoutMode.Grid -> stringResource(R.string.board_show_image_only_catalog)
+                                    BoardLayoutMode.ThumbnailGrid -> stringResource(R.string.board_show_list_catalog)
                                 },
                         )
                     }
@@ -197,7 +203,7 @@ fun BoardScreen(
             val refreshError = threads.loadState.refresh as? LoadState.Error
             if (refreshError != null && threads.itemCount == 0) {
                 ErrorView(
-                    message = refreshError.error.message ?: "Couldn't load this board's catalog",
+                    message = refreshError.error.message ?: stringResource(R.string.board_load_error),
                     onRetry = threads::retry,
                 )
             } else {
@@ -412,7 +418,8 @@ private fun ThumbnailOnlyCell(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Image,
-                    contentDescription = thread.originalPost.subject ?: "/${thread.key.board.value}/",
+                    contentDescription =
+                        thread.originalPost.subject ?: stringResource(R.string.board_slug, thread.key.board.value),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -432,7 +439,13 @@ private fun ThumbnailOnlyCell(
             Icon(
                 imageVector = Icons.Outlined.Notifications,
                 contentDescription =
-                    if (isSubscribed) "Unsubscribe from thread" else "Subscribe to thread",
+                    if (isSubscribed) {
+                        stringResource(
+                            R.string.board_unsubscribe,
+                        )
+                    } else {
+                        stringResource(R.string.board_subscribe)
+                    },
                 tint =
                     if (isSubscribed) {
                         MaterialTheme.colorScheme.primary
@@ -453,12 +466,14 @@ internal fun KurobaListThreadCell(
     onToggleSubscription: () -> Unit,
     onClick: () -> Unit,
 ) {
+    // Resolved here: the semantics block below is not a composable context.
+    val alreadyReadLabel = stringResource(R.string.board_already_read)
     ElevatedCard(
         modifier =
             Modifier
                 .fillMaxWidth()
                 // A visited thread is only dimmer to the eye; say it for TalkBack.
-                .semantics { if (isVisited) stateDescription = "Already read" }
+                .semantics { if (isVisited) stateDescription = alreadyReadLabel }
                 .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -496,12 +511,14 @@ internal fun KurobaGridThreadCell(
     onToggleSubscription: () -> Unit,
     onClick: () -> Unit,
 ) {
+    // Resolved here: the semantics block below is not a composable context.
+    val alreadyReadLabel = stringResource(R.string.board_already_read)
     ElevatedCard(
         modifier =
             Modifier
                 .fillMaxWidth()
                 // A visited thread is only dimmer to the eye; say it for TalkBack.
-                .semantics { if (isVisited) stateDescription = "Already read" }
+                .semantics { if (isVisited) stateDescription = alreadyReadLabel }
                 .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -520,9 +537,9 @@ internal fun KurobaGridThreadCell(
                         imageVector = Icons.Outlined.Notifications,
                         contentDescription =
                             if (isSubscribed) {
-                                "Unsubscribe from thread"
+                                stringResource(R.string.board_unsubscribe)
                             } else {
-                                "Subscribe to thread"
+                                stringResource(R.string.board_subscribe)
                             },
                         tint =
                             if (isSubscribed) {
@@ -579,12 +596,21 @@ private fun CatalogThumbnail(
 
                     if (attachment.isSpoiler) {
                         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)))
-                        Icon(Icons.Filled.VisibilityOff, contentDescription = "Spoiler", tint = Color.White)
+                        Icon(
+                            Icons.Filled.VisibilityOff,
+                            contentDescription = stringResource(R.string.board_spoiler),
+                            tint = Color.White,
+                        )
                     } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
                         Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
                             Icon(
                                 imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                                contentDescription =
+                                    if (attachment.type == MediaType.AUDIO) {
+                                        stringResource(R.string.board_audio)
+                                    } else {
+                                        stringResource(R.string.board_video)
+                                    },
                                 tint = Color.White,
                                 modifier = Modifier.padding(8.dp).size(24.dp),
                             )
@@ -632,13 +658,13 @@ private fun ThreadTitle(
         if (thread.stats.isSticky) {
             Icon(
                 imageVector = Icons.Filled.PushPin,
-                contentDescription = "Sticky",
+                contentDescription = stringResource(R.string.board_sticky),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(16.dp),
             )
         }
         Text(
-            text = thread.originalPost.subject ?: "No.${thread.key.thread.value}",
+            text = thread.originalPost.subject ?: stringResource(R.string.board_post_number, thread.key.thread.value),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             // Already-read threads dim like a visited link, so a returning glance at the catalog

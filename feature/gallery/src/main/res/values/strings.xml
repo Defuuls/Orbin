@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gallery_title">Gallery</string>
+    <string name="gallery_tab_browse">Browse</string>
+    <string name="gallery_tab_bookmarks">Bookmarks</string>
+    <string name="gallery_subtitle_browse">Browse media by board and thread</string>
+    <string name="gallery_subtitle_bookmarks">Your bookmarked threads</string>
+    <string name="gallery_no_media">No media in this thread</string>
+    <string name="gallery_preloading">Preloading</string>
+    <string name="gallery_preload_thread">Preload thread</string>
+    <string name="gallery_preparing_media">Preparing media in the background…</string>
+    <string name="gallery_board_label">Board</string>
+    <string name="gallery_thread_label">Thread</string>
+    <!-- A board shown as its slug and title, e.g. "/g/ - Technology". -->
+    <string name="gallery_board_item">/%1$s/ - %2$s</string>
+    <string name="gallery_audio">Audio</string>
+    <string name="gallery_video">Video</string>
+    <!-- A post number shown imageboard-style, e.g. No.12345. -->
+    <string name="gallery_post_number">No.%1$d</string>
+    <string name="gallery_no_bookmarks">No bookmarks yet</string>
+    <string name="gallery_remove_bookmark_title">Remove bookmark?</string>
+    <string name="gallery_remove_bookmark_text">This removes "%1$s" from your bookmarks.</string>
+    <string name="gallery_remove">Remove</string>
+    <!-- A bookmark's board and reply count, e.g. "/g/ · 12 replies". -->
+    <string name="gallery_bookmark_summary">/%1$s/ · %2$d replies</string>
+    <string name="gallery_watch">Watch</string>
+    <string name="gallery_unwatch">Unwatch</string>
+</resources>

@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -68,15 +69,15 @@ fun HomeScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             ModernCenterTopAppBar(
-                title = "Boards",
+                title = stringResource(R.string.home_boards_title),
                 modifier =
                     Modifier.clickable(
-                        onClickLabel = "Scroll to top",
+                        onClickLabel = stringResource(R.string.home_scroll_to_top),
                         onClick = { scope.launch { listState.animateScrollToItem(0) } },
                     ),
                 actions = {
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_settings))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -185,7 +186,7 @@ private fun BoardList(
 
         if (otherBoards.isNotEmpty()) {
             item {
-                ModernListItemHeader(title = "All Boards")
+                ModernListItemHeader(title = stringResource(R.string.home_all_boards_header))
             }
             items(otherBoards, key = { it.id.value }) { board ->
                 BoardItemCard(
@@ -256,7 +257,12 @@ private fun BoardItemCard(
                     modifier = Modifier.padding(4.dp),
                 ) {
                     val starIcon = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder
-                    val starDesc = if (isFavorite) "Remove favorite" else "Favorite"
+                    val starDesc =
+                        if (isFavorite) {
+                            stringResource(R.string.home_remove_favorite)
+                        } else {
+                            stringResource(R.string.home_favorite)
+                        }
                     val starTint =
                         if (isFavorite) {
                             MaterialTheme.colorScheme.primary

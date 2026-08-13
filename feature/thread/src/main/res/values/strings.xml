@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="thread_title_fallback">Thread</string>
+    <string name="thread_back">Back</string>
+    <string name="thread_scroll_to_top">Scroll to top</string>
+    <string name="thread_show_thumbnails_only">Show thumbnails only</string>
+    <string name="thread_show_posts">Show posts</string>
+    <string name="thread_thumbnail_size">Thumbnail size: %1$s</string>
+    <string name="thread_bookmark">Bookmark</string>
+    <string name="thread_remove_bookmark">Remove bookmark</string>
+    <string name="thread_more_actions">More thread actions</string>
+    <string name="thread_save">Save thread</string>
+    <string name="thread_delete_saved_copy">Delete saved copy</string>
+    <string name="thread_download_all_media">Download all media</string>
+    <string name="thread_export_links">Export links</string>
+    <string name="thread_poster_anonymous">Anonymous</string>
+    <!-- A per-thread poster id, shown imageboard-style, e.g. ID:Ab3xY. -->
+    <string name="thread_poster_id">ID:%1$s</string>
+    <!-- A post number shown imageboard-style, e.g. No.12345. -->
+    <string name="thread_post_number">No.%1$d</string>
+    <string name="thread_post_collapsed">Collapsed</string>
+    <string name="thread_post_expanded">Expanded</string>
+    <string name="thread_expand_post">Expand post</string>
+    <string name="thread_collapse_post">Collapse post</string>
+    <string name="thread_jump_to_post">Jump to post %1$d</string>
+    <string name="thread_saved_copy_banner">This thread is no longer available. Showing your saved copy, as plain text.</string>
+</resources>

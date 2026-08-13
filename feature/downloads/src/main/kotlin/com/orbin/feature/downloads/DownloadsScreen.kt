@@ -1,5 +1,6 @@
 package com.orbin.feature.downloads
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernConfirmDialog
@@ -41,33 +43,39 @@ fun DownloadsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Downloads") },
+                title = { Text(stringResource(R.string.downloads_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.downloads_back),
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { showClearDialog = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Clear")
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.downloads_clear_action))
                     }
                 },
             )
         },
     ) { padding ->
         if (downloads.isEmpty()) {
-            EmptyView("No downloads yet", Modifier.padding(padding))
+            EmptyView(stringResource(R.string.downloads_empty), Modifier.padding(padding))
             return@Scaffold
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             items(downloads, key = { it.id }) { record ->
                 ListItem(
                     headlineContent = { Text(record.fileName) },
-                    supportingContent = { Text(record.status.label()) },
+                    supportingContent = { Text(stringResource(record.status.labelRes())) },
                     trailingContent = {
                         if (record.status == DownloadStatus.FAILED) {
                             IconButton(onClick = { viewModel.retry(record.id) }) {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Retry download")
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = stringResource(R.string.downloads_retry),
+                                )
                             }
                         }
                     },
@@ -79,8 +87,8 @@ fun DownloadsScreen(
 
     if (showClearDialog) {
         ModernConfirmDialog(
-            title = "Clear download history?",
-            text = "This removes every entry from the list below. It doesn't delete the files themselves.",
+            title = stringResource(R.string.downloads_clear_dialog_title),
+            text = stringResource(R.string.downloads_clear_dialog_text),
             onConfirm = {
                 viewModel.clear()
                 showClearDialog = false
@@ -90,10 +98,11 @@ fun DownloadsScreen(
     }
 }
 
-private fun DownloadStatus.label(): String =
+@StringRes
+private fun DownloadStatus.labelRes(): Int =
     when (this) {
-        DownloadStatus.QUEUED -> "Queued"
-        DownloadStatus.RUNNING -> "Downloading…"
-        DownloadStatus.COMPLETED -> "Completed"
-        DownloadStatus.FAILED -> "Failed"
+        DownloadStatus.QUEUED -> R.string.downloads_status_queued
+        DownloadStatus.RUNNING -> R.string.downloads_status_running
+        DownloadStatus.COMPLETED -> R.string.downloads_status_completed
+        DownloadStatus.FAILED -> R.string.downloads_status_failed
     }

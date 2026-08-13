@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_back">Back</string>
+    <string name="downloads_clear_action">Clear</string>
+    <string name="downloads_empty">No downloads yet</string>
+    <string name="downloads_retry">Retry download</string>
+    <string name="downloads_clear_dialog_title">Clear download history?</string>
+    <string name="downloads_clear_dialog_text">This removes every entry from the list below. It doesn\'t delete the files themselves.</string>
+    <string name="downloads_status_queued">Queued</string>
+    <string name="downloads_status_running">Downloading…</string>
+    <string name="downloads_status_completed">Completed</string>
+    <string name="downloads_status_failed">Failed</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_spoiler">Spoiler</string>
+    <string name="media_play">Play</string>
+    <string name="media_open_in_browser">Open in browser</string>
+</resources>

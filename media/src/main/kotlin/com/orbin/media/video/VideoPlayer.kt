@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -64,6 +65,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
+import com.orbin.media.R
 import com.orbin.media.di.VideoMediaDataSource
 import com.orbin.network.interceptor.RetryAfterTracker
 import dagger.hilt.EntryPoint
@@ -302,7 +304,7 @@ fun VideoPlayer(
                         textAlign = TextAlign.Center,
                     )
                     Button(onClick = { uriHandler.openUri(url) }) {
-                        Text("Open in browser")
+                        Text(stringResource(R.string.media_open_in_browser))
                     }
                 }
             }

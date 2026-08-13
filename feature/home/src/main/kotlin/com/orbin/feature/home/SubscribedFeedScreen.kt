@@ -87,6 +87,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -200,7 +201,7 @@ fun SubscribedFeedScreen(
                     TopAppBar(
                         modifier =
                             Modifier.clickable(
-                                onClickLabel = "Scroll to top",
+                                onClickLabel = stringResource(R.string.home_scroll_to_top),
                                 onClick = { scope.launch { scrollFeedToTop(layoutMode, listState, gridState) } },
                             ),
                         title = {
@@ -211,13 +212,16 @@ fun SubscribedFeedScreen(
                         },
                         actions = {
                             IconButton(onClick = viewModel::refresh) {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
+                                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.feed_refresh))
                             }
                             IconButton(
                                 onClick = { collapsedBoards = emptySet() },
                                 enabled = collapsedBoards.isNotEmpty(),
                             ) {
-                                Icon(Icons.Filled.ExpandLess, contentDescription = "Expand all boards")
+                                Icon(
+                                    Icons.Filled.ExpandLess,
+                                    contentDescription = stringResource(R.string.feed_expand_all_boards),
+                                )
                             }
                             IconButton(
                                 onClick = {
@@ -242,13 +246,20 @@ fun SubscribedFeedScreen(
                                         collapsedBoards.size < allBoardIds.size
                                     },
                             ) {
-                                Icon(Icons.Filled.ExpandMore, contentDescription = "Collapse all boards")
+                                Icon(
+                                    Icons.Filled.ExpandMore,
+                                    contentDescription = stringResource(R.string.feed_collapse_all_boards),
+                                )
                             }
                             if (layoutMode == FeedLayoutMode.ThumbnailGrid) {
                                 IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
                                     Icon(
                                         Icons.Filled.PhotoSizeSelectLarge,
-                                        contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.feed_thumbnail_size,
+                                                thumbnailSize.label,
+                                            ),
                                     )
                                 }
                             }
@@ -262,14 +273,14 @@ fun SubscribedFeedScreen(
                                         },
                                     contentDescription =
                                         when (layoutMode) {
-                                            FeedLayoutMode.List -> "Show grid feed"
-                                            FeedLayoutMode.Grid -> "Show image-only feed"
-                                            FeedLayoutMode.ThumbnailGrid -> "Show list feed"
+                                            FeedLayoutMode.List -> stringResource(R.string.feed_show_grid)
+                                            FeedLayoutMode.Grid -> stringResource(R.string.feed_show_image_only)
+                                            FeedLayoutMode.ThumbnailGrid -> stringResource(R.string.feed_show_list)
                                         },
                                 )
                             }
                             IconButton(onClick = onOpenSettings) {
-                                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_settings))
                             }
                         },
                         colors =
@@ -418,7 +429,7 @@ private fun LockNowButton(
 ) {
     if (visible) {
         IconButton(onClick = onClick, modifier = modifier) {
-            Icon(Icons.Filled.Lock, contentDescription = "Lock Orbin now")
+            Icon(Icons.Filled.Lock, contentDescription = stringResource(R.string.feed_lock_now))
         }
     }
 }
@@ -498,7 +509,7 @@ private fun SubscribedFeedList(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No subscribed threads match your search.",
+                        text = stringResource(R.string.feed_no_search_matches),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),
@@ -613,7 +624,7 @@ private fun SubscribedFeedGrid(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No subscribed threads match your search.",
+                        text = stringResource(R.string.feed_no_search_matches),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),
@@ -770,14 +781,14 @@ private fun SubscribedFeedSearchBar(
         value = query,
         onValueChange = onQueryChange,
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Search subscribed threads") },
+        label = { Text(stringResource(R.string.feed_search_label)) },
         singleLine = true,
         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
         trailingIcon =
             if (query.isNotBlank()) {
                 {
                     IconButton(onClick = { onQueryChange("") }) {
-                        Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.feed_clear_search))
                     }
                 }
             } else {
@@ -820,7 +831,12 @@ private fun BoardFeedHeader(
                 ) {
                     Icon(
                         imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
-                        contentDescription = if (isCollapsed) "Expand board" else "Collapse board",
+                        contentDescription =
+                            if (isCollapsed) {
+                                stringResource(R.string.feed_expand_board)
+                            } else {
+                                stringResource(R.string.feed_collapse_board)
+                            },
                         modifier = Modifier.size(24.dp),
                     )
                     Text(
@@ -844,14 +860,17 @@ private fun BoardFeedHeader(
             Box {
                 AssistChip(
                     onClick = { menuExpanded = true },
-                    label = { Text("${feed.threads.size} threads") },
+                    label = { Text(stringResource(R.string.feed_thread_count, feed.threads.size)) },
                     trailingIcon = {
-                        Icon(Icons.Filled.ArrowDropDown, contentDescription = "Adjust threads shown for this board")
+                        Icon(
+                            Icons.Filled.ArrowDropDown,
+                            contentDescription = stringResource(R.string.feed_adjust_thread_limit),
+                        )
                     },
                 )
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
-                        text = { Text("Default (${globalThreadLimit.label})") },
+                        text = { Text(stringResource(R.string.feed_thread_limit_default, globalThreadLimit.label)) },
                         onClick = {
                             onSetThreadLimit(null)
                             menuExpanded = false
@@ -895,6 +914,10 @@ private fun FeedThreadCell(
 ) {
     val isMuted = thread.matchesFilterTokens(mutedTags)
 
+    // Resolved here: the semantics block below is not a composable context.
+    val mutedLabel = stringResource(R.string.feed_muted)
+    val alreadyReadLabel = stringResource(R.string.feed_already_read)
+
     if (tabletLayout) {
         Surface(
             modifier =
@@ -904,9 +927,9 @@ private fun FeedThreadCell(
                     // Dimming is the only visual signal for both states; say them for TalkBack.
                     .semantics {
                         if (isMuted) {
-                            stateDescription = "Muted"
+                            stateDescription = mutedLabel
                         } else if (isVisited) {
-                            stateDescription = "Already read"
+                            stateDescription = alreadyReadLabel
                         }
                     }.clickable(onClick = onClick),
             shape = RoundedCornerShape(6.dp),
@@ -933,9 +956,9 @@ private fun FeedThreadCell(
                     .alpha(if (isMuted) 0.62f else 1f)
                     .semantics {
                         if (isMuted) {
-                            stateDescription = "Muted"
+                            stateDescription = mutedLabel
                         } else if (isVisited) {
-                            stateDescription = "Already read"
+                            stateDescription = alreadyReadLabel
                         }
                     }.clickable(onClick = onClick),
             shape = RoundedCornerShape(8.dp),
@@ -1018,10 +1041,16 @@ private fun FeedThreadCellContent(
                 formatPostDateTime(thread.originalPost.createdAtMillis)?.let { created ->
                     AssistChip(onClick = onClick, label = { Text(created) })
                 }
-                AssistChip(onClick = onClick, label = { Text("${thread.stats.replyCount} replies") })
-                AssistChip(onClick = onClick, label = { Text("${thread.stats.imageCount} media") })
+                AssistChip(
+                    onClick = onClick,
+                    label = { Text(stringResource(R.string.feed_reply_count, thread.stats.replyCount)) },
+                )
+                AssistChip(
+                    onClick = onClick,
+                    label = { Text(stringResource(R.string.feed_media_count, thread.stats.imageCount)) },
+                )
                 if (isMuted) {
-                    AssistChip(onClick = onClick, label = { Text("Muted") })
+                    AssistChip(onClick = onClick, label = { Text(stringResource(R.string.feed_muted)) })
                 }
             }
             Box(modifier = Modifier.heightIn(max = if (tabletLayout) 72.dp else 64.dp)) {
@@ -1047,7 +1076,11 @@ private fun FeedThumbnail(
     ) {
         if (attachments.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("OP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.feed_original_post),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         } else if (mediaScrollEnabled && attachments.size > 1) {
             val pagerState =
@@ -1143,15 +1176,19 @@ private fun EmptySubscribedFeed(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("No subscribed boards", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(
-            text = "Subscribe to boards from the board gallery or run setup again.",
+            stringResource(R.string.feed_no_subscribed_boards),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.feed_no_subscribed_boards_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onOpenBoards) { Text("Boards") }
-            OutlinedButton(onClick = onOpenSettings) { Text("Settings") }
+            OutlinedButton(onClick = onOpenBoards) { Text(stringResource(R.string.home_boards_title)) }
+            OutlinedButton(onClick = onOpenSettings) { Text(stringResource(R.string.home_settings)) }
         }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /**
@@ -46,45 +47,43 @@ fun SafeModeScreen(
                     .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Orbin didn't start", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.safe_mode_title), style = MaterialTheme.typography.headlineSmall)
             Text(
-                "The last two launches stopped before the app was usable, so it's starting in " +
-                    "safe mode instead of trying again.",
+                stringResource(R.string.safe_mode_explanation),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                "Saving the crash details first is worth doing even if you plan to reset — it's " +
-                    "the only record of what went wrong, and it stays on your device until you " +
-                    "share it.",
+                stringResource(R.string.safe_mode_save_first),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            Button(onClick = onExportDiagnostics) { Text("Save crash details") }
+            Button(onClick = onExportDiagnostics) { Text(stringResource(R.string.safe_mode_save_crash_details)) }
 
-            OutlinedButton(onClick = { showResetConfirmation = true }) { Text("Reset local data") }
+            OutlinedButton(
+                onClick = { showResetConfirmation = true },
+            ) { Text(stringResource(R.string.safe_mode_reset)) }
 
-            TextButton(onClick = onContinueAnyway) { Text("Try starting normally") }
+            TextButton(onClick = onContinueAnyway) { Text(stringResource(R.string.safe_mode_try_normally)) }
         }
     }
 
     if (showResetConfirmation) {
         AlertDialog(
             onDismissRequest = { showResetConfirmation = false },
-            title = { Text("Reset local data?") },
+            title = { Text(stringResource(R.string.safe_mode_reset_dialog_title)) },
             text = {
-                Text(
-                    "Deletes bookmarks, reading history, saved searches and download history from " +
-                        "this device. Your settings are kept. This cannot be undone.",
-                )
+                Text(stringResource(R.string.safe_mode_reset_dialog_text))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showResetConfirmation = false
                     onResetLocalData()
-                }) { Text("Reset") }
+                }) { Text(stringResource(R.string.safe_mode_reset_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showResetConfirmation = false }) { Text("Cancel") }
+                TextButton(
+                    onClick = { showResetConfirmation = false },
+                ) { Text(stringResource(R.string.safe_mode_cancel)) }
             },
         )
     }

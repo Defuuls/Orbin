@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_title">History</string>
+    <string name="history_clear_action">Clear history</string>
+    <string name="history_empty">No history yet</string>
+    <!-- A board id shown in imageboard convention, e.g. /g/. -->
+    <string name="history_board_label">/%1$s/</string>
+    <string name="history_clear_dialog_title">Clear reading history?</string>
+    <string name="history_clear_dialog_text">This removes every thread from your reading history on this device.</string>
+</resources>

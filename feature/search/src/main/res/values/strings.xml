@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_title">Search</string>
+    <string name="search_tab_search">Search</string>
+    <!-- The saved-searches tab with its count, e.g. "Saved (3)". -->
+    <string name="search_tab_saved">Saved (%1$d)</string>
+    <string name="search_subscribed_board">Subscribed board</string>
+    <string name="search_all_subscribed_boards">All subscribed boards</string>
+    <!-- A board shown as its slug and title, e.g. "/g/ - Technology". -->
+    <string name="search_board_item">/%1$s/ - %2$s</string>
+    <string name="search_query_label">Search query</string>
+    <string name="search_min_replies">Min replies</string>
+    <string name="search_include_nsfw">Include NSFW</string>
+    <string name="search_idle_hint">Search subscribed boards</string>
+    <string name="search_no_matches">No matches</string>
+    <string name="search_save_this_search">Save This Search</string>
+    <string name="search_no_saved">No saved searches</string>
+    <!-- A board id shown in imageboard convention, e.g. /g/. -->
+    <string name="search_board_slug">/%1$s/</string>
+    <string name="search_delete">Delete</string>
+    <string name="search_delete_saved_title">Delete saved search?</string>
+    <string name="search_delete_saved_text">This deletes "%1$s" from your saved searches.</string>
+</resources>

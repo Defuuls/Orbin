@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -163,7 +164,7 @@ class MainActivity : FragmentActivity() {
                         unlockMessage = message
                     },
                     onAuthenticationFailed = {
-                        unlockMessage = AUTHENTICATION_FAILED_MESSAGE
+                        unlockMessage = getString(R.string.lock_error_not_recognized)
                     },
                 )
             }
@@ -271,9 +272,7 @@ class MainActivity : FragmentActivity() {
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
             finishAuthentication(session)
-            onAuthenticationError(
-                "Biometric authentication is required but not available. Please enroll a biometric or reconfigure app lock in Settings.",
-            )
+            onAuthenticationError(getString(R.string.lock_biometric_unavailable))
             return
         }
 
@@ -285,7 +284,7 @@ class MainActivity : FragmentActivity() {
                     // the current enrollment) on the next attempt.
                     AppLockCrypto.invalidate()
                     finishAuthentication(session)
-                    onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                    onAuthenticationError(getString(R.string.lock_error_canceled))
                     return
                 }
 
@@ -294,7 +293,7 @@ class MainActivity : FragmentActivity() {
                 val promptToCancel = activeBiometricPrompt
                 if (finishAuthentication(session)) {
                     promptToCancel?.cancelAuthentication()
-                    onAuthenticationError(AUTHENTICATION_TIMEOUT_MESSAGE)
+                    onAuthenticationError(getString(R.string.lock_error_timeout))
                 }
             }
         mainHandler.postDelayed(timeout, AUTHENTICATION_TIMEOUT_MS)
@@ -317,7 +316,7 @@ class MainActivity : FragmentActivity() {
                             if (verified) {
                                 onUnlocked()
                             } else {
-                                onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                                onAuthenticationError(getString(R.string.lock_error_canceled))
                             }
                         }
                     }
@@ -328,7 +327,9 @@ class MainActivity : FragmentActivity() {
                     ) {
                         mainHandler.removeCallbacks(timeout)
                         if (finishAuthentication(session)) {
-                            onAuthenticationError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
+                            onAuthenticationError(
+                                errString.toString().ifBlank { getString(R.string.lock_error_canceled) },
+                            )
                         }
                     }
 
@@ -341,17 +342,17 @@ class MainActivity : FragmentActivity() {
         val promptInfo =
             BiometricPrompt.PromptInfo
                 .Builder()
-                .setTitle("Unlock Orbin")
-                .setSubtitle("Use fingerprint or face unlock")
+                .setTitle(getString(R.string.lock_prompt_title))
+                .setSubtitle(getString(R.string.lock_prompt_subtitle))
                 .setAllowedAuthenticators(authenticators)
-                .setNegativeButtonText("Cancel")
+                .setNegativeButtonText(getString(R.string.lock_prompt_cancel))
                 .build()
 
         runCatching { prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher)) }
             .onFailure {
                 mainHandler.removeCallbacks(timeout)
                 if (finishAuthentication(session)) {
-                    onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
+                    onAuthenticationError(getString(R.string.lock_error_canceled))
                 }
             }
     }
@@ -380,9 +381,6 @@ class MainActivity : FragmentActivity() {
     }
 
     private companion object {
-        private const val AUTHENTICATION_ERROR_MESSAGE = "Unlock was canceled. Try again."
-        private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
-        private const val AUTHENTICATION_TIMEOUT_MESSAGE = "Unlock timed out. Try again."
         private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
         private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
 
@@ -488,9 +486,9 @@ private fun LockedScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("Orbin is locked", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = message ?: "Authenticate to continue.",
+            text = message ?: stringResource(R.string.lock_authenticate_hint),
             modifier = Modifier.padding(top = 8.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -500,11 +498,11 @@ private fun LockedScreen(
             enabled = !unlocking,
             modifier = Modifier.padding(top = 16.dp),
         ) {
-            Text(if (unlocking) "Unlocking..." else "Unlock")
+            Text(if (unlocking) stringResource(R.string.lock_unlocking) else stringResource(R.string.lock_unlock))
         }
         if (allowContinueWithoutLock) {
             TextButton(onClick = onContinueWithoutLock) {
-                Text("Continue without app lock")
+                Text(stringResource(R.string.lock_continue_without))
             }
         }
     }

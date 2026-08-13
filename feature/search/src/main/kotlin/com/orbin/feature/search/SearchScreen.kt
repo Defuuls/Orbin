@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,7 +77,7 @@ fun SearchScreen(
     var includeNsfw by remember { mutableStateOf(true) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Search") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.search_title)) }) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             PrimaryTabRow(
                 selectedTabIndex = selectedTab,
@@ -85,12 +86,12 @@ fun SearchScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Search") },
+                    text = { Text(stringResource(R.string.search_tab_search)) },
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Saved (${savedSearches.size})") },
+                    text = { Text(stringResource(R.string.search_tab_saved, savedSearches.size)) },
                 )
             }
 
@@ -175,8 +176,8 @@ private fun BoardDropdown(
             value = selectedBoard?.let { "/${it.id.value}/ - ${it.title}" }.orEmpty(),
             onValueChange = {},
             readOnly = true,
-            label = { Text("Subscribed board") },
-            placeholder = { Text("All subscribed boards") },
+            label = { Text(stringResource(R.string.search_subscribed_board)) },
+            placeholder = { Text(stringResource(R.string.search_all_subscribed_boards)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             singleLine = true,
             modifier =
@@ -189,7 +190,7 @@ private fun BoardDropdown(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("All subscribed boards") },
+                text = { Text(stringResource(R.string.search_all_subscribed_boards)) },
                 onClick = {
                     onSelected(null)
                     expanded = false
@@ -197,7 +198,7 @@ private fun BoardDropdown(
             )
             boards.forEach { board ->
                 DropdownMenuItem(
-                    text = { Text("/${board.id.value}/ - ${board.title}") },
+                    text = { Text(stringResource(R.string.search_board_item, board.id.value, board.title)) },
                     onClick = {
                         onSelected(board)
                         expanded = false
@@ -240,7 +241,7 @@ private fun SearchTabContent(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            label = { Text("Search query") },
+            label = { Text(stringResource(R.string.search_query_label)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions =
@@ -264,7 +265,7 @@ private fun SearchTabContent(
             OutlinedTextField(
                 value = minReplies,
                 onValueChange = onMinRepliesChange,
-                label = { Text("Min replies") },
+                label = { Text(stringResource(R.string.search_min_replies)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
@@ -277,7 +278,7 @@ private fun SearchTabContent(
                     checked = includeNsfw,
                     onCheckedChange = onNsfwToggle,
                 )
-                Text("Include NSFW")
+                Text(stringResource(R.string.search_include_nsfw))
             }
         }
 
@@ -298,19 +299,19 @@ private fun SearchTabContent(
         }
 
         when (val s = state) {
-            SearchUiState.Idle -> EmptyView("Search subscribed boards")
+            SearchUiState.Idle -> EmptyView(stringResource(R.string.search_idle_hint))
             SearchUiState.Loading -> LoadingView()
             is SearchUiState.Error -> ErrorView(s.message)
             is SearchUiState.Results ->
                 if (s.results.isEmpty()) {
-                    EmptyView("No matches")
+                    EmptyView(stringResource(R.string.search_no_matches))
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Button(
                             onClick = onSaveSearch,
                             modifier = Modifier.align(Alignment.End).padding(top = 8.dp),
                         ) {
-                            Text("Save This Search")
+                            Text(stringResource(R.string.search_save_this_search))
                         }
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(s.results, key = { it.key.thread.value }) { result ->
@@ -365,7 +366,7 @@ private fun SavedSearchesTabContent(
 
     Column(modifier = modifier) {
         if (savedSearches.isEmpty()) {
-            EmptyView("No saved searches")
+            EmptyView(stringResource(R.string.search_no_saved))
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(savedSearches, key = { it.id }) { search ->
@@ -378,7 +379,10 @@ private fun SavedSearchesTabContent(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 search.board?.let { board ->
-                                    Text("/${board.value}/", style = MaterialTheme.typography.labelSmall)
+                                    Text(
+                                        stringResource(R.string.search_board_slug, board.value),
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
                                 }
                                 if (search.filters.contentTypes.isNotEmpty()) {
                                     Text(
@@ -390,7 +394,7 @@ private fun SavedSearchesTabContent(
                         },
                         trailingContent = {
                             IconButton(onClick = { pendingDelete = search }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.search_delete))
                             }
                         },
                     )
@@ -402,8 +406,8 @@ private fun SavedSearchesTabContent(
 
     pendingDelete?.let { search ->
         ModernConfirmDialog(
-            title = "Delete saved search?",
-            text = "This deletes \"${search.text}\" from your saved searches.",
+            title = stringResource(R.string.search_delete_saved_title),
+            text = stringResource(R.string.search_delete_saved_text, search.text),
             onConfirm = {
                 onDeleteSearch(search.id)
                 pendingDelete = null

@@ -9,8 +9,8 @@ android {
 
     // Opt in: library modules don't ship Android resources by default (see gradle.properties).
     // This module carries the app-icon-variant preview drawables shown in the feed top bar.
-    buildFeatures {
-        androidResources = true
+    androidResources {
+        enable = true
     }
 
     testOptions {

@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -137,13 +138,21 @@ fun ThreadScreen(
             TopAppBar(
                 modifier =
                     Modifier.clickable(
-                        onClickLabel = "Scroll to top",
+                        onClickLabel = stringResource(R.string.thread_scroll_to_top),
                         onClick = { scrollToTopRequest += 1 },
                     ),
-                title = { Text(viewModel.title.ifBlank { "Thread" }, maxLines = 1) },
+                title = {
+                    Text(
+                        viewModel.title.ifBlank { stringResource(R.string.thread_title_fallback) },
+                        maxLines = 1,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.thread_back),
+                        )
                     }
                 },
                 actions = {
@@ -166,9 +175,9 @@ fun ThreadScreen(
                                 },
                             contentDescription =
                                 if (layoutMode == ThreadLayoutMode.Posts) {
-                                    "Show thumbnails only"
+                                    stringResource(R.string.thread_show_thumbnails_only)
                                 } else {
-                                    "Show posts"
+                                    stringResource(R.string.thread_show_posts)
                                 },
                         )
                     }
@@ -176,7 +185,11 @@ fun ThreadScreen(
                         IconButton(onClick = { thumbnailSizeOverride = thumbnailSize.next() }) {
                             Icon(
                                 Icons.Filled.PhotoSizeSelectLarge,
-                                contentDescription = "Thumbnail size: ${thumbnailSize.label}",
+                                contentDescription =
+                                    stringResource(
+                                        R.string.thread_thumbnail_size,
+                                        thumbnailSize.label,
+                                    ),
                             )
                         }
                     }
@@ -188,7 +201,12 @@ fun ThreadScreen(
                                 } else {
                                     Icons.Outlined.BookmarkBorder
                                 },
-                            contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark",
+                            contentDescription =
+                                if (isBookmarked) {
+                                    stringResource(R.string.thread_remove_bookmark)
+                                } else {
+                                    stringResource(R.string.thread_bookmark)
+                                },
                         )
                     }
                     ThreadOverflowMenu(
@@ -251,11 +269,19 @@ private fun ThreadOverflowMenu(
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "More thread actions")
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.thread_more_actions))
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text(if (isSaved) "Delete saved copy" else "Save thread") },
+                text = {
+                    Text(
+                        if (isSaved) {
+                            stringResource(R.string.thread_delete_saved_copy)
+                        } else {
+                            stringResource(R.string.thread_save)
+                        },
+                    )
+                },
                 leadingIcon = {
                     Icon(
                         if (isSaved) Icons.Filled.Delete else Icons.Filled.Archive,
@@ -268,7 +294,7 @@ private fun ThreadOverflowMenu(
                 },
             )
             DropdownMenuItem(
-                text = { Text("Download all media") },
+                text = { Text(stringResource(R.string.thread_download_all_media)) },
                 leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
                 onClick = {
                     expanded = false
@@ -276,7 +302,7 @@ private fun ThreadOverflowMenu(
                 },
             )
             DropdownMenuItem(
-                text = { Text("Export links") },
+                text = { Text(stringResource(R.string.thread_export_links)) },
                 leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
                 onClick = {
                     expanded = false
@@ -622,6 +648,9 @@ private fun PostHeader(
     onClick: () -> Unit,
 ) {
     val postedTime = remember(post.createdAtMillis) { formatRelativeTime(post.createdAtMillis) }
+    // Resolved here: the semantics block is not a composable context.
+    val collapsedLabel = stringResource(R.string.thread_post_collapsed)
+    val expandedLabel = stringResource(R.string.thread_post_expanded)
     Row(
         modifier =
             Modifier
@@ -629,16 +658,21 @@ private fun PostHeader(
                 // The chevron shows collapse state to the eye; TalkBack needs it said. The click
                 // label names the action, the state description names the current state, and the
                 // chevron itself stays undescribed so neither is announced twice.
-                .semantics { stateDescription = if (isCollapsed) "Collapsed" else "Expanded" }
+                .semantics { stateDescription = if (isCollapsed) collapsedLabel else expandedLabel }
                 .clickable(
-                    onClickLabel = if (isCollapsed) "Expand post" else "Collapse post",
+                    onClickLabel =
+                        if (isCollapsed) {
+                            stringResource(R.string.thread_expand_post)
+                        } else {
+                            stringResource(R.string.thread_collapse_post)
+                        },
                     onClick = onClick,
                 ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = post.poster.name ?: "Anonymous",
+            text = post.poster.name ?: stringResource(R.string.thread_poster_anonymous),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -647,7 +681,11 @@ private fun PostHeader(
             modifier = Modifier.weight(1f, fill = false),
         )
         post.poster.posterId?.let {
-            Text("ID:$it", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(
+                stringResource(R.string.thread_poster_id, it),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
         }
         Spacer(Modifier.weight(1f))
         postedTime?.let { posted ->
@@ -659,7 +697,7 @@ private fun PostHeader(
             )
         }
         Text(
-            text = "No.${post.id.value}",
+            text = stringResource(R.string.thread_post_number, post.id.value),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -697,7 +735,9 @@ private fun Backlinks(
                     Modifier
                         .minimumInteractiveComponentSize()
                         .clip(MaterialTheme.shapes.small)
-                        .clickable(onClickLabel = "Jump to post ${id.value}") { onQuoteClick(id) }
+                        .clickable(
+                            onClickLabel = stringResource(R.string.thread_jump_to_post, id.value),
+                        ) { onQuoteClick(id) }
                         .padding(horizontal = 6.dp, vertical = 4.dp),
             )
         }
@@ -731,7 +771,7 @@ private fun SavedCopyBanner() {
         ) {
             Icon(Icons.Filled.Archive, contentDescription = null)
             Text(
-                "This thread is no longer available. Showing your saved copy, as plain text.",
+                stringResource(R.string.thread_saved_copy_banner),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

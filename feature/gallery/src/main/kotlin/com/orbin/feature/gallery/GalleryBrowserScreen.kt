@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -79,13 +80,13 @@ fun GalleryBrowserScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Gallery")
+                        Text(stringResource(R.string.gallery_title))
                         Text(
                             text =
                                 if (selectedTab == BROWSE_TAB) {
-                                    "Browse media by board and thread"
+                                    stringResource(R.string.gallery_subtitle_browse)
                                 } else {
-                                    "Your bookmarked threads"
+                                    stringResource(R.string.gallery_subtitle_bookmarks)
                                 },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -100,12 +101,12 @@ fun GalleryBrowserScreen(
                 Tab(
                     selected = selectedTab == BROWSE_TAB,
                     onClick = { selectedTab = BROWSE_TAB },
-                    text = { Text("Browse") },
+                    text = { Text(stringResource(R.string.gallery_tab_browse)) },
                 )
                 Tab(
                     selected = selectedTab == BOOKMARKS_TAB,
                     onClick = { selectedTab = BOOKMARKS_TAB },
-                    text = { Text("Bookmarks") },
+                    text = { Text(stringResource(R.string.gallery_tab_bookmarks)) },
                 )
             }
             if (selectedTab == BROWSE_TAB) {
@@ -156,7 +157,7 @@ private fun GalleryBrowseTab(
                 LoadingView(Modifier.fillMaxSize())
 
             state.media.isEmpty() ->
-                EmptyView(state.message ?: "No media in this thread", Modifier.fillMaxSize())
+                EmptyView(state.message ?: stringResource(R.string.gallery_no_media), Modifier.fillMaxSize())
 
             else ->
                 MediaGrid(
@@ -216,7 +217,12 @@ private fun GalleryControls(
             ) {
                 Icon(Icons.Filled.FileDownload, contentDescription = null)
                 Text(
-                    text = if (state.preloadingThread) "Preloading" else "Preload thread",
+                    text =
+                        if (state.preloadingThread) {
+                            stringResource(R.string.gallery_preloading)
+                        } else {
+                            stringResource(R.string.gallery_preload_thread)
+                        },
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -228,7 +234,7 @@ private fun GalleryControls(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    text = state.progressMessage ?: "Preparing media in the background…",
+                    text = state.progressMessage ?: stringResource(R.string.gallery_preparing_media),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -263,13 +269,13 @@ private fun BoardDropdown(
             onValueChange = {},
             readOnly = true,
             enabled = enabled,
-            label = { Text("Board") },
+            label = { Text(stringResource(R.string.gallery_board_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             boards.forEach { board ->
                 DropdownMenuItem(
-                    text = { Text("/${board.id.value}/ - ${board.title}") },
+                    text = { Text(stringResource(R.string.gallery_board_item, board.id.value, board.title)) },
                     onClick = {
                         expanded = false
                         onSelect(board)
@@ -299,7 +305,7 @@ private fun ThreadDropdown(
             onValueChange = {},
             readOnly = true,
             enabled = enabled,
-            label = { Text("Thread") },
+            label = { Text(stringResource(R.string.gallery_thread_label)) },
             trailingIcon = {
                 Icon(Icons.Filled.ExpandMore, contentDescription = null)
             },
@@ -371,7 +377,12 @@ private fun MediaTile(
             Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
                 Icon(
                     imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = if (attachment.type == MediaType.AUDIO) "Audio" else "Video",
+                    contentDescription =
+                        if (attachment.type == MediaType.AUDIO) {
+                            stringResource(R.string.gallery_audio)
+                        } else {
+                            stringResource(R.string.gallery_video)
+                        },
                     tint = Color.White,
                     modifier = Modifier.padding(8.dp).size(24.dp),
                 )
@@ -380,7 +391,10 @@ private fun MediaTile(
     }
 }
 
-private fun CatalogThread.label(): String = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}"
+@Composable
+private fun CatalogThread.label(): String =
+    originalPost.subject?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.gallery_post_number, key.thread.value)
 
 private const val BROWSE_TAB = 0
 private const val BOOKMARKS_TAB = 1

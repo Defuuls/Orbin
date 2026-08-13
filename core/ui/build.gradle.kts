@@ -5,6 +5,12 @@ plugins {
 
 android {
     namespace = "com.orbin.core.ui"
+
+    // Opt in: library modules don't ship Android resources by default (see gradle.properties).
+    // This module's user-facing strings live in res/values/strings.xml so they can be translated.
+    androidResources {
+        enable = true
+    }
 }
 
 dependencies {
