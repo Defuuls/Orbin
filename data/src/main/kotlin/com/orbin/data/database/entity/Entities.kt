@@ -66,6 +66,50 @@ data class BoardEntity(
     val cachedAtMillis: Long,
 )
 
+/**
+ * A thread the reader chose to keep. Threads are pruned upstream — that is the defining property
+ * of the platform — so a thread read an hour ago can be gone, and downloads only ever covered its
+ * media. This keeps its text.
+ */
+@Entity(tableName = "saved_threads", primaryKeys = ["provider", "board", "thread"])
+data class SavedThreadEntity(
+    val provider: String,
+    val board: String,
+    val thread: Long,
+    val title: String,
+    val savedAtMillis: Long,
+    val postCount: Int,
+)
+
+/**
+ * One post of a [SavedThreadEntity], flattened to primitives.
+ *
+ * The comment is stored as its own text rather than the parsed node tree: parsing is a provider
+ * concern and re-running it here would tie saved copies to the engine that produced them. A saved
+ * post therefore reads as plain text, which is what an archive needs to be — attachment URLs are
+ * kept so links survive, while the files themselves remain the job of "download all media".
+ */
+@Entity(tableName = "saved_posts", primaryKeys = ["provider", "board", "thread", "postId"])
+data class SavedPostEntity(
+    val provider: String,
+    val board: String,
+    val thread: Long,
+    val postId: Long,
+    val isOriginalPost: Boolean,
+    val subject: String?,
+    val comment: String,
+    val posterName: String?,
+    val posterTripcode: String?,
+    val posterIdentifier: String?,
+    val posterCapcode: String?,
+    val createdAtMillis: Long,
+    /** Reading order, so replies come back in the order they were posted. */
+    val sortIndex: Int,
+    /** Newline-separated, paired by position with [attachmentNames]. */
+    val attachmentUrls: String,
+    val attachmentNames: String,
+)
+
 @Entity(tableName = "recent_searches", primaryKeys = ["provider", "query"])
 data class RecentSearchEntity(
     val provider: String,

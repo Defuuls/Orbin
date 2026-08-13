@@ -24,7 +24,9 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -45,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -106,6 +109,7 @@ fun ThreadScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
+    val isSaved by viewModel.isSaved.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val mediaScrollEnabled by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
@@ -186,6 +190,9 @@ fun ThreadScreen(
                         )
                     }
                     ThreadOverflowMenu(
+                        isSaved = isSaved,
+                        onSaveThread = viewModel::saveThread,
+                        onForgetSavedThread = viewModel::forgetSavedThread,
                         onDownloadAllMedia = viewModel::downloadAllMedia,
                         onExportLinks = viewModel::exportLinks,
                     )
@@ -205,19 +212,22 @@ fun ThreadScreen(
                 ThreadUiState.Loading -> LoadingView()
                 is ThreadUiState.Error -> ErrorView(state.message, onRetry = viewModel::refresh)
                 is ThreadUiState.Success ->
-                    ThreadContent(
-                        thread = state.thread,
-                        layoutMode = layoutMode,
-                        thumbnailSize = thumbnailSize,
-                        onOpenMedia = onOpenMedia,
-                        mediaScrollIndex = mediaScrollIndex,
-                        onMediaScrollConsumed = onMediaScrollConsumed,
-                        scrollToTopRequest = scrollToTopRequest,
-                        mediaScrollEnabled = mediaScrollEnabled,
-                        initialScrollPosition = initialScrollPosition,
-                        onScrollPositionChanged = viewModel::saveScrollPosition,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (state.fromSavedCopy) SavedCopyBanner()
+                        ThreadContent(
+                            thread = state.thread,
+                            layoutMode = layoutMode,
+                            thumbnailSize = thumbnailSize,
+                            onOpenMedia = onOpenMedia,
+                            mediaScrollIndex = mediaScrollIndex,
+                            onMediaScrollConsumed = onMediaScrollConsumed,
+                            scrollToTopRequest = scrollToTopRequest,
+                            mediaScrollEnabled = mediaScrollEnabled,
+                            initialScrollPosition = initialScrollPosition,
+                            onScrollPositionChanged = viewModel::saveScrollPosition,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
             }
         }
     }
@@ -230,6 +240,9 @@ fun ThreadScreen(
  */
 @Composable
 private fun ThreadOverflowMenu(
+    isSaved: Boolean,
+    onSaveThread: () -> Unit,
+    onForgetSavedThread: () -> Unit,
     onDownloadAllMedia: () -> Unit,
     onExportLinks: () -> Unit,
 ) {
@@ -239,6 +252,19 @@ private fun ThreadOverflowMenu(
             Icon(Icons.Filled.MoreVert, contentDescription = "More thread actions")
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(if (isSaved) "Delete saved copy" else "Save thread") },
+                leadingIcon = {
+                    Icon(
+                        if (isSaved) Icons.Filled.Delete else Icons.Filled.Archive,
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    if (isSaved) onForgetSavedThread() else onSaveThread()
+                },
+            )
             DropdownMenuItem(
                 text = { Text("Download all media") },
                 leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
@@ -673,3 +699,29 @@ private enum class ThreadLayoutMode {
 
 /** How long to wait after scrolling stops before persisting the reading position. */
 private const val SCROLL_SAVE_DEBOUNCE_MS = 600L
+
+/**
+ * Says the thread on screen is the reader's own saved copy rather than the live one — otherwise a
+ * thread that was pruned upstream looks identical to one that is still up, only frozen and
+ * unformatted for no visible reason.
+ */
+@Composable
+private fun SavedCopyBanner() {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(Icons.Filled.Archive, contentDescription = null)
+            Text(
+                "This thread is no longer available. Showing your saved copy, as plain text.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}

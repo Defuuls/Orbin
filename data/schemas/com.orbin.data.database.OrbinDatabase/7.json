@@ -1,0 +1,520 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "fe1533596a57805d02d3102fd81b0b24",
+    "entities": [
+      {
+        "tableName": "bookmarks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, `title` TEXT NOT NULL, `thumbnailUrl` TEXT, `createdAtMillis` INTEGER NOT NULL, `isWatched` INTEGER NOT NULL, `lastSeenReplyCount` INTEGER NOT NULL, `latestReplyCount` INTEGER NOT NULL, `isThreadDead` INTEGER NOT NULL, PRIMARY KEY(`provider`, `board`, `thread`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thread",
+            "columnName": "thread",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "createdAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isWatched",
+            "columnName": "isWatched",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSeenReplyCount",
+            "columnName": "lastSeenReplyCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latestReplyCount",
+            "columnName": "latestReplyCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isThreadDead",
+            "columnName": "isThreadDead",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "board",
+            "thread"
+          ]
+        }
+      },
+      {
+        "tableName": "history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, `title` TEXT NOT NULL, `thumbnailUrl` TEXT, `lastVisitedMillis` INTEGER NOT NULL, `lastReadPostId` INTEGER, `lastReadOffsetPx` INTEGER NOT NULL, PRIMARY KEY(`provider`, `board`, `thread`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thread",
+            "columnName": "thread",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastVisitedMillis",
+            "columnName": "lastVisitedMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastReadPostId",
+            "columnName": "lastReadPostId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastReadOffsetPx",
+            "columnName": "lastReadOffsetPx",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "board",
+            "thread"
+          ]
+        }
+      },
+      {
+        "tableName": "recent_searches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `query` TEXT NOT NULL, `lastUsedMillis` INTEGER NOT NULL, PRIMARY KEY(`provider`, `query`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "query",
+            "columnName": "query",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUsedMillis",
+            "columnName": "lastUsedMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "query"
+          ]
+        }
+      },
+      {
+        "tableName": "downloads",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `url` TEXT NOT NULL, `fileName` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, `relativeDir` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileName",
+            "columnName": "fileName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "createdAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relativeDir",
+            "columnName": "relativeDir",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "saved_searches",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `board` TEXT, `mediaOnly` INTEGER NOT NULL, `minReplies` INTEGER, `includeNsfw` INTEGER NOT NULL, `contentTypes` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mediaOnly",
+            "columnName": "mediaOnly",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minReplies",
+            "columnName": "minReplies",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "includeNsfw",
+            "columnName": "includeNsfw",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentTypes",
+            "columnName": "contentTypes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "createdAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "boards",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `id` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `category` TEXT NOT NULL, `isNsfw` INTEGER NOT NULL, `pageCount` INTEGER, `bumpLimit` INTEGER, `imageLimit` INTEGER, `maxCommentChars` INTEGER, `supportsMedia` INTEGER NOT NULL, `sortIndex` INTEGER NOT NULL, `cachedAtMillis` INTEGER NOT NULL, PRIMARY KEY(`provider`, `id`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isNsfw",
+            "columnName": "isNsfw",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pageCount",
+            "columnName": "pageCount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bumpLimit",
+            "columnName": "bumpLimit",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "imageLimit",
+            "columnName": "imageLimit",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maxCommentChars",
+            "columnName": "maxCommentChars",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "supportsMedia",
+            "columnName": "supportsMedia",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortIndex",
+            "columnName": "sortIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAtMillis",
+            "columnName": "cachedAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "saved_threads",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, `title` TEXT NOT NULL, `savedAtMillis` INTEGER NOT NULL, `postCount` INTEGER NOT NULL, PRIMARY KEY(`provider`, `board`, `thread`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thread",
+            "columnName": "thread",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "savedAtMillis",
+            "columnName": "savedAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postCount",
+            "columnName": "postCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "board",
+            "thread"
+          ]
+        }
+      },
+      {
+        "tableName": "saved_posts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, `postId` INTEGER NOT NULL, `isOriginalPost` INTEGER NOT NULL, `subject` TEXT, `comment` TEXT NOT NULL, `posterName` TEXT, `posterTripcode` TEXT, `posterIdentifier` TEXT, `posterCapcode` TEXT, `createdAtMillis` INTEGER NOT NULL, `sortIndex` INTEGER NOT NULL, `attachmentUrls` TEXT NOT NULL, `attachmentNames` TEXT NOT NULL, PRIMARY KEY(`provider`, `board`, `thread`, `postId`))",
+        "fields": [
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thread",
+            "columnName": "thread",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postId",
+            "columnName": "postId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isOriginalPost",
+            "columnName": "isOriginalPost",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "comment",
+            "columnName": "comment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "posterName",
+            "columnName": "posterName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "posterTripcode",
+            "columnName": "posterTripcode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "posterIdentifier",
+            "columnName": "posterIdentifier",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "posterCapcode",
+            "columnName": "posterCapcode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtMillis",
+            "columnName": "createdAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortIndex",
+            "columnName": "sortIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attachmentUrls",
+            "columnName": "attachmentUrls",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attachmentNames",
+            "columnName": "attachmentNames",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider",
+            "board",
+            "thread",
+            "postId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fe1533596a57805d02d3102fd81b0b24')"
+    ]
+  }
+}

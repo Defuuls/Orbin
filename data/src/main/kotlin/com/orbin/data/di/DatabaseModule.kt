@@ -8,6 +8,7 @@ import com.orbin.data.database.MIGRATION_2_3
 import com.orbin.data.database.MIGRATION_3_4
 import com.orbin.data.database.MIGRATION_4_5
 import com.orbin.data.database.MIGRATION_5_6
+import com.orbin.data.database.MIGRATION_6_7
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.SelfHealingOpenHelperFactory
 import com.orbin.data.database.dao.BoardDao
@@ -16,6 +17,7 @@ import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
+import com.orbin.data.database.dao.SavedThreadDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -57,7 +59,7 @@ object DatabaseModule {
                     delegate = SupportOpenHelperFactory(passphrase),
                     repair = DatabaseKeyRepair(context, passphrase)::repair,
                 ),
-            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
             // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
             // recreated. Every version from 2 on migrates: a missing migration now fails loudly
             // at open time instead of silently dropping the user's bookmarks and history.
@@ -67,6 +69,9 @@ object DatabaseModule {
 
     @Provides
     fun providesBoardDao(database: OrbinDatabase): BoardDao = database.boardDao()
+
+    @Provides
+    fun providesSavedThreadDao(database: OrbinDatabase): SavedThreadDao = database.savedThreadDao()
 
     @Provides
     fun providesBookmarkDao(database: OrbinDatabase): BookmarkDao = database.bookmarkDao()

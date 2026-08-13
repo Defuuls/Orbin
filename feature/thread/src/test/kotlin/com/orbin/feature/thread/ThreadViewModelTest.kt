@@ -22,6 +22,7 @@ import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
+import com.orbin.core.testing.repository.FakeSavedThreadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
@@ -150,6 +151,7 @@ class ThreadViewModelTest {
         downloadRepository = downloadRepository,
         historyRepository = FakeHistoryRepository(),
         settingsRepository = settingsRepository,
+        savedThreadRepository = FakeSavedThreadRepository(),
     )
 
     private fun defaultThread() =

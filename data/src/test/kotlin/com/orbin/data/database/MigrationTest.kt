@@ -56,19 +56,27 @@ class MigrationTest {
         migrationTestHelper.runMigrationsAndValidate(TEST_DB, 6, true, MIGRATION_5_6)
     }
 
+    @Test
+    fun migrate6To7() {
+        migrationTestHelper.createDatabase(TEST_DB, 6).close()
+
+        migrationTestHelper.runMigrationsAndValidate(TEST_DB, 7, true, MIGRATION_6_7)
+    }
+
     /** The full chain a v2 install actually walks through when it upgrades straight to current. */
     @Test
-    fun migrateAllTheWayFrom2To6() {
+    fun migrateAllTheWayFrom2To7() {
         migrationTestHelper.createDatabase(TEST_DB, 2).close()
 
         migrationTestHelper.runMigrationsAndValidate(
             TEST_DB,
-            6,
+            7,
             true,
             MIGRATION_2_3,
             MIGRATION_3_4,
             MIGRATION_4_5,
             MIGRATION_5_6,
+            MIGRATION_6_7,
         )
     }
 }

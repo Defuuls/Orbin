@@ -17,6 +17,13 @@ All notable changes to Orbin are documented here. The format is based on
   matched everything and emptied the feed. Matching now uses the comment's own text.
 
 ### Added
+- **Save a thread's text, so a pruned thread survives.** Downloads have always covered a thread's
+  media; its words were never kept. **Save thread** in the thread's overflow menu stores every post
+  — subject, comment, poster and attachment links — and when that thread later can't be fetched,
+  because it was pruned or deleted, Orbin shows your saved copy with a banner saying so instead of
+  an error you can do nothing about. Saving again captures replies posted since; nothing refreshes
+  a saved copy on its own. A saved thread reads as plain text: the formatting and quote links come
+  from a provider's parser, which isn't re-run on stored posts.
 - **Hide by who posted, not just what was posted.** A hidden or muted tag prefixed with `name:`,
   `cap:`, `trip:` or `id:` matches the poster instead of the post. Names and capcodes match as
   substrings; tripcodes and per-thread poster ids must match in full, since a partial match on an

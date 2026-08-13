@@ -8,6 +8,7 @@ import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.CatalogRepositoryImpl
 import com.orbin.data.repository.DownloadRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
+import com.orbin.data.repository.SavedThreadRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.repository.UpdateRepositoryImpl
@@ -20,6 +21,7 @@ import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
@@ -43,6 +45,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsDiagnosticsRepository(impl: DiagnosticsRepositoryImpl): DiagnosticsRepository
+
+    @Binds
+    @Singleton
+    fun bindsSavedThreadRepository(impl: SavedThreadRepositoryImpl): SavedThreadRepository
 
     @Binds
     @Singleton
