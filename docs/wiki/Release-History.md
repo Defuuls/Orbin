@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v81** in
+Orbin ships regular, signed, tag-driven releases. This page covers **v49 through v86** in
 detail, summarises v35–v48, and keeps the **v30–v34** detail further down; the full record
 lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
@@ -14,7 +14,25 @@ stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward 
 are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
 Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
 Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar,
-Merak, Phecda.
+Merak, Phecda, **Talitha, Tania, Alula**.
+
+## v86 — Alula (2026-08-13)
+
+*Current release.* The second iteration of the comprehensive modernization audit (v82–v86).
+
+- **Reader-facing UI strings extracted to translation resources.** The feed, board catalogs, thread
+  viewer, gallery, search, history, downloads, app lock, and safe mode now draw labels from
+  `strings.xml` per module, enabling translation via `values-xx` locale folders without editing code.
+- **Java-Kotlin static security scanning restored.** Kotlin was briefly upgraded to 2.4.20-Beta1 for
+  a build-cache fix, but this silently disabled CodeQL analysis on every PR — Kotlin reverted to 2.4.10
+  until 2.4.20 reaches stability in Q4 2026.
+- **Thread and thread state now spoken to screen readers** — expanded/collapsed posts, muted threads,
+  already-read indicators, and navigation hints are all announced.
+- **Hidden tags now apply everywhere you read** — catalogs and thread replies, not just the feed.
+- **Save and restore threads offline.** Save thread stores posts permanently; when a thread is pruned,
+  Orbin shows your saved copy with a banner instead of an error.
+- **Hide by who posted, not just what.** Prefix a hidden tag with `name:`, `cap:`, `trip:` or `id:`
+  to filter by poster.
 
 ## v81 — Phecda (2026-08-09)
 

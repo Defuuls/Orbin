@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [86-Alula] - 2026-08-13
+
 ### Changed
 - **Every reading surface's text now lives in string resources, ready for translation.** The feed,
   board catalogs, the thread viewer, gallery, search, history, downloads, the app lock and safe
@@ -13,6 +15,11 @@ All notable changes to Orbin are documented here. The format is based on
   translating Orbin becomes contributing a `values-xx` folder rather than editing Kotlin. The
   settings and onboarding screens, and messages composed in view models, still carry literals —
   each is coupled to code in a way that deserves its own change.
+- **Java-Kotlin static security scanning is restored.** Kotlin was temporarily upgraded to 2.4.20-Beta1
+  to fix a build-cache deserialization vulnerability, but this exceeded CodeQL's Kotlin extractor
+  version ceiling, silently disabling code analysis on every PR. CodeQL support is required before
+  moving to 2.4.20; Kotlin is reverted to 2.4.10 and the build-machine vulnerability is deferred
+  until 2.4.20 stable releases (Q4 2026).
 
 ### Fixed
 - **Thread and catalog state that was only visible is now spoken.** TalkBack now announces whether
