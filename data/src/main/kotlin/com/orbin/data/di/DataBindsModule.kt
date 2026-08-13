@@ -1,5 +1,6 @@
 package com.orbin.data.di
 
+import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
@@ -16,6 +17,7 @@ import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
+import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SearchRepository
@@ -37,6 +39,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsProviderRegistry(impl: ProviderRegistryImpl): ProviderRegistry
+
+    @Binds
+    @Singleton
+    fun bindsDiagnosticsRepository(impl: DiagnosticsRepositoryImpl): DiagnosticsRepository
 
     @Binds
     @Singleton

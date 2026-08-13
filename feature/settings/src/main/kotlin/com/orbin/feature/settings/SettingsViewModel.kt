@@ -19,6 +19,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.UpdateStatus
+import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SearchRepository
@@ -50,11 +51,16 @@ class SettingsViewModel
         private val downloadRepository: DownloadRepository,
         private val backupService: BackupService,
         private val updateRepository: UpdateRepository,
+        private val diagnosticsRepository: DiagnosticsRepository,
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
+        private val _diagnosticsStatus = MutableStateFlow<DiagnosticsStatus?>(null)
+
+        /** Result of the last diagnostics export or clear, for a snackbar. */
+        val diagnosticsStatus: StateFlow<DiagnosticsStatus?> = _diagnosticsStatus.asStateFlow()
 
         /** State of a manual update check, for the button and its result message. */
         val updateCheck: StateFlow<UpdateCheckState> = _updateCheck.asStateFlow()
@@ -221,6 +227,36 @@ class SettingsViewModel
                     }
             }
 
+        /**
+         * Writes the recorded crash reports through [sink], mirroring [exportBackup] so SAF URIs
+         * stay out of the ViewModel. Reports what happened so the UI can say "nothing to export"
+         * rather than silently writing an empty file.
+         */
+        fun exportDiagnostics(sink: suspend (String) -> Unit) =
+            update {
+                val report = diagnosticsRepository.exportReport()
+                _diagnosticsStatus.value =
+                    if (report == null) {
+                        DiagnosticsStatus.Empty
+                    } else {
+                        runCatching { sink(report) }
+                            .fold(
+                                onSuccess = { DiagnosticsStatus.Exported },
+                                onFailure = { DiagnosticsStatus.Failed(it.message ?: "Could not write the file") },
+                            )
+                    }
+            }
+
+        fun clearDiagnostics() =
+            update {
+                diagnosticsRepository.clearReports()
+                _diagnosticsStatus.value = DiagnosticsStatus.Cleared
+            }
+
+        fun clearDiagnosticsStatus() {
+            _diagnosticsStatus.value = null
+        }
+
         fun clearBackupStatus() {
             _backupStatus.value = null
         }
@@ -233,6 +269,20 @@ class SettingsViewModel
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
+
+/** Outcome of exporting or clearing local crash diagnostics. */
+sealed interface DiagnosticsStatus {
+    data object Exported : DiagnosticsStatus
+
+    /** Nothing has been recorded — worth saying, rather than writing an empty file. */
+    data object Empty : DiagnosticsStatus
+
+    data object Cleared : DiagnosticsStatus
+
+    data class Failed(
+        val message: String,
+    ) : DiagnosticsStatus
+}
 
 /** Outcome of the most recent backup export or import. */
 sealed interface BackupStatus {

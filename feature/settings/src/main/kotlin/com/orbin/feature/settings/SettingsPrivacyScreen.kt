@@ -1,5 +1,7 @@
 package com.orbin.feature.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -7,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,6 +38,8 @@ import com.orbin.core.designsystem.component.ModernListItem
 import com.orbin.core.designsystem.component.ModernSmallTopAppBar
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.UpdateStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Locking, local-data controls, the in-app updater, and DNS privacy. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +56,33 @@ fun SettingsPrivacyScreen(
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showClearLocalActivityDialog by remember { mutableStateOf(false) }
+    val diagnosticsStatus by viewModel.diagnosticsStatus.collectAsStateWithLifecycle()
+
+    // Writing the file is the caller's job, matching how backups are exported: the ViewModel
+    // produces the text and never sees a SAF URI.
+    val exportDiagnosticsLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            viewModel.exportDiagnostics { report ->
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(report.toByteArray()) }
+                        ?: error("Could not open the selected file")
+                }
+            }
+        }
+
+    LaunchedEffect(diagnosticsStatus) {
+        val message =
+            when (val status = diagnosticsStatus) {
+                null -> return@LaunchedEffect
+                DiagnosticsStatus.Exported -> "Crash details saved"
+                DiagnosticsStatus.Empty -> "No crashes have been recorded"
+                DiagnosticsStatus.Cleared -> "Crash details deleted"
+                is DiagnosticsStatus.Failed -> status.message
+            }
+        snackbarHostState.showSnackbar(message = message, withDismissAction = true)
+        viewModel.clearDiagnosticsStatus()
+    }
 
     // The row itself shows progress; the snackbar exists to carry the "Open release" action, so it
     // is only worth raising once the check has actually finished.
@@ -123,6 +155,16 @@ fun SettingsPrivacyScreen(
                         Icon(Icons.Filled.DeleteOutline, contentDescription = "Clear local activity")
                     }
                 },
+            )
+            ModernListItem(
+                title = "Crash details",
+                subtitle = "Save a copy of any recorded crashes. Nothing is sent anywhere on its own.",
+                trailing = {
+                    IconButton(onClick = { exportDiagnosticsLauncher.launch(DIAGNOSTICS_FILE_NAME) }) {
+                        Icon(Icons.Filled.BugReport, contentDescription = "Save crash details")
+                    }
+                },
+                onClick = { exportDiagnosticsLauncher.launch(DIAGNOSTICS_FILE_NAME) },
             )
             ModernListItem(
                 title = "HTTPS only",
@@ -208,3 +250,5 @@ private fun UpdateCheckState.rowSubtitle(currentVersionName: String): String =
                 is UpdateStatus.Available -> "${status.tag} is available on GitHub"
             }
     }
+
+private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"

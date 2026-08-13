@@ -41,13 +41,19 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
+import androidx.lifecycle.lifecycleScope
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
+import com.orbin.domain.repository.DiagnosticsRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -62,6 +68,28 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var appLockController: AppLockController
 
+    @Inject
+    lateinit var diagnosticsRepository: DiagnosticsRepository
+
+    /**
+     * Registered eagerly: the safe-mode screen may be the very first thing composed, and a
+     * launcher registered after the activity is started throws.
+     */
+    private val exportDiagnosticsLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            uri ?: return@registerForActivityResult
+            lifecycleScope.launch {
+                val report = diagnosticsRepository.exportReport() ?: return@launch
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        contentResolver.openOutputStream(uri)?.use { it.write(report.toByteArray()) }
+                    }
+                }
+            }
+        }
+
+    private var safeMode by mutableStateOf(false)
+
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
@@ -69,12 +97,47 @@ class MainActivity : FragmentActivity() {
     private var authenticationSession = 0
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    /** The recovery UI shown when startup has been crash-looping. */
+    @Composable
+    private fun SafeMode() {
+        SafeModeScreen(
+            onExportDiagnostics = { exportDiagnostics() },
+            onResetLocalData = {
+                lifecycleScope.launch {
+                    diagnosticsRepository.resetLocalData()
+                    safeMode = false
+                }
+            },
+            onContinueAnyway = { safeMode = false },
+        )
+    }
+
+    private fun exportDiagnostics() {
+        exportDiagnosticsLauncher.launch(DIAGNOSTICS_FILE_NAME)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        safeMode = diagnosticsRepository.isCrashLooping()
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         setContent {
+            // Before the view model, the theme or anything else that reads local state: a crash
+            // loop is most likely caused by that state, so safe mode must not depend on it.
+            if (safeMode) {
+                SafeMode()
+                return@setContent
+            }
+
+            // A launch that stays up this long counts as working, clearing the crash-loop counter.
+            // Long enough that a startup crash would already have happened, short enough that a
+            // user who waits out one bad launch isn't held in safe mode afterwards.
+            LaunchedEffect(Unit) {
+                delay(LAUNCH_SUCCESS_DELAY_MILLIS)
+                diagnosticsRepository.markLaunchSucceeded()
+            }
+
             val viewModel: MainViewModel = hiltViewModel()
             val settings by viewModel.settings.collectAsStateWithLifecycle()
             val ready by viewModel.ready.collectAsStateWithLifecycle()
@@ -386,6 +449,10 @@ class MainActivity : FragmentActivity() {
         private const val AUTHENTICATION_FAILED_MESSAGE = "Authentication was not recognized. Try again."
         private const val AUTHENTICATION_TIMEOUT_MESSAGE = "Unlock timed out. Try again."
         private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
+        private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
+
+        /** How long a launch must stay up before it counts as working. */
+        private const val LAUNCH_SUCCESS_DELAY_MILLIS = 15_000L
     }
 }
 

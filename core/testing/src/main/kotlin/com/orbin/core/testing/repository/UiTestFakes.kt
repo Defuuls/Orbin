@@ -7,6 +7,7 @@ import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.UpdateStatus
+import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.UpdateRepository
@@ -101,6 +102,38 @@ class FakeUpdateRepository(
     var status: OrbinResult<UpdateStatus> = OrbinResult.Success(UpdateStatus.UpToDate),
 ) : UpdateRepository {
     override suspend fun checkForUpdate(currentVersionName: String): OrbinResult<UpdateStatus> = status
+}
+
+/** Records nothing and reports a healthy launch, so tests never land in safe mode. */
+class FakeDiagnosticsRepository(
+    var crashLooping: Boolean = false,
+    var report: String? = null,
+) : DiagnosticsRepository {
+    var launchesMarkedSucceeded = 0
+        private set
+    var reportsCleared = 0
+        private set
+    var localDataResets = 0
+        private set
+
+    override fun isCrashLooping(): Boolean = crashLooping
+
+    override fun markLaunchSucceeded() {
+        launchesMarkedSucceeded++
+    }
+
+    override suspend fun hasReports(): Boolean = report != null
+
+    override suspend fun exportReport(): String? = report
+
+    override suspend fun clearReports() {
+        report = null
+        reportsCleared++
+    }
+
+    override suspend fun resetLocalData() {
+        localDataResets++
+    }
 }
 
 /** Reports DNS as encrypted unless a test says otherwise. */
