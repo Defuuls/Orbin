@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [82-Alioth-p2] - 2026-08-13
+
 ### Fixed
 - **The app crashed on launch with "file is not a database" for everyone upgrading to 82-Alioth.**
   The heap-hygiene step added in 82-Alioth zeroed the SQLCipher passphrase immediately after handing
@@ -17,6 +19,56 @@ All notable changes to Orbin are documented here. The format is based on
   are detected on the failing open and rekeyed to the real passphrase, so bookmarks, history and
   downloads survive. Any database that still cannot be opened is recreated empty rather than
   crashing the app on every launch.
+
+## [82-Alioth-p1] - 2026-08-12
+
+### Fixed
+- **Hardened passphrase recovery against a stored key that can no longer be read.** A SQLCipher
+  passphrase whose stored form is malformed, or whose Android Keystore key is gone, no longer
+  throws out of app startup: it is treated as "no usable passphrase", and a fresh one is generated
+  with the old database dropped so it can be recreated. A failure to write the new passphrase back
+  is likewise tolerated rather than fatal.
+
+### Known issues
+- **This release does not fix the 82-Alioth launch crash it was cut for.** The passphrase was never
+  the unreadable part — it was being zeroed before SQLCipher read it — so affected users kept
+  crashing on launch until 82-Alioth-p2.
+
+## [82-Alioth] - 2026-08-12
+
+### Fixed
+- **A thread whose response contained no posts crashed the app** instead of reporting that the
+  thread was gone. Threads that have been pruned or deleted now surface as a normal "not found"
+  error the UI can show and retry from.
+- **Reading history could lose an update when two entries were recorded at once.** Recording an
+  entry read the existing row, merged it, and wrote it back as three separate steps, so concurrent
+  recordings could overwrite each other's scroll positions; the read-modify-write now happens in a
+  single database transaction.
+- **Pull-to-refresh on a board catalog could skip posts.** Paging's initial load defaulted to three
+  pages' worth of items while subsequent pages fetched one, so refreshing left a gap where the
+  offsets did not line up. The initial load now matches the page size.
+- **Watching a thread you had already bookmarked discarded the bookmark's other details.** Watching
+  now flips the watched flag on the existing bookmark instead of replacing it wholesale, and only
+  creates a new bookmark when there wasn't one.
+- **Switching providers carried the previous provider's subscribed-feed state across.** Scroll
+  position and which boards were collapsed are now tracked per provider, so each provider's feed
+  keeps its own state instead of inheriting whatever the last one was showing.
+
+### Security
+- **The app lock no longer offers an unauthenticated way past itself.** When biometric
+  authentication is unavailable — no enrollment, or enrollment deleted — the lock screen used to
+  offer "Continue without lock", which let anyone holding the device walk straight in. It now falls
+  back to the device credential (PIN, pattern or password), and if the device has neither biometric
+  nor device lock configured it refuses to unlock and asks the user to set a device lock up.
+- **The Keystore key protecting local data is now StrongBox-backed where the device supports it**,
+  falling back to the TEE otherwise. Both keep key material off the heap and out of a copied data
+  directory; StrongBox additionally isolates it in dedicated secure hardware.
+
+### Known issues
+- **This release crashes on launch for anyone upgrading with an existing database.** A heap-hygiene
+  change zeroed the SQLCipher passphrase before the database was ever opened, so every open failed
+  with "file is not a database". 82-Alioth-p1 did not fix it; 82-Alioth-p2 does, and recovers the
+  databases this release created.
 
 ## [81-Phecda] - 2026-08-09
 
