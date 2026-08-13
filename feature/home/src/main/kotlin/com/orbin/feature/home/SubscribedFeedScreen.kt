@@ -1048,10 +1048,6 @@ private fun FeedThreadCellContent(
                 }
                 AssistChip(
                     onClick = onClick,
-                    label = { Text(stringResource(R.string.feed_reply_count, thread.stats.replyCount)) },
-                )
-                AssistChip(
-                    onClick = onClick,
                     label = { Text(stringResource(R.string.feed_media_count, thread.stats.imageCount)) },
                 )
                 if (isMuted) {
