@@ -21,6 +21,7 @@ import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,12 +58,14 @@ class ThreadViewModel
         private val downloadRepository: DownloadRepository,
         private val historyRepository: HistoryRepository,
         private val settingsRepository: SettingsRepository,
+        private val savedThreadRepository: SavedThreadRepository,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
+        private val threadKey = ThreadKey(provider, board, threadId)
         private val key = ThreadKey(provider, board, threadId)
 
         private var loadedThread: Thread? = null
@@ -130,7 +133,20 @@ class ThreadViewModel
             ) { result, filter, hidden ->
                 result.fold(
                     onSuccess = { ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden)) },
-                    onFailure = { ThreadUiState.Error(it.message) },
+                    onFailure = { error ->
+                        // A thread that will not load is usually one that was pruned, which is
+                        // exactly the case a saved copy exists for. Serving it beats an error the
+                        // reader can do nothing about.
+                        val saved = savedThreadRepository.load(threadKey)
+                        if (saved == null) {
+                            ThreadUiState.Error(error.message)
+                        } else {
+                            ThreadUiState.Success(
+                                thread = saved.filteredBy(filter).hidingMatches(hidden),
+                                fromSavedCopy = true,
+                            )
+                        }
+                    },
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
 
@@ -186,6 +202,31 @@ class ThreadViewModel
                             threadTitle = threadTitle,
                         )
                     }
+            }
+        }
+
+        /** True while this thread has a saved copy, so the menu can offer to forget it instead. */
+        val isSaved: StateFlow<Boolean> =
+            savedThreadRepository
+                .isSaved(threadKey)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
+        /**
+         * Keeps the thread as it currently reads. Saving again captures replies posted since, which
+         * is the only way a saved copy stays current — nothing refreshes it in the background.
+         */
+        fun saveThread() {
+            val thread = loadedThread ?: return
+            viewModelScope.launch {
+                savedThreadRepository.save(thread)
+                _exportMessage.value = "Saved this thread's text (${thread.allPosts.size} posts)"
+            }
+        }
+
+        fun forgetSavedThread() {
+            viewModelScope.launch {
+                savedThreadRepository.forget(threadKey)
+                _exportMessage.value = "Deleted the saved copy"
             }
         }
 

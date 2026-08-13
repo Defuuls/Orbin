@@ -5,11 +5,14 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
+import com.orbin.core.model.SavedThreadSummary
+import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.UpdateRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,6 +105,43 @@ class FakeUpdateRepository(
     var status: OrbinResult<UpdateStatus> = OrbinResult.Success(UpdateStatus.UpToDate),
 ) : UpdateRepository {
     override suspend fun checkForUpdate(currentVersionName: String): OrbinResult<UpdateStatus> = status
+}
+
+/** Keeps saved threads in memory, so a test can save one and read it back. */
+class FakeSavedThreadRepository(
+    private val saved: MutableMap<ThreadKey, Thread> = mutableMapOf(),
+) : SavedThreadRepository {
+    private val state = MutableStateFlow(saved.keys.toSet())
+
+    override fun observeSaved(): Flow<List<SavedThreadSummary>> =
+        state.map { keys ->
+            keys.map { key ->
+                SavedThreadSummary(
+                    key = key,
+                    title =
+                        saved
+                            .getValue(key)
+                            .originalPost.subject
+                            .orEmpty(),
+                    savedAtMillis = 0,
+                    postCount = saved.getValue(key).allPosts.size,
+                )
+            }
+        }
+
+    override fun isSaved(key: ThreadKey): Flow<Boolean> = state.map { key in it }
+
+    override suspend fun save(thread: Thread) {
+        saved[thread.key] = thread
+        state.value = saved.keys.toSet()
+    }
+
+    override suspend fun load(key: ThreadKey): Thread? = saved[key]
+
+    override suspend fun forget(key: ThreadKey) {
+        saved.remove(key)
+        state.value = saved.keys.toSet()
+    }
 }
 
 /** Records nothing and reports a healthy launch, so tests never land in safe mode. */

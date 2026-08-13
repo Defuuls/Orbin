@@ -80,3 +80,41 @@ internal val MIGRATION_5_6 =
             )
         }
     }
+
+internal val MIGRATION_6_7 =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v7 lets a reader keep a thread's text, so a thread pruned upstream survives locally.
+            // Statements copied from the exported v7 schema so the result is byte-identical to a
+            // freshly created database, which is what Room validates.
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `saved_threads` (" +
+                    "`provider` TEXT NOT NULL, " +
+                    "`board` TEXT NOT NULL, " +
+                    "`thread` INTEGER NOT NULL, " +
+                    "`title` TEXT NOT NULL, " +
+                    "`savedAtMillis` INTEGER NOT NULL, " +
+                    "`postCount` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`provider`, `board`, `thread`))",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `saved_posts` (" +
+                    "`provider` TEXT NOT NULL, " +
+                    "`board` TEXT NOT NULL, " +
+                    "`thread` INTEGER NOT NULL, " +
+                    "`postId` INTEGER NOT NULL, " +
+                    "`isOriginalPost` INTEGER NOT NULL, " +
+                    "`subject` TEXT, " +
+                    "`comment` TEXT NOT NULL, " +
+                    "`posterName` TEXT, " +
+                    "`posterTripcode` TEXT, " +
+                    "`posterIdentifier` TEXT, " +
+                    "`posterCapcode` TEXT, " +
+                    "`createdAtMillis` INTEGER NOT NULL, " +
+                    "`sortIndex` INTEGER NOT NULL, " +
+                    "`attachmentUrls` TEXT NOT NULL, " +
+                    "`attachmentNames` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`provider`, `board`, `thread`, `postId`))",
+            )
+        }
+    }
