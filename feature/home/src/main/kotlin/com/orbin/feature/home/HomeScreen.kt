@@ -43,6 +43,7 @@ import com.orbin.core.designsystem.component.ModernCenterTopAppBar
 import com.orbin.core.designsystem.component.ModernListItemHeader
 import com.orbin.core.model.Board
 import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import kotlinx.coroutines.launch
@@ -122,7 +123,7 @@ private fun BoardList(
     val filteredBoards =
         boards
             .filterNot { board -> hideNsfwBoards && board.isNsfw }
-            .filterNot { board -> board.matchesAny(hiddenTags) }
+            .filterNot { board -> board.matchesFilterTokens(hiddenTags) }
             .let { visibleBoards ->
                 if (!personalizedHomeFeed) {
                     visibleBoards
@@ -272,10 +273,4 @@ private fun BoardItemCard(
         },
         onClick = onBoardClick,
     )
-}
-
-private fun Board.matchesAny(tokens: Set<String>): Boolean {
-    if (tokens.isEmpty()) return false
-    val haystack = listOf(id.value, title, description).joinToString(" ").lowercase()
-    return tokens.any(haystack::contains)
 }
