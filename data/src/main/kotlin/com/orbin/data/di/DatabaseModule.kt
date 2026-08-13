@@ -3,10 +3,12 @@ package com.orbin.data.di
 import android.content.Context
 import androidx.room.Room
 import com.orbin.data.crypto.DatabasePassphrase
+import com.orbin.data.database.DatabaseKeyRepair
 import com.orbin.data.database.MIGRATION_2_3
 import com.orbin.data.database.MIGRATION_3_4
 import com.orbin.data.database.MIGRATION_4_5
 import com.orbin.data.database.OrbinDatabase
+import com.orbin.data.database.SelfHealingOpenHelperFactory
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
@@ -40,19 +42,25 @@ object DatabaseModule {
             // the database is (re)created encrypted with the fresh passphrase.
             context.deleteDatabase(OrbinDatabase.NAME)
         }
-        val database =
-            Room
-                .databaseBuilder(context, OrbinDatabase::class.java, OrbinDatabase.NAME)
-                .openHelperFactory(SupportOpenHelperFactory(passphrase))
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-                // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
-                // recreated. Every version from 2 on migrates: a missing migration now fails loudly
-                // at open time instead of silently dropping the user's bookmarks and history.
-                .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
-                .build()
-        // Zero the passphrase from the heap after SQLCipher has consumed it.
-        passphrase.fill(0)
-        return database
+        return Room
+            .databaseBuilder(context, OrbinDatabase::class.java, OrbinDatabase.NAME)
+            // The passphrase array must stay intact for as long as the database is open: Room opens
+            // lazily (on whichever thread first touches a DAO, long after this function returns) and
+            // SQLCipher keeps the array by reference, re-reading it every time the connection pool
+            // opens another connection. Zeroing it here to keep key material off the heap is what
+            // shipped in 82-Alioth — it keyed every open with 32 zero bytes and crash-looped the app
+            // with "file is not a database". [DatabaseKeyRepair] recovers the databases that created.
+            .openHelperFactory(
+                SelfHealingOpenHelperFactory(
+                    delegate = SupportOpenHelperFactory(passphrase),
+                    repair = DatabaseKeyRepair(context, passphrase)::repair,
+                ),
+            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
+            // recreated. Every version from 2 on migrates: a missing migration now fails loudly
+            // at open time instead of silently dropping the user's bookmarks and history.
+            .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
+            .build()
     }
 
     @Provides

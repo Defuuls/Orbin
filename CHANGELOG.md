@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The app crashed on launch with "file is not a database" for everyone upgrading to 82-Alioth.**
+  The heap-hygiene step added in 82-Alioth zeroed the SQLCipher passphrase immediately after handing
+  it to Room's open-helper factory — but Room opens the database lazily, on whichever background
+  thread first touches a DAO, and SQLCipher keeps the passphrase by reference rather than copying
+  it. Every open therefore used 32 zero bytes instead of the real key, which SQLCipher reports as
+  "file is not a database" against an existing encrypted `orbin.db`. The passphrase now lives as
+  long as the database does. Databases *created* by 82-Alioth are keyed with those zero bytes: they
+  are detected on the failing open and rekeyed to the real passphrase, so bookmarks, history and
+  downloads survive. Any database that still cannot be opened is recreated empty rather than
+  crashing the app on every launch.
+
 ## [81-Phecda] - 2026-08-09
 
 ### Changed
