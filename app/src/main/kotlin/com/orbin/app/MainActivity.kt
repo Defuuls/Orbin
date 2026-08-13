@@ -264,33 +264,16 @@ class MainActivity : FragmentActivity() {
         authenticationInProgress = true
         val session = ++authenticationSession
 
-        // Biometric-only: a CryptoObject-gated unlock (see below) can't be combined with
-        // DEVICE_CREDENTIAL, since a PIN/pattern unlock doesn't correspond to a fresh execution
-        // of the underlying Keystore crypto operation the way a biometric match does.
+        // Require biometric authentication with KeyStore-backed cryptography.
+        // Device credential fallback is not used to ensure all authentication paths
+        // use cryptographic verification to prevent bypass via hooking tools.
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
-            // Biometric unavailable (e.g., deleted enrollment). Fall back to device credential
-            // (PIN/pattern/password) to maintain the app-lock second-factor guarantee.
-            val deviceCredentialAvailable =
-                BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL) ==
-                    BiometricManager.BIOMETRIC_SUCCESS
-            if (deviceCredentialAvailable) {
-                authenticateWithDeviceCredential(
-                    session = session,
-                    onUnlocked = onUnlocked,
-                    onError = onAuthenticationError,
-                    onFailed = onAuthenticationFailed,
-                )
-            } else {
-                // Neither biometric nor device credential available — this should be rare
-                // (requires a device with neither fingerprint/face nor PIN/pattern/password),
-                // so we fail the authentication attempt entirely instead of allowing bypass.
-                finishAuthentication(session)
-                onAuthenticationError(
-                    "Device lock (PIN/pattern/password) required but not configured. Please set up a device lock in Settings.",
-                )
-            }
+            finishAuthentication(session)
+            onAuthenticationError(
+                "Biometric authentication is required but not available. Please enroll a biometric or reconfigure app lock in Settings.",
+            )
             return
         }
 
@@ -371,56 +354,8 @@ class MainActivity : FragmentActivity() {
                     onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
                 }
             }
-    }
-
-    private fun authenticateWithDeviceCredential(
-        session: Int,
-        onUnlocked: () -> Unit,
-        onError: (String) -> Unit,
-        onFailed: () -> Unit,
-    ) {
-        // Device credential (PIN/pattern/password) auth doesn't use a CryptoObject, so we can't
-        // cryptographically verify like we do with biometric. Instead, successful device credential
-        // auth itself is proof enough of identity, since the OS gates that behind the user's
-        // OS-level security setup.
-        val prompt =
-            BiometricPrompt(
-                this,
-                object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        if (finishAuthentication(session)) {
-                            onUnlocked()
-                        }
-                    }
-
-                    override fun onAuthenticationError(
-                        errorCode: Int,
-                        errString: CharSequence,
-                    ) {
-                        if (finishAuthentication(session)) {
-                            onError(errString.toString().ifBlank { AUTHENTICATION_ERROR_MESSAGE })
-                        }
-                    }
-
-                    override fun onAuthenticationFailed() {
-                        onFailed()
-                    }
-                },
-            )
-        activeBiometricPrompt = prompt
-        val promptInfo =
-            BiometricPrompt.PromptInfo
-                .Builder()
-                .setTitle("Unlock Orbin")
-                .setSubtitle("Use your device lock (PIN/pattern/password)")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
-                .build()
-
-        runCatching { prompt.authenticate(promptInfo) }
-            .onFailure {
-                if (finishAuthentication(session)) {
-                    onError(AUTHENTICATION_ERROR_MESSAGE)
-                }
+            .onSuccess {
+                // Authentication prompt launched successfully
             }
     }
 
