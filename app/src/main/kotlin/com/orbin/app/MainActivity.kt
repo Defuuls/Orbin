@@ -354,9 +354,6 @@ class MainActivity : FragmentActivity() {
                     onAuthenticationError(AUTHENTICATION_ERROR_MESSAGE)
                 }
             }
-            .onSuccess {
-                // Authentication prompt launched successfully
-            }
     }
 
     private fun cancelActiveAuthentication() {
