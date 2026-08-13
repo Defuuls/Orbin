@@ -56,6 +56,12 @@ private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', '
  * span keeps its identity across the rebuild that reveals it. Reveals are per-composition, so
  * scrolling a post out of view and back re-hides it.
  *
+ * Known accessibility limitation: a blacked-out spoiler is a span coloured to match its
+ * background inside this one Text, so a screen reader speaks it immediately — the tap-to-reveal
+ * choice only exists visually. Per-span semantics inside an AnnotatedString aren't expressible
+ * today; fixing this means rendering spoilers as separate composables, which changes text layout
+ * and is out of scope here. Recorded rather than hidden.
+ *
  * For non-interactive previews (catalog cards, feed rows) use [PostCommentPreviewText] instead, so
  * taps fall through to the enclosing card.
  */
