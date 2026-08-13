@@ -20,13 +20,18 @@ internal class DatabasePassphrase(
 
     fun resolve(): Resolved {
         prefs.getString(KEY_PASSPHRASE, null)?.let { stored ->
-            runCatching { LocalDataCipher.decrypt(Base64.decode(stored, Base64.NO_WRAP)) }
-                .getOrNull()
+            runCatching {
+                val decoded = Base64.decode(stored, Base64.NO_WRAP)
+                LocalDataCipher.decrypt(decoded)
+            }.getOrNull()
                 ?.let { return Resolved(it, wipeDatabase = false) }
         }
         val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
-        val wrapped = Base64.encodeToString(LocalDataCipher.encrypt(fresh), Base64.NO_WRAP)
-        prefs.edit().putString(KEY_PASSPHRASE, wrapped).apply()
+        runCatching {
+            val encrypted = LocalDataCipher.encrypt(fresh)
+            val wrapped = Base64.encodeToString(encrypted, Base64.NO_WRAP)
+            prefs.edit().putString(KEY_PASSPHRASE, wrapped).apply()
+        }
         return Resolved(fresh, wipeDatabase = true)
     }
 
