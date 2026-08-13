@@ -9,6 +9,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.filteredBy
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -64,17 +67,24 @@ class GalleryViewModel
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
 
+        /**
+         * The thread's media, in reading order. Filtered exactly as the thread view filters it, so
+         * the page a tapped thumbnail opens at is the one the reader tapped.
+         */
         val media: StateFlow<ImmutableList<MediaAttachment>> =
-            observeThread(provider, board, threadId)
-                .map { result ->
-                    when (result) {
-                        is OrbinResult.Success ->
-                            result.data.allPosts
-                                .flatMap { it.attachments }
-                                .toImmutableList()
-                        is OrbinResult.Failure -> persistentListOf()
-                    }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+            combine(
+                observeThread(provider, board, threadId),
+                settings.map { it.mediaFilter }.distinctUntilChanged(),
+            ) { result, filter ->
+                when (result) {
+                    is OrbinResult.Success ->
+                        result.data.allPosts
+                            .flatMap { it.attachments }
+                            .filteredBy(filter)
+                            .toImmutableList()
+                    is OrbinResult.Failure -> persistentListOf()
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
         fun download(attachment: MediaAttachment) {
             viewModelScope.launch {

@@ -7,6 +7,9 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -22,6 +25,7 @@ import com.orbin.core.testing.repository.FakeHistoryRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -79,6 +83,48 @@ class ThreadViewModelTest {
         }
 
     @Test
+    fun `images-only leaves the posts in place and hides their videos`() =
+        runTest {
+            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.IMAGES))
+            val viewModel = createViewModel(thread = threadWithMixedMedia(), settingsRepository = settings)
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is ThreadUiState.Success) state = awaitItem()
+
+                assertThat(
+                    state.thread.originalPost.attachments
+                        .map { it.id },
+                ).containsExactly("jpg")
+                assertThat(state.thread.replies).hasSize(1)
+                assertThat(
+                    state.thread.replies
+                        .single()
+                        .attachments,
+                ).isEmpty()
+            }
+        }
+
+    @Test
+    fun `downloading all media downloads only what the filter shows`() =
+        runTest {
+            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.VIDEOS))
+            val downloads = FakeDownloadRepository()
+            val viewModel =
+                createViewModel(
+                    thread = threadWithMixedMedia(),
+                    settingsRepository = settings,
+                    downloadRepository = downloads,
+                )
+
+            viewModel.uiState.test { awaitItem() }
+            viewModel.downloadAllMedia()
+
+            assertThat(downloads.enqueuedUrls)
+                .containsExactly("https://example.org/webm", "https://example.org/mp4")
+        }
+
+    @Test
     fun `exporting links from a thread with none reports that instead of writing a file`() =
         runTest {
             val viewModel = createViewModel()
@@ -93,6 +139,7 @@ class ThreadViewModelTest {
         thread: Thread = defaultThread(),
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
+        downloadRepository: FakeDownloadRepository = FakeDownloadRepository(),
     ) = ThreadViewModel(
         savedStateHandle =
             SavedStateHandle(
@@ -100,7 +147,7 @@ class ThreadViewModelTest {
             ),
         observeThread = ObserveThreadUseCase(FakeThreadRepository(thread)),
         bookmarkRepository = bookmarkRepository,
-        downloadRepository = FakeDownloadRepository(),
+        downloadRepository = downloadRepository,
         historyRepository = FakeHistoryRepository(),
         settingsRepository = settingsRepository,
     )
@@ -117,6 +164,47 @@ class ThreadViewModelTest {
                 ),
             stats = ThreadStats(),
         )
+
+    /** An OP with one image and one video, and a reply carrying a second video. */
+    private fun threadWithMixedMedia() =
+        Thread(
+            key = key,
+            originalPost =
+                Post(
+                    id = PostId(THREAD),
+                    board = BoardId(BOARD),
+                    threadId = ThreadId(THREAD),
+                    isOriginalPost = true,
+                    attachments =
+                        persistentListOf(
+                            attachment("jpg", MediaType.IMAGE),
+                            attachment("webm", MediaType.VIDEO),
+                        ),
+                ),
+            replies =
+                persistentListOf(
+                    Post(
+                        id = PostId(THREAD + 1),
+                        board = BoardId(BOARD),
+                        threadId = ThreadId(THREAD),
+                        isOriginalPost = false,
+                        attachments = persistentListOf(attachment("mp4", MediaType.VIDEO)),
+                    ),
+                ),
+            stats = ThreadStats(),
+        )
+
+    private fun attachment(
+        id: String,
+        type: MediaType,
+    ) = MediaAttachment(
+        id = id,
+        originalFileName = "$id.file",
+        extension = "file",
+        type = type,
+        sourceUrl = "https://example.org/$id",
+        thumbnailUrl = "https://example.org/$id/thumb",
+    )
 }
 
 private class FakeThreadRepository(

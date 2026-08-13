@@ -8,6 +8,7 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -29,6 +30,8 @@ interface SettingsRepository {
     suspend fun setHideNsfwBoards(enabled: Boolean)
 
     suspend fun setHideTextOnlyThreads(enabled: Boolean)
+
+    suspend fun setMediaFilter(filter: MediaFilter)
 
     suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval)
 

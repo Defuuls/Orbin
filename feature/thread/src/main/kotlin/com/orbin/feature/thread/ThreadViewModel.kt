@@ -8,12 +8,14 @@ import com.orbin.core.common.result.fold
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.filteredBy
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -87,22 +90,36 @@ class ThreadViewModel
         /** Drives the pull-to-refresh indicator; false again once the reload settles. */
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+        /**
+         * The reader's media filter. Eager so [downloadAllMedia] can read it synchronously and
+         * download exactly what the thread is showing.
+         */
+        private val mediaFilter: StateFlow<MediaFilter> =
+            settingsRepository.settings
+                .map { it.mediaFilter }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
+
         val uiState: StateFlow<ThreadUiState> =
-            reloads
-                .flatMapLatest { attempt ->
-                    // The initial load may serve the cache for instant display. A reload must not:
-                    // the reader is asking whether there are new replies, and the answer cannot be
-                    // the snapshot they are already looking at.
-                    observeThread(provider, board, threadId, forceRefresh = attempt > 0)
-                }.onEach { result ->
-                    if (result is OrbinResult.Success) onThreadLoaded(result.data)
-                    _isRefreshing.value = false
-                }.map { result ->
-                    result.fold(
-                        onSuccess = { ThreadUiState.Success(it) },
-                        onFailure = { ThreadUiState.Error(it.message) },
-                    )
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
+            combine(
+                reloads
+                    .flatMapLatest { attempt ->
+                        // The initial load may serve the cache for instant display. A reload must
+                        // not: the reader is asking whether there are new replies, and the answer
+                        // cannot be the snapshot they are already looking at.
+                        observeThread(provider, board, threadId, forceRefresh = attempt > 0)
+                    }.onEach { result ->
+                        // Deliberately upstream of the filter, so history and the loaded snapshot
+                        // are recorded once per load rather than again on every settings change.
+                        if (result is OrbinResult.Success) onThreadLoaded(result.data)
+                        _isRefreshing.value = false
+                    },
+                mediaFilter,
+            ) { result, filter ->
+                result.fold(
+                    onSuccess = { ThreadUiState.Success(it.filteredBy(filter)) },
+                    onFailure = { ThreadUiState.Error(it.message) },
+                )
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
 
         /** Reloads the thread from the network, bypassing the cache. */
         fun refresh() {
@@ -144,6 +161,9 @@ class ThreadViewModel
             viewModelScope.launch {
                 thread.allPosts
                     .flatMap { it.attachments }
+                    // Downloads what the thread is showing: a reader browsing videos only does not
+                    // expect "download all media" to pull in every image as well.
+                    .filteredBy(mediaFilter.value)
                     .forEach { attachment ->
                         downloadRepository.enqueue(
                             url = attachment.sourceUrl,

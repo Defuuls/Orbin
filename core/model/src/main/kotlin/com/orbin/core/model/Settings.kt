@@ -139,6 +139,12 @@ data class AppSettings(
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
+    /**
+     * Restricts every view that shows post media to one kind of attachment. Threads whose media
+     * is entirely filtered out drop off the feed and board catalogs, since a catalog cell is its
+     * OP's thumbnail and there would be nothing left to show.
+     */
+    val mediaFilter: MediaFilter = MediaFilter.ALL,
     /** How stale the subscribed feed may be before returning to it reloads it. */
     val feedRefreshInterval: FeedRefreshInterval = FeedRefreshInterval.ALWAYS,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,

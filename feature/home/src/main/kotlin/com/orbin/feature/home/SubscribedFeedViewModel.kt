@@ -12,6 +12,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.filteredCatalogBy
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -263,6 +264,9 @@ class SubscribedFeedViewModel
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
                 .filterNot { thread -> thread.matchesAny(settings.hiddenTagTokens()) }
                 .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
+                // Media filtering comes last so it acts on what the feed would otherwise show:
+                // threads left with no matching attachment drop out rather than showing a blank cell.
+                .filteredCatalogBy(settings.mediaFilter)
                 .toImmutableList()
         }
 

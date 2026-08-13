@@ -71,6 +71,7 @@ Introduced in v30 and refined through v32:
 
 | Setting | What it does |
 | --- | --- |
+| Show media | **All media** (default), **Images only**, or **Videos only**. Applies to every view that shows post media — the subscribed feed, board catalogs, thread view, the thread gallery and the gallery browser — so the choice holds wherever you browse. Attachments of the other kind are hidden, and threads left with nothing to show drop out of the feed and catalogs (a catalog cell is its OP's thumbnail, so they would otherwise be blank tiles). GIFs count as images; audio and unrecognised files are hidden by either filter. "Download all media" in a thread, and the gallery browser's preload, follow the same choice. |
 | Autoplay videos | Starts videos automatically. |
 | Mute by default | Videos start muted. |
 | Fullscreen video | Plays videos edge-to-edge, hiding the system bars and app chrome. |

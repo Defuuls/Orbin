@@ -52,6 +52,7 @@ val settingsSearchIndex =
         SettingsSearchEntry("Full-screen feed", SettingsSection.APPEARANCE),
         SettingsSearchEntry("Font size", SettingsSection.APPEARANCE),
         SettingsSearchEntry("Thumbnail size", SettingsSection.APPEARANCE),
+        SettingsSearchEntry("Show media", SettingsSection.MEDIA),
         SettingsSearchEntry("Autoplay videos", SettingsSection.MEDIA),
         SettingsSearchEntry("Mute by default", SettingsSection.MEDIA),
         SettingsSearchEntry("Fullscreen video", SettingsSection.MEDIA),

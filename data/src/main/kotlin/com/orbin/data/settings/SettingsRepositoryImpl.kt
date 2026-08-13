@@ -19,6 +19,7 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -75,6 +76,10 @@ class SettingsRepositoryImpl
 
         override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
             edit { it[Keys.hideTextOnlyThreads] = enabled }
+        }
+
+        override suspend fun setMediaFilter(filter: MediaFilter) {
+            edit { it[Keys.mediaFilter] = filter.name }
         }
 
         override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
@@ -294,6 +299,9 @@ class SettingsRepositoryImpl
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
+                mediaFilter =
+                    this[Keys.mediaFilter]?.toEnumOrDefault(MediaFilter.ALL)
+                        ?: MediaFilter.ALL,
                 feedRefreshInterval =
                     resolveFeedRefreshInterval(this[Keys.feedRefreshInterval], this[Keys.refreshFeedOnReturn]),
                 threadPresentation =
@@ -380,6 +388,7 @@ class SettingsRepositoryImpl
             val mutedTags = stringPreferencesKey("muted_tags")
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
+            val mediaFilter = stringPreferencesKey("media_filter")
             val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
             val feedRefreshInterval = stringPreferencesKey("feed_refresh_interval")
             val threadPresentation = stringPreferencesKey("thread_presentation")

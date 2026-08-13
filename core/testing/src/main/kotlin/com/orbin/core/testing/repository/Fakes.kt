@@ -13,6 +13,7 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -174,6 +175,10 @@ class FakeSettingsRepository(
 
     override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
         update { copy(hideTextOnlyThreads = enabled) }
+    }
+
+    override suspend fun setMediaFilter(filter: MediaFilter) {
+        update { copy(mediaFilter = filter) }
     }
 
     override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
