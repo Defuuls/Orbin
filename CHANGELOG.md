@@ -16,6 +16,8 @@ All notable changes to Orbin are documented here. The format is based on
   thread and what the gallery browser preloads, so neither spends data on files that are not being
   shown. Defaults to all media, and is included in backups.
 
+## [84-Talitha] - 2026-08-13
+
 ### Changed
 - **Orbin now runs on Android 12 and newer, instead of Android 15 and newer.** Nothing in the app
   required Android 15: the entire codebase contained a single SDK-level check, and it guarded for
