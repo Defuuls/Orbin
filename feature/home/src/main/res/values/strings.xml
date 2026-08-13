@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_boards_title">Boards</string>
+    <string name="home_scroll_to_top">Scroll to top</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_all_boards_header">All Boards</string>
+    <string name="home_favorite">Favorite</string>
+    <string name="home_remove_favorite">Remove favorite</string>
+    <string name="feed_refresh">Refresh feed</string>
+    <string name="feed_expand_all_boards">Expand all boards</string>
+    <string name="feed_collapse_all_boards">Collapse all boards</string>
+    <string name="feed_thumbnail_size">Thumbnail size: %1$s</string>
+    <string name="feed_show_grid">Show grid feed</string>
+    <string name="feed_show_image_only">Show image-only feed</string>
+    <string name="feed_show_list">Show list feed</string>
+    <string name="feed_lock_now">Lock Orbin now</string>
+    <string name="feed_no_search_matches">No subscribed threads match your search.</string>
+    <string name="feed_search_label">Search subscribed threads</string>
+    <string name="feed_clear_search">Clear search</string>
+    <string name="feed_expand_board">Expand board</string>
+    <string name="feed_collapse_board">Collapse board</string>
+    <string name="feed_thread_count">%1$d threads</string>
+    <string name="feed_adjust_thread_limit">Adjust threads shown for this board</string>
+    <string name="feed_thread_limit_default">Default (%1$s)</string>
+    <string name="feed_muted">Muted</string>
+    <string name="feed_already_read">Already read</string>
+    <string name="feed_reply_count">%1$d replies</string>
+    <string name="feed_media_count">%1$d media</string>
+    <!-- Marks the thread's opening post in the feed card. -->
+    <string name="feed_original_post">OP</string>
+    <string name="feed_no_subscribed_boards">No subscribed boards</string>
+    <string name="feed_no_subscribed_boards_hint">Subscribe to boards from the board gallery or run setup again.</string>
+</resources>

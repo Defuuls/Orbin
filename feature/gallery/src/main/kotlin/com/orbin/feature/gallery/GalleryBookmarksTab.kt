@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernConfirmDialog
@@ -38,7 +39,7 @@ fun GalleryBookmarksTab(
     var pendingRemove by remember { mutableStateOf<Bookmark?>(null) }
 
     if (bookmarks.isEmpty()) {
-        EmptyView("No bookmarks yet", Modifier.fillMaxSize())
+        EmptyView(stringResource(R.string.gallery_no_bookmarks), Modifier.fillMaxSize())
         return
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -62,9 +63,9 @@ fun GalleryBookmarksTab(
 
     pendingRemove?.let { bookmark ->
         ModernConfirmDialog(
-            title = "Remove bookmark?",
-            text = "This removes \"${bookmark.title}\" from your bookmarks.",
-            confirmLabel = "Remove",
+            title = stringResource(R.string.gallery_remove_bookmark_title),
+            text = stringResource(R.string.gallery_remove_bookmark_text, bookmark.title),
+            confirmLabel = stringResource(R.string.gallery_remove),
             onConfirm = {
                 viewModel.remove(bookmark.key)
                 pendingRemove = null
@@ -85,7 +86,7 @@ private fun BookmarkRow(
         modifier = Modifier.clickable(onClick = onOpen),
         headlineContent = { Text(bookmark.title) },
         supportingContent = {
-            Text("/${bookmark.key.board.value}/ · ${bookmark.latestReplyCount} replies")
+            Text(stringResource(R.string.gallery_bookmark_summary, bookmark.key.board.value, bookmark.latestReplyCount))
         },
         leadingContent =
             if (bookmark.hasUnread) {
@@ -103,11 +104,16 @@ private fun BookmarkRow(
                             } else {
                                 Icons.Outlined.Notifications
                             },
-                        contentDescription = if (bookmark.isWatched) "Unwatch" else "Watch",
+                        contentDescription =
+                            if (bookmark.isWatched) {
+                                stringResource(R.string.gallery_unwatch)
+                            } else {
+                                stringResource(R.string.gallery_watch)
+                            },
                     )
                 }
                 IconButton(onClick = onRemove) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Remove")
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.gallery_remove))
                 }
             }
         },

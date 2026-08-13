@@ -21,16 +21,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.orbin.core.ui.R
 
 /** Centered progress indicator for full-screen loading. */
 @Composable
 fun LoadingView(modifier: Modifier = Modifier) {
+    // Resolved here: the semantics block is not a composable context.
+    val loadingLabel = stringResource(R.string.ui_loading)
     Box(
-        modifier = modifier.fillMaxSize().semantics { contentDescription = "Loading" },
+        modifier = modifier.fillMaxSize().semantics { contentDescription = loadingLabel },
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
@@ -51,7 +55,7 @@ fun ErrorView(
         modifier = modifier,
         action =
             onRetry?.let { retry ->
-                { Button(onClick = retry) { Text("Retry") } }
+                { Button(onClick = retry) { Text(stringResource(R.string.ui_retry)) } }
             },
     )
 }

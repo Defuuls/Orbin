@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernConfirmDialog
@@ -39,17 +40,17 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("History") },
+                title = { Text(stringResource(R.string.history_title)) },
                 actions = {
                     IconButton(onClick = { showClearDialog = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Clear history")
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.history_clear_action))
                     }
                 },
             )
         },
     ) { padding ->
         if (history.isEmpty()) {
-            EmptyView("No history yet", Modifier.padding(padding))
+            EmptyView(stringResource(R.string.history_empty), Modifier.padding(padding))
             return@Scaffold
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -65,7 +66,7 @@ fun HistoryScreen(
                             )
                         },
                     headlineContent = { Text(entry.title) },
-                    supportingContent = { Text("/${entry.key.board.value}/") },
+                    supportingContent = { Text(stringResource(R.string.history_board_label, entry.key.board.value)) },
                 )
                 HorizontalDivider()
             }
@@ -74,8 +75,8 @@ fun HistoryScreen(
 
     if (showClearDialog) {
         ModernConfirmDialog(
-            title = "Clear reading history?",
-            text = "This removes every thread from your reading history on this device.",
+            title = stringResource(R.string.history_clear_dialog_title),
+            text = stringResource(R.string.history_clear_dialog_text),
             onConfirm = {
                 viewModel.clear()
                 showClearDialog = false

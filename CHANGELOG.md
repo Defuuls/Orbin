@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Every reading surface's text now lives in string resources, ready for translation.** The feed,
+  board catalogs, the thread viewer, gallery, search, history, downloads, the app lock and safe
+  mode had every label compiled into code; they now draw from per-module `strings.xml`, so
+  translating Orbin becomes contributing a `values-xx` folder rather than editing Kotlin. The
+  settings and onboarding screens, and messages composed in view models, still carry literals —
+  each is coupled to code in a way that deserves its own change.
+
 ### Fixed
 - **Thread and catalog state that was only visible is now spoken.** TalkBack now announces whether
   a post is collapsed or expanded (and what tapping its header will do), whether a feed thread is

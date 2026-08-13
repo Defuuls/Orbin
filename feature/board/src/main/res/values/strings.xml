@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A board id shown in imageboard convention, e.g. /g/. -->
+    <string name="board_slug">/%1$s/</string>
+    <string name="board_catalog_label">Catalog</string>
+    <string name="board_back">Back</string>
+    <string name="board_scroll_to_top">Scroll to top</string>
+    <string name="board_thumbnail_size">Thumbnail size: %1$s</string>
+    <string name="board_show_grid_catalog">Show grid catalog</string>
+    <string name="board_show_image_only_catalog">Show image-only catalog</string>
+    <string name="board_show_list_catalog">Show list catalog</string>
+    <string name="board_load_error">Couldn\'t load this board\'s catalog</string>
+    <string name="board_subscribe">Subscribe to thread</string>
+    <string name="board_unsubscribe">Unsubscribe from thread</string>
+    <string name="board_spoiler">Spoiler</string>
+    <string name="board_audio">Audio</string>
+    <string name="board_video">Video</string>
+    <string name="board_sticky">Sticky</string>
+    <string name="board_already_read">Already read</string>
+    <!-- A post number shown imageboard-style, e.g. No.12345. -->
+    <string name="board_post_number">No.%1$d</string>
+</resources>

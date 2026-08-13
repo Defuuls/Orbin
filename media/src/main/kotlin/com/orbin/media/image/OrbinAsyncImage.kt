@@ -25,11 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.media.R
 
 /**
  * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.
@@ -151,13 +153,13 @@ fun MediaThumbnail(
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)))
             Icon(
                 imageVector = Icons.Filled.VisibilityOff,
-                contentDescription = "Spoiler",
+                contentDescription = stringResource(R.string.media_spoiler),
                 tint = Color.White,
             )
         } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = "Play",
+                contentDescription = stringResource(R.string.media_play),
                 tint = Color.White,
                 modifier =
                     Modifier
