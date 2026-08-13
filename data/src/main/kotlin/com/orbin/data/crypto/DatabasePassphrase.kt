@@ -23,8 +23,7 @@ internal class DatabasePassphrase(
             runCatching {
                 val decoded = Base64.decode(stored, Base64.NO_WRAP)
                 LocalDataCipher.decrypt(decoded)
-            }
-                .getOrNull()
+            }.getOrNull()
                 ?.let { return Resolved(it, wipeDatabase = false) }
         }
         val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
