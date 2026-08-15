@@ -6,6 +6,41 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [90-Vega] - 2026-08-15
+
+### Added
+- **A built-in content filter that cannot be turned off.** Gore, shock, abuse and violent content
+  is removed from every surface that shows post text, board metadata or a filename: board
+  catalogs, threads and their replies, the subscribed feed, search, the gallery, reading history,
+  bookmarks and downloads. A thread whose opening post matches is not rendered at all, and is kept
+  out of history. There is no setting behind it — it survives a settings reset, a restored backup
+  and a fresh install — and Settings lists it read-only so a reader who notices something missing
+  can find out why.
+
+  The term list is deliberately blunt. Alongside unambiguous terms it filters the bare words
+  `death`, `gun`, `murder`, `violence`, `hanging`, `suicide` and `rent`, so ordinary threads about
+  death metal, gun control, murder mysteries, hanging out, suicide prevention or the cost of rent
+  are removed too. Matching is whole-word, which is what keeps `shotgun`, `parent`, `current`,
+  `torrent`, `deathmatch` and `necromancer` readable. Being a keyword filter over text the engine
+  provides, it cannot inspect images: it reduces exposure rather than eliminating it.
+
+- **Older builds refuse to run once a newer one has.** After a version launches successfully on a
+  device, no earlier version will start there; it shows which build it is and which is expected,
+  then exits. The high-water mark is raised only by a launch that has actually got somewhere, so a
+  build that crash-loops on startup cannot lock you out of the working build you came from.
+
+  Scope worth knowing: Android already refuses to install a lower `versionCode` over an existing
+  app, so this covers what gets past that — `adb install -d`, and installs that keep app data while
+  replacing the APK. It does not survive uninstall-then-reinstall, which wipes the stored mark
+  along with the rest of the app's data.
+
+### Fixed
+- **`versionCode` and `versionName` are correct again.** Every release from 86-Alula through
+  89-Albireo shipped the metadata of 85-Tania — `versionCode` 107 and the name `85-Tania` — because
+  `app/build.gradle.kts` was never bumped after v85. Builds were indistinguishable to Android and
+  to Orbin's own version display and update check. This release moves to `versionCode` 108 and the
+  matching name.
+
 ## [86-Alula] - 2026-08-13
 
 ### Changed
@@ -1148,7 +1183,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v64-Aldebaran...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v90-Vega...HEAD
+[90-Vega]: https://github.com/Defuuls/Orbin/compare/v89-Albireo...v90-Vega
 [64-Aldebaran]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...v64-Aldebaran
 [63-Acrux]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...v63-Acrux
 [62-Hadar]: https://github.com/Defuuls/Orbin/compare/v61-Achernar...v62-Hadar
