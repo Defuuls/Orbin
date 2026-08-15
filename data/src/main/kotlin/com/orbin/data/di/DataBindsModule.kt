@@ -13,6 +13,7 @@ import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.SettingsRepositoryImpl
+import com.orbin.data.version.VersionGuardRepositoryImpl
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -26,6 +27,7 @@ import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.repository.UpdateRepository
+import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.Binds
@@ -97,4 +99,8 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsNetworkConfigProvider(impl: SettingsRepositoryImpl): NetworkConfigProvider
+
+    @Binds
+    @Singleton
+    fun bindsVersionGuardRepository(impl: VersionGuardRepositoryImpl): VersionGuardRepository
 }
