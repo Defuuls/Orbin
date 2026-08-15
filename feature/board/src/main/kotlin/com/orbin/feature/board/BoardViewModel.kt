@@ -137,14 +137,16 @@ class BoardViewModel
         }
     }
 
-/** Drops threads whose opening post matches one of the reader's hidden keywords. */
+/**
+ * Drops threads whose opening post matches one of the reader's hidden keywords, or is caught by
+ * the permanent filter.
+ *
+ * There is no "nothing to do" fast path for an empty token set any more: the permanent filter has
+ * no setting behind it, so an empty set still has to be filtered.
+ */
 internal fun Flow<PagingData<CatalogThread>>.hidingMatches(tokens: Flow<Set<String>>): Flow<PagingData<CatalogThread>> =
     combine(this, tokens) { pagingData, hidden ->
-        if (hidden.isEmpty()) {
-            pagingData
-        } else {
-            pagingData.filter { thread -> !thread.matchesFilterTokens(hidden) }
-        }
+        pagingData.filter { thread -> !thread.matchesFilterTokens(hidden) }
     }
 
 /**

@@ -10,6 +10,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
@@ -60,7 +61,14 @@ private class CatalogPagingSource(
             val provider =
                 registry.get(request.provider)
                     ?: return LoadResult.Error(IllegalStateException("Unknown provider"))
-            val all = cached ?: provider.getCatalog(request).also { cached = it }
+            // Filtered as the catalog arrives, before it is cached or paged: doing it here rather
+            // than per-screen means the counts and page keys below describe what is actually
+            // shown, so a filtered thread cannot leave a gap in the grid.
+            val all =
+                cached ?: provider
+                    .getCatalog(request)
+                    .filterNot { it.isPermanentlyFiltered() }
+                    .also { cached = it }
 
             val offset = params.key ?: 0
             val end = minOf(offset + params.loadSize, all.size)

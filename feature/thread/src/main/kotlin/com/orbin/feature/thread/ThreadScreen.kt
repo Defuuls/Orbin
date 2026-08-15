@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -87,6 +88,7 @@ import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.core.ui.thread.summaryLabels
@@ -231,6 +233,13 @@ fun ThreadScreen(
             when (val state = uiState) {
                 ThreadUiState.Loading -> LoadingView()
                 is ThreadUiState.Error -> ErrorView(state.message, onRetry = viewModel::refresh)
+                // No retry: the filter is not a transient failure, and refreshing would only
+                // fetch the same blocked thread again.
+                ThreadUiState.Blocked ->
+                    EmptyView(
+                        message = stringResource(R.string.thread_blocked),
+                        icon = Icons.Outlined.Block,
+                    )
                 is ThreadUiState.Success ->
                     Column(modifier = Modifier.fillMaxSize()) {
                         if (state.fromSavedCopy) SavedCopyBanner()

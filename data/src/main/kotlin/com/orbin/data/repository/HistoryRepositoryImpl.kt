@@ -6,6 +6,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toEntity
@@ -24,8 +25,17 @@ class HistoryRepositoryImpl
     constructor(
         private val dao: HistoryDao,
     ) : HistoryRepository {
+        /**
+         * Recent threads, minus anything the permanent filter catches by title.
+         *
+         * The thread viewer already declines to record such a thread, so this is about rows that
+         * predate the filter or arrived in a restored backup: filtering on read means they stop
+         * being shown immediately, without a migration that rewrites the reader's history.
+         */
         override fun observeHistory(): Flow<List<HistoryEntry>> =
-            dao.observeRecent(HISTORY_LIMIT).map { list -> list.map { it.toDomain() } }
+            dao.observeRecent(HISTORY_LIMIT).map { list ->
+                list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
+            }
 
         override fun observeVisitedKeys(): Flow<Set<ThreadKey>> =
             dao.observeKeys().map { rows ->

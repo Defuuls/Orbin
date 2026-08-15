@@ -6,6 +6,7 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.common.result.map
 import com.orbin.core.model.Board
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toEntity
@@ -37,11 +38,18 @@ class BoardRepositoryImpl
         private val boardDao: BoardDao,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : BoardRepository {
+        /**
+         * Every board list in the app comes from here, so this is where the permanent filter is
+         * applied to boards: a board it catches is not something individual screens should have to
+         * remember to drop. Filtered on read rather than on write, so a board already cached from
+         * an earlier version disappears without needing a migration.
+         */
         override fun observeBoards(provider: ProviderId): Flow<List<Board>> =
             boardDao
                 .observeBoards(provider.value)
-                .map { entities -> entities.map { it.toDomain() } }
-                .onStart {
+                .map { entities ->
+                    entities.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
+                }.onStart {
                     if (isStale(provider)) refreshBoards(provider)
                 }
 

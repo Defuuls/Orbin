@@ -59,6 +59,15 @@ fun SettingsContentScreen(
                 subtitle = "Manage subscribed boards",
                 onClick = onOpenSubscriptions,
             )
+            // Deliberately not a switch: this filter has no off state. It is listed anyway so a
+            // reader who notices a thread missing has somewhere to find out why, instead of
+            // filing it as a bug.
+            ModernListItem(
+                title = "Built-in content filter",
+                subtitle =
+                    "Always on. Gore, shock and abuse content is removed from every board, thread, " +
+                        "feed, search, gallery and download — it cannot be turned off.",
+            )
             TextFieldRow(
                 label = "Hidden tags",
                 value = settings.hiddenTags,

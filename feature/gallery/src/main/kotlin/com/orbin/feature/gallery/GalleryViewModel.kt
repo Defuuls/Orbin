@@ -10,6 +10,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.filteredBy
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
@@ -69,7 +70,9 @@ class GalleryViewModel
 
         /**
          * The thread's media, in reading order. Filtered exactly as the thread view filters it, so
-         * the page a tapped thumbnail opens at is the one the reader tapped.
+         * the page a tapped thumbnail opens at is the one the reader tapped — which is also why
+         * the permanent filter is applied here in the same two ways the thread view applies it:
+         * whole posts it catches, then individual files it catches by name.
          */
         val media: StateFlow<ImmutableList<MediaAttachment>> =
             combine(
@@ -79,7 +82,9 @@ class GalleryViewModel
                 when (result) {
                     is OrbinResult.Success ->
                         result.data.allPosts
+                            .filterNot { it.isPermanentlyFiltered() }
                             .flatMap { it.attachments }
+                            .filterNot { it.isPermanentlyFiltered() }
                             .filteredBy(filter)
                             .toImmutableList()
                     is OrbinResult.Failure -> persistentListOf()

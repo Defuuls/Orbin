@@ -17,6 +17,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.filteredBy
 import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DownloadRepository
@@ -132,19 +133,29 @@ class ThreadViewModel
                 hiddenTokens,
             ) { result, filter, hidden ->
                 result.fold(
-                    onSuccess = { ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden)) },
+                    onSuccess = {
+                        // Checked before anything is rendered, and checked on the saved copy too:
+                        // a thread can be reached by direct link, history or a bookmark made
+                        // before the OP was edited, none of which pass through a catalog.
+                        if (it.isPermanentlyFiltered()) {
+                            ThreadUiState.Blocked
+                        } else {
+                            ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden))
+                        }
+                    },
                     onFailure = { error ->
                         // A thread that will not load is usually one that was pruned, which is
                         // exactly the case a saved copy exists for. Serving it beats an error the
                         // reader can do nothing about.
                         val saved = savedThreadRepository.load(threadKey)
-                        if (saved == null) {
-                            ThreadUiState.Error(error.message)
-                        } else {
-                            ThreadUiState.Success(
-                                thread = saved.filteredBy(filter).hidingMatches(hidden),
-                                fromSavedCopy = true,
-                            )
+                        when {
+                            saved == null -> ThreadUiState.Error(error.message)
+                            saved.isPermanentlyFiltered() -> ThreadUiState.Blocked
+                            else ->
+                                ThreadUiState.Success(
+                                    thread = saved.filteredBy(filter).hidingMatches(hidden),
+                                    fromSavedCopy = true,
+                                )
                         }
                     },
                 )
@@ -265,6 +276,10 @@ class ThreadViewModel
         }
 
         private fun onThreadLoaded(thread: Thread) {
+            // A permanently filtered thread is never shown, so it must not leave a trace either:
+            // recording it would put its subject and thumbnail in the history list, which is one
+            // more surface showing exactly what the filter exists to keep out.
+            if (thread.isPermanentlyFiltered()) return
             loadedThread = thread
             viewModelScope.launch {
                 // record() preserves any existing scroll anchor; only metadata (title, thumbnail,
@@ -321,16 +336,17 @@ data class ThreadScrollPosition(
 )
 
 /**
- * Drops replies matching the reader's hidden keywords.
+ * Drops replies matching the reader's hidden keywords or caught by the permanent filter. No fast
+ * path for an empty token set: the permanent filter applies regardless of what the reader set.
  *
- * The opening post is deliberately never dropped: the catalog already hides threads whose OP
- * matches, so a thread opened from anywhere else was opened on purpose, and blanking its first
- * post would leave an unexplained empty shell. Quote links pointing at a hidden reply are left
- * alone — they resolve to nothing, the same as a quote of a post pruned upstream.
+ * For hidden keywords the opening post is deliberately never dropped: the catalog already hides
+ * threads whose OP matches, so a thread opened from anywhere else was opened on purpose, and
+ * blanking its first post would leave an unexplained empty shell. Quote links pointing at a hidden
+ * reply are left alone — they resolve to nothing, the same as a quote of a post pruned upstream.
+ *
+ * A permanently filtered OP is the one case that does not survive that reasoning, and it is
+ * handled a step up in [ThreadViewModel] by refusing to show the thread at all: "you opened it on
+ * purpose" is not a reason to render content the app is never allowed to render.
  */
 internal fun Thread.hidingMatches(tokens: Set<String>): Thread =
-    if (tokens.isEmpty()) {
-        this
-    } else {
-        copy(replies = replies.filterNot { reply -> reply.matchesFilterTokens(tokens) }.toImmutableList())
-    }
+    copy(replies = replies.filterNot { reply -> reply.matchesFilterTokens(tokens) }.toImmutableList())

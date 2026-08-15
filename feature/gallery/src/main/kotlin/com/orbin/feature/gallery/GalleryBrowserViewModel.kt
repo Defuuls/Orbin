@@ -12,6 +12,7 @@ import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredBy
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
@@ -151,7 +152,11 @@ class GalleryBrowserViewModel
                         // Only the media on screen is warmed: preloading what the filter hides
                         // would spend the user's data on files they have chosen not to see.
                         val media =
-                            rememberMedia(result.data.allPosts.flatMap { post -> post.attachments })
+                            rememberMedia(
+                                result.data.allPosts
+                                    .filterNot { post -> post.isPermanentlyFiltered() }
+                                    .flatMap { post -> post.attachments },
+                            )
                         _uiState.update {
                             it.copy(
                                 media = media,
@@ -213,6 +218,7 @@ class GalleryBrowserViewModel
                             boards
                                 .filter { it.id in subscribedIds }
                                 .filterNot { board -> hideNsfw && board.isNsfw }
+                                .filterNot { board -> board.isPermanentlyFiltered() }
                                 .sortedBy { it.id.value }
                         val selected = subscribed.firstOrNull()
                         _uiState.update {
@@ -244,7 +250,8 @@ class GalleryBrowserViewModel
         ) {
             viewModelScope.launch {
                 runCatching { provider.getCatalog(CatalogRequest(provider.metadata.id, board.id)) }
-                    .onSuccess { threads ->
+                    .onSuccess { catalog ->
+                        val threads = catalog.filterNot { it.isPermanentlyFiltered() }
                         // Opens on a thread that has something to show under the current filter.
                         val filter = mediaFilter.value
                         val selected =
@@ -288,17 +295,28 @@ class GalleryBrowserViewModel
                     threadRepository.observeThread(key).collectLatest { result ->
                         if (_uiState.value.selectedThread?.key != key) return@collectLatest
                         if (result is OrbinResult.Success) {
-                            val media = rememberMedia(result.data.allPosts.flatMap { post -> post.attachments })
+                            val media =
+                                rememberMedia(
+                                    result.data.allPosts
+                                        .filterNot { post -> post.isPermanentlyFiltered() }
+                                        .flatMap { post -> post.attachments },
+                                )
                             _uiState.update { it.copy(media = media) }
                         }
                     }
                 }
         }
 
-        /** Records [media] as the selected thread's full set and returns what the filter shows. */
+        /**
+         * Records [media] as the selected thread's full set and returns what the filter shows.
+         *
+         * Permanently filtered files are dropped here, at intake, rather than on display:
+         * [unfilteredMedia] is what the media-filter toggle re-filters from, so anything left in
+         * it would reappear the moment the reader changed that setting.
+         */
         private fun rememberMedia(media: List<MediaAttachment>): ImmutableList<MediaAttachment> {
-            unfilteredMedia = media
-            return media.visibleUnder(mediaFilter.value)
+            unfilteredMedia = media.filterNot { it.isPermanentlyFiltered() }
+            return unfilteredMedia.visibleUnder(mediaFilter.value)
         }
 
         private fun List<MediaAttachment>.visibleUnder(filter: MediaFilter): ImmutableList<MediaAttachment> =
