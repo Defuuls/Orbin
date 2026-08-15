@@ -21,7 +21,7 @@ reply, or create threads.
 
 ![Orbin thread viewer in thumbnail-grid mode, with encrypted-at-rest and biometric app-lock highlights](docs/assets/orbin-hero-screenshot.svg)
 
-![Orbin settings screenshot](docs/assets/orbin-settings-screenshot.svg)
+![Orbin settings screen showing the always-on built-in content filter alongside content, appearance, media, network, privacy, and storage preferences](docs/assets/orbin-settings-screenshot.svg)
 
 ---
 
