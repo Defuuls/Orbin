@@ -53,9 +53,10 @@
 
 ## Release & Version Management
 
-- Version naming: star codenames. Since v49 these are prominent naked-eye stars (Altair,
-  Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella); v30-v48 used nearby or dim stars
-  (Proxima Centauri, Sirius B, Ross 128). Pick a star not already used by an existing tag.
+- Version naming: themed codenames, one era at a time. From v91 these are types of pasta
+  (Bucatini, Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle).
+  v30-v90 used stars and ended with v90-Vega; do not pick from that era. Pick a name not
+  already used by an existing tag — check `git tag --list 'v*'`, not this list.
 - versionCode increments by 1 for each release
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections
 - README.md kept current with latest release version

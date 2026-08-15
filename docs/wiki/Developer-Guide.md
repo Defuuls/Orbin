@@ -142,13 +142,19 @@ If pushing a tag is not possible, run **Release** via `workflow_dispatch` instea
 `tag` and `tag_message`. The job creates and pushes the annotated tag itself, producing an
 identical result.
 
-**Codenames:** every milestone gets a star codename. Since v49 the scheme has been prominent
-naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus, Capella,
-Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux, Deneb, Regulus,
-Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar, Merak, Phecda.
-Earlier releases drew on nearby or dim stars instead: v30–v33 used the smallest known stars
-(Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", and
-v37–v48 returned to nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B.
+**Codenames:** every milestone gets a codename, drawn from the theme the project is currently on.
+**From v91 onward that theme is types of pasta** — Bucatini, Rigatoni, Orecchiette, Fusilli,
+Farfalle, Linguine, Cavatappi, Pappardelle, Conchiglie, Casarecce, Trofie, Paccheri, Mafaldine,
+Strozzapreti. Pick one that is distinctive, short enough for a changelog heading, and not already
+used by an existing tag — check `git tag --list 'v*'` rather than this list.
+
+The star era it replaces ran from v30 to **v90 — Vega**: v30–v33 used the smallest known stars
+(Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", v37–v48
+used nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B, and v49–v90 used
+prominent naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus,
+Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux, Deneb,
+Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar, Merak,
+Phecda, Talitha, Tania, Alula, Adara, Castor, Albireo.
 
 Pick names that are distinctive, short enough for changelog entries, and **not already used** —
 `git tag --list 'v*'` is the authoritative list of what is taken, not this page or the

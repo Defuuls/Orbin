@@ -78,10 +78,11 @@ works without secrets.
 
 ## Release codenames
 
-Release milestones use star names as codenames, not mythical cities. Since v49 the scheme has
-been **prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
-Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica.
-Earlier eras used smaller/dimmer stars and, briefly, bear families — see the wiki's
+**From v91 onward, release codenames are types of pasta** — Bucatini, Rigatoni, Orecchiette,
+Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle, Conchiglie, Casarecce, Trofie, Paccheri,
+Mafaldine, Strozzapreti. This replaces the star scheme, which ran from v30 and ended with
+**v90 — Vega**; before that came bear families, mythical cities, rare fish and desserts. Codename
+eras change; the tag format `v<number>-<Codename>` does not. See the wiki's
 [[Release History|Release-History]] for the full lineage.
 
 Pick a name that is distinctive, short enough for a changelog heading, and — check
