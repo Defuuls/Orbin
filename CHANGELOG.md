@@ -6,11 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [91-Bucatini] - 2026-08-15
+
 ### Changed
 - **Release naming:** pasta codenames replace star codenames for release milestones. The star era
   ran from v30 and closed with v90 — Vega; from v91 the codenames are types of pasta, returning to
   the food themes used for v4–v22. Only forward-looking documentation changed — the historical
   record of past eras is left as it was — and the tag format `v<number>-<Codename>` is unaffected.
+- **No functional changes.** This release carries documentation, two code comments and the version
+  bump only. The app behaves exactly as 90-Vega does; there is no reason to update for it beyond
+  keeping the version number current.
 
 ## [90-Vega] - 2026-08-15
 
@@ -1189,7 +1194,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v90-Vega...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...HEAD
+[91-Bucatini]: https://github.com/Defuuls/Orbin/compare/v90-Vega...v91-Bucatini
 [90-Vega]: https://github.com/Defuuls/Orbin/compare/v89-Albireo...v90-Vega
 [64-Aldebaran]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...v64-Aldebaran
 [63-Acrux]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...v63-Acrux
