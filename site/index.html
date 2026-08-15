@@ -175,7 +175,7 @@
     <p class="section-lead">
       Orbin browses 4chan (vichan/4chan-compatible) and BBW Chan (LynxChan) today, and its
       provider architecture means new engines can be added by implementing a single interface —
-      no app changes required. It targets Android&nbsp;15+, is a read-only browsing client
+      no app changes required. It targets Android&nbsp;12+, is a read-only browsing client
       (no posting), and ships regular signed releases.
     </p>
     <div class="grid">
@@ -204,6 +204,10 @@
         <p>Material 3 with dynamic color, light/dark and AMOLED-black themes, app icon variants, font and thumbnail sizing, and predictive back with smooth transitions. Settings itself is organized as a category hub instead of one long scroll, so the option you want is a couple of taps away, not a search.</p>
       </div>
       <div class="card">
+        <h3>Built-in content filter</h3>
+        <p>Gore, shock, abuse and violent content is filtered out of every board, thread, feed, search, gallery and download &mdash; there is no setting to turn it off. It is a keyword filter over post text, filenames and board metadata, so it reduces exposure rather than eliminating it, and it is deliberately broad: threads that only mention violence are removed too.</p>
+      </div>
+      <div class="card">
         <h3>Private by default</h3>
         <p>Everything local is encrypted at rest, networking is HTTPS-only with optional DNS-over-HTTPS, and a biometric app-lock keeps the app and its previews gated. Nothing syncs off the device implicitly &mdash; and because that also means a reinstall would lose everything, you can export your settings, boards, bookmarks and saved searches to a file you control, then import it back.</p>
       </div>
@@ -217,7 +221,7 @@
     <div class="shots">
       <img src="assets/orbin-thread-screenshot.svg" alt="Orbin thread viewer showing reply cards with relative post times such as just now, 5m, and 2h, tappable quote links, and callouts for relative timestamps and accessible links" loading="lazy">
       <img src="assets/orbin-hero-screenshot.svg" alt="Orbin thread viewer in thumbnail-grid mode, with encrypted-at-rest and biometric app-lock highlights" loading="lazy">
-      <img src="assets/orbin-settings-screenshot.svg" alt="Orbin settings screen showing content, appearance, media, network, privacy, and storage preferences" loading="lazy">
+      <img src="assets/orbin-settings-screenshot.svg" alt="Orbin settings screen showing the always-on built-in content filter alongside content, appearance, media, network, privacy, and storage preferences" loading="lazy">
     </div>
   </div>
 </section>
@@ -226,7 +230,7 @@
   <div class="wrap">
     <h2>Download</h2>
     <p class="section-lead">
-      Orbin requires <strong>Android 15 or newer</strong>. Signed APKs are published on
+      Orbin requires <strong>Android 12 or newer</strong>. Signed APKs are published on
       <a href="https://github.com/Defuuls/Orbin/releases">GitHub Releases</a> with SHA-256 checksums
       for every artifact.
     </p>
@@ -240,6 +244,11 @@
         <strong>Verify the download</strong> (optional but encouraged) with the checksum file
         attached to the release:
         <pre><code>sha256sum -c orbin-&lt;version&gt;.apk.sha256</code></pre>
+      </li>
+      <li>
+        <strong>Updates are one-way.</strong> Once a version has run on your device, older
+        versions will not start on it. Uninstalling and reinstalling clears that, at the cost of
+        your local data.
       </li>
       <li>
         <strong>Stay up to date.</strong> Orbin checks for new versions inside the app
