@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       tag_message:
-        description: 'Annotated tag message / release codename (e.g. Shangri-La)'
+        description: 'Annotated tag message / release codename (e.g. Bucatini)'
         required: true
         type: string
       base_ref:

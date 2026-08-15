@@ -13,9 +13,9 @@ private const val ROBOLECTRIC_SDK = 35
 /**
  * Covers the release comparison, which is the part of the update check that can be quietly wrong.
  *
- * Orbin's tags are `v<number>-<Codename>` where the codename is a star, not a version component, so
- * neither string ordering nor semver parsing applies. Robolectric is here only to supply a real
- * `org.json` — the JVM stub throws on every call.
+ * Orbin's tags are `v<number>-<Codename>` where the codename is a themed label — stars up to v90,
+ * pasta from v91 — and never a version component, so neither string ordering nor semver parsing
+ * applies. Robolectric is here only to supply a real `org.json` — the JVM stub throws on every call.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [ROBOLECTRIC_SDK])

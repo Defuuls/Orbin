@@ -103,9 +103,10 @@ internal fun parseLatestRelease(
 }
 
 /**
- * Tags are `v<number>-<Codename>`, so the leading number is the only ordered part — codenames are
- * stars, not versions. Comparing tags as strings would sort "v9" after "v61", and comparing
- * codenames would be meaningless. An unreadable tag yields 0, which reports "up to date" rather
+ * Tags are `v<number>-<Codename>`, so the leading number is the only ordered part — a codename is a
+ * label drawn from whatever theme the project is on (stars up to v90, pasta from v91), never a
+ * version component. Comparing tags as strings would sort "v9" after "v61", and comparing codenames
+ * would be meaningless in any theme. An unreadable tag yields 0, which reports "up to date" rather
  * than nagging the user about a release that may not exist.
  */
 private fun releaseNumber(tag: String): Int = tag.removePrefix("v").substringBefore('-').toIntOrNull() ?: 0

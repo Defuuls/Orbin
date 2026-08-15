@@ -15,11 +15,11 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v86 — Alula** (2026-08-13) |
+| Current release | **v90 — Vega** (2026-08-15) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
-| Codename scheme | Per-release star codenames (prominent naked-eye stars since v49; nearby or dim stars for v30–v48) |
+| Codename scheme | Per-release codenames by era: types of pasta from v91; stars for v30–v90 |
 
 Orbin is under active development with regular signed releases. The architecture, build system,
 domain core, networking, media pipeline, encrypted data layer, and two reference providers

@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [86 — Alula](https://github.com/Defuuls/Orbin/releases/tag/86-Alula)
+**Current release:** [90 — Vega](https://github.com/Defuuls/Orbin/releases/tag/v90-Vega)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 

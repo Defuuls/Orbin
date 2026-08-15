@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Release naming:** pasta codenames replace star codenames for release milestones. The star era
+  ran from v30 and closed with v90 — Vega; from v91 the codenames are types of pasta, returning to
+  the food themes used for v4–v22. Only forward-looking documentation changed — the historical
+  record of past eras is left as it was — and the tag format `v<number>-<Codename>` is unaffected.
+
 ## [90-Vega] - 2026-08-15
 
 ### Added

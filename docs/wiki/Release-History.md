@@ -9,12 +9,16 @@ lives in
 Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
 codenames used for v26–v29; v34 is "Dippin".
 
-The star theme has held since, but the selection shifted: v37–v48 stayed with nearby or dim
-stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while **from v49 onward the codenames
-are prominent naked-eye stars** — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega,
-Arcturus, Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux,
-Deneb, Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar,
-Merak, Phecda, **Talitha, Tania, Alula**.
+The star theme then held for sixty releases, though the selection shifted: v37–v48 stayed with
+nearby or dim stars (Wolf 359, Ross 128, Proxima Centauri, Sirius B), while v49–v90 used
+prominent naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus,
+Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux, Deneb,
+Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar, Merak,
+Phecda, Talitha, Tania, Alula, Adara, Castor, Albireo.
+
+**The star era closed with v90 — Vega. From v91 onward the codenames are types of pasta**
+(Bucatini, Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle), returning
+the project to the food themes it used for v4–v22.
 
 ## v86 — Alula (2026-08-13)
 
@@ -381,6 +385,7 @@ These releases ran quickly through the nearby-star codenames; the full detail is
 
 | Versions | Codename era | Notable milestones |
 | --- | --- | --- |
+| v30–v90 | Stars (smallest known → nearby/dim → prominent naked-eye) | The longest-running era, closing with v90 — Vega. Superseded from v91 by pasta codenames. |
 | v26–v29 | Bear families | Incremental releases leading up to the v30 feed work. |
 | v23–v25.2.1 | Mythical cities (with a few detours) | v23.0 hardened the app lock, comment parser, and HTTPS policy; v23.1 fixed 4chan boards failing to load on numeric media IDs; v23.8 fixed biometric-unlock hangs; v25.2.1 fixed thread-link exports to respect the saved-media folder. |
 | v24.0 | — | **Encryption at rest:** SQLCipher database + encrypted DataStore behind a hardware-backed Keystore key. Because the on-disk format changed, this version performed a **one-time reset** of history, bookmarks, downloads, and settings (including favorites and subscriptions). |
