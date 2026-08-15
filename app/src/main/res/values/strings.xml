@@ -13,6 +13,12 @@
     <string name="safe_mode_reset_dialog_text">Deletes bookmarks, reading history, saved searches and download history from this device. Your settings are kept. This cannot be undone.</string>
     <string name="safe_mode_reset_confirm">Reset</string>
     <string name="safe_mode_cancel">Cancel</string>
+    <string name="downgrade_blocked_title">This version can\'t run</string>
+    <string name="downgrade_blocked_explanation">A newer version of Orbin has already run on this device. Once you\'ve updated, older versions can no longer be used.</string>
+    <!-- %1$d is the running build's version code, %2$d the newest one that has run on this device. -->
+    <string name="downgrade_blocked_versions">This build is version %1$d. The newest one used here is version %2$d.</string>
+    <string name="downgrade_blocked_next_step">Install version %1$d or newer to keep using Orbin.</string>
+    <string name="downgrade_blocked_close">Close</string>
 
     <!-- App lock. -->
     <string name="lock_title">Orbin is locked</string>

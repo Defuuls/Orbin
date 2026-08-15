@@ -50,6 +50,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.domain.repository.DiagnosticsRepository
+import com.orbin.domain.repository.VersionGuardRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -72,6 +73,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var diagnosticsRepository: DiagnosticsRepository
 
+    @Inject
+    lateinit var versionGuardRepository: VersionGuardRepository
+
     /**
      * Registered eagerly: the safe-mode screen may be the very first thing composed, and a
      * launcher registered after the activity is started throws.
@@ -90,6 +94,8 @@ class MainActivity : FragmentActivity() {
         }
 
     private var safeMode by mutableStateOf(false)
+
+    private var downgradeBlocked by mutableStateOf(false)
 
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
@@ -113,6 +119,35 @@ class MainActivity : FragmentActivity() {
         )
     }
 
+    /** The dead end shown when this build is older than one that has already run here. */
+    @Composable
+    private fun DowngradeBlocked() {
+        DowngradeBlockedScreen(
+            currentVersionCode = versionGuardRepository.currentVersionCode(),
+            highestVersionCode = versionGuardRepository.highestVersionCodeSeen(),
+            onClose = { finish() },
+        )
+    }
+
+    /**
+     * A launch that stays up this long counts as working, clearing the crash-loop counter. Long
+     * enough that a startup crash would already have happened, short enough that a user who waits
+     * out one bad launch isn't held in safe mode afterwards.
+     *
+     * The downgrade high-water mark is raised by the same signal, and deliberately not at process
+     * start: a build that crash-loops on startup would otherwise raise the mark on its way down,
+     * blocking the working build the user came from and turning a bad release into an
+     * unrecoverable one.
+     */
+    @Composable
+    private fun MarkLaunchSucceededAfterDelay() {
+        LaunchedEffect(Unit) {
+            delay(LAUNCH_SUCCESS_DELAY_MILLIS)
+            diagnosticsRepository.markLaunchSucceeded()
+            versionGuardRepository.recordSuccessfulLaunch()
+        }
+    }
+
     private fun exportDiagnostics() {
         exportDiagnosticsLauncher.launch(DIAGNOSTICS_FILE_NAME)
     }
@@ -125,8 +160,17 @@ class MainActivity : FragmentActivity() {
         // there, so reading an injected dependency any earlier throws. Still before setContent,
         // which is all safe mode needs.
         safeMode = diagnosticsRepository.isCrashLooping()
+        downgradeBlocked = versionGuardRepository.isDowngrade()
 
         setContent {
+            // Ahead of safe mode: a build that must not run must not run, and safe mode's recovery
+            // actions (resetting local data) would be the wrong thing to offer for a problem that
+            // is not about local state at all.
+            if (downgradeBlocked) {
+                DowngradeBlocked()
+                return@setContent
+            }
+
             // Before the view model, the theme or anything else that reads local state: a crash
             // loop is most likely caused by that state, so safe mode must not depend on it.
             if (safeMode) {
@@ -134,13 +178,7 @@ class MainActivity : FragmentActivity() {
                 return@setContent
             }
 
-            // A launch that stays up this long counts as working, clearing the crash-loop counter.
-            // Long enough that a startup crash would already have happened, short enough that a
-            // user who waits out one bad launch isn't held in safe mode afterwards.
-            LaunchedEffect(Unit) {
-                delay(LAUNCH_SUCCESS_DELAY_MILLIS)
-                diagnosticsRepository.markLaunchSucceeded()
-            }
+            MarkLaunchSucceededAfterDelay()
 
             val viewModel: MainViewModel = hiltViewModel()
             val settings by viewModel.settings.collectAsStateWithLifecycle()
