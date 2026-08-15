@@ -13,6 +13,7 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
+import com.orbin.core.model.PermanentContentFilter
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.domain.repository.DownloadRepository
@@ -62,6 +63,11 @@ class DownloadRepositoryImpl
                 val uri = Uri.parse(url)
                 // Defence in depth: only ever hand encrypted media URLs to the platform DownloadManager.
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
+                // Nothing the permanent filter catches is written to the user's storage, whether it
+                // was reached one file at a time or through a bulk "download all media".
+                if (PermanentContentFilter.matchesAny(listOf(fileName, threadTitle))) {
+                    return@withContext SKIPPED_ID
+                }
                 // The file name comes from the remote post; sanitise it so it can never escape the
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)

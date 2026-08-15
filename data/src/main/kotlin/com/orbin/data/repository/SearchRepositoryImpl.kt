@@ -12,6 +12,7 @@ import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.entity.RecentSearchEntity
@@ -51,13 +52,19 @@ class SearchRepositoryImpl
 
                 runCatchingProvider {
                     when (query.scope) {
-                        SearchScope.REMOTE -> provider.search(query)
+                        // Remote results arrive already reduced to a title and a snippet, so that
+                        // is all there is to check; the catalog branch below can do better.
+                        SearchScope.REMOTE -> provider.search(query).filterNot { it.isPermanentlyFiltered() }
                         SearchScope.BOARD_CATALOG -> {
                             val board =
                                 query.board
                                     ?: return@runCatchingProvider emptyList()
                             provider
                                 .getCatalog(CatalogRequest(query.provider, board))
+                                // Applied before the query matches, so a search can never be the
+                                // way a reader reaches filtered content — including by searching
+                                // for a filtered term directly.
+                                .filterNot { it.isPermanentlyFiltered() }
                                 .filter { it.matches(query) }
                                 .map { it.toSearchResult() }
                         }

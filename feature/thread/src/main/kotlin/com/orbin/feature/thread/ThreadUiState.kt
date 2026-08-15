@@ -20,4 +20,13 @@ sealed interface ThreadUiState {
     data class Error(
         val message: String,
     ) : ThreadUiState
+
+    /**
+     * The thread's opening post is caught by the permanent content filter, so the thread is not
+     * rendered at all — not even the OP, which the hidden-keyword filter would have left in place.
+     *
+     * Distinct from [Error] because nothing went wrong and there is nothing to retry: the reader
+     * gets an explanation instead of a failure they would keep tapping at.
+     */
+    data object Blocked : ThreadUiState
 }

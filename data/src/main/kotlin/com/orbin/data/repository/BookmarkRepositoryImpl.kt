@@ -2,6 +2,7 @@ package com.orbin.data.repository
 
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toEntity
@@ -18,9 +19,16 @@ class BookmarkRepositoryImpl
     constructor(
         private val dao: BookmarkDao,
     ) : BookmarkRepository {
+        /**
+         * Bookmarks, minus anything the permanent filter catches by title — covering rows saved
+         * before the filter existed or restored from a backup.
+         *
+         * This is also what the watch worker reads, so a filtered thread stops raising new-reply
+         * notifications as well as disappearing from the list.
+         */
         override fun observeBookmarks(): Flow<List<Bookmark>> =
             dao.observeAll().map { list ->
-                list.map { it.toDomain() }
+                list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
             }
 
         override fun observeBookmark(key: ThreadKey): Flow<Bookmark?> =

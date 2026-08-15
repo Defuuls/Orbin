@@ -14,6 +14,7 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredCatalogBy
 import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -222,6 +223,10 @@ class SubscribedFeedViewModel
                 boards
                     .filter { it.id in subscribedIds }
                     .filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
+                    // A board the permanent filter catches is dropped even if it is subscribed:
+                    // the subscription may predate the filter, and honouring it would fetch the
+                    // board's catalog into the feed.
+                    .filterNot { board -> board.isPermanentlyFiltered() }
                     .sortedBy { it.id.value }
 
             if (subscribedBoards.isEmpty()) {

@@ -24,4 +24,5 @@
     <string name="thread_collapse_post">Collapse post</string>
     <string name="thread_jump_to_post">Jump to post %1$d</string>
     <string name="thread_saved_copy_banner">This thread is no longer available. Showing your saved copy, as plain text.</string>
+    <string name="thread_blocked">This thread is blocked by Orbin\'s built-in content filter.</string>
 </resources>
