@@ -65,8 +65,9 @@ fun SettingsContentScreen(
             ModernListItem(
                 title = "Built-in content filter",
                 subtitle =
-                    "Always on. Gore, shock and abuse content is removed from every board, thread, " +
-                        "feed, search, gallery and download — it cannot be turned off.",
+                    "Always on. Gore, shock, abuse and violent content — including posts that just " +
+                        "mention violence — is removed from every board, thread, feed, search, " +
+                        "gallery and download. It cannot be turned off.",
             )
             TextFieldRow(
                 label = "Hidden tags",

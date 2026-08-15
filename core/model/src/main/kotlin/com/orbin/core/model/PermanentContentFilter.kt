@@ -10,14 +10,25 @@ package com.orbin.core.model
  * configured anything. There is deliberately no setting, no toggle and no override: the whole
  * point is that it survives a settings reset, a restored backup, and a fresh install.
  *
+ * ## How broad this is
+ *
+ * Deliberately very. Alongside the unambiguous terms (`guro`, `beheading`, `bestiality`) the list
+ * carries bare words like `death`, `gun`, `murder`, `violence`, `hanging` and `suicide`, which
+ * occur constantly in threads that have nothing to do with shock content. Filtering them removes a
+ * great deal of ordinary discussion — "death metal", "gun control", "hanging out", suicide
+ * prevention — and that is the intended trade: the filter was asked to err heavily towards
+ * removing too much. [PermanentContentFilterTest] pins the main false positives so the cost stays
+ * visible in review rather than being discovered from a bug report.
+ *
  * ## Why word boundaries, not substrings
  *
  * Hidden tags match as substrings, because a reader who types `webm` means "anything with webm in
  * it" and can fix a bad token by deleting it. Nobody can delete these, so a false positive here is
  * permanent — and short terms are exactly where substring matching goes wrong: `gore` is inside
- * `categorem`, and `rent` is inside `parent`, `current`, `different` and `torrent`. Matching whole
- * words only keeps the filter to the posts it is meant for. `_` and punctuation count as
- * boundaries, so `gore_video`, `[gore]` and `gore.webm` are all caught while `parent` is not.
+ * `categorem`, `gun` is inside `shotgun`, and `rent` is inside `parent`, `current` and `torrent`.
+ * Matching whole words only is the one thing keeping an already-blunt list from being unusable.
+ * `_` and punctuation count as boundaries, so `gore_video`, `[gore]` and `gore.webm` are all
+ * caught while `parent` is not.
  *
  * Digits deliberately do **not** count as boundaries, so `gore2` is not caught. That costs a
  * little recall on filenames, and buys the thing that matters more: the two-letter terms in the
@@ -52,10 +63,22 @@ object PermanentContentFilter {
             "goretube",
             "liveleak",
             "rekt",
+            "goro",
             "wpd",
             "watch people die",
             "shock site",
-            "death video",
+            // Broad violence terms. These are the widest entries in the list by a long way:
+            // unlike `guro` or `beheading`, they are ordinary English words that appear constantly
+            // in threads that have nothing to do with shock content — "death metal", "gun
+            // control", "murder mystery", "violence in games". They are here because the filter
+            // was asked to err on the side of removing too much, and whole-word matching is doing
+            // real work behind them (it is what keeps `shotgun` and `deathmatch` readable). If the
+            // filter is later reported as too aggressive, this is the group to look at first.
+            "death",
+            "murder",
+            "violence",
+            "gun",
+            "hanging",
             // Explicit violence against people.
             "beheading",
             "beheaded",
@@ -72,9 +95,10 @@ object PermanentContentFilter {
             "necro",
             "necrophilia",
             "ryona",
-            // Self-harm.
+            // Self-harm. `suicide` covers the prevention and support discussions too, which is a
+            // real cost of filtering the bare word rather than only phrases like `suicide pact`.
+            "suicide",
             "self harm",
-            "suicide pact",
             // Sexual content involving minors or animals. These are illegal in most
             // jurisdictions, so they are filtered rather than merely de-emphasised.
             "cp",
