@@ -3,6 +3,7 @@
     <string name="thread_title_fallback">Thread</string>
     <string name="thread_back">Back</string>
     <string name="thread_scroll_to_top">Scroll to top</string>
+    <string name="thread_scroll_to_bottom">Scroll to bottom</string>
     <string name="thread_show_thumbnails_only">Show thumbnails only</string>
     <string name="thread_show_posts">Show posts</string>
     <string name="thread_thumbnail_size">Thumbnail size: %1$s</string>
