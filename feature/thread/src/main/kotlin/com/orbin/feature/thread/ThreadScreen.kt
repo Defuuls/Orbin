@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
@@ -125,7 +126,16 @@ fun ThreadScreen(
     var thumbnailSizeOverride by rememberSaveable { mutableStateOf<ThumbnailSize?>(null) }
     val thumbnailSize = thumbnailSizeOverride ?: defaultThumbnailSize
     val snackbarHostState = remember { SnackbarHostState() }
-    var scrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
+    // Counters rather than booleans: tapping twice in a row has to scroll twice, so the signal has
+    // to change on every request rather than latch on true.
+    //
+    // Deliberately `remember` and not `rememberSaveable`. These are one-shot requests, and nothing
+    // ever resets them — so a saved counter comes back non-zero after a rotation, re-triggers the
+    // effect keyed on it, and throws the reader back to the top or bottom of the thread, undoing
+    // the scroll-position restore below. The top counter was saved and had exactly that bug; it is
+    // fixed here rather than mirrored into the new one.
+    var scrollToTopRequest by remember { mutableIntStateOf(0) }
+    var scrollToBottomRequest by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(exportMessage) {
         exportMessage?.let {
@@ -158,6 +168,15 @@ fun ThreadScreen(
                     }
                 },
                 actions = {
+                    // The counterpart to tapping the bar itself, which scrolls to the top. That
+                    // gesture is undiscoverable and has no opposite, so the way back down is a
+                    // real button — in a long thread the newest replies are the reason to open it.
+                    IconButton(onClick = { scrollToBottomRequest += 1 }) {
+                        Icon(
+                            Icons.Filled.KeyboardDoubleArrowDown,
+                            contentDescription = stringResource(R.string.thread_scroll_to_bottom),
+                        )
+                    }
                     IconButton(
                         onClick = {
                             layoutMode =
@@ -251,6 +270,7 @@ fun ThreadScreen(
                             mediaScrollIndex = mediaScrollIndex,
                             onMediaScrollConsumed = onMediaScrollConsumed,
                             scrollToTopRequest = scrollToTopRequest,
+                            scrollToBottomRequest = scrollToBottomRequest,
                             mediaScrollEnabled = mediaScrollEnabled,
                             initialScrollPosition = initialScrollPosition,
                             onScrollPositionChanged = viewModel::saveScrollPosition,
@@ -331,6 +351,7 @@ private fun ThreadContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    scrollToBottomRequest: Int,
     mediaScrollEnabled: Boolean = true,
     initialScrollPosition: ThreadScrollPosition? = null,
     onScrollPositionChanged: (PostId, Int) -> Unit = { _, _ -> },
@@ -344,6 +365,7 @@ private fun ThreadContent(
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
                 scrollToTopRequest = scrollToTopRequest,
+                scrollToBottomRequest = scrollToBottomRequest,
                 mediaScrollEnabled = mediaScrollEnabled,
                 initialScrollPosition = initialScrollPosition,
                 onScrollPositionChanged = onScrollPositionChanged,
@@ -357,6 +379,7 @@ private fun ThreadContent(
                 mediaScrollIndex = mediaScrollIndex,
                 onMediaScrollConsumed = onMediaScrollConsumed,
                 scrollToTopRequest = scrollToTopRequest,
+                scrollToBottomRequest = scrollToBottomRequest,
                 modifier = modifier,
             )
     }
@@ -370,6 +393,7 @@ private fun PostListContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    scrollToBottomRequest: Int,
     mediaScrollEnabled: Boolean = true,
     initialScrollPosition: ThreadScrollPosition? = null,
     onScrollPositionChanged: (PostId, Int) -> Unit = { _, _ -> },
@@ -430,6 +454,14 @@ private fun PostListContent(
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    }
+
+    // Index 0 is the stats header, so the last post is at posts.size, not lastIndex. The extra
+    // offset lands on the true end of the thread rather than the top of the final post, which
+    // matters when that post is taller than the screen; Compose clamps it to the end of the
+    // content, so overshooting is how you reliably arrive at the bottom.
+    LaunchedEffect(scrollToBottomRequest) {
+        if (scrollToBottomRequest > 0) listState.animateScrollToItem(posts.size, SCROLL_TO_END_OFFSET_PX)
     }
 
     // Applied once per thread: later recompositions (e.g. a pull-to-refresh reload) must not keep
@@ -494,6 +526,7 @@ private fun ThumbnailGridContent(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     scrollToTopRequest: Int,
+    scrollToBottomRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     val attachments = remember(thread.key) { thread.allPosts.flatMap { it.attachments } }
@@ -511,6 +544,14 @@ private fun ThumbnailGridContent(
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
+    }
+
+    // Guarded on emptiness: a thread whose posts carry no attachments renders an empty grid, and
+    // asking an empty list to scroll to index 0 is not a no-op.
+    LaunchedEffect(scrollToBottomRequest) {
+        if (scrollToBottomRequest > 0 && attachments.isNotEmpty()) {
+            gridState.animateScrollToItem(attachments.lastIndex, SCROLL_TO_END_OFFSET_PX)
+        }
     }
 
     LazyVerticalGrid(
@@ -760,6 +801,14 @@ private enum class ThreadLayoutMode {
 
 /** How long to wait after scrolling stops before persisting the reading position. */
 private const val SCROLL_SAVE_DEBOUNCE_MS = 600L
+
+/**
+ * Deliberate overshoot for "scroll to bottom": scrolling to the last item alone leaves the reader
+ * at that item's *top*, which is the wrong place when the last post is taller than the screen.
+ * Any value past the end works because the list clamps to its content, so this only has to be
+ * larger than a plausible final post.
+ */
+private const val SCROLL_TO_END_OFFSET_PX = 100_000
 
 /**
  * Says the thread on screen is the reader's own saved copy rather than the live one — otherwise a
