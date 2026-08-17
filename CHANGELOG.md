@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [92-Rigatoni] - 2026-08-17
+
+### Added
+- **A scroll-to-bottom button in the thread top bar.** The bar could already be tapped to jump to
+  the top, but that gesture is invisible and had no opposite, so reaching the newest replies in a
+  long thread meant flinging. Works in both the post list and the thumbnail grid, and lands on the
+  true end of the thread rather than the top of the final post.
+
+### Fixed
+- **A thread reopens where you left off after leaving the app.** Two faults had to be fixed for the
+  position to survive. It was only written 600ms after scrolling stopped, so leaving inside that
+  window and having the process killed later — reclaimed in the background, or a device restart —
+  lost the write entirely; it is now also flushed when the app is stopped. And the guard that stops
+  a pull-to-refresh from yanking you back was itself saved across process death, so on a cold start
+  it suppressed the very restore it should have allowed: the position was read from the database
+  and then ignored.
+- **Rotating a thread no longer jumps to the top.** The scroll-to-top request was saved across
+  configuration changes and never reset, so it re-fired on every rotation and overrode the
+  scroll-position restore.
+
 ## [91-Bucatini] - 2026-08-15
 
 ### Changed
@@ -1194,7 +1214,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...HEAD
+[92-Rigatoni]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...v92-Rigatoni
 [91-Bucatini]: https://github.com/Defuuls/Orbin/compare/v90-Vega...v91-Bucatini
 [90-Vega]: https://github.com/Defuuls/Orbin/compare/v89-Albireo...v90-Vega
 [64-Aldebaran]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...v64-Aldebaran
