@@ -55,6 +55,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +63,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -81,6 +83,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -464,9 +469,14 @@ private fun PostListContent(
         if (scrollToBottomRequest > 0) listState.animateScrollToItem(posts.size, SCROLL_TO_END_OFFSET_PX)
     }
 
-    // Applied once per thread: later recompositions (e.g. a pull-to-refresh reload) must not keep
-    // snapping the reader back to where they were when the thread was first opened.
-    var hasRestoredScrollPosition by rememberSaveable(thread.key) { mutableStateOf(false) }
+    // Applied once per composition of this thread: a pull-to-refresh reload must not keep snapping
+    // the reader back to where they were when the thread was opened.
+    //
+    // Deliberately `remember` and not `rememberSaveable`. Saved, it came back true on a fresh
+    // composition after process death and suppressed the restore that a cold start exists for —
+    // the persisted position was read, then ignored. Re-applying it per composition is safe
+    // because the flush below keeps the persisted position current at teardown.
+    var hasRestoredScrollPosition by remember(thread.key) { mutableStateOf(false) }
     LaunchedEffect(thread.key, initialScrollPosition) {
         if (hasRestoredScrollPosition) return@LaunchedEffect
         val target = initialScrollPosition ?: return@LaunchedEffect
@@ -483,6 +493,28 @@ private fun PostListContent(
                 val postId = posts.getOrNull(index - 1)?.id ?: return@collect
                 onScrollPositionChanged(postId, offsetPx)
             }
+    }
+
+    // The debounce above only writes once scrolling has been still for SCROLL_SAVE_DEBOUNCE_MS.
+    // Leaving the app inside that window loses the write entirely if the process is then killed —
+    // reclaimed in the background, or a device restart — and the thread reopens at the top, which
+    // is the bug this exists to close. ON_STOP is the last point at which the position on screen
+    // is still readable and the ViewModel scope is still alive to persist it.
+    val saveVisiblePosition by rememberUpdatedState {
+        val index = listState.firstVisibleItemIndex
+        // Index 0 is the header item ("stats"), not a post; posts start at 1.
+        posts.getOrNull(index - 1)?.let { post ->
+            onScrollPositionChanged(post.id, listState.firstVisibleItemScrollOffset)
+        }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) saveVisiblePosition()
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LazyColumn(

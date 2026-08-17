@@ -27,8 +27,10 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +39,7 @@ private const val PROVIDER = "fourchan"
 private const val BOARD = "g"
 private const val THREAD = 1L
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ThreadViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -136,11 +139,38 @@ class ThreadViewModelTest {
             assertThat(viewModel.exportMessage.value).isEqualTo("No links found in this thread")
         }
 
+    /**
+     * The reported bug: leave the app and come back (or restart the device) and the thread reopens
+     * at the top. A cold ViewModel over the same history must surface where the reader left off.
+     */
+    @Test
+    fun `a fresh view model resumes the scroll position saved by the previous one`() =
+        runTest {
+            val history = FakeHistoryRepository()
+
+            val first = createViewModel(historyRepository = history)
+            // Subscribing is what starts the load, and the load is what records the history row
+            // that the scroll position is later written onto.
+            first.uiState.test { awaitItem() }
+            first.saveScrollPosition(PostId(42), offsetPx = 17)
+            runCurrent()
+
+            val reopened = createViewModel(historyRepository = history)
+            reopened.initialScrollPosition.test {
+                // The flow starts at null and fills in once history has been read.
+                val restored = awaitItem() ?: awaitItem()
+                assertThat(restored).isNotNull()
+                assertThat(restored!!.postId).isEqualTo(PostId(42))
+                assertThat(restored.offsetPx).isEqualTo(17)
+            }
+        }
+
     private fun createViewModel(
         thread: Thread = defaultThread(),
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         downloadRepository: FakeDownloadRepository = FakeDownloadRepository(),
+        historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
     ) = ThreadViewModel(
         savedStateHandle =
             SavedStateHandle(
@@ -149,7 +179,7 @@ class ThreadViewModelTest {
         observeThread = ObserveThreadUseCase(FakeThreadRepository(thread)),
         bookmarkRepository = bookmarkRepository,
         downloadRepository = downloadRepository,
-        historyRepository = FakeHistoryRepository(),
+        historyRepository = historyRepository,
         settingsRepository = settingsRepository,
         savedThreadRepository = FakeSavedThreadRepository(),
     )
