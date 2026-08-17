@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [91 — Bucatini](https://github.com/Defuuls/Orbin/releases/tag/v91-Bucatini)
+**Current release:** [92 — Rigatoni](https://github.com/Defuuls/Orbin/releases/tag/v92-Rigatoni)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
