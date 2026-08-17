@@ -27,6 +27,7 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runCurrent
@@ -38,6 +39,7 @@ private const val PROVIDER = "fourchan"
 private const val BOARD = "g"
 private const val THREAD = 1L
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ThreadViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
