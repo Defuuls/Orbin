@@ -94,6 +94,7 @@ import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.next
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.core.ui.scrollbar.FastScrollbar
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -517,36 +518,44 @@ private fun PostListContent(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LazyColumn(
-        modifier = modifier,
-        state = listState,
-        contentPadding =
-            androidx.compose.foundation.layout
-                .PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item(key = "stats") { ThreadStatsHeader(thread) }
+    // The list and its scrollbar share a box so the bar floats over the right edge rather
+    // than taking a column of its own and narrowing every post.
+    Box(modifier = modifier) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding =
+                androidx.compose.foundation.layout
+                    .PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item(key = "stats") { ThreadStatsHeader(thread) }
 
-        items(count = posts.size, key = { posts[it].id.value }) { index ->
-            val post = posts[index]
-            PostCard(
-                post = post,
-                isCollapsed = post.id.value in collapsedIds,
-                onToggleCollapse = {
-                    val collapsing = !collapsedIds.remove(post.id.value)
-                    if (collapsing) collapsedIds.add(post.id.value)
-                    // Collapsing removes what the reader was looking at, so the tick confirms the
-                    // tap landed on the header rather than on something inside the post.
-                    haptics.performHapticFeedback(
-                        if (collapsing) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff,
-                    )
-                },
-                onQuoteClick = onQuoteClick,
-                onLinkClick = onLinkClick,
-                onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
-                mediaScrollEnabled = mediaScrollEnabled,
-            )
+            items(count = posts.size, key = { posts[it].id.value }) { index ->
+                val post = posts[index]
+                PostCard(
+                    post = post,
+                    isCollapsed = post.id.value in collapsedIds,
+                    onToggleCollapse = {
+                        val collapsing = !collapsedIds.remove(post.id.value)
+                        if (collapsing) collapsedIds.add(post.id.value)
+                        // Collapsing removes what the reader was looking at, so the tick confirms the
+                        // tap landed on the header rather than on something inside the post.
+                        haptics.performHapticFeedback(
+                            if (collapsing) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff,
+                        )
+                    },
+                    onQuoteClick = onQuoteClick,
+                    onLinkClick = onLinkClick,
+                    onMediaClick = { mediaId -> mediaIndexById[mediaId]?.let(onOpenMedia) },
+                    mediaScrollEnabled = mediaScrollEnabled,
+                )
+            }
         }
+        FastScrollbar(
+            listState = listState,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 

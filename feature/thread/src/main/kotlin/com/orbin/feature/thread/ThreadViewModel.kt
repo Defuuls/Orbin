@@ -73,7 +73,17 @@ class ThreadViewModel
 
         private val _initialScrollPosition = MutableStateFlow<ThreadScrollPosition?>(null)
 
-        /** Where the reader left off last time, loaded once when the thread is opened. */
+        /**
+         * Where to put the reader if the thread view has to restore its position: seeded from
+         * history when the thread opens, and kept current by [saveScrollPosition] afterwards.
+         *
+         * Staying current is the point. This used to be a one-time snapshot of where the reader
+         * left off *last* time, which was fine while the view restored once and never again. It
+         * stopped being fine when the restore became per-composition: rotating, or a reload that
+         * dips through the loading state, drops and rebuilds the list, and the restore then fired
+         * against a value from when the thread was opened — rewinding the reader, after which the
+         * debounced save wrote that stale position over the real one.
+         */
         val initialScrollPosition: StateFlow<ThreadScrollPosition?> = _initialScrollPosition.asStateFlow()
 
         init {
@@ -270,6 +280,10 @@ class ThreadViewModel
             postId: PostId,
             offsetPx: Int,
         ) {
+            // Updated in step with the database so a later restore resumes here rather than
+            // rewinding to wherever the thread was opened. Set before the write, not after it, so
+            // a restore racing a slow database write still reads the newer position.
+            _initialScrollPosition.value = ThreadScrollPosition(postId, offsetPx)
             viewModelScope.launch {
                 historyRepository.updateScrollPosition(key, postId, offsetPx)
             }
