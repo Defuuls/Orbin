@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [93-Orecchiette] - 2026-08-20
+
+### Added
+- **A fast scrollbar down the right edge of a thread.** Press the track to jump straight to that
+  point, or drag the thumb to sweep the whole thread under your finger. Flinging moves by whatever
+  momentum it happens to carry, which makes reaching the middle of a long thread a matter of
+  flinging repeatedly and overshooting. The bar positions by post rather than by pixel — a lazy
+  list only knows the height of what it has already measured — so a thread of very uneven posts
+  tracks slightly unevenly. It is absent rather than greyed out on a thread that already fits on
+  screen, so it never eats a tap meant for a post.
+
+### Fixed
+- **A thread stops rewinding to where you opened it.** 92-Rigatoni made the scroll restore run
+  whenever the list was rebuilt, which fixed reopening the app but introduced a worse problem: the
+  position it restored *to* was a snapshot taken when the thread was opened and never updated
+  afterwards. Rotating, or a refresh that passed through the loading state, therefore threw the
+  reader back to the start of the thread — and the save that followed wrote that stale position
+  over the real one, so the place you had actually read to was lost. The restore target now moves
+  with you.
+
 ## [92-Rigatoni] - 2026-08-17
 
 ### Added
@@ -1214,7 +1234,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v93-Orecchiette...HEAD
+[93-Orecchiette]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...v93-Orecchiette
 [92-Rigatoni]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...v92-Rigatoni
 [91-Bucatini]: https://github.com/Defuuls/Orbin/compare/v90-Vega...v91-Bucatini
 [90-Vega]: https://github.com/Defuuls/Orbin/compare/v89-Albireo...v90-Vega
