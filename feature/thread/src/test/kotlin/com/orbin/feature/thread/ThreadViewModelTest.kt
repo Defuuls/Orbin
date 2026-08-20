@@ -165,6 +165,27 @@ class ThreadViewModelTest {
             }
         }
 
+    /**
+     * The v92 regression: the restore target was a one-time snapshot taken when the thread opened,
+     * so a rebuilt list (rotation, or a reload dipping through the loading state) restored to where
+     * the reader *started* and the debounced save then wrote that stale position over the real one.
+     */
+    @Test
+    fun `saving a scroll position moves the restore target with it`() =
+        runTest {
+            val history = FakeHistoryRepository()
+            val viewModel = createViewModel(historyRepository = history)
+            viewModel.uiState.test { awaitItem() }
+
+            viewModel.saveScrollPosition(PostId(42), offsetPx = 17)
+            runCurrent()
+
+            val target = viewModel.initialScrollPosition.value
+            assertThat(target).isNotNull()
+            assertThat(target!!.postId).isEqualTo(PostId(42))
+            assertThat(target.offsetPx).isEqualTo(17)
+        }
+
     private fun createViewModel(
         thread: Thread = defaultThread(),
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),

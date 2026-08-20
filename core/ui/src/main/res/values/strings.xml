@@ -2,4 +2,5 @@
 <resources>
     <string name="ui_loading">Loading</string>
     <string name="ui_retry">Retry</string>
+    <string name="ui_fast_scrollbar">Fast scrollbar. Press or drag to move through the list.</string>
 </resources>
