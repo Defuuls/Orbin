@@ -27,6 +27,7 @@ import com.orbin.core.model.FeedThreadLimit
 fun SettingsContentScreen(
     onBack: () -> Unit,
     onOpenSubscriptions: () -> Unit,
+    onOpenAllBoards: () -> Unit,
     onOpenSetup: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -58,6 +59,14 @@ fun SettingsContentScreen(
                 title = "Subscriptions",
                 subtitle = "Manage subscribed boards",
                 onClick = onOpenSubscriptions,
+            )
+            // The gallery of every board existed already but was only reachable from the empty
+            // feed, so it disappeared the moment a reader subscribed to anything. This is the way
+            // back to it.
+            ModernListItem(
+                title = "All boards",
+                subtitle = "Browse every board this provider offers",
+                onClick = onOpenAllBoards,
             )
             // Deliberately not a switch: this filter has no off state. It is listed anyway so a
             // reader who notices a thread missing has somewhere to find out why, instead of

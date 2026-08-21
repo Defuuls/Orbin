@@ -33,6 +33,7 @@ val settingsSearchIndex =
     listOf(
         SettingsSearchEntry("Personalized home feed", SettingsSection.CONTENT),
         SettingsSearchEntry("Subscriptions", SettingsSection.CONTENT),
+        SettingsSearchEntry("All boards", SettingsSection.CONTENT),
         SettingsSearchEntry("Built-in content filter", SettingsSection.CONTENT),
         SettingsSearchEntry("Hidden tags", SettingsSection.CONTENT),
         SettingsSearchEntry("Muted tags", SettingsSection.CONTENT),

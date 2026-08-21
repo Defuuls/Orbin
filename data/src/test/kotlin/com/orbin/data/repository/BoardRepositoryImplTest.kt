@@ -1,6 +1,7 @@
 package com.orbin.data.repository
 
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
@@ -108,6 +109,24 @@ class BoardRepositoryImplTest {
             // Board lists are curated rather than alphabetical, so position is data, not a detail.
             assertThat(written.captured.map { it.id to it.sortIndex })
                 .containsExactly("g" to 0, "a" to 1, "v" to 2)
+                .inOrder()
+        }
+
+    /**
+     * observeBoards filtered these out already; refreshBoards returned the provider's list as-is,
+     * so a caller taking the refresh result directly — the board gallery does — saw boards the
+     * always-on filter exists to remove.
+     */
+    @Test
+    fun `refresh does not return boards the permanent filter catches`() =
+        runTest {
+            coEvery { provider.getBoards() } returns listOf(board("g"), board("gore"), board("v"))
+
+            val result = repository.refreshBoards(providerId)
+
+            assertThat(result.isSuccess).isTrue()
+            assertThat((result as OrbinResult.Success).data.map { it.id.value })
+                .containsExactly("g", "v")
                 .inOrder()
         }
 
