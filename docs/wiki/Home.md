@@ -15,7 +15,7 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v94 — Fusilli** (2026-08-21) |
+| Current release | **v95 — Farfalle** (2026-08-21) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
@@ -37,6 +37,9 @@ domain core, networking, media pipeline, encrypted data layer, and two reference
   restore that resumes right where you left off, even after fully closing the app.
 - **Wide-screen two-pane layout** — above 840dp, opening a thread keeps the board catalog
   visible alongside it instead of replacing it, and survives rotating across the threshold.
+- **All media in one grid** — a single continuous wall of every image and video from every board,
+  swept from all their catalogs at once, with no board to pick and no thread to open. Fills board
+  by board as it sweeps, with a press-and-drag scrollbar for crossing thousands of tiles.
 - **Gallery & bookmarks** — a pinch-zoom swipe gallery; bookmarks live in a tab inside the
   Gallery view.
 - **Media carousel** — posts with several attachments scroll horizontally with a page counter,
