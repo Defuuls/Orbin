@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [93 — Orecchiette](https://github.com/Defuuls/Orbin/releases/tag/v93-Orecchiette)
+**Current release:** [94 — Fusilli](https://github.com/Defuuls/Orbin/releases/tag/v94-Fusilli)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
