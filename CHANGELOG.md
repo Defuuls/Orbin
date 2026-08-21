@@ -6,6 +6,25 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [94-Fusilli] - 2026-08-21
+
+### Added
+- **"All boards" in Settings → Content & Feed.** Opens a full-screen gallery of every board the
+  provider offers. The gallery itself is not new, but it was only reachable from the empty
+  subscribed feed, so it disappeared the moment you subscribed to anything and there was no way
+  back to it. Now there is.
+
+### Fixed
+- **The board gallery no longer bypasses the built-in content filter.** Board lists were filtered
+  when read from the cache but not when returned straight from a refresh, and the gallery uses the
+  latter — so it listed boards the always-on filter exists to remove. A hole that was invisible
+  only because the screen was so hard to reach.
+- **The board gallery honours your own board filters.** "Hide NSFW boards" and hidden tags applied
+  to the home board list but not here, which would have made a gallery of every board the one place
+  those settings did nothing. The random-board button also drew from the unfiltered list, so it
+  could drop you into a board you had hidden; it now picks only from what is shown. A gallery left
+  empty by filters says so, rather than claiming the provider returned no boards.
+
 ## [93-Orecchiette] - 2026-08-20
 
 ### Added
@@ -1234,7 +1253,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v93-Orecchiette...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v94-Fusilli...HEAD
+[94-Fusilli]: https://github.com/Defuuls/Orbin/compare/v93-Orecchiette...v94-Fusilli
 [93-Orecchiette]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...v93-Orecchiette
 [92-Rigatoni]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...v92-Rigatoni
 [91-Bucatini]: https://github.com/Defuuls/Orbin/compare/v90-Vega...v91-Bucatini
