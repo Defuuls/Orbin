@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [95-Farfalle] - 2026-08-21
+
 ### Added
 - **"All media" — every file on every board in one grid.** A new screen that sweeps every board's
   catalog and pours every image and video it finds into a single continuous grid, with no board to
