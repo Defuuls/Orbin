@@ -27,6 +27,9 @@ sealed interface Route {
     data object GalleryBrowser : Route
 
     @Serializable
+    data object AllMedia : Route
+
+    @Serializable
     data class Board(
         val provider: String,
         val board: String,
@@ -47,6 +50,12 @@ sealed interface Route {
         val board: String,
         val thread: Long,
         val startIndex: Int,
+        /**
+         * Which file to open at, when the caller knows the attachment but not its index in the
+         * thread. The all-media wall is such a caller: it holds a catalog's files, not the thread's
+         * full ordering, so it cannot supply a meaningful [startIndex].
+         */
+        val attachmentId: String? = null,
     ) : Route
 
     @Serializable

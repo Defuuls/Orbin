@@ -61,6 +61,11 @@ reply, or create threads.
   part of reading history and updates automatically as you scroll.
 
 **Media**
+- **All media in one grid:** a single continuous wall of every image and video from every board,
+  swept from the catalogs of all of them at once — no board to pick, no thread to open. It fills
+  board by board as the sweep runs, carries a press-and-drag fast scrollbar for crossing thousands
+  of tiles, and tapping any file opens it in the gallery. Reachable from Settings → Content & Feed
+  or the Gallery tab's top bar.
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
   native download manager.

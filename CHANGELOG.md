@@ -6,6 +6,30 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **"All media" — every file on every board in one grid.** A new screen that sweeps every board's
+  catalog and pours every image and video it finds into a single continuous grid, with no board to
+  pick and no thread to open first. It fills board by board as the sweep runs, so there is
+  something to look at within a second or two rather than a spinner until every board is in, and
+  what is already on screen never reshuffles underneath you. Reachable from Settings →
+  Content & Feed, and from the grid button in the Gallery tab's top bar. Pull down to re-sweep.
+  Your board filters, hidden tags and the always-on content filter all apply, and a file posted in
+  two places appears once.
+- **The fast scrollbar now works on grids, not just lists.** The all-media wall runs to thousands
+  of tiles, where flinging never gets anywhere; press or drag the bar to cross it in one gesture.
+
+### Changed
+- **Tapping a file opens the gallery at that exact file.** The gallery could previously only be
+  opened at a position in a thread's media, which the all-media wall has no way to know — it holds
+  a catalog's files, a different list from the thread's. It now accepts the file itself and finds
+  it, falling back to the position if the file has since been deleted from the thread.
+
+### Known limitations
+- The all-media sweep reads board catalogs, so it reaches every thread's opening post plus whatever
+  teaser replies a catalog carries — not every reply in every thread. Reaching those would mean one
+  request per thread, thousands per sweep, which is the traffic pattern that gets a reader
+  rate-limited by the provider.
+
 ## [94-Fusilli] - 2026-08-21
 
 ### Added

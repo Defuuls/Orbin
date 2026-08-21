@@ -25,4 +25,15 @@
     <string name="gallery_bookmark_summary">/%1$s/ · %2$d replies</string>
     <string name="gallery_watch">Watch</string>
     <string name="gallery_unwatch">Unwatch</string>
+    <string name="all_media_title">All media</string>
+    <!-- Sweep progress, e.g. "12/74 boards · 3,410 files". -->
+    <string name="all_media_scanning">%1$d/%2$d boards · %3$d files</string>
+    <plurals name="all_media_complete">
+        <item quantity="one">%1$d file from %2$d boards</item>
+        <item quantity="other">%1$d files from %2$d boards</item>
+    </plurals>
+    <string name="all_media_empty">No media found on any board</string>
+    <string name="all_media_no_boards">Every board is hidden by your board filters</string>
+    <!-- The board a tile came from, e.g. "/g/". -->
+    <string name="all_media_board_badge">/%1$s/</string>
 </resources>

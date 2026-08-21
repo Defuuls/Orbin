@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -29,6 +30,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -69,6 +71,7 @@ import com.orbin.media.image.OrbinAsyncImage
 fun GalleryBrowserScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, startIndex: Int) -> Unit,
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    onOpenAllMedia: () -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     viewModel: GalleryBrowserViewModel = hiltViewModel(),
@@ -90,6 +93,17 @@ fun GalleryBrowserScreen(
                                 },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                actions = {
+                    // The wall is the way out of this screen's board-then-thread drill-down, so it
+                    // belongs here as well as in Settings — this is where a reader looking for
+                    // media already is.
+                    IconButton(onClick = onOpenAllMedia) {
+                        Icon(
+                            imageVector = Icons.Filled.GridView,
+                            contentDescription = stringResource(R.string.all_media_title),
                         )
                     }
                 },
