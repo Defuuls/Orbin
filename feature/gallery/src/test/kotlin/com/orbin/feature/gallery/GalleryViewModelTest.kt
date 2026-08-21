@@ -80,6 +80,31 @@ class GalleryViewModelTest {
             }
         }
 
+    @Test
+    fun `an attachment id opens at that file, wherever it sits in the thread`() =
+        runTest {
+            val viewModel = createViewModel(FakeSettingsRepository(), attachmentId = "gif")
+
+            viewModel.media.test {
+                var media = awaitItem()
+                while (media.isEmpty()) media = awaitItem()
+                // "gif" is on a reply, not the OP — an index from a catalog could never have found it.
+                assertThat(viewModel.initialPageIn(media)).isEqualTo(2)
+            }
+        }
+
+    @Test
+    fun `an attachment no longer in the thread falls back to the index`() =
+        runTest {
+            val viewModel = createViewModel(FakeSettingsRepository(), attachmentId = "deleted")
+
+            viewModel.media.test {
+                var media = awaitItem()
+                while (media.isEmpty()) media = awaitItem()
+                assertThat(viewModel.initialPageIn(media)).isEqualTo(0)
+            }
+        }
+
     private fun createViewModel(settingsRepository: FakeSettingsRepository) =
         GalleryViewModel(
             savedStateHandle =
@@ -95,6 +120,25 @@ class GalleryViewModelTest {
             downloadRepository = FakeDownloadRepository(),
             settingsRepository = settingsRepository,
         )
+
+    private fun createViewModel(
+        settingsRepository: FakeSettingsRepository,
+        attachmentId: String,
+    ) = GalleryViewModel(
+        savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "provider" to PROVIDER,
+                    "board" to BOARD,
+                    "thread" to THREAD,
+                    "startIndex" to 0,
+                    "attachmentId" to attachmentId,
+                ),
+            ),
+        observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
+        downloadRepository = FakeDownloadRepository(),
+        settingsRepository = settingsRepository,
+    )
 
     private fun thread() =
         Thread(

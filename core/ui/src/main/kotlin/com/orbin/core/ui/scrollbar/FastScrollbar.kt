@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -54,9 +55,60 @@ fun FastScrollbar(
     minThumbHeight: Dp = ScrollbarDefaults.MinThumbHeight,
 ) {
     val layoutInfo = listState.layoutInfo
-    val totalItems = layoutInfo.totalItemsCount
-    val visibleItems = layoutInfo.visibleItemsInfo.size
     val scope = rememberCoroutineScope()
+    FastScrollbarTrack(
+        totalItems = layoutInfo.totalItemsCount,
+        visibleItems = layoutInfo.visibleItemsInfo.size,
+        firstVisibleIndex = listState.firstVisibleItemIndex,
+        onScrollToItem = { index -> scope.launch { listState.scrollToItem(index) } },
+        modifier = modifier,
+        width = width,
+        minThumbHeight = minThumbHeight,
+    )
+}
+
+/**
+ * The same scrollbar for a [LazyGridState], for grids long enough that flinging is hopeless — the
+ * media wall spanning every board runs to thousands of tiles.
+ *
+ * Counts here are items, not rows, which is what [LazyGridState.scrollToItem] indexes by. With a
+ * fixed column count the two are proportional, so the thumb still tracks the grid evenly.
+ */
+@Composable
+fun FastScrollbar(
+    gridState: LazyGridState,
+    modifier: Modifier = Modifier,
+    width: Dp = ScrollbarDefaults.Width,
+    minThumbHeight: Dp = ScrollbarDefaults.MinThumbHeight,
+) {
+    val layoutInfo = gridState.layoutInfo
+    val scope = rememberCoroutineScope()
+    FastScrollbarTrack(
+        totalItems = layoutInfo.totalItemsCount,
+        visibleItems = layoutInfo.visibleItemsInfo.size,
+        firstVisibleIndex = gridState.firstVisibleItemIndex,
+        onScrollToItem = { index -> scope.launch { gridState.scrollToItem(index) } },
+        modifier = modifier,
+        width = width,
+        minThumbHeight = minThumbHeight,
+    )
+}
+
+/**
+ * The bar itself, in terms of item counts and a way to jump to an index — everything both lazy
+ * layouts have in common. Keeping the gesture handling and thumb drawing here means the list and
+ * grid entry points cannot drift apart in feel.
+ */
+@Composable
+private fun FastScrollbarTrack(
+    totalItems: Int,
+    visibleItems: Int,
+    firstVisibleIndex: Int,
+    onScrollToItem: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    width: Dp = ScrollbarDefaults.Width,
+    minThumbHeight: Dp = ScrollbarDefaults.MinThumbHeight,
+) {
     val density = LocalDensity.current
 
     // Height of the track, filled in on layout. Kept in state so the drag maths below can convert a
@@ -68,7 +120,7 @@ fun FastScrollbar(
         scrollbarMetrics(
             totalItems = totalItems,
             visibleItems = visibleItems,
-            firstVisibleIndex = listState.firstVisibleItemIndex,
+            firstVisibleIndex = firstVisibleIndex,
             trackPx = trackHeightPx,
             minThumbPx = minThumbPx,
         )
@@ -76,15 +128,15 @@ fun FastScrollbar(
     val label = stringResource(R.string.ui_fast_scrollbar)
 
     fun scrollToPress(yPx: Float) {
-        val target =
+        onScrollToItem(
             targetIndexForThumbCentre(
                 centreYPx = yPx,
                 trackPx = trackHeightPx,
                 thumbPx = metrics?.thumbPx ?: minThumbPx,
                 totalItems = totalItems,
                 visibleItems = visibleItems,
-            )
-        scope.launch { listState.scrollToItem(target) }
+            ),
+        )
     }
 
     Box(

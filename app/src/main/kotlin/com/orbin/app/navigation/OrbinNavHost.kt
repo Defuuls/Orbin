@@ -24,6 +24,7 @@ import androidx.navigation.toRoute
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.BoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
+import com.orbin.feature.gallery.AllMediaScreen
 import com.orbin.feature.gallery.GalleryBrowserScreen
 import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.history.HistoryScreen
@@ -167,10 +168,22 @@ fun OrbinNavHost(
                     navController.navigate(Route.Gallery(provider, board, thread, index))
                 },
                 onOpenThread = openThread,
+                onOpenAllMedia = { navController.navigate(Route.AllMedia) },
                 mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
                 onMediaScrollConsumed = {
                     backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
                         NO_THREAD_MEDIA_SCROLL_INDEX
+                },
+            )
+        }
+
+        composable<Route.AllMedia> {
+            AllMediaScreen(
+                onBack = navController::navigateUp,
+                onOpenMedia = { provider, board, thread, attachmentId ->
+                    navController.navigate(
+                        Route.Gallery(provider, board, thread, startIndex = 0, attachmentId = attachmentId),
+                    )
                 },
             )
         }
@@ -268,6 +281,7 @@ fun OrbinNavHost(
                 onBack = navController::navigateUp,
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
                 onOpenAllBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenAllMedia = { navController.navigate(Route.AllMedia) },
                 onOpenSetup = { navController.navigate(Route.Onboarding) },
             )
         }

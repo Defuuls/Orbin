@@ -54,7 +54,27 @@ class GalleryViewModel
         private val downloadRepository: DownloadRepository,
         settingsRepository: SettingsRepository,
     ) : ViewModel() {
-        val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
+        private val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
+
+        /**
+         * The file to open at, when the caller knew which attachment it wanted but not where that
+         * attachment falls in the thread. Resolved against the loaded media in [initialPageIn].
+         */
+        private val attachmentId: String? = savedStateHandle.get<String>("attachmentId")
+
+        /**
+         * Which page the pager should open on, given the thread's [media].
+         *
+         * An index alone is only meaningful to a caller that built the same list this screen shows
+         * — the thread view and the gallery browser do, the all-media wall does not: it holds a
+         * catalog's files, which is a different list from the thread's. So an attachment id, when
+         * one was passed, wins over the index, and falls back to it if the file is no longer in the
+         * thread (deleted, or filtered out of this list).
+         */
+        fun initialPageIn(media: List<MediaAttachment>): Int {
+            val byId = attachmentId?.let { id -> media.indexOfFirst { it.id == id } } ?: -1
+            return if (byId >= 0) byId else startIndex
+        }
 
         /** Drives video autoplay / mute in the gallery from the user's media settings. */
         val settings: StateFlow<AppSettings> =

@@ -28,6 +28,7 @@ fun SettingsContentScreen(
     onBack: () -> Unit,
     onOpenSubscriptions: () -> Unit,
     onOpenAllBoards: () -> Unit,
+    onOpenAllMedia: () -> Unit,
     onOpenSetup: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -67,6 +68,14 @@ fun SettingsContentScreen(
                 title = "All boards",
                 subtitle = "Browse every board this provider offers",
                 onClick = onOpenAllBoards,
+            )
+            // The board gallery above still means picking a board and then a thread. This is the
+            // way past that entirely: one grid of every file the provider has, with nothing to
+            // drill into.
+            ModernListItem(
+                title = "All media",
+                subtitle = "Every image and video from every board in one continuous grid",
+                onClick = onOpenAllMedia,
             )
             // Deliberately not a switch: this filter has no off state. It is listed anyway so a
             // reader who notices a thread missing has somewhere to find out why, instead of

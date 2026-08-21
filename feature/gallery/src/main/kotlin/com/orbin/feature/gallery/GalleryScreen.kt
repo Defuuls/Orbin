@@ -71,7 +71,7 @@ fun GalleryScreen(
 
     val pagerState =
         rememberPagerState(
-            initialPage = viewModel.startIndex.coerceIn(0, media.lastIndex),
+            initialPage = viewModel.initialPageIn(media).coerceIn(0, media.lastIndex),
             pageCount = { media.size },
         )
 
