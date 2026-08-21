@@ -53,6 +53,15 @@ class BoardRepositoryImpl
                     if (isStale(provider)) refreshBoards(provider)
                 }
 
+        /**
+         * Fetches the provider's board list, caches it, and returns it minus anything the permanent
+         * filter catches.
+         *
+         * The filter is applied to what is returned, not to what is cached: [observeBoards] filters
+         * on read, so the cache stays a faithful copy of the provider and both paths out of it are
+         * filtered. Returning the raw list here was a hole in that — a caller taking this result
+         * directly, as the board gallery does, saw boards the filter is meant to remove.
+         */
         override suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>> =
             withContext(ioDispatcher) {
                 val result =
@@ -60,15 +69,16 @@ class BoardRepositoryImpl
                         registry.get(provider)?.getBoards()
                             ?: error("Unknown provider: ${provider.value}")
                     }
-                result.also {
-                    it.map { boards ->
-                        val now = System.currentTimeMillis()
-                        boardDao.replaceBoards(
-                            provider = provider.value,
-                            boards = boards.mapIndexed { index, board -> board.toEntity(provider, index, now) },
-                        )
-                    }
-                }
+                result
+                    .also {
+                        it.map { boards ->
+                            val now = System.currentTimeMillis()
+                            boardDao.replaceBoards(
+                                provider = provider.value,
+                                boards = boards.mapIndexed { index, board -> board.toEntity(provider, index, now) },
+                            )
+                        }
+                    }.map { boards -> boards.filterNot { board -> board.isPermanentlyFiltered() } }
             }
 
         private suspend fun isStale(provider: ProviderId): Boolean =

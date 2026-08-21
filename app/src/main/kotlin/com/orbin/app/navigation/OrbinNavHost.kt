@@ -267,6 +267,7 @@ fun OrbinNavHost(
             SettingsContentScreen(
                 onBack = navController::navigateUp,
                 onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
+                onOpenAllBoards = { navController.navigate(Route.BoardGallery) },
                 onOpenSetup = { navController.navigate(Route.Onboarding) },
             )
         }

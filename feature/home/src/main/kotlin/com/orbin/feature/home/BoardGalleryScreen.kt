@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -39,6 +40,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernSmallTopAppBar
 import com.orbin.core.model.Board
+import com.orbin.core.model.hiddenTagTokens
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
@@ -57,9 +60,22 @@ fun BoardGalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(providerId, board.id.value, board.title)
     }
+
+    // The reader's board filters, applied here rather than only on the home list: this screen is
+    // reachable from Settings now, and a gallery of every board would otherwise be the one place
+    // where "Hide NSFW boards" and hidden tags quietly do not apply.
+    val visibleBoards =
+        remember(uiState, settings.hideNsfwBoards, settings.hiddenTags) {
+            (uiState as? HomeUiState.Success)
+                ?.boards
+                ?.filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
+                ?.filterNot { board -> board.matchesFilterTokens(settings.hiddenTagTokens()) }
+                .orEmpty()
+        }
 
     Scaffold(
         topBar = {
@@ -68,10 +84,9 @@ fun BoardGalleryScreen(
                 navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 onNavigationClick = onBack,
                 actions = {
-                    val success = uiState as? HomeUiState.Success
                     IconButton(
-                        onClick = { success?.boards?.randomOrNull()?.let(openBoard) },
-                        enabled = success != null && success.boards.isNotEmpty(),
+                        onClick = { visibleBoards.randomOrNull()?.let(openBoard) },
+                        enabled = visibleBoards.isNotEmpty(),
                     ) {
                         Icon(Icons.Filled.Casino, contentDescription = "Open a random board")
                     }
@@ -84,8 +99,16 @@ fun BoardGalleryScreen(
                 HomeUiState.Loading -> LoadingView()
                 is HomeUiState.Error -> ErrorView(state.message, onRetry = viewModel::load)
                 is HomeUiState.Success ->
-                    if (state.boards.isEmpty()) {
-                        EmptyView("No boards available")
+                    if (visibleBoards.isEmpty()) {
+                        // Distinguished so a reader who has filtered everything out is told that,
+                        // rather than being left to think the provider returned nothing.
+                        EmptyView(
+                            if (state.boards.isEmpty()) {
+                                "No boards available"
+                            } else {
+                                "Every board is hidden by your board filters"
+                            },
+                        )
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 160.dp),
@@ -94,7 +117,7 @@ fun BoardGalleryScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            items(state.boards, key = { it.id.value }) { board ->
+                            items(visibleBoards, key = { it.id.value }) { board ->
                                 BoardTile(board = board, onClick = { openBoard(board) })
                             }
                         }
