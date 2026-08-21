@@ -9,6 +9,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.Post
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.isPermanentlyFiltered
@@ -27,6 +28,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +66,10 @@ data class AllMediaUiState(
     val isScanning: Boolean = false,
     /** Boards whose catalog could not be fetched this sweep; the rest of the wall still stands. */
     val failedBoards: Int = 0,
+    /** True while the deep pass is walking threads for reply media, after the catalog sweep. */
+    val isDeepScanning: Boolean = false,
+    val threadsScanned: Int = 0,
+    val threadsTotal: Int = 0,
 ) {
     val isInitialLoad: Boolean get() = isScanning && items.isEmpty()
 }
@@ -84,9 +90,9 @@ data class AllMediaUiState(
  * - **A board that fails is skipped, not fatal.** Sweeping ~70 boards means some will 404 or time
  *   out; one of them must not take the other sixty-nine down with it.
  *
- * What this cannot show is media from *replies* beyond the teaser replies a catalog happens to
- * carry. Reaching those means one request per thread — thousands per sweep — which is exactly the
- * traffic pattern that gets a reader rate-limited, so the sweep stops at the catalog.
+ * A catalog carries each thread's opening post and, on some engines, a few teaser replies — so the
+ * sweep alone cannot reach media attached deeper inside a thread. The optional deep scan does,
+ * at the cost of one request per thread; see [runDeepScan].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -96,7 +102,7 @@ class AllMediaViewModel
         providerRegistry: ProviderRegistry,
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -121,6 +127,18 @@ class AllMediaViewModel
         private val seenUrls = mutableSetOf<String>()
 
         private var scanJob: Job? = null
+        private var deepScanJob: Job? = null
+
+        /**
+         * Threads the catalog sweep found, for the deep scan to walk. Held separately from
+         * [collected] because a thread whose opening post has no media contributes nothing to the
+         * wall and would be invisible there — and a text-only OP with image replies is exactly the
+         * case the deep scan exists for.
+         */
+        private var deepScanTargets: List<DeepScanTarget> = emptyList()
+
+        /** What the deep scan needs to resume against once the catalog sweep has finished. */
+        private var sweptWith: SweepContext? = null
 
         /** Drives tile sizing on the wall from the reader's thumbnail-size preference. */
         val settings: StateFlow<AppSettings> =
@@ -133,11 +151,24 @@ class AllMediaViewModel
                 .distinctUntilChanged()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
 
+        private val deepScanEnabled: StateFlow<Boolean> =
+            settingsRepository.settings
+                .map { it.deepMediaScan }
+                .distinctUntilChanged()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
         init {
             mediaFilter
                 .onEach { filter ->
                     _uiState.update { it.copy(items = collected.visibleUnder(filter)) }
                 }.launchIn(viewModelScope)
+
+            // Toggling the deep scan acts on the sweep already done rather than provoking a new
+            // one: switching it on picks up the threads the catalog sweep found, and switching it
+            // off stops the walk without disturbing what is already on the wall.
+            deepScanEnabled
+                .onEach { enabled -> if (enabled) startDeepScan() else stopDeepScan() }
+                .launchIn(viewModelScope)
 
             activeProvider
                 .flatMapLatest { provider ->
@@ -161,14 +192,22 @@ class AllMediaViewModel
             refreshRequests.value += 1
         }
 
+        /** Turns the deep scan on or off; the wall reacts through [deepScanEnabled]. */
+        fun setDeepScan(enabled: Boolean) {
+            viewModelScope.launch { settingsRepository.setDeepMediaScan(enabled) }
+        }
+
         private fun startScan(
             provider: ImageBoardProvider,
             boards: List<Board>,
             scanSettings: ScanSettings,
         ) {
             scanJob?.cancel()
+            stopDeepScan()
             collected = emptyList()
             seenUrls.clear()
+            deepScanTargets = emptyList()
+            sweptWith = null
 
             val visibleBoards = boards.visibleUnder(scanSettings)
             _uiState.value =
@@ -181,6 +220,7 @@ class AllMediaViewModel
             scanJob =
                 viewModelScope.launch {
                     val permits = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
+                    val targets = mutableListOf<DeepScanTarget>()
                     coroutineScope {
                         visibleBoards
                             .map { board ->
@@ -188,17 +228,23 @@ class AllMediaViewModel
                             }.forEachIndexed { index, deferred ->
                                 // Awaited in submission order rather than completion order: see the
                                 // class comment on why the wall must not reshuffle as it fills.
-                                deferred.await()?.let(::append)
+                                deferred.await()?.let { sweep ->
+                                    append(sweep.items)
+                                    targets += sweep.targets
+                                }
                                 _uiState.update { it.copy(boardsScanned = index + 1) }
                             }
                     }
+                    deepScanTargets = targets
+                    sweptWith = SweepContext(provider, scanSettings)
                     _uiState.update { it.copy(isScanning = false) }
                     _isRefreshing.value = false
+                    if (deepScanEnabled.value) startDeepScan()
                 }
         }
 
         /**
-         * One board's attachments, or null if its catalog could not be fetched.
+         * One board's attachments and its threads, or null if its catalog could not be fetched.
          *
          * Only [ProviderException] is caught, and cancellation is left to propagate: a sweep that
          * swallowed cancellation would keep running after the screen was closed, or race the next
@@ -209,19 +255,68 @@ class AllMediaViewModel
             provider: ImageBoardProvider,
             board: Board,
             scanSettings: ScanSettings,
-        ): List<AllMediaItem>? =
+        ): BoardSweep? =
             try {
                 val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
-                mediaItemsFrom(board, catalog, scanSettings.hiddenTokens)
+                sweepBoard(board, catalog, scanSettings.hiddenTokens)
             } catch (e: ProviderException) {
                 Log.w(TAG, "Failed to sweep /${board.id.value}/", e)
                 _uiState.update { it.copy(failedBoards = it.failedBoards + 1) }
                 null
             }
 
+        private fun startDeepScan() {
+            val context = sweptWith ?: return
+            if (deepScanJob?.isActive == true || deepScanTargets.isEmpty()) return
+            deepScanJob = viewModelScope.launch { runDeepScan(context) }
+        }
+
+        private fun stopDeepScan() {
+            deepScanJob?.cancel()
+            deepScanJob = null
+            _uiState.update { it.copy(isDeepScanning = false) }
+        }
+
+        /**
+         * Walks every thread the catalog sweep found and adds the media hanging off its replies.
+         *
+         * This is one request per *thread* rather than per board — thousands of them — so it is
+         * trickled out one at a time with [DEEP_SCAN_REQUEST_INTERVAL_MS] between requests, which
+         * is what providers ask of a client. That makes it a background trickle measured in hours,
+         * not a load that finishes: it fills the wall gradually while the reader scrolls, keeps its
+         * place is at the end so nothing above it moves, and stops the moment the screen closes or
+         * the setting is switched off. Hence opt-in, and hence off by default.
+         */
+        private suspend fun runDeepScan(context: SweepContext) {
+            val targets = deepScanTargets
+            _uiState.update {
+                it.copy(isDeepScanning = true, threadsTotal = targets.size, threadsScanned = 0)
+            }
+            targets.forEachIndexed { index, target ->
+                fetchThreadMedia(context, target)?.let(::append)
+                _uiState.update { it.copy(threadsScanned = index + 1) }
+                delay(DEEP_SCAN_REQUEST_INTERVAL_MS)
+            }
+            _uiState.update { it.copy(isDeepScanning = false) }
+        }
+
+        /** One thread's attachments, or null if it could not be fetched — pruned, 404, timed out. */
+        private suspend fun fetchThreadMedia(
+            context: SweepContext,
+            target: DeepScanTarget,
+        ): List<AllMediaItem>? =
+            try {
+                val thread = context.provider.getThread(target.key.board, target.key.thread)
+                thread.allPosts.mediaItemsFor(target, context.scanSettings.hiddenTokens)
+            } catch (e: ProviderException) {
+                Log.w(TAG, "Deep scan skipped /${target.key.board.value}/${target.key.thread.value}", e)
+                null
+            }
+
         /**
          * Adds a board's haul to the wall. New files land at the end, so nothing already rendered
-         * moves; duplicates of a file already shown are dropped.
+         * moves; duplicates of a file already shown are dropped — which is also what keeps the deep
+         * scan from re-adding the opening-post media the catalog sweep already found.
          */
         private fun append(items: List<AllMediaItem>) {
             val fresh = items.filter { seenUrls.add(it.attachment.sourceUrl) }
@@ -240,8 +335,34 @@ class AllMediaViewModel
              * a scraper to the server.
              */
             const val MAX_CONCURRENT_BOARD_LOADS = 4
+
+            /**
+             * One request a second, sequentially, which is the rate the major engines ask clients
+             * to stay under. Deliberately not tuned for speed: the deep scan's whole risk is that
+             * it is thousands of requests, and a reader who gets rate-limited loses the wall.
+             */
+            const val DEEP_SCAN_REQUEST_INTERVAL_MS = 1_000L
         }
     }
+
+/** A thread the deep scan can walk, with the labels its files will carry onto the wall. */
+internal data class DeepScanTarget(
+    val key: ThreadKey,
+    val boardTitle: String,
+    val threadTitle: String,
+)
+
+/** What one board's catalog yielded: files for the wall now, threads for the deep scan later. */
+internal data class BoardSweep(
+    val items: List<AllMediaItem>,
+    val targets: List<DeepScanTarget>,
+)
+
+/** The provider and filters a completed sweep ran under, so the deep scan matches it exactly. */
+private data class SweepContext(
+    val provider: ImageBoardProvider,
+    val scanSettings: ScanSettings,
+)
 
 /**
  * The settings a sweep actually depends on. Isolated from [AppSettings] so that changing an
@@ -263,32 +384,46 @@ internal fun List<Board>.visibleUnder(scanSettings: ScanSettings): List<Board> =
         .sortedBy { it.id.value }
 
 /**
- * Every attachment a board's catalog carries, as wall items.
+ * Every attachment a board's catalog carries, as wall items, plus the threads behind them.
  *
  * Teaser replies count as well as opening posts: they cost nothing extra, and they are the only
- * reply-level media a catalog sweep can reach.
+ * reply-level media a catalog sweep can reach on its own.
+ *
+ * A thread the filters reject yields no files *and* no deep-scan target — otherwise the deep scan
+ * would walk straight back into a thread the wall had deliberately dropped.
  */
-internal fun mediaItemsFrom(
+internal fun sweepBoard(
     board: Board,
     catalog: List<CatalogThread>,
     hiddenTokens: Set<String>,
+): BoardSweep {
+    val visible = catalog.filterNot { thread -> thread.matchesFilterTokens(hiddenTokens) }
+    val targets =
+        visible.map { thread ->
+            DeepScanTarget(key = thread.key, boardTitle = board.id.value, threadTitle = thread.title())
+        }
+    val items =
+        visible.flatMapIndexed { index, thread ->
+            (listOf(thread.originalPost) + thread.previewReplies).mediaItemsFor(targets[index], hiddenTokens)
+        }
+    return BoardSweep(items = items, targets = targets)
+}
+
+/** The wall items a set of posts contributes, with every filter the wall applies. */
+internal fun List<Post>.mediaItemsFor(
+    target: DeepScanTarget,
+    hiddenTokens: Set<String>,
 ): List<AllMediaItem> =
-    catalog
-        .filterNot { thread -> thread.matchesFilterTokens(hiddenTokens) }
-        .flatMap { thread ->
-            val title = thread.title()
-            (listOf(thread.originalPost) + thread.previewReplies)
-                .filterNot { post -> post.matchesFilterTokens(hiddenTokens) }
-                .flatMap { post -> post.attachments }
-                .filterNot { attachment -> attachment.isPermanentlyFiltered() }
-                .map { attachment ->
-                    AllMediaItem(
-                        attachment = attachment,
-                        key = thread.key,
-                        boardTitle = board.id.value,
-                        threadTitle = title,
-                    )
-                }
+    filterNot { post -> post.matchesFilterTokens(hiddenTokens) }
+        .flatMap { post -> post.attachments }
+        .filterNot { attachment -> attachment.isPermanentlyFiltered() }
+        .map { attachment ->
+            AllMediaItem(
+                attachment = attachment,
+                key = target.key,
+                boardTitle = target.boardTitle,
+                threadTitle = target.threadTitle,
+            )
         }
 
 private fun List<AllMediaItem>.visibleUnder(filter: MediaFilter): ImmutableList<AllMediaItem> =

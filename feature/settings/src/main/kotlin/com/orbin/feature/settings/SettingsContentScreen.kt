@@ -77,6 +77,18 @@ fun SettingsContentScreen(
                 subtitle = "Every image and video from every board in one continuous grid",
                 onClick = onOpenAllMedia,
             )
+            SwitchRow(
+                "Deep scan for reply media",
+                settings.deepMediaScan,
+                viewModel::setDeepMediaScan,
+            )
+            SupportingNote(
+                "Off by default. The all-media wall normally reads board catalogs, which reach " +
+                    "each thread's opening post but not the files attached to its replies. This " +
+                    "walks every thread as well — one request per thread, thousands of them, " +
+                    "trickled out about one a second to stay within what providers allow. Expect " +
+                    "it to keep filling for hours, and only while the all-media screen is open.",
+            )
             // Deliberately not a switch: this filter has no off state. It is listed anyway so a
             // reader who notices a thread missing has somewhere to find out why, instead of
             // filing it as a bug.

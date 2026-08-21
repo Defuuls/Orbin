@@ -27,6 +27,7 @@ own.
 | Subscriptions | Opens the screen for managing subscribed boards — these power the Feed tab and (since v33) the gallery's board picker. |
 | All boards | Opens a full-screen gallery of every board the provider offers (v94). Reachable here because the gallery otherwise disappeared once you subscribed to anything. |
 | All media | Opens the all-media wall: every image and video from every board, in one continuous grid, with no board or thread to pick first (v95). |
+| Deep scan for reply media | Off by default. Follows the all-media sweep with a pass through every thread for the media on its replies — one request per thread, trickled at about one a second, filling over hours and only while that screen is open (v96). |
 | Built-in content filter | Not a switch — an explanation. Gore, shock, abuse and violent content is removed from every surface in the app and cannot be turned off. Listed so a missing thread has an explanation rather than looking like a bug. |
 | Hidden tags | Comma-separated tags; matching threads are **removed** from feeds. |
 | Muted tags | Comma-separated tags; matching threads **stay visible but are de-emphasized** in the feed. |

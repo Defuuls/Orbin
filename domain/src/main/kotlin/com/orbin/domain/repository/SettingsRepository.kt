@@ -31,6 +31,8 @@ interface SettingsRepository {
 
     suspend fun setHideTextOnlyThreads(enabled: Boolean)
 
+    suspend fun setDeepMediaScan(enabled: Boolean)
+
     suspend fun setMediaFilter(filter: MediaFilter)
 
     suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval)

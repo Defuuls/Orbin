@@ -32,6 +32,9 @@
         <item quantity="one">%1$d file from %2$d boards</item>
         <item quantity="other">%1$d files from %2$d boards</item>
     </plurals>
+    <string name="all_media_deep_scan">Deep scan for reply media</string>
+    <!-- Deep-scan progress, e.g. "Deep scan: 120/3,412 threads · 9,004 files". -->
+    <string name="all_media_deep_scanning">Deep scan: %1$d/%2$d threads · %3$d files</string>
     <string name="all_media_empty">No media found on any board</string>
     <string name="all_media_no_boards">Every board is hidden by your board filters</string>
     <!-- The board a tile came from, e.g. "/g/". -->
