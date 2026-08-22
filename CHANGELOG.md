@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [96-Linguine] - 2026-08-22
+
 ### Added
 - **Deep scan for reply media (opt-in).** The all-media wall reads board catalogs, which reach each
   thread's opening post but not the files attached to its replies. Switching this on follows the
