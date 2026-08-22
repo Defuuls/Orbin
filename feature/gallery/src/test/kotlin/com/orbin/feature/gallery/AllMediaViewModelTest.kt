@@ -28,10 +28,14 @@ import com.orbin.provider.api.ProviderMetadata
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
 
 private const val PROVIDER = "fourchan"
+
+/** Virtual-time bound on the state waiters, so a state that never arrives fails fast. */
+private const val AWAIT_TIMEOUT_MS = 10_000L
 
 /**
  * The wall's whole promise is that it holds *everything* without the reader picking a board, so
@@ -197,20 +201,111 @@ class AllMediaViewModelTest {
             assertThat(state.items.map { it.attachment.id }).containsExactly("g-1")
         }
 
+    @Test
+    fun `the deep scan adds media hanging off replies`() =
+        runTest {
+            val op = catalogThread(tech, 1L, image("op"))
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology")),
+                    catalogs = mapOf(tech to listOf(op)),
+                    settings = AppSettings.Default.copy(deepMediaScan = true),
+                    threads = mapOf(op.key to thread(op, replyAttachments = listOf(image("buried")))),
+                )
+
+            val state = viewModel.awaitCompletedDeepScan()
+
+            // "buried" is on a reply the catalog never carried; "op" is not duplicated by the walk.
+            assertThat(state.items.map { it.attachment.id }).containsExactly("op", "buried").inOrder()
+        }
+
+    @Test
+    fun `a text-only thread is still walked for its reply media`() =
+        runTest {
+            // The thread contributes nothing to the wall from its catalog entry, so it would be
+            // invisible if the deep scan took its targets from the files already collected.
+            val textOnly = catalogThread(tech, 1L)
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology")),
+                    catalogs = mapOf(tech to listOf(textOnly)),
+                    settings = AppSettings.Default.copy(deepMediaScan = true),
+                    threads = mapOf(textOnly.key to thread(textOnly, replyAttachments = listOf(image("buried")))),
+                )
+
+            val state = viewModel.awaitCompletedDeepScan()
+
+            assertThat(state.items.map { it.attachment.id }).containsExactly("buried")
+        }
+
+    @Test
+    fun `reply media stays off the wall while the deep scan is off`() =
+        runTest {
+            val op = catalogThread(tech, 1L, image("op"))
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology")),
+                    catalogs = mapOf(tech to listOf(op)),
+                    threads = mapOf(op.key to thread(op, replyAttachments = listOf(image("buried")))),
+                )
+
+            val state = viewModel.awaitCompletedSweep()
+
+            assertThat(state.items.map { it.attachment.id }).containsExactly("op")
+            assertThat(state.isDeepScanning).isFalse()
+        }
+
+    @Test
+    fun `the deep scan does not walk back into a filtered thread`() =
+        runTest {
+            val filthy =
+                catalogThread(tech, 1L, image("op")).let { thread ->
+                    thread.copy(originalPost = thread.originalPost.copy(subject = "gore thread"))
+                }
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology")),
+                    catalogs = mapOf(tech to listOf(filthy)),
+                    settings = AppSettings.Default.copy(deepMediaScan = true),
+                    threads = mapOf(filthy.key to thread(filthy, replyAttachments = listOf(image("buried")))),
+                )
+
+            val state = viewModel.awaitCompletedSweep()
+
+            // No target, so nothing to walk: the thread the wall dropped stays dropped.
+            assertThat(state.items).isEmpty()
+            assertThat(state.threadsTotal).isEqualTo(0)
+        }
+
+    /**
+     * Waits for the deep pass to finish walking every thread it was given.
+     *
+     * Bounded, because the interesting regression here — the deep scan never being given a thread
+     * to walk — shows up as a state that simply never arrives. The timeout is virtual, so this
+     * costs nothing when the state does arrive and fails in the same breath when it does not.
+     */
+    private suspend fun AllMediaViewModel.awaitCompletedDeepScan(): AllMediaUiState =
+        withTimeout(AWAIT_TIMEOUT_MS) {
+            uiState.first {
+                !it.isScanning && !it.isDeepScanning && it.threadsTotal > 0 && it.threadsScanned == it.threadsTotal
+            }
+        }
+
     /**
      * Waits out the progressive fill. The wall appends board by board, so the early emissions are
      * partial by design and only the settled state is worth asserting on.
      */
     private suspend fun AllMediaViewModel.awaitCompletedSweep(): AllMediaUiState =
-        uiState.first { !it.isScanning && it.boardsTotal > 0 }
+        withTimeout(AWAIT_TIMEOUT_MS) { uiState.first { !it.isScanning && it.boardsTotal > 0 } }
 
     private fun createViewModel(
         boards: List<Board>,
         catalogs: Map<BoardId, List<CatalogThread>>,
         failing: Set<BoardId> = emptySet(),
         settings: AppSettings = AppSettings.Default,
+        threads: Map<ThreadKey, Thread> = emptyMap(),
     ): AllMediaViewModel {
-        val registry = FakeProviderRegistry(catalogProvider(catalogs, failing))
+        val registry = FakeProviderRegistry(catalogProvider(catalogs, failing, threads))
         val settingsRepository = FakeSettingsRepository(settings)
         return AllMediaViewModel(
             providerRegistry = registry,
@@ -223,6 +318,7 @@ class AllMediaViewModelTest {
     private fun catalogProvider(
         catalogs: Map<BoardId, List<CatalogThread>>,
         failing: Set<BoardId>,
+        threads: Map<ThreadKey, Thread>,
     ) = object : ImageBoardProvider {
         override val metadata = ProviderMetadata(ProviderId(PROVIDER), "Test", "https://example.org")
         override val capabilities = ProviderCapabilities()
@@ -237,7 +333,9 @@ class AllMediaViewModelTest {
         override suspend fun getThread(
             board: BoardId,
             thread: ThreadId,
-        ): Thread = throw ProviderException.NotFound("not used")
+        ): Thread =
+            threads[ThreadKey(ProviderId(PROVIDER), board, thread)]
+                ?: throw ProviderException.NotFound("Resource not found")
     }
 
     private fun catalogThread(
@@ -254,6 +352,26 @@ class AllMediaViewModelTest {
                 isOriginalPost = true,
                 attachments = attachments.toList().toPersistentList(),
             ),
+        stats = ThreadStats(),
+    )
+
+    private fun thread(
+        catalog: CatalogThread,
+        replyAttachments: List<MediaAttachment>,
+    ) = Thread(
+        key = catalog.key,
+        originalPost = catalog.originalPost,
+        replies =
+            replyAttachments
+                .mapIndexed { index, attachment ->
+                    Post(
+                        id = PostId(catalog.key.thread.value + index + 1),
+                        board = catalog.key.board,
+                        threadId = catalog.key.thread,
+                        isOriginalPost = false,
+                        attachments = listOf(attachment).toPersistentList(),
+                    )
+                }.toPersistentList(),
         stats = ThreadStats(),
     )
 

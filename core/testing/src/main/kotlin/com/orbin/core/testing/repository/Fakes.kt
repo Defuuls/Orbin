@@ -173,6 +173,10 @@ class FakeSettingsRepository(
         update { copy(hideNsfwBoards = enabled) }
     }
 
+    override suspend fun setDeepMediaScan(enabled: Boolean) {
+        update { copy(deepMediaScan = enabled) }
+    }
+
     override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
         update { copy(hideTextOnlyThreads = enabled) }
     }

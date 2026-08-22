@@ -140,6 +140,16 @@ data class AppSettings(
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
     /**
+     * Whether the all-media wall follows its catalog sweep with a slow pass through every thread
+     * it found, pulling in the media attached to replies.
+     *
+     * Off by default, and deliberately so: the sweep itself is one request per board, while this
+     * is one request per *thread* — thousands per sweep. It is trickled out at roughly one request
+     * a second to stay inside what providers ask for, which means it fills over hours rather than
+     * minutes, and it only runs while the wall is open.
+     */
+    val deepMediaScan: Boolean = false,
+    /**
      * Restricts every view that shows post media to one kind of attachment. Threads whose media
      * is entirely filtered out drop off the feed and board catalogs, since a catalog cell is its
      * OP's thumbnail and there would be nothing left to show.

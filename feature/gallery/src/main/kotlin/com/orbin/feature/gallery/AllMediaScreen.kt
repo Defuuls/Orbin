@@ -15,7 +15,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -69,6 +72,23 @@ fun AllMediaScreen(
                 title = stringResource(R.string.all_media_title),
                 navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 onNavigationClick = onBack,
+                actions = {
+                    // Mirrors the Settings switch and writes the same preference. It belongs here
+                    // too because this is the only screen the deep scan affects, and the reader
+                    // deciding whether the wall is deep enough is looking at the wall.
+                    IconButton(onClick = { viewModel.setDeepScan(!settings.deepMediaScan) }) {
+                        Icon(
+                            imageVector = Icons.Filled.TravelExplore,
+                            contentDescription = stringResource(R.string.all_media_deep_scan),
+                            tint =
+                                if (settings.deepMediaScan) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                        )
+                    }
+                },
             )
         },
     ) { padding ->
@@ -145,20 +165,30 @@ private fun SweepProgress(uiState: AllMediaUiState) {
     if (uiState.boardsTotal == 0) return
 
     val summary =
-        if (uiState.isScanning) {
-            stringResource(
-                R.string.all_media_scanning,
-                uiState.boardsScanned,
-                uiState.boardsTotal,
-                uiState.items.size,
-            )
-        } else {
-            pluralStringResource(
-                R.plurals.all_media_complete,
-                uiState.items.size,
-                uiState.items.size,
-                uiState.boardsTotal,
-            )
+        when {
+            uiState.isScanning ->
+                stringResource(
+                    R.string.all_media_scanning,
+                    uiState.boardsScanned,
+                    uiState.boardsTotal,
+                    uiState.items.size,
+                )
+            // The deep scan runs for hours, so it reports threads walked rather than pretending to
+            // be a load that is about to finish.
+            uiState.isDeepScanning ->
+                stringResource(
+                    R.string.all_media_deep_scanning,
+                    uiState.threadsScanned,
+                    uiState.threadsTotal,
+                    uiState.items.size,
+                )
+            else ->
+                pluralStringResource(
+                    R.plurals.all_media_complete,
+                    uiState.items.size,
+                    uiState.items.size,
+                    uiState.boardsTotal,
+                )
         }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -172,6 +202,13 @@ private fun SweepProgress(uiState: AllMediaUiState) {
             LinearProgressIndicator(
                 progress = {
                     uiState.boardsScanned.toFloat() / uiState.boardsTotal.coerceAtLeast(1)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else if (uiState.isDeepScanning) {
+            LinearProgressIndicator(
+                progress = {
+                    uiState.threadsScanned.toFloat() / uiState.threadsTotal.coerceAtLeast(1)
                 },
                 modifier = Modifier.fillMaxWidth(),
             )

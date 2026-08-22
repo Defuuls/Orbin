@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Deep scan for reply media (opt-in).** The all-media wall reads board catalogs, which reach each
+  thread's opening post but not the files attached to its replies. Switching this on follows the
+  catalog sweep with a second pass that walks every thread it found and adds what it finds inside.
+  Off by default, and worth understanding before switching on: it is one request per *thread*
+  rather than per board — thousands of them — so it is trickled out at about one a second to stay
+  inside what providers ask of a client. It fills over hours rather than minutes, runs only while
+  the all-media screen is open, and stops the moment you switch it off or leave. New files append
+  at the end, so nothing already on screen moves. Toggle it from Settings → Content & Feed or the
+  compass button on the wall itself; the wall reports "Deep scan: 120/3,412 threads" while it runs.
+  A thread the wall's filters dropped is not walked, so the deep scan cannot reintroduce it.
+
 ## [95-Farfalle] - 2026-08-21
 
 ### Added

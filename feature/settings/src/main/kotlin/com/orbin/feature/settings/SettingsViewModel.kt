@@ -105,6 +105,8 @@ class SettingsViewModel
 
         fun setHideTextOnlyThreads(enabled: Boolean) = update { repository.setHideTextOnlyThreads(enabled) }
 
+        fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
+
         fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
