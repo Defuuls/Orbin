@@ -47,7 +47,7 @@ serialization = "1.11.0"
 serializationConverter = "1.0.0"
 
 # Networking
-okhttp = "5.4.0"
+okhttp = "5.5.0"
 retrofit = "3.0.0"
 jsoup = "1.23.1"
 
