@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val orbinVersionCode = providers.gradleProperty("orbin.versionCode").get().toInt()
-val orbinVersionName = providers.gradleProperty("orbin.versionName").get()
+val minimalVersionCode = providers.gradleProperty("orbin.minimalVersionCode").get().toInt()
+val minimalVersionName = providers.gradleProperty("orbin.minimalVersionName").get()
 
 android {
     namespace = "com.orbin.minimal"
@@ -15,10 +15,10 @@ android {
         // replacing it. The cost is that Android sandboxes the two separately: subscriptions made
         // here are this app's own, and cannot be read out of the full client's encrypted database.
         applicationId = "com.orbin.minimal"
-        // Shared with the full client via gradle.properties: the two ship as a matched pair,
-        // built from the same commit, and a version skew between them would be meaningless.
-        versionCode = orbinVersionCode
-        versionName = orbinVersionName
+        // Its own version line, declared in gradle.properties. This app releases on its own
+        // cadence under `minimal-v*` tags, so it does not inherit the full client's number.
+        versionCode = minimalVersionCode
+        versionName = minimalVersionName
     }
 
     buildTypes {

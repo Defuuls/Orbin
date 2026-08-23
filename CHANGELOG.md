@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Orbin Minimal versions and releases on its own line**, starting at **1** rather than inheriting
+  the full client's number. It is a separate app with its own cadence, and a first release labelled
+  114 would say something untrue about it. Tags are `minimal-v*`, built and published by their own
+  `release-minimal.yml`; the full client's release no longer carries the minimal APK, since
+  publishing one APK under two version schemes is how a download gets mistaken for the other app.
+
 ### Added
 - **Orbin Minimal — a second, separate APK.** A pared-back reader whose entire interface is your
   subscribed boards as one flat feed: every thread across every board you follow, merged and sorted
