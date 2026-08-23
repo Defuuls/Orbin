@@ -39,7 +39,7 @@ hiltNavigationCompose = "1.4.0"
 room = "2.8.4"
 datastore = "1.2.1"
 securityCrypto = "1.1.0"
-sqlcipher = "4.17.0"
+sqlcipher = "4.18.0"
 
 # Async / Serialization
 coroutines = "1.11.0"
