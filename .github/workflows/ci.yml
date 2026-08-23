@@ -105,9 +105,13 @@ jobs:
       - name: Compile instrumentation tests
         run: ./gradlew assembleDebugAndroidTest -Porbin.warningsAsErrors=true
 
-      - name: Upload debug APK
+      - name: Upload debug APKs
         uses: actions/upload-artifact@v7
         with:
           name: orbin-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          # Both shipped apps: the full client and the pared-back subscription reader. They are
+          # separate applicationIds and install side by side, so both are worth having to hand.
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app-minimal/build/outputs/apk/debug/*.apk
           if-no-files-found: error

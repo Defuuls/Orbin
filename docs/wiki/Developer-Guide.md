@@ -125,6 +125,10 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
 
 ## Cutting a release
 
+1. Bump `orbin.versionCode` / `orbin.versionName` in `gradle.properties` — both shipped APKs
+   read them from there, so one edit moves the full client and Orbin Minimal together. (The
+   older instruction below predates the second APK and the property file; `app/build.gradle.kts`
+   no longer carries literal version numbers.)
 1. Run the **New Version** workflow (or bump `versionName`/`versionCode` in
    `app/build.gradle.kts` and update `CHANGELOG.md` by hand) and merge the release PR.
 2. Tag and push. Tags are `v<number>-<Codename>`, and the tag must be **annotated** — the

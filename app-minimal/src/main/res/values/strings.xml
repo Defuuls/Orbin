@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="minimal_app_name">Orbin Minimal</string>
+    <string name="minimal_feed_title">Feed</string>
+    <string name="minimal_boards_title">Boards</string>
+    <string name="minimal_edit_boards">Choose boards</string>
+    <string name="minimal_refresh">Refresh</string>
+    <string name="minimal_no_subscriptions">No boards yet. Tap the list icon to choose some.</string>
+    <string name="minimal_no_threads">Nothing in your boards right now</string>
+    <string name="minimal_downgrade_title">This build is older than one already used here</string>
+    <string name="minimal_downgrade_body">Orbin Minimal will not run an older build over a newer one. Install version %1$d or later.</string>
+    <!-- A thread row's board and reply count, e.g. "/g/ · 42 replies". -->
+    <string name="minimal_thread_summary">/%1$s/ · %2$d replies</string>
+</resources>

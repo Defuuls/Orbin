@@ -6,6 +6,29 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Orbin Minimal — a second, separate APK.** A pared-back reader whose entire interface is your
+  subscribed boards as one flat feed: every thread across every board you follow, merged and sorted
+  by latest activity, with a board tag, a title and a reply count per row. Tap to read, tap an
+  image to view it full screen. That is all of it — no bottom navigation, no settings hub, no
+  search, gallery, downloads, bookmarks, history, notifications, app-lock or themes. It installs
+  alongside the full client rather than replacing it, and is published on each release as
+  `orbin-minimal-<tag>.apk` with its own checksum.
+
+  It is a different front end over the same layers, not a second implementation: identical
+  providers, caching, encrypted storage, board filters and the always-on content filter. Because
+  Android sandboxes the two applicationIds separately, its subscriptions are its own — pick boards
+  from the list icon in its top bar.
+
+### Changed
+- **The shipped version lives in `gradle.properties`** (`orbin.versionCode` / `orbin.versionName`)
+  instead of `app/build.gradle.kts`, so one edit moves both APKs. Two build files each holding a
+  literal version is how a bump gets half-applied — which has already happened here once, with
+  v85 through v89 all shipping versionCode 107.
+- **Release signing is configured once** in the build-logic convention plugin rather than inline in
+  `app/build.gradle.kts`. Two copies of that logic would drift, and the way they would drift is one
+  APK silently shipping debug-signed.
+
 ## [96-Linguine] - 2026-08-22
 
 ### Added

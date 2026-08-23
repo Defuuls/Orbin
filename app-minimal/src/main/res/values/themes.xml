@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- No splash screen: Compose paints the feed immediately, and a splash on a reader this
+         small is ceremony for something already on screen. -->
+    <style name="Theme.OrbinMinimal" parent="android:Theme.Material.NoActionBar" />
+</resources>

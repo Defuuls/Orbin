@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same mark as the full client, one shade lighter, so the two are recognisably siblings
+         but tellable apart in a launcher that now holds both. -->
+    <color name="ic_launcher_background">#2A2A2A</color>
+</resources>

@@ -103,6 +103,19 @@ reply, or create threads.
   reinstall. Importing merges rather than replaces, so a restore cannot destroy an existing
   setup. The file is plain JSON and is not encrypted — keep it somewhere you trust.
 
+## Orbin Minimal
+
+Each release also ships **`orbin-minimal-<tag>.apk`** — a separate, pared-back app whose whole
+interface is your subscribed boards as one flat feed, merged across every board you follow and
+sorted by latest activity. Tap a row to read the thread, tap an image to view it full screen.
+Nothing else: no bottom navigation, no settings hub, no search, gallery, downloads, bookmarks,
+history, notifications, app-lock or themes.
+
+It is a different front end over the same layers — identical providers, caching, encrypted storage,
+board filters and the always-on content filter — built from `app-minimal/`. It installs alongside
+the full client under its own applicationId, which also means Android sandboxes their data
+separately: its subscriptions are its own, chosen from the list icon in its top bar.
+
 ## Tech stack
 
 | Concern | Choice |
@@ -123,6 +136,7 @@ Exact versions are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.
 ```
 Orbin/
 ├── app/                      # Application, MainActivity, navigation host, DI aggregation
+├── app-minimal/              # Second shipped APK: subscribed boards as one flat feed, nothing else
 ├── benchmark/                # Baseline profile generation (startup + feed path)
 ├── build-logic/              # Gradle convention plugins (the build's backbone)
 ├── core/

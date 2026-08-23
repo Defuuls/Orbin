@@ -1,7 +1,8 @@
 name: Release
 
-# Every git tag matching v* triggers a full release build: signs the APK, generates release
-# notes, and publishes a GitHub Release with the APK, the R8 mapping file, and SHA-256 checksums.
+# Every git tag matching v* triggers a full release build: signs both shipped APKs (the full
+# client and Orbin Minimal), generates release notes, and publishes a GitHub Release with the
+# APKs, their R8 mapping files, and SHA-256 checksums.
 # workflow_dispatch allows triggering a release manually when tag-push is unavailable.
 on:
   push:
@@ -82,16 +83,35 @@ jobs:
         id: artifacts
         run: |
           set -euo pipefail
-          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
-          MAPPING=$(find app/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
           mkdir -p release-staging
           VERSION="${RELEASE_TAG}"
+
+          # Two shipped APKs: the full client, and the pared-back subscription reader. They carry
+          # different applicationIds and install side by side, so both are published. Named
+          # distinctly so a downloader cannot mistake one for the other.
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          MAPPING=$(find app/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
           cp "$APK" "release-staging/orbin-${VERSION}.apk"
           ( cd release-staging && sha256sum "orbin-${VERSION}.apk" > "orbin-${VERSION}.apk.sha256" )
           if [ -n "$MAPPING" ]; then
             cp "$MAPPING" "release-staging/orbin-${VERSION}-mapping.txt"
             ( cd release-staging && sha256sum "orbin-${VERSION}-mapping.txt" > "orbin-${VERSION}-mapping.txt.sha256" )
           fi
+
+          # Unlike the main APK this one is required to exist: a release that silently dropped it
+          # would look complete while shipping half of what was built.
+          MINIMAL_APK=$(find app-minimal/build/outputs/apk/release -name '*.apk' | head -n1)
+          if [ -z "$MINIMAL_APK" ]; then
+            echo "::error::No minimal APK found under app-minimal/build/outputs/apk/release"; exit 1
+          fi
+          MINIMAL_MAPPING=$(find app-minimal/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
+          cp "$MINIMAL_APK" "release-staging/orbin-minimal-${VERSION}.apk"
+          ( cd release-staging && sha256sum "orbin-minimal-${VERSION}.apk" > "orbin-minimal-${VERSION}.apk.sha256" )
+          if [ -n "$MINIMAL_MAPPING" ]; then
+            cp "$MINIMAL_MAPPING" "release-staging/orbin-minimal-${VERSION}-mapping.txt"
+            ( cd release-staging && sha256sum "orbin-minimal-${VERSION}-mapping.txt" > "orbin-minimal-${VERSION}-mapping.txt.sha256" )
+          fi
+
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Generate release notes
@@ -119,6 +139,12 @@ jobs:
               echo "### Changes"
               git log --no-merges --pretty='- %s (%h)' "${RELEASE_TAG}"
             fi
+            echo
+            echo "### Downloads"
+            echo "- \`orbin-${RELEASE_TAG}.apk\` — the full client."
+            echo "- \`orbin-minimal-${RELEASE_TAG}.apk\` — Orbin Minimal: subscribed boards as one"
+            echo "  flat feed, and nothing else. A separate app that installs alongside the full"
+            echo "  client and keeps its own subscriptions."
             echo
             echo "### Verifying downloads"
             echo "Each artifact ships with a \`.sha256\` checksum. Verify with:"

@@ -57,7 +57,8 @@
   (Bucatini, Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle).
   v30-v90 used stars and ended with v90-Vega; do not pick from that era. Pick a name not
   already used by an existing tag — check `git tag --list 'v*'`, not this list.
-- versionCode increments by 1 for each release
+- versionCode increments by 1 for each release, in `gradle.properties`
+  (`orbin.versionCode` / `orbin.versionName`) — both shipped APKs read it from there
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections
 - README.md kept current with latest release version
 - docs/wiki/Release-History.md maintained as the comprehensive historical record (root-level
