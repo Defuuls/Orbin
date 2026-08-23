@@ -27,8 +27,9 @@ rootProject.name = "Orbin"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// Application
+// Applications. Two shipped APKs: the full client, and a pared-back subscription reader.
 include(":app")
+include(":app-minimal")
 include(":benchmark")
 
 // Core layers

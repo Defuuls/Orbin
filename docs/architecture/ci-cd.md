@@ -91,7 +91,7 @@ Pick a name that is distinctive, short enough for a changelog heading, and — c
 ## Cutting a release
 
 ```bash
-# bump versionName/versionCode in app/build.gradle.kts, update CHANGELOG.md, commit
+# bump orbin.versionName/orbin.versionCode in gradle.properties, update CHANGELOG.md, commit
 git tag -a v67-<Codename> -m "<Codename>"
 git push origin v67-<Codename>
 ```

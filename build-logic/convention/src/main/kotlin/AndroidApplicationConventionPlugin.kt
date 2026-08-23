@@ -3,14 +3,16 @@ import com.orbin.buildlogic.configureAndroidCompose
 import com.orbin.buildlogic.configureJava
 import com.orbin.buildlogic.configureKotlinAndroid
 import com.orbin.buildlogic.configureLint
+import com.orbin.buildlogic.configureReleaseSigning
 import com.orbin.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 
 /**
- * Convention plugin for the single `:app` module. Configures the application plugin, Kotlin,
- * Compose, and the target SDK / version code defaults.
+ * Convention plugin for the application modules — `:app` and `:app-minimal`. Configures the
+ * application plugin, Kotlin, Compose, the target SDK defaults, and the release signing both
+ * shipped APKs are signed with.
  */
 class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
@@ -25,6 +27,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this)
             configureLint(this)
+            configureReleaseSigning(this)
             compileOptions {
                 configureJava()
             }
