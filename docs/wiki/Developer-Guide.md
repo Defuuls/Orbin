@@ -115,6 +115,7 @@ profile is not harmful, only progressively less useful.
 | `screenshots.yml` | PRs touching UI | Records Roborazzi screenshots and uploads them as artifacts. |
 | `instrumentation.yml` | every push to `main` and every PR | Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Both ends of the supported range are covered, because a pass on 35 says nothing about the devices `minSdk` 31 admits. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, uploads it as the `baseline-profile` artifact, then opens a draft PR with it. The PR step needs *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*; without it the step fails and the run warns, but the artifact still carries the profile. |
+| `release-minimal.yml` | `minimal-v*` tag push, or manual | Builds, signs and publishes **Orbin Minimal** alone. Separate app, separate version line (`orbin.minimalVersionCode` / `orbin.minimalVersionName`), separate cadence — not carried by `release.yml`. |
 | `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version name, `versionCode`, codename, base branch, draft flag. Bumps `app/build.gradle.kts` and `CHANGELOG.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 | `wiki-sync.yml` | push to `main` touching `docs/wiki/**` (or manual) | Mirrors `docs/wiki/` onto the repository's GitHub wiki via `rsync --delete`, so `docs/wiki` is the single source of truth — edit it in a PR like any other file, never the wiki directly. |
@@ -125,9 +126,10 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
 
 ## Cutting a release
 
-1. Bump `orbin.versionCode` / `orbin.versionName` in `gradle.properties` — both shipped APKs
-   read them from there, so one edit moves the full client and Orbin Minimal together. (The
-   older instruction below predates the second APK and the property file; `app/build.gradle.kts`
+1. Bump `orbin.versionCode` / `orbin.versionName` in `gradle.properties` for the full client.
+   Orbin Minimal has its own pair in the same file (`orbin.minimalVersionCode` /
+   `orbin.minimalVersionName`) and its own `minimal-v*` tags — releasing one does not release
+   the other. (The older instruction below predates the property file; `app/build.gradle.kts`
    no longer carries literal version numbers.)
 1. Run the **New Version** workflow (or bump `versionName`/`versionCode` in
    `app/build.gradle.kts` and update `CHANGELOG.md` by hand) and merge the release PR.

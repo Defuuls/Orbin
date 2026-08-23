@@ -1,25 +1,25 @@
-name: Release
+name: Release Orbin Minimal
 
-# Every git tag matching v* triggers a full release build of the main client: signs the APK,
-# generates release notes, and publishes a GitHub Release with the APK, the R8 mapping file,
-# and SHA-256 checksums.
+# Orbin Minimal releases on its own line, under `minimal-v*` tags, starting at minimal-v1.
 #
-# Orbin Minimal is NOT released here. It is a separate app on its own version line and its own
-# cadence — see release-minimal.yml, which triggers on minimal-v* tags. Publishing it from both
-# would ship one APK under two version schemes.
-# workflow_dispatch allows triggering a release manually when tag-push is unavailable.
+# It is a separate app — its own applicationId, its own version in gradle.properties, its own
+# cadence — so it gets its own workflow rather than riding along with the full client's release.
+# Publishing it from both would ship one APK under two version schemes, and tie a reader's
+# expectations about "version 1" to a number that says 114.
+#
+# workflow_dispatch mirrors release.yml, and is the path used when tag-push is unavailable.
 on:
   push:
     tags:
-      - 'v*'
+      - 'minimal-v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to create and release (e.g. v23.3). Must not already exist.'
+        description: 'Tag to create and release (e.g. minimal-v1). Must not already exist.'
         required: true
         type: string
       tag_message:
-        description: 'Annotated tag message / release codename (e.g. Bucatini)'
+        description: 'Annotated tag message (e.g. Orbin Minimal 1)'
         required: true
         type: string
       base_ref:
@@ -33,11 +33,10 @@ permissions:
 
 jobs:
   release:
-    name: Build, sign & publish release
+    name: Build, sign & publish Orbin Minimal
     runs-on: ubuntu-latest
     env:
       # For tag-push events GITHUB_REF_NAME is the tag; for dispatch it is the branch.
-      # RELEASE_TAG normalises this so all steps can use a single variable.
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
@@ -76,12 +75,14 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/orbin-release.jks"
           echo "ORBIN_KEYSTORE_FILE=$RUNNER_TEMP/orbin-release.jks" >> "$GITHUB_ENV"
 
+      # Only this module. `assembleRelease` would build the full client too — minutes of R8 for an
+      # APK this release does not publish.
       - name: Build signed release APK
         env:
           ORBIN_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           ORBIN_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           ORBIN_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: ./gradlew :app-minimal:assembleRelease
 
       - name: Locate artifacts and compute checksums
         id: artifacts
@@ -90,13 +91,16 @@ jobs:
           mkdir -p release-staging
           VERSION="${RELEASE_TAG}"
 
-          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
-          MAPPING=$(find app/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
-          cp "$APK" "release-staging/orbin-${VERSION}.apk"
-          ( cd release-staging && sha256sum "orbin-${VERSION}.apk" > "orbin-${VERSION}.apk.sha256" )
+          APK=$(find app-minimal/build/outputs/apk/release -name '*.apk' | head -n1)
+          if [ -z "$APK" ]; then
+            echo "::error::No APK found under app-minimal/build/outputs/apk/release"; exit 1
+          fi
+          MAPPING=$(find app-minimal/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
+          cp "$APK" "release-staging/orbin-minimal-${VERSION}.apk"
+          ( cd release-staging && sha256sum "orbin-minimal-${VERSION}.apk" > "orbin-minimal-${VERSION}.apk.sha256" )
           if [ -n "$MAPPING" ]; then
-            cp "$MAPPING" "release-staging/orbin-${VERSION}-mapping.txt"
-            ( cd release-staging && sha256sum "orbin-${VERSION}-mapping.txt" > "orbin-${VERSION}-mapping.txt.sha256" )
+            cp "$MAPPING" "release-staging/orbin-minimal-${VERSION}-mapping.txt"
+            ( cd release-staging && sha256sum "orbin-minimal-${VERSION}-mapping.txt" > "orbin-minimal-${VERSION}-mapping.txt.sha256" )
           fi
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
@@ -105,32 +109,39 @@ jobs:
         id: notes
         run: |
           set -euo pipefail
-          # actions/checkout materializes the tag as a lightweight ref, so the
-          # annotated tag object (whose message carries the release name) may be
-          # absent. Force-fetch it so %(contents:subject) reads the tag message
-          # rather than falling through to the underlying commit subject.
+          # actions/checkout materializes the tag as a lightweight ref, so the annotated tag object
+          # (whose message carries the release name) may be absent. Force-fetch it so
+          # %(contents:subject) reads the tag message rather than the underlying commit subject.
           git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
           RELEASE_NAME=$(git for-each-ref "refs/tags/${RELEASE_TAG}" --format='%(contents:subject)')
           if [ -z "$RELEASE_NAME" ]; then
             RELEASE_NAME="${RELEASE_TAG}"
           fi
-          PREV_TAG=$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || true)
+          # Only this app's own tags, so the diff never spans the full client's release history.
+          PREV_TAG=$(git tag --list 'minimal-v*' --sort=-creatordate | grep -v "^${RELEASE_TAG}$" | head -n1 || true)
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {
-            echo "## Orbin ${RELEASE_TAG} - ${RELEASE_NAME}"
+            echo "## ${RELEASE_NAME}"
+            echo
+            echo "Orbin Minimal is a separate app: your subscribed boards as one flat feed, and"
+            echo "nothing else. No bottom navigation, no settings hub, no search, gallery,"
+            echo "downloads, bookmarks, history, notifications, app-lock or themes."
+            echo
+            echo "It installs **alongside** the full Orbin client rather than replacing it, under"
+            echo "its own applicationId. Android sandboxes the two separately, so its subscriptions"
+            echo "are its own — pick boards from the list icon in its top bar."
             echo
             if [ -n "$PREV_TAG" ]; then
               echo "### Changes since ${PREV_TAG}"
-              git log --no-merges --pretty='- %s (%h)' "${PREV_TAG}..${RELEASE_TAG}"
+              git log --no-merges --pretty='- %s (%h)' "${PREV_TAG}..${RELEASE_TAG}" -- app-minimal
             else
-              echo "### Changes"
-              git log --no-merges --pretty='- %s (%h)' "${RELEASE_TAG}"
+              echo "### First release"
             fi
             echo
             echo "### Verifying downloads"
             echo "Each artifact ships with a \`.sha256\` checksum. Verify with:"
             echo '```'
-            echo "sha256sum -c orbin-${RELEASE_TAG}.apk.sha256"
+            echo "sha256sum -c orbin-minimal-${RELEASE_TAG}.apk.sha256"
             echo '```'
           } > release-notes.md
 

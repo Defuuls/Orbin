@@ -105,7 +105,9 @@ reply, or create threads.
 
 ## Orbin Minimal
 
-Each release also ships **`orbin-minimal-<tag>.apk`** — a separate, pared-back app whose whole
+**Orbin Minimal releases separately**, under `minimal-v*` tags starting at
+[**1**](https://github.com/Defuuls/Orbin/releases/tag/minimal-v1), on its own cadence — it is not
+bundled with the full client's release. It is a pared-back app whose whole
 interface is your subscribed boards as one flat feed, merged across every board you follow and
 sorted by latest activity. Tap a row to read the thread, tap an image to view it full screen.
 Nothing else: no bottom navigation, no settings hub, no search, gallery, downloads, bookmarks,
