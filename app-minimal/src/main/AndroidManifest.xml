@@ -7,8 +7,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- tools:ignore="NotificationPermission": the shared :data module carries the thread-watch
+         notifier, so lint sees a notification call site and asks for POST_NOTIFICATIONS. This app
+         has no thread watching to schedule it and never calls WatchScheduler, so that code is
+         unreachable here. Declaring the permission to satisfy lint would be the worse answer —
+         it would ask readers to grant notifications to an app that has none. -->
     <application
         android:name=".MinimalApplication"
+        tools:ignore="NotificationPermission"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
