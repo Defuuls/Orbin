@@ -93,6 +93,7 @@ class MinimalScreenshotTest {
                             persistentListOf(
                                 thread(TECH, 1L, subject = "Exactly one reply", replies = 1),
                                 thread(TECH, 3L, subject = "No replies at all", replies = 0),
+                                thread(TECH, 2L, subject = null, comment = "", replies = 5),
                             ),
                             null,
                         ),
@@ -144,20 +145,33 @@ class MinimalScreenshotTest {
         }
 
     @Test
-    fun boardsPopulated() =
-        capture("minimal_boards_populated") {
-            MinimalBoardsContent(boards = sampleBoards(), onBack = {}, onToggle = { _, _ -> })
-        }
+    fun boardsPopulated() = capture("minimal_boards_populated") { Boards(sampleBoards()) }
 
-    /**
-     * The picker with nothing in it. The screen cannot tell "still fetching" from "this provider
-     * returned no boards", so both land here.
-     */
+    /** Fetch in flight and nothing cached yet — the only case that should show a spinner. */
     @Test
-    fun boardsEmpty() =
-        capture("minimal_boards_empty") {
-            MinimalBoardsContent(boards = emptyList(), onBack = {}, onToggle = { _, _ -> })
-        }
+    fun boardsLoading() = capture("minimal_boards_loading") { Boards(emptyList(), isLoading = true) }
+
+    /** The provider answered with no boards. Previously indistinguishable from still loading. */
+    @Test
+    fun boardsEmpty() = capture("minimal_boards_empty") { Boards(emptyList()) }
+
+    /** The fetch failed. Previously a spinner with no way out; now it offers a retry. */
+    @Test
+    fun boardsError() = capture("minimal_boards_error") { Boards(emptyList(), error = FETCH_ERROR) }
+
+    @Composable
+    private fun Boards(
+        boards: List<SubscribableBoard>,
+        isLoading: Boolean = false,
+        error: String? = null,
+    ) = MinimalBoardsContent(
+        boards = boards,
+        isLoading = isLoading,
+        errorMessage = error,
+        onBack = {},
+        onRefresh = {},
+        onToggle = { _, _ -> },
+    )
 
     @Composable
     private fun MinimalFeed(state: SubscribedFeedUiState) {
@@ -250,6 +264,7 @@ class MinimalScreenshotTest {
         const val UNBROKEN =
             "Supercalifragilisticexpialidociousaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         const val LONG_BOARD_TITLE = "Worksafe Gifs, with a title long enough to need truncating"
+        const val FETCH_ERROR = "Could not reach the server"
 
         // Wide enough to reach the right edge, so the scrollbar either clears the text or does not.
         const val SCROLLBAR_ROW =

@@ -227,6 +227,21 @@ private fun SweepProgress(uiState: AllMediaUiState) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
         )
+        // A sweep that skipped boards is a partial wall, and the count above cannot say so — it
+        // reads the same whether every board answered or a third of them failed.
+        if (uiState.failedBoards > 0) {
+            Text(
+                text =
+                    pluralStringResource(
+                        R.plurals.all_media_boards_failed,
+                        uiState.failedBoards,
+                        uiState.failedBoards,
+                    ),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 4.dp),
+            )
+        }
         if (uiState.isScanning) {
             LinearProgressIndicator(
                 progress = {
@@ -259,6 +274,11 @@ private fun MediaTile(
         )
         // Only the board, not the thread title: at this tile size a title is unreadable, and the
         // board is what tells a reader where an image in a wall of thousands actually came from.
+        //
+        // Top, not bottom: a thumbnail that fails to load draws "Image unavailable" across the
+        // bottom of the tile, and a bottom-start badge landed on top of it — two overlapping runs
+        // of white text, neither readable. Failures are routine here, since the sweep asks every
+        // board for thumbnails at once and can be rate limited.
         Text(
             text = stringResource(R.string.all_media_board_badge, item.boardTitle),
             style = MaterialTheme.typography.labelSmall,
@@ -267,7 +287,7 @@ private fun MediaTile(
             overflow = TextOverflow.Ellipsis,
             modifier =
                 Modifier
-                    .align(Alignment.BottomStart)
+                    .align(Alignment.TopStart)
                     .padding(4.dp)
                     .background(Color.Black.copy(alpha = BADGE_ALPHA), MaterialTheme.shapes.extraSmall)
                     .padding(horizontal = 4.dp, vertical = 1.dp),
