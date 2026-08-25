@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.orbin.android.application)
     alias(libs.plugins.orbin.android.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.roborazzi)
 }
 
 val minimalVersionCode = providers.gradleProperty("orbin.minimalVersionCode").get().toInt()
@@ -34,6 +35,28 @@ android {
                 "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    // The screenshot tests compose real screens, which resolve strings and themes.
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+}
+
+// Same arrangement as :core:designsystem — keep screenshot tests out of the aggregate `test` task,
+// which would otherwise run them with no baselines, but let the Roborazzi tasks through.
+val roborazziInvoked =
+    gradle.startParameter.taskNames.any { it.contains("roborazzi", ignoreCase = true) }
+
+tasks.withType<Test>().configureEach {
+    if (name.startsWith("test") && !roborazziInvoked) {
+        filter {
+            excludeTestsMatching("*ScreenshotTest")
+            isFailOnNoMatchingTests = false
         }
     }
 }
@@ -80,4 +103,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.rule)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

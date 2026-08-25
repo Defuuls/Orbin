@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.ui.scrollbar.FastScrollbar
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
@@ -59,6 +60,33 @@ fun MinimalFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     val visitedKeys by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
+
+    MinimalFeedContent(
+        uiState = uiState,
+        isRefreshing = isRefreshing,
+        providerId = providerId,
+        visitedKeys = visitedKeys,
+        onRefresh = viewModel::refresh,
+        onOpenThread = onOpenThread,
+        onOpenBoards = onOpenBoards,
+    )
+}
+
+/**
+ * The feed's rendering, with no view model attached, so it can be composed against fixed state —
+ * which is what the screenshot tests do to cover the loading, error, empty and populated cases.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun MinimalFeedContent(
+    uiState: SubscribedFeedUiState,
+    isRefreshing: Boolean,
+    providerId: String,
+    visitedKeys: Set<ThreadKey>,
+    onRefresh: () -> Unit,
+    onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    onOpenBoards: () -> Unit,
+) {
     val listState = rememberLazyListState()
 
     Scaffold(
@@ -78,12 +106,12 @@ fun MinimalFeedScreen(
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-            onRefresh = viewModel::refresh,
+            onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             when (val state = uiState) {
                 SubscribedFeedUiState.Loading -> LoadingView()
-                is SubscribedFeedUiState.Error -> ErrorView(state.message, onRetry = viewModel::refresh)
+                is SubscribedFeedUiState.Error -> ErrorView(state.message, onRetry = onRefresh)
                 is SubscribedFeedUiState.Success -> {
                     val threads = remember(state.boards) { state.boards.flattenToFeed() }
                     when {
