@@ -7,6 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import coil3.ColorImage
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
+import coil3.test.FakeImageLoaderEngine
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.orbin.core.designsystem.theme.OrbinPreviewTheme
 import com.orbin.core.model.BoardId
@@ -17,6 +22,8 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThumbnailSize
 import kotlinx.collections.immutable.toPersistentList
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,15 +34,48 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * Renders the all-media wall at each stage of the sweep.
  *
- * Thumbnails do not load here — there is no network under Robolectric — so these cover the layout
- * around them: the progress header, the tile grid and badges, and the states with no grid at all.
+ * Thumbnails are served by a fake image loader rather than left to fail. Letting them hit the
+ * network made the captures depend on *how* the request failed: behind a proxy it stayed pending
+ * and the tiles rendered blank, while on a CI runner DNS failed immediately and the tiles rendered
+ * their error state. The goldens recorded one and the runner produced the other, so the same code
+ * passed in one place and failed in the other.
+ *
+ * Replacing the singleton loader is what `DelicateCoilApi` warns about: it is process-wide and
+ * racy if anything else is loading. Nothing else is here, and `@After` puts it back.
  */
+@OptIn(DelicateCoilApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class AllMediaScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Before
+    fun installFakeImageLoader() = loadThumbnailsAs(TILE_COLOUR)
+
+    @After
+    fun resetImageLoader() = SingletonImageLoader.reset()
+
+    /** Every thumbnail request resolves to a flat colour, synchronously and identically. */
+    private fun loadThumbnailsAs(colour: Int) {
+        val engine = FakeImageLoaderEngine.Builder().default(ColorImage(colour)).build()
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader.Builder(context).components { add(engine) }.build()
+        }
+    }
+
+    /** Every thumbnail request fails, so the tiles render their "Image unavailable" state. */
+    private fun failAllThumbnails() {
+        val engine =
+            FakeImageLoaderEngine
+                .Builder()
+                .intercept({ true }, { error("thumbnail unavailable") })
+                .build()
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader.Builder(context).components { add(engine) }.build()
+        }
+    }
 
     /** Mid-sweep: tiles already on the wall, progress bar still filling. */
     @Test
@@ -88,6 +128,22 @@ class AllMediaScreenshotTest {
     /** Every board filtered out, so there was nothing to sweep. */
     @Test
     fun noBoards() = capture("all_media_no_boards") { state() }
+
+    /**
+     * Thumbnails that failed to load.
+     *
+     * Worth a golden of its own because it is common rather than exceptional here: the sweep asks
+     * for thumbnails from every board at once, and the loader has a dedicated message for HTTP 429.
+     * It also records a defect — the tile's "Image unavailable" text is bottom-centred while the
+     * board badge is bottom-start, so on a wall-sized tile the two overlap illegibly.
+     */
+    @Test
+    fun failedThumbnails() {
+        failAllThumbnails()
+        capture("all_media_failed_thumbnails") {
+            state(items = items(9), boardsScanned = 70, boardsTotal = 70)
+        }
+    }
 
     /** One tile per row, the widest the wall gets. */
     @Test
@@ -179,5 +235,9 @@ class AllMediaScreenshotTest {
     private companion object {
         // The last is deliberately long: board ids are short, but nothing enforces that.
         val BOARDS = listOf("g", "a", "wsg", "lit", "verylongboardid")
+
+        // Opaque mid-grey: distinguishable from both themes' backgrounds, so a tile that failed
+        // to draw at all is not mistaken for one that drew correctly.
+        const val TILE_COLOUR = 0xFF6E7A8A.toInt()
     }
 }
