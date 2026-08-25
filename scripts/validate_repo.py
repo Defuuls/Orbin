@@ -117,9 +117,16 @@ def check_changelog_links(tags: set[str], fix: bool) -> None:
     if missing and not fix:
         fail("changelog", f"{len(missing)} heading(s) with no link ref: {missing[:8]}")
 
-    # Every tag named by a ref must actually exist, or the link 404s. The one
-    # legitimate exception is the release being prepared in this very commit,
-    # whose tag is not pushed until after the release PR merges.
+    # Every tag named by a ref must actually exist, or the link 404s. This can
+    # only be judged when tags are actually present: a shallow CI checkout has
+    # none, and validating against an empty set reports all 200-odd refs as
+    # broken. Structural checks above still run either way.
+    if not tags:
+        notes.append("skipping tag-existence checks — no tags in this checkout")
+        return
+
+    # The one legitimate exception is the release being prepared in this very
+    # commit, whose tag is not pushed until after the release PR merges.
     pending = {f"v{headings[0]}", "v" + headings[0].replace(" ", "-")} if headings else set()
     unknown: list[str] = []
     for name, url in refs.items():
