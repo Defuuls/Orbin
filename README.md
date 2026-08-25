@@ -64,8 +64,13 @@ reply, or create threads.
 - **All media in one grid:** a single continuous wall of every image and video from every board,
   swept from the catalogs of all of them at once — no board to pick, no thread to open. It fills
   board by board as the sweep runs, carries a press-and-drag fast scrollbar for crossing thousands
-  of tiles, and tapping any file opens it in the gallery. Reachable from Settings → Content & Feed
-  or the Gallery tab's top bar.
+  of tiles, and tapping any file opens it in the gallery. Boards whose catalog could not be
+  fetched are reported, so a partial sweep is never presented as a complete one. Reachable from
+  Settings → Content & Feed or the Gallery tab's top bar.
+- **Deep scan (opt-in):** a catalog sweep reaches each thread's opening post but not the files
+  attached to its replies. Switching this on walks the threads themselves for that reply media —
+  far more thorough, and far slower, so it reports threads walked rather than pretending to be a
+  load that is about to finish. Toggled from the wall's top bar or Settings.
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
   native download manager.
@@ -105,9 +110,12 @@ reply, or create threads.
 
 ## Orbin Minimal
 
-**Orbin Minimal releases separately**, under `minimal-v*` tags starting at
-[**1**](https://github.com/Defuuls/Orbin/releases/tag/minimal-v1), on its own cadence — it is not
-bundled with the full client's release. It is a pared-back app whose whole
+**Orbin Minimal releases separately**, under
+[`minimal-v*` tags](https://github.com/Defuuls/Orbin/releases?q=minimal&expanded=true) numbered
+from 1, on its own cadence — it is not bundled with the full client's release. Because both apps
+are tagged in this repository, "latest release" resolves by date across the two: pick by the
+filename (`orbin-minimal-…apk` versus `orbin-v…apk`) rather than by whichever release is on top.
+It is a pared-back app whose whole
 interface is your subscribed boards as one flat feed, merged across every board you follow and
 sorted by latest activity. Tap a row to read the thread, tap an image to view it full screen.
 Nothing else: no bottom navigation, no settings hub, no search, gallery, downloads, bookmarks,

@@ -218,7 +218,7 @@ class DownloadRepositoryImpl
             val cleaned =
                 base
                     .filterNot { it.isISOControl() }
-                    .replace(Regex("""[/\\:*?"<>|]"""), "_")
+                    .replace(UNSAFE_PATH_CHARS, "_")
                     .replace("..", "_")
                     .trim(' ', '.')
                     .takeLast(MAX_FILENAME_LENGTH)
@@ -358,12 +358,20 @@ class DownloadRepositoryImpl
 
 private const val MAX_PATH_SEGMENT_LENGTH = 80
 
+/**
+ * Characters that cannot appear in a path component on the platforms Orbin writes to.
+ *
+ * Compiled once. Both sanitizers below build a name per downloaded file, so constructing this
+ * inline meant recompiling the same pattern for every file in a batch.
+ */
+private val UNSAFE_PATH_CHARS = Regex("""[/\\:*?"<>|]""")
+
 /** Same cleanup as filename sanitizing, but keeps the front of the name (an id/board is there). */
 internal fun sanitizePathSegment(raw: String): String {
     val cleaned =
         raw
             .filterNot { it.isISOControl() }
-            .replace(Regex("""[/\\:*?"<>|]"""), "_")
+            .replace(UNSAFE_PATH_CHARS, "_")
             .replace("..", "_")
             .trim(' ', '.')
             .take(MAX_PATH_SEGMENT_LENGTH)

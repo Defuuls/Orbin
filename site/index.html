@@ -163,7 +163,9 @@
   <h1>Orbin</h1>
   <p class="tagline">A modern, fast, and beautiful open-source image board client for Android — built with Kotlin, Jetpack Compose, and Material 3.</p>
   <div class="cta">
-    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download APK</a>
+    <!-- Deliberately the releases list, not /releases/latest: two apps are tagged in this
+         repository and "latest" resolves by date across both, so it can point at Orbin Minimal. -->
+    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases">Download APK</a>
     <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
   </div>
   <p class="note">Free and AGPLv3-licensed, forever. Not available on Google Play — releases are signed and published on GitHub.</p>
@@ -200,6 +202,14 @@
         <p>A gallery scoped to your subscriptions with a built-in Bookmarks tab: watch toggles, unread badges, and background thread-watching notifications.</p>
       </div>
       <div class="card">
+        <h3>The whole provider's media, as one wall</h3>
+        <p>Every file on every thread of every board in a single grid that just keeps going. It fills board by board while the sweep runs, so there is something to look at within seconds rather than a spinner, and a fast scrollbar to cross thousands of tiles in one gesture. An opt-in deep scan walks each thread for reply media too &mdash; slower, and far more thorough than a catalog sweep can be on its own.</p>
+      </div>
+      <div class="card">
+        <h3>Orbin Minimal &mdash; a second, smaller app</h3>
+        <p>A separate APK whose entire interface is your subscribed boards as one flat feed, newest first, with a board tag and a reply count per row. Tap to read, tap an image to view it. No bottom navigation, no settings hub, no search, gallery, downloads, bookmarks or themes. It is a different front end over the same providers, caching, encrypted storage and filters &mdash; not a second implementation &mdash; and it installs alongside the full client rather than replacing it.</p>
+      </div>
+      <div class="card">
         <h3>Make it yours</h3>
         <p>Material 3 with dynamic color, light/dark and AMOLED-black themes, app icon variants, font and thumbnail sizing, and predictive back with smooth transitions. Settings itself is organized as a category hub instead of one long scroll, so the option you want is a couple of taps away, not a search.</p>
       </div>
@@ -234,11 +244,19 @@
       <a href="https://github.com/Defuuls/Orbin/releases">GitHub Releases</a> with SHA-256 checksums
       for every artifact.
     </p>
+    <p class="section-lead">
+      <strong>There are two apps here, on separate version lines.</strong> Orbin is the full
+      client, tagged <code>v…</code> and published as <code>orbin-v&lt;version&gt;.apk</code>.
+      Orbin Minimal is a much smaller, separate reader, tagged <code>minimal-v…</code> and
+      published as <code>orbin-minimal-…apk</code>. They install alongside each other, and each
+      releases on its own schedule — so pick by the filename rather than by whichever release sits
+      at the top of the list.
+    </p>
     <ol class="dl-steps">
       <li>
         <strong>Get the APK</strong> from the
-        <a href="https://github.com/Defuuls/Orbin/releases/latest">latest release</a> and allow
-        installs from your browser when Android asks.
+        <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>, checking the
+        filename matches the app you want, and allow installs from your browser when Android asks.
       </li>
       <li>
         <strong>Verify the download</strong> (optional but encouraged) with the checksum file
