@@ -108,6 +108,13 @@ fun HomeScreen(
     }
 }
 
+/** The board list split into the sections the screen draws, computed once per input change. */
+private data class BoardSections(
+    val favorite: List<Board>,
+    val subscribed: List<Board>,
+    val other: List<Board>,
+)
+
 @Composable
 private fun BoardList(
     boards: List<Board>,
@@ -121,28 +128,45 @@ private fun BoardList(
     onSubscriptionChange: (board: String, subscribed: Boolean) -> Unit,
     listState: LazyListState,
 ) {
-    val filteredBoards =
-        boards
-            .filterNot { board -> hideNsfwBoards && board.isNsfw }
-            .filterNot { board -> board.matchesFilterTokens(hiddenTags) }
-            .let { visibleBoards ->
-                if (!personalizedHomeFeed) {
-                    visibleBoards
-                } else {
-                    visibleBoards.sortedWith(
-                        compareByDescending<Board> { it.id.value in favoriteBoardIds }
-                            .thenByDescending { it.id.value in subscribedBoardIds }
-                            .thenBy { it.id.value },
-                    )
+    // Kept behind a remember because none of it is cheap and none of it depends on anything that
+    // changes between recompositions: filtering builds and lowercases a string per board, the sort
+    // does two set lookups per comparison, and the three splits below each walk the whole list.
+    // Recomposing this screen — a scroll, a search keystroke, a favourite toggle — used to redo all
+    // of it for every board the provider has.
+    val boardSections =
+        remember(boards, hideNsfwBoards, hiddenTags, personalizedHomeFeed, favoriteBoardIds, subscribedBoardIds) {
+            val visible =
+                boards
+                    .filterNot { board -> hideNsfwBoards && board.isNsfw }
+                    .filterNot { board -> board.matchesFilterTokens(hiddenTags) }
+                    .let { visibleBoards ->
+                        if (!personalizedHomeFeed) {
+                            visibleBoards
+                        } else {
+                            visibleBoards.sortedWith(
+                                compareByDescending<Board> { it.id.value in favoriteBoardIds }
+                                    .thenByDescending { it.id.value in subscribedBoardIds }
+                                    .thenBy { it.id.value },
+                            )
+                        }
+                    }
+            // One pass instead of three, since every board lands in exactly one section.
+            val favorite = mutableListOf<Board>()
+            val subscribed = mutableListOf<Board>()
+            val other = mutableListOf<Board>()
+            visible.forEach { board ->
+                when {
+                    board.id.value in favoriteBoardIds -> favorite += board
+                    board.id.value in subscribedBoardIds -> subscribed += board
+                    else -> other += board
                 }
             }
-
-    val favoriteBoards = filteredBoards.filter { it.id.value in favoriteBoardIds }
-    val subscribedBoards =
-        filteredBoards.filter {
-            it.id.value in subscribedBoardIds && it.id.value !in favoriteBoardIds
+            BoardSections(favorite, subscribed, other)
         }
-    val otherBoards = filteredBoards.filter { it.id.value !in favoriteBoardIds && it.id.value !in subscribedBoardIds }
+
+    val favoriteBoards = boardSections.favorite
+    val subscribedBoards = boardSections.subscribed
+    val otherBoards = boardSections.other
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

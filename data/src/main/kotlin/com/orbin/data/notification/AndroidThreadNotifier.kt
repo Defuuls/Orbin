@@ -14,7 +14,6 @@ import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,12 +40,12 @@ class AndroidThreadNotifier
             NotificationManagerCompat.from(context).createNotificationChannel(channel)
         }
 
-        override fun notifyThreadUpdate(
+        override suspend fun notifyThreadUpdate(
             key: ThreadKey,
             title: String,
             newReplyCount: Int,
         ) {
-            val settings = runBlocking { settingsRepository.settings.first() }
+            val settings = settingsRepository.settings.first()
             if (!settings.threadWatchNotificationsEnabled) return
             if (isInQuietHours(settings.quietHoursStart, settings.quietHoursEnd)) return
 

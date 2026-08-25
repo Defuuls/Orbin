@@ -100,7 +100,7 @@ private fun extensionFor(
                 .substringBefore('?')
                 .substringAfterLast('.', missingDelimiterValue = "img")
                 .lowercase()
-                .takeIf { it.matches(Regex("[a-z0-9]{2,5}")) }
+                .takeIf { it.matches(FILE_EXTENSION) }
                 ?: "img"
     }
 
@@ -116,3 +116,9 @@ private const val READ_TIMEOUT_MS = 30_000
 private const val HTTP_SUCCESS_MIN = 200
 private const val HTTP_SUCCESS_MAX = 299
 private const val MAX_IMAGE_BYTES = 50L * 1024L * 1024L
+
+/**
+ * The shape a URL's trailing segment must have to be treated as a file extension. Compiled once;
+ * it was being rebuilt for every image copied to the clipboard.
+ */
+private val FILE_EXTENSION = Regex("[a-z0-9]{2,5}")

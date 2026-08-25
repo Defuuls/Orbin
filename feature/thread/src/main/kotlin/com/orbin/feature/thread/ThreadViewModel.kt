@@ -334,11 +334,17 @@ class ThreadViewModel
             val cleanName =
                 originalFileName
                     .ifBlank { id }
-                    .replace(Regex("""[\\/:*?"<>|]"""), "_")
+                    .replace(UNSAFE_FILENAME_CHARS, "_")
             return "${board.value}_${threadId.value}_${id}_$cleanName"
         }
 
         private companion object {
+            /**
+             * Compiled once rather than per attachment. The download repository sanitizes the name
+             * again on the way to disk; this keeps it readable in the meantime.
+             */
+            val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
+
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
