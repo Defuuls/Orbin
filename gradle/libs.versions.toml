@@ -1,14 +1,18 @@
 [versions]
 # Android / Build
 agp = "9.3.1"
-# Held below 2.4.20 until CodeQL's Kotlin extractor supports it: 2.4.20 (and its prereleases)
-# make the java-kotlin CodeQL analysis hard-fail with KotlinVersionTooRecentError, which silently
-# disables security scanning for every PR. This guard was here before, was deleted as stale when
-# 2.4.10 passed CodeQL, and the very next bump proved the category of warning load-bearing.
-# Dependabot alert #63 (build-cache metadata deserialization) is knowingly left open by this pin:
-# it is a build-machine concern, not an APK one, and the fix is 2.4.20 stable once CodeQL
-# supports it — not a beta compiler at the cost of the scanner.
-kotlin = "2.4.10"
+# PROBE, NOT A DECISION: this lifts the pin that holds Kotlin below 2.4.20, purely to find out
+# whether CodeQL's Kotlin extractor has caught up since 2.4.20-Beta1 was tried and reverted.
+#
+# The pin exists because 2.4.20 and its prereleases made the java-kotlin CodeQL analysis hard-fail
+# with KotlinVersionTooRecentError, which silently disables security scanning for every PR — a
+# worse security outcome than the alert it fixes. Dependabot alert #63 (build-cache metadata
+# deserialization) is the alert in question: a build-machine concern, not an APK one.
+#
+# 2.4.20-RC is the newest available; there is still no 2.4.20 stable. If the java-kotlin CodeQL
+# job passes on this branch, the extractor has caught up and the alert can be closed for real. If
+# it fails, this branch is thrown away and the pin below is restored verbatim.
+kotlin = "2.4.20-RC"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
 ksp = "2.3.11"
