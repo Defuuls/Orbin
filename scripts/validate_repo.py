@@ -84,6 +84,16 @@ def check_version_consistency(version_name: str) -> None:
     changelog = read("CHANGELOG.md")
     if not re.search(rf"^## \[{re.escape(version_name)}\] - \d{{4}}-\d{{2}}-\d{{2}}$", changelog, re.M):
         fail("version", f"CHANGELOG.md has no dated '## [{version_name}]' heading")
+        return
+
+    # A heading alone is not release notes. Closing [Unreleased] when nothing was written into it
+    # produces a released version documenting nothing, which is how v98 nearly shipped: three
+    # merged pull requests had each deferred their entry to "the next release".
+    section = re.split(
+        r"^## \[", changelog.split(f"## [{version_name}] - ", 1)[1], maxsplit=1, flags=re.M
+    )[0]
+    if not re.search(r"^- ", section, re.M):
+        fail("version", f"CHANGELOG.md's '{version_name}' section has no entries")
 
 
 def check_minimal_version_present() -> None:

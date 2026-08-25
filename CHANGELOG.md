@@ -6,6 +6,44 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [98-Ziti] - 2026-08-25
+
+### Fixed
+- **The all-media wall no longer reports a partial sweep as a complete one.** Boards whose catalog
+  could not be fetched were counted internally but never shown, so "9 files from 70 boards" read
+  exactly the same whether every board answered or a third of them failed. The count of boards that
+  could not be loaded now appears beneath the summary.
+- **A thumbnail that fails to load is readable again.** The tile draws "Image unavailable" across
+  its bottom edge and the board badge sat on top of it — two runs of white text over each other,
+  neither legible. The badge has moved to the top of the tile. This is a common sight rather than a
+  rare one: the wall asks every board for thumbnails at once and can be rate limited.
+- **Orbin Minimal:** a thread with one reply reads "1 reply" rather than "1 replies".
+- **Orbin Minimal:** the board picker is no longer a dead end. An empty list was drawn as a
+  spinner, so a provider that returned no boards — or a fetch that failed — left it turning
+  forever with no explanation and no way out. Loading, empty and failed are now three different
+  screens, and the last offers a retry.
+- **Orbin Minimal:** opening the board picker fetches the board list. Nothing ever asked for it, so
+  on a fresh install there was nothing to pick from and no way to make it appear. There is a
+  refresh action in the bar as well.
+- **Orbin Minimal:** "Back" and "No subject" are translatable, rather than English baked into the
+  code.
+- **Release notes name the right previous version.** Both APKs are tagged on the same branch, so
+  the full client's notes diffed against whichever tag was nearest — v97-Penne's read "Changes
+  since minimal-v1" because Orbin Minimal happened to release in between.
+
+### Added
+- **Screenshot coverage for Orbin Minimal and the all-media wall.** Neither screen had ever been
+  drawn in a test; both were covered only by logic tests over their view models. Every state a
+  reader can land on is now captured and compared on each pull request, which is how the defects
+  above were found.
+
+### Changed
+- **The repository checks its own consistency on every pull request.** The shipped version is
+  written in `gradle.properties` and quoted in four other files, and nothing held them together —
+  v85 through v89 all shipped versionCode 107, and the README has been left a release behind more
+  than once. `scripts/validate_repo.py` also verifies the changelog's links resolve to tags that
+  exist; 38 of 102 entries had no link at all.
+
 ## [97-Penne] - 2026-08-25
 
 ### Changed
@@ -1325,7 +1363,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v97-Penne...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...HEAD
+[98-Ziti]: https://github.com/Defuuls/Orbin/compare/v97-Penne...v98-Ziti
 [97-Penne]: https://github.com/Defuuls/Orbin/compare/v96-Linguine...v97-Penne
 [96-Linguine]: https://github.com/Defuuls/Orbin/compare/v95-Farfalle...v96-Linguine
 [95-Farfalle]: https://github.com/Defuuls/Orbin/compare/v94-Fusilli...v95-Farfalle
