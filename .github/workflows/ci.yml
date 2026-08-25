@@ -42,6 +42,22 @@ jobs:
       - name: Android Lint
         run: ./gradlew lint --continue
 
+      # The version is written in gradle.properties but quoted in README,
+      # docs/wiki/Home.md and CHANGELOG. Nothing used to hold those in step:
+      # v85-v89 all shipped versionCode 107, and README has been left a
+      # release behind more than once. This also checks the CHANGELOG's link
+      # refs resolve to real tags — 38 of 102 headings once had none at all.
+      - name: Repository consistency
+        run: python3 scripts/validate_repo.py
+
+      # Prose only. Kotlin source is excluded in .codespellrc: API names like
+      # OptIn and launchIn trip the dictionary, and a check with 40 false
+      # positives is one nobody reads.
+      - name: Spell check prose
+        run: |
+          pip install --quiet codespell
+          codespell $(git ls-files '*.md' '*.html' '*/values/strings.xml')
+
       - name: Upload analysis reports
         if: always()
         uses: actions/upload-artifact@v7

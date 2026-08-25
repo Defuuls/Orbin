@@ -1327,15 +1327,52 @@ included, so this is equally safe as a fresh install.
 
 [Unreleased]: https://github.com/Defuuls/Orbin/compare/v97-Penne...HEAD
 [97-Penne]: https://github.com/Defuuls/Orbin/compare/v96-Linguine...v97-Penne
+[96-Linguine]: https://github.com/Defuuls/Orbin/compare/v95-Farfalle...v96-Linguine
+[95-Farfalle]: https://github.com/Defuuls/Orbin/compare/v94-Fusilli...v95-Farfalle
 [94-Fusilli]: https://github.com/Defuuls/Orbin/compare/v93-Orecchiette...v94-Fusilli
 [93-Orecchiette]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...v93-Orecchiette
 [92-Rigatoni]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...v92-Rigatoni
 [91-Bucatini]: https://github.com/Defuuls/Orbin/compare/v90-Vega...v91-Bucatini
 [90-Vega]: https://github.com/Defuuls/Orbin/compare/v89-Albireo...v90-Vega
+[86-Alula]: https://github.com/Defuuls/Orbin/compare/v85-Tania...v86-Alula
+[85-Tania]: https://github.com/Defuuls/Orbin/compare/v84-Talitha...v85-Tania
+[84-Talitha]: https://github.com/Defuuls/Orbin/compare/v83-Megrez...v84-Talitha
+[83-Megrez]: https://github.com/Defuuls/Orbin/compare/v82-Alioth-p2...v83-Megrez
+[82-Alioth-p2]: https://github.com/Defuuls/Orbin/compare/v82-Alioth-p1...v82-Alioth-p2
+[82-Alioth-p1]: https://github.com/Defuuls/Orbin/compare/v82-Alioth...v82-Alioth-p1
+[82-Alioth]: https://github.com/Defuuls/Orbin/compare/v81-Phecda...v82-Alioth
+[81-Phecda]: https://github.com/Defuuls/Orbin/compare/v80-Merak...v81-Phecda
+[80-Merak]: https://github.com/Defuuls/Orbin/compare/v79-Mizar...v80-Merak
+[79-Mizar]: https://github.com/Defuuls/Orbin/compare/v78-Alioth...v79-Mizar
+[78-Alioth]: https://github.com/Defuuls/Orbin/compare/v77-Dubhe...v78-Alioth
+[77-Dubhe]: https://github.com/Defuuls/Orbin/compare/v76-Mirfak...v77-Dubhe
+[76-Mirfak]: https://github.com/Defuuls/Orbin/compare/v75-Alkaid...v76-Mirfak
+[75-Alkaid]: https://github.com/Defuuls/Orbin/compare/v74-Avior...v75-Alkaid
+[74-Avior]: https://github.com/Defuuls/Orbin/compare/v73-Peacock...v74-Avior
+[73-Peacock]: https://github.com/Defuuls/Orbin/compare/v72-Alnair...v73-Peacock
+[72-Alnair]: https://github.com/Defuuls/Orbin/compare/v71-Elnath...v72-Alnair
+[71-Elnath]: https://github.com/Defuuls/Orbin/compare/v70-Bellatrix...v71-Elnath
+[70-Bellatrix]: https://github.com/Defuuls/Orbin/compare/v69-Regulus...v70-Bellatrix
+[69-Regulus]: https://github.com/Defuuls/Orbin/compare/v68-Deneb...v69-Regulus
+[68-Deneb]: https://github.com/Defuuls/Orbin/compare/v67-Pollux...v68-Deneb
+[67-Pollux]: https://github.com/Defuuls/Orbin/compare/v66-Spica...v67-Pollux
+[66-Spica]: https://github.com/Defuuls/Orbin/compare/v65-Antares...v66-Spica
+[65-Antares]: https://github.com/Defuuls/Orbin/compare/v64-Aldebaran...v65-Antares
 [64-Aldebaran]: https://github.com/Defuuls/Orbin/compare/v63-Acrux...v64-Aldebaran
 [63-Acrux]: https://github.com/Defuuls/Orbin/compare/v62-Hadar...v63-Acrux
 [62-Hadar]: https://github.com/Defuuls/Orbin/compare/v61-Achernar...v62-Hadar
+[61-Achernar]: https://github.com/Defuuls/Orbin/compare/v60-Procyon...v61-Achernar
+[60-Procyon]: https://github.com/Defuuls/Orbin/compare/v59-Betelgeuse...v60-Procyon
+[59-Betelgeuse]: https://github.com/Defuuls/Orbin/compare/v58-Capella...v59-Betelgeuse
+[58-Capella]: https://github.com/Defuuls/Orbin/compare/v57-Arcturus...v58-Capella
+[57-Arcturus]: https://github.com/Defuuls/Orbin/compare/v56-Vega...v57-Arcturus
+[56-Vega]: https://github.com/Defuuls/Orbin/compare/v55-Polaris...v56-Vega
+[55-Polaris]: https://github.com/Defuuls/Orbin/compare/v54-Canopus...v55-Polaris
+[54-Canopus]: https://github.com/Defuuls/Orbin/compare/v53-Sirius...v54-Canopus
+[53-Sirius]: https://github.com/Defuuls/Orbin/compare/v52-Wolf-359...v53-Sirius
 [52-Wolf 359]: https://github.com/Defuuls/Orbin/compare/v51-Rigel...v52-Wolf-359
+[50-Fomalhaut]: https://github.com/Defuuls/Orbin/compare/v49-Altair...v50-Fomalhaut
+[49-Altair]: https://github.com/Defuuls/Orbin/compare/v48-Sirius-B...v49-Altair
 [48-Sirius B]: https://github.com/Defuuls/Orbin/compare/v47-Proxima-Centauri...v48-Sirius-B
 [47-Proxima Centauri]: https://github.com/Defuuls/Orbin/compare/v46-Epsilon-Eridani...v47-Proxima-Centauri
 [46-Epsilon Eridani]: https://github.com/Defuuls/Orbin/compare/v38-Ross-128...v46-Epsilon-Eridani
@@ -1369,6 +1406,7 @@ included, so this is equally safe as a fresh install.
 [23.5]: https://github.com/Defuuls/Orbin/compare/v23.4...v23.5
 [23.4]: https://github.com/Defuuls/Orbin/compare/v23.3...v23.4
 [23.3]: https://github.com/Defuuls/Orbin/compare/v23.1...v23.3
+[23.1]: https://github.com/Defuuls/Orbin/compare/v23.0...v23.1
 [23.0]: https://github.com/Defuuls/Orbin/compare/v22.0...v23.0
 [22.0]: https://github.com/Defuuls/Orbin/compare/v21.0...v22.0
 [21.0]: https://github.com/Defuuls/Orbin/compare/v20.0...v21.0
@@ -1380,9 +1418,9 @@ included, so this is equally safe as a fresh install.
 [15.0]: https://github.com/Defuuls/Orbin/compare/v14.0...v15.0
 [14.0]: https://github.com/Defuuls/Orbin/compare/v13.0...v14.0
 [13.0]: https://github.com/Defuuls/Orbin/compare/v12.0...v13.0
-[12.0]: https://github.com/Defuuls/Orbin/compare/v11.0...v12.0
-[11.0]: https://github.com/Defuuls/Orbin/compare/v10.0...v11.0
-[10.0]: https://github.com/Defuuls/Orbin/compare/v9.0...v10.0
+[12.0]: https://github.com/Defuuls/Orbin/compare/v11.0-coconut...v12.0
+[11.0]: https://github.com/Defuuls/Orbin/compare/v10.0-tiramisu...v11.0-coconut
+[10.0]: https://github.com/Defuuls/Orbin/compare/v9.0...v10.0-tiramisu
 [9.0]: https://github.com/Defuuls/Orbin/releases/tag/v9.0
 [8.0]: https://github.com/Defuuls/Orbin/releases/tag/v8.0
 [7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0

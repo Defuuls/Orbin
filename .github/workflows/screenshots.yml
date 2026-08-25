@@ -1,20 +1,31 @@
 name: Screenshots
 
-# Records Roborazzi screenshots and uploads them as artifacts so goldens can be reviewed and
-# committed. Verification (verifyRoborazziDebug) runs locally / once goldens are checked in.
+# Verifies Roborazzi screenshots against the goldens committed under
+# src/test/screenshots. Recording alone never compared anything — the goldens
+# were checked in but nothing gated them, so a UI regression could land with
+# the screenshot job green.
+#
+# Roborazzi renders through Robolectric on the JVM, which is reproducible
+# across machines: re-recording the :core:designsystem goldens on a different
+# host reproduced them byte for byte. If a legitimate UI change makes this
+# fail, re-record locally (./gradlew recordRoborazziDebug) and commit the new
+# goldens, or download the roborazzi-diffs artifact to see what moved.
 on:
   workflow_dispatch:
   pull_request:
     paths:
       - 'core/designsystem/**'
+      - 'core/ui/**'
       - 'feature/**'
+      - 'app-minimal/**'
+      - 'media/**'
 
 permissions:
   contents: read
 
 jobs:
-  record:
-    name: Record screenshots
+  verify:
+    name: Verify screenshots
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -28,13 +39,17 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Record Roborazzi screenshots
-        run: ./gradlew recordRoborazziDebug
+      - name: Verify Roborazzi screenshots
+        run: ./gradlew verifyRoborazziDebug
 
-      - name: Upload screenshots
-        if: always()
+      # Only useful when the step above fails: these are the actual/diff images
+      # showing what changed against the committed golden.
+      - name: Upload comparison images
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: screenshots
-          path: '**/src/test/screenshots/**'
+          name: roborazzi-diffs
+          path: |
+            **/build/outputs/roborazzi/**
+            **/src/test/screenshots/**
           if-no-files-found: ignore

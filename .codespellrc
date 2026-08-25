@@ -1,0 +1,14 @@
+[codespell]
+# Prose spell checking. Kotlin source is deliberately out of scope: API names
+# like OptIn, InstallIn, launchIn and UpToDate trip every dictionary, and a
+# check that reports 40 false positives is a check nobody reads.
+#
+# What is checked is what a reader actually sees: documentation, the website,
+# and the user-facing string resources.
+skip = .git,build,*/build,gradle,*.png,*.webp,*.svg,*.jks,*.keystore,*.jar,baseline-prof.txt,*/baselineProfiles/*
+# Words the dictionary flags that are correct here:
+#   couldn  - "Couldn\'t" in XML, split by the escape
+#   ba/nd/te/ans/fo/ist/thru/inout - short tokens inside identifiers and hex
+#   installin/optin - Kotlin annotations quoted in documentation code blocks
+ignore-words-list = couldn,ba,nd,te,ans,fo,ist,shs,parms,thru,inout,optin,installin,launchin,nin
+quiet-level = 2
