@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [97-Penne] - 2026-08-25
+
 ### Changed
 - **Orbin Minimal versions and releases on its own line**, starting at **1** rather than inheriting
   the full client's number. It is a separate app with its own cadence, and a first release labelled
@@ -1323,7 +1325,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v94-Fusilli...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v97-Penne...HEAD
+[97-Penne]: https://github.com/Defuuls/Orbin/compare/v96-Linguine...v97-Penne
 [94-Fusilli]: https://github.com/Defuuls/Orbin/compare/v93-Orecchiette...v94-Fusilli
 [93-Orecchiette]: https://github.com/Defuuls/Orbin/compare/v92-Rigatoni...v93-Orecchiette
 [92-Rigatoni]: https://github.com/Defuuls/Orbin/compare/v91-Bucatini...v92-Rigatoni
