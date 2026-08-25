@@ -40,8 +40,15 @@ uploaded as an artifact, because the upload deliberately happens first — every
 ordering recorded a profile successfully and then threw it away.
 
 ### `new-version.yml` — manual (`workflow_dispatch`)
-Prepares a release PR from inputs (version name, `versionCode`, codename, base branch, draft
-flag), bumping `app/build.gradle.kts` and `CHANGELOG.md`.
+Prepares a release PR from inputs (version number, codename, `versionCode`, base branch, draft
+flag). It bumps `orbin.versionCode` / `orbin.versionName` in `gradle.properties`, closes the
+`[Unreleased]` changelog section as the new version, and moves the current-release pointers in
+`README.md` and `docs/wiki/Home.md`.
+
+The number and the codename are separate inputs that the workflow joins (`97` + `Penne` →
+`97-Penne`), so the branch, tag, changelog heading and APK name all derive from one place.
+It finishes by running `scripts/validate_repo.py`, so a release PR cannot be opened with the
+four version references out of step.
 
 ### `release.yml` — on every `v*` tag (or manual dispatch with a tag name)
 A single job that produces a complete, verifiable release:

@@ -20,6 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The consistency check verifies CHANGELOG link refs against the real
+          # tag list. A default checkout is shallow and carries no tags, which
+          # would make every ref look like it points at a missing tag. Tags
+          # only — full history is not needed here.
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5.7.0
@@ -41,6 +48,22 @@ jobs:
       # so this gates new ones.
       - name: Android Lint
         run: ./gradlew lint --continue
+
+      # The version is written in gradle.properties but quoted in README,
+      # docs/wiki/Home.md and CHANGELOG. Nothing used to hold those in step:
+      # v85-v89 all shipped versionCode 107, and README has been left a
+      # release behind more than once. This also checks the CHANGELOG's link
+      # refs resolve to real tags — 38 of 102 headings once had none at all.
+      - name: Repository consistency
+        run: python3 scripts/validate_repo.py
+
+      # Prose only. Kotlin source is excluded in .codespellrc: API names like
+      # OptIn and launchIn trip the dictionary, and a check with 40 false
+      # positives is one nobody reads.
+      - name: Spell check prose
+        run: |
+          python3 -m pip install --quiet codespell
+          git ls-files -z '*.md' '*.html' '*/values/strings.xml' | xargs -0 codespell
 
       - name: Upload analysis reports
         if: always()
