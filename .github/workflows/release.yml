@@ -114,7 +114,12 @@ jobs:
           if [ -z "$RELEASE_NAME" ]; then
             RELEASE_NAME="${RELEASE_TAG}"
           fi
-          PREV_TAG=$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || true)
+          # Restrict to this app's own tags. Both APKs are tagged on the same
+          # branch, so an unfiltered describe returns whichever tag is nearest —
+          # v97-Penne's notes read "Changes since minimal-v1" because the minimal
+          # app happened to release in between. minimal-v* does not match 'v*',
+          # which is what separates the two lines here.
+          PREV_TAG=$(git describe --tags --abbrev=0 --match 'v*' "${RELEASE_TAG}^" 2>/dev/null || true)
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {
             echo "## Orbin ${RELEASE_TAG} - ${RELEASE_NAME}"

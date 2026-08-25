@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -119,17 +120,22 @@ internal fun MinimalFeedContent(
                         threads.isEmpty() -> EmptyView(stringResource(R.string.minimal_no_threads))
                         else ->
                             Box(modifier = Modifier.fillMaxSize()) {
+                                // Resolved once here rather than per row, and reused for the
+                                // reader's title so both say the same thing.
+                                val untitled = stringResource(R.string.minimal_no_subject)
                                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                                     items(threads, key = { it.id }) { row ->
+                                        val title = row.title.ifEmpty { untitled }
                                         ThreadRow(
                                             row = row,
+                                            title = title,
                                             isRead = row.thread.key in visitedKeys,
                                             onClick = {
                                                 onOpenThread(
                                                     providerId,
                                                     row.board.id.value,
                                                     row.thread.key.thread.value,
-                                                    row.title,
+                                                    title,
                                                 )
                                             },
                                         )
@@ -154,6 +160,7 @@ internal fun MinimalFeedContent(
 @Composable
 private fun ThreadRow(
     row: MinimalThread,
+    title: String,
     isRead: Boolean,
     onClick: () -> Unit,
 ) {
@@ -172,7 +179,7 @@ private fun ThreadRow(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = row.title,
+            text = title,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (isRead) FontWeight.Normal else FontWeight.Medium,
             color = titleColor,
@@ -181,8 +188,9 @@ private fun ThreadRow(
         )
         Text(
             text =
-                stringResource(
-                    R.string.minimal_thread_summary,
+                pluralStringResource(
+                    R.plurals.minimal_thread_summary,
+                    row.thread.stats.replyCount,
                     row.board.id.value,
                     row.thread.stats.replyCount,
                 ),

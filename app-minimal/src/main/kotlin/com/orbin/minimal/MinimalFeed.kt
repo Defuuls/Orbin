@@ -11,7 +11,12 @@ data class MinimalThread(
 ) {
     val id: String get() = "${board.id.value}/${thread.key.thread.value}"
 
-    /** The subject if the thread has one, otherwise the start of the opening post. */
+    /**
+     * The subject if the thread has one, otherwise the start of the opening post.
+     *
+     * Empty when the thread has neither. The stand-in shown to a reader is a string resource, so
+     * it is resolved in the UI rather than hard-coded in English here.
+     */
     val title: String
         get() {
             val subject =
@@ -23,7 +28,6 @@ data class MinimalThread(
                 thread.originalPost.comment.raw
                     .trim()
             return when {
-                comment.isEmpty() -> "No subject"
                 comment.length > TITLE_MAX_CHARS -> comment.take(TITLE_MAX_CHARS) + "…"
                 else -> comment
             }

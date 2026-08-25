@@ -1,5 +1,6 @@
 package com.orbin.minimal
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.model.Board
@@ -8,14 +9,17 @@ import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -65,6 +69,26 @@ class MinimalBoardsViewModel
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
+        private val _isLoading = MutableStateFlow(false)
+
+        /**
+         * Whether a fetch is in flight.
+         *
+         * Without this the screen cannot tell "still loading" from "this provider has no boards":
+         * both are an empty list, and it showed a spinner for both, so a failed or empty fetch left
+         * a spinner turning forever with no way out.
+         */
+        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+        private val _errorMessage = MutableStateFlow<String?>(null)
+        val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+        init {
+            // Nothing else asked for the board list. Opening the picker on a fresh install left it
+            // waiting on a fetch that was never going to be made.
+            refresh()
+        }
+
         fun setSubscribed(
             board: BoardId,
             subscribed: Boolean,
@@ -79,10 +103,24 @@ class MinimalBoardsViewModel
         }
 
         fun refresh() {
-            viewModelScope.launch { boardRepository.refreshBoards(activeProvider.value.metadata.id) }
+            viewModelScope.launch {
+                _isLoading.value = true
+                _errorMessage.value = null
+                try {
+                    boardRepository.refreshBoards(activeProvider.value.metadata.id)
+                } catch (e: ProviderException) {
+                    // A provider that cannot be reached is the common case worth reporting; the
+                    // screen offers a retry rather than sitting on an empty list.
+                    Log.w(TAG, "Could not refresh the board list", e)
+                    _errorMessage.value = e.message
+                } finally {
+                    _isLoading.value = false
+                }
+            }
         }
 
         private companion object {
+            const val TAG = "MinimalBoardsViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }

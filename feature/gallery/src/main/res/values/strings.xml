@@ -35,6 +35,13 @@
     <string name="all_media_deep_scan">Deep scan for reply media</string>
     <!-- Deep-scan progress, e.g. "Deep scan: 120/3,412 threads · 9,004 files". -->
     <string name="all_media_deep_scanning">Deep scan: %1$d/%2$d threads · %3$d files</string>
+    <!-- Boards whose catalog could not be fetched this sweep. Without this the wall reports a
+         partial result as a complete one — "9 files from 70 boards" reads identically whether
+         all 70 succeeded or 23 of them failed. -->
+    <plurals name="all_media_boards_failed">
+        <item quantity="one">%1$d board could not be loaded</item>
+        <item quantity="other">%1$d boards could not be loaded</item>
+    </plurals>
     <string name="all_media_empty">No media found on any board</string>
     <string name="all_media_no_boards">Every board is hidden by your board filters</string>
     <!-- The board a tile came from, e.g. "/g/". -->

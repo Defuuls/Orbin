@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.BoardId
+import com.orbin.core.ui.state.EmptyView
+import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 
 /** Tick the boards you want in the feed. That is the whole of this build's configuration. */
@@ -39,10 +42,15 @@ fun MinimalBoardsScreen(
     viewModel: MinimalBoardsViewModel = hiltViewModel(),
 ) {
     val boards by viewModel.boards.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     MinimalBoardsContent(
         boards = boards,
+        isLoading = isLoading,
+        errorMessage = errorMessage,
         onBack = onBack,
+        onRefresh = viewModel::refresh,
         onToggle = { id, subscribed -> viewModel.setSubscribed(id, subscribed) },
     )
 }
@@ -52,7 +60,10 @@ fun MinimalBoardsScreen(
 @Composable
 internal fun MinimalBoardsContent(
     boards: List<SubscribableBoard>,
+    isLoading: Boolean,
+    errorMessage: String?,
     onBack: () -> Unit,
+    onRefresh: () -> Unit,
     onToggle: (BoardId, Boolean) -> Unit,
 ) {
     Scaffold(
@@ -61,14 +72,40 @@ internal fun MinimalBoardsContent(
                 title = { Text(stringResource(R.string.minimal_boards_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.minimal_back),
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onRefresh, enabled = !isLoading) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = stringResource(R.string.minimal_refresh),
+                        )
                     }
                 },
             )
         },
     ) { padding ->
+        // An empty list is not the same as a pending one. Showing a spinner for both left a fetch
+        // that failed, or a provider with no boards, turning forever with no way to retry.
         if (boards.isEmpty()) {
-            LoadingView(Modifier.padding(padding))
+            when {
+                isLoading -> LoadingView(Modifier.padding(padding))
+                errorMessage != null ->
+                    ErrorView(
+                        message = errorMessage,
+                        onRetry = onRefresh,
+                        modifier = Modifier.padding(padding),
+                    )
+                else ->
+                    EmptyView(
+                        message = stringResource(R.string.minimal_no_boards_available),
+                        modifier = Modifier.padding(padding),
+                    )
+            }
             return@Scaffold
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {

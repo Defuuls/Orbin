@@ -68,11 +68,13 @@ class MinimalFeedTest {
     }
 
     @Test
-    fun `a row with neither subject nor comment still says something`() {
+    fun `a row with neither subject nor comment has no title of its own`() {
         val blank = thread(tech, 1L, bumpedAt = 0, subject = null, comment = "")
         val feeds = listOf(SubscribedBoardFeed(tech, listOf(blank).toPersistentList(), null))
 
-        assertThat(feeds.flattenToFeed().single().title).isEqualTo("No subject")
+        // Empty rather than a hard-coded "No subject": the stand-in is a string resource, so the
+        // screen supplies it and it can be translated.
+        assertThat(feeds.flattenToFeed().single().title).isEmpty()
     }
 
     @Test
