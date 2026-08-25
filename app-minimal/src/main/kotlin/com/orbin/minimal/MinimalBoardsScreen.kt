@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.BoardId
 import com.orbin.core.ui.state.LoadingView
 
 /** Tick the boards you want in the feed. That is the whole of this build's configuration. */
@@ -39,6 +40,21 @@ fun MinimalBoardsScreen(
 ) {
     val boards by viewModel.boards.collectAsStateWithLifecycle()
 
+    MinimalBoardsContent(
+        boards = boards,
+        onBack = onBack,
+        onToggle = { id, subscribed -> viewModel.setSubscribed(id, subscribed) },
+    )
+}
+
+/** The board picker's rendering, detached from its view model so it can be screenshot-tested. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun MinimalBoardsContent(
+    boards: List<SubscribableBoard>,
+    onBack: () -> Unit,
+    onToggle: (BoardId, Boolean) -> Unit,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -59,7 +75,7 @@ fun MinimalBoardsScreen(
             items(boards, key = { it.board.id.value }) { entry ->
                 BoardRow(
                     entry = entry,
-                    onToggle = { viewModel.setSubscribed(entry.board.id, !entry.isSubscribed) },
+                    onToggle = { onToggle(entry.board.id, !entry.isSubscribed) },
                 )
                 HorizontalDivider()
             }

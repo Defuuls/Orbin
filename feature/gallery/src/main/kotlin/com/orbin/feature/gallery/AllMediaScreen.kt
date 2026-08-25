@@ -63,6 +63,35 @@ fun AllMediaScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+
+    AllMediaContent(
+        uiState = uiState,
+        isRefreshing = isRefreshing,
+        thumbnailSize = settings.thumbnailSize,
+        deepMediaScan = settings.deepMediaScan,
+        onBack = onBack,
+        onRefresh = viewModel::refresh,
+        onToggleDeepScan = { viewModel.setDeepScan(!settings.deepMediaScan) },
+        onOpenMedia = onOpenMedia,
+    )
+}
+
+/**
+ * The wall's rendering, detached from its view model so the sweep's stages — initial load, filling,
+ * deep scan, complete and empty — can each be composed against fixed state in a screenshot test.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AllMediaContent(
+    uiState: AllMediaUiState,
+    isRefreshing: Boolean,
+    thumbnailSize: ThumbnailSize,
+    deepMediaScan: Boolean,
+    onBack: () -> Unit,
+    onRefresh: () -> Unit,
+    onToggleDeepScan: () -> Unit,
+    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
+) {
     val haptics = LocalHapticFeedback.current
     val gridState = rememberLazyGridState()
 
@@ -76,12 +105,12 @@ fun AllMediaScreen(
                     // Mirrors the Settings switch and writes the same preference. It belongs here
                     // too because this is the only screen the deep scan affects, and the reader
                     // deciding whether the wall is deep enough is looking at the wall.
-                    IconButton(onClick = { viewModel.setDeepScan(!settings.deepMediaScan) }) {
+                    IconButton(onClick = onToggleDeepScan) {
                         Icon(
                             imageVector = Icons.Filled.TravelExplore,
                             contentDescription = stringResource(R.string.all_media_deep_scan),
                             tint =
-                                if (settings.deepMediaScan) {
+                                if (deepMediaScan) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -99,7 +128,7 @@ fun AllMediaScreen(
                 isRefreshing = isRefreshing,
                 onRefresh = {
                     haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                    viewModel.refresh()
+                    onRefresh()
                 },
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -117,7 +146,7 @@ fun AllMediaScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
-                                columns = settings.thumbnailSize.wallColumns(),
+                                columns = thumbnailSize.wallColumns(),
                                 contentPadding =
                                     PaddingValues(
                                         start = 4.dp,
