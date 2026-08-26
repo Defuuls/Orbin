@@ -104,6 +104,7 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":core:testing"))
     testImplementation(libs.robolectric)
+    testImplementation(libs.coil.test)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.rule)

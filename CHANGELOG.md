@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Orbin Minimal: previews in the feed, and video that plays as you scroll.** Each row now carries
+  the opening post's first attachment, and a row whose attachment is a video plays it — muted —
+  while the row is on screen, stopping and releasing the player as it scrolls away. This is the
+  behaviour the full client offers as an opt-in setting; because this build has no settings screen
+  it is always on, which on a feed spanning every board you follow will use mobile data without
+  asking. A spoilered video never autoplays: it stays blacked out until tapped, since starting
+  playback would hand over exactly what the spoiler is hiding.
+
+### Changed
+- **The board list no longer recomputes on every recomposition.** Filtering, sorting and splitting
+  the boards into sections ran again on every scroll, keystroke and favourite toggle — and the
+  filter builds and lowercases a string per board. It is computed once per change of input now.
+- **The watched-thread notifier no longer blocks a worker thread.** It read settings with
+  `runBlocking` from inside a coroutine, once per notification posted.
+
 ## [98-Ziti] - 2026-08-25
 
 ### Fixed

@@ -2,6 +2,8 @@ package com.orbin.minimal
 
 import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.feature.home.SubscribedBoardFeed
 
 /** One row of the flat feed: a thread, and the board it came from. */
@@ -10,6 +12,16 @@ data class MinimalThread(
     val thread: CatalogThread,
 ) {
     val id: String get() = "${board.id.value}/${thread.key.thread.value}"
+
+    /**
+     * The opening post's first attachment, or null when the thread has none.
+     *
+     * Permanently-filtered files are skipped rather than shown, matching the media wall. The
+     * thread-level filters have already run by the time a row exists, so this is the last gap a
+     * file could come through.
+     */
+    val preview: MediaAttachment?
+        get() = thread.originalPost.attachments.firstOrNull { !it.isPermanentlyFiltered() }
 
     /**
      * The subject if the thread has one, otherwise the start of the opening post.

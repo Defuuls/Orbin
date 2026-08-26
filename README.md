@@ -117,9 +117,14 @@ are tagged in this repository, "latest release" resolves by date across the two:
 filename (`orbin-minimal-…apk` versus `orbin-v…apk`) rather than by whichever release is on top.
 It is a pared-back app whose whole
 interface is your subscribed boards as one flat feed, merged across every board you follow and
-sorted by latest activity. Tap a row to read the thread, tap an image to view it full screen.
-Nothing else: no bottom navigation, no settings hub, no search, gallery, downloads, bookmarks,
-history, notifications, app-lock or themes.
+sorted by latest activity. Each row carries the opening post's first attachment as a preview, and
+a row whose attachment is a video plays it — muted — while the row is on screen. Tap a row to read
+the thread, tap an image to view it full screen. Nothing else: no bottom navigation, no settings
+hub, no search, gallery, downloads, bookmarks, history, notifications, app-lock or themes.
+
+Because there is no settings screen, autoplay is always on rather than a preference. On a feed
+spanning every board you follow that will use mobile data without asking; the full client makes
+the same behaviour opt-in under Settings → Media.
 
 It is a different front end over the same layers — identical providers, caching, encrypted storage,
 board filters and the always-on content filter — built from `app-minimal/`. It installs alongside
