@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **The full client's back catalogue is titled to the convention.** Releases v27 through v100 read
+  "Orbin 57 - Arcturus" rather than a bare "Arcturus", matching the current releases and the Orbin
+  Minimal line. Where an older title carried a summary after a colon, the summary is kept — it is
+  worth more to a reader scanning the list than uniformity is.
+- **The dotted-version era (v23.8 to v25.2.1) is deliberately left alone.** Those tags carry no
+  codename, so the name lives only in the release title: retitling `v25.2.1` from "Cleopatra" would
+  not reformat that codename, it would delete it.
+
+### Added
+- **`retitle-release.yml` gained a backfill mode and a title override.** `from_number`/`to_number`
+  retitles a range of full-client releases in one dispatch; `title` sets an exact string for one
+  release. It also carries four codenames a tag cannot express — `TRAPPIST-1` and `Luyten 726-8`,
+  whose hyphens belong to the star designation rather than separating words, and Barnard's and Van
+  Maanen's Star, whose apostrophes no tag ever carried.
+
+
 ### Added
 - **A workflow that applies the release-title convention to an already-published release.**
   Titles are derived from the tag from now on, but releases published before that kept whatever
