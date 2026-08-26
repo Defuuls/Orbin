@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [99-Rotini] - 2026-08-26
+
 ### Added
 - **Orbin Minimal: previews in the feed, and video that plays as you scroll.** Each row now carries
   the opening post's first attachment, and a row whose attachment is a video plays it — muted —
@@ -1379,7 +1381,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...HEAD
+[99-Rotini]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...v99-Rotini
 [98-Ziti]: https://github.com/Defuuls/Orbin/compare/v97-Penne...v98-Ziti
 [97-Penne]: https://github.com/Defuuls/Orbin/compare/v96-Linguine...v97-Penne
 [96-Linguine]: https://github.com/Defuuls/Orbin/compare/v95-Farfalle...v96-Linguine
