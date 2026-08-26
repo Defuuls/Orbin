@@ -1,80 +1,62 @@
 // Top-level build file. Convention plugins live in `build-logic` and are applied per-module.
-// Apply security overrides to the plugin classpath before the `plugins` block resolves.
-// Was pinned to a nonexistent "4.1.139.Final", which never failed only because nothing resolved a
-// Netty artifact through these configurations; the first dependency that did (UTP, via the
-// benchmark module) broke the build outright. Sourced from gradle.properties so the buildscript
-// block and the project-level patches below cannot drift apart.
-val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
-val protobufVersion: String = providers.gradleProperty("orbin.protobufVersion").get()
+//
+// Security dependency pins are declared once, as data, in `gradle/security-pins.txt`, and applied
+// to both scopes that need them: the plugin classpath immediately below, and every project
+// configuration further down. See that file for the format, and for what went wrong when the two
+// scopes each spelled the rules out longhand.
 
 buildscript {
-    val nettyVersion: String = providers.gradleProperty("orbin.nettyVersion").get()
-    val protobufVersion: String = providers.gradleProperty("orbin.protobufVersion").get()
-    configurations.classpath {
-        resolutionStrategy.eachDependency {
-            when {
-                requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                    useVersion(nettyVersion)
-                    because("Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.")
-                }
-
-                requested.group == "org.bouncycastle" && requested.name in setOf(
-                    "bcprov-jdk18on",
-                    "bcpkix-jdk18on",
-                    "bcutil-jdk18on",
-                    "bcpg-jdk18on",
-                ) -> {
-                    useVersion("1.84")
-                    because("Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.")
-                }
-
-                requested.group == "org.apache.commons" && requested.name == "commons-compress" -> {
-                    useVersion("1.28.0")
-                    because("Dependabot reports Apache Commons Compress CVEs in the Gradle plugin classpath.")
-                }
-
-                requested.group == "commons-io" && requested.name == "commons-io" -> {
-                    useVersion("2.20.0")
-                    because("Dependabot reports an Apache Commons IO denial-of-service vulnerability.")
-                }
-
-                requested.group == "org.jdom" && requested.name == "jdom2" -> {
-                    useVersion("2.0.6.1")
-                    because("Dependabot reports a JDOM XXE vulnerability in the Gradle plugin classpath.")
-                }
-
-                requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
-                    useVersion(protobufVersion)
-                    because("Dependabot reports protobuf denial-of-service vulnerabilities.")
-                }
-
-                requested.group == "org.bitbucket.b_c" && requested.name == "jose4j" -> {
-                    useVersion("0.9.6")
-                    because("Dependabot reports a jose4j denial-of-service vulnerability.")
-                }
-
-                requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                    useVersion("1.5.35")
-                    because("Dependabot reports Logback deserialization and object-injection vulnerabilities.")
-                }
-
-                requested.group == "org.apache.httpcomponents" && requested.name == "httpclient" -> {
-                    useVersion("4.5.13")
-                    because("Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).")
-                }
-
-                requested.group == "io.opentelemetry" && requested.name in setOf(
-                    "opentelemetry-api",
-                    "opentelemetry-extension-trace-propagators",
-                ) -> {
-                    useVersion("1.62.0")
-                    because(
-                        "Dependabot reports an OpenTelemetry unbounded memory allocation " +
-                            "vulnerability (GHSA-rcgg-9c38-7xpx).",
-                    )
-                }
-            }
+    // A Kotlin build script's buildscript block runs before any top-level declaration in the same
+    // file exists — that asymmetry is exactly why the pin rules were duplicated in the first
+    // place. So the table is read and the rule is built here, in the scope that runs first, and
+    // parked on `extra` for the project side further down to pick up and reuse verbatim.
+    val pins = providers.fileContents(
+        layout.projectDirectory.file("gradle/security-pins.txt"),
+    ).asText.get()
+        .lineSequence()
+        .map { it.substringBefore('#').trim() }
+        .filter { it.isNotEmpty() }
+        .map { line ->
+            val (coordinate, version, reason) = line.split('|').map(String::trim)
+            Triple(
+                Regex(coordinate.split("*").joinToString(".*") { Regex.escape(it) }),
+                version,
+                reason,
+            )
         }
+        .toList()
+
+    // Numeric segments, compared left to right and zero-padded: 2.0.6 < 2.0.6.1, 4.5.13 < 4.5.14.
+    // Non-numeric parts (".Final", "-alpha") are ignored — no pin here distinguishes on them.
+    fun segments(value: String): List<Long> =
+        Regex("""\d+""").findAll(value).map { it.value.toLongOrNull() ?: 0L }.toList()
+
+    fun outranks(pinned: String, requested: String): Boolean {
+        val left = segments(pinned)
+        val right = segments(requested)
+        for (index in 0 until maxOf(left.size, right.size)) {
+            val a = left.getOrElse(index) { 0L }
+            val b = right.getOrElse(index) { 0L }
+            if (a != b) return a > b
+        }
+        return false
+    }
+
+    // A pin is a floor, not an exact version. Forcing exactly downgrades anything that already
+    // resolved higher, which is how the httpclient pin was quietly pulling 4.5.14 back to 4.5.13 —
+    // an older build than the one the tree had asked for, in the name of security.
+    val applyPins: (org.gradle.api.artifacts.DependencyResolveDetails) -> Unit = { details ->
+        val coordinate = "${details.requested.group}:${details.requested.name}"
+        val pin = pins.firstOrNull { it.first.matches(coordinate) }
+        if (pin != null && outranks(pin.second, details.requested.version.orEmpty())) {
+            details.useVersion(pin.second)
+            details.because(pin.third)
+        }
+    }
+    extra["orbin.securityPinRule"] = applyPins
+
+    configurations.classpath {
+        resolutionStrategy.eachDependency { applyPins(this) }
     }
 }
 
@@ -93,71 +75,12 @@ plugins {
     alias(libs.plugins.roborazzi) apply false
 }
 
+// The very same rule the plugin classpath was patched with, reused rather than restated.
+@Suppress("UNCHECKED_CAST")
+val applySecurityPin = extra["orbin.securityPinRule"] as (DependencyResolveDetails) -> Unit
+
 fun ResolutionStrategy.applySecurityDependencyPatches() {
-    eachDependency {
-        when {
-            requested.group == "io.netty" && requested.name.startsWith("netty-") -> {
-                useVersion(nettyVersion)
-                because("Dependabot reports multiple Netty CVEs in the Android Gradle Plugin transitive classpath.")
-            }
-
-            requested.group == "org.bouncycastle" && requested.name in setOf(
-                "bcprov-jdk18on",
-                "bcpkix-jdk18on",
-                "bcutil-jdk18on",
-                "bcpg-jdk18on",
-            ) -> {
-                useVersion("1.84")
-                because("Dependabot reports Bouncy Castle CVEs in the Android Gradle Plugin transitive classpath.")
-            }
-
-            requested.group == "org.apache.commons" && requested.name == "commons-compress" -> {
-                useVersion("1.28.0")
-                because("Dependabot reports Apache Commons Compress CVEs in the Android Gradle Plugin transitive classpath.")
-            }
-
-            requested.group == "org.apache.commons" && requested.name == "commons-io" -> {
-                useVersion("2.20.0")
-                because("Dependabot reports an Apache Commons IO denial-of-service vulnerability.")
-            }
-
-            requested.group == "org.jdom" && requested.name == "jdom2" -> {
-                useVersion("2.0.6.1")
-                because("Dependabot reports a JDOM XXE vulnerability in the Android Gradle Plugin transitive classpath.")
-            }
-
-            requested.group == "com.google.protobuf" && requested.name.startsWith("protobuf-") -> {
-                useVersion(protobufVersion)
-                because("Dependabot reports protobuf denial-of-service vulnerabilities.")
-            }
-
-            requested.group == "org.bitbucket.b_c" && requested.name == "jose4j" -> {
-                useVersion("0.9.6")
-                because("Dependabot reports a jose4j denial-of-service vulnerability.")
-            }
-
-            requested.group == "ch.qos.logback" && requested.name.startsWith("logback-") -> {
-                useVersion("1.5.35")
-                because("Dependabot reports Logback deserialization and object-injection vulnerabilities.")
-            }
-
-            requested.group == "org.apache.httpcomponents" && requested.name == "httpclient" -> {
-                useVersion("4.5.13")
-                because("Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).")
-            }
-
-            requested.group == "io.opentelemetry" && requested.name in setOf(
-                "opentelemetry-api",
-                "opentelemetry-extension-trace-propagators",
-            ) -> {
-                useVersion("1.62.0")
-                because(
-                    "Dependabot reports an OpenTelemetry unbounded memory allocation " +
-                        "vulnerability (GHSA-rcgg-9c38-7xpx).",
-                )
-            }
-        }
-    }
+    eachDependency { applySecurityPin(this) }
 }
 
 configurations.configureEach {

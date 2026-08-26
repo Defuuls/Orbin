@@ -6,6 +6,35 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Orbin Minimal's release assets no longer say "minimal" twice.** The workflow named each file
+  after the tag, and the tag already begins with `minimal-`, so `minimal-v4-Yui` shipped as
+  `orbin-minimal-minimal-v4-Yui.apk`. Assets now read `orbin-minimal-v4-Yui.apk`, alongside the
+  full client's `orbin-v100-Sakura.apk`. The checksum command quoted in the release notes is
+  generated from the same string, so it names the file that is actually attached.
+- **Orbin Minimal's release notes describe the app rather than the app it used to be.** The blurb
+  was written before the feed had media in it, so it defined the app entirely by what it lacks —
+  and never mentioned the previews and scroll-triggered video that are now the reason to install
+  it. It leads with what the app does, and still says plainly that always-on autoplay will use
+  mobile data without asking.
+
+### Security
+- **The ten security version pins are written once, not twice.** They have to be installed on both
+  the Gradle plugin classpath and every project configuration, and a Kotlin build script runs its
+  `buildscript` block before any top-level declaration exists — so the rules had been spelled out
+  longhand in both places. The table now lives in `gradle/security-pins.txt` as data, and the rule
+  that applies it is built once, in the scope that runs first, and reused by the other. Under the
+  old arrangement the Commons IO pin had already drifted to two different versions, fixed by hand
+  in 100-Sakura — this removes the place the next one would have come from.
+- **A pin that was never reaching project configurations now does.** The project-side rule for
+  Commons IO matched group `org.apache.commons`, which has published no release of it since 1.3.2
+  — the real coordinate is `commons-io:commons-io`. It matched nothing, so project configurations
+  were not pinned at all; the typo was invisible because the plugin classpath had it right.
+- **A pin is a floor now, not an exact version.** `useVersion` forces in both directions, so the
+  httpclient entry — pinned at the advisory's fixed 4.5.13 while the dependency tree asked for
+  4.5.14 — was downgrading a build every time it ran, in the name of security. A pin below what
+  already resolved is left alone.
+
 ## [100-Sakura] - 2026-08-26
 
 ### Changed
@@ -26,6 +55,11 @@ All notable changes to Orbin are documented here. The format is based on
   markup themselves — so it produced dependency alerts and update PRs for a library that has never
   shipped in either APK.
 
+- **Debug logging is stripped from release builds.** Preloading logs the media URL it is fetching
+  at debug level, and nothing removed it when minifying — so an app that encrypts everything it
+  stores was writing what a reader is looking at into the system log. Warnings and errors stay:
+  they carry no browsing content and are what makes a crash report legible.
+
 ### Fixed
 - **Orbin Minimal: copying an image from the viewer works.** It never could. The gallery hands the
   file over through a `FileProvider`, which that build did not declare, so every copy fell back to
@@ -36,12 +70,6 @@ All notable changes to Orbin are documented here. The format is based on
   anywhere.
 - **"1 new reply", not "1 new replies".** The notification body was English assembled in code,
   which also meant it could not be translated. It is a plural resource now.
-
-### Security
-- **Debug logging is stripped from release builds.** Preloading logs the media URL it is fetching
-  at debug level, and nothing removed it when minifying — so an app that encrypts everything it
-  stores was writing what a reader is looking at into the system log. Warnings and errors stay:
-  they carry no browsing content and are what makes a crash report legible.
 
 ## [99-Rotini] - 2026-08-26
 
