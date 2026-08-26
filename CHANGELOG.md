@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Both apps' releases are titled the same way.** The full client published as "Hana" while
+  Orbin Minimal published as "Orbin Minimal 5 - Aoi" — on a releases page carrying both apps, one
+  of those says what it is and the other does not. Titles are now derived from the tag rather than
+  typed into the dispatch form: `v101-Hana` becomes "Orbin 101 - Hana" and `minimal-v5-Aoi`
+  becomes "Orbin Minimal 5 - Aoi". A tag with no codename (`minimal-v3`) reads "Orbin Minimal 3",
+  and a codename hyphenated in the tag (`v48-Sirius-B`) is spaced back out.
+- **Dispatching a release takes one input.** The free-text `tag_message` is gone from both release
+  workflows; the derived title annotates the tag too, so the tag message and the release title
+  cannot say different things. That free-text field is how the two lines drifted apart.
+
+
 ## [101-Hana] - 2026-08-26
 
 ### Fixed

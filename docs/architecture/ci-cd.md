@@ -99,11 +99,13 @@ Pick a name that is distinctive, short enough for a changelog heading, and — c
 
 ```bash
 # bump orbin.versionName/orbin.versionCode in gradle.properties, update CHANGELOG.md, commit
-git tag -a v67-<Codename> -m "<Codename>"
+git tag -a v67-<Codename> -m "Orbin 67 - <Codename>"
 git push origin v67-<Codename>
 ```
 
 The tag push triggers `release.yml`; the GitHub Release appears once the job completes. If
 pushing a tag directly isn't possible, run `release.yml` via `workflow_dispatch` instead,
-supplying `tag` and `tag_message` — it creates and pushes the annotated tag itself. See the
-wiki's [[Developer Guide|Developer-Guide]] for the full walkthrough.
+supplying `tag` — it creates and pushes the annotated tag itself. The release title is derived
+from the tag ("Orbin 67 - <Codename>", and "Orbin Minimal 5 - Aoi" on the other line), so the two
+lines are titled the same way. See the wiki's [[Developer Guide|Developer-Guide]] for the full
+walkthrough.

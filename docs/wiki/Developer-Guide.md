@@ -140,16 +140,23 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
    release job reads its message as the GitHub Release title:
 
    ```bash
-   git tag -a v81-Phecda -m "Phecda"
-   git push origin v81-Phecda
+   git tag -a v101-Hana -m "Orbin 101 - Hana"
+   git push origin v101-Hana
    ```
 
 3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
    mapping file, and checksums once the job completes.
 
-If pushing a tag is not possible, run **Release** via `workflow_dispatch` instead, supplying
-`tag` and `tag_message`. The job creates and pushes the annotated tag itself, producing an
-identical result.
+If pushing a tag is not possible, run **Release** via `workflow_dispatch` instead, supplying only
+`tag`. The job creates and pushes the annotated tag itself, producing an identical result.
+
+**The release title is derived from the tag, not typed.** `v101-Hana` is published as
+"Orbin 101 - Hana", and `minimal-v5-Aoi` as "Orbin Minimal 5 - Aoi", so both lines read the same
+way on a releases page that mixes them. The same string is used as the annotated tag's message,
+which is why the tag command above spells it out — nothing reads that message any more, but a tag
+whose message disagrees with its release is a confusing artifact to leave behind. A tag with no
+codename (`minimal-v3`) is titled "Orbin Minimal 3"; a codename hyphenated in the tag
+(`v48-Sirius-B`) is spaced back out in the title.
 
 **Codenames:** every milestone gets a codename, drawn from the theme the project is currently on.
 **From v100 and minimal-v4 onward that theme is popular Japanese female names** — Sakura, Yui,
