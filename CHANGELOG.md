@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Orbin Minimal: copying an image from the viewer works.** It never could. The gallery hands the
+  file over through a `FileProvider`, which that build did not declare, so every copy fell back to
+  copying the URL and reported "Image unavailable" — blaming the image for a missing manifest
+  entry.
+- **A watched-thread notification opens the app when tapped.** It carried no content intent, so a
+  tap only dismissed it: a notification about a thread could not take you to the thread, or
+  anywhere.
+- **"1 new reply", not "1 new replies".** The notification body was English assembled in code,
+  which also meant it could not be translated. It is a plural resource now.
+
+### Security
+- **Debug logging is stripped from release builds.** Preloading logs the media URL it is fetching
+  at debug level, and nothing removed it when minifying — so an app that encrypts everything it
+  stores was writing what a reader is looking at into the system log. Warnings and errors stay:
+  they carry no browsing content and are what makes a crash report legible.
+
 ## [99-Rotini] - 2026-08-26
 
 ### Added

@@ -6,6 +6,13 @@ lives in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) and on the
 [Releases page](https://github.com/Defuuls/Orbin/releases).
 
+> **This page is a narrative, not an index.** It stops well short of the current release and is
+> not extended for each one — the complete list is CHANGELOG.md and the Releases page. Two
+> things it does not cover at all: releases from **v91** onward, which are named after pasta
+> rather than stars, and **Orbin Minimal**, the second app in this repository, which releases
+> separately under `minimal-v*` tags numbered from 1. Because both apps are tagged here, the
+> newest tag is not necessarily the newest full-client release.
+
 Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
 codenames used for v26–v29; v34 is "Dippin".
 

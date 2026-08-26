@@ -5,6 +5,12 @@ plugins {
 }
 
 android {
+    // Opt in: library modules ship no resources by default (see gradle.properties). The
+    // watched-thread notification is user-facing text, and it was English built in code.
+    androidResources {
+        enable = true
+    }
+
     namespace = "com.orbin.data"
 }
 

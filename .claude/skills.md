@@ -63,9 +63,12 @@
   `minimal-v*` tags via `release-minimal.yml`
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections
 - README.md kept current with latest release version
-- docs/wiki/Release-History.md maintained as the comprehensive historical record (root-level
-  RELEASE_HISTORY.md and DESIGN_SYSTEM.md were retired — superseded by docs/wiki/ and stale)
-- Git tags created for all releases (v{version}-{codename})
+- CHANGELOG.md is the comprehensive historical record. docs/wiki/Release-History.md is a
+  narrative summary of selected eras, not a complete list, and says so in its own header — do
+  not treat it as the place a new release must be recorded (root-level RELEASE_HISTORY.md and
+  DESIGN_SYSTEM.md were retired — superseded by docs/wiki/ and stale)
+- Git tags: the full client is `v{version}-{codename}`; Orbin Minimal is `minimal-v{number}`
+  with no codename, on its own line
 
 ## Build & CI/CD
 
