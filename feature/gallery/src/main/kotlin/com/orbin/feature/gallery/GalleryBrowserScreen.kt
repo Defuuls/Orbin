@@ -65,6 +65,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.OrbinAsyncImage
+import com.orbin.media.image.SpoilerOverlay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -366,8 +367,10 @@ private fun MediaGrid(
     }
 }
 
+// Internal rather than private so a screenshot test can render it directly: this grid is where a
+// spoilered file was being shown in the clear, and a golden is what keeps it from happening again.
 @Composable
-private fun MediaTile(
+internal fun MediaTile(
     attachment: MediaAttachment,
     onClick: () -> Unit,
 ) {
@@ -387,7 +390,9 @@ private fun MediaTile(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+        if (attachment.isSpoiler) {
+            SpoilerOverlay()
+        } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
             Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
                 Icon(
                     imageVector = Icons.Filled.PlayArrow,

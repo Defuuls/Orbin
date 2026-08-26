@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
@@ -83,6 +82,7 @@ import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.thread.summaryLabels
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
+import com.orbin.media.image.SpoilerOverlay
 import kotlinx.coroutines.launch
 
 /** Board catalog with a Kuroba-inspired dense list/grid presentation. */
@@ -595,12 +595,7 @@ private fun CatalogThumbnail(
                     )
 
                     if (attachment.isSpoiler) {
-                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)))
-                        Icon(
-                            Icons.Filled.VisibilityOff,
-                            contentDescription = stringResource(R.string.board_spoiler),
-                            tint = Color.White,
-                        )
+                        SpoilerOverlay()
                     } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
                         Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
                             Icon(

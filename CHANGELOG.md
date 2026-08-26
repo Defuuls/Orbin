@@ -6,6 +6,31 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [101-Hana] - 2026-08-26
+
+### Fixed
+- **A spoilered video no longer plays itself in the subscribed feed.** Autoplay checked that the
+  attachment was a video but not that the poster had marked it, so the one file in a thread that
+  was meant to stay hidden until tapped started playing on its own as the row scrolled into view —
+  and kept playing. Orbin Minimal already had this guard; the full client, which is where autoplay
+  originated, did not.
+- **The feed drew no spoiler blackout at all.** Even paused, a spoilered attachment's thumbnail was
+  shown in the clear in the subscribed feed: the preview reached for the raw image rather than the
+  thumbnail component that knows what a spoiler is.
+- **Spoilers are hidden in a thread's media grid.** The grid that shows every attachment in a
+  thread at a glance drew the play badge for video and nothing for a spoiler, so the whole point of
+  opening that view — seeing everything at once — included the files marked not to be seen.
+
+### Changed
+- **One spoiler blackout, drawn identically everywhere.** Three screens each drew their own, at two
+  different opacities, and a fourth drew none — which is how a missing one stayed invisible. There
+  is a single `SpoilerOverlay` now, and the board catalog's lighter 72% scrim moves up to the 85%
+  the rest of the app uses.
+- **Both apps ask one function whether an attachment may autoplay.** The rule was written out in
+  each feed, and the two answers had already diverged. `canAutoplayInFeed` is covered by unit
+  tests, and the thread media grid has a screenshot golden showing a spoilered tile blacked out.
+
+
 ### Changed
 - **Orbin Minimal's release assets no longer say "minimal" twice.** The workflow named each file
   after the tag, and the tag already begins with `minimal-`, so `minimal-v4-Yui` shipped as
@@ -1446,7 +1471,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v101-Hana...HEAD
+[101-Hana]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...v101-Hana
 [100-Sakura]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...v100-Sakura
 [99-Rotini]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...v99-Rotini
 [98-Ziti]: https://github.com/Defuuls/Orbin/compare/v97-Penne...v98-Ziti

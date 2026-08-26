@@ -12,7 +12,6 @@
     <string name="board_load_error">Couldn\'t load this board\'s catalog</string>
     <string name="board_subscribe">Subscribe to thread</string>
     <string name="board_unsubscribe">Unsubscribe from thread</string>
-    <string name="board_spoiler">Spoiler</string>
     <string name="board_audio">Audio</string>
     <string name="board_video">Video</string>
     <string name="board_sticky">Sticky</string>

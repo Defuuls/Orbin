@@ -1,7 +1,10 @@
 package com.orbin.feature.gallery
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -151,6 +154,51 @@ class AllMediaScreenshotTest {
         capture("all_media_fill") {
             state(items = items(3), boardsScanned = 70, boardsTotal = 70, size = ThumbnailSize.FILL)
         }
+
+    /**
+     * The thread media browser's tiles: a plain image, a video with its play badge, and a spoiler.
+     *
+     * The spoiler is the reason this golden exists. This grid drew no spoiler overlay at all, so a
+     * file the poster had marked was rendered in the clear — the one case where "it looks fine" is
+     * indistinguishable from the bug.
+     */
+    @Test
+    fun galleryBrowserTiles() {
+        composeRule.setContent {
+            OrbinPreviewTheme {
+                Surface(modifier = Modifier.size(411.dp, 160.dp)) {
+                    Row(modifier = Modifier.padding(8.dp)) {
+                        listOf(
+                            tile(MediaType.IMAGE, isSpoiler = false),
+                            tile(MediaType.VIDEO, isSpoiler = false),
+                            tile(MediaType.IMAGE, isSpoiler = true),
+                        ).forEach { attachment ->
+                            Box(modifier = Modifier.width(120.dp).padding(4.dp)) {
+                                MediaTile(attachment = attachment, onClick = {})
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage("src/test/screenshots/gallery_browser_tiles.png")
+    }
+
+    private fun tile(
+        type: MediaType,
+        isSpoiler: Boolean,
+    ) = MediaAttachment(
+        id = "tile-$type-$isSpoiler",
+        originalFileName = "file.jpg",
+        extension = "jpg",
+        type = type,
+        sourceUrl = "https://example.invalid/file.jpg",
+        thumbnailUrl = "https://example.invalid/files.jpg",
+        width = 1024,
+        height = 768,
+        isSpoiler = isSpoiler,
+    )
 
     private fun capture(
         name: String,

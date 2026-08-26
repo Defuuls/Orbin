@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.ui.scrollbar.FastScrollbar
 import com.orbin.core.ui.state.EmptyView
@@ -49,6 +48,7 @@ import com.orbin.feature.home.SubscribedFeedUiState
 import com.orbin.feature.home.SubscribedFeedViewModel
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
+import com.orbin.media.video.canAutoplayInFeed
 
 /**
  * The entire app, near enough: every thread across every subscribed board in one list, newest
@@ -259,7 +259,7 @@ private fun MinimalPreview(
         shape = RoundedCornerShape(8.dp),
         modifier = modifier,
     ) {
-        if (autoplay && attachment.type == MediaType.VIDEO && !attachment.isSpoiler) {
+        if (canAutoplayInFeed(attachment, autoplay)) {
             VideoPlayer(
                 url = attachment.sourceUrl,
                 modifier = Modifier.fillMaxSize(),
