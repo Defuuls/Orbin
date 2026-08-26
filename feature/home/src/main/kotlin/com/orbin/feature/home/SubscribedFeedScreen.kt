@@ -115,7 +115,9 @@ import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.OrbinAsyncImage
+import com.orbin.media.image.SpoilerOverlay
 import com.orbin.media.video.VideoPlayer
+import com.orbin.media.video.canAutoplayInFeed
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -1128,9 +1130,9 @@ private fun FeedThumbnail(
 }
 
 /**
- * A single attachment preview: an actively-playing muted [VideoPlayer] when [autoplayVideo] is
- * set on a video attachment, otherwise the usual static thumbnail with a play-icon overlay for
- * video/audio. [autoplayVideo] is only ever true while the row is on screen — scrolling it away
+ * A single attachment preview: an actively-playing muted [VideoPlayer] when [canAutoplayInFeed]
+ * allows it, otherwise the static thumbnail — a play-icon overlay for video/audio, and a blackout
+ * for a spoiler. [autoplayVideo] is only ever true while the row is on screen; scrolling it away
  * flips this back to the static branch, which disposes the player rather than merely pausing it.
  */
 @Composable
@@ -1139,7 +1141,7 @@ private fun FeedAttachmentPreview(
     autoplayVideo: Boolean,
     muted: Boolean,
 ) {
-    if (autoplayVideo && attachment.type == MediaType.VIDEO) {
+    if (canAutoplayInFeed(attachment, autoplayVideo)) {
         VideoPlayer(
             url = attachment.sourceUrl,
             modifier = Modifier.fillMaxSize(),
@@ -1156,7 +1158,9 @@ private fun FeedAttachmentPreview(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
         )
-        if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+        if (attachment.isSpoiler) {
+            SpoilerOverlay()
+        } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Surface(color = Color.Black.copy(alpha = 0.62f), shape = RoundedCornerShape(999.dp)) {
                     Icon(

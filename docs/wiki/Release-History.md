@@ -8,10 +8,10 @@ lives in
 
 > **This page is a narrative, not an index.** It stops well short of the current release and is
 > not extended for each one — the complete list is CHANGELOG.md and the Releases page. Two
-> things it does not cover at all: releases from **v91** onward, which are named after pasta
-> rather than stars, and **Orbin Minimal**, the second app in this repository, which releases
-> separately under `minimal-v*` tags numbered from 1. Because both apps are tagged here, the
-> newest tag is not necessarily the newest full-client release.
+> things it does not cover at all: releases from **v91** onward, which left the star names behind,
+> and **Orbin Minimal**, the second app in this repository, which releases separately under
+> `minimal-v*` tags numbered from 1. Because both apps are tagged here, the newest tag is not
+> necessarily the newest full-client release.
 
 Releases v30–v33 were codenamed after the **smallest known stars**, replacing the bear-family
 codenames used for v26–v29; v34 is "Dippin".
@@ -23,13 +23,17 @@ Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica,
 Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar, Merak,
 Phecda, Talitha, Tania, Alula, Adara, Castor, Albireo.
 
-**The star era closed with v90 — Vega. From v91 onward the codenames are types of pasta**
-(Bucatini, Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle), returning
-the project to the food themes it used for v4–v22.
+**The star era closed with v90 — Vega.** v91–v99 were named after types of pasta (Bucatini,
+Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle), returning the project
+to the food themes it used for v4–v22.
+
+**From v100 — Sakura the codenames are popular Japanese female names.** Orbin Minimal draws from
+the same pool from `minimal-v4` onward, and a name is never reused across the two lines, so a
+codename identifies exactly one release of one app.
 
 ## v86 — Alula (2026-08-13)
 
-*Current release.* The second iteration of the comprehensive modernization audit (v82–v86).
+The second iteration of the comprehensive modernization audit (v82–v86).
 
 - **Reader-facing UI strings extracted to translation resources.** The feed, board catalogs, thread
   viewer, gallery, search, history, downloads, app lock, and safe mode now draw labels from

@@ -150,12 +150,7 @@ fun MediaThumbnail(
         )
 
         if (attachment.isSpoiler) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)))
-            Icon(
-                imageVector = Icons.Filled.VisibilityOff,
-                contentDescription = stringResource(R.string.media_spoiler),
-                tint = Color.White,
-            )
+            SpoilerOverlay()
         } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
@@ -169,6 +164,31 @@ fun MediaThumbnail(
         }
     }
 }
+
+/**
+ * The blackout drawn over a spoilered attachment.
+ *
+ * Every surface that paints a thumbnail has to draw this, and each one that wrote its own drew it
+ * a little differently — one of them at a lighter alpha, and one not at all, which showed the file
+ * in the clear. It is one composable now: a surface either draws it or visibly does not.
+ */
+@Composable
+fun SpoilerOverlay(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize().background(Color.Black.copy(alpha = SPOILER_SCRIM_ALPHA)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.VisibilityOff,
+            contentDescription = stringResource(R.string.media_spoiler),
+            tint = Color.White,
+        )
+    }
+}
+
+// Opaque enough that shape and colour do not read through it. A spoiler that can be guessed from
+// its own blackout has not been hidden.
+private const val SPOILER_SCRIM_ALPHA = 0.85f
 
 private fun Throwable.mediaLoadMessage(): String =
     if (hasHttpStatus(HTTP_TOO_MANY_REQUESTS)) {
