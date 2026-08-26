@@ -1,0 +1,81 @@
+name: Retitle Release
+
+# Applies the current title convention to a release that was published under an older one.
+#
+# release.yml and release-minimal.yml derive every new release's title from its tag, so the two
+# lines read the same way. Releases published before that change kept whatever was typed into the
+# dispatch form — v101-Hana, for one, is titled "Hana" rather than "Orbin 101 - Hana". This
+# workflow re-derives the title with the same rule and applies it.
+#
+# It changes the release's title and nothing else: not the body, not the tag, and not a single
+# asset. That distinction is the whole reason it exists — re-running the release workflow would
+# also rebuild and re-upload the APK under the same URL, changing the checksum of a file people
+# may already have downloaded, which is far too much to pay for a title.
+#
+# Dispatch-only and idempotent: a release already carrying the derived title is left alone.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag of the release to retitle (e.g. v101-Hana, or minimal-v5-Aoi)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  retitle:
+    name: Retitle the release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Derive the title and apply it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # The same derivation the two release workflows use, with the prefix chosen by which
+          # line the tag belongs to. Keep these three in step if the convention ever changes.
+          case "$TAG" in
+            minimal-v*)
+              PREFIX="Orbin Minimal"
+              VERSION="${TAG#minimal-v}"
+              ;;
+            v*)
+              PREFIX="Orbin"
+              VERSION="${TAG#v}"
+              ;;
+            *)
+              echo "::error::tag must start with 'v' or 'minimal-v', got '${TAG}'"; exit 1
+              ;;
+          esac
+          NUMBER="${VERSION%%-*}"
+          CODENAME="${VERSION#*-}"
+          if [ "$CODENAME" = "$NUMBER" ]; then
+            TITLE="${PREFIX} ${NUMBER}"
+          else
+            # Tags hyphenate a multi-word codename (v48-Sirius-B); the title spaces it back out.
+            TITLE="${PREFIX} ${NUMBER} - ${CODENAME//-/ }"
+          fi
+
+          if ! RELEASE=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" 2>/dev/null); then
+            echo "::error::no published release found for tag '${TAG}'"; exit 1
+          fi
+          ID=$(echo "$RELEASE" | jq -r '.id')
+          CURRENT=$(echo "$RELEASE" | jq -r '.name')
+
+          echo "tag:     ${TAG}"
+          echo "current: ${CURRENT}"
+          echo "derived: ${TITLE}"
+
+          if [ "$CURRENT" = "$TITLE" ]; then
+            echo "Already titled \"${TITLE}\" — nothing to do."
+            echo "\`${TAG}\` was already titled \`${TITLE}\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${ID}" -f name="$TITLE" >/dev/null
+          echo "Retitled \`${TAG}\`: \`${CURRENT}\` → \`${TITLE}\`" >> "$GITHUB_STEP_SUMMARY"

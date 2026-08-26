@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **A workflow that applies the release-title convention to an already-published release.**
+  Titles are derived from the tag from now on, but releases published before that kept whatever
+  was typed into the dispatch form — v101-Hana is titled "Hana". `retitle-release.yml` re-derives
+  the title with the same rule and sets it, changing the title and nothing else: not the body, not
+  the tag, not one asset. Re-running the release workflow would also fix a title, but it would
+  rebuild and re-upload the APK under the same URL and change the checksum of a file people may
+  already have downloaded.
+
+
 ### Changed
 - **Both apps' releases are titled the same way.** The full client published as "Hana" while
   Orbin Minimal published as "Orbin Minimal 5 - Aoi" — on a releases page carrying both apps, one
