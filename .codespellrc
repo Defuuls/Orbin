@@ -10,5 +10,8 @@ skip = .git,build,*/build,gradle,*.png,*.webp,*.svg,*.jks,*.keystore,*.jar,basel
 #   couldn  - "Couldn\'t" in XML, split by the escape
 #   ba/nd/te/ans/fo/ist/thru/inout - short tokens inside identifiers and hex
 #   installin/optin - Kotlin annotations quoted in documentation code blocks
-ignore-words-list = couldn,ba,nd,te,ans,fo,ist,shs,parms,thru,inout,optin,installin,launchin,nin
+#   rin - a release codename. Codenames are popular Japanese female names, and short ones
+#         collide with the dictionary; add a name here when it is flagged rather than
+#         picking a different one for the spell checker's benefit.
+ignore-words-list = couldn,ba,nd,te,ans,fo,ist,shs,parms,thru,inout,optin,installin,launchin,nin,rin
 quiet-level = 2
