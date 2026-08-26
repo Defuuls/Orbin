@@ -19,11 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to create and release (e.g. minimal-v4-Yui). Must not already exist.'
-        required: true
-        type: string
-      tag_message:
-        description: 'Annotated tag message / release name (e.g. Orbin Minimal 4 - Yui)'
+        description: 'Tag to create and release (e.g. minimal-v5-Aoi). Must not already exist.'
         required: true
         type: string
       base_ref:
@@ -48,6 +44,26 @@ jobs:
           fetch-depth: 0 # full history so release notes can diff against the previous tag
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
 
+      # The release title is derived from the tag rather than typed into the dispatch form, so the
+      # two lines read the same way on a releases page that mixes them: v101-Hana becomes
+      # "Orbin 101 - Hana" and minimal-v5-Aoi becomes "Orbin Minimal 5 - Aoi". It used to be
+      # whatever the tag message said, which is how the full client's releases came to be titled
+      # with a bare codename ("Hana") while Orbin Minimal's spelled out the app and its number.
+      # The same string annotates the tag, so the tag message and the release title cannot drift.
+      - name: Derive the release name
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#minimal-v}"
+          NUMBER="${VERSION%%-*}"
+          CODENAME="${VERSION#*-}"
+          if [ "$CODENAME" = "$NUMBER" ]; then
+            # minimal-v1 to minimal-v3 carry no codename.
+            RELEASE_NAME="Orbin Minimal ${NUMBER}"
+          else
+            RELEASE_NAME="Orbin Minimal ${NUMBER} - ${CODENAME//-/ }"
+          fi
+          echo "RELEASE_NAME=${RELEASE_NAME}" >> "$GITHUB_ENV"
+
       - name: Create and push annotated tag (dispatch only)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -56,7 +72,7 @@ jobs:
           if git ls-remote --tags origin "${{ inputs.tag }}" | grep -q "${{ inputs.tag }}"; then
             echo "Tag ${{ inputs.tag }} already exists on remote — skipping creation."
           else
-            git tag -a "${{ inputs.tag }}" -m "${{ inputs.tag_message }}"
+            git tag -a "${{ inputs.tag }}" -m "$RELEASE_NAME"
             git push origin "${{ inputs.tag }}"
           fi
 
@@ -115,14 +131,8 @@ jobs:
         id: notes
         run: |
           set -euo pipefail
-          # actions/checkout materializes the tag as a lightweight ref, so the annotated tag object
-          # (whose message carries the release name) may be absent. Force-fetch it so
-          # %(contents:subject) reads the tag message rather than the underlying commit subject.
+          # Make sure the tag object itself is present; the previous-tag lookup below reads it.
           git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
-          RELEASE_NAME=$(git for-each-ref "refs/tags/${RELEASE_TAG}" --format='%(contents:subject)')
-          if [ -z "$RELEASE_NAME" ]; then
-            RELEASE_NAME="${RELEASE_TAG}"
-          fi
           # Only this app's own tags, so the diff never spans the full client's release history.
           PREV_TAG=$(git tag --list 'minimal-v*' --sort=-creatordate | grep -v "^${RELEASE_TAG}$" | head -n1 || true)
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"

@@ -53,10 +53,9 @@
 
 ## Release & Version Management
 
-- Version naming: themed codenames, one era at a time. From v91 these are types of pasta
-  (Bucatini, Rigatoni, Orecchiette, Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle).
-  v30-v90 used stars and ended with v90-Vega; do not pick from that era. Pick a name not
-  already used by an existing tag — check `git tag --list 'v*'`, not this list.
+- Version naming: themed codenames, one era at a time. Pasta names ran v91-v99 and stars ran
+  v30-v90 (ending at v90-Vega); do not pick from either — the current era is below. Pick a name
+  not already used by an existing tag — check `git tag --list`, not any list in this file.
 - versionCode increments by 1 for each release, in `gradle.properties`
   (`orbin.versionCode` / `orbin.versionName`). Orbin Minimal versions separately in the same
   file (`orbin.minimalVersionCode` / `orbin.minimalVersionName`) and releases under
@@ -69,6 +68,11 @@
   DESIGN_SYSTEM.md were retired — superseded by docs/wiki/ and stale)
 - Git tags: the full client is `v{number}-{codename}`; Orbin Minimal is
   `minimal-v{number}-{codename}`, on its own line
+- **Release titles are derived from the tag by the workflows — there is nothing to type.**
+  `v101-Hana` publishes as "Orbin 101 - Hana" and `minimal-v5-Aoi` as "Orbin Minimal 5 - Aoi",
+  so both lines are titled the same way on a releases page that mixes them. Dispatching a
+  release takes `tag` alone; it used to take a free-text `tag_message` as well, and the two
+  lines drifted apart because of it (the full client was titled with a bare codename).
 - Codenames are **popular Japanese female names** (Sakura, Yui, Hana, Aoi, Mei, Rin, Hina,
   Emi, Yuna, Akari, Miu, Riko, Ichika, Himari, Mio, Nao…). In use from **v100** and
   **minimal-v4**; before that the full client used pasta (v91-v99) and stars (to v90), and
