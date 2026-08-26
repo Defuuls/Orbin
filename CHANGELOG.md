@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- **A security version pin had drifted between the two scopes that apply it.** Commons IO was
+  forced to 2.20.0 on the plugin classpath but 2.18.0 on project configurations — the same CVE,
+  two answers. Netty and protobuf are read from `gradle.properties` precisely so the two scopes
+  cannot disagree; the other eight pins are still written twice, and this is the first to drift.
+- **Removed the unused `jsoup` version-catalog entry.** Nothing references it — the providers parse
+  markup themselves — so it produced dependency alerts and update PRs for a library that has never
+  shipped in either APK.
+
 ### Fixed
 - **Orbin Minimal: copying an image from the viewer works.** It never could. The gallery hands the
   file over through a `FileProvider`, which that build did not declare, so every copy fell back to
