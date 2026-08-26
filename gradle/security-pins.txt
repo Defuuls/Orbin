@@ -1,0 +1,55 @@
+# Security dependency pins — the single source of truth for both scopes they apply to.
+#
+# These overrides have to be installed twice: once on the Gradle plugin classpath
+# (`buildscript {}` in the root build file) and once on every project configuration. Kotlin DSL
+# evaluates the buildscript block before any top-level declaration in the same file, so the two
+# scopes cannot share a Kotlin constant — and when the rules were written out longhand in both
+# places they drifted: commons-io was pinned to 2.18.0 in one and 2.20.0 in the other, and the
+# project-scope rule for it named a group (org.apache.commons) that commons-io has not published
+# under since 1.3.2, so it matched nothing. Keeping the table here as data means a pin is written
+# once and both scopes read the same line.
+#
+# Format, one pin per line:
+#
+#     group:nameGlob | version | reason
+#
+# `*` in the name matches any run of characters; everything else matches literally. The reason is
+# passed to Gradle's `because()`, so it shows up in dependency-insight output. Blank lines and
+# anything after a `#` are ignored.
+#
+# The version is a floor, not an exact force: a dependency that already resolves higher is left
+# alone. Forcing exactly is a downgrade dressed as a security fix, which is what the httpclient
+# entry below was doing — pulling the tree's 4.5.14 back to 4.5.13 every build.
+#
+# Use a glob only where the matched artifacts genuinely share one version line — Bouncy Castle's
+# jdk18on artifacts do, OpenTelemetry's do not (its -alpha modules version separately), which is
+# why the two OpenTelemetry artifacts are listed out.
+
+# Was pinned to a nonexistent "4.1.139.Final", which never failed only because nothing resolved a
+# Netty artifact through these configurations; the first dependency that did (UTP, via the
+# benchmark module) broke the build outright. This is the newest release on the 4.1 line.
+io.netty:netty-*                                    | 4.1.136.Final | Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.
+
+org.bouncycastle:bc*-jdk18on                        | 1.84          | Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.
+
+org.apache.commons:commons-compress                 | 1.28.0        | Dependabot reports Apache Commons Compress CVEs.
+
+commons-io:commons-io                               | 2.20.0        | Dependabot reports an Apache Commons IO denial-of-service vulnerability.
+
+org.jdom:jdom2                                      | 2.0.6.1       | Dependabot reports a JDOM XXE vulnerability.
+
+# Was pinned to 3.25.5, which fixes CVE-2024-7254 but predates the `RuntimeVersion` class that
+# AGP's Unified Test Platform requires — so forcing it made every instrumentation test die with
+# NoClassDefFoundError the moment one actually ran. 4.x carries the same fix (4.28.3+) and the class.
+com.google.protobuf:protobuf-*                      | 4.35.1        | Dependabot reports protobuf denial-of-service vulnerabilities.
+
+org.bitbucket.b_c:jose4j                            | 0.9.6         | Dependabot reports a jose4j denial-of-service vulnerability.
+
+ch.qos.logback:logback-*                            | 1.5.35        | Dependabot reports Logback deserialization and object-injection vulnerabilities.
+
+# The advisory's fixed version. The tree already asks for 4.5.14, so this line is a floor that
+# currently changes nothing — which is the point: it stops a regression, it does not cause one.
+org.apache.httpcomponents:httpclient                | 4.5.13        | Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).
+
+io.opentelemetry:opentelemetry-api                  | 1.62.0        | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
+io.opentelemetry:opentelemetry-extension-trace-propagators | 1.62.0  | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
