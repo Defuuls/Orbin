@@ -13,13 +13,34 @@ name: Retitle Release
 # may already have downloaded, which is far too much to pay for a title.
 #
 # Dispatch-only and idempotent: a release already carrying the derived title is left alone.
+#
+# Two modes. Pass `tag` to retitle one release, optionally with `title` to set an exact string
+# instead of the derived one. Pass `from_number` and `to_number` to backfill every full-client
+# release in that inclusive range — Orbin Minimal is excluded there, its own titles having
+# matched the convention from the start.
+#
+# Where an older title carries a summary after a colon ("Arcturus: crisp thumbnails, selectable
+# app icons, 9 CVE fixes"), the summary is carried onto the new prefix rather than dropped: it is
+# worth more to someone scanning the list than perfect uniformity is.
 
 on:
   workflow_dispatch:
     inputs:
       tag:
         description: 'Tag of the release to retitle (e.g. v101-Hana, or minimal-v5-Aoi)'
-        required: true
+        required: false
+        type: string
+      title:
+        description: 'Exact title, overriding the derived one. Single tag only.'
+        required: false
+        type: string
+      from_number:
+        description: 'Backfill: first full-client release number, inclusive (e.g. 27)'
+        required: false
+        type: string
+      to_number:
+        description: 'Backfill: last full-client release number, inclusive (e.g. 99)'
+        required: false
         type: string
 
 permissions:
@@ -30,52 +51,106 @@ jobs:
     name: Retitle the release
     runs-on: ubuntu-latest
     steps:
-      - name: Derive the title and apply it
+      - name: Retitle
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
+          TITLE_OVERRIDE: ${{ inputs.title }}
+          FROM_NUMBER: ${{ inputs.from_number }}
+          TO_NUMBER: ${{ inputs.to_number }}
         run: |
           set -euo pipefail
 
+          # Four historical codenames a tag cannot express. Spacing out a tag's hyphens is right
+          # for Sirius-B and CM-Draconis-A, but wrong where the hyphen belongs to the star
+          # designation itself — and no tag ever carried an apostrophe. Without these the
+          # backfill would publish "TRAPPIST 1", "Luyten 726 8" and "Barnards Star".
+          codename_override() {
+            case "$1" in
+              v36-TRAPPIST-1)       echo "TRAPPIST-1" ;;
+              v40-Luyten-726-8)     echo "Luyten 726-8" ;;
+              v39-Barnards-Star)    echo "Barnard's Star" ;;
+              v42-Van-Maanens-Star) echo "Van Maanen's Star" ;;
+            esac
+          }
+
           # The same derivation the two release workflows use, with the prefix chosen by which
           # line the tag belongs to. Keep these three in step if the convention ever changes.
-          case "$TAG" in
-            minimal-v*)
-              PREFIX="Orbin Minimal"
-              VERSION="${TAG#minimal-v}"
-              ;;
-            v*)
-              PREFIX="Orbin"
-              VERSION="${TAG#v}"
-              ;;
-            *)
-              echo "::error::tag must start with 'v' or 'minimal-v', got '${TAG}'"; exit 1
-              ;;
-          esac
-          NUMBER="${VERSION%%-*}"
-          CODENAME="${VERSION#*-}"
-          if [ "$CODENAME" = "$NUMBER" ]; then
-            TITLE="${PREFIX} ${NUMBER}"
+          derive() {
+            local tag="$1" prefix version number codename override
+            case "$tag" in
+              minimal-v*) prefix="Orbin Minimal"; version="${tag#minimal-v}" ;;
+              v*)         prefix="Orbin";         version="${tag#v}" ;;
+              *) echo "::error::tag must start with 'v' or 'minimal-v', got '${tag}'"; return 1 ;;
+            esac
+            number="${version%%-*}"
+            codename="${version#*-}"
+            override=$(codename_override "$tag")
+            if [ -n "$override" ]; then
+              echo "${prefix} ${number} - ${override}"
+            elif [ "$codename" = "$number" ]; then
+              echo "${prefix} ${number}"
+            else
+              # Tags hyphenate a multi-word codename (v48-Sirius-B); the title spaces it back out.
+              echo "${prefix} ${number} - ${codename//-/ }"
+            fi
+          }
+
+          # A handful of older titles carry a summary after a colon — "Arcturus: crisp thumbnails,
+          # selectable app icons, 9 CVE fixes". That line is worth more to someone scanning the
+          # list than uniformity is, so it is carried across onto the new prefix rather than lost.
+          retitle_one() {
+            local tag="$1" want="${2:-}"
+            local release id current suffix
+            if ! release=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" 2>/dev/null); then
+              echo "::error::no published release found for tag '${tag}'"; return 1
+            fi
+            id=$(echo "$release" | jq -r '.id')
+            current=$(echo "$release" | jq -r '.name')
+
+            if [ -z "$want" ]; then
+              want=$(derive "$tag")
+              case "$current" in
+                *": "*) suffix=": ${current#*: }"; want="${want}${suffix}" ;;
+              esac
+            fi
+
+            if [ "$current" = "$want" ]; then
+              echo "- \`${tag}\` already titled \`${current}\`" >> "$GITHUB_STEP_SUMMARY"
+              echo "skip ${tag}: already \"${current}\""
+              return 0
+            fi
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${id}" -f name="$want" >/dev/null
+            echo "- \`${tag}\`: \`${current}\` → \`${want}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "retitled ${tag}: \"${current}\" -> \"${want}\""
+          }
+
+          if [ -n "$FROM_NUMBER" ] || [ -n "$TO_NUMBER" ]; then
+            if [ -n "$TAG" ] || [ -n "$TITLE_OVERRIDE" ]; then
+              echo "::error::from_number/to_number is the backfill mode — do not pass tag or title with it"; exit 1
+            fi
+            if [ -z "$FROM_NUMBER" ] || [ -z "$TO_NUMBER" ]; then
+              echo "::error::backfill needs both from_number and to_number"; exit 1
+            fi
+            # Only the full-client line, and only tags whose number falls in the range. Orbin
+            # Minimal is excluded outright: its own tags were titled to the convention already.
+            mapfile -t TAGS < <(
+              gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" --jq '.[].tag_name' |
+                grep -E '^v[0-9]+-' |
+                awk -v lo="$FROM_NUMBER" -v hi="$TO_NUMBER" '
+                  { n = $0; sub(/^v/, "", n); sub(/-.*$/, "", n)
+                    if (n + 0 >= lo + 0 && n + 0 <= hi + 0) print }
+                ' | sort -V
+            )
+            if [ "${#TAGS[@]}" -eq 0 ]; then
+              echo "::error::no full-client releases found between ${FROM_NUMBER} and ${TO_NUMBER}"; exit 1
+            fi
+            echo "### Retitled ${#TAGS[@]} releases" >> "$GITHUB_STEP_SUMMARY"
+            for t in "${TAGS[@]}"; do retitle_one "$t"; done
           else
-            # Tags hyphenate a multi-word codename (v48-Sirius-B); the title spaces it back out.
-            TITLE="${PREFIX} ${NUMBER} - ${CODENAME//-/ }"
+            if [ -z "$TAG" ]; then
+              echo "::error::pass either tag, or from_number and to_number"; exit 1
+            fi
+            echo "### Retitled" >> "$GITHUB_STEP_SUMMARY"
+            retitle_one "$TAG" "$TITLE_OVERRIDE"
           fi
-
-          if ! RELEASE=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" 2>/dev/null); then
-            echo "::error::no published release found for tag '${TAG}'"; exit 1
-          fi
-          ID=$(echo "$RELEASE" | jq -r '.id')
-          CURRENT=$(echo "$RELEASE" | jq -r '.name')
-
-          echo "tag:     ${TAG}"
-          echo "current: ${CURRENT}"
-          echo "derived: ${TITLE}"
-
-          if [ "$CURRENT" = "$TITLE" ]; then
-            echo "Already titled \"${TITLE}\" — nothing to do."
-            echo "\`${TAG}\` was already titled \`${TITLE}\`." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${ID}" -f name="$TITLE" >/dev/null
-          echo "Retitled \`${TAG}\`: \`${CURRENT}\` → \`${TITLE}\`" >> "$GITHUB_STEP_SUMMARY"
