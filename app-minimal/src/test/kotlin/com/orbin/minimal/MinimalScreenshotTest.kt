@@ -8,11 +8,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import coil3.ColorImage
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
+import coil3.test.FakeImageLoaderEngine
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.orbin.core.designsystem.theme.OrbinPreviewTheme
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
@@ -24,6 +31,8 @@ import com.orbin.feature.home.SubscribedBoardFeed
 import com.orbin.feature.home.SubscribedFeedUiState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,12 +47,29 @@ import org.robolectric.annotation.GraphicsMode
  * layers, so composing them against fixed state is very nearly the whole of what a manual pass
  * would check: that each state draws something legible rather than a blank or a clipped row.
  */
+@OptIn(DelicateCoilApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class MinimalScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    /**
+     * Thumbnails resolve to a flat colour rather than being left to fail. Letting them reach the
+     * network makes a capture depend on *how* the request fails, which differs by environment —
+     * the same trap the media wall's goldens fell into.
+     */
+    @Before
+    fun installFakeImageLoader() {
+        val engine = FakeImageLoaderEngine.Builder().default(ColorImage(TILE_COLOUR)).build()
+        SingletonImageLoader.setSafe { context ->
+            ImageLoader.Builder(context).components { add(engine) }.build()
+        }
+    }
+
+    @After
+    fun resetImageLoader() = SingletonImageLoader.reset()
 
     @Test
     fun feedPopulated() = capture("minimal_feed_populated") { MinimalFeed(populatedState()) }
@@ -137,6 +163,38 @@ class MinimalScreenshotTest {
                             (1..40)
                                 .map { thread(TECH, it.toLong(), subject = SCROLLBAR_ROW, replies = it) }
                                 .toPersistentList(),
+                            null,
+                        ),
+                    ),
+                ),
+            )
+        }
+
+    /**
+     * Rows carrying media. An image, a video (which autoplays while on screen, so this captures the
+     * player rather than the thumbnail), a spoilered video that must NOT autoplay, and a row with
+     * no attachment at all so the text-only shape still gets covered.
+     */
+    @Test
+    fun feedWithMedia() =
+        capture("minimal_feed_media") {
+            MinimalFeed(
+                SubscribedFeedUiState.Success(
+                    persistentListOf(
+                        SubscribedBoardFeed(
+                            TECH,
+                            persistentListOf(
+                                thread(TECH, 4L, subject = "An image", media = MediaType.IMAGE),
+                                thread(TECH, 3L, subject = "A video", media = MediaType.VIDEO),
+                                thread(
+                                    TECH,
+                                    2L,
+                                    subject = "A spoilered video",
+                                    media = MediaType.VIDEO,
+                                    spoiler = true,
+                                ),
+                                thread(TECH, 1L, subject = "No attachment"),
+                            ),
                             null,
                         ),
                     ),
@@ -239,6 +297,8 @@ class MinimalScreenshotTest {
         comment: String = "",
         replies: Int = 3,
         bumpedAt: Long = id * 100,
+        media: MediaType? = null,
+        spoiler: Boolean = false,
     ) = CatalogThread(
         key = ThreadKey(ProviderId(PROVIDER), board.id, ThreadId(id)),
         originalPost =
@@ -249,6 +309,20 @@ class MinimalScreenshotTest {
                 isOriginalPost = true,
                 subject = subject,
                 comment = PostComment(raw = comment, nodes = persistentListOf()),
+                attachments =
+                    media?.let {
+                        persistentListOf(
+                            MediaAttachment(
+                                id = "f$id",
+                                originalFileName = "f$id",
+                                extension = if (it == MediaType.VIDEO) "webm" else "jpg",
+                                type = it,
+                                sourceUrl = "https://example.invalid/$id",
+                                thumbnailUrl = "https://example.invalid/${'$'}{id}s",
+                                isSpoiler = spoiler,
+                            ),
+                        )
+                    } ?: persistentListOf(),
             ),
         stats = ThreadStats(replyCount = replies, lastModifiedMillis = bumpedAt),
     )
@@ -265,6 +339,9 @@ class MinimalScreenshotTest {
             "Supercalifragilisticexpialidociousaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         const val LONG_BOARD_TITLE = "Worksafe Gifs, with a title long enough to need truncating"
         const val FETCH_ERROR = "Could not reach the server"
+
+        // Opaque mid-grey, so a tile that failed to draw is not mistaken for one that drew.
+        const val TILE_COLOUR = 0xFF6E7A8A.toInt()
 
         // Wide enough to reach the right edge, so the scrollbar either clears the text or does not.
         const val SCROLLBAR_ROW =
