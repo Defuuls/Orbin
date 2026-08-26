@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [100-Sakura] - 2026-08-26
+
+### Changed
+- **Release codenames are now popular Japanese female names**, for both apps, from this release
+  and `minimal-v4` onward. They replace the pasta names used for v91-v99, which replaced star
+  names before that. Both lines draw from one pool and a name is never reused, so a codename
+  identifies exactly one release across the two.
+- **Orbin Minimal's tags carry a codename for the first time.** `minimal-v1` through `minimal-v3`
+  were bare numbers; from `minimal-v4-Yui` the shape matches the full client's. Its `versionName`
+  follows suit — `4-Yui` rather than `4`.
+
 ### Security
 - **A security version pin had drifted between the two scopes that apply it.** Commons IO was
   forced to 2.20.0 on the plugin classpath but 2.18.0 on project configurations — the same CVE,
@@ -1407,7 +1418,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...HEAD
+[100-Sakura]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...v100-Sakura
 [99-Rotini]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...v99-Rotini
 [98-Ziti]: https://github.com/Defuuls/Orbin/compare/v97-Penne...v98-Ziti
 [97-Penne]: https://github.com/Defuuls/Orbin/compare/v96-Linguine...v97-Penne

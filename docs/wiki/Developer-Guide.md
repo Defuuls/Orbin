@@ -1,7 +1,8 @@
 # Developer Guide
 
 How to build Orbin, what the toolchain looks like after the July 2026 AGP 9 upgrade, and how CI
-and releases work. Current as of **v81 (Phecda)**. See also
+and releases work. The version numbers below are a snapshot; `gradle/libs.versions.toml` and
+`gradle.properties` are authoritative and this page is not updated per release. See also
 [[Architecture and Modules|Architecture-and-Modules]] and the in-repo docs under
 [`docs/`](https://github.com/Defuuls/Orbin/tree/main/docs).
 
@@ -116,7 +117,7 @@ profile is not harmful, only progressively less useful.
 | `instrumentation.yml` | every push to `main` and every PR | Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Both ends of the supported range are covered, because a pass on 35 says nothing about the devices `minSdk` 31 admits. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, uploads it as the `baseline-profile` artifact, then opens a draft PR with it. The PR step needs *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*; without it the step fails and the run warns, but the artifact still carries the profile. |
 | `release-minimal.yml` | `minimal-v*` tag push, or manual | Builds, signs and publishes **Orbin Minimal** alone. Separate app, separate version line (`orbin.minimalVersionCode` / `orbin.minimalVersionName`), separate cadence — not carried by `release.yml`. |
-| `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version number (`97`), codename (`Penne`), `versionCode`, base branch, draft flag. Bumps `gradle.properties`, closes the `[Unreleased]` changelog section, and moves the current-release pointers in `README.md` and `docs/wiki/Home.md`. |
+| `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version number (`100`), codename (`Sakura`), `versionCode`, base branch, draft flag. Bumps `gradle.properties`, closes the `[Unreleased]` changelog section, and moves the current-release pointers in `README.md` and `docs/wiki/Home.md`. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 | `wiki-sync.yml` | push to `main` touching `docs/wiki/**` (or manual) | Mirrors `docs/wiki/` onto the repository's GitHub wiki via `rsync --delete`, so `docs/wiki` is the single source of truth — edit it in a PR like any other file, never the wiki directly. |
 | `pages.yml` | push to `main` touching `site/**` (or manual) | Deploys the static landing page in `site/` to GitHub Pages (https://defuuls.github.io/Orbin/). |
@@ -134,7 +135,8 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
    the `[Unreleased]` changelog section, and the current-release lines in `README.md` and
    `docs/wiki/Home.md`) and merge the release PR. Either way `scripts/validate_repo.py`
    checks the four stay in step — CI runs it on every PR.
-2. Tag and push. Tags are `v<number>-<Codename>`, and the tag must be **annotated** — the
+2. Tag and push. Tags are `v<number>-<Codename>` for the full client and
+   `minimal-v<number>-<Codename>` for Orbin Minimal, and the tag must be **annotated** — the
    release job reads its message as the GitHub Release title:
 
    ```bash
@@ -150,10 +152,17 @@ If pushing a tag is not possible, run **Release** via `workflow_dispatch` instea
 identical result.
 
 **Codenames:** every milestone gets a codename, drawn from the theme the project is currently on.
-**From v91 onward that theme is types of pasta** — Bucatini, Rigatoni, Orecchiette, Fusilli,
-Farfalle, Linguine, Cavatappi, Pappardelle, Conchiglie, Casarecce, Trofie, Paccheri, Mafaldine,
-Strozzapreti. Pick one that is distinctive, short enough for a changelog heading, and not already
-used by an existing tag — check `git tag --list 'v*'` rather than this list.
+**From v100 and minimal-v4 onward that theme is popular Japanese female names** — Sakura, Yui,
+Hana, Aoi, Mei, Rin, Hina, Emi, Yuna, Akari, Miu, Riko, Ichika, Himari, Mio, Nao, Koharu, Tsumugi,
+Sara, Yuzuki. Pick one that is distinctive, short enough for a changelog heading, and not already
+used by an existing tag — check `git tag --list` rather than this list.
+
+**Both apps draw from that one pool, and a name is never reused**, so a codename identifies
+exactly one release across the two lines. This is also the point at which Orbin Minimal starts
+having codenames at all: `minimal-v1` through `minimal-v3` were bare numbers.
+
+The pasta era it replaces ran from v91 to **v99 — Rotini**: Bucatini, Rigatoni, Orecchiette,
+Fusilli, Farfalle, Linguine, Penne, Ziti, Rotini.
 
 The star era it replaces ran from v30 to **v90 — Vega**: v30–v33 used the smallest known stars
 (Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", v37–v48

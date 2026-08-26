@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [99 — Rotini](https://github.com/Defuuls/Orbin/releases/tag/v99-Rotini)
+**Current release:** [100 — Sakura](https://github.com/Defuuls/Orbin/releases/tag/v100-Sakura)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -112,7 +112,8 @@ reply, or create threads.
 
 **Orbin Minimal releases separately**, under
 [`minimal-v*` tags](https://github.com/Defuuls/Orbin/releases?q=minimal&expanded=true) numbered
-from 1, on its own cadence — it is not bundled with the full client's release. Because both apps
+from 1 — and, from `minimal-v4`, carrying a codename the way the full client's tags do — on its
+own cadence — it is not bundled with the full client's release. Because both apps
 are tagged in this repository, "latest release" resolves by date across the two: pick by the
 filename (`orbin-minimal-…apk` versus `orbin-v…apk`) rather than by whichever release is on top.
 It is a pared-back app whose whole
