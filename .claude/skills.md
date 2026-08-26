@@ -67,8 +67,14 @@
   narrative summary of selected eras, not a complete list, and says so in its own header — do
   not treat it as the place a new release must be recorded (root-level RELEASE_HISTORY.md and
   DESIGN_SYSTEM.md were retired — superseded by docs/wiki/ and stale)
-- Git tags: the full client is `v{version}-{codename}`; Orbin Minimal is `minimal-v{number}`
-  with no codename, on its own line
+- Git tags: the full client is `v{number}-{codename}`; Orbin Minimal is
+  `minimal-v{number}-{codename}`, on its own line
+- Codenames are **popular Japanese female names** (Sakura, Yui, Hana, Aoi, Mei, Rin, Hina,
+  Emi, Yuna, Akari, Miu, Riko, Ichika, Himari, Mio, Nao…). In use from **v100** and
+  **minimal-v4**; before that the full client used pasta (v91-v99) and stars (to v90), and
+  Orbin Minimal had no codename at all (minimal-v1 to v3).
+- **One pool across both apps — never reuse a name.** A codename identifies exactly one
+  release, so "Sakura" can never mean both a full-client and a Minimal build.
 
 ## Build & CI/CD
 

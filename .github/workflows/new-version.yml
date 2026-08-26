@@ -6,10 +6,15 @@ name: New Version
 # Orbin Minimal is NOT prepared here. It is a separate app on its own version
 # line (orbin.minimalVersionCode/Name) with its own cadence.
 #
-# The version is a number and a pasta codename that travel together —
-# "97" + "Penne" become versionName "97-Penne" and tag "v97-Penne". They are
+# The version is a number and a codename that travel together — "100" +
+# "Sakura" become versionName "100-Sakura" and tag "v100-Sakura". They are
 # separate inputs so the branch, tag, changelog heading and APK name are all
 # derived from one place rather than re-typed.
+#
+# Codenames are popular Japanese female names, from v100 onward. They replace
+# the pasta names used for v91-v99, which replaced star names before that.
+# Orbin Minimal uses the same pool from minimal-v4 — one pool across both
+# apps, never reusing a name, so a codename always identifies one release.
 
 on:
   workflow_dispatch:
@@ -19,7 +24,7 @@ on:
         required: true
         type: string
       codename:
-        description: 'Pasta release codename, for example Penne'
+        description: 'Release codename — a popular Japanese female name, for example Sakura'
         required: true
         type: string
       version_code:
@@ -64,7 +69,7 @@ jobs:
             echo "::error::version_number must be a whole number, for example 97"; exit 1
           fi
           if ! [[ "$CODENAME" =~ ^[A-Za-z][A-Za-z0-9\ \'-]*$ ]]; then
-            echo "::error::codename must be a readable pasta name"; exit 1
+            echo "::error::codename must be a readable name, e.g. Sakura"; exit 1
           fi
           if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
             echo "::error::version_code must be a whole number"; exit 1
@@ -166,7 +171,8 @@ jobs:
           Orbin Minimal is untouched — it releases on its own \`minimal-v*\` line.
 
           ## Release note
-          This continues the pasta release naming convention, in use from v91.
+          Codenames are popular Japanese female names, in use from v100. The pool is
+          shared with Orbin Minimal and a name is never reused across either line.
 
           After merging, push the tag to publish:
           \`\`\`

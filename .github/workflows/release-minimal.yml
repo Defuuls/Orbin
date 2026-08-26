@@ -8,6 +8,10 @@ name: Release Orbin Minimal
 # expectations about "version 1" to a number that says 114.
 #
 # workflow_dispatch mirrors release.yml, and is the path used when tag-push is unavailable.
+#
+# From minimal-v4 the tag carries a codename — a popular Japanese female name, the same pool
+# the full client draws from and never reusing a name across the two. minimal-v1 to v3 were
+# bare numbers; the 'minimal-v*' pattern above matches both shapes.
 on:
   push:
     tags:
@@ -15,11 +19,11 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to create and release (e.g. minimal-v1). Must not already exist.'
+        description: 'Tag to create and release (e.g. minimal-v4-Yui). Must not already exist.'
         required: true
         type: string
       tag_message:
-        description: 'Annotated tag message (e.g. Orbin Minimal 1)'
+        description: 'Annotated tag message / release name (e.g. Orbin Minimal 4 - Yui)'
         required: true
         type: string
       base_ref:
