@@ -37,6 +37,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Required, not optional: the gallery this app opens for inline media offers a "copy
+             image" action, and that action hands the file over through a FileProvider. Without
+             this declaration the lookup throws, the caller swallows it, and every copy silently
+             degrades to copying the URL with the message "Image unavailable" — which blames the
+             image for a missing manifest entry. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- WorkManager's default initializer is removed for the same reason as in the full
              client: the Hilt-aware configuration below replaces it. -->
         <provider

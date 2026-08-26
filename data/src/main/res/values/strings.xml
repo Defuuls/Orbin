@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Body of a watched-thread notification, e.g. "3 new replies". A plural rather than a
+         format string, so a single reply does not read "1 new replies". -->
+    <plurals name="notification_thread_new_replies">
+        <item quantity="one">%1$d new reply</item>
+        <item quantity="other">%1$d new replies</item>
+    </plurals>
+</resources>
