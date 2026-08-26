@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [98 — Ziti](https://github.com/Defuuls/Orbin/releases/tag/v98-Ziti)
+**Current release:** [99 — Rotini](https://github.com/Defuuls/Orbin/releases/tag/v99-Rotini)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
