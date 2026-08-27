@@ -9,13 +9,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,13 +40,14 @@ data class Command(
  * another screen.
  *
  * So make that the primary way in, for everything, not a last resort for settings. One sheet over
- * whatever you are reading. Type a few letters and it matches boards, threads you have open,
- * settings, and actions in the same list — because to the person typing "auto" there is no
- * meaningful difference between a screen called Media & Playback and the toggle inside it that
- * they actually wanted.
+ * whatever you are reading — the page behind it stays visible under a scrim, so you have not left
+ * where you were. Type a few letters and it matches boards, threads you have open, settings, and
+ * actions in the same list, each tagged with what kind of thing it is, because to the person typing
+ * "auto" there is no meaningful difference between a screen called Media & Playback and the toggle
+ * inside it that they actually wanted.
  *
- * Nothing here is a destination you must first know exists. That is what removes the screens
- * without removing the features.
+ * Nothing here is a destination you must first know exists. That is what removes the screens without
+ * removing the features.
  */
 @Composable
 fun CommandSheet(
@@ -51,65 +55,64 @@ fun CommandSheet(
     results: List<Command>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(modifier = modifier.fillMaxSize().background(next.background)) {
+        // What you were reading, still there, dimmed.
         Column(modifier = Modifier.fillMaxSize()) {
-            // The dimmed content behind the sheet: you have not left where you were.
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(0.32f)
-                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f)),
-                contentAlignment = Alignment.BottomStart,
-            ) {
-                Column(modifier = Modifier.padding(GUTTER)) {
-                    MetaLine("Behind: Feed")
-                }
-            }
+            FadedFeedBehind()
+        }
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.42f)))
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxWidth().weight(0.28f))
             Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(0.68f)
-                        .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
-                        .background(MaterialTheme.colorScheme.background),
+                        .weight(0.72f)
+                        .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+                        .background(next.background),
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier =
                             Modifier
-                                .size(width = 34.dp, height = 4.dp)
+                                .size(width = 38.dp, height = 4.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
-                                ),
+                                .background(next.hairline),
                     )
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(GUTTER),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = GUTTER, vertical = 20.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = query,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.6).sp,
+                        color = next.ink,
                     )
                     Box(
                         modifier =
                             Modifier
-                                .padding(start = 2.dp)
-                                .size(width = 2.dp, height = 24.dp)
-                                .background(MaterialTheme.colorScheme.primary),
+                                .padding(start = 3.dp)
+                                .size(width = 2.dp, height = 26.dp)
+                                .background(next.accent),
                     )
+                    Box(modifier = Modifier.weight(1f))
+                    MetaLine("${results.size} matches", color = next.faint)
                 }
                 Hairline()
-                results.forEach { command ->
-                    CommandRow(command)
-                    Hairline(inset = true)
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    results.forEachIndexed { index, command ->
+                        CommandRow(command)
+                        if (index < results.lastIndex) Hairline(inset = true)
+                    }
                 }
             }
         }
@@ -119,45 +122,101 @@ fun CommandSheet(
 @Composable
 private fun CommandRow(command: Command) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 13.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = command.kind,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = MUTED),
-            modifier = Modifier.width(74.dp),
-        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = command.label,
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 15.5.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = (-0.1).sp,
+                color = next.ink,
             )
             if (command.hint != null) {
-                Gap(2)
+                Gap(4)
                 MetaLine(command.hint)
+            }
+        }
+        WidthSpacer(12)
+        Pill(command.kind, tint = kindTint(command.kind))
+    }
+}
+
+@Composable
+private fun kindTint(kind: String): Color =
+    when (kind) {
+        "board" -> boardHue("/g/")
+        "search" -> boardHue("/lit/")
+        "thread" -> boardHue("/p/")
+        else -> next.accent
+    }
+
+/** A suggestion of the feed underneath, so the sheet reads as a layer rather than a screen. */
+@Composable
+private fun FadedFeedBehind() {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 26.dp)) {
+        Text(
+            text = "Feed",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.9).sp,
+            color = next.ink,
+            modifier = Modifier.padding(horizontal = GUTTER),
+        )
+        Gap(24)
+        repeat(3) { index ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .width(54.dp)
+                                .height(11.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(next.hairline),
+                    )
+                    Gap(10)
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(if (index == 1) 0.62f else 0.88f)
+                                .height(15.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(next.hairline),
+                    )
+                    Gap(8)
+                    Box(
+                        modifier =
+                            Modifier
+                                .width(120.dp)
+                                .height(11.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(next.hairline),
+                    )
+                }
+                WidthSpacer(14)
+                MediaTile(modifier = Modifier.size(68.dp), seed = index, radius = 14.dp)
             }
         }
     }
 }
 
-@Composable
-private fun Modifier.width(value: androidx.compose.ui.unit.Dp): Modifier =
-    this.then(Modifier.size(width = value, height = 16.dp))
-
 /**
  * Settings: fifty-nine of them, on one screen.
  *
- * They are currently spread over a hub and seven category screens, which is why a search screen
- * had to be added. Categories are not wrong, but they should be waypoints in one scrolling list
- * rather than places you navigate to and back from — you can flick past a heading, and you cannot
- * flick past a screen.
+ * They are currently spread over a hub and seven category screens, which is why a search screen had
+ * to be added. Categories are not wrong, but they should be waypoints in one scrolling list rather
+ * than places you navigate to and back from — you can flick past a heading, and you cannot flick
+ * past a screen.
  *
  * Each row is its label and its current value. No switches drawn as switches, no chevrons, no
  * secondary description repeating the label in a longer form: the value *is* the description, and
  * where it needs explaining, that explanation belongs on the row you pressed rather than on all
- * fifty-nine rows at once.
+ * fifty-nine rows at once. A setting that is on says so in the accent colour, so the state of a
+ * whole section is one glance down the right-hand edge.
  */
 @Composable
 fun SettingsScreen(
@@ -165,42 +224,46 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     Surface {
-        Column(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.weight(1f)) {
-                ScreenTitle(text = "Settings", subtitle = "59 settings · type ⌘ to jump to one")
+        Box(modifier = modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                ScreenTitle(text = "Settings", subtitle = "59 of them, in one list")
                 groups.forEach { (heading, rows) ->
                     Text(
                         text = heading.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = GUTTER, top = 18.dp, bottom = 6.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        color = next.accent,
+                        modifier = Modifier.padding(start = GUTTER, top = 22.dp, bottom = 8.dp),
                     )
-                    rows.forEach { (label, value) ->
+                    rows.forEachIndexed { index, (label, value) ->
                         Row(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = GUTTER, vertical = 11.dp),
+                                    .padding(horizontal = GUTTER, vertical = 13.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = label,
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 15.5.sp,
+                                letterSpacing = (-0.1).sp,
+                                color = next.ink,
                                 modifier = Modifier.weight(1f),
                             )
                             Text(
                                 text = value,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = MUTED),
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (value == "On" || value == "Always on") next.accent else next.muted,
                             )
                         }
-                        Hairline(inset = true)
+                        if (index < rows.lastIndex) Hairline(inset = true)
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth().height(24.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(RAIL_HEIGHT + 28.dp))
             }
-            ContextRail(where = "Settings")
+            ContextRail(where = "Settings", modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 }

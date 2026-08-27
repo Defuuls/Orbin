@@ -8,7 +8,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.orbin.core.designsystem.theme.OrbinPreviewTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +39,7 @@ class ProposalScreenshotTest {
             BoardScreen(
                 board = "/g/",
                 description = "Technology",
-                rows = feedRows().take(6),
+                rows = boardRows(),
             )
         }
 
@@ -74,8 +73,9 @@ class ProposalScreenshotTest {
                         Command("Autoplay videos", "setting", "Media · currently on"),
                         Command("Autoplay videos in feed", "setting", "Media · currently off"),
                         Command("Auto-rotate video", "setting", "Media · currently on"),
-                        Command("/aco/", "board", "Adult Cartoons"),
+                        Command("/aco/", "board", "Adult Cartoons · subscribed"),
                         Command("Automotive threads", "search", "12 saved results"),
+                        Command("Autumn photo dump", "thread", "/p/ · 84 replies · open"),
                     ),
             )
         }
@@ -92,7 +92,7 @@ class ProposalScreenshotTest {
         content: @androidx.compose.runtime.Composable () -> Unit,
     ) {
         composeRule.setContent {
-            OrbinPreviewTheme(darkTheme = dark) {
+            NextTheme(darkTheme = dark) {
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box { content() }
                 }
@@ -112,6 +112,16 @@ class ProposalScreenshotTest {
             FeedRow("Reading list for winter", "/lit/", "3h", 28, 4, hasPreview = false, read = true),
             FeedRow("Post your desk setup", "/g/", "4h", 311, 205),
             FeedRow("Cheap mechanical keyboards worth having", "/g/", "6h", 88, 17),
+        )
+
+    private fun boardRows() =
+        listOf(
+            FeedRow("Anyone else running a home server on ARM?", "/g/", "4m", 218, 31),
+            FeedRow("Weekly desktop thread", "/g/", "12m", 94, 88),
+            FeedRow("Old ThinkPads that still earn their keep", "/g/", "31m", 63, 19),
+            FeedRow("Post your desk setup", "/g/", "1h", 311, 205, read = true),
+            FeedRow("Cheap mechanical keyboards worth having", "/g/", "2h", 88, 17),
+            FeedRow("Self-hosting what you actually use", "/g/", "3h", 41, 6, hasPreview = false),
         )
 
     private fun posts() =
