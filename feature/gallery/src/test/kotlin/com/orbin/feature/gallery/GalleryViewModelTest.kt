@@ -21,6 +21,7 @@ import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -119,6 +120,7 @@ class GalleryViewModelTest {
             observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
             downloadRepository = FakeDownloadRepository(),
             settingsRepository = settingsRepository,
+            imageClipboard = mockk(relaxed = true),
         )
 
     private fun createViewModel(
@@ -138,6 +140,9 @@ class GalleryViewModelTest {
         observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
         downloadRepository = FakeDownloadRepository(),
         settingsRepository = settingsRepository,
+        // Never exercised here — these tests are about which media the gallery pages through,
+        // not about copying one to the clipboard.
+        imageClipboard = mockk(relaxed = true),
     )
 
     private fun thread() =

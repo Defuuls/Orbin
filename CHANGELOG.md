@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- **Copying an image no longer goes around the app's own network stack.** The clipboard copy
+  opened a raw `HttpURLConnection`. That still spoke HTTPS — the platform enforces it — but it
+  bypassed everything the shared client exists to provide: the request resolved through the system
+  resolver rather than DNS-over-HTTPS, announcing to the network which host was being read from at
+  the moment of the copy, and it carried the JVM's default user-agent instead of the configured
+  one, making that single request identifiably different from every other request the app sends.
+  One copy was enough to undo settings deliberately switched on. It goes through the injected
+  client now, and inherits the configured timeouts along with the rest.
+
+### Changed
+- **The clipboard copy moved from the gallery feature into `:media`.** That is the layer which
+  already holds a network client; a feature module reaching for OkHttp directly is how the
+  `feature → domain → model` boundary erodes. The screen asks its ViewModel, which asks an injected
+  `ImageClipboard`.
+- **`retitle-release.yml` can rewrite a release body's leading heading.** Opt-in, single-release
+  only, and never during a backfill: the body is prose someone published, and the only part of it
+  this workflow has any business touching is the heading that repeats the title.
+
+
 ### Changed
 - **The full client's back catalogue is titled to the convention.** Releases v27 through v100 read
   "Orbin 57 - Arcturus" rather than a bare "Arcturus", matching the current releases and the Orbin
