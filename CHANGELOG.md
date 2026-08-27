@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The Orbin Minimal asset version lost its `v`.** Hoisting it into the step that derives the
+  release title reused that step's version string, which strips `minimal-v` to get the bare number
+  for the title — where asset names need only `minimal-` stripped. It republished
+  `minimal-v6-Rin`'s notes pointing at `orbin-minimal-6-Rin.apk`, a file that does not exist, and
+  the next release would have dropped the `v` from the APK itself.
+
+
 ### Added
 - **Orbin Minimal's release workflow can regenerate the notes of a release it already published.**
   `notes_only` skips the build and the upload entirely and rewrites just the notes, which is how
