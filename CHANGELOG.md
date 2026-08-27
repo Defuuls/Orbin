@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Orbin Minimal's release workflow can regenerate the notes of a release it already published.**
+  `notes_only` skips the build and the upload entirely and rewrites just the notes, which is how
+  `minimal-v6-Rin` gets the changes list it should have had. The notes come from the same step a
+  real release uses, so a repaired release and the next one cannot disagree about what counts as
+  a change — and the asset version moved to a step that runs either way, so the checksum command
+  still names the right file when nothing is being built.
+
+
 ### Fixed
 - **Orbin Minimal's release notes listed changes to its front end only.** The notes filtered the
   log to `app-minimal`, which describes the screen rather than the app: `minimal-v6-Rin` shipped a
