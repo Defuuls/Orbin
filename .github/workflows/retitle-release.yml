@@ -121,14 +121,17 @@ jobs:
               esac
             fi
 
+            # Deliberately not an early return. A release whose title is already right can still
+            # carry the old heading in its body — which is exactly the release this was pointed at
+            # first, so returning here meant the run reported success having done nothing.
             if [ "$current" = "$want" ]; then
               echo "- \`${tag}\` already titled \`${current}\`" >> "$GITHUB_STEP_SUMMARY"
               echo "skip ${tag}: already \"${current}\""
-              return 0
+            else
+              gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${id}" -f name="$want" >/dev/null
+              echo "- \`${tag}\`: \`${current}\` → \`${want}\`" >> "$GITHUB_STEP_SUMMARY"
+              echo "retitled ${tag}: \"${current}\" -> \"${want}\""
             fi
-            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${id}" -f name="$want" >/dev/null
-            echo "- \`${tag}\`: \`${current}\` → \`${want}\`" >> "$GITHUB_STEP_SUMMARY"
-            echo "retitled ${tag}: \"${current}\" -> \"${want}\""
 
             # Opt-in, and only ever the first line. The notes body is prose someone published;
             # rewriting more of it than the heading that repeats the title is not this workflow's

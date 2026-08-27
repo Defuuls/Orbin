@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The release-heading rewrite could not reach a release whose title was already correct.**
+  `retitle_one` returned as soon as the title matched, and the heading rewrite sat below that
+  return — so the one release it was built for, whose title had been fixed an hour earlier, was
+  skipped and the run still reported success. Skipping the title no longer skips the body.
+
+
 ### Security
 - **Copying an image no longer goes around the app's own network stack.** The clipboard copy
   opened a raw `HttpURLConnection`. That still spoke HTTPS — the platform enforces it — but it
