@@ -135,6 +135,33 @@ jobs:
           git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
           # Only this app's own tags, so the diff never spans the full client's release history.
           PREV_TAG=$(git tag --list 'minimal-v*' --sort=-creatordate | grep -v "^${RELEASE_TAG}$" | head -n1 || true)
+
+          # Which paths count as a change to *this* app. It used to be `app-minimal` alone, which
+          # describes the front end rather than the app: minimal-v6-Rin carried a fix to the image
+          # copy — real, user-visible, and in :media — and published an empty changes list, which
+          # reads as "nothing changed" and is worse than no list at all.
+          #
+          # The list is read out of app-minimal's own build file rather than written here, so
+          # adding a module to the app widens its release notes automatically instead of waiting
+          # for someone to notice that two lists disagree. Test-only dependencies are excluded by
+          # matching implementation/api alone; the feature modules the app does not route to
+          # (board, search, history, settings, downloads, onboarding) are excluded by simply not
+          # being in that file.
+          #
+          # Build configuration is deliberately out of scope: a dependency bump in
+          # gradle/libs.versions.toml does reach the APK, but listing it here would bury the app's
+          # own changes under build noise. The changelog is where that belongs.
+          mapfile -t MODULE_PATHS < <(
+            grep -E '^[[:space:]]*(implementation|api)\(project\("' app-minimal/build.gradle.kts |
+              sed -E 's/.*project\("(:[^"]+)"\).*/\1/' |
+              sed -E 's|^:||; s|:|/|g' |
+              sort -u
+          )
+          if [ "${#MODULE_PATHS[@]}" -eq 0 ]; then
+            echo "::error::could not read Orbin Minimal's module list from app-minimal/build.gradle.kts"
+            exit 1
+          fi
+          echo "Release notes cover: app-minimal ${MODULE_PATHS[*]}"
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {
             echo "## ${RELEASE_NAME}"
@@ -160,7 +187,8 @@ jobs:
             echo
             if [ -n "$PREV_TAG" ]; then
               echo "### Changes since ${PREV_TAG}"
-              git log --no-merges --pretty='- %s (%h)' "${PREV_TAG}..${RELEASE_TAG}" -- app-minimal
+              git log --no-merges --pretty='- %s (%h)' "${PREV_TAG}..${RELEASE_TAG}" \
+                -- app-minimal "${MODULE_PATHS[@]}"
             else
               echo "### First release"
             fi
