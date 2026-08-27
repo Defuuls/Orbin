@@ -72,7 +72,12 @@ jobs:
           # The tag already begins with "minimal-", so naming assets after it whole spelled the
           # word twice: orbin-minimal-minimal-v6-Rin.apk. Derived here rather than beside the
           # build so the notes can quote the right filename even when nothing is being built.
-          echo "ASSET_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          #
+          # Strips "minimal-" and NOT "minimal-v": the title above wants the bare number, the
+          # assets want the v. Reusing VERSION here published notes pointing at
+          # orbin-minimal-6-Rin.apk — a file that does not exist — and would have dropped the v
+          # from the next release's APK too.
+          echo "ASSET_VERSION=${RELEASE_TAG#minimal-}" >> "$GITHUB_ENV"
 
       - name: Create and push annotated tag (dispatch only)
         if: github.event_name == 'workflow_dispatch' && !inputs.notes_only
