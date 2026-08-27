@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [103-Hina] - 2026-08-27
+
 ### Security
 - **Netty moves to 4.1.137.Final.** CVE-2026-59903: `CorsHandler` overwrote a `Vary` header the
   application had already set, so a cache in front of it could serve one user's response to
@@ -1562,7 +1564,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v102-Mei...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v103-Hina...HEAD
+[103-Hina]: https://github.com/Defuuls/Orbin/compare/v102-Mei...v103-Hina
 [102-Mei]: https://github.com/Defuuls/Orbin/compare/v101-Hana...v102-Mei
 [101-Hana]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...v101-Hana
 [100-Sakura]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...v100-Sakura
