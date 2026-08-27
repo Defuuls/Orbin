@@ -34,6 +34,11 @@ on:
         description: 'Exact title, overriding the derived one. Single tag only.'
         required: false
         type: string
+      fix_heading:
+        description: 'Also rewrite the body''s leading "## ..." heading to match the title'
+        required: false
+        default: false
+        type: boolean
       from_number:
         description: 'Backfill: first full-client release number, inclusive (e.g. 27)'
         required: false
@@ -56,6 +61,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           TITLE_OVERRIDE: ${{ inputs.title }}
+          FIX_HEADING: ${{ inputs.fix_heading }}
           FROM_NUMBER: ${{ inputs.from_number }}
           TO_NUMBER: ${{ inputs.to_number }}
         run: |
@@ -123,11 +129,35 @@ jobs:
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${id}" -f name="$want" >/dev/null
             echo "- \`${tag}\`: \`${current}\` → \`${want}\`" >> "$GITHUB_STEP_SUMMARY"
             echo "retitled ${tag}: \"${current}\" -> \"${want}\""
+
+            # Opt-in, and only ever the first line. The notes body is prose someone published;
+            # rewriting more of it than the heading that repeats the title is not this workflow's
+            # business, and a backfill must never touch it at all.
+            if [ "$FIX_HEADING" = "true" ]; then
+              local body first rest
+              body=$(echo "$release" | jq -r '.body')
+              first=$(printf '%s' "$body" | head -n1)
+              case "$first" in
+                "## "*)
+                  if [ "$first" = "## ${want}" ]; then
+                    echo "  heading already matches"
+                  else
+                    rest=$(printf '%s' "$body" | tail -n +2)
+                    printf '## %s\n%s' "$want" "$rest" > /tmp/release-body.md
+                    gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${id}" \
+                      -F body=@/tmp/release-body.md >/dev/null
+                    echo "  heading: \`${first}\` → \`## ${want}\`" >> "$GITHUB_STEP_SUMMARY"
+                    echo "  heading rewritten: \"${first}\" -> \"## ${want}\""
+                  fi
+                  ;;
+                *) echo "  body does not open with a '## ' heading — left alone" ;;
+              esac
+            fi
           }
 
           if [ -n "$FROM_NUMBER" ] || [ -n "$TO_NUMBER" ]; then
-            if [ -n "$TAG" ] || [ -n "$TITLE_OVERRIDE" ]; then
-              echo "::error::from_number/to_number is the backfill mode — do not pass tag or title with it"; exit 1
+            if [ -n "$TAG" ] || [ -n "$TITLE_OVERRIDE" ] || [ "$FIX_HEADING" = "true" ]; then
+              echo "::error::from_number/to_number is the backfill mode — do not pass tag, title or fix_heading with it"; exit 1
             fi
             if [ -z "$FROM_NUMBER" ] || [ -z "$TO_NUMBER" ]; then
               echo "::error::backfill needs both from_number and to_number"; exit 1

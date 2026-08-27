@@ -14,6 +14,8 @@ import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import com.orbin.media.image.ImageClipboard
+import com.orbin.media.image.ImageCopyResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -53,7 +55,15 @@ class GalleryViewModel
         observeThread: ObserveThreadUseCase,
         private val downloadRepository: DownloadRepository,
         settingsRepository: SettingsRepository,
+        private val imageClipboard: ImageClipboard,
     ) : ViewModel() {
+        /**
+         * Copies the image on screen. Routed through the ViewModel so the fetch uses the app's
+         * injected HTTP client — DNS-over-HTTPS, configured user-agent and all — rather than a
+         * connection the UI opens for itself.
+         */
+        suspend fun copyImage(imageUrl: String): ImageCopyResult = imageClipboard.copy(imageUrl)
+
         private val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
 
         /**

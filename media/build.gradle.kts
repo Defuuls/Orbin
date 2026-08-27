@@ -20,6 +20,9 @@ dependencies {
     implementation(project(":network"))
 
     implementation(libs.androidx.core.ktx)
+    // Named directly rather than leaned on transitively: this module builds requests itself,
+    // through the shared client :network provides.
+    implementation(libs.okhttp)
 
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

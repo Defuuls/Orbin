@@ -42,6 +42,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaType
 import com.orbin.core.ui.state.EmptyView
+import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -116,7 +117,7 @@ fun GalleryScreen(
                             IconButton(
                                 onClick = {
                                     scope.launch {
-                                        val result = copyImageToClipboard(context, currentItem.sourceUrl)
+                                        val result = viewModel.copyImage(currentItem.sourceUrl)
                                         val message =
                                             when (result) {
                                                 ImageCopyResult.IMAGE -> "Image copied"
