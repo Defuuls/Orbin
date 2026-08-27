@@ -6,22 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Fixed
-- **The release-heading rewrite could not reach a release whose title was already correct.**
-  `retitle_one` returned as soon as the title matched, and the heading rewrite sat below that
-  return — so the one release it was built for, whose title had been fixed an hour earlier, was
-  skipped and the run still reported success. Skipping the title no longer skips the body.
+## [102-Mei] - 2026-08-27
 
-
-### Security
-- **Copying an image no longer goes around the app's own network stack.** The clipboard copy
-  opened a raw `HttpURLConnection`. That still spoke HTTPS — the platform enforces it — but it
-  bypassed everything the shared client exists to provide: the request resolved through the system
-  resolver rather than DNS-over-HTTPS, announcing to the network which host was being read from at
-  the moment of the copy, and it carried the JVM's default user-agent instead of the configured
-  one, making that single request identifiably different from every other request the app sends.
-  One copy was enough to undo settings deliberately switched on. It goes through the injected
-  client now, and inherits the configured timeouts along with the rest.
+### Added
+- **`retitle-release.yml` gained a backfill mode and a title override.** `from_number`/`to_number`
+  retitles a range of full-client releases in one dispatch; `title` sets an exact string for one
+  release. It also carries four codenames a tag cannot express — `TRAPPIST-1` and `Luyten 726-8`,
+  whose hyphens belong to the star designation rather than separating words, and Barnard's and Van
+  Maanen's Star, whose apostrophes no tag ever carried.
+- **A workflow that applies the release-title convention to an already-published release.**
+  Titles are derived from the tag from now on, but releases published before that kept whatever
+  was typed into the dispatch form — v101-Hana is titled "Hana". `retitle-release.yml` re-derives
+  the title with the same rule and sets it, changing the title and nothing else: not the body, not
+  the tag, not one asset. Re-running the release workflow would also fix a title, but it would
+  rebuild and re-upload the APK under the same URL and change the checksum of a file people may
+  already have downloaded.
 
 ### Changed
 - **The clipboard copy moved from the gallery feature into `:media`.** That is the layer which
@@ -31,9 +30,6 @@ All notable changes to Orbin are documented here. The format is based on
 - **`retitle-release.yml` can rewrite a release body's leading heading.** Opt-in, single-release
   only, and never during a backfill: the body is prose someone published, and the only part of it
   this workflow has any business touching is the heading that repeats the title.
-
-
-### Changed
 - **The full client's back catalogue is titled to the convention.** Releases v27 through v100 read
   "Orbin 57 - Arcturus" rather than a bare "Arcturus", matching the current releases and the Orbin
   Minimal line. Where an older title carried a summary after a colon, the summary is kept — it is
@@ -41,26 +37,6 @@ All notable changes to Orbin are documented here. The format is based on
 - **The dotted-version era (v23.8 to v25.2.1) is deliberately left alone.** Those tags carry no
   codename, so the name lives only in the release title: retitling `v25.2.1` from "Cleopatra" would
   not reformat that codename, it would delete it.
-
-### Added
-- **`retitle-release.yml` gained a backfill mode and a title override.** `from_number`/`to_number`
-  retitles a range of full-client releases in one dispatch; `title` sets an exact string for one
-  release. It also carries four codenames a tag cannot express — `TRAPPIST-1` and `Luyten 726-8`,
-  whose hyphens belong to the star designation rather than separating words, and Barnard's and Van
-  Maanen's Star, whose apostrophes no tag ever carried.
-
-
-### Added
-- **A workflow that applies the release-title convention to an already-published release.**
-  Titles are derived from the tag from now on, but releases published before that kept whatever
-  was typed into the dispatch form — v101-Hana is titled "Hana". `retitle-release.yml` re-derives
-  the title with the same rule and sets it, changing the title and nothing else: not the body, not
-  the tag, not one asset. Re-running the release workflow would also fix a title, but it would
-  rebuild and re-upload the APK under the same URL and change the checksum of a file people may
-  already have downloaded.
-
-
-### Changed
 - **Both apps' releases are titled the same way.** The full client published as "Hana" while
   Orbin Minimal published as "Orbin Minimal 5 - Aoi" — on a releases page carrying both apps, one
   of those says what it is and the other does not. Titles are now derived from the tag rather than
@@ -71,6 +47,21 @@ All notable changes to Orbin are documented here. The format is based on
   workflows; the derived title annotates the tag too, so the tag message and the release title
   cannot say different things. That free-text field is how the two lines drifted apart.
 
+### Fixed
+- **The release-heading rewrite could not reach a release whose title was already correct.**
+  `retitle_one` returned as soon as the title matched, and the heading rewrite sat below that
+  return — so the one release it was built for, whose title had been fixed an hour earlier, was
+  skipped and the run still reported success. Skipping the title no longer skips the body.
+
+### Security
+- **Copying an image no longer goes around the app's own network stack.** The clipboard copy
+  opened a raw `HttpURLConnection`. That still spoke HTTPS — the platform enforces it — but it
+  bypassed everything the shared client exists to provide: the request resolved through the system
+  resolver rather than DNS-over-HTTPS, announcing to the network which host was being read from at
+  the moment of the copy, and it carried the JVM's default user-agent instead of the configured
+  one, making that single request identifiably different from every other request the app sends.
+  One copy was enough to undo settings deliberately switched on. It goes through the injected
+  client now, and inherits the configured timeouts along with the rest.
 
 ## [101-Hana] - 2026-08-26
 
@@ -1537,7 +1528,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v101-Hana...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v102-Mei...HEAD
+[102-Mei]: https://github.com/Defuuls/Orbin/compare/v101-Hana...v102-Mei
 [101-Hana]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...v101-Hana
 [100-Sakura]: https://github.com/Defuuls/Orbin/compare/v99-Rotini...v100-Sakura
 [99-Rotini]: https://github.com/Defuuls/Orbin/compare/v98-Ziti...v99-Rotini
