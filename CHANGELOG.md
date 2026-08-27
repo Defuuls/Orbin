@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Orbin Minimal's release notes listed changes to its front end only.** The notes filtered the
+  log to `app-minimal`, which describes the screen rather than the app: `minimal-v6-Rin` shipped a
+  real fix to the image copy, in `:media`, and published an empty changes list — which reads as
+  "nothing changed", and is worse than no list at all. The notes now cover every module the app
+  actually ships, read out of `app-minimal`'s own build file so that adding a module widens them
+  automatically rather than waiting for someone to notice two lists disagree.
+
+
 ## [102-Mei] - 2026-08-27
 
 ### Added
