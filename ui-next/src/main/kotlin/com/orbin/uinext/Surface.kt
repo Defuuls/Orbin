@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ContextRail(
     where: String,
-    detail: String? = null,
     modifier: Modifier = Modifier,
+    detail: String? = null,
 ) {
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         // Content dissolves into the background under the bar instead of running into it.
@@ -118,8 +118,8 @@ fun ContextRail(
 @Composable
 fun ScreenTitle(
     text: String,
-    subtitle: String? = null,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
     size: Int = 32,
 ) {
     Column(modifier = modifier.padding(start = GUTTER, end = GUTTER, top = 26.dp, bottom = 18.dp)) {
