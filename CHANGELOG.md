@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- **Netty moves to 4.1.137.Final.** CVE-2026-59903: `CorsHandler` overwrote a `Vary` header the
+  application had already set, so a cache in front of it could serve one user's response to
+  another. The pin sat at 4.1.136.Final, the last affected release. Netty reaches this project on
+  the Gradle plugin and test classpath rather than either APK, and nothing in an Android client
+  runs a `CorsHandler`, so this closes an alert rather than an exposure.
+
+
 ### Fixed
 - **The Orbin Minimal asset version lost its `v`.** Hoisting it into the step that derives the
   release title reused that step's version string, which strips `minimal-v` to get the bare number
