@@ -60,3 +60,6 @@ include(":feature:search")
 include(":feature:gallery")
 include(":feature:downloads")
 include(":feature:onboarding")
+
+// A proposed replacement interface, rendered for review and wired to nothing yet.
+include(":ui-next")
