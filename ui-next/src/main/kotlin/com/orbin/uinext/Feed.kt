@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -140,7 +142,11 @@ fun FeedScreen(
     val bottomPad = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
+            // The header is the list's first item rather than a band above it, so it scrolls away
+            // with the content: a title tells you what you opened and stops being useful once you
+            // are reading, and the layout switch is a choice you make on arriving, not a control
+            // worth a permanent strip of the display.
+            val header: @Composable () -> Unit = {
                 FeedHeader(
                     subtitle = subtitle ?: "${rows.size} threads",
                     layout = layout,
@@ -148,43 +154,50 @@ fun FeedScreen(
                     filter = filter,
                     onClearFilter = onClearFilter,
                 )
-                when (layout) {
-                    FeedLayout.LIST ->
-                        LazyColumn(
-                            state = listState,
-                            contentPadding = PaddingValues(bottom = bottomPad),
-                        ) {
-                            itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                                FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                                if (index < rows.lastIndex) Hairline(inset = true)
-                            }
+            }
+            val insets = Modifier.fillMaxSize().contentInsets()
+            when (layout) {
+                FeedLayout.LIST ->
+                    LazyColumn(
+                        state = listState,
+                        modifier = insets,
+                        contentPadding = PaddingValues(bottom = bottomPad),
+                    ) {
+                        item(key = FEED_HEADER_KEY) { header() }
+                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                            FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                            if (index < rows.lastIndex) Hairline(inset = true)
                         }
+                    }
 
-                    FeedLayout.GRID ->
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            state = gridState,
-                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
-                        ) {
-                            itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                                FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                            }
+                FeedLayout.GRID ->
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = gridState,
+                        modifier = insets,
+                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                    ) {
+                        fullWidthItem { header() }
+                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                            FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                         }
+                    }
 
-                    FeedLayout.IMAGES ->
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            state = gridState,
-                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
-                        ) {
-                            // A thread with nothing to show would be an empty cell in a wall of
-                            // pictures, which reads as a broken tile rather than as a text thread.
-                            val withPreview = rows.filter { it.hasPreview }
-                            itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
-                                FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                            }
+                FeedLayout.IMAGES ->
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        state = gridState,
+                        modifier = insets,
+                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                    ) {
+                        fullWidthItem { header() }
+                        // A thread with nothing to show would be an empty cell in a wall of
+                        // pictures, which reads as a broken tile rather than as a text thread.
+                        val withPreview = rows.filter { it.hasPreview }
+                        itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
+                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                         }
-                }
+                    }
             }
             AnimatedVisibility(
                 visible = showRail && railVisible,
@@ -212,43 +225,47 @@ private fun FeedHeader(
     filter: String?,
     onClearFilter: () -> Unit,
 ) {
-    ScreenTitle(text = "Feed", subtitle = subtitle)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        InlineAction(
-            label = "List",
-            accent = layout == FeedLayout.LIST,
-            onClick = { onLayoutChange(FeedLayout.LIST) },
-        )
-        WidthSpacer(4)
-        InlineAction(
-            label = "Grid",
-            accent = layout == FeedLayout.GRID,
-            onClick = { onLayoutChange(FeedLayout.GRID) },
-        )
-        WidthSpacer(4)
-        InlineAction(
-            label = "Images",
-            accent = layout == FeedLayout.IMAGES,
-            onClick = { onLayoutChange(FeedLayout.IMAGES) },
-        )
-    }
-    if (filter != null) {
-        Gap(10)
+    // Its own Column: a header that relies on its caller's layout stacks on top of itself the
+    // moment it is put somewhere else — which is exactly what happened when it moved into the grid.
+    Column {
+        ScreenTitle(text = "Feed", subtitle = subtitle)
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Pill("filter")
-            WidthSpacer(8)
-            MetaLine(filter, modifier = Modifier.weight(1f))
-            InlineAction("Clear", onClick = onClearFilter)
+            InlineAction(
+                label = "List",
+                accent = layout == FeedLayout.LIST,
+                onClick = { onLayoutChange(FeedLayout.LIST) },
+            )
+            WidthSpacer(4)
+            InlineAction(
+                label = "Grid",
+                accent = layout == FeedLayout.GRID,
+                onClick = { onLayoutChange(FeedLayout.GRID) },
+            )
+            WidthSpacer(4)
+            InlineAction(
+                label = "Images",
+                accent = layout == FeedLayout.IMAGES,
+                onClick = { onLayoutChange(FeedLayout.IMAGES) },
+            )
         }
+        if (filter != null) {
+            Gap(10)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Pill("filter")
+                WidthSpacer(8)
+                MetaLine(filter, modifier = Modifier.weight(1f))
+                InlineAction("Clear", onClick = onClearFilter)
+            }
+        }
+        Gap(12)
+        Hairline()
     }
-    Gap(12)
-    Hairline()
 }
 
 @Composable
@@ -458,59 +475,67 @@ fun BoardScreen(
     val bottomPad = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
-                Row(
-                    modifier = Modifier.padding(start = GUTTER, top = 26.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    BoardDot(board, size = 10.dp)
-                    WidthSpacer(10)
-                    Text(
-                        text = board,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.9).sp,
-                        color = next.ink,
-                    )
-                }
-                Text(
-                    text = description,
-                    fontSize = 14.sp,
-                    color = next.muted,
-                    modifier = Modifier.padding(start = GUTTER, top = 6.dp),
-                )
-                Gap(16)
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    InlineAction(
-                        label = "List",
-                        accent = layout == FeedLayout.LIST,
-                        onClick = { onLayoutChange(FeedLayout.LIST) },
-                    )
-                    WidthSpacer(4)
-                    InlineAction(
-                        label = "Grid",
-                        accent = layout == FeedLayout.GRID,
-                        onClick = { onLayoutChange(FeedLayout.GRID) },
-                    )
-                    WidthSpacer(4)
-                    InlineAction(
-                        label = "Images",
-                        accent = layout == FeedLayout.IMAGES,
-                        onClick = { onLayoutChange(FeedLayout.IMAGES) },
-                    )
-                    Box(modifier = Modifier.weight(1f))
-                    if (sortLabel != null) {
-                        InlineAction("$sortLabel ▾", onClick = onSort)
+            // The board's name and its layout switch scroll away with the catalogue, the same as
+            // the feed's: which layout you are in is visible from the rows themselves.
+            val header: @Composable () -> Unit = {
+                Column {
+                    Row(
+                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        BoardDot(board, size = 10.dp)
+                        WidthSpacer(10)
+                        Text(
+                            text = board,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.9).sp,
+                            color = next.ink,
+                        )
                     }
+                    Text(
+                        text = description,
+                        fontSize = 14.sp,
+                        color = next.muted,
+                        modifier = Modifier.padding(start = GUTTER, top = 6.dp),
+                    )
+                    Gap(16)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        InlineAction(
+                            label = "List",
+                            accent = layout == FeedLayout.LIST,
+                            onClick = { onLayoutChange(FeedLayout.LIST) },
+                        )
+                        WidthSpacer(4)
+                        InlineAction(
+                            label = "Grid",
+                            accent = layout == FeedLayout.GRID,
+                            onClick = { onLayoutChange(FeedLayout.GRID) },
+                        )
+                        WidthSpacer(4)
+                        InlineAction(
+                            label = "Images",
+                            accent = layout == FeedLayout.IMAGES,
+                            onClick = { onLayoutChange(FeedLayout.IMAGES) },
+                        )
+                        Box(modifier = Modifier.weight(1f))
+                        if (sortLabel != null) {
+                            InlineAction("$sortLabel ▾", onClick = onSort)
+                        }
+                    }
+                    Gap(12)
+                    Hairline()
                 }
-                Gap(12)
-                Hairline()
+            }
+            val insets = Modifier.fillMaxSize().contentInsets()
+            run {
                 when (layout) {
                     FeedLayout.LIST ->
-                        LazyColumn(contentPadding = PaddingValues(bottom = bottomPad)) {
+                        LazyColumn(modifier = insets, contentPadding = PaddingValues(bottom = bottomPad)) {
+                            item(key = FEED_HEADER_KEY) { header() }
                             items(itemCount) { index ->
                                 val row = rowAt(index)
                                 if (row != null) {
@@ -531,8 +556,10 @@ fun BoardScreen(
                     FeedLayout.GRID ->
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
+                            modifier = insets,
                             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
                         ) {
+                            fullWidthItem { header() }
                             items(itemCount) { index ->
                                 rowAt(index)?.let { row ->
                                     FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
@@ -543,8 +570,10 @@ fun BoardScreen(
                     FeedLayout.IMAGES ->
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(3),
+                            modifier = insets,
                             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
                         ) {
+                            fullWidthItem { header() }
                             items(itemCount) { index ->
                                 rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
                                     FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
@@ -628,33 +657,10 @@ fun MediaWallScreen(
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
-                ScreenTitle(
-                    text = "All media",
-                    subtitle = "Every file from every board you follow",
-                )
-                // Only while something is happening. A finished sweep has nothing to report.
-                if (scanning || deepScanning || failed > 0) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (deepScanning) {
-                            SweepBar(scanned = deepScanned, total = deepTotal)
-                            WidthSpacer(12)
-                            MetaLine("Reading $deepScanned of $deepTotal threads")
-                        } else if (scanning) {
-                            SweepBar(scanned = scanned, total = total)
-                            WidthSpacer(12)
-                            MetaLine("$scanned of $total")
-                        }
-                        Box(modifier = Modifier.weight(1f))
-                        if (failed > 0) MetaLine("$failed unreachable", color = next.accent)
-                    }
-                    Gap(16)
-                }
+            run {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
+                    modifier = Modifier.fillMaxSize().contentInsets(),
                     contentPadding =
                         PaddingValues(
                             start = 14.dp,
@@ -662,6 +668,37 @@ fun MediaWallScreen(
                             bottom = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset(),
                         ),
                 ) {
+                    // The title and the sweep's progress are the grid's first item, so they scroll
+                    // away with it. The rail keeps reporting the sweep once they have.
+                    fullWidthItem {
+                        Column {
+                            ScreenTitle(
+                                text = "All media",
+                                subtitle = "Every file from every board you follow",
+                            )
+                            // Only while something is happening. A finished sweep has nothing to
+                            // report.
+                            if (scanning || deepScanning || failed > 0) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    if (deepScanning) {
+                                        SweepBar(scanned = deepScanned, total = deepTotal)
+                                        WidthSpacer(12)
+                                        MetaLine("Reading $deepScanned of $deepTotal threads")
+                                    } else if (scanning) {
+                                        SweepBar(scanned = scanned, total = total)
+                                        WidthSpacer(12)
+                                        MetaLine("$scanned of $total")
+                                    }
+                                    Box(modifier = Modifier.weight(1f))
+                                    if (failed > 0) MetaLine("$failed unreachable", color = next.accent)
+                                }
+                                Gap(16)
+                            }
+                        }
+                    }
                     itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
                         Box(
                             modifier =
@@ -756,3 +793,15 @@ private fun scrollingUp(state: LazyListState): Boolean {
 private const val GRID_TILE_ASPECT = 1.1f
 private val GRID_TILE_RADIUS = 16.dp
 private val GRID_CELL_PADDING = 8.dp
+
+/**
+ * A header that spans every column of a grid rather than sitting in the first cell.
+ *
+ * Both grids need it and neither should have to spell out the span, which is the only fiddly part
+ * of putting a header inside a lazy grid rather than in a band above it.
+ */
+private fun LazyGridScope.fullWidthItem(content: @Composable () -> Unit) =
+    item(key = FEED_HEADER_KEY, span = { GridItemSpan(maxLineSpan) }) { content() }
+
+/** Keyed so a layout switch keeps the header identified across the list and the two grids. */
+private const val FEED_HEADER_KEY = "header"
