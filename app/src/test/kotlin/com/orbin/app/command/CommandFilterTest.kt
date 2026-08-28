@@ -1,0 +1,89 @@
+package com.orbin.app.command
+
+import com.google.common.truth.Truth.assertThat
+import com.orbin.feature.settings.SettingsSection
+import org.junit.Test
+
+/**
+ * The command surface replaces a two-item bottom bar, several top-bar icon sets, a settings hub of
+ * seven screens and the settings search screen. It is only that replacement if typing a few letters
+ * actually reaches the thing you meant, so the filtering is the part worth pinning down.
+ */
+class CommandFilterTest {
+    @Test
+    fun `an empty query offers places and actions, not the whole catalogue`() {
+        val results = filterCommands(catalogue(), "")
+
+        assertThat(results).isNotEmpty()
+        assertThat(results.all { it is CommandTarget.Go || it is CommandTarget.Act }).isTrue()
+        // Someone who opened the surface without a word in mind wants somewhere to go, not 59
+        // settings and every board on the site.
+        assertThat(results.none { it is CommandTarget.OpenSetting }).isTrue()
+    }
+
+    @Test
+    fun `one query reaches a setting, a board and a thread at once`() {
+        val results = filterCommands(catalogue(), "auto")
+
+        assertThat(
+            results.map { it.label },
+        ).containsAtLeast("Autoplay videos", "/auto/", "Automotive detailing general")
+    }
+
+    @Test
+    fun `a prefix match outranks a mention buried in a description`() {
+        val results = filterCommands(catalogue(), "his")
+
+        // "History" starts with it; the /g/ board only mentions it in its description.
+        assertThat(results.first().label).isEqualTo("History")
+    }
+
+    @Test
+    fun `a setting is reachable by the name of the screen it used to live behind`() {
+        val results = filterCommands(catalogue(), "Media & Playback")
+
+        assertThat(results.map { it.label }).contains("Autoplay videos")
+    }
+
+    @Test
+    fun `matching is case insensitive and ignores surrounding space`() {
+        assertThat(filterCommands(catalogue(), "  GALLERY ").map { it.label }).contains("Gallery")
+    }
+
+    @Test
+    fun `a query matching nothing returns nothing rather than everything`() {
+        assertThat(filterCommands(catalogue(), "zzzzz")).isEmpty()
+    }
+
+    @Test
+    fun `the three actions the old feed chrome carried are all reachable`() {
+        val labels = filterCommands(catalogue(), "").map { it.label }
+
+        assertThat(labels).containsAtLeast("Refresh feed", "Scroll to top", "Lock Orbin")
+    }
+
+    @Test
+    fun `the previous feed is still reachable now that no tab points at it`() {
+        val classic = filterCommands(catalogue(), "classic").single()
+
+        assertThat(classic).isInstanceOf(CommandTarget.Go::class.java)
+        assertThat((classic as CommandTarget.Go).destination).isEqualTo(CommandDestination.CLASSIC_FEED)
+    }
+
+    @Test
+    fun `ids are unique, so a board and a setting sharing a label stay distinct`() {
+        val ids = catalogue().map { it.commandId() }
+
+        assertThat(ids).containsNoDuplicates()
+    }
+
+    private fun catalogue(): List<CommandTarget> =
+        staticTargets() +
+            listOf(
+                CommandTarget.OpenThread("Automotive detailing general", "/o/", "fourchan", "o", 1L),
+                CommandTarget.OpenBoard("/auto/", "Automobiles", "fourchan", "auto", "Automobiles"),
+                CommandTarget.OpenBoard("/g/", "Technology and its history", "fourchan", "g", "Technology"),
+                CommandTarget.OpenSetting("Autoplay videos", "Media & Playback", SettingsSection.MEDIA),
+                CommandTarget.OpenSetting("Hidden tags", "Content & Feed", SettingsSection.CONTENT),
+            )
+}

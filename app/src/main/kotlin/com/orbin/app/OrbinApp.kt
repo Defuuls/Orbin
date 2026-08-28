@@ -55,12 +55,17 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.orbin.app.command.CommandAction
+import com.orbin.app.command.CommandDestination
+import com.orbin.app.command.CommandHost
+import com.orbin.app.command.CommandTarget
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.TopLevelDestination
 import com.orbin.core.designsystem.component.ModernNavigationBar
 import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import com.orbin.core.model.ThreadPresentation
+import com.orbin.feature.settings.SettingsSection
 
 /**
  * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level
@@ -83,12 +88,19 @@ fun OrbinApp(
         val snackbarHostState = LocalOrbinSnackbarHostState.current
 
         val topLevel = TopLevelDestination.entries
-        val showBottomBar = topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
+        val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
+        // The redesigned feed carries its own rail, and the rail is what replaces this bar. Showing
+        // both would stack two pieces of navigation chrome on a screen whose whole argument is that
+        // it needs none.
+        val showBottomBar =
+            !isNextFeed && topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
         val isSubscribedFeed = currentDestination?.hasRoute(Route.SubscribedFeed::class) == true
-        val feedChromeHidesOnScroll = isSubscribedFeed && (fullScreenFeedChrome || tabletFeedChrome)
+        val feedChromeHidesOnScroll =
+            (isSubscribedFeed || isNextFeed) && (fullScreenFeedChrome || tabletFeedChrome)
         var feedChromeVisible by rememberSaveable { mutableStateOf(true) }
         var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
+        var commandsOpen by rememberSaveable { mutableStateOf(false) }
         val bottomBarVisible = showBottomBar && (!feedChromeHidesOnScroll || feedChromeVisible)
         // All three navigation surfaces ask the same question; the null-safe call also drops a
         // redundant guard the compiler could already prove true in the tablet-dock branch.
@@ -107,7 +119,7 @@ fun OrbinApp(
         // True full screen: while the feed chrome is scrolled away, also hide the status and
         // navigation bars so the feed uses the entire display instead of leaving inset strips.
         val view = LocalView.current
-        val immersiveFeed = isSubscribedFeed && fullScreenFeedChrome && !feedChromeVisible
+        val immersiveFeed = (isSubscribedFeed || isNextFeed) && fullScreenFeedChrome && !feedChromeVisible
         DisposableEffect(view, immersiveFeed) {
             val window = view.context.findActivity()?.window
             val controller = window?.let { WindowCompat.getInsetsController(it, view) }
@@ -176,7 +188,7 @@ fun OrbinApp(
                 OrbinNavHost(
                     navController = navController,
                     modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
-                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
+                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
                     subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
                     hideSubscribedFeedTopBar = useTabletFeedDock,
@@ -186,11 +198,78 @@ fun OrbinApp(
                     subscribedFeedRefreshRequest = feedRefreshRequest,
                     threadPresentation = threadPresentation,
                     onFeedChromeVisibleChange = { feedChromeVisible = it },
+                    onOpenCommands = { commandsOpen = true },
                 )
             }
         }
+        if (commandsOpen) {
+            CommandHost(
+                onDismiss = { commandsOpen = false },
+                onSelect = { target ->
+                    commandsOpen = false
+                    navController.follow(
+                        target = target,
+                        onRefreshFeed = { feedRefreshRequest++ },
+                        onScrollToTop = { feedScrollToTopRequest++ },
+                    )
+                },
+            )
+        }
     }
 }
+
+/**
+ * Sends the user wherever a command points, or performs it if it is not a place.
+ *
+ * Kept out of [OrbinApp] so the root composable stays a layout rather than also being the
+ * navigation table for every command.
+ */
+private fun NavHostController.follow(
+    target: CommandTarget,
+    onRefreshFeed: () -> Unit,
+    onScrollToTop: () -> Unit,
+) {
+    when (target) {
+        is CommandTarget.OpenBoard -> navigate(Route.Board(target.provider, target.board, target.title))
+        is CommandTarget.OpenThread ->
+            navigate(Route.Thread(target.provider, target.board, target.thread, target.label))
+
+        is CommandTarget.OpenSetting -> navigate(target.section.route())
+        is CommandTarget.Go -> navigate(target.destination.route())
+        is CommandTarget.Act ->
+            when (target.action) {
+                CommandAction.REFRESH_FEED -> onRefreshFeed()
+                CommandAction.SCROLL_TO_TOP -> onScrollToTop()
+                // Served inside the command surface itself: it holds the lock controller, and
+                // locking must not depend on which screen is behind the sheet.
+                CommandAction.LOCK_NOW -> Unit
+            }
+    }
+}
+
+private fun SettingsSection.route(): Route =
+    when (this) {
+        SettingsSection.CONTENT -> Route.SettingsContent
+        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
+        SettingsSection.APPEARANCE -> Route.SettingsAppearance
+        SettingsSection.MEDIA -> Route.SettingsMedia
+        SettingsSection.PRIVACY -> Route.SettingsPrivacy
+        SettingsSection.ADVANCED -> Route.SettingsAdvanced
+        SettingsSection.STORAGE -> Route.SettingsStorage
+    }
+
+private fun CommandDestination.route(): Route =
+    when (this) {
+        CommandDestination.GALLERY -> Route.GalleryBrowser
+        CommandDestination.ALL_MEDIA -> Route.AllMedia
+        CommandDestination.BOARDS -> Route.BoardGallery
+        CommandDestination.SUBSCRIPTIONS -> Route.Subscriptions
+        CommandDestination.HISTORY -> Route.History
+        CommandDestination.DOWNLOADS -> Route.Downloads
+        CommandDestination.SEARCH -> Route.Search
+        CommandDestination.SETTINGS -> Route.Settings
+        CommandDestination.CLASSIC_FEED -> Route.SubscribedFeed
+    }
 
 @Composable
 private fun OfflineBanner() {

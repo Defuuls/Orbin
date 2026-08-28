@@ -11,6 +11,6 @@ enum class TopLevelDestination(
     val label: String,
     val icon: ImageVector,
 ) {
-    FEED(Route.SubscribedFeed, "Feed", Icons.Filled.DynamicFeed),
+    FEED(Route.NextFeed, "Feed", Icons.Filled.DynamicFeed),
     GALLERY(Route.GalleryBrowser, "Gallery", Icons.Filled.PhotoLibrary),
 }

@@ -1,6 +1,12 @@
 package com.orbin.uinext
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,10 +18,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,7 +38,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** One thread as it appears in the feed. */
+/**
+ * One thread as it appears in the feed.
+ *
+ * [id] is what the list is keyed on and what a click reports back, so the screen never has to know
+ * what a thread actually is. Everything else is already-formatted display text: this type is the
+ * whole contract between the interface and whatever is feeding it.
+ */
 data class FeedRow(
     val subject: String,
     val board: String,
@@ -33,6 +53,7 @@ data class FeedRow(
     val media: Int,
     val hasPreview: Boolean = true,
     val read: Boolean = false,
+    val id: String = "$board:$subject",
 )
 
 /**
@@ -59,23 +80,56 @@ data class FeedRow(
 fun FeedScreen(
     rows: List<FeedRow>,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    railDetail: String? = null,
+    showRail: Boolean = true,
+    onOpenRow: (FeedRow) -> Unit = {},
+    onSearch: () -> Unit = {},
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
+    scrollToTopRequest: Int = 0,
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    }
+    // Scrolling down puts the rail away and the feed edge to edge; any scroll back brings it
+    // straight home. This is what the old shell's "full-screen feed" setting drove when there
+    // were two bars to hide.
+    val railVisible =
+        if (hideRailOnScroll) scrollingUp(listState) else true
+    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(contentPadding = PaddingValues(bottom = RAIL_HEIGHT + 28.dp)) {
+            LazyColumn(
+                state = listState,
+                contentPadding =
+                    PaddingValues(bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp),
+            ) {
                 item {
-                    ScreenTitle(text = "Feed", subtitle = "${rows.size} threads across 7 boards")
+                    ScreenTitle(
+                        text = "Feed",
+                        subtitle = subtitle ?: "${rows.size} threads",
+                    )
                 }
-                itemsIndexed(rows) { index, row ->
-                    FeedRowView(row, seed = index)
+                itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                    FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     if (index < rows.lastIndex) Hairline(inset = true)
                 }
             }
-            ContextRail(
-                where = "Feed",
-                detail = "7 boards",
+            AnimatedVisibility(
+                visible = showRail && railVisible,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            ) {
+                ContextRail(
+                    where = "Feed",
+                    detail = railDetail,
+                    onSearch = onSearch,
+                )
+            }
         }
     }
 }
@@ -85,9 +139,15 @@ private fun FeedRowView(
     row: FeedRow,
     seed: Int,
     showBoard: Boolean = true,
+    onClick: (FeedRow) -> Unit = {},
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick(row) }
+                .padding(horizontal = GUTTER, vertical = 15.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -124,7 +184,14 @@ private fun FeedRowView(
         }
         if (row.hasPreview) {
             WidthSpacer(14)
-            MediaTile(modifier = Modifier.size(68.dp), seed = seed, radius = 14.dp)
+            val tile = Modifier.size(68.dp)
+            // A real thumbnail when something supplies one; stand-in artwork when nothing does,
+            // which is what keeps this screen renderable on its own.
+            if (thumbnail != null) {
+                thumbnail(row, tile)
+            } else {
+                MediaTile(modifier = tile, seed = seed, radius = 14.dp)
+            }
         }
     }
 }
@@ -275,4 +342,33 @@ private fun SweepBar(
                     .background(next.accent),
         )
     }
+}
+
+/**
+ * Whether the list is moving up the page, remembered across scroll events.
+ *
+ * Compared by item index and offset rather than by a raw delta so a fling reads as one direction
+ * rather than flickering, and so the rail is always present at the top of the list.
+ */
+@Composable
+private fun scrollingUp(state: LazyListState): Boolean {
+    var lastIndex by remember { mutableIntStateOf(0) }
+    var lastOffset by remember { mutableIntStateOf(0) }
+    return remember {
+        derivedStateOf {
+            if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) {
+                true
+            } else {
+                val up =
+                    if (lastIndex != state.firstVisibleItemIndex) {
+                        lastIndex > state.firstVisibleItemIndex
+                    } else {
+                        lastOffset >= state.firstVisibleItemScrollOffset
+                    }
+                lastIndex = state.firstVisibleItemIndex
+                lastOffset = state.firstVisibleItemScrollOffset
+                up
+            }
+        }
+    }.value
 }

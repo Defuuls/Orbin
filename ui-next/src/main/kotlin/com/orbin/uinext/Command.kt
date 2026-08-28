@@ -1,33 +1,51 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** One thing you can go to or do, whatever kind of thing it is. */
+/**
+ * One thing you can go to or do, whatever kind of thing it is.
+ *
+ * [id] is what selection reports back, so the sheet never has to know what a board, a thread, a
+ * setting or an action actually is — only that they are all things with a name you can type.
+ */
 data class Command(
     val label: String,
     val kind: String,
     val hint: String? = null,
+    val id: String = "$kind:$label",
 )
 
 /**
@@ -54,63 +72,94 @@ fun CommandSheet(
     query: String,
     results: List<Command>,
     modifier: Modifier = Modifier,
+    onQueryChange: (String) -> Unit = {},
+    onSelect: (Command) -> Unit = {},
+    onDismiss: () -> Unit = {},
+    placeholder: String = "Board, thread, setting, action",
+    emptyLabel: String = "Nothing matches that",
 ) {
-    Box(modifier = modifier.fillMaxSize().background(next.background)) {
-        // What you were reading, still there, dimmed.
-        Column(modifier = Modifier.fillMaxSize()) {
-            FadedFeedBehind()
-        }
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.42f)))
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().weight(0.28f))
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(0.72f)
-                        .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-                        .background(next.background),
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    Box(modifier = modifier.fillMaxSize()) {
+        // Tapping what you were reading puts you back in it. The sheet is a layer, not a screen.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onDismiss,
+                    ),
+        )
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.72f)
+                    .align(Alignment.BottomCenter)
+                    .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+                    .background(next.background),
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(width = 38.dp, height = 4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(next.hairline),
-                    )
-                }
-                Row(
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = GUTTER, vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = query,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.6).sp,
-                        color = next.ink,
+                            .size(width = 38.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(next.hairline),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-0.6).sp,
+                            color = next.faint,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    BasicTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        singleLine = true,
+                        textStyle =
+                            TextStyle(
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-0.6).sp,
+                                color = next.ink,
+                            ),
+                        cursorBrush = SolidColor(next.accent),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus),
                     )
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(start = 3.dp)
-                                .size(width = 2.dp, height = 26.dp)
-                                .background(next.accent),
-                    )
-                    Box(modifier = Modifier.weight(1f))
-                    MetaLine("${results.size} matches", color = next.faint)
                 }
-                Hairline()
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    results.forEachIndexed { index, command ->
-                        CommandRow(command)
+                WidthSpacer(12)
+                MetaLine("${results.size}", color = next.faint)
+            }
+            Hairline()
+            if (results.isEmpty()) {
+                Text(
+                    text = emptyLabel,
+                    fontSize = 14.sp,
+                    color = next.muted,
+                    modifier = Modifier.padding(horizontal = GUTTER, vertical = 22.dp),
+                )
+            } else {
+                LazyColumn {
+                    itemsIndexed(results, key = { _, command -> command.id }) { index, command ->
+                        CommandRow(command, onClick = onSelect)
                         if (index < results.lastIndex) Hairline(inset = true)
                     }
                 }
@@ -120,9 +169,16 @@ fun CommandSheet(
 }
 
 @Composable
-private fun CommandRow(command: Command) {
+private fun CommandRow(
+    command: Command,
+    onClick: (Command) -> Unit = {},
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 14.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick(command) }
+                .padding(horizontal = GUTTER, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -151,58 +207,6 @@ private fun kindTint(kind: String): Color =
         "thread" -> boardHue("/p/")
         else -> next.accent
     }
-
-/** A suggestion of the feed underneath, so the sheet reads as a layer rather than a screen. */
-@Composable
-private fun FadedFeedBehind() {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 26.dp)) {
-        Text(
-            text = "Feed",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.9).sp,
-            color = next.ink,
-            modifier = Modifier.padding(horizontal = GUTTER),
-        )
-        Gap(24)
-        repeat(3) { index ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .width(54.dp)
-                                .height(11.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(next.hairline),
-                    )
-                    Gap(10)
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth(if (index == 1) 0.62f else 0.88f)
-                                .height(15.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(next.hairline),
-                    )
-                    Gap(8)
-                    Box(
-                        modifier =
-                            Modifier
-                                .width(120.dp)
-                                .height(11.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(next.hairline),
-                    )
-                }
-                WidthSpacer(14)
-                MediaTile(modifier = Modifier.size(68.dp), seed = index, radius = 14.dp)
-            }
-        }
-    }
-}
 
 /**
  * Settings: fifty-nine of them, on one screen.

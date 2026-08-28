@@ -30,6 +30,7 @@ import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.HomeScreen
+import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.home.SubscribedFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
@@ -70,7 +71,7 @@ internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: Route = Route.SubscribedFeed,
+    startDestination: Route = Route.NextFeed,
     subscribedFeedChromeHidesOnScroll: Boolean = false,
     subscribedFeedShowBoardHeaders: Boolean = true,
     hideSubscribedFeedTopBar: Boolean = false,
@@ -81,6 +82,7 @@ fun OrbinNavHost(
     subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onFeedChromeVisibleChange: (Boolean) -> Unit = {},
+    onOpenCommands: () -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -126,6 +128,17 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+            )
+        }
+
+        composable<Route.NextFeed> {
+            NextFeedScreen(
+                onOpenThread = openThread,
+                onOpenCommands = onOpenCommands,
+                hideRailOnScroll = subscribedFeedChromeHidesOnScroll,
+                onChromeVisibleChange = onFeedChromeVisibleChange,
+                scrollToTopRequest = subscribedFeedScrollToTopRequest,
+                refreshRequest = subscribedFeedRefreshRequest,
             )
         }
 
@@ -323,7 +336,7 @@ fun OrbinNavHost(
         composable<Route.Onboarding> {
             OnboardingScreen(
                 onFinish = {
-                    navController.navigate(Route.SubscribedFeed) {
+                    navController.navigate(Route.NextFeed) {
                         // Clear onboarding from the back stack so Back from Feed exits the app.
                         popUpTo(navController.graph.id) {
                             inclusive = true

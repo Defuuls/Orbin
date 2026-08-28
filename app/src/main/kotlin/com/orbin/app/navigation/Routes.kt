@@ -14,6 +14,14 @@ sealed interface Route {
     @Serializable
     data object SubscribedFeed : Route
 
+    /**
+     * The redesigned feed. It reads the same subscribed-feed state as [SubscribedFeed]; the two are
+     * separate destinations so the previous feed stays reachable and comparable while the rest of
+     * the interface catches up.
+     */
+    @Serializable
+    data object NextFeed : Route
+
     @Serializable
     data object BoardGallery : Route
 
