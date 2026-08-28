@@ -100,9 +100,6 @@ sealed interface Route {
     data object SettingsStorage : Route
 
     @Serializable
-    data object SettingsSearch : Route
-
-    @Serializable
     data object Subscriptions : Route
 
     @Serializable

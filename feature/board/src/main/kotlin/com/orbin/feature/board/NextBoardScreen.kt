@@ -1,0 +1,122 @@
+package com.orbin.feature.board
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.orbin.core.model.CatalogThread
+import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.media.image.MediaThumbnail
+import com.orbin.uinext.BoardScreen
+import com.orbin.uinext.FeedLayout
+import com.orbin.uinext.FeedRow
+import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextTheme
+
+/**
+ * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
+ *
+ * A catalog is a feed scoped to one board, so it reuses the feed's row and its three layouts
+ * rather than being a second layout with its own conventions.
+ *
+ * Rows are handed over by index rather than as a list, because the catalog is paged: reading an
+ * index is what asks Paging for the page containing it. Collecting the pages into a list first
+ * would show whatever had already loaded and then never load another.
+ *
+ * No sort control is drawn. The catalog stream is fixed to bump order and the view model offers no
+ * alternative, so a "Recent" chip here would be a control that does nothing.
+ */
+@Composable
+fun NextBoardScreen(
+    onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
+    onOpenCommands: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: BoardViewModel = hiltViewModel(),
+) {
+    val threads = viewModel.catalog.collectAsLazyPagingItems()
+    val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
+    var layout by rememberSaveable { mutableStateOf(FeedLayout.LIST) }
+
+    val board = "/${viewModel.boardId}/"
+    // Keyed on the snapshot so it is rebuilt when a page lands, and only then. Looking a thread up
+    // by scanning the snapshot per tile would be linear work on every one of them.
+    val byThreadId =
+        remember(threads.itemSnapshotList) {
+            threads.itemSnapshotList.items.associateBy { it.key.thread.value }
+        }
+    val rowFor: (Int) -> FeedRow? = { index ->
+        threads[index]?.toRow(board, visitedThreadIds)
+    }
+
+    NextTheme {
+        if (threads.itemCount == 0) {
+            MessageScreen(
+                title = board,
+                subtitle = stringResource(R.string.next_board_empty),
+                modifier = modifier,
+            )
+            return@NextTheme
+        }
+        BoardScreen(
+            board = board,
+            description = viewModel.title,
+            itemCount = threads.itemCount,
+            rowAt = rowFor,
+            layout = layout,
+            onLayoutChange = { layout = it },
+            onSearch = onOpenCommands,
+            onOpenRow = { row ->
+                row.threadId()?.let { id ->
+                    onOpenThread(
+                        viewModel.providerId,
+                        viewModel.boardId,
+                        id,
+                        byThreadId[id]?.originalPost?.subject ?: "No.$id",
+                    )
+                }
+            },
+            thumbnail = { row, tileModifier ->
+                row.threadId()?.let { id ->
+                    byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
+                        MediaThumbnail(
+                            attachment = attachment,
+                            modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+                        )
+                    }
+                }
+            },
+            modifier = modifier,
+        )
+    }
+}
+
+/** The thread number encoded in a row's id, or null if the id is not one this screen made. */
+private fun FeedRow.threadId(): Long? = id.substringAfterLast('/').toLongOrNull()
+
+private fun CatalogThread.toRow(
+    board: String,
+    visited: Set<Long>,
+): FeedRow =
+    FeedRow(
+        id = "${key.board.value}/${key.thread.value}",
+        subject = originalPost.subject ?: "No.${key.thread.value}",
+        board = board,
+        activity =
+            formatRelativeTime(
+                if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis,
+            ).orEmpty(),
+        replies = stats.replyCount,
+        media = stats.imageCount,
+        hasPreview = originalPost.attachments.isNotEmpty(),
+        read = key.thread.value in visited,
+    )

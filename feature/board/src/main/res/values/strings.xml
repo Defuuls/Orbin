@@ -18,4 +18,5 @@
     <string name="board_already_read">Already read</string>
     <!-- A post number shown imageboard-style, e.g. No.12345. -->
     <string name="board_post_number">No.%1$d</string>
+    <string name="next_board_empty">Nothing on this board right now.</string>
 </resources>

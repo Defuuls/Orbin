@@ -17,13 +17,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -390,7 +393,11 @@ private fun FeedImageCell(
     ) {
         val tile = Modifier.fillMaxWidth().height(124.dp)
         if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
-        Pill(text = row.board, tint = boardHue(row.board), modifier = Modifier.padding(6.dp))
+        Pill(
+            text = row.board,
+            tint = boardHue(row.board),
+            modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
+        )
     }
 }
 
@@ -419,78 +426,186 @@ private fun scrollingUpGrid(state: LazyGridState): Boolean {
 }
 
 /**
- * A board catalog. The same row, the same rules — a catalog is a feed scoped to one board, so it
- * should not be a second layout with its own conventions, as it is today.
+ * A board catalog: the same row as the feed, the same three layouts.
  *
- * The layout switcher (list / grid / image-only) and the sort order used to live as two icons in the
- * top bar of every catalog. They are one inline control here, shown once at the top of the list and
- * scrolling away with it.
+ * A catalog is a feed scoped to one board, so it is not a second layout with its own conventions
+ * as it was before. The board label drops off the rows, because inside one board it would repeat
+ * on every one of them.
+ *
+ * Rows arrive by index rather than as a list because the catalog is paged: reading index *n* is
+ * what asks for the page containing it, and handing this screen a finished list would quietly
+ * stop it ever loading a second page. [rowAt] returning null means that row has not arrived yet.
  */
 @Composable
 fun BoardScreen(
     board: String,
     description: String,
-    rows: List<FeedRow>,
+    itemCount: Int,
+    rowAt: (Int) -> FeedRow?,
     modifier: Modifier = Modifier,
+    layout: FeedLayout = FeedLayout.LIST,
+    onLayoutChange: (FeedLayout) -> Unit = {},
+    sortLabel: String? = null,
+    onSort: () -> Unit = {},
+    showRail: Boolean = true,
+    onOpenRow: (FeedRow) -> Unit = {},
+    onSearch: () -> Unit = {},
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
+    val bottomPad = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(contentPadding = PaddingValues(bottom = RAIL_HEIGHT + 28.dp)) {
-                item {
-                    Row(
-                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        BoardDot(board, size = 10.dp)
-                        WidthSpacer(10)
-                        Text(
-                            text = board,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.9).sp,
-                            color = next.ink,
-                        )
-                    }
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier.padding(start = GUTTER, top = 26.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BoardDot(board, size = 10.dp)
+                    WidthSpacer(10)
                     Text(
-                        text = description,
-                        fontSize = 14.sp,
-                        color = next.muted,
-                        modifier = Modifier.padding(start = GUTTER, top = 6.dp),
+                        text = board,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.9).sp,
+                        color = next.ink,
                     )
-                    Gap(16)
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        InlineAction("List", accent = true)
-                        WidthSpacer(4)
-                        InlineAction("Grid")
-                        WidthSpacer(4)
-                        InlineAction("Images")
-                        Box(modifier = Modifier.weight(1f))
-                        InlineAction("Recent ▾")
-                    }
-                    Gap(12)
                 }
-                itemsIndexed(rows) { index, row ->
-                    FeedRowView(row, seed = index + 2, showBoard = false)
-                    if (index < rows.lastIndex) Hairline(inset = true)
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = next.muted,
+                    modifier = Modifier.padding(start = GUTTER, top = 6.dp),
+                )
+                Gap(16)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    InlineAction(
+                        label = "List",
+                        accent = layout == FeedLayout.LIST,
+                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.LIST) },
+                    )
+                    WidthSpacer(4)
+                    InlineAction(
+                        label = "Grid",
+                        accent = layout == FeedLayout.GRID,
+                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.GRID) },
+                    )
+                    WidthSpacer(4)
+                    InlineAction(
+                        label = "Images",
+                        accent = layout == FeedLayout.IMAGES,
+                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.IMAGES) },
+                    )
+                    Box(modifier = Modifier.weight(1f))
+                    if (sortLabel != null) {
+                        InlineAction("$sortLabel ▾", modifier = Modifier.clickable(onClick = onSort))
+                    }
+                }
+                Gap(12)
+                Hairline()
+                when (layout) {
+                    FeedLayout.LIST ->
+                        LazyColumn(contentPadding = PaddingValues(bottom = bottomPad)) {
+                            items(itemCount) { index ->
+                                val row = rowAt(index)
+                                if (row != null) {
+                                    FeedRowView(
+                                        row,
+                                        seed = index,
+                                        showBoard = false,
+                                        onClick = onOpenRow,
+                                        thumbnail = thumbnail,
+                                    )
+                                } else {
+                                    PendingRow()
+                                }
+                                if (index < itemCount - 1) Hairline(inset = true)
+                            }
+                        }
+
+                    FeedLayout.GRID ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                        ) {
+                            items(itemCount) { index ->
+                                rowAt(index)?.let { row ->
+                                    FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                                }
+                            }
+                        }
+
+                    FeedLayout.IMAGES ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                        ) {
+                            items(itemCount) { index ->
+                                rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
+                                    FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                                }
+                            }
+                        }
                 }
             }
-            ContextRail(
-                where = board,
-                detail = "catalog",
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            if (showRail) {
+                ContextRail(
+                    where = board,
+                    detail = "catalog",
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
 
+/** A row whose page has not arrived: the shape of a row, so the list does not jump when it does. */
+@Composable
+private fun PendingRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            PendingBar(width = 54.dp, height = 11.dp)
+            Gap(9)
+            PendingBar(width = 240.dp, height = 15.dp)
+            Gap(8)
+            PendingBar(width = 120.dp, height = 11.dp)
+        }
+    }
+}
+
+@Composable
+private fun PendingBar(
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp,
+) {
+    Box(
+        modifier =
+            Modifier
+                .width(width)
+                .height(height)
+                .clip(RoundedCornerShape(3.dp))
+                .background(next.hairline),
+    )
+}
+
+/** One file on the wall. [id] is what a tap reports back; [board] tints its badge. */
+data class MediaCell(
+    val id: String,
+    val board: String,
+)
+
 /**
  * The all-media wall: every file from every board you follow, as one continuous grid.
  *
- * The sweep's progress used to be a determinate bar plus a line of text plus a deep-scan toggle in
- * the top bar. It is one line here, above the grid, and it disappears when the sweep finishes.
+ * The sweep's progress used to be a determinate bar, a line of text and a deep-scan toggle in the
+ * top bar. It is one line here, above the grid, and it disappears when the sweep finishes — a
+ * progress bar that never goes away is just decoration.
  */
 @Composable
 fun MediaWallScreen(
@@ -498,45 +613,84 @@ fun MediaWallScreen(
     total: Int,
     failed: Int,
     modifier: Modifier = Modifier,
+    cells: List<MediaCell> = emptyList(),
+    scanning: Boolean = false,
+    deepScanning: Boolean = false,
+    deepScanned: Int = 0,
+    deepTotal: Int = 0,
+    showRail: Boolean = true,
+    onOpen: (MediaCell) -> Unit = {},
+    onSearch: () -> Unit = {},
+    tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                ScreenTitle(text = "All media", subtitle = "Every file from every board you follow")
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SweepBar(scanned = scanned, total = total)
-                    WidthSpacer(12)
-                    MetaLine("$scanned of $total")
-                    Box(modifier = Modifier.weight(1f))
-                    if (failed > 0) MetaLine("$failed unreachable", color = next.accent)
-                }
-                Gap(16)
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
-                    repeat(5) { rowIndex ->
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            repeat(3) { column ->
-                                val n = rowIndex * 3 + column
-                                MediaTile(
-                                    modifier = Modifier.weight(1f).height(126.dp),
-                                    seed = n + rowIndex,
-                                    badge = if (n % 4 == 0) "/g/" else null,
-                                    radius = 10.dp,
-                                )
-                                if (column < 2) WidthSpacer(5)
-                            }
+                ScreenTitle(
+                    text = "All media",
+                    subtitle = "Every file from every board you follow",
+                )
+                // Only while something is happening. A finished sweep has nothing to report.
+                if (scanning || deepScanning || failed > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (deepScanning) {
+                            SweepBar(scanned = deepScanned, total = deepTotal)
+                            WidthSpacer(12)
+                            MetaLine("Reading $deepScanned of $deepTotal threads")
+                        } else if (scanning) {
+                            SweepBar(scanned = scanned, total = total)
+                            WidthSpacer(12)
+                            MetaLine("$scanned of $total")
                         }
-                        Gap(5)
+                        Box(modifier = Modifier.weight(1f))
+                        if (failed > 0) MetaLine("$failed unreachable", color = next.accent)
+                    }
+                    Gap(16)
+                }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding =
+                        PaddingValues(
+                            start = 14.dp,
+                            end = 14.dp,
+                            bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp,
+                        ),
+                ) {
+                    itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(2.5.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { onOpen(cell) },
+                            contentAlignment = Alignment.BottomStart,
+                        ) {
+                            val shape = Modifier.fillMaxWidth().height(124.dp)
+                            if (tile != null) {
+                                tile(cell, shape)
+                            } else {
+                                MediaTile(modifier = shape, seed = index, radius = 10.dp)
+                            }
+                            Pill(
+                                text = cell.board,
+                                tint = boardHue(cell.board),
+                                modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
+                            )
+                        }
                     }
                 }
             }
-            ContextRail(
-                where = "All media",
-                detail = "$scanned/$total swept",
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            if (showRail) {
+                ContextRail(
+                    where = "All media",
+                    detail = if (total > 0) "$scanned/$total swept" else null,
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }

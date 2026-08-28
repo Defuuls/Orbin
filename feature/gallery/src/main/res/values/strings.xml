@@ -46,4 +46,8 @@
     <string name="all_media_no_boards">Every board is hidden by your board filters</string>
     <!-- The board a tile came from, e.g. "/g/". -->
     <string name="all_media_board_badge">/%1$s/</string>
+    <string name="next_media_title">All media</string>
+    <string name="next_media_sweeping">Sweeping %1$d boards for files…</string>
+    <string name="next_media_empty">No files found on the boards you follow.</string>
+    <string name="next_media_rescan">Sweep again</string>
 </resources>

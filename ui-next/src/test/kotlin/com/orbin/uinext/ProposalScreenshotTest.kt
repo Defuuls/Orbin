@@ -82,10 +82,12 @@ class ProposalScreenshotTest {
     @Test
     fun board() =
         capture("next_board") {
+            val rows = boardRows()
             BoardScreen(
                 board = "/g/",
                 description = "Technology",
-                rows = boardRows(),
+                itemCount = rows.size,
+                rowAt = { index -> rows.getOrNull(index) },
             )
         }
 
@@ -131,10 +133,23 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun settings() = capture("next_settings") { SettingsScreen(groups = settingsGroups()) }
+    fun settings() =
+        capture("next_settings") {
+            // With one choice open, which is the interaction the single list rests on.
+            SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
+        }
 
     @Test
-    fun mediaWall() = capture("next_media") { MediaWallScreen(scanned = 42, total = 70, failed = 3) }
+    fun mediaWall() =
+        capture("next_media") {
+            MediaWallScreen(
+                scanned = 42,
+                total = 70,
+                failed = 3,
+                scanning = true,
+                cells = mediaCells(),
+            )
+        }
 
     private fun capture(
         name: String,
@@ -208,33 +223,44 @@ class ProposalScreenshotTest {
 
     private fun settingsGroups() =
         listOf(
-            "Content" to
+            "Content & feed" to
                 listOf(
-                    "Built-in content filter" to "Always on",
-                    "Hidden tags" to "3",
-                    "Hide NSFW boards" to "Off",
-                    "Threads per board" to "50",
+                    SettingItem("filter", "Built-in content filter", "Always on", SettingKind.LINK),
+                    SettingItem("hiddenTags", "Hidden tags", "3", SettingKind.LINK),
+                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
+                    SettingItem(
+                        id = "threadLimit",
+                        label = "Threads per board",
+                        value = "All",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("6", "12", "18", "All"),
+                        selected = 3,
+                    ),
                 ),
             "Appearance" to
                 listOf(
-                    "Color theme" to "Yotsuba",
-                    "Dynamic color" to "Off",
-                    "AMOLED black" to "On",
-                    "Font size" to "Medium",
-                    "App icon" to "Classic",
+                    SettingItem(
+                        id = "colorTheme",
+                        label = "Color theme",
+                        value = "Yotsuba",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("Orbin", "Yotsuba", "Tomorrow", "Photon"),
+                        selected = 1,
+                    ),
+                    SettingItem("dynamicColor", "Dynamic color", "Off", SettingKind.TOGGLE),
+                    SettingItem("amoled", "AMOLED black", "On", SettingKind.TOGGLE),
+                    SettingItem("fontScale", "Font size", "100%", SettingKind.LINK),
                 ),
-            "Media" to
+            "Media & playback" to
                 listOf(
-                    "Autoplay videos" to "On",
-                    "Autoplay videos in feed" to "Off",
-                    "Mute by default" to "On",
-                    "Thumbnail size" to "Medium",
-                ),
-            "Privacy" to
-                listOf(
-                    "Lock with biometrics" to "On",
-                    "DNS over HTTPS" to "Cloudflare",
-                    "Custom user agent" to "Default",
+                    SettingItem("autoplay", "Autoplay videos", "On", SettingKind.TOGGLE),
+                    SettingItem("autoplayFeed", "Autoplay videos in feed", "Off", SettingKind.TOGGLE),
+                    SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
                 ),
         )
+
+    private fun mediaCells() =
+        List(15) { index ->
+            MediaCell(id = "cell-$index", board = listOf("/g/", "/ck/", "/p/", "/lit/")[index % 4])
+        }
 }

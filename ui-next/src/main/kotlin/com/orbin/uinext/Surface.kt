@@ -241,6 +241,9 @@ fun Pill(
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.3.sp,
         color = hue,
+        // Board ids have no length limit, and an unbounded pill runs off the tile it sits on.
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier =
             modifier
                 .clip(RoundedCornerShape(6.dp))
