@@ -28,10 +28,22 @@ class ProposalScreenshotTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun feed() = capture("next_feed") { FeedScreen(rows = feedRows()) }
+    fun feed() =
+        capture("next_feed") { FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards") }
 
     @Test
-    fun feedDark() = capture("next_feed_dark", dark = true) { FeedScreen(rows = feedRows()) }
+    fun feedDark() =
+        capture("next_feed_dark", dark = true) {
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+        }
+
+    /** What the feed actually looks like as shipped: inside the app shell, which still owns the
+     *  bottom navigation bar, so the rail stays off until the command surface replaces that bar. */
+    @Test
+    fun feedInShell() =
+        capture("next_feed_in_shell") {
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
+        }
 
     @Test
     fun board() =
@@ -100,6 +112,10 @@ class ProposalScreenshotTest {
         }
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
+    }
+
+    private companion object {
+        const val SAMPLE_SUBTITLE = "8 threads across 7 boards"
     }
 
     private fun feedRows() =

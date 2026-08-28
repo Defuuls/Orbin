@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,7 +25,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** One thread as it appears in the feed. */
+/**
+ * One thread as it appears in the feed.
+ *
+ * [id] is what the list is keyed on and what a click reports back, so the screen never has to know
+ * what a thread actually is. Everything else is already-formatted display text: this type is the
+ * whole contract between the interface and whatever is feeding it.
+ */
 data class FeedRow(
     val subject: String,
     val board: String,
@@ -33,6 +40,7 @@ data class FeedRow(
     val media: Int,
     val hasPreview: Boolean = true,
     val read: Boolean = false,
+    val id: String = "$board:$subject",
 )
 
 /**
@@ -59,23 +67,38 @@ data class FeedRow(
 fun FeedScreen(
     rows: List<FeedRow>,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    railDetail: String? = null,
+    showRail: Boolean = true,
+    onOpenRow: (FeedRow) -> Unit = {},
+    onSearch: () -> Unit = {},
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(contentPadding = PaddingValues(bottom = RAIL_HEIGHT + 28.dp)) {
+            LazyColumn(
+                contentPadding =
+                    PaddingValues(bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp),
+            ) {
                 item {
-                    ScreenTitle(text = "Feed", subtitle = "${rows.size} threads across 7 boards")
+                    ScreenTitle(
+                        text = "Feed",
+                        subtitle = subtitle ?: "${rows.size} threads",
+                    )
                 }
-                itemsIndexed(rows) { index, row ->
-                    FeedRowView(row, seed = index)
+                itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                    FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     if (index < rows.lastIndex) Hairline(inset = true)
                 }
             }
-            ContextRail(
-                where = "Feed",
-                detail = "7 boards",
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            if (showRail) {
+                ContextRail(
+                    where = "Feed",
+                    detail = railDetail,
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
@@ -85,9 +108,15 @@ private fun FeedRowView(
     row: FeedRow,
     seed: Int,
     showBoard: Boolean = true,
+    onClick: (FeedRow) -> Unit = {},
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick(row) }
+                .padding(horizontal = GUTTER, vertical = 15.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -124,7 +153,14 @@ private fun FeedRowView(
         }
         if (row.hasPreview) {
             WidthSpacer(14)
-            MediaTile(modifier = Modifier.size(68.dp), seed = seed, radius = 14.dp)
+            val tile = Modifier.size(68.dp)
+            // A real thumbnail when something supplies one; stand-in artwork when nothing does,
+            // which is what keeps this screen renderable on its own.
+            if (thumbnail != null) {
+                thumbnail(row, tile)
+            } else {
+                MediaTile(modifier = tile, seed = seed, radius = 14.dp)
+            }
         }
     }
 }

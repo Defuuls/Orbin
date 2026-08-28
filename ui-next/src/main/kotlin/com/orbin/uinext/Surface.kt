@@ -2,6 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ fun ContextRail(
     where: String,
     modifier: Modifier = Modifier,
     detail: String? = null,
+    onSearch: () -> Unit = {},
 ) {
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         // Content dissolves into the background under the bar instead of running into it.
@@ -98,6 +100,7 @@ fun ContextRail(
                 modifier =
                     Modifier
                         .clip(RoundedCornerShape(16.dp))
+                        .clickable(onClick = onSearch)
                         .background(next.accentSoft)
                         .padding(horizontal = 14.dp, vertical = 8.dp),
             )
@@ -284,4 +287,44 @@ internal fun Surface(content: @Composable () -> Unit) {
 @Composable
 internal fun WidthSpacer(width: Int) {
     Box(modifier = Modifier.width(width.dp))
+}
+
+/**
+ * What the interface shows when there is nothing to show: no spinner in the middle of an empty
+ * screen, no red error card. The same title-and-subtitle the loaded screen uses, saying what is
+ * happening, with one action when there is one worth offering.
+ */
+@Composable
+fun MessageScreen(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
+    where: String? = null,
+    onSearch: () -> Unit = {},
+) {
+    Surface {
+        Box(modifier = modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                ScreenTitle(text = title, subtitle = subtitle)
+                if (actionLabel != null) {
+                    Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
+                        InlineAction(
+                            label = actionLabel,
+                            accent = true,
+                            modifier = Modifier.clickable(onClick = onAction),
+                        )
+                    }
+                }
+            }
+            if (where != null) {
+                ContextRail(
+                    where = where,
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+        }
+    }
 }

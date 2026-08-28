@@ -176,7 +176,7 @@ fun OrbinApp(
                 OrbinNavHost(
                     navController = navController,
                     modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
-                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.SubscribedFeed,
+                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
                     subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
                     hideSubscribedFeedTopBar = useTabletFeedDock,

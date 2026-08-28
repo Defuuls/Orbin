@@ -30,4 +30,9 @@
     <string name="feed_original_post">OP</string>
     <string name="feed_no_subscribed_boards">No subscribed boards</string>
     <string name="feed_no_subscribed_boards_hint">Subscribe to boards from the board gallery or run setup again.</string>
+    <string name="next_feed_title">Feed</string>
+    <string name="next_feed_loading">Gathering threads from your boards…</string>
+    <string name="next_feed_empty">Nothing here yet. Subscribe to a board and its threads show up in this list.</string>
+    <string name="next_feed_unavailable">Feed unavailable</string>
+    <string name="next_feed_try_again">Try again</string>
 </resources>
