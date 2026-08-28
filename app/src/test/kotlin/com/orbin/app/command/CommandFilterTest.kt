@@ -1,7 +1,6 @@
 package com.orbin.app.command
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.feature.settings.SettingsSection
 import org.junit.Test
 
 /**
@@ -91,7 +90,7 @@ class CommandFilterTest {
                 CommandTarget.OpenThread("Automotive detailing general", "/o/", "fourchan", "o", 1L),
                 CommandTarget.OpenBoard("/auto/", "Automobiles", "fourchan", "auto", "Automobiles"),
                 CommandTarget.OpenBoard("/g/", "Technology and its history", "fourchan", "g", "Technology"),
-                CommandTarget.OpenSetting("Autoplay videos", "Media & Playback", SettingsSection.MEDIA),
-                CommandTarget.OpenSetting("Hidden tags", "Content & Feed", SettingsSection.CONTENT),
+                CommandTarget.OpenSetting("Autoplay videos", "Media & playback", "autoplay"),
+                CommandTarget.OpenSetting("Hidden tags", "Content & feed", "hiddenTags"),
             )
 }

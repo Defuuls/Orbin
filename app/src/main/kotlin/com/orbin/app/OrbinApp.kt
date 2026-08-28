@@ -60,7 +60,6 @@ import com.orbin.app.navigation.TopLevelDestination
 import com.orbin.core.designsystem.component.ModernNavigationBar
 import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import com.orbin.core.model.ThreadPresentation
-import com.orbin.feature.settings.SettingsSection
 
 /**
  * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level
@@ -225,7 +224,7 @@ private fun NavHostController.follow(
         is CommandTarget.OpenThread ->
             navigate(Route.Thread(target.provider, target.board, target.thread, target.label))
 
-        is CommandTarget.OpenSetting -> navigate(target.section.route())
+        is CommandTarget.OpenSetting -> navigate(Route.Settings(focus = target.settingId))
         is CommandTarget.Go -> navigate(target.destination.route())
         is CommandTarget.Act ->
             when (target.action) {
@@ -239,17 +238,6 @@ private fun NavHostController.follow(
     }
 }
 
-private fun SettingsSection.route(): Route =
-    when (this) {
-        SettingsSection.CONTENT -> Route.SettingsContent
-        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
-        SettingsSection.APPEARANCE -> Route.SettingsAppearance
-        SettingsSection.MEDIA -> Route.SettingsMedia
-        SettingsSection.PRIVACY -> Route.SettingsPrivacy
-        SettingsSection.ADVANCED -> Route.SettingsAdvanced
-        SettingsSection.STORAGE -> Route.SettingsStorage
-    }
-
 private fun CommandDestination.route(): Route =
     when (this) {
         CommandDestination.GALLERY -> Route.GalleryBrowser
@@ -259,7 +247,7 @@ private fun CommandDestination.route(): Route =
         CommandDestination.HISTORY -> Route.History
         CommandDestination.DOWNLOADS -> Route.Downloads
         CommandDestination.SEARCH -> Route.Search
-        CommandDestination.SETTINGS -> Route.Settings
+        CommandDestination.SETTINGS -> Route.Settings()
     }
 
 @Composable

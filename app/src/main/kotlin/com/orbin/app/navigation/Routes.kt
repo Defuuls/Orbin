@@ -62,29 +62,17 @@ sealed interface Route {
     @Serializable
     data object Downloads : Route
 
+    /**
+     * One settings destination, not eight.
+     *
+     * [focus] is the id of a row to open on, for arriving from the command surface having typed a
+     * setting's name. The seven category screens this replaced were the only reason a settings
+     * result had to name a screen at all.
+     */
     @Serializable
-    data object Settings : Route
-
-    @Serializable
-    data object SettingsContent : Route
-
-    @Serializable
-    data object SettingsNotifications : Route
-
-    @Serializable
-    data object SettingsAppearance : Route
-
-    @Serializable
-    data object SettingsMedia : Route
-
-    @Serializable
-    data object SettingsPrivacy : Route
-
-    @Serializable
-    data object SettingsAdvanced : Route
-
-    @Serializable
-    data object SettingsStorage : Route
+    data class Settings(
+        val focus: String? = null,
+    ) : Route
 
     @Serializable
     data object Subscriptions : Route

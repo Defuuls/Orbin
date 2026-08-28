@@ -6,6 +6,32 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Settings are editable where they stand — all of them.** Eleven rows still handed you back to the
+  category screens the list replaced, so pressing a setting could drop you into the interface this
+  one was built to get rid of. Every row is now edited in place: font size, the two timeouts and the
+  cache limit open their options under the row (they were always fixed lists, never free-form), and
+  tags, the user agent and quiet hours open a text field under the row, written on Save rather than
+  on every keystroke. The built-in content filter and HTTPS-only state their guarantee and cannot be
+  pressed at all.
+- **Actions that need the system open the system, not another screen.** The saved-media folder, the
+  backup export and import, the crash-details file and the update check run from their own row, with
+  the platform's own picker over this screen. Each says what it will do before you press it, because
+  "merges rather than replaces" is not something to find out afterwards.
+- **A settings result from Search lands on the setting.** It used to open the category screen the
+  setting lived on. The list is lazy now and search results carry a row's id, so it scrolls to the
+  row itself.
+
+### Removed
+- **The seven settings category screens.** Content & Feed, Notifications, Appearance, Media &
+  Playback, Privacy & Network, Storage & Backup and Advanced, along with their routes and the row
+  components they shared. Everything they held is in the one list.
+
+### Fixed
+- Quiet hours were shown even with thread-watch notifications off, and the DNS-privacy notice —
+  the only way you learn your lookups have stopped being encrypted — existed only on the deleted
+  privacy screen. Both are back where they belong, in the list.
+
 ## [105-Himari] - 2026-08-28
 
 ### Fixed

@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -20,15 +21,18 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -222,14 +227,22 @@ private fun kindTint(kind: String): Color =
         else -> next.accent
     }
 
-/** One setting, as the list draws it. [kind] decides what happens when it is pressed. */
+/**
+ * One setting, as the list draws it. [kind] decides what happens when it is pressed.
+ *
+ * [value] is what the row shows on the right; for a [SettingKind.TEXT] row that may be a summary
+ * ("3 tags"), so [text] carries the raw string the editor is seeded with. [hint] is the line that
+ * appears under the label while a row is open, for the settings whose format has to be explained.
+ */
 data class SettingItem(
     val id: String,
     val label: String,
     val value: String,
-    val kind: SettingKind = SettingKind.LINK,
+    val kind: SettingKind = SettingKind.TOGGLE,
     val options: List<String> = emptyList(),
     val selected: Int = -1,
+    val text: String = "",
+    val hint: String? = null,
 )
 
 enum class SettingKind {
@@ -239,8 +252,20 @@ enum class SettingKind {
     /** Pressing opens its options in place, under the row. */
     CHOICE,
 
-    /** Pressing goes somewhere — the few settings that need a keyboard or a file picker. */
-    LINK,
+    /** Pressing opens a text field in place, under the row. */
+    TEXT,
+
+    /**
+     * Pressing does something here — a file picker, an export, a check.
+     *
+     * Not a link: the interface it belongs to is the one you are already in, and where a system
+     * picker is the right editor that picker opens over this screen rather than a screen of ours
+     * opening under it.
+     */
+    ACTION,
+
+    /** States something and cannot be pressed: the settings that are guarantees, not choices. */
+    INFO,
 }
 
 /**
@@ -267,43 +292,59 @@ fun SettingsScreen(
     subtitle: String? = null,
     expandedId: String? = null,
     showRail: Boolean = true,
+    focusId: String? = null,
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
+    onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
     onSearch: () -> Unit = {},
 ) {
+    // Flattened once so the list is lazy and a row can be reached by index: arriving from the
+    // command surface having typed a setting's name should land on that setting, not near it.
+    val entries = remember(groups) { groups.flatten() }
+    val state = rememberLazyListState()
+    LaunchedEffect(focusId, entries) {
+        val index = entries.indexOfFirst { it is SettingsEntry.Row && it.item.id == focusId }
+        if (index >= 0) state.animateScrollToItem(index + 1)
+    }
+
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .contentInsets()
-                        .verticalScroll(rememberScrollState()),
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding = PaddingValues(bottom = RAIL_HEIGHT + 28.dp + bottomInset()),
             ) {
-                ScreenTitle(
-                    text = "Settings",
-                    subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
-                )
-                groups.forEach { (heading, rows) ->
-                    Text(
-                        text = heading.uppercase(),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp,
-                        color = next.accent,
-                        modifier = Modifier.padding(start = GUTTER, top = 22.dp, bottom = 8.dp),
+                item {
+                    ScreenTitle(
+                        text = "Settings",
+                        subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
                     )
-                    rows.forEachIndexed { index, item ->
-                        SettingRow(
-                            item = item,
-                            expanded = item.id == expandedId,
-                            onActivate = onActivate,
-                            onSelectOption = onSelectOption,
-                        )
-                        if (index < rows.lastIndex) Hairline(inset = true)
+                }
+                items(entries, key = SettingsEntry::key) { entry ->
+                    when (entry) {
+                        is SettingsEntry.Heading ->
+                            Text(
+                                text = entry.text.uppercase(),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp,
+                                color = next.accent,
+                                modifier = Modifier.padding(start = GUTTER, top = 22.dp, bottom = 8.dp),
+                            )
+
+                        is SettingsEntry.Row ->
+                            Column {
+                                SettingRow(
+                                    item = entry.item,
+                                    expanded = entry.item.id == expandedId,
+                                    onActivate = onActivate,
+                                    onSelectOption = onSelectOption,
+                                    onCommitText = onCommitText,
+                                )
+                                if (!entry.last) Hairline(inset = true)
+                            }
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth().height(RAIL_HEIGHT + 28.dp + bottomInset()))
             }
             if (showRail) {
                 ContextRail(
@@ -316,29 +357,75 @@ fun SettingsScreen(
     }
 }
 
+/** A heading or a row, in the order they are drawn, so the list can be lazy and addressable. */
+private sealed interface SettingsEntry {
+    val key: String
+
+    data class Heading(
+        val text: String,
+    ) : SettingsEntry {
+        override val key: String get() = "heading:$text"
+    }
+
+    /** [last] suppresses the separator after a group's final row, which its heading replaces. */
+    data class Row(
+        val item: SettingItem,
+        val last: Boolean,
+    ) : SettingsEntry {
+        override val key: String get() = "row:${item.id}"
+    }
+}
+
+private fun List<Pair<String, List<SettingItem>>>.flatten(): List<SettingsEntry> =
+    flatMap { (heading, rows) ->
+        listOf(SettingsEntry.Heading(heading)) +
+            rows.mapIndexed { index, item -> SettingsEntry.Row(item, last = index == rows.lastIndex) }
+    }
+
 @Composable
 private fun SettingRow(
     item: SettingItem,
     expanded: Boolean,
     onActivate: (SettingItem) -> Unit,
     onSelectOption: (SettingItem, Int) -> Unit,
+    onCommitText: (SettingItem, String) -> Unit,
 ) {
     Column {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clickable { onActivate(item) }
-                    .padding(horizontal = GUTTER, vertical = 13.dp),
+                    // An INFO row states a guarantee. Nothing happens when it is pressed, so it
+                    // does not offer a press: no ripple, and no button role for a screen reader.
+                    .then(
+                        if (item.kind == SettingKind.INFO) {
+                            Modifier
+                        } else {
+                            Modifier.clickable(role = Role.Button) { onActivate(item) }
+                        },
+                    ).padding(horizontal = GUTTER, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = item.label,
-                fontSize = 15.5.sp,
-                letterSpacing = (-0.1).sp,
-                color = next.ink,
-                modifier = Modifier.weight(1f),
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.label,
+                    fontSize = 15.5.sp,
+                    letterSpacing = (-0.1).sp,
+                    color = next.ink,
+                )
+                // An action states its consequence without being pressed: "merges rather than
+                // replaces" is not something to find out afterwards, and a stated guarantee is
+                // only worth stating in full. Toggles and choices don't get this — for them the
+                // value is the description, and a second line would be noise.
+                if (item.kind in STATED_KINDS && item.hint != null) {
+                    Text(
+                        text = item.hint,
+                        fontSize = 12.5.sp,
+                        color = next.muted,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
             WidthSpacer(12)
             Text(
                 text = item.value,
@@ -349,25 +436,79 @@ private fun SettingRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        if (expanded && item.options.isNotEmpty()) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, end = GUTTER, bottom = 12.dp),
-            ) {
-                item.options.forEachIndexed { index, option ->
-                    InlineAction(
-                        label = option,
-                        accent = index == item.selected,
-                        onClick = { onSelectOption(item, index) },
-                    )
-                    WidthSpacer(4)
-                }
-            }
+        if (!expanded) return@Column
+        if (item.kind == SettingKind.TEXT && item.hint != null) {
+            Text(
+                text = item.hint,
+                fontSize = 13.sp,
+                color = next.muted,
+                modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 10.dp),
+            )
         }
+        when {
+            item.kind == SettingKind.TEXT -> SettingTextEditor(item, onCommitText)
+            item.options.isNotEmpty() ->
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, end = GUTTER, bottom = 12.dp),
+                ) {
+                    item.options.forEachIndexed { index, option ->
+                        InlineAction(
+                            label = option,
+                            accent = index == item.selected,
+                            onClick = { onSelectOption(item, index) },
+                        )
+                        WidthSpacer(4)
+                    }
+                }
+        }
+    }
+}
+
+/**
+ * The text editor for a setting that is a string rather than a choice — tags, a user agent, a time.
+ *
+ * It opens under its own row exactly as a choice does, so the one thing the list never does is move
+ * out from under what you were reading. The draft is local until Save, because a setting that wrote
+ * on every keystroke would persist every half-typed intermediate state of it.
+ */
+@Composable
+private fun SettingTextEditor(
+    item: SettingItem,
+    onCommitText: (SettingItem, String) -> Unit,
+) {
+    // Keyed on the row, so opening a different one starts from that row's value rather than the
+    // last one's, and a value changed elsewhere is picked up on reopening.
+    var draft by remember(item.id, item.text) { mutableStateOf(item.text) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(item.id) { focus.requestFocus() }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = GUTTER, end = GUTTER, bottom = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            if (draft.isEmpty()) {
+                Text(text = item.value, fontSize = 15.sp, color = next.faint, maxLines = 1)
+            }
+            BasicTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
+                cursorBrush = SolidColor(next.accent),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+            Hairline(modifier = Modifier.padding(top = 26.dp))
+        }
+        WidthSpacer(8)
+        InlineAction(label = "Save", accent = true, onClick = { onCommitText(item, draft) })
     }
 }
 
 /** Whether the value should read as active. Only toggles have an "on"; a choice is never accented. */
 private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
+
+private val STATED_KINDS = setOf(SettingKind.ACTION, SettingKind.INFO)
 
 const val ON_LABEL = "On"
 const val OFF_LABEL = "Off"
