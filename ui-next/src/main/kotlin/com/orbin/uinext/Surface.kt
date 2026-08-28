@@ -6,13 +6,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,13 +54,15 @@ fun ContextRail(
     detail: String? = null,
     onSearch: () -> Unit = {},
 ) {
+    val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        // Content dissolves into the background under the bar instead of running into it.
+        // Content dissolves into the background under the bar instead of running into it. The scrim
+        // runs to the bottom edge, behind the navigation bar, so there is no seam where it stops.
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(RAIL_HEIGHT + 58.dp)
+                    .height(RAIL_HEIGHT + 58.dp + bottomInset())
                     .background(
                         Brush.verticalGradient(
                             0f to next.background.copy(alpha = 0f),
@@ -67,6 +75,9 @@ fun ContextRail(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    // The bar floats above the navigation bar rather than under it; the scrim
+                    // behind it is what covers that strip.
+                    .windowInsetsPadding(railInsets)
                     .padding(horizontal = 14.dp, vertical = 12.dp)
                     .height(RAIL_HEIGHT)
                     .clip(RoundedCornerShape(RAIL_HEIGHT / 2))
@@ -312,6 +323,29 @@ val RAIL_HEIGHT = 52.dp
 /** The smallest thing a finger should have to hit. */
 val MIN_TOUCH_TARGET = 48.dp
 
+/**
+ * The status bar and the side of a display cutout, kept off the content.
+ *
+ * A screen with a top bar and a bottom navigation bar gets this for free: the bars sit in the inset
+ * strips and the content starts below them. This interface deleted both bars, and nothing took over
+ * the job they were doing — so the first row of every screen was drawn underneath the clock and the
+ * rail underneath the gesture handle. The background still runs to the edges; only the content is
+ * pushed clear.
+ */
+@Composable
+internal fun Modifier.contentInsets(): Modifier =
+    windowInsetsPadding(
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+    )
+
+/**
+ * How much taller a scrolling list's bottom padding has to be so its last row clears the navigation
+ * bar as well as the rail. The list itself still runs to the bottom edge — content scrolls under
+ * both, which is the point of drawing edge to edge.
+ */
+@Composable
+internal fun bottomInset(): Dp = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
+
 @Composable
 internal fun Gap(height: Int) {
     Box(modifier = Modifier.height(height.dp))
@@ -344,7 +378,7 @@ fun MessageScreen(
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
                 ScreenTitle(text = title, subtitle = subtitle)
                 if (actionLabel != null) {
                     Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
