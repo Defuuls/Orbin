@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -208,29 +209,62 @@ private fun kindTint(kind: String): Color =
         else -> next.accent
     }
 
+/** One setting, as the list draws it. [kind] decides what happens when it is pressed. */
+data class SettingItem(
+    val id: String,
+    val label: String,
+    val value: String,
+    val kind: SettingKind = SettingKind.LINK,
+    val options: List<String> = emptyList(),
+    val selected: Int = -1,
+)
+
+enum class SettingKind {
+    /** Pressing flips it. The value reads On or Off. */
+    TOGGLE,
+
+    /** Pressing opens its options in place, under the row. */
+    CHOICE,
+
+    /** Pressing goes somewhere — the few settings that need a keyboard or a file picker. */
+    LINK,
+}
+
 /**
- * Settings: fifty-nine of them, on one screen.
+ * Settings: all of them, on one screen.
  *
- * They are currently spread over a hub and seven category screens, which is why a search screen had
- * to be added. Categories are not wrong, but they should be waypoints in one scrolling list rather
- * than places you navigate to and back from — you can flick past a heading, and you cannot flick
- * past a screen.
+ * They were spread over a hub and seven category screens, which is why a settings *search* screen
+ * had to be added — the interface had outgrown anyone's memory of where things lived, and the fix
+ * was another screen. Categories are not wrong, but they should be waypoints in one scrolling list
+ * rather than places you navigate to and back from: you can flick past a heading, and you cannot
+ * flick past a screen.
  *
  * Each row is its label and its current value. No switches drawn as switches, no chevrons, no
- * secondary description repeating the label in a longer form: the value *is* the description, and
- * where it needs explaining, that explanation belongs on the row you pressed rather than on all
- * fifty-nine rows at once. A setting that is on says so in the accent colour, so the state of a
- * whole section is one glance down the right-hand edge.
+ * secondary description repeating the label in a longer form: the value *is* the description. A
+ * setting that is on says so in the accent colour, so the state of a whole section is one glance
+ * down the right-hand edge.
+ *
+ * A choice opens under the row that owns it rather than in a dialog, so the list never moves out
+ * from under the thing you were reading.
  */
 @Composable
 fun SettingsScreen(
-    groups: List<Pair<String, List<Pair<String, String>>>>,
+    groups: List<Pair<String, List<SettingItem>>>,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    expandedId: String? = null,
+    showRail: Boolean = true,
+    onActivate: (SettingItem) -> Unit = {},
+    onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
+    onSearch: () -> Unit = {},
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                ScreenTitle(text = "Settings", subtitle = "59 of them, in one list")
+                ScreenTitle(
+                    text = "Settings",
+                    subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
+                )
                 groups.forEach { (heading, rows) ->
                     Text(
                         text = heading.uppercase(),
@@ -240,34 +274,81 @@ fun SettingsScreen(
                         color = next.accent,
                         modifier = Modifier.padding(start = GUTTER, top = 22.dp, bottom = 8.dp),
                     )
-                    rows.forEachIndexed { index, (label, value) ->
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = GUTTER, vertical = 13.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 15.5.sp,
-                                letterSpacing = (-0.1).sp,
-                                color = next.ink,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                text = value,
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (value == "On" || value == "Always on") next.accent else next.muted,
-                            )
-                        }
+                    rows.forEachIndexed { index, item ->
+                        SettingRow(
+                            item = item,
+                            expanded = item.id == expandedId,
+                            onActivate = onActivate,
+                            onSelectOption = onSelectOption,
+                        )
                         if (index < rows.lastIndex) Hairline(inset = true)
                     }
                 }
                 Box(modifier = Modifier.fillMaxWidth().height(RAIL_HEIGHT + 28.dp))
             }
-            ContextRail(where = "Settings", modifier = Modifier.align(Alignment.BottomCenter))
+            if (showRail) {
+                ContextRail(
+                    where = "Settings",
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }
+
+@Composable
+private fun SettingRow(
+    item: SettingItem,
+    expanded: Boolean,
+    onActivate: (SettingItem) -> Unit,
+    onSelectOption: (SettingItem, Int) -> Unit,
+) {
+    Column {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onActivate(item) }
+                    .padding(horizontal = GUTTER, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = item.label,
+                fontSize = 15.5.sp,
+                letterSpacing = (-0.1).sp,
+                color = next.ink,
+                modifier = Modifier.weight(1f),
+            )
+            WidthSpacer(12)
+            Text(
+                text = item.value,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (item.isOn()) next.accent else next.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (expanded && item.options.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, end = GUTTER, bottom = 12.dp),
+            ) {
+                item.options.forEachIndexed { index, option ->
+                    InlineAction(
+                        label = option,
+                        accent = index == item.selected,
+                        onClick = { onSelectOption(item, index) },
+                    )
+                    WidthSpacer(4)
+                }
+            }
+        }
+    }
+}
+
+/** Whether the value should read as active. Only toggles have an "on"; a choice is never accented. */
+private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
+
+const val ON_LABEL = "On"
+const val OFF_LABEL = "Off"

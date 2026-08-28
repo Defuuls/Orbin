@@ -131,24 +131,24 @@ fun ThreadScreen(
                         InlineAction(
                             label = if (watching) "Watching" else "Watch",
                             accent = watching,
-                            modifier = Modifier.clickable(onClick = onWatch),
+                            onClick = onWatch,
                         )
                         WidthSpacer(4)
-                        InlineAction("Files", modifier = Modifier.clickable(onClick = onFiles))
+                        InlineAction("Files", onClick = onFiles)
                         WidthSpacer(4)
                         InlineAction(
                             label = "Download all",
-                            modifier = Modifier.clickable(onClick = onDownloadAll),
+                            onClick = onDownloadAll,
                         )
                         WidthSpacer(4)
-                        InlineAction("Share", modifier = Modifier.clickable(onClick = onShare))
+                        InlineAction("Share", onClick = onShare)
                     }
                     if (onClassicReader != null) {
                         Gap(4)
                         Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
                             InlineAction(
                                 label = "Classic reader",
-                                modifier = Modifier.clickable(onClick = onClassicReader),
+                                onClick = onClassicReader,
                             )
                         }
                     }

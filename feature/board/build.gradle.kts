@@ -13,6 +13,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ui-next"))
     implementation(project(":media"))
     implementation(libs.androidx.paging.compose)
 

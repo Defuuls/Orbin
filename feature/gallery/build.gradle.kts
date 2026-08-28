@@ -28,6 +28,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    implementation(project(":ui-next"))
     implementation(project(":media"))
 
     testImplementation(libs.robolectric)

@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ui-next"))
     testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)

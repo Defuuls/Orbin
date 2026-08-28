@@ -22,25 +22,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.orbin.core.model.ThreadPresentation
-import com.orbin.feature.board.BoardScreen
+import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
-import com.orbin.feature.gallery.AllMediaScreen
 import com.orbin.feature.gallery.GalleryBrowserScreen
 import com.orbin.feature.gallery.GalleryScreen
+import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
+import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.settings.SettingsAdvancedScreen
 import com.orbin.feature.settings.SettingsAppearanceScreen
 import com.orbin.feature.settings.SettingsContentScreen
 import com.orbin.feature.settings.SettingsMediaScreen
 import com.orbin.feature.settings.SettingsNotificationsScreen
 import com.orbin.feature.settings.SettingsPrivacyScreen
-import com.orbin.feature.settings.SettingsScreen
-import com.orbin.feature.settings.SettingsSearchScreen
 import com.orbin.feature.settings.SettingsSection
 import com.orbin.feature.settings.SettingsStorageScreen
 import com.orbin.feature.settings.SubscriptionsScreen
@@ -177,13 +176,13 @@ fun OrbinNavHost(
         }
 
         composable<Route.AllMedia> {
-            AllMediaScreen(
-                onBack = navController::navigateUp,
+            NextAllMediaScreen(
                 onOpenMedia = { provider, board, thread, attachmentId ->
                     navController.navigate(
                         Route.Gallery(provider, board, thread, startIndex = 0, attachmentId = attachmentId),
                     )
                 },
+                onOpenCommands = onOpenCommands,
             )
         }
 
@@ -216,7 +215,7 @@ fun OrbinNavHost(
                     onBack = navController::navigateUp,
                 )
             } else {
-                BoardScreen(onOpenThread = openThread, onBack = navController::navigateUp)
+                NextBoardScreen(onOpenThread = openThread, onOpenCommands = onOpenCommands)
             }
         }
 
@@ -271,22 +270,9 @@ fun OrbinNavHost(
         }
 
         composable<Route.Settings> {
-            SettingsScreen(
-                onBack = navController::navigateUp,
-                onOpenContent = { navController.navigate(Route.SettingsContent) },
-                onOpenNotifications = { navController.navigate(Route.SettingsNotifications) },
-                onOpenAppearance = { navController.navigate(Route.SettingsAppearance) },
-                onOpenMedia = { navController.navigate(Route.SettingsMedia) },
-                onOpenPrivacy = { navController.navigate(Route.SettingsPrivacy) },
-                onOpenStorage = { navController.navigate(Route.SettingsStorage) },
-                onOpenSearch = { navController.navigate(Route.SettingsSearch) },
-            )
-        }
-
-        composable<Route.SettingsSearch> {
-            SettingsSearchScreen(
-                onBack = navController::navigateUp,
-                onOpenSection = { section -> navController.navigate(section.toRoute()) },
+            NextSettingsScreen(
+                onOpenSection = { section -> navController.navigate(section.route()) },
+                onOpenCommands = onOpenCommands,
             )
         }
 
@@ -404,3 +390,15 @@ internal val threadRouteSaver =
             )
         },
     )
+
+/** Which destination a settings section's editor lives at. */
+private fun SettingsSection.route(): Route =
+    when (this) {
+        SettingsSection.CONTENT -> Route.SettingsContent
+        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
+        SettingsSection.APPEARANCE -> Route.SettingsAppearance
+        SettingsSection.MEDIA -> Route.SettingsMedia
+        SettingsSection.PRIVACY -> Route.SettingsPrivacy
+        SettingsSection.ADVANCED -> Route.SettingsAdvanced
+        SettingsSection.STORAGE -> Route.SettingsStorage
+    }

@@ -23,7 +23,6 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.ThumbnailSize
 import kotlinx.collections.immutable.toPersistentList
 import org.junit.After
 import org.junit.Before
@@ -148,13 +147,6 @@ class AllMediaScreenshotTest {
         }
     }
 
-    /** One tile per row, the widest the wall gets. */
-    @Test
-    fun fillColumns() =
-        capture("all_media_fill") {
-            state(items = items(3), boardsScanned = 70, boardsTotal = 70, size = ThumbnailSize.FILL)
-        }
-
     /**
      * The thread media browser's tiles: a plain image, a video with its play badge, and a spoiler.
      *
@@ -210,15 +202,12 @@ class AllMediaScreenshotTest {
             OrbinPreviewTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box {
-                        AllMediaContent(
+                        NextAllMediaContent(
                             uiState = case.uiState,
                             isRefreshing = false,
-                            thumbnailSize = case.size,
-                            deepMediaScan = case.uiState.isDeepScanning,
-                            onBack = {},
                             onRefresh = {},
-                            onToggleDeepScan = {},
                             onOpenMedia = { _, _, _, _ -> },
+                            onOpenCommands = {},
                         )
                     }
                 }
@@ -230,7 +219,6 @@ class AllMediaScreenshotTest {
 
     private data class AllMediaCase(
         val uiState: AllMediaUiState,
-        val size: ThumbnailSize,
     )
 
     private fun state(
@@ -242,7 +230,6 @@ class AllMediaScreenshotTest {
         isDeepScanning: Boolean = false,
         threadsScanned: Int = 0,
         threadsTotal: Int = 0,
-        size: ThumbnailSize = ThumbnailSize.MEDIUM,
     ) = AllMediaCase(
         AllMediaUiState(
             items = items.toPersistentList(),
@@ -254,7 +241,6 @@ class AllMediaScreenshotTest {
             threadsScanned = threadsScanned,
             threadsTotal = threadsTotal,
         ),
-        size,
     )
 
     /** A spread of boards, plus a video and a spoiler, whose overlays draw without a network. */
