@@ -13,8 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,7 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.feature.board.BoardScreen
-import com.orbin.feature.thread.ThreadScreen
+import com.orbin.feature.thread.NextThreadScreen
 import kotlinx.serialization.Serializable
 
 /**
@@ -41,10 +39,10 @@ import kotlinx.serialization.Serializable
  */
 @Composable
 fun BoardDetailTwoPane(
-    boardEntry: NavBackStackEntry,
     selectedThread: Route.Thread?,
     onThreadSelected: (Route.Thread?) -> Unit,
     onOpenGallery: (provider: String, board: String, thread: Long, index: Int) -> Unit,
+    onOpenCommands: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -106,27 +104,11 @@ fun BoardDetailTwoPane(
 
                 composable<Route.Thread> { entry ->
                     val route = entry.toRoute<Route.Thread>()
-                    // The media scroll index round-trips through the *catalog* entry, because the
-                    // gallery opens on the outer navigation graph and writes its page back to its
-                    // own previous entry — which in two-pane mode is the catalog, not this pane.
-                    val mediaScrollIndex by
-                        boardEntry.savedStateHandle
-                            .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
-                            .collectAsStateWithLifecycle()
-
-                    ThreadScreen(
-                        onBack = {
-                            onThreadSelected(null)
-                            detailNavController.popBackStack()
-                        },
+                    NextThreadScreen(
                         onOpenMedia = { index ->
                             onOpenGallery(route.provider, route.board, route.thread, index)
                         },
-                        mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
-                        onMediaScrollConsumed = {
-                            boardEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
-                                NO_THREAD_MEDIA_SCROLL_INDEX
-                        },
+                        onOpenCommands = onOpenCommands,
                     )
                 }
             }
