@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -327,7 +328,9 @@ private fun FeedGridCell(
                 .clip(RoundedCornerShape(14.dp))
                 .clickable { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().height(132.dp)
+        // An aspect ratio rather than a fixed height: the cell keeps its proportion as the column
+        // widens on a tablet or in landscape, where a fixed height would letterbox it.
+        val tile = Modifier.fillMaxWidth().aspectRatio(GRID_TILE_ASPECT)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -748,3 +751,6 @@ private fun scrollingUp(state: LazyListState): Boolean {
         }
     }.value
 }
+
+/** Slightly taller than wide, which is the shape most thread images end up being. */
+private const val GRID_TILE_ASPECT = 1.1f
