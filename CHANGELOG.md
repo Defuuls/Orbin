@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [104-Akari] - 2026-08-28
+
 ### Changed
 - **The interface is rebuilt.** Every screen now comes from `:ui-next`: a feed, thread reader,
   board catalog, settings list and media wall drawn from one small vocabulary — one bar, one
@@ -1643,7 +1645,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v103-Hina...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v104-Akari...HEAD
+[104-Akari]: https://github.com/Defuuls/Orbin/compare/v103-Hina...v104-Akari
 [103-Hina]: https://github.com/Defuuls/Orbin/compare/v102-Mei...v103-Hina
 [102-Mei]: https://github.com/Defuuls/Orbin/compare/v101-Hana...v102-Mei
 [101-Hana]: https://github.com/Defuuls/Orbin/compare/v100-Sakura...v101-Hana
