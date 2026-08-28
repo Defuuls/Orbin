@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [104 — Akari](https://github.com/Defuuls/Orbin/releases/tag/v104-Akari)
+**Current release:** [105 — Himari](https://github.com/Defuuls/Orbin/releases/tag/v105-Himari)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 

@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [105-Himari] - 2026-08-28
+
 ### Fixed
 - **Every screen was cut off at the top and the bottom.** The interface draws edge to edge, and the
   top bar and bottom navigation bar it replaced were what had been keeping content out of the status
@@ -1657,7 +1659,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v104-Akari...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v105-Himari...HEAD
+[105-Himari]: https://github.com/Defuuls/Orbin/compare/v104-Akari...v105-Himari
 [104-Akari]: https://github.com/Defuuls/Orbin/compare/v103-Hina...v104-Akari
 [103-Hina]: https://github.com/Defuuls/Orbin/compare/v102-Mei...v103-Hina
 [102-Mei]: https://github.com/Defuuls/Orbin/compare/v101-Hana...v102-Mei
