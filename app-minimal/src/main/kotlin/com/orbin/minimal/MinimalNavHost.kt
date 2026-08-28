@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.feature.gallery.GalleryScreen
-import com.orbin.feature.thread.ThreadScreen
+import com.orbin.feature.thread.NextThreadScreen
 import kotlinx.serialization.Serializable
 
 /**
@@ -35,8 +35,7 @@ fun MinimalNavHost() {
 
         composable<MinimalRoute.Thread> { backStackEntry ->
             val route = backStackEntry.toRoute<MinimalRoute.Thread>()
-            ThreadScreen(
-                onBack = navController::navigateUp,
+            NextThreadScreen(
                 // The thread renders media inline; this is the tap that opens it full screen.
                 // Without it the images in a thread would be a dead tap, which is a worse kind of
                 // minimal than simply leaving a feature out.

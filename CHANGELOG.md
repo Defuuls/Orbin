@@ -6,6 +6,85 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **The interface is rebuilt.** Every screen now comes from `:ui-next`: a feed, thread reader,
+  board catalog, settings list and media wall drawn from one small vocabulary — one bar, one
+  separator, actions set as words. The old interface spent a top bar and a bottom navigation bar on
+  every screen before drawing a single post, reached twenty-one destinations through those bars and
+  their overflow menus, and boxed every row in an elevated card. What replaced each part is listed
+  below; nothing here is a reskin of the old screen.
+
+- **One floating bar replaces both the top bar and the bottom navigation bar.** It says where you
+  are and offers one affordance — Search. There is no back button, because layers are dismissed by
+  dragging them down, and no tabs, because there are no longer tabs. It slides away as you scroll
+  down and returns on any scroll up, which is what the "full-screen feed" setting now drives.
+
+- **A command surface replaces navigation.** One list holding every board, the threads you were
+  last reading, all fifty-nine settings, the other destinations and three actions, filtered by what
+  you type. To someone typing `auto` there is no meaningful difference between a screen called
+  Media & Playback and the toggle inside it they actually wanted, so both are in the same list. An
+  empty query offers places and actions rather than the whole catalogue, and a label that starts
+  with the query outranks one that merely mentions it.
+
+- **The subscribed feed is one list, ordered by activity.** It was a list of boards each containing
+  threads, so a quiet board's stale thread outranked a busy board's live one purely on alphabetical
+  board order. Every subscribed board is merged and sorted by when each thread last moved. Board
+  headers and per-board collapsing go with that grouping; a colour per board replaces them, so a
+  mixed feed is still sortable by eye.
+
+- **Settings are one scrolling list.** Fifty-nine of them under the seven headings the category
+  screens used, which are waypoints now rather than destinations: you can flick past a heading, and
+  you cannot flick past a screen. Toggles flip where they stand and choices open under their own
+  row. Twelve settings that need a keyboard, a time picker or a file picker still open the screen
+  that has the right editor, so the trip is the exception rather than the rule.
+
+- **A read thread loses its weight rather than being dimmed.** Dimming made a thread you had
+  already opened harder to read; losing the bold makes it easy to skip without making it hard to
+  read.
+
+- **Actions are words placed beside what they act on**, rather than icons in a bar. Each carries a
+  button role and a 48dp touch target, which a clickable label does not get for free.
+
+### Added
+- **A reply's depth is visible in the thread reader.** The reader has always been one flat
+  chronological list, leaving the reader to follow quote links by hand to see what answers what. A
+  reply now steps in once per link in the chain it hangs off, marked with a hairline in the board's
+  colour. Depth is derived from quote links: quoting only the opening post is not nesting, because
+  that is how people address the thread itself; a post quoting several takes the shallowest, because
+  a reply rejoining a top-level conversation belongs to the one it rejoins; and a quote pointing
+  forward or out of the thread is ignored, so depth stays well-defined. Order is never changed.
+
+- **A thread's reply counts survive on a saved copy**, because they are counted from quote links
+  rather than read from the backlinks the data layer fills in, which a saved copy may not carry. A
+  saved copy also says so in the reader's subtitle — otherwise a thread that has moved on since
+  simply looks quiet.
+
+### Fixed
+- **A post with more than one attachment showed only the first.** Most engines allow one file per
+  post, so this stayed invisible; not all of them do. Every attachment now renders, swiped through
+  in place when "media scroll in thread" is on and stacked when it is off.
+- **A long board id ran its badge off the edge of its tile** on the media wall and the feed's
+  image-only cells.
+- **An action's ripple was not clipped to the shape it belonged to**, because the click arrived as
+  a modifier from the caller and landed before the component's own clip.
+
+### Removed
+- **The settings hub and the settings search screen.** The hub was seven doors; the search screen
+  existed to find your way back through them, and its index feeds the command surface now. Both
+  were what one list plus a command surface is for, so keeping them would have been keeping the
+  problem.
+- **The previous feed, thread reader and media wall**, once everything they carried had a home.
+  The tablet feed dock goes with the feed — its refresh, scroll-to-top and settings buttons are
+  commands now.
+- **Two session-only overrides**: the feed's and the thread reader's thumbnail-size controls. The
+  Appearance setting still governs thumbnail size, including how dense the thread's file wall is.
+
+### Not carried over
+- The gallery's return-scroll round-trip in the thread reader, which used to carry the viewer's
+  page back so the thread scrolled to the attachment you had been looking at.
+- The board catalog draws no sort control, because its stream is fixed to bump order and the view
+  model offers no alternative — a chip that does nothing is worse than no chip.
+
 ## [103-Hina] - 2026-08-27
 
 ### Security

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,9 +27,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/** What the reader is showing: the conversation, or just its files. */
+enum class ThreadLayout {
+    POSTS,
+    FILES,
+}
 
 /**
  * One post in a thread.
@@ -76,8 +86,15 @@ fun ThreadScreen(
     subtitle: String? = null,
     watching: Boolean = false,
     showRail: Boolean = true,
+    layout: ThreadLayout = ThreadLayout.POSTS,
+    onLayoutChange: (ThreadLayout) -> Unit = {},
+    files: List<MediaCell> = emptyList(),
+    fileColumns: Int = 3,
+    onOpenFile: (MediaCell) -> Unit = {},
+    fileTile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
+    collapsed: Set<String> = emptySet(),
+    onToggleCollapse: (Post) -> Unit = {},
     onWatch: () -> Unit = {},
-    onFiles: () -> Unit = {},
     onDownloadAll: () -> Unit = {},
     onShare: () -> Unit = {},
     onClassicReader: (() -> Unit)? = null,
@@ -134,7 +151,15 @@ fun ThreadScreen(
                             onClick = onWatch,
                         )
                         WidthSpacer(4)
-                        InlineAction("Files", onClick = onFiles)
+                        InlineAction(
+                            label = "Files",
+                            accent = layout == ThreadLayout.FILES,
+                            onClick = {
+                                onLayoutChange(
+                                    if (layout == ThreadLayout.FILES) ThreadLayout.POSTS else ThreadLayout.FILES,
+                                )
+                            },
+                        )
                         WidthSpacer(4)
                         InlineAction(
                             label = "Download all",
@@ -155,16 +180,44 @@ fun ThreadScreen(
                     Gap(18)
                     Hairline()
                 }
-                itemsIndexed(posts, key = { _, post -> post.id }) { index, post ->
-                    PostView(
-                        post = post,
-                        board = board,
-                        seed = index,
-                        onClick = onPostClick,
-                        body = body,
-                        media = media,
-                    )
-                    if (index < posts.lastIndex) Hairline(inset = true)
+                if (layout == ThreadLayout.POSTS) {
+                    itemsIndexed(posts, key = { _, post -> post.id }) { index, post ->
+                        PostView(
+                            post = post,
+                            board = board,
+                            seed = index,
+                            collapsed = post.id in collapsed,
+                            onToggleCollapse = onToggleCollapse,
+                            onClick = onPostClick,
+                            body = body,
+                            media = media,
+                        )
+                        if (index < posts.lastIndex) Hairline(inset = true)
+                    }
+                } else {
+                    // The thread's files, as a wall. The same shape as All media, because it is the
+                    // same question asked of one thread.
+                    items(files.chunked(fileColumns)) { rowOfFiles ->
+                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp)) {
+                            rowOfFiles.forEach { cell ->
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .weight(1f)
+                                            .padding(2.5.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .clickable { onOpenFile(cell) },
+                                ) {
+                                    val shape = Modifier.fillMaxWidth().aspectRatio(1f)
+                                    if (fileTile != null) fileTile(cell, shape) else MediaTile(modifier = shape)
+                                }
+                            }
+                            // Keeps a short last row aligned with the ones above it.
+                            repeat(fileColumns - rowOfFiles.size) {
+                                Box(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
                 }
             }
             if (showRail) {
@@ -187,6 +240,8 @@ private fun PostView(
     post: Post,
     board: String,
     seed: Int,
+    collapsed: Boolean = false,
+    onToggleCollapse: (Post) -> Unit = {},
     onClick: (Post) -> Unit = {},
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
@@ -222,7 +277,18 @@ private fun PostView(
                         bottom = 15.dp,
                     ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // The quiet line is also the handle: tapping it folds the post away. The old reader
+            // put this on a card header; here the line that can already be ignored is the one that
+            // makes the rest ignorable.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .clickable(
+                            onClickLabel = if (collapsed) "Expand post" else "Collapse post",
+                            onClick = { onToggleCollapse(post) },
+                        ).semantics { stateDescription = if (collapsed) "Collapsed" else "Expanded" },
+            ) {
                 MetaLine(post.number, color = next.faint)
                 WidthSpacer(8)
                 MetaLine(post.time, color = next.faint)
@@ -230,7 +296,12 @@ private fun PostView(
                     WidthSpacer(8)
                     Pill("${post.replies} replies", tint = next.muted)
                 }
+                if (collapsed) {
+                    WidthSpacer(8)
+                    MetaLine("collapsed", color = next.faint)
+                }
             }
+            if (collapsed) return@Column
             Gap(8)
             if (post.spoiler) {
                 // The same scrim the shipped app uses: black regardless of theme, so a spoiler is

@@ -113,6 +113,33 @@ class ProposalScreenshotTest {
             )
         }
 
+    /** Two posts folded away, which is how a long thread is skimmed. */
+    @Test
+    fun threadCollapsed() =
+        capture("next_thread_collapsed") {
+            ThreadScreen(
+                subject = "Anyone else running a home server on ARM?",
+                board = "/g/",
+                posts = posts(),
+                watching = true,
+                collapsed = setOf("No.4471028", "No.4471040"),
+            )
+        }
+
+    /** The same thread as a wall of its files, which is what "Files" switches to. */
+    @Test
+    fun threadFiles() =
+        capture("next_thread_files") {
+            ThreadScreen(
+                subject = "Anyone else running a home server on ARM?",
+                board = "/g/",
+                posts = posts(),
+                watching = true,
+                layout = ThreadLayout.FILES,
+                files = mediaCells().take(7),
+            )
+        }
+
     @Test
     fun command() =
         capture("next_command") {
