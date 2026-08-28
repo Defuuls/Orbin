@@ -220,19 +220,19 @@ private fun FeedHeader(
         InlineAction(
             label = "List",
             accent = layout == FeedLayout.LIST,
-            modifier = Modifier.clickable { onLayoutChange(FeedLayout.LIST) },
+            onClick = { onLayoutChange(FeedLayout.LIST) },
         )
         WidthSpacer(4)
         InlineAction(
             label = "Grid",
             accent = layout == FeedLayout.GRID,
-            modifier = Modifier.clickable { onLayoutChange(FeedLayout.GRID) },
+            onClick = { onLayoutChange(FeedLayout.GRID) },
         )
         WidthSpacer(4)
         InlineAction(
             label = "Images",
             accent = layout == FeedLayout.IMAGES,
-            modifier = Modifier.clickable { onLayoutChange(FeedLayout.IMAGES) },
+            onClick = { onLayoutChange(FeedLayout.IMAGES) },
         )
     }
     if (filter != null) {
@@ -244,7 +244,7 @@ private fun FeedHeader(
             Pill("filter")
             WidthSpacer(8)
             MetaLine(filter, modifier = Modifier.weight(1f))
-            InlineAction("Clear", modifier = Modifier.clickable(onClick = onClearFilter))
+            InlineAction("Clear", onClick = onClearFilter)
         }
     }
     Gap(12)
@@ -487,23 +487,23 @@ fun BoardScreen(
                     InlineAction(
                         label = "List",
                         accent = layout == FeedLayout.LIST,
-                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.LIST) },
+                        onClick = { onLayoutChange(FeedLayout.LIST) },
                     )
                     WidthSpacer(4)
                     InlineAction(
                         label = "Grid",
                         accent = layout == FeedLayout.GRID,
-                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.GRID) },
+                        onClick = { onLayoutChange(FeedLayout.GRID) },
                     )
                     WidthSpacer(4)
                     InlineAction(
                         label = "Images",
                         accent = layout == FeedLayout.IMAGES,
-                        modifier = Modifier.clickable { onLayoutChange(FeedLayout.IMAGES) },
+                        onClick = { onLayoutChange(FeedLayout.IMAGES) },
                     )
                     Box(modifier = Modifier.weight(1f))
                     if (sortLabel != null) {
-                        InlineAction("$sortLabel ▾", modifier = Modifier.clickable(onClick = onSort))
+                        InlineAction("$sortLabel ▾", onClick = onSort)
                     }
                 }
                 Gap(12)

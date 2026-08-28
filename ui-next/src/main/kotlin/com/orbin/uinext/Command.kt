@@ -338,7 +338,7 @@ private fun SettingRow(
                     InlineAction(
                         label = option,
                         accent = index == item.selected,
-                        modifier = Modifier.clickable { onSelectOption(item, index) },
+                        onClick = { onSelectOption(item, index) },
                     )
                     WidthSpacer(4)
                 }

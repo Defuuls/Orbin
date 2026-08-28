@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -92,18 +94,26 @@ fun ContextRail(
                 )
             }
             Box(modifier = Modifier.weight(1f))
-            Text(
-                text = "Search",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = next.accent,
+            Box(
                 modifier =
                     Modifier
+                        .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onSearch)
-                        .background(next.accentSoft)
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-            )
+                        .clickable(role = Role.Button, onClick = onSearch),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Search",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = next.accent,
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(next.accentSoft)
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                )
+            }
         }
     }
 }
@@ -213,18 +223,40 @@ fun InlineAction(
     label: String,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
-    Text(
-        text = label,
-        fontSize = 13.5.sp,
-        fontWeight = if (accent) FontWeight.SemiBold else FontWeight.Medium,
-        color = if (accent) next.accent else next.muted,
+    val shape = RoundedCornerShape(15.dp)
+    val text =
+        @Composable {
+            Text(
+                text = label,
+                fontSize = 13.5.sp,
+                fontWeight = if (accent) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (accent) next.accent else next.muted,
+                modifier =
+                    Modifier
+                        .clip(shape)
+                        .background(if (accent) next.accentSoft else Color.Transparent)
+                        .padding(horizontal = if (accent) 13.dp else 4.dp, vertical = 7.dp),
+            )
+        }
+    if (onClick == null) {
+        Box(modifier = modifier) { text() }
+        return
+    }
+    // The pill keeps its own small size; the box around it is what gets pressed. Set as words
+    // rather than as a Material button, an action still has to be a button to a screen reader and
+    // still has to be big enough to hit — neither of which a clickable Text gives you.
+    Box(
         modifier =
             modifier
-                .clip(RoundedCornerShape(15.dp))
-                .background(if (accent) next.accentSoft else Color.Transparent)
-                .padding(horizontal = if (accent) 13.dp else 4.dp, vertical = 7.dp),
-    )
+                .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
+                .clip(shape)
+                .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        text()
+    }
 }
 
 /** A small tinted label: the kind of a search result, the board on a media tile. */
@@ -275,7 +307,10 @@ fun MediaTile(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = 20.dp
-val RAIL_HEIGHT = 46.dp
+val RAIL_HEIGHT = 52.dp
+
+/** The smallest thing a finger should have to hit. */
+val MIN_TOUCH_TARGET = 48.dp
 
 @Composable
 internal fun Gap(height: Int) {
@@ -313,11 +348,7 @@ fun MessageScreen(
                 ScreenTitle(text = title, subtitle = subtitle)
                 if (actionLabel != null) {
                     Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
-                        InlineAction(
-                            label = actionLabel,
-                            accent = true,
-                            modifier = Modifier.clickable(onClick = onAction),
-                        )
+                        InlineAction(label = actionLabel, accent = true, onClick = onAction)
                     }
                 }
             }
