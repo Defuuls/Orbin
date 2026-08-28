@@ -58,7 +58,7 @@ internal fun CommandTarget.commandId(): String =
         is CommandTarget.OpenThread -> "thread:$provider/$board/$thread"
         is CommandTarget.OpenSetting -> "setting:${section.name}:$label"
         is CommandTarget.Go -> "go:${destination.name}"
-        is CommandTarget.Act -> "do:${action.name}"
+        is CommandTarget.Act -> if (query.isEmpty()) "do:${action.name}" else "do:${action.name}:$query"
     }
 
 private fun CommandTarget.toCommand() =

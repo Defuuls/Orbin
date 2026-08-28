@@ -31,7 +31,6 @@ import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.home.NextFeedScreen
-import com.orbin.feature.home.SubscribedFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.SettingsAdvancedScreen
@@ -74,9 +73,6 @@ fun OrbinNavHost(
     modifier: Modifier = Modifier,
     startDestination: Route = Route.NextFeed,
     subscribedFeedChromeHidesOnScroll: Boolean = false,
-    subscribedFeedShowBoardHeaders: Boolean = true,
-    hideSubscribedFeedTopBar: Boolean = false,
-    tabletSubscribedFeedLayout: Boolean = false,
     /** Show the catalog and the selected thread side by side instead of one replacing the other. */
     twoPaneBoardDetail: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
@@ -84,6 +80,8 @@ fun OrbinNavHost(
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onFeedChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenCommands: () -> Unit = {},
+    feedFilter: String = "",
+    onClearFeedFilter: () -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -140,21 +138,8 @@ fun OrbinNavHost(
                 onChromeVisibleChange = onFeedChromeVisibleChange,
                 scrollToTopRequest = subscribedFeedScrollToTopRequest,
                 refreshRequest = subscribedFeedRefreshRequest,
-            )
-        }
-
-        composable<Route.SubscribedFeed> {
-            SubscribedFeedScreen(
-                onOpenThread = openThread,
-                onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenSettings = { navController.navigate(Route.Settings) },
-                chromeHidesOnScroll = subscribedFeedChromeHidesOnScroll,
-                showTopBar = !hideSubscribedFeedTopBar,
-                showBoardHeaders = subscribedFeedShowBoardHeaders,
-                tabletFeedLayout = tabletSubscribedFeedLayout,
-                scrollToTopRequest = subscribedFeedScrollToTopRequest,
-                refreshRequest = subscribedFeedRefreshRequest,
-                onChromeVisibleChange = onFeedChromeVisibleChange,
+                filter = feedFilter,
+                onClearFilter = onClearFeedFilter,
             )
         }
 

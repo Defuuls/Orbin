@@ -46,6 +46,40 @@ class ProposalScreenshotTest {
         }
 
     @Test
+    fun feedGrid() =
+        capture("next_feed_grid") {
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                railDetail = "7 boards",
+                layout = FeedLayout.GRID,
+            )
+        }
+
+    @Test
+    fun feedImages() =
+        capture("next_feed_images") {
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                railDetail = "7 boards",
+                layout = FeedLayout.IMAGES,
+            )
+        }
+
+    /** The feed narrowed by the command surface, which is where its search bar went. */
+    @Test
+    fun feedFiltered() =
+        capture("next_feed_filtered") {
+            FeedScreen(
+                rows = feedRows().filter { it.board == "/g/" },
+                subtitle = "5 threads across 7 boards",
+                railDetail = "7 boards",
+                filter = "thinkpad",
+            )
+        }
+
+    @Test
     fun board() =
         capture("next_board") {
             BoardScreen(
