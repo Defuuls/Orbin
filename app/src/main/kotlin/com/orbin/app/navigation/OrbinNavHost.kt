@@ -82,6 +82,7 @@ fun OrbinNavHost(
     subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onFeedChromeVisibleChange: (Boolean) -> Unit = {},
+    onOpenCommands: () -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -133,7 +134,11 @@ fun OrbinNavHost(
         composable<Route.NextFeed> {
             NextFeedScreen(
                 onOpenThread = openThread,
-                onOpenSearch = { navController.navigate(Route.Search) },
+                onOpenCommands = onOpenCommands,
+                hideRailOnScroll = subscribedFeedChromeHidesOnScroll,
+                onChromeVisibleChange = onFeedChromeVisibleChange,
+                scrollToTopRequest = subscribedFeedScrollToTopRequest,
+                refreshRequest = subscribedFeedRefreshRequest,
             )
         }
 

@@ -78,6 +78,8 @@ class ProposalScreenshotTest {
     @Test
     fun command() =
         capture("next_command") {
+            // Drawn over the real feed, because that is how it appears: a layer, not a screen.
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
             CommandSheet(
                 query = "auto",
                 results =
@@ -87,7 +89,7 @@ class ProposalScreenshotTest {
                         Command("Auto-rotate video", "setting", "Media · currently on"),
                         Command("/aco/", "board", "Adult Cartoons · subscribed"),
                         Command("Automotive threads", "search", "12 saved results"),
-                        Command("Autumn photo dump", "thread", "/p/ · 84 replies · open"),
+                        Command("Automotive detailing general", "thread", "/o/ · 84 replies · open"),
                     ),
             )
         }

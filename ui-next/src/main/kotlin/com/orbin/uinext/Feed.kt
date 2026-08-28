@@ -1,5 +1,10 @@
 package com.orbin.uinext
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -13,10 +18,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,10 +86,24 @@ fun FeedScreen(
     onOpenRow: (FeedRow) -> Unit = {},
     onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
+    scrollToTopRequest: Int = 0,
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    }
+    // Scrolling down puts the rail away and the feed edge to edge; any scroll back brings it
+    // straight home. This is what the old shell's "full-screen feed" setting drove when there
+    // were two bars to hide.
+    val railVisible =
+        if (hideRailOnScroll) scrollingUp(listState) else true
+    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
+                state = listState,
                 contentPadding =
                     PaddingValues(bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp),
             ) {
@@ -91,12 +118,16 @@ fun FeedScreen(
                     if (index < rows.lastIndex) Hairline(inset = true)
                 }
             }
-            if (showRail) {
+            AnimatedVisibility(
+                visible = showRail && railVisible,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+                modifier = Modifier.align(Alignment.BottomCenter),
+            ) {
                 ContextRail(
                     where = "Feed",
                     detail = railDetail,
                     onSearch = onSearch,
-                    modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
         }
@@ -311,4 +342,33 @@ private fun SweepBar(
                     .background(next.accent),
         )
     }
+}
+
+/**
+ * Whether the list is moving up the page, remembered across scroll events.
+ *
+ * Compared by item index and offset rather than by a raw delta so a fling reads as one direction
+ * rather than flickering, and so the rail is always present at the top of the list.
+ */
+@Composable
+private fun scrollingUp(state: LazyListState): Boolean {
+    var lastIndex by remember { mutableIntStateOf(0) }
+    var lastOffset by remember { mutableIntStateOf(0) }
+    return remember {
+        derivedStateOf {
+            if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) {
+                true
+            } else {
+                val up =
+                    if (lastIndex != state.firstVisibleItemIndex) {
+                        lastIndex > state.firstVisibleItemIndex
+                    } else {
+                        lastOffset >= state.firstVisibleItemScrollOffset
+                    }
+                lastIndex = state.firstVisibleItemIndex
+                lastOffset = state.firstVisibleItemScrollOffset
+                up
+            }
+        }
+    }.value
 }

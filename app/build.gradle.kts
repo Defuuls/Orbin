@@ -56,6 +56,7 @@ dependencies {
     implementation(project(":provider:lynxchan"))
 
     // Feature modules
+    implementation(project(":ui-next"))
     implementation(project(":feature:home"))
     implementation(project(":feature:board"))
     implementation(project(":feature:thread"))

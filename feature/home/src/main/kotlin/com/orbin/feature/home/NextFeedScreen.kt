@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -37,19 +38,28 @@ import com.orbin.uinext.NextTheme
  * subscribed board into one list ordered by when each thread last moved, which is the order someone
  * opening a feed is actually looking for.
  *
- * [showRail] is off while this runs inside the existing app shell, which still supplies the bottom
- * navigation bar. Two bars stacked would be worse than either alone, and the rail only replaces that
- * bar once the command surface it points at exists.
+ * The rail is on: it is the screen's only chrome, and the shell no longer draws a bottom navigation
+ * bar here. Its Search opens the command surface, which is how every other destination is reached
+ * now that there are no tabs.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
-    onOpenSearch: () -> Unit,
+    onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
-    showRail: Boolean = false,
+    showRail: Boolean = true,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
+    scrollToTopRequest: Int = 0,
+    refreshRequest: Int = 0,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
+    // "Refresh feed" from the command surface, which is where the tablet dock's refresh button and
+    // the old top bar's overflow item both ended up.
+    LaunchedEffect(refreshRequest) {
+        if (refreshRequest > 0) viewModel.refresh()
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -98,7 +108,10 @@ fun NextFeedScreen(
                             subtitle = feedSubtitle(entries.size, state.boards.size),
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
-                            onSearch = onOpenSearch,
+                            hideRailOnScroll = hideRailOnScroll,
+                            onChromeVisibleChange = onChromeVisibleChange,
+                            scrollToTopRequest = scrollToTopRequest,
+                            onSearch = onOpenCommands,
                             onOpenRow = { row ->
                                 byId[row.id]?.let { entry ->
                                     onOpenThread(
