@@ -56,6 +56,46 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
+    /**
+     * Quiet hours only mean anything while there are notifications to be quiet about.
+     *
+     * Asserted here rather than on a device: the list is lazy, so on screen an absent row and a row
+     * merely scrolled out of view look exactly the same.
+     */
+    @Test
+    fun `quiet hours appear only when watch notifications are on`() {
+        val on = buildModel(watchNotifications = true).groups.flatMap { it.second }.map { it.id }
+        val off = buildModel(watchNotifications = false).groups.flatMap { it.second }.map { it.id }
+
+        assertThat(on).containsAtLeast("quietStart", "quietEnd")
+        assertThat(off).containsNoneOf("quietStart", "quietEnd")
+    }
+
+    /** HTTPS-only is shown for transparency and must read as on without being switchable. */
+    @Test
+    fun `https only is stated rather than offered`() {
+        val row = allRows().first { it.id == "httpsOnly" }
+
+        assertThat(row.kind).isEqualTo(SettingKind.INFO)
+        assertThat(row.value).isEqualTo("Always enforced")
+    }
+
+    /**
+     * Encrypted DNS has no off switch, so this notice is the only way a user learns their lookups
+     * have stopped being private. It has to actually change when the monitor says so.
+     */
+    @Test
+    fun `the dns notice reflects whether lookups are encrypted`() {
+        val encrypted = buildModel().groups.flatMap { it.second }.first { it.id == "dnsPrivacy" }
+        val fallingBack =
+            buildModel(fallback = true).groups.flatMap { it.second }.first { it.id == "dnsPrivacy" }
+
+        assertThat(encrypted.value).isEqualTo("Encrypted")
+        assertThat(encrypted.hint).contains("Encrypted DNS is always on")
+        assertThat(fallingBack.value).isEqualTo("Not private right now")
+        assertThat(fallingBack.hint).contains("system resolver")
+    }
+
     /** The updater's own check only exists while the updater does. */
     @Test
     fun `the update check appears only when in-app updates are on`() {
@@ -72,13 +112,19 @@ class SettingsIndexTest {
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(internalUpdater: Boolean = true) =
-        buildSettings(
-            settings =
-                com.orbin.core.model
-                    .AppSettings(internalUpdaterEnabled = internalUpdater),
-            vm = io.mockk.mockk(relaxed = true),
-            updateState = "Up to date",
-            dnsFallbackActive = false,
-        )
+    private fun buildModel(
+        internalUpdater: Boolean = true,
+        watchNotifications: Boolean = true,
+        fallback: Boolean = false,
+    ) = buildSettings(
+        settings =
+            com.orbin.core.model
+                .AppSettings(
+                    internalUpdaterEnabled = internalUpdater,
+                    threadWatchNotificationsEnabled = watchNotifications,
+                ),
+        vm = io.mockk.mockk(relaxed = true),
+        updateState = "Up to date",
+        dnsFallbackActive = fallback,
+    )
 }
