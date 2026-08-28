@@ -31,13 +31,16 @@ reply, or create threads.
 - Multi-provider support through a clean provider abstraction (4chan via Vichan and BBW Chan via
   LynxChan included; additional imageboard engines can be added without modifying app code).
 - Board list, catalog with sorting, and a rich thread viewer with post dates.
-- Subscribed feed with tap-to-top chrome, optional full-screen scrolling, and an adaptive
-  tablet dock that keeps navigation close without crowding the feed.
+- Subscribed feed merged across every board you follow and ordered by activity, so a quiet
+  board's stale thread no longer outranks a busy board's live one. A colour per board keeps the
+  mix sortable by eye.
 - **List / Grid / image-only layouts:** the subscribed feed and every board catalog switch
-  between three layouts from the same top-bar icon — the usual text-and-thumbnail list, a denser
-  card grid, or a pure image-only grid with an adjustable thumbnail size (Medium/Large/Fill).
-- **Already-read threads are dimmed** in the board catalog and subscribed feed (List/Grid
-  layouts), so a returning glance can tell new threads apart from ones already opened.
+  between three layouts — the usual text-and-thumbnail list, a denser card grid, or a pure
+  image-only grid. The switch is three words at the top of the list that scroll away with it,
+  rather than an icon parked in a bar.
+- **Already-read threads lose their weight** in the board catalog and subscribed feed, so a
+  returning glance can tell new threads from ones already opened without making the old ones
+  harder to read.
 - **Pull-to-refresh** on the subscribed feed, board catalog, and thread view, with haptic
   feedback on the refresh threshold.
 - **Offline banner:** a banner appears across the app whenever the device loses its network
@@ -49,10 +52,11 @@ reply, or create threads.
 **Thread viewer**
 - Structured reply tree with quote links, quote previews, and backlinks.
 - Inline images and video, collapsible replies, and thread stats.
-- A thumbnail-only grid view that shows every attachment in the thread at a glance, with the
-  same adjustable thumbnail sizing as the board/feed image-only layouts.
-- A "More" overflow menu keeps less-frequent actions (download all media, export links) out of
-  the main toolbar, alongside a real expand/collapse icon on collapsed posts.
+- A "Files" view that shows every attachment in the thread at a glance, its density set by the
+  thumbnail-size preference.
+- Watch, Files, download-all and share are words set beneath the title, where they scroll away
+  with it rather than occupying the top of the screen for the life of the thread. Tapping a
+  post's number-and-time line folds it away.
 - **Tap-to-reveal spoilers:** spoilered text stays blacked out until tapped, then reveals in
   place; a quote link hidden inside a spoiler is inert until revealed, so the tap that would
   navigate away can't be taken by accident.
@@ -66,11 +70,11 @@ reply, or create threads.
   board by board as the sweep runs, carries a press-and-drag fast scrollbar for crossing thousands
   of tiles, and tapping any file opens it in the gallery. Boards whose catalog could not be
   fetched are reported, so a partial sweep is never presented as a complete one. Reachable from
-  Settings → Content & Feed or the Gallery tab's top bar.
+  Settings → Content & Feed, or by typing "All media" into Search.
 - **Deep scan (opt-in):** a catalog sweep reaches each thread's opening post but not the files
   attached to its replies. Switching this on walks the threads themselves for that reply media —
   far more thorough, and far slower, so it reports threads walked rather than pretending to be a
-  load that is about to finish. Toggled from the wall's top bar or Settings.
+  load that is about to finish. Toggled from Settings.
 - Hardware-accelerated image and video, progressive loading, pinch-zoom, swipe gallery,
   background preloading, autoplay + mute toggle, fullscreen playback, auto-rotate video, and a
   native download manager.
@@ -85,12 +89,11 @@ reply, or create threads.
 - Material 3 with dynamic color, light/dark, and AMOLED-black themes, plus 20+ ported imageboard
   color palettes (Yotsuba, Tomorrow, Miku, Lain, Penumbra, Windows 95, and more), checked in CI
   against a WCAG AA contrast baseline.
-- **Settings as a category hub:** Content & Feed, Notifications, Appearance, Media & Playback,
+- **Settings as one scrolling list:** Content & Feed, Notifications, Appearance, Media & Playback,
   Privacy & Network, and Storage & Backup each get their own screen instead of one long scroll
   through 35+ options, with a search icon on the hub to jump straight to any setting by name.
-- Selectable app icons (five launcher variants), shown correctly in the feed's top bar.
+- Selectable app icons (five launcher variants).
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
-- Tablet feed rows use an old-Reddit-style thumbnail-and-text layout for faster scanning on
   larger screens.
 - Predictive back gesture and smooth shared-element transitions.
 
@@ -165,6 +168,7 @@ Orbin/
 ├── data/                     # Room, DataStore, Paging, repository implementations
 ├── network/                  # OkHttp/Retrofit, DoH, connectivity
 ├── media/                    # Coil 3 + Media3 integration, download manager
+├── ui-next/                  # The interface itself: screens as plain data plus slots, no app types
 ├── provider/
 │   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
 │   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)

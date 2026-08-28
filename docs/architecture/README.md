@@ -8,7 +8,7 @@ Dependencies always point *inward*: outer layers (UI, framework) depend on inner
 
 | Layer | Modules | Responsibility | Android? |
 | --- | --- | --- | --- |
-| Presentation | `app`, `feature:*`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes |
+| Presentation | `app`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes |
 | Domain | `domain` | Use cases, repository **contracts** | no* |
 | Data | `data`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | yes (except `provider:api`) |
 | Model | `core:model` | Pure domain entities shared by all layers | no |
@@ -47,6 +47,14 @@ graph TD
     feature_home --> core_ui[core:ui]
     core_ui --> core_designsystem[core:designsystem]
 
+    app --> ui_next[ui-next]
+    feature_home --> ui_next
+    feature_board --> ui_next
+    feature_thread --> ui_next
+    feature_settings --> ui_next
+    feature_gallery --> ui_next
+    ui_next --> core_designsystem
+
     domain --> core_model[core:model]
     domain --> core_common[core:common]
     domain --> provider_api[provider:api]
@@ -66,6 +74,17 @@ graph TD
 ```
 
 ## Key design decisions
+
+### The interface seam
+
+`ui-next` holds every screen the app shows. It imports no app type — no model, no repository, no
+view model — even though the feature convention plugin puts `core:model` and `core:ui` on its
+classpath; the design system is all it actually uses. A screen
+takes already-formatted rows and hands back an id; the feature module owns the join to its view
+model, and anything behavioural — thumbnails, post bodies, video — is passed in through a slot so
+it is the shipped component rather than a copy of one. That is why the same feed row serves the
+subscribed feed and every board catalog, why the screens can be screenshot without a view model,
+and why a change to how a thread renders cannot reach into how one is loaded.
 
 ### The provider seam
 All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). The app
@@ -103,7 +122,7 @@ HTML in the presentation layer. Backlinks are computed by inverting forward quot
 | Unit | JUnit, Truth, MockK, Turbine | `src/test` in every module |
 | Repository/DB | Room in-memory, MockWebServer | `data`, `network` |
 | UI | Compose UI test, Hilt test runner | `feature:*/src/androidTest` |
-| Screenshot | Roborazzi | `core:designsystem`, `feature:*` |
+| Screenshot | Roborazzi | `ui-next`, `core:designsystem`, `feature:*` |
 
 Individual design decisions and their rationale are recorded chronologically in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
