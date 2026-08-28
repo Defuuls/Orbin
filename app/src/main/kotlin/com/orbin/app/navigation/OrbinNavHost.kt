@@ -45,6 +45,7 @@ import com.orbin.feature.settings.SettingsSearchScreen
 import com.orbin.feature.settings.SettingsSection
 import com.orbin.feature.settings.SettingsStorageScreen
 import com.orbin.feature.settings.SubscriptionsScreen
+import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.feature.thread.ThreadScreen
 
 private const val TRANSITION_MS = 300
@@ -236,6 +237,21 @@ fun OrbinNavHost(
 
         composable<Route.Thread> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.Thread>()
+            NextThreadScreen(
+                onOpenMedia = { index ->
+                    navController.navigate(Route.Gallery(route.provider, route.board, route.thread, index))
+                },
+                onOpenCommands = onOpenCommands,
+                onOpenClassicReader = {
+                    navController.navigate(
+                        Route.ClassicThread(route.provider, route.board, route.thread, route.title),
+                    )
+                },
+            )
+        }
+
+        composable<Route.ClassicThread> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.ClassicThread>()
             val mediaScrollIndex by
                 backStackEntry.savedStateHandle
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
@@ -372,7 +388,11 @@ private fun SettingsSection.toRoute(): Route =
  */
 private fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
     hasRoute(Route.Settings::class) ||
-        (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))
+        (
+            threadPresentation == ThreadPresentation.OVERLAY &&
+                // Both readers, so "Open threads as" means the same thing wherever a thread opens.
+                (hasRoute(Route.Thread::class) || hasRoute(Route.ClassicThread::class))
+        )
 
 /**
  * Saves the thread open in the detail pane across configuration changes.

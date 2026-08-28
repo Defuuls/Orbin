@@ -62,6 +62,7 @@ class ProposalScreenshotTest {
                 subject = "Anyone else running a home server on ARM?",
                 board = "/g/",
                 posts = posts(),
+                watching = true,
             )
         }
 
@@ -72,6 +73,7 @@ class ProposalScreenshotTest {
                 subject = "Anyone else running a home server on ARM?",
                 board = "/g/",
                 posts = posts(),
+                watching = true,
             )
         }
 
