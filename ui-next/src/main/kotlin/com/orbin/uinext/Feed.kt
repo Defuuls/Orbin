@@ -324,8 +324,8 @@ private fun FeedGridCell(
     Column(
         modifier =
             Modifier
-                .padding(6.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .padding(GRID_CELL_PADDING)
+                .clip(RoundedCornerShape(GRID_TILE_RADIUS))
                 .clickable { onClick(row) },
     ) {
         // An aspect ratio rather than a fixed height: the cell keeps its proportion as the column
@@ -334,23 +334,23 @@ private fun FeedGridCell(
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
-            MediaTile(modifier = tile, seed = seed, radius = 14.dp)
+            MediaTile(modifier = tile, seed = seed, radius = GRID_TILE_RADIUS)
         } else {
             // A text thread keeps its cell rather than collapsing: the grid is still a list of
             // threads, and a missing picture is not a missing thread.
             Box(
                 modifier =
                     tile
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(GRID_TILE_RADIUS))
                         .background(next.ink.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center,
             ) {
                 MetaLine("no image", color = next.faint)
             }
         }
-        Gap(8)
+        Gap(12)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BoardDot(row.board, size = 5.dp)
+            BoardDot(row.board, size = 6.dp)
             WidthSpacer(6)
             Text(
                 text = row.board,
@@ -369,7 +369,7 @@ private fun FeedGridCell(
             letterSpacing = (-0.1).sp,
             fontWeight = if (row.read) FontWeight.Normal else FontWeight.Medium,
             color = if (row.read) next.muted else next.ink,
-            maxLines = 2,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
         Gap(4)
@@ -754,3 +754,5 @@ private fun scrollingUp(state: LazyListState): Boolean {
 
 /** Slightly taller than wide, which is the shape most thread images end up being. */
 private const val GRID_TILE_ASPECT = 1.1f
+private val GRID_TILE_RADIUS = 16.dp
+private val GRID_CELL_PADDING = 8.dp
