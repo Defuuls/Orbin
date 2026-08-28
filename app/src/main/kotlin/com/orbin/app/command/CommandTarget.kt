@@ -1,7 +1,5 @@
 package com.orbin.app.command
 
-import com.orbin.feature.settings.SettingsSection
-
 /**
  * Something the command surface can send you to, or do.
  *
@@ -37,10 +35,11 @@ sealed interface CommandTarget {
         override val kind: String get() = "thread"
     }
 
+    /** [settingId] is the row's id in the settings list, which is what the list scrolls to. */
     data class OpenSetting(
         override val label: String,
         override val hint: String,
-        val section: SettingsSection,
+        val settingId: String,
     ) : CommandTarget {
         override val kind: String get() = "setting"
     }

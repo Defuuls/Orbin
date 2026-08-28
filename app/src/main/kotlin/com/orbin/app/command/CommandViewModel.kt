@@ -133,7 +133,7 @@ class CommandViewModel
                         )
                     }
                 settingsSearchIndex.forEach { entry ->
-                    add(CommandTarget.OpenSetting(entry.label, entry.section.title, entry.section))
+                    add(CommandTarget.OpenSetting(entry.label, entry.group, entry.id))
                 }
             }
 

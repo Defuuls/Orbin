@@ -21,6 +21,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.orbin.app.LocalOrbinSnackbarHostState
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -34,14 +35,6 @@ import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
-import com.orbin.feature.settings.SettingsAdvancedScreen
-import com.orbin.feature.settings.SettingsAppearanceScreen
-import com.orbin.feature.settings.SettingsContentScreen
-import com.orbin.feature.settings.SettingsMediaScreen
-import com.orbin.feature.settings.SettingsNotificationsScreen
-import com.orbin.feature.settings.SettingsPrivacyScreen
-import com.orbin.feature.settings.SettingsSection
-import com.orbin.feature.settings.SettingsStorageScreen
 import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.NextThreadScreen
 
@@ -124,7 +117,7 @@ fun OrbinNavHost(
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
-                onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenSettings = { navController.navigate(Route.Settings()) },
             )
         }
 
@@ -243,50 +236,12 @@ fun OrbinNavHost(
             DownloadsScreen(onBack = navController::navigateUp)
         }
 
-        composable<Route.Settings> {
+        composable<Route.Settings> { backStackEntry ->
             NextSettingsScreen(
-                onOpenSection = { section -> navController.navigate(section.route()) },
                 onOpenCommands = onOpenCommands,
-            )
-        }
-
-        composable<Route.SettingsContent> {
-            SettingsContentScreen(
-                onBack = navController::navigateUp,
-                onOpenSubscriptions = { navController.navigate(Route.Subscriptions) },
-                onOpenAllBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenAllMedia = { navController.navigate(Route.AllMedia) },
-                onOpenSetup = { navController.navigate(Route.Onboarding) },
-            )
-        }
-
-        composable<Route.SettingsNotifications> {
-            SettingsNotificationsScreen(onBack = navController::navigateUp)
-        }
-
-        composable<Route.SettingsAppearance> {
-            SettingsAppearanceScreen(onBack = navController::navigateUp)
-        }
-
-        composable<Route.SettingsMedia> {
-            SettingsMediaScreen(onBack = navController::navigateUp)
-        }
-
-        composable<Route.SettingsPrivacy> {
-            SettingsPrivacyScreen(
-                onBack = navController::navigateUp,
-                onOpenAdvanced = { navController.navigate(Route.SettingsAdvanced) },
-            )
-        }
-
-        composable<Route.SettingsAdvanced> {
-            SettingsAdvancedScreen(onBack = navController::navigateUp)
-        }
-
-        composable<Route.SettingsStorage> {
-            SettingsStorageScreen(
-                onBack = navController::navigateUp,
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onRunSetup = { navController.navigate(Route.Onboarding) },
+                snackbarHostState = LocalOrbinSnackbarHostState.current,
+                focusId = backStackEntry.toRoute<Route.Settings>().focus,
             )
         }
 
@@ -309,21 +264,6 @@ fun OrbinNavHost(
         }
     }
 }
-
-/**
- * Where a settings search result deep-links to. [SettingsSection] is feature:settings' own type,
- * so it can't reference [Route] itself.
- */
-private fun SettingsSection.toRoute(): Route =
-    when (this) {
-        SettingsSection.CONTENT -> Route.SettingsContent
-        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
-        SettingsSection.APPEARANCE -> Route.SettingsAppearance
-        SettingsSection.MEDIA -> Route.SettingsMedia
-        SettingsSection.PRIVACY -> Route.SettingsPrivacy
-        SettingsSection.ADVANCED -> Route.SettingsAdvanced
-        SettingsSection.STORAGE -> Route.SettingsStorage
-    }
 
 /**
  * Whether this destination lays itself over the screen behind rather than pushing it aside.
@@ -362,13 +302,3 @@ internal val threadRouteSaver =
     )
 
 /** Which destination a settings section's editor lives at. */
-private fun SettingsSection.route(): Route =
-    when (this) {
-        SettingsSection.CONTENT -> Route.SettingsContent
-        SettingsSection.NOTIFICATIONS -> Route.SettingsNotifications
-        SettingsSection.APPEARANCE -> Route.SettingsAppearance
-        SettingsSection.MEDIA -> Route.SettingsMedia
-        SettingsSection.PRIVACY -> Route.SettingsPrivacy
-        SettingsSection.ADVANCED -> Route.SettingsAdvanced
-        SettingsSection.STORAGE -> Route.SettingsStorage
-    }

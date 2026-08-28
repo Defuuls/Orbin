@@ -26,26 +26,30 @@ import com.orbin.uinext.SettingKind
  * those screens used, because that is what people have learned — they are waypoints in one list
  * now rather than seven destinations.
  *
- * Three kinds of row. A toggle flips where it stands. A choice opens its options under itself. A
- * link goes somewhere, and is kept for the handful that need a keyboard, a time picker or a file
- * picker: a text field inline in a list this long would be worse than the trip.
+ * Every row is editable where it stands. A toggle flips, a choice opens its options underneath, a
+ * text field opens underneath, an action runs here — a system picker opens over this screen rather
+ * than a screen of ours opening under it — and the two rows that are guarantees rather than choices
+ * say so and cannot be pressed. Nothing navigates: a settings list that sends you to another
+ * interface to change a setting is two interfaces.
  */
 internal fun buildSettings(
     settings: AppSettings,
     vm: SettingsViewModel,
+    updateState: String,
+    dnsFallbackActive: Boolean,
 ): SettingsModel {
     val rows = Rows()
     val groups =
         listOf(
-            "Content & feed" to rows.content(settings, vm),
-            "Appearance" to rows.appearance(settings, vm),
-            "Media & playback" to rows.media(settings, vm),
-            "Notifications" to rows.notifications(settings, vm),
-            "Privacy & network" to rows.privacy(settings, vm),
-            "Storage & backup" to rows.storage(settings, vm),
-            "Advanced" to rows.advanced(settings, vm),
+            CONTENT to rows.content(settings, vm),
+            APPEARANCE to rows.appearance(settings, vm),
+            MEDIA to rows.media(settings, vm),
+            NOTIFICATIONS to rows.notifications(settings, vm),
+            PRIVACY to rows.privacy(settings, vm, updateState, dnsFallbackActive),
+            STORAGE to rows.storage(settings, vm),
+            ADVANCED to rows.advanced(settings, vm),
         )
-    return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap())
+    return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
 }
 
 /**
@@ -57,6 +61,7 @@ internal fun buildSettings(
 private class Rows {
     val toggles = mutableMapOf<String, () -> Unit>()
     val choices = mutableMapOf<String, (Int) -> Unit>()
+    val texts = mutableMapOf<String, (String) -> Unit>()
 
     fun toggle(
         id: String,
@@ -87,15 +92,63 @@ private class Rows {
         )
     }
 
+    /**
+     * A string setting, edited under its own row.
+     *
+     * [value] is what the row shows — often a summary such as "3 tags" — while [current] is the raw
+     * string the editor is seeded with, so a row can read well closed and still edit truthfully.
+     */
+    fun text(
+        id: String,
+        label: String,
+        value: String,
+        current: String,
+        hint: String,
+        onChange: (String) -> Unit,
+    ): SettingItem {
+        texts[id] = onChange
+        return SettingItem(id, label, value, SettingKind.TEXT, text = current, hint = hint)
+    }
+
+    /** Something that happens here: a picker, an export, a check. Dispatched by id in the screen. */
+    fun action(
+        id: String,
+        label: String,
+        value: String,
+        hint: String? = null,
+    ): SettingItem = SettingItem(id, label, value, SettingKind.ACTION, hint = hint)
+
+    /** A guarantee rather than a choice: stated, and not pressable. */
+    fun info(
+        id: String,
+        label: String,
+        value: String,
+        hint: String? = null,
+    ): SettingItem = SettingItem(id, label, value, SettingKind.INFO, hint = hint)
+
     fun content(
         settings: AppSettings,
         vm: SettingsViewModel,
     ) = listOf(
         // Stated, never offered: the permanent filter has no setter and never will.
-        SettingItem("permanentFilter", "Built-in content filter", "Always on", SettingKind.LINK),
+        info("permanentFilter", "Built-in content filter", "Always on"),
         toggle("personalized", "Personalized home feed", settings.personalizedHomeFeed, vm::setPersonalizedHomeFeed),
-        SettingItem("hiddenTags", "Hidden tags", settings.hiddenTags.tagSummary(), SettingKind.LINK),
-        SettingItem("mutedTags", "Muted tags", settings.mutedTags.tagSummary(), SettingKind.LINK),
+        text(
+            "hiddenTags",
+            "Hidden tags",
+            settings.hiddenTags.tagSummary(),
+            settings.hiddenTags,
+            "Comma-separated. Threads matching any of them are hidden.",
+            vm::setHiddenTags,
+        ),
+        text(
+            "mutedTags",
+            "Muted tags",
+            settings.mutedTags.tagSummary(),
+            settings.mutedTags,
+            "Comma-separated. Threads matching any of them are collapsed rather than removed.",
+            vm::setMutedTags,
+        ),
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
         toggle("hideTextOnly", "Hide text-only threads", settings.hideTextOnlyThreads, vm::setHideTextOnlyThreads),
         toggle("deepScan", "Deep scan for reply media", settings.deepMediaScan, vm::setDeepMediaScan),
@@ -150,7 +203,14 @@ private class Rows {
             vm::setThreadPresentation,
         ),
         toggle("fullScreenFeed", "Full-screen feed", settings.fullScreenFeedChrome, vm::setFullScreenFeedChrome),
-        SettingItem("fontScale", "Font size", "${(settings.fontScale * PERCENT).toInt()}%", SettingKind.LINK),
+        choice(
+            "fontScale",
+            "Font size",
+            FontScaleOption.entries,
+            FontScaleOption.fromScale(settings.fontScale),
+            { it.label },
+            { option -> vm.setFontScale(option.scale) },
+        ),
         choice(
             "thumbnailSize",
             "Thumbnail size",
@@ -194,24 +254,63 @@ private class Rows {
     fun notifications(
         settings: AppSettings,
         vm: SettingsViewModel,
-    ) = listOf(
+    ) = listOfNotNull(
         toggle(
             "watchNotifications",
             "Thread watch notifications",
             settings.threadWatchNotificationsEnabled,
             vm::setThreadWatchNotifications,
         ),
-        SettingItem("quietStart", "Quiet hours start", settings.quietHoursStart.orNotSet(), SettingKind.LINK),
-        SettingItem("quietEnd", "Quiet hours end", settings.quietHoursEnd.orNotSet(), SettingKind.LINK),
+        // Quiet hours only mean anything while there are notifications to be quiet about.
+        if (settings.threadWatchNotificationsEnabled) {
+            text(
+                "quietStart",
+                "Quiet hours start",
+                settings.quietHoursStart.orNotSet(),
+                settings.quietHoursStart,
+                QUIET_HOURS_HINT,
+                vm::setQuietHoursStart,
+            )
+        } else {
+            null
+        },
+        if (settings.threadWatchNotificationsEnabled) {
+            text(
+                "quietEnd",
+                "Quiet hours end",
+                settings.quietHoursEnd.orNotSet(),
+                settings.quietHoursEnd,
+                QUIET_HOURS_HINT,
+                vm::setQuietHoursEnd,
+            )
+        } else {
+            null
+        },
     )
 
     fun privacy(
         settings: AppSettings,
         vm: SettingsViewModel,
-    ) = listOf(
+        updateState: String,
+        dnsFallbackActive: Boolean,
+    ) = listOfNotNull(
+        // Stated rather than offered, the same as the content filter: there is no plaintext mode.
+        info("httpsOnly", "HTTPS only", "Always enforced"),
         toggle("biometric", "Lock with biometrics", settings.biometricLockEnabled, vm::setBiometricLock),
         toggle("recentSearches", "Save recent searches", settings.saveRecentSearches, vm::setSaveRecentSearches),
         choice("doh", "DNS over HTTPS", DohProvider.entries, settings.dohProvider, { it.label }, vm::setDohProvider),
+        info(
+            "dnsPrivacy",
+            "DNS privacy",
+            if (dnsFallbackActive) "Not private right now" else "Encrypted",
+            if (dnsFallbackActive) {
+                "This network is blocking ${settings.dohProvider.label}, so lookups are going through the " +
+                    "system resolver. Try another resolver above, or another network."
+            } else {
+                "Encrypted DNS is always on. If a network blocks the resolver you pick, Orbin falls back to " +
+                    "the system resolver and says so here rather than failing to load."
+            },
+        ),
         // Stored inverted — the setting is "disable OCSP", the row is the guarantee it provides.
         toggle(
             "ocsp",
@@ -219,21 +318,67 @@ private class Rows {
             !settings.disableOcspChecking,
             vm::setCertificateRevocationChecks,
         ),
-        SettingItem("userAgent", "Custom user agent", settings.userAgent.ifBlank { "Default" }, SettingKind.LINK),
-        SettingItem("connectTimeout", "Connect timeout", "${settings.connectTimeoutSeconds}s", SettingKind.LINK),
-        SettingItem("readTimeout", "Read timeout", "${settings.readTimeoutSeconds}s", SettingKind.LINK),
+        text(
+            "userAgent",
+            "Custom user agent",
+            settings.userAgent.ifBlank { "Default" },
+            settings.userAgent,
+            "Sent with every request. Leave empty to use Orbin's default.",
+            vm::setUserAgent,
+        ),
+        choice(
+            "connectTimeout",
+            "Connect timeout",
+            CONNECT_TIMEOUTS_SECONDS,
+            settings.connectTimeoutSeconds,
+            { "${it}s" },
+            vm::setConnectTimeout,
+        ),
+        choice(
+            "readTimeout",
+            "Read timeout",
+            READ_TIMEOUTS_SECONDS,
+            settings.readTimeoutSeconds,
+            { "${it}s" },
+            vm::setReadTimeout,
+        ),
+        action(
+            "clearActivity",
+            "Clear local activity",
+            "Delete",
+            "Deletes browsing history, recent searches and download history stored on this device.",
+        ),
+        action(
+            "crashDetails",
+            "Crash details",
+            "Save",
+            "Saves a copy of any recorded crashes to a file you choose. Nothing is sent anywhere on its own.",
+        ),
+        // Only when the in-app updater is on: a check you cannot run is not a setting.
+        if (settings.internalUpdaterEnabled) {
+            action("checkUpdates", "Check for updates", updateState, "Asks GitHub whether a newer release exists.")
+        } else {
+            null
+        },
     )
 
     fun storage(
         settings: AppSettings,
         vm: SettingsViewModel,
     ) = listOf(
-        SettingItem("cacheLimit", "Image cache limit", "${settings.imageCacheLimitMb} MB", SettingKind.LINK),
-        SettingItem(
+        choice(
+            "cacheLimit",
+            "Image cache limit",
+            IMAGE_CACHE_LIMITS_MB,
+            settings.imageCacheLimitMb,
+            { "$it MB" },
+            vm::setImageCacheLimitMb,
+        ),
+        action(
             "downloadFolder",
-            "Download folder",
-            settings.downloadFolderUri.ifBlank { "Default" },
-            SettingKind.LINK,
+            "Saved media folder",
+            settings.downloadFolderUri.ifBlank { "Downloads/Orbin" },
+            "Opens the system folder picker.",
         ),
         choice(
             "downloadOrg",
@@ -243,6 +388,19 @@ private class Rows {
             { it.label },
             vm::setDownloadOrganization,
         ),
+        action(
+            "exportBackup",
+            "Export data",
+            "Save",
+            "Writes settings, boards, bookmarks and saved searches to a file you choose. " +
+                "It is plain JSON and is not encrypted.",
+        ),
+        action(
+            "importBackup",
+            "Import data",
+            "Restore",
+            "Merges a backup into what is already here, so a restore cannot destroy an existing setup.",
+        ),
     )
 
     fun advanced(
@@ -250,8 +408,36 @@ private class Rows {
         vm: SettingsViewModel,
     ) = listOf(
         toggle("internalUpdater", "In-app updates", settings.internalUpdaterEnabled, vm::setInternalUpdater),
+        action("runSetup", "Run setup again", "Start", "Walks through the first-run setup from the beginning."),
     )
 }
+
+/** The four steps the appearance screen offered; font size was never free-form. */
+internal enum class FontScaleOption(
+    val scale: Float,
+    val label: String,
+) {
+    SMALL(FONT_SCALE_SMALL, "Small"),
+    DEFAULT(FONT_SCALE_DEFAULT, "Default"),
+    LARGE(FONT_SCALE_LARGE, "Large"),
+    XLARGE(FONT_SCALE_EXTRA_LARGE, "XL"),
+    ;
+
+    companion object {
+        fun fromScale(scale: Float): FontScaleOption =
+            entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
+    }
+}
+
+private const val FONT_SCALE_SMALL = 0.9f
+private const val FONT_SCALE_DEFAULT = 1f
+private const val FONT_SCALE_LARGE = 1.1f
+private const val FONT_SCALE_EXTRA_LARGE = 1.2f
+
+private const val QUIET_HOURS_HINT = "HH:MM, 24-hour. Leave empty to disable."
+private val CONNECT_TIMEOUTS_SECONDS = listOf(10L, 15L, 30L, 60L)
+private val READ_TIMEOUTS_SECONDS = listOf(15L, 30L, 60L, 120L)
+private val IMAGE_CACHE_LIMITS_MB = listOf(128, 256, 512, 1024)
 
 /**
  * The rows, plus what each one does.
@@ -263,6 +449,7 @@ internal class SettingsModel(
     val groups: List<Pair<String, List<SettingItem>>>,
     private val toggles: Map<String, () -> Unit>,
     private val choices: Map<String, (Int) -> Unit>,
+    private val texts: Map<String, (String) -> Unit>,
 ) {
     val count: Int get() = groups.sumOf { it.second.size }
 
@@ -272,9 +459,12 @@ internal class SettingsModel(
         id: String,
         index: Int,
     ) = choices[id]?.invoke(index)
-}
 
-private const val PERCENT = 100
+    fun commit(
+        id: String,
+        value: String,
+    ) = texts[id]?.invoke(value.trim())
+}
 
 /** SYSTEM -> "System". These enums carry no label, and shouting at the reader is not a design. */
 private fun Enum<*>.titleCase(): String = name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)

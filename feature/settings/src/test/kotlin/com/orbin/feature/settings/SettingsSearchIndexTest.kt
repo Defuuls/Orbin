@@ -6,7 +6,7 @@ import org.junit.Test
 class SettingsSearchIndexTest {
     @Test
     fun `matches is case-insensitive against the label`() {
-        val entry = SettingsSearchEntry("Lock with biometrics", SettingsSection.PRIVACY)
+        val entry = SettingsSearchEntry("biometric", "Lock with biometrics", PRIVACY)
 
         assertThat(entry.matches("BIOMETRICS")).isTrue()
         assertThat(entry.matches("lock")).isTrue()
@@ -14,18 +14,15 @@ class SettingsSearchIndexTest {
     }
 
     @Test
-    fun `matches also checks the section title`() {
-        val entry = SettingsSearchEntry("Custom user agent", SettingsSection.ADVANCED)
+    fun `matches also checks the group heading`() {
+        val entry = SettingsSearchEntry("userAgent", "Custom user agent", PRIVACY)
 
-        assertThat(entry.matches("advanced")).isTrue()
+        assertThat(entry.matches("privacy")).isTrue()
     }
 
     @Test
-    fun `the index has no duplicate label-section pairs`() {
-        val duplicates =
-            settingsSearchIndex
-                .groupBy { it.label to it.section }
-                .filterValues { it.size > 1 }
+    fun `the index has no duplicate ids`() {
+        val duplicates = settingsSearchIndex.groupBy { it.id }.filterValues { it.size > 1 }
 
         assertThat(duplicates).isEmpty()
     }

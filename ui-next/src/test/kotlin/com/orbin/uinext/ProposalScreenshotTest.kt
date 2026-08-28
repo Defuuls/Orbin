@@ -166,6 +166,16 @@ class ProposalScreenshotTest {
             SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
         }
 
+    /**
+     * The two shapes that replaced the rows which used to navigate: a string edited under its own
+     * row, and an action that states its consequence and runs where it stands.
+     */
+    @Test
+    fun settingsEditing() =
+        capture("next_settings_editing") {
+            SettingsScreen(groups = settingsGroups(), expandedId = "hiddenTags")
+        }
+
     @Test
     fun mediaWall() =
         capture("next_media") {
@@ -252,8 +262,15 @@ class ProposalScreenshotTest {
         listOf(
             "Content & feed" to
                 listOf(
-                    SettingItem("filter", "Built-in content filter", "Always on", SettingKind.LINK),
-                    SettingItem("hiddenTags", "Hidden tags", "3", SettingKind.LINK),
+                    SettingItem("filter", "Built-in content filter", "Always on", SettingKind.INFO),
+                    SettingItem(
+                        id = "hiddenTags",
+                        label = "Hidden tags",
+                        value = "3",
+                        kind = SettingKind.TEXT,
+                        text = "spoilers, politics, meta",
+                        hint = "Comma-separated. Threads matching any of them are hidden.",
+                    ),
                     SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
                     SettingItem(
                         id = "threadLimit",
@@ -262,6 +279,18 @@ class ProposalScreenshotTest {
                         kind = SettingKind.CHOICE,
                         options = listOf("6", "12", "18", "All"),
                         selected = 3,
+                    ),
+                ),
+            "Storage & backup" to
+                listOf(
+                    SettingItem(
+                        id = "importBackup",
+                        label = "Import data",
+                        value = "Restore",
+                        kind = SettingKind.ACTION,
+                        hint =
+                            "Merges a backup into what is already here, so a restore cannot " +
+                                "destroy an existing setup.",
                     ),
                 ),
             "Appearance" to
@@ -276,7 +305,14 @@ class ProposalScreenshotTest {
                     ),
                     SettingItem("dynamicColor", "Dynamic color", "Off", SettingKind.TOGGLE),
                     SettingItem("amoled", "AMOLED black", "On", SettingKind.TOGGLE),
-                    SettingItem("fontScale", "Font size", "100%", SettingKind.LINK),
+                    SettingItem(
+                        id = "fontScale",
+                        label = "Font size",
+                        value = "Default",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("Small", "Default", "Large", "XL"),
+                        selected = 1,
+                    ),
                 ),
             "Media & playback" to
                 listOf(
