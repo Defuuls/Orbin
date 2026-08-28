@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [106-Yuna] - 2026-08-28
+
 ### Changed
 - **Settings are editable where they stand — all of them.** Eleven rows still handed you back to the
   category screens the list replaced, so pressing a setting could drop you into the interface this
@@ -1685,7 +1687,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v105-Himari...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v106-Yuna...HEAD
+[106-Yuna]: https://github.com/Defuuls/Orbin/compare/v105-Himari...v106-Yuna
 [105-Himari]: https://github.com/Defuuls/Orbin/compare/v104-Akari...v105-Himari
 [104-Akari]: https://github.com/Defuuls/Orbin/compare/v103-Hina...v104-Akari
 [103-Hina]: https://github.com/Defuuls/Orbin/compare/v102-Mei...v103-Hina
