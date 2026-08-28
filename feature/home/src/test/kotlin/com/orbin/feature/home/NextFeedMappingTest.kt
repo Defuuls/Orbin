@@ -134,6 +134,41 @@ class NextFeedMappingTest {
         assertThat(boardCountLabel(0)).isEqualTo("0 boards")
     }
 
+    @Test
+    fun `the feed filter matches board, subject, comment, poster and filename`() {
+        val feeds = listOf(boardFeed("g", thread(1, board = "g", subject = "Home server on ARM")))
+
+        // The previous feed's haystack, unchanged — narrowing it would quietly lose matches.
+        assertThat(feedEntries(feeds, emptySet(), NOW, "arm")).hasSize(1)
+        assertThat(feedEntries(feeds, emptySet(), NOW, "/g/".trim('/'))).hasSize(1)
+        assertThat(feedEntries(feeds, emptySet(), NOW, "nothing here")).isEmpty()
+    }
+
+    @Test
+    fun `the filter ignores case and surrounding space, and an empty filter keeps everything`() {
+        val feeds = listOf(boardFeed("g", thread(1, board = "g", subject = "Weekly desktop thread")))
+
+        assertThat(feedEntries(feeds, emptySet(), NOW, "  DESKTOP ")).hasSize(1)
+        assertThat(feedEntries(feeds, emptySet(), NOW, "   ")).hasSize(1)
+        assertThat(feedEntries(feeds, emptySet(), NOW, "")).hasSize(1)
+    }
+
+    @Test
+    fun `filtering narrows the merged list without disturbing its order`() {
+        val feeds =
+            listOf(
+                boardFeed(
+                    "g",
+                    thread(1, board = "g", subject = "keep me", bumped = 1_000L),
+                    thread(2, board = "g", subject = "drop me", bumped = 5_000L),
+                    thread(3, board = "g", subject = "keep me too", bumped = 9_000L),
+                ),
+            )
+
+        val kept = feedEntries(feeds, emptySet(), NOW, "keep")
+        assertThat(kept.map { it.key.thread.value }).containsExactly(3L, 1L).inOrder()
+    }
+
     private fun boardFeed(
         board: String,
         vararg threads: CatalogThread,
@@ -151,6 +186,7 @@ class NextFeedMappingTest {
     private fun thread(
         id: Long,
         board: String = "g",
+        subject: String? = null,
         bumped: Long = 0L,
         created: Long = 0L,
         replies: Int = 0,
@@ -164,6 +200,7 @@ class NextFeedMappingTest {
                 board = BoardId(board),
                 threadId = ThreadId(id),
                 isOriginalPost = true,
+                subject = subject,
                 createdAtMillis = created,
                 attachments = attachments.toList().toPersistentList(),
             ),

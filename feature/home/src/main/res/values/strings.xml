@@ -35,4 +35,6 @@
     <string name="next_feed_empty">Nothing here yet. Subscribe to a board and its threads show up in this list.</string>
     <string name="next_feed_unavailable">Feed unavailable</string>
     <string name="next_feed_try_again">Try again</string>
+    <string name="next_feed_no_matches">Nothing in your feed matches “%1$s”.</string>
+    <string name="next_feed_clear_filter">Clear filter</string>
 </resources>

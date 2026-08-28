@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
@@ -18,7 +19,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -80,6 +83,51 @@ class SubscriptionsViewModel
                             SubscriptionsUiState.Success(result.data.toImmutableList())
                         is OrbinResult.Failure -> SubscriptionsUiState.Error(result.error.message)
                     }
+            }
+        }
+
+        /**
+         * Each subscribed board's thread-count override, or absent where it follows the global
+         * default. Observed for every board so the row can show what it is set to without the
+         * screen asking board by board.
+         */
+        val threadLimits: StateFlow<Map<String, FeedThreadLimit>> =
+            activeProvider
+                .flatMapLatest { provider ->
+                    boardPreferencesRepository
+                        .observeSubscribedBoards(provider.metadata.id)
+                        .flatMapLatest { subscribed ->
+                            if (subscribed.isEmpty()) {
+                                flowOf(emptyMap())
+                            } else {
+                                combine(
+                                    subscribed.map { id ->
+                                        boardPreferencesRepository
+                                            .observeFeedThreadLimit(provider.metadata.id, id)
+                                            .map { limit -> id.value to limit }
+                                    },
+                                ) { pairs -> pairs.mapNotNull { (id, l) -> l?.let { id to it } }.toMap() }
+                            }
+                        }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
+
+        /**
+         * Sets one board's thread count, or clears it back to the global default.
+         *
+         * This used to live in the feed's per-board header, which the redesigned feed does not
+         * have — it merges every board into one list rather than sectioning by board. A per-board
+         * preference belongs with the list of boards you follow regardless.
+         */
+        fun setThreadLimit(
+            boardId: String,
+            limit: FeedThreadLimit?,
+        ) {
+            viewModelScope.launch {
+                boardPreferencesRepository.setFeedThreadLimit(
+                    provider = activeProvider.value.metadata.id,
+                    board = BoardId(boardId),
+                    limit = limit,
+                )
             }
         }
 

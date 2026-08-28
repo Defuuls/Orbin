@@ -32,7 +32,8 @@ class CommandFilterTest {
 
     @Test
     fun `a prefix match outranks a mention buried in a description`() {
-        val results = filterCommands(catalogue(), "his")
+        // Past the filter-feed entry, which leads for every query by design.
+        val results = filterCommands(catalogue(), "his").drop(1)
 
         // "History" starts with it; the /g/ board only mentions it in its description.
         assertThat(results.first().label).isEqualTo("History")
@@ -51,11 +52,6 @@ class CommandFilterTest {
     }
 
     @Test
-    fun `a query matching nothing returns nothing rather than everything`() {
-        assertThat(filterCommands(catalogue(), "zzzzz")).isEmpty()
-    }
-
-    @Test
     fun `the three actions the old feed chrome carried are all reachable`() {
         val labels = filterCommands(catalogue(), "").map { it.label }
 
@@ -63,11 +59,23 @@ class CommandFilterTest {
     }
 
     @Test
-    fun `the previous feed is still reachable now that no tab points at it`() {
-        val classic = filterCommands(catalogue(), "classic").single()
+    fun `any query offers to filter the feed by it, carrying the text`() {
+        // This is where the previous feed's search bar went: the text field already exists, so the
+        // feature did not need a second one.
+        val first = filterCommands(catalogue(), "thinkpad").first()
 
-        assertThat(classic).isInstanceOf(CommandTarget.Go::class.java)
-        assertThat((classic as CommandTarget.Go).destination).isEqualTo(CommandDestination.CLASSIC_FEED)
+        assertThat(first).isInstanceOf(CommandTarget.Act::class.java)
+        assertThat((first as CommandTarget.Act).action).isEqualTo(CommandAction.FILTER_FEED)
+        assertThat(first.query).isEqualTo("thinkpad")
+    }
+
+    @Test
+    fun `a query matching nothing else still offers to filter the feed`() {
+        // The feed is the one place the query might still match, so this result is never dropped.
+        val results = filterCommands(catalogue(), "zzzzz")
+
+        assertThat(results).hasSize(1)
+        assertThat((results.single() as CommandTarget.Act).action).isEqualTo(CommandAction.FILTER_FEED)
     }
 
     @Test

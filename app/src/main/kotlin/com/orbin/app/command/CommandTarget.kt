@@ -57,6 +57,8 @@ sealed interface CommandTarget {
         override val label: String,
         override val hint: String,
         val action: CommandAction,
+        /** What to act on, where the action needs it — the feed filter's text. */
+        val query: String = "",
     ) : CommandTarget {
         override val kind: String get() = "do"
     }
@@ -72,7 +74,6 @@ enum class CommandDestination {
     DOWNLOADS,
     SEARCH,
     SETTINGS,
-    CLASSIC_FEED,
 }
 
 /** Something that happens where you are, rather than somewhere you go. */
@@ -80,6 +81,9 @@ enum class CommandAction {
     REFRESH_FEED,
     SCROLL_TO_TOP,
     LOCK_NOW,
+
+    /** Narrows the feed to what was typed. Carries the query on the target rather than the enum. */
+    FILTER_FEED,
 }
 
 /**
@@ -99,7 +103,6 @@ internal fun staticTargets(): List<CommandTarget> =
         CommandTarget.Go("Downloads", "Files saved to this device", CommandDestination.DOWNLOADS),
         CommandTarget.Go("Search", "Search threads across your boards", CommandDestination.SEARCH),
         CommandTarget.Go("Settings", "All 59 of them", CommandDestination.SETTINGS),
-        CommandTarget.Go("Classic feed", "The previous feed, grouped by board", CommandDestination.CLASSIC_FEED),
         CommandTarget.Act("Refresh feed", "Reload every subscribed board", CommandAction.REFRESH_FEED),
         CommandTarget.Act("Scroll to top", "Back to the newest thread", CommandAction.SCROLL_TO_TOP),
         CommandTarget.Act("Lock Orbin", "Lock now, without waiting for the timeout", CommandAction.LOCK_NOW),
@@ -119,13 +122,24 @@ internal fun filterCommands(
 ): List<CommandTarget> {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) return targets.filter { it is CommandTarget.Go || it is CommandTarget.Act }
-    return targets
-        .filter { target -> target.haystack.contains(trimmed, ignoreCase = true) }
-        .sortedWith(
-            compareBy(
-                { target -> if (target.label.startsWith(trimmed, ignoreCase = true)) 0 else 1 },
-                { target -> if (target.label.contains(trimmed, ignoreCase = true)) 0 else 1 },
-                { target -> target.label.length },
-            ),
+    // Filtering the feed is offered first for any query, because it is the one result that cannot
+    // be listed in advance: it is made out of what you just typed. This is where the previous
+    // feed's search bar went — the text field already exists, so the feature did not need a second.
+    val filterFeed =
+        CommandTarget.Act(
+            label = "Filter feed for \u201C$trimmed\u201D",
+            hint = "Show only matching threads",
+            action = CommandAction.FILTER_FEED,
+            query = trimmed,
         )
+    return listOf(filterFeed) +
+        targets
+            .filter { target -> target.haystack.contains(trimmed, ignoreCase = true) }
+            .sortedWith(
+                compareBy(
+                    { target -> if (target.label.startsWith(trimmed, ignoreCase = true)) 0 else 1 },
+                    { target -> if (target.label.contains(trimmed, ignoreCase = true)) 0 else 1 },
+                    { target -> target.label.length },
+                ),
+            )
 }

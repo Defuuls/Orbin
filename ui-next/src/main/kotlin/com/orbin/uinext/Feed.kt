@@ -19,6 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +42,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/**
+ * How the feed draws its threads.
+ *
+ * The same three the current feed offers, because they answer three different questions: [LIST]
+ * for "what is being talked about", [GRID] for "what is being talked about, with the picture", and
+ * [IMAGES] for "what has been posted", which on an imageboard is a question people genuinely open
+ * the app to ask.
+ */
+enum class FeedLayout {
+    LIST,
+    GRID,
+    IMAGES,
+}
 
 /**
  * One thread as it appears in the feed.
@@ -83,6 +102,10 @@ fun FeedScreen(
     subtitle: String? = null,
     railDetail: String? = null,
     showRail: Boolean = true,
+    layout: FeedLayout = FeedLayout.LIST,
+    onLayoutChange: (FeedLayout) -> Unit = {},
+    filter: String? = null,
+    onClearFilter: () -> Unit = {},
     onOpenRow: (FeedRow) -> Unit = {},
     onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
@@ -91,31 +114,72 @@ fun FeedScreen(
     scrollToTopRequest: Int = 0,
 ) {
     val listState = rememberLazyListState()
-    LaunchedEffect(scrollToTopRequest) {
-        if (scrollToTopRequest > 0) listState.animateScrollToItem(0)
+    val gridState = rememberLazyGridState()
+    LaunchedEffect(scrollToTopRequest, layout) {
+        if (scrollToTopRequest > 0) {
+            if (layout == FeedLayout.LIST) listState.animateScrollToItem(0) else gridState.animateScrollToItem(0)
+        }
     }
     // Scrolling down puts the rail away and the feed edge to edge; any scroll back brings it
     // straight home. This is what the old shell's "full-screen feed" setting drove when there
     // were two bars to hide.
     val railVisible =
-        if (hideRailOnScroll) scrollingUp(listState) else true
+        if (!hideRailOnScroll) {
+            true
+        } else if (layout == FeedLayout.LIST) {
+            scrollingUp(listState)
+        } else {
+            scrollingUpGrid(gridState)
+        }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
+
+    val bottomPad = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(
-                state = listState,
-                contentPadding =
-                    PaddingValues(bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp),
-            ) {
-                item {
-                    ScreenTitle(
-                        text = "Feed",
-                        subtitle = subtitle ?: "${rows.size} threads",
-                    )
-                }
-                itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                    FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                    if (index < rows.lastIndex) Hairline(inset = true)
+            Column(modifier = Modifier.fillMaxSize()) {
+                FeedHeader(
+                    subtitle = subtitle ?: "${rows.size} threads",
+                    layout = layout,
+                    onLayoutChange = onLayoutChange,
+                    filter = filter,
+                    onClearFilter = onClearFilter,
+                )
+                when (layout) {
+                    FeedLayout.LIST ->
+                        LazyColumn(
+                            state = listState,
+                            contentPadding = PaddingValues(bottom = bottomPad),
+                        ) {
+                            itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                                FeedRowView(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                                if (index < rows.lastIndex) Hairline(inset = true)
+                            }
+                        }
+
+                    FeedLayout.GRID ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            state = gridState,
+                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                        ) {
+                            itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                                FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                            }
+                        }
+
+                    FeedLayout.IMAGES ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            state = gridState,
+                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = bottomPad),
+                        ) {
+                            // A thread with nothing to show would be an empty cell in a wall of
+                            // pictures, which reads as a broken tile rather than as a text thread.
+                            val withPreview = rows.filter { it.hasPreview }
+                            itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
+                                FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                            }
+                        }
                 }
             }
             AnimatedVisibility(
@@ -124,14 +188,63 @@ fun FeedScreen(
                 exit = slideOutVertically { it } + fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                ContextRail(
-                    where = "Feed",
-                    detail = railDetail,
-                    onSearch = onSearch,
-                )
+                ContextRail(where = "Feed", detail = railDetail, onSearch = onSearch)
             }
         }
     }
+}
+
+/**
+ * The title, the layout switcher, and the filter when one is active.
+ *
+ * The switcher was two icons in the top bar of the current feed, permanently present and
+ * ambiguous. Here it is three words at the top of the list, and it scrolls away with the title.
+ */
+@Composable
+private fun FeedHeader(
+    subtitle: String,
+    layout: FeedLayout,
+    onLayoutChange: (FeedLayout) -> Unit,
+    filter: String?,
+    onClearFilter: () -> Unit,
+) {
+    ScreenTitle(text = "Feed", subtitle = subtitle)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        InlineAction(
+            label = "List",
+            accent = layout == FeedLayout.LIST,
+            modifier = Modifier.clickable { onLayoutChange(FeedLayout.LIST) },
+        )
+        WidthSpacer(4)
+        InlineAction(
+            label = "Grid",
+            accent = layout == FeedLayout.GRID,
+            modifier = Modifier.clickable { onLayoutChange(FeedLayout.GRID) },
+        )
+        WidthSpacer(4)
+        InlineAction(
+            label = "Images",
+            accent = layout == FeedLayout.IMAGES,
+            modifier = Modifier.clickable { onLayoutChange(FeedLayout.IMAGES) },
+        )
+    }
+    if (filter != null) {
+        Gap(10)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Pill("filter")
+            WidthSpacer(8)
+            MetaLine(filter, modifier = Modifier.weight(1f))
+            InlineAction("Clear", modifier = Modifier.clickable(onClick = onClearFilter))
+        }
+    }
+    Gap(12)
+    Hairline()
 }
 
 @Composable
@@ -194,6 +307,115 @@ private fun FeedRowView(
             }
         }
     }
+}
+
+/** A grid cell: the picture, then what the thread is about, then how busy it is. */
+@Composable
+private fun FeedGridCell(
+    row: FeedRow,
+    seed: Int,
+    onClick: (FeedRow) -> Unit,
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+) {
+    Column(
+        modifier =
+            Modifier
+                .padding(6.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .clickable { onClick(row) },
+    ) {
+        val tile = Modifier.fillMaxWidth().height(132.dp)
+        if (row.hasPreview && thumbnail != null) {
+            thumbnail(row, tile)
+        } else if (row.hasPreview) {
+            MediaTile(modifier = tile, seed = seed, radius = 14.dp)
+        } else {
+            // A text thread keeps its cell rather than collapsing: the grid is still a list of
+            // threads, and a missing picture is not a missing thread.
+            Box(
+                modifier =
+                    tile
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(next.ink.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                MetaLine("no image", color = next.faint)
+            }
+        }
+        Gap(8)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BoardDot(row.board, size = 5.dp)
+            WidthSpacer(6)
+            Text(
+                text = row.board,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (row.read) next.muted else boardHue(row.board),
+            )
+            WidthSpacer(6)
+            MetaLine(row.activity, color = next.faint)
+        }
+        Gap(4)
+        Text(
+            text = row.subject,
+            fontSize = 14.sp,
+            lineHeight = 18.sp,
+            letterSpacing = (-0.1).sp,
+            fontWeight = if (row.read) FontWeight.Normal else FontWeight.Medium,
+            color = if (row.read) next.muted else next.ink,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Gap(4)
+        MetaLine("${row.replies} replies  ·  ${row.media} files")
+        Gap(10)
+    }
+}
+
+/** An image-only cell: the picture, and the board it came from. Nothing else. */
+@Composable
+private fun FeedImageCell(
+    row: FeedRow,
+    seed: Int,
+    onClick: (FeedRow) -> Unit,
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+) {
+    Box(
+        modifier =
+            Modifier
+                .padding(2.5.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .clickable { onClick(row) },
+        contentAlignment = Alignment.BottomStart,
+    ) {
+        val tile = Modifier.fillMaxWidth().height(124.dp)
+        if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
+        Pill(text = row.board, tint = boardHue(row.board), modifier = Modifier.padding(6.dp))
+    }
+}
+
+/** [scrollingUp], for the grid layouts. */
+@Composable
+private fun scrollingUpGrid(state: LazyGridState): Boolean {
+    var lastIndex by remember { mutableIntStateOf(0) }
+    var lastOffset by remember { mutableIntStateOf(0) }
+    return remember {
+        derivedStateOf {
+            if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) {
+                true
+            } else {
+                val up =
+                    if (lastIndex != state.firstVisibleItemIndex) {
+                        lastIndex > state.firstVisibleItemIndex
+                    } else {
+                        lastOffset >= state.firstVisibleItemScrollOffset
+                    }
+                lastIndex = state.firstVisibleItemIndex
+                lastOffset = state.firstVisibleItemScrollOffset
+                up
+            }
+        }
+    }.value
 }
 
 /**

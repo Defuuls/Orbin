@@ -8,27 +8,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -45,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -81,7 +72,6 @@ fun OrbinApp(
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val tabletFeedChrome = maxWidth >= TABLET_MIN_WIDTH && maxHeight >= TABLET_MIN_HEIGHT
-        val compactTabletDock = maxWidth < COMPACT_TABLET_DOCK_WIDTH
         val twoPaneBoardDetail = maxWidth >= TWO_PANE_MIN_WIDTH
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = backStackEntry?.destination
@@ -94,13 +84,13 @@ fun OrbinApp(
         // it needs none.
         val showBottomBar =
             !isNextFeed && topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
-        val isSubscribedFeed = currentDestination?.hasRoute(Route.SubscribedFeed::class) == true
         val feedChromeHidesOnScroll =
-            (isSubscribedFeed || isNextFeed) && (fullScreenFeedChrome || tabletFeedChrome)
+            isNextFeed && (fullScreenFeedChrome || tabletFeedChrome)
         var feedChromeVisible by rememberSaveable { mutableStateOf(true) }
         var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
         var commandsOpen by rememberSaveable { mutableStateOf(false) }
+        var feedFilter by rememberSaveable { mutableStateOf("") }
         val bottomBarVisible = showBottomBar && (!feedChromeHidesOnScroll || feedChromeVisible)
         // All three navigation surfaces ask the same question; the null-safe call also drops a
         // redundant guard the compiler could already prove true in the tablet-dock branch.
@@ -108,7 +98,6 @@ fun OrbinApp(
             currentDestination?.hasRoute(destination.route::class) == true
         }
         val useTabletDock = showBottomBar && tabletFeedChrome
-        val useTabletFeedDock = isSubscribedFeed && tabletFeedChrome
 
         LaunchedEffect(feedChromeHidesOnScroll) {
             if (!feedChromeHidesOnScroll) {
@@ -119,7 +108,7 @@ fun OrbinApp(
         // True full screen: while the feed chrome is scrolled away, also hide the status and
         // navigation bars so the feed uses the entire display instead of leaving inset strips.
         val view = LocalView.current
-        val immersiveFeed = (isSubscribedFeed || isNextFeed) && fullScreenFeedChrome && !feedChromeVisible
+        val immersiveFeed = isNextFeed && fullScreenFeedChrome && !feedChromeVisible
         DisposableEffect(view, immersiveFeed) {
             val window = view.context.findActivity()?.window
             val controller = window?.let { WindowCompat.getInsetsController(it, view) }
@@ -159,17 +148,7 @@ fun OrbinApp(
                         enter = slideInVertically { it } + fadeIn(),
                         exit = slideOutVertically { it } + fadeOut(),
                     ) {
-                        if (useTabletFeedDock) {
-                            TabletFeedDock(
-                                topLevel = topLevel,
-                                currentDestinationMatches = destinationMatches,
-                                compact = compactTabletDock,
-                                onNavigate = navController::navigateToTopLevel,
-                                onScrollToTop = { feedScrollToTopRequest++ },
-                                onRefresh = { feedRefreshRequest++ },
-                                onOpenSettings = { navController.navigate(Route.Settings) },
-                            )
-                        } else if (useTabletDock) {
+                        if (useTabletDock) {
                             TabletNavigationDock(
                                 topLevel = topLevel,
                                 currentDestinationMatches = destinationMatches,
@@ -190,15 +169,14 @@ fun OrbinApp(
                     modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
                     startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
-                    subscribedFeedShowBoardHeaders = !fullScreenFeedChrome,
-                    hideSubscribedFeedTopBar = useTabletFeedDock,
-                    tabletSubscribedFeedLayout = useTabletFeedDock,
                     twoPaneBoardDetail = twoPaneBoardDetail,
                     subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
                     subscribedFeedRefreshRequest = feedRefreshRequest,
                     threadPresentation = threadPresentation,
                     onFeedChromeVisibleChange = { feedChromeVisible = it },
                     onOpenCommands = { commandsOpen = true },
+                    feedFilter = feedFilter,
+                    onClearFeedFilter = { feedFilter = "" },
                 )
             }
         }
@@ -211,6 +189,7 @@ fun OrbinApp(
                         target = target,
                         onRefreshFeed = { feedRefreshRequest++ },
                         onScrollToTop = { feedScrollToTopRequest++ },
+                        onFilterFeed = { query -> feedFilter = query },
                     )
                 },
             )
@@ -228,6 +207,7 @@ private fun NavHostController.follow(
     target: CommandTarget,
     onRefreshFeed: () -> Unit,
     onScrollToTop: () -> Unit,
+    onFilterFeed: (String) -> Unit,
 ) {
     when (target) {
         is CommandTarget.OpenBoard -> navigate(Route.Board(target.provider, target.board, target.title))
@@ -243,6 +223,7 @@ private fun NavHostController.follow(
                 // Served inside the command surface itself: it holds the lock controller, and
                 // locking must not depend on which screen is behind the sheet.
                 CommandAction.LOCK_NOW -> Unit
+                CommandAction.FILTER_FEED -> onFilterFeed(target.query)
             }
     }
 }
@@ -268,7 +249,6 @@ private fun CommandDestination.route(): Route =
         CommandDestination.DOWNLOADS -> Route.Downloads
         CommandDestination.SEARCH -> Route.Search
         CommandDestination.SETTINGS -> Route.Settings
-        CommandDestination.CLASSIC_FEED -> Route.SubscribedFeed
     }
 
 @Composable
@@ -320,59 +300,6 @@ private fun TabletNavigationDock(
 }
 
 @Composable
-private fun TabletFeedDock(
-    topLevel: List<TopLevelDestination>,
-    currentDestinationMatches: (TopLevelDestination) -> Boolean,
-    compact: Boolean,
-    onNavigate: (TopLevelDestination) -> Unit,
-    onScrollToTop: () -> Unit,
-    onRefresh: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    FloatingDockSurface {
-        if (compact) {
-            Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-                FeedDockTopActions(
-                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp),
-                    onScrollToTop = onScrollToTop,
-                    onRefresh = onRefresh,
-                    onOpenSettings = onOpenSettings,
-                )
-                ModernNavigationBar(modifier = Modifier.fillMaxWidth()) {
-                    TopLevelNavigationItems(
-                        topLevel = topLevel,
-                        currentDestinationMatches = currentDestinationMatches,
-                        onNavigate = onNavigate,
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp).padding(start = 20.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FeedDockTopActions(
-                    modifier = Modifier.weight(0.72f),
-                    onScrollToTop = onScrollToTop,
-                    onRefresh = onRefresh,
-                    onOpenSettings = onOpenSettings,
-                )
-                ModernNavigationBar(
-                    modifier = Modifier.weight(1.28f),
-                ) {
-                    TopLevelNavigationItems(
-                        topLevel = topLevel,
-                        currentDestinationMatches = currentDestinationMatches,
-                        onNavigate = onNavigate,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FloatingDockSurface(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -386,33 +313,6 @@ private fun FloatingDockSurface(content: @Composable () -> Unit) {
             shadowElevation = 8.dp,
         ) {
             content()
-        }
-    }
-}
-
-@Composable
-private fun FeedDockTopActions(
-    modifier: Modifier = Modifier,
-    onScrollToTop: () -> Unit,
-    onRefresh: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = "Subscribed",
-            modifier = Modifier.weight(1f).clickable(onClickLabel = "Scroll to top", onClick = onScrollToTop),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        IconButton(onClick = onRefresh) {
-            Icon(Icons.Filled.Refresh, contentDescription = "Refresh feed")
-        }
-        IconButton(onClick = onOpenSettings) {
-            Icon(Icons.Filled.Settings, contentDescription = "Settings")
         }
     }
 }
@@ -451,7 +351,6 @@ private fun NavHostController.navigateToTopLevel(destination: TopLevelDestinatio
 
 private val TABLET_MIN_WIDTH = 600.dp
 private val TABLET_MIN_HEIGHT = 480.dp
-private val COMPACT_TABLET_DOCK_WIDTH = 720.dp
 
 /**
  * Width at which the catalog and a thread are shown side by side.
