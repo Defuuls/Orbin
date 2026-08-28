@@ -13,6 +13,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ui-next"))
     implementation(project(":media"))
 
     testImplementation(project(":core:testing"))

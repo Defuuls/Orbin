@@ -26,4 +26,9 @@
     <string name="thread_jump_to_post">Jump to post %1$d</string>
     <string name="thread_saved_copy_banner">This thread is no longer available. Showing your saved copy, as plain text.</string>
     <string name="thread_blocked">This thread is blocked by Orbin\'s built-in content filter.</string>
+    <string name="next_thread_loading">Fetching the thread…</string>
+    <string name="next_thread_unavailable">Thread unavailable</string>
+    <string name="next_thread_try_again">Try again</string>
+    <string name="next_thread_blocked_title">Not shown</string>
+    <string name="next_thread_blocked">This thread is caught by the built-in content filter.</string>
 </resources>

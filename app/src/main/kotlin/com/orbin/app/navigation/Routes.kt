@@ -52,6 +52,19 @@ sealed interface Route {
         val title: String,
     ) : Route
 
+    /**
+     * The previous thread reader, opened from inside the new one. Separate destination rather than
+     * a mode so the reader that has not been ported yet keeps working exactly as it did, with the
+     * per-post collapsing, layout toggle and thumbnail-size controls the new one does not carry.
+     */
+    @Serializable
+    data class ClassicThread(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val title: String,
+    ) : Route
+
     @Serializable
     data class Gallery(
         val provider: String,
