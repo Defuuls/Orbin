@@ -7,10 +7,11 @@ android {
     namespace = "com.orbin.uinext"
 }
 
-// A proposal, not a shipped surface: nothing depends on this module yet, and the screens are
-// stateless composables fed by sample state so they can be rendered and judged before any of it
-// is wired to a ViewModel. Same arrangement as :core:designsystem — screenshot tests are kept out
-// of the aggregate `test` task, which would otherwise run them with no baselines.
+// The screens are stateless composables fed by sample state, so each one can be rendered and
+// judged without a ViewModel. Same arrangement as :core:designsystem — screenshot tests are kept
+// out of the aggregate `test` task, which would otherwise run them with no baselines. Tests that
+// are not screenshots (the window-insets checks) still run there, which is the point of the filter
+// matching on name rather than excluding the whole source set.
 val roborazziInvoked =
     gradle.startParameter.taskNames.any { it.contains("roborazzi", ignoreCase = true) }
 

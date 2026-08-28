@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Every screen was cut off at the top and the bottom.** The interface draws edge to edge, and the
+  top bar and bottom navigation bar it replaced were what had been keeping content out of the status
+  bar and the gesture handle — nothing took that job over, so the first row of each screen sat under
+  the clock and the rail sat behind the navigation bar. Content is now held clear of both, while the
+  background still runs to the edges and lists still scroll underneath. The command sheet also moves
+  with the keyboard rather than leaving its results behind it, and the offline banner clears the
+  status bar.
+- **A screenshot golden could not have caught it:** Robolectric renders with no system bars unless a
+  test puts them there. There is now a test that dispatches real insets and asserts content clears
+  them, checked against the broken layout to confirm it fails on it.
+
 ## [104-Akari] - 2026-08-28
 
 ### Changed

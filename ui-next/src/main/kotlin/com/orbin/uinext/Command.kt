@@ -7,12 +7,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -81,6 +87,7 @@ fun CommandSheet(
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    val sheetInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     Box(modifier = modifier.fillMaxSize()) {
         // Tapping what you were reading puts you back in it. The sheet is a layer, not a screen.
         Box(
@@ -100,8 +107,14 @@ fun CommandSheet(
                     .fillMaxWidth()
                     .fillMaxHeight(0.72f)
                     .align(Alignment.BottomCenter)
+                    // The keyboard moves the whole sheet, since a search sheet whose results are
+                    // behind the keyboard is a search sheet you cannot read. The navigation bar
+                    // only insets the content: the sheet's own background still runs to the bottom
+                    // edge, so it reads as attached to it rather than floating above a gap.
+                    .imePadding()
                     .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-                    .background(next.background),
+                    .background(next.background)
+                    .windowInsetsPadding(sheetInsets),
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -260,7 +273,13 @@ fun SettingsScreen(
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .contentInsets()
+                        .verticalScroll(rememberScrollState()),
+            ) {
                 ScreenTitle(
                     text = "Settings",
                     subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
@@ -284,7 +303,7 @@ fun SettingsScreen(
                         if (index < rows.lastIndex) Hairline(inset = true)
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth().height(RAIL_HEIGHT + 28.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(RAIL_HEIGHT + 28.dp + bottomInset()))
             }
             if (showRail) {
                 ContextRail(

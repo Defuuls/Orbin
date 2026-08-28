@@ -120,8 +120,11 @@ fun ThreadScreen(
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
                 state = state,
+                modifier = Modifier.contentInsets(),
                 contentPadding =
-                    PaddingValues(bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp),
+                    PaddingValues(
+                        bottom = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset(),
+                    ),
             ) {
                 item {
                     Row(

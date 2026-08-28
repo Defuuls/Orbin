@@ -137,10 +137,10 @@ fun FeedScreen(
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
 
-    val bottomPad = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp
+    val bottomPad = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
                 FeedHeader(
                     subtitle = subtitle ?: "${rows.size} threads",
                     layout = layout,
@@ -455,10 +455,10 @@ fun BoardScreen(
     onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
-    val bottomPad = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp
+    val bottomPad = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
                 Row(
                     modifier = Modifier.padding(start = GUTTER, top = 26.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -628,7 +628,7 @@ fun MediaWallScreen(
 ) {
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
                 ScreenTitle(
                     text = "All media",
                     subtitle = "Every file from every board you follow",
@@ -659,7 +659,7 @@ fun MediaWallScreen(
                         PaddingValues(
                             start = 14.dp,
                             end = 14.dp,
-                            bottom = if (showRail) RAIL_HEIGHT + 28.dp else 16.dp,
+                            bottom = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset(),
                         ),
                 ) {
                     itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
