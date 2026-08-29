@@ -6,6 +6,39 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **A new launcher icon: an orbit, and the one body on it.** Two shapes in one terracotta, on the
+  dark palette's own ground. What it replaced was seven paths of hairline strokes and four alpha
+  levels drawn in a 256 viewport — around half a pixel wide by the time a launcher scaled it, so
+  most of the drawing was not there at the size anyone actually saw. It is drawn in the accent the
+  rest of the app uses; the old mark was still in the blue and purple of a palette nothing else
+  has used since the interface was rebuilt.
+- **The default icon is an adaptive icon**, so the launcher masks it to its own shape and Android
+  13 can draw it as a themed icon. It was a bare vector, which gets neither. The "Orbital Orb"
+  choice in Settings is now called "Orbit", since it is no longer an orb.
+- **Both apps draw the mark from one file** in `:core:designsystem`, rather than from a copy each
+  that described itself in a comment as being the same as the other.
+
+### Fixed
+- **The theme settings govern the interface again.** Theme, AMOLED black and font size reached the
+  gallery and the onboarding wizard but stopped at the edge of every redesigned screen, because
+  each screen wraps itself in its own theme and that theme read none of them. Dark mode was the
+  visible half of it — 108-Ichika made the screens follow the *system*, which is not the same as
+  following the setting, and a reader who had chosen Dark on a light phone still got a light app.
+  The shell now states all three once and the screens inherit them: Light and Dark are obeyed,
+  AMOLED black draws a true-black ground behind the same ink and accent, and the font size scales
+  every screen rather than only the Material ones.
+- **Font size multiplies the system's own setting rather than replacing it**, so enlarging text
+  system-wide is no longer undone by opening the app — and it is applied once, not once per screen,
+  which is what an interface where every screen carries a theme would otherwise do.
+
+### Changed
+- **Dynamic color and the ported imageboard skins deliberately stop at the same edge.** The
+  redesigned screens keep their own palette — warm ink on warm paper, one terracotta accent, a
+  colour per board — because recolouring that from the wallpaper would be the interface they
+  replaced wearing their layout. Both settings still govern the gallery, the onboarding wizard,
+  dialogs and snackbars.
+
 ## [108-Ichika] - 2026-08-29
 
 ### Changed

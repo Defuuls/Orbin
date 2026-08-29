@@ -83,10 +83,30 @@ text is a look and not a licence. `ScreenTitle` sets a title in the content so i
 since a title tells you what you opened and stops being useful once you are reading.
 
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
-wherever it is composed, tests included. That makes nesting the normal case: an explicit
-`darkTheme` wins, an enclosing theme's choice is inherited, and failing both it follows the system.
-Do not give that parameter a hardcoded default again — it had one, and every screen inside a theme
-silently overwrote it.
+wherever it is composed, tests included. That makes nesting the normal case, and every parameter
+resolves the same way: an explicit value wins, an enclosing theme's is inherited, and failing both
+there is a default. Do not give one a hardcoded default again — `darkTheme` had one, and every
+screen inside a theme silently overwrote it.
+
+Inheritance is also how a reader's settings reach this module. The shell states them once at the
+top — `MainActivity` for the full client, `MinimalActivity` for Orbin Minimal — and the screens
+below say nothing. A screen here has no view model and cannot read a setting, for the same reason
+it takes rows rather than threads. Three settings arrive that way:
+
+| Setting | Effect here |
+| --- | --- |
+| Theme (System / Light / Dark) | `darkTheme` — which of the two palettes |
+| AMOLED black | `amoled` — true black behind the same ink and accent; dark themes only |
+| Font size | `fontScale` — multiplied onto the density, which is what scales the literal `sp` |
+
+`fontScale` multiplies the scale already in force rather than replacing it, and only the *change*
+is applied: a nested theme inherits an already-scaled density, so re-applying the factor there
+would compound it once per screen.
+
+Dynamic color and the ported imageboard skins deliberately do **not** arrive. This module's palette
+is the argument it makes, and recolouring it from the wallpaper would be the old interface wearing
+this one's layout. Those two still govern the Material surfaces around it — the gallery, the
+onboarding wizard, dialogs and snackbars.
 
 Colours come from `next`, not `MaterialTheme`. `boardHue()` gives a board its colour; a merged feed
 is otherwise four grey characters per row. `placeholderArt()` stands in for a thumbnail that has

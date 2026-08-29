@@ -49,7 +49,7 @@ own.
 | Setting | What it does |
 | --- | --- |
 | Color theme | Picks the app color theme. |
-| App icon *(v57)* | Picks the launcher icon: Orbital Orb, Nested Rings, Abstract Flow, Minimalist Essence, or Dual Gradient. Applied immediately, without restarting the app. |
+| App icon *(v57)* | Picks the launcher icon: Orbit, Nested Rings, Abstract Flow, Minimalist Essence, or Dual Gradient. Applied immediately, without restarting the app. |
 | Theme mode | Light, dark, or follow system. |
 | Dynamic color | Uses Material You dynamic color from your wallpaper. |
 | AMOLED black | Pure-black dark theme for OLED screens. |

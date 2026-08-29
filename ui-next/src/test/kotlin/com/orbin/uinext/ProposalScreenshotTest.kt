@@ -37,6 +37,24 @@ class ProposalScreenshotTest {
             FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
         }
 
+    /**
+     * The AMOLED ground, which is a setting the redesigned screens used to ignore entirely. Worth a
+     * capture of its own because true black against this palette's warm ink is the case where a
+     * near-black that looked fine could turn out not to.
+     */
+    @Test
+    fun feedAmoled() =
+        capture("next_feed_amoled", dark = true, amoled = true) {
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+        }
+
+    /** The same feed at XL, the largest font size the settings offer, where a row runs out of width. */
+    @Test
+    fun feedLargeText() =
+        capture("next_feed_large_text", fontScale = XL_FONT_SCALE) {
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+        }
+
     /** What the feed actually looks like as shipped: inside the app shell, which still owns the
      *  bottom navigation bar, so the rail stays off until the command surface replaces that bar. */
     @Test
@@ -197,10 +215,12 @@ class ProposalScreenshotTest {
     private fun capture(
         name: String,
         dark: Boolean = false,
+        amoled: Boolean = false,
+        fontScale: Float = 1f,
         content: @androidx.compose.runtime.Composable () -> Unit,
     ) {
         composeRule.setContent {
-            NextTheme(darkTheme = dark) {
+            NextTheme(darkTheme = dark, amoled = amoled, fontScale = fontScale) {
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box { content() }
                 }
@@ -222,6 +242,8 @@ class ProposalScreenshotTest {
         )
 
     private companion object {
+        /** `FontScaleOption.XLARGE`, so the capture tracks the setting rather than a guess at it. */
+        const val XL_FONT_SCALE = 1.2f
         const val SAMPLE_SUBTITLE = "8 threads across 7 boards"
     }
 

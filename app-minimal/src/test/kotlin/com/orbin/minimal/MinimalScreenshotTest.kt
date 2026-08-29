@@ -1,10 +1,15 @@
 package com.orbin.minimal
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -53,6 +58,34 @@ class MinimalScreenshotTest {
     @Test
     fun boardsError() = capture("minimal_boards_error") { Boards(emptyList(), error = FETCH_ERROR) }
 
+    /**
+     * The launcher icon, drawn at its own 108dp viewport.
+     *
+     * Not vanity: the mark is an arc, and an arc in a `pathData` is an `A` command, which nothing
+     * else in this project uses. A vector that fails to parse does not fail the build — it draws
+     * nothing, on a surface no test otherwise looks at, and the first person to find out is
+     * whoever installs the APK. Rendering it here is what makes that a caught failure.
+     */
+    @Test
+    fun launcherIcon() {
+        composeRule.setContent {
+            Box(
+                modifier =
+                    Modifier
+                        .size(ICON_SIZE)
+                        .background(colorResource(R.color.ic_launcher_background)),
+            ) {
+                Image(
+                    painter = painterResource(com.orbin.core.designsystem.R.drawable.ic_launcher_orbit_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage("src/test/screenshots/minimal_launcher_icon.png")
+    }
+
     @Composable
     private fun Boards(
         boards: List<SubscribableBoard>,
@@ -92,6 +125,8 @@ class MinimalScreenshotTest {
         )
 
     private companion object {
+        /** The adaptive icon's own viewport, so the capture is the drawable rather than a crop. */
+        val ICON_SIZE = 108.dp
         val TECH = Board(BoardId("g"), "Technology")
         val ANIME = Board(BoardId("a"), "Anime & Manga")
         const val LONG_BOARD_TITLE = "Worksafe Gifs, with a title long enough to need truncating"

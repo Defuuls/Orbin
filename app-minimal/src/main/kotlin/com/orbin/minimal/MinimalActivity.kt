@@ -36,11 +36,16 @@ class MinimalActivity : ComponentActivity() {
         downgradeBlocked = versionGuardRepository.isDowngrade()
 
         setContent {
-            if (downgradeBlocked) {
-                DowngradeBlocked()
-            } else {
-                MarkLaunchSucceededAfterDelay()
-                MinimalNavHost()
+            // Stated once here, exactly as the full client states its settings, so every screen
+            // below inherits one choice rather than each resolving its own. This app has no
+            // settings screen, so the system is the whole of the choice.
+            NextTheme {
+                if (downgradeBlocked) {
+                    DowngradeBlocked()
+                } else {
+                    MarkLaunchSucceededAfterDelay()
+                    MinimalNavHost()
+                }
             }
         }
     }
@@ -56,18 +61,16 @@ class MinimalActivity : ComponentActivity() {
      */
     @Composable
     private fun DowngradeBlocked() {
-        NextTheme {
-            MessageScreen(
-                title = stringResource(R.string.minimal_downgrade_title),
-                subtitle =
-                    stringResource(
-                        R.string.minimal_downgrade_body,
-                        versionGuardRepository.highestVersionCodeSeen(),
-                    ),
-                actionLabel = stringResource(R.string.minimal_close),
-                onAction = ::finish,
-            )
-        }
+        MessageScreen(
+            title = stringResource(R.string.minimal_downgrade_title),
+            subtitle =
+                stringResource(
+                    R.string.minimal_downgrade_body,
+                    versionGuardRepository.highestVersionCodeSeen(),
+                ),
+            actionLabel = stringResource(R.string.minimal_close),
+            onAction = ::finish,
+        )
     }
 
     /**
