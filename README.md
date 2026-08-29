@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [106 — Yuna](https://github.com/Defuuls/Orbin/releases/tag/v106-Yuna)
+**Current release:** [107 — Tsumugi](https://github.com/Defuuls/Orbin/releases/tag/v107-Tsumugi)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
