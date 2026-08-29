@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.common.dispatchers.ApplicationScope
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -100,10 +99,6 @@ class SettingsRepositoryImpl
 
         override suspend fun setColorTheme(theme: ColorTheme) {
             edit { it[Keys.colorTheme] = theme.name }
-        }
-
-        override suspend fun setAppIconVariant(variant: AppIconVariant) {
-            edit { it[Keys.appIconVariant] = variant.name }
         }
 
         override suspend fun setFullScreenFeedChrome(enabled: Boolean) {
@@ -319,9 +314,6 @@ class SettingsRepositoryImpl
                 dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
-                appIconVariant =
-                    this[Keys.appIconVariant]?.toEnumOrDefault(AppIconVariant.DEFAULT)
-                        ?: AppIconVariant.DEFAULT,
                 fullScreenFeedChrome = this[Keys.fullScreenFeedChrome] ?: false,
                 thumbnailSize =
                     this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
@@ -400,7 +392,6 @@ class SettingsRepositoryImpl
             val threadPresentation = stringPreferencesKey("thread_presentation")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
-            val appIconVariant = stringPreferencesKey("app_icon_variant")
             val fullScreenFeedChrome = booleanPreferencesKey("full_screen_feed_chrome")
             val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")

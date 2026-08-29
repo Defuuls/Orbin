@@ -1,7 +1,6 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
@@ -299,10 +298,6 @@ class FakeSettingsRepository(
 
     override suspend fun setColorTheme(theme: ColorTheme) {
         update { copy(colorTheme = theme) }
-    }
-
-    override suspend fun setAppIconVariant(variant: AppIconVariant) {
-        update { copy(appIconVariant = variant) }
     }
 
     override suspend fun setFullScreenFeedChrome(enabled: Boolean) {

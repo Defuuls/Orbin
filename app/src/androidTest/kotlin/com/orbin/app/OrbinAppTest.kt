@@ -1,18 +1,12 @@
 package com.orbin.app
 
-import android.content.ComponentName
-import android.content.pm.PackageManager
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import com.orbin.core.model.AppIconVariant
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import org.junit.BeforeClass
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,31 +24,17 @@ private const val READY_TIMEOUT_MS = 20_000L
  * It asserts on the first-run wizard, which is what a fresh settings store produces and which needs
  * no network.
  *
- * **Ignored: `MainActivity` still produces no Compose hierarchy under instrumentation.** What is
- * established, from logcat rather than from reasoning:
+ * **Previously ignored, and no longer.** The activity launched and rendered, then was torn down
+ * mid-test — `PAUSED -> STOPPED -> DESTROYED`, preceded by `PackageUpdatedTask: Package updated`.
+ * That package update came from the launcher-alias writes: `MainActivity` applied the selected app
+ * icon on every start, a fresh install always wrote (it reports `COMPONENT_ENABLED_STATE_DEFAULT`
+ * rather than `ENABLED`), and every instrumentation run is a fresh install. Pinning the aliases
+ * up-front did not help, because the writes are broadcast asynchronously.
  *
- * - The activity launches and renders. `ActivityTaskManager: Displayed .../MainActivity: +544ms`.
- *   So "the activity did not launch" and "setContent was not called" are both out.
- * - It is then torn down mid-test: `PAUSED -> STOPPED -> DESTROYED`, preceded by
- *   `PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.orbin.app.debug]`.
- * - That package update comes from the launcher-alias writes — `AppIconManager` skips them when
- *   the aliases already match, but a fresh install reports `COMPONENT_ENABLED_STATE_DEFAULT`
- *   rather than `ENABLED`, so the first run always writes, and every instrumentation run is a
- *   fresh install.
- * - Writing that state up-front in [pinLauncherAliases] did **not** fix it. The package update
- *   still lands after the activity is displayed, so the writes are evidently persisted and
- *   broadcast asynchronously. The tear-down is unchanged.
- *
- * So the mechanism is understood and the remedy is not. Suppressing the icon write under test
- * would need `AppIconManager` behind an interface so it can be replaced — a production change made
- * solely for a test, which is worth a deliberate decision rather than a quiet one.
- *
- * Four hypotheses were wrong before the logcat existed: the async readiness gate (`setContent` is
- * unconditional and `AppContent` renders regardless of `ready`), a launch refusal (`MainActivity`
- * is exported and enabled), the DataStore conflict and the missing WorkManager configuration. The
- * latter two were real faults and are fixed; neither was this.
+ * The remedy at the time would have been to put `AppIconManager` behind an interface purely so a
+ * test could replace it. Selectable app icons have since been removed outright, taking the aliases
+ * and the writes with them, so the cause is gone rather than worked around.
  */
-@Ignore("MainActivity is destroyed mid-test by its own launcher-alias writes - see the KDoc")
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class OrbinAppTest {
@@ -63,50 +43,6 @@ class OrbinAppTest {
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    companion object {
-        /**
-         * Pins the launcher aliases before anything launches the activity.
-         *
-         * `MainActivity` applies the selected icon from a `LaunchedEffect` on every start.
-         * `AppIconManager` skips the work when the aliases already match, but a fresh install
-         * reports `COMPONENT_ENABLED_STATE_DEFAULT` rather than `ENABLED`, so the first run always
-         * writes. Those writes make PackageManager broadcast a package change, and that tears down
-         * the activity under test:
-         *
-         * ```
-         * Displayed com.orbin.app.debug/com.orbin.app.MainActivity: +517ms
-         * PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.orbin.app.debug]
-         * MainActivity in: STOPPED  ->  DESTROYED
-         * ```
-         *
-         * Every instrumentation run is a fresh install, so this fired every time and surfaced as
-         * "No compose hierarchies found in the app" — the activity had launched and then gone.
-         * Writing the same state here first makes the app's own call a no-op.
-         *
-         * `@BeforeClass` rather than a rule: it has to happen before the Compose rule launches the
-         * activity, and rules cannot be ordered ahead of that reliably.
-         */
-        @JvmStatic
-        @BeforeClass
-        fun pinLauncherAliases() {
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val pm = context.packageManager
-            AppIconVariant.entries.forEach { variant ->
-                val state =
-                    if (variant == AppIconVariant.DEFAULT) {
-                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                    } else {
-                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-                    }
-                pm.setComponentEnabledSetting(
-                    ComponentName(context, AppIconAliases.qualifiedName(variant)),
-                    state,
-                    PackageManager.DONT_KILL_APP,
-                )
-            }
-        }
-    }
 
     @Test
     fun theAppLaunchesAndShowsFirstRunSetup() {

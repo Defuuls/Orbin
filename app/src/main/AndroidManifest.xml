@@ -20,80 +20,22 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Orbin.Starting">
 
+        <!--
+          The launcher entry lives on the activity itself. It used to live on five activity
+          aliases, one per selectable app icon, with exactly one enabled at a time — so removing
+          that feature means moving this intent-filter back here, or the app would vanish from the
+          launcher on update rather than merely stop offering a choice of icon.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Orbin.Starting" />
-
-        <!-- Exactly one alias per AppIconVariant, and exactly one enabled at a time. This one is
-             enabled in the manifest because it backs AppIconVariant.DEFAULT, so a fresh install
-             always has a launcher entry. Adding an alias here means adding it to AppIconManager:
-             an unmanaged alias stays enabled forever and shows up as a duplicate launcher icon. -->
-        <activity-alias
-            android:name=".OrbitalOrbIconAlias"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_orbital_orb"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
+            android:theme="@style/Theme.Orbin.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".NestedRingsIconAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_nested_rings"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".AbstractFlowIconAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_abstract_flow"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".MinimalistEssenceIconAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_minimalist_essence"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".DualGradientIconAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_dual_gradient"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"

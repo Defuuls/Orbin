@@ -67,9 +67,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     @Inject
-    lateinit var appIconManager: AppIconManager
-
-    @Inject
     lateinit var appLockController: AppLockController
 
     @Inject
@@ -216,10 +213,6 @@ class MainActivity : FragmentActivity() {
             )
             SideEffect {
                 biometricLockActive = shouldLock
-            }
-
-            LaunchedEffect(settings.appIconVariant) {
-                appIconManager.setIconVariant(settings.appIconVariant)
             }
 
             // A "lock now" request from anywhere in the UI (e.g. the feed's failsafe button)

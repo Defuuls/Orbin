@@ -25,7 +25,6 @@ class BackupDocumentTest {
                     hiddenTags = "spoilers, wip",
                     themeMode = AppThemeMode.DARK,
                     colorTheme = ColorTheme.TOMORROW_NIGHT,
-                    appIconVariant = AppIconVariant.DUAL_GRADIENT,
                     thumbnailSize = ThumbnailSize.FILL,
                     fontScale = 1.2f,
                     feedThreadLimit = FeedThreadLimit.ALL,

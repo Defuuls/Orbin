@@ -8,6 +8,5 @@
 
     <!-- Legacy Orbin colors (maintained for compatibility) -->
     <color name="ic_launcher_background">#0D0D11</color>
-    <color name="ic_launcher_stellar_background">#212121</color>
     <color name="splash_background">#171717</color>
 </resources>
