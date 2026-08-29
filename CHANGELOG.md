@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The feed, board catalogue and media wall now scroll their headers away**, which is what the
+  thread reader and the settings list already did and what the documentation has claimed all along.
+  All three pinned the title and the layout switch in a band above the list instead, spending a
+  strip of every screen on furniture — the exact thing the interface was rebuilt to stop doing. The
+  screenshot goldens could not see it, because at rest a pinned header and a first-item header are
+  the same picture; there is now a test that scrolls, checked against the pinned layout to confirm
+  it fails on it.
+- **The feed header no longer stacks on top of itself** when it is not the direct child of a
+  column. It emitted its title, its layout switch and its separator as siblings with no parent
+  layout of its own, so moving it into the grid made all three overlap.
+
 ## [106-Yuna] - 2026-08-28
 
 ### Changed
