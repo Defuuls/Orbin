@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
+import com.orbin.uinext.NextTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -467,6 +469,10 @@ private fun AppContent(
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
 ) {
+    // Two themes, because the app draws from two layers. OrbinTheme covers the Material surfaces
+    // — the gallery, the onboarding wizard, dialogs and snackbars. NextTheme covers the interface
+    // itself, whose screens each wrap themselves in one and inherit this outer choice rather than
+    // overwriting it; stating it here is how a theme setting reaches them at all.
     com.orbin.core.designsystem.theme.OrbinTheme(
         themeMode = settings.themeMode.toDesignSystem(),
         colorSchemeVariant = settings.colorTheme.toDesignSystem(),
@@ -474,37 +480,43 @@ private fun AppContent(
         amoled = settings.amoled,
         fontScale = settings.fontScale,
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        NextTheme(
+            darkTheme = settings.themeMode.isDark(),
+            amoled = settings.amoled,
+            fontScale = settings.fontScale,
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background,
+            Box(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             ) {
-                if (ready) {
-                    OrbinAppProviders {
-                        OrbinApp(
-                            startWithOnboarding = !settings.onboardingCompleted,
-                            fullScreenFeedChrome = settings.fullScreenFeedChrome,
-                            threadPresentation = settings.threadPresentation,
-                            isOnline = isOnline,
-                        )
-                    }
-                }
-            }
-
-            if (ready && shouldLock && !unlocked) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    LockedScreen(
-                        message = unlockMessage,
-                        unlocking = authenticationInProgress,
-                        allowContinueWithoutLock = allowContinueWithoutLock,
-                        onRetry = onRetryUnlock,
-                        onContinueWithoutLock = onContinueWithoutLock,
-                    )
+                    if (ready) {
+                        OrbinAppProviders {
+                            OrbinApp(
+                                startWithOnboarding = !settings.onboardingCompleted,
+                                fullScreenFeedChrome = settings.fullScreenFeedChrome,
+                                threadPresentation = settings.threadPresentation,
+                                isOnline = isOnline,
+                            )
+                        }
+                    }
+                }
+
+                if (ready && shouldLock && !unlocked) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        LockedScreen(
+                            message = unlockMessage,
+                            unlocking = authenticationInProgress,
+                            allowContinueWithoutLock = allowContinueWithoutLock,
+                            onRetry = onRetryUnlock,
+                            onContinueWithoutLock = onContinueWithoutLock,
+                        )
+                    }
                 }
             }
         }
@@ -545,6 +557,19 @@ private fun LockedScreen(
         }
     }
 }
+
+/**
+ * The same choice as [toDesignSystem], resolved to a plain boolean for `:ui-next`, which has one
+ * dark palette and one light one rather than a mode. SYSTEM is answered here rather than left to
+ * NextTheme's own default so both themes read the same setting in the same composition.
+ */
+@Composable
+private fun AppThemeMode.isDark(): Boolean =
+    when (this) {
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
 
 private fun AppThemeMode.toDesignSystem(): ThemeMode =
     when (this) {

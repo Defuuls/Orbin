@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The theme settings govern the interface again.** Theme, AMOLED black and font size reached the
+  gallery and the onboarding wizard but stopped at the edge of every redesigned screen, because
+  each screen wraps itself in its own theme and that theme read none of them. Dark mode was the
+  visible half of it — 108-Ichika made the screens follow the *system*, which is not the same as
+  following the setting, and a reader who had chosen Dark on a light phone still got a light app.
+  The shell now states all three once and the screens inherit them: Light and Dark are obeyed,
+  AMOLED black draws a true-black ground behind the same ink and accent, and the font size scales
+  every screen rather than only the Material ones.
+- **Font size multiplies the system's own setting rather than replacing it**, so enlarging text
+  system-wide is no longer undone by opening the app — and it is applied once, not once per screen,
+  which is what an interface where every screen carries a theme would otherwise do.
+
+### Changed
+- **Dynamic color and the ported imageboard skins deliberately stop at the same edge.** The
+  redesigned screens keep their own palette — warm ink on warm paper, one terracotta accent, a
+  colour per board — because recolouring that from the wallpaper would be the interface they
+  replaced wearing their layout. Both settings still govern the gallery, the onboarding wizard,
+  dialogs and snackbars.
+
 ## [108-Ichika] - 2026-08-29
 
 ### Changed

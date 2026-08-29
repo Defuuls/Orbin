@@ -10,6 +10,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 
 /**
  * The palette the proposal is drawn from.
@@ -34,6 +36,8 @@ data class NextPalette(
     val accent: Color,
     val accentSoft: Color,
     val dark: Boolean,
+    /** True only for the AMOLED ground, so a nested theme inherits that choice with the palette. */
+    val amoled: Boolean = false,
 )
 
 private val LightPalette =
@@ -62,6 +66,19 @@ private val DarkPalette =
         dark = true,
     )
 
+/**
+ * The AMOLED ground: true black rather than the dark palette's near-black.
+ *
+ * Only the two surfaces change. The ink, the accent and the board hues are what the palette *is*,
+ * and an OLED screen saving power on the background is not a reason to redraw them.
+ */
+private val AmoledPalette =
+    DarkPalette.copy(
+        background = Color.Black,
+        raised = Color(0xFF0A0A0A),
+        amoled = true,
+    )
+
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
 /**
@@ -71,6 +88,9 @@ val LocalNext = staticCompositionLocalOf { LightPalette }
  */
 private val LocalNextThemed = staticCompositionLocalOf { false }
 
+/** The app's own font-size preference, so a nested theme inherits it as it inherits the palette. */
+private val LocalNextFontScale = staticCompositionLocalOf { 1f }
+
 /** Shorthand for the palette in scope. */
 val next: NextPalette
     @Composable get() = LocalNext.current
@@ -79,19 +99,40 @@ val next: NextPalette
  * Every screen wraps itself in this rather than the shell wrapping all of them, so that each one
  * draws correctly wherever it is composed — including in a test that renders it on its own.
  *
- * That makes nesting the normal case rather than the exception, so the rule is: an explicit
- * [darkTheme] wins, an enclosing theme's choice is inherited, and failing both it follows the
- * system. It used to be a plain `= false`, which meant an outer choice was overwritten by every
+ * That makes nesting the normal case rather than the exception, and every parameter here follows
+ * the same rule: an explicit value wins, an enclosing theme's is inherited, and failing both there
+ * is a default — the system for [darkTheme], off for [amoled], unscaled for [fontScale].
+ * [darkTheme] used to be a plain `= false`, which meant an outer choice was overwritten by every
  * screen inside it and the whole app was light whatever the system or the settings said.
+ *
+ * This is how a reader's theme settings reach this module: the shell states them once, at the top,
+ * and the screens below say nothing and inherit. A screen here has no view model and cannot read a
+ * setting, for the same reason it takes rows rather than threads.
+ *
+ * What is deliberately not a parameter is dynamic color and the ported imageboard skins. This
+ * module's palette is the argument it makes — warm ink on warm paper, one terracotta accent, a
+ * colour per board — and recolouring it from the wallpaper would be the interface it replaced
+ * wearing this one's layout. Those two settings still govern the Material surfaces around it: the
+ * gallery, the onboarding wizard, dialogs and snackbars.
  */
 @Composable
 fun NextTheme(
     darkTheme: Boolean? = null,
+    amoled: Boolean? = null,
+    fontScale: Float? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
     val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
-    val palette = if (dark) DarkPalette else LightPalette
+    val black = amoled ?: (inherited?.amoled ?: false)
+    val inheritedScale = LocalNextFontScale.current
+    val scale = fontScale ?: inheritedScale
+    val palette =
+        when {
+            dark && black -> AmoledPalette
+            dark -> DarkPalette
+            else -> LightPalette
+        }
     val scheme =
         if (dark) {
             darkColorScheme(
@@ -110,7 +151,22 @@ fun NextTheme(
                 primary = palette.accent,
             )
         }
-    CompositionLocalProvider(LocalNext provides palette, LocalNextThemed provides true) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(
+        LocalNext provides palette,
+        LocalNextThemed provides true,
+        LocalNextFontScale provides scale,
+        // Scaling the density is what makes every literal `sp` in this module obey the setting,
+        // rather than threading a factor through each piece of text. Multiplied onto the scale
+        // already in force rather than replacing it, so a reader who has enlarged text system-wide
+        // does not have that undone by opening this app.
+        //
+        // Only the *change* is applied. A nested theme that inherits the scale inherits a density
+        // the outer one has already scaled, and re-applying the factor there would compound it
+        // once per screen — which is exactly what a module where every screen wraps itself in a
+        // theme would do.
+        LocalDensity provides Density(density.density, density.fontScale * scale / inheritedScale),
+    ) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
 }
