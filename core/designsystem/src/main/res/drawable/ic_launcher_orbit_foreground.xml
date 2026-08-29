@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!--
+      Orbin's mark: an orbit, and the one body on it. Two shapes, one colour.
+
+      It lives here rather than in either application module because both apps wear it, and it was
+      previously copied into each of them — two files that could drift, describing themselves in
+      comments as being the same.
+
+      The ring breaks where the body sits rather than passing behind it. That is what keeps the
+      shape legible at 36px, where a ring with a dot merely resting on it reads as a ring with a
+      lump; this was checked by rendering it at every launcher size and mask, not assumed.
+
+      The colour is `next.accent` from the dark palette. The interface is warm ink on warm paper
+      with a single terracotta accent, and the mark this replaced was still drawn in the blue and
+      purple of a palette the app no longer uses anywhere.
+
+      Everything stays within a radius of 29 from centre; the adaptive-icon safe zone is 33.
+    -->
+    <path
+        android:strokeColor="#F08A5A"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M74.92,47.2 A22,22 0 1 1 53.23,32.01" />
+    <path
+        android:fillColor="#F08A5A"
+        android:pathData="M66.62,35.98 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+</vector>

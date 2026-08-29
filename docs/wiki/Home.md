@@ -44,7 +44,7 @@ domain core, networking, media pipeline, encrypted data layer, and two reference
   Gallery view.
 - **Media carousel** — posts with several attachments scroll horizontally with a page counter,
   in the thread view and optionally in the board feed, with configurable thumbnail sizes.
-- **Selectable app icons** — five launcher icons (Orbital Orb, Nested Rings, Abstract Flow,
+- **Selectable app icons** — five launcher icons (Orbit, Nested Rings, Abstract Flow,
   Minimalist Essence, Dual Gradient), switchable from Settings without a restart.
 - **Saved searches & watch notifications** — saved search queries, plus per-thread watch
   notifications with configurable quiet hours.

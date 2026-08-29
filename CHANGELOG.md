@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **A new launcher icon: an orbit, and the one body on it.** Two shapes in one terracotta, on the
+  dark palette's own ground. What it replaced was seven paths of hairline strokes and four alpha
+  levels drawn in a 256 viewport — around half a pixel wide by the time a launcher scaled it, so
+  most of the drawing was not there at the size anyone actually saw. It is drawn in the accent the
+  rest of the app uses; the old mark was still in the blue and purple of a palette nothing else
+  has used since the interface was rebuilt.
+- **The default icon is an adaptive icon**, so the launcher masks it to its own shape and Android
+  13 can draw it as a themed icon. It was a bare vector, which gets neither. The "Orbital Orb"
+  choice in Settings is now called "Orbit", since it is no longer an orb.
+- **Both apps draw the mark from one file** in `:core:designsystem`, rather than from a copy each
+  that described itself in a comment as being the same as the other.
+
 ### Fixed
 - **The theme settings govern the interface again.** Theme, AMOLED black and font size reached the
   gallery and the onboarding wizard but stopped at the edge of every redesigned screen, because

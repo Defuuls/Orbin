@@ -1,47 +1,15 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="256"
-    android:viewportHeight="256">
-    <!-- Outer orbital ring -->
-    <path
-        android:strokeColor="#3B82F6"
-        android:strokeWidth="2"
-        android:fillColor="#00000000"
-        android:pathData="M128,33 a95,95 0 0,1 0,190 a95,95 0 0,1 0,-190"
-        android:strokeAlpha="0.3" />
-    <!-- Inner orbital path -->
-    <path
-        android:strokeColor="#22D3EE"
-        android:strokeWidth="2.5"
-        android:fillColor="#00000000"
-        android:pathData="M128,50 A78,78 0 0,1 185,150 A78,78 0 0,1 128,206"
-        android:strokeAlpha="0.4"
-        android:strokeLineCap="round" />
-    <!-- Central orb -->
-    <path
-        android:fillColor="#7C3AED"
-        android:pathData="M128,80 a48,48 0 1,0 0.01,0 Z" />
-    <!-- Inner highlight -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.12"
-        android:pathData="M115,92 a18,18 0 1,0 0.01,0 Z" />
-    <!-- Accent node on orbital path -->
-    <path
-        android:fillColor="#22D3EE"
-        android:fillAlpha="0.9"
-        android:pathData="M185,144 a6,6 0 1,0 0.01,0 Z" />
-    <!-- Outer accent ring -->
-    <path
-        android:strokeColor="#7C3AED"
-        android:strokeWidth="1"
-        android:fillColor="#00000000"
-        android:strokeAlpha="0.2"
-        android:pathData="M128,80 a48,48 0 1,0 0.01,0 Z" />
-    <!-- Secondary accent node -->
-    <path
-        android:fillColor="#3B82F6"
-        android:fillAlpha="0.6"
-        android:pathData="M70,151 a4,4 0 1,0 0.01,0 Z" />
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The icon a fresh install shows: `AppIconVariant.DEFAULT` is the only alias enabled in the
+  manifest, so this drawable, not `@mipmap/ic_launcher`, is what ends up on the launcher.
+
+  It is an adaptive icon now rather than a bare vector, which is what lets the launcher mask it to
+  its own shape and lets Android 13 draw it as a themed icon. What it replaced was seven paths of
+  hairline strokes and four alpha levels in a 256 viewport — around half a pixel wide once scaled
+  to a launcher, so most of the drawing simply was not there at the size anyone saw it.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_orbit_background" />
+    <foreground android:drawable="@drawable/ic_launcher_orbit_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_orbit_foreground" />
+</adaptive-icon>

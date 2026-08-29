@@ -24,7 +24,9 @@ enum class ColorTheme(
 enum class AppIconVariant(
     val label: String,
 ) {
-    DEFAULT("Orbital Orb"),
+    // The constant name is what is persisted and what names the manifest alias, so it stays
+    // DEFAULT; only the label changes, because the icon it names is no longer an orb.
+    DEFAULT("Orbit"),
     NESTED_RINGS("Nested Rings"),
     ABSTRACT_FLOW("Abstract Flow"),
     MINIMALIST_ESSENCE("Minimalist Essence"),
