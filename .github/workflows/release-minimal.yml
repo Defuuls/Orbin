@@ -183,22 +183,25 @@ jobs:
             echo
             echo "Orbin Minimal is a separate app: every board you follow, merged into one flat"
             echo "feed and sorted by latest activity. Each row carries the opening post's first"
-            echo "attachment as a preview, and a row whose attachment is a video plays it — muted —"
-            echo "for as long as the row is on screen, so the feed reads as a wall of live media"
-            echo "rather than a list of links. Tap a row to read the thread, tap an image to open it"
+            echo "attachment as a preview. Tap a row to read the thread, tap an image to open it"
             echo "full screen."
             echo
+            echo "The screens are the full client's own, so the feed has the same three layouts,"
+            echo "the same pull-to-refresh and the same floating rail. The rail's one affordance"
+            echo "here is Boards rather than Search, because the board picker is the only other"
+            echo "place this app has — and it is the whole of the navigation."
+            echo
             echo "That is the entire interface. No bottom navigation, no settings hub, no search,"
-            echo "gallery, downloads, bookmarks, history, notifications, app-lock or themes — and"
-            echo "because there is no settings screen, autoplay is simply always on rather than a"
-            echo "preference. On a feed spanning every board you follow, that will use mobile data"
-            echo "without asking."
+            echo "gallery, downloads, bookmarks, history, notifications, app-lock or themes. With"
+            echo "no settings screen, feed autoplay stays off, since it is the full client's"
+            echo "setting and there is nowhere here to turn it on; videos play when you open the"
+            echo "thread."
             echo
             echo "Underneath is the full client's machinery: the same providers, caching, encrypted"
             echo "storage, board filters and always-on content filter. It installs **alongside** the"
             echo "full Orbin client rather than replacing it, under its own applicationId. Android"
             echo "sandboxes the two separately, so its subscriptions are its own — pick boards from"
-            echo "the list icon in its top bar."
+            echo "the rail's Boards."
             echo
             if [ -n "$PREV_TAG" ]; then
               echo "### Changes since ${PREV_TAG}"
