@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -113,6 +114,7 @@ fun FeedScreen(
     filter: String? = null,
     onClearFilter: () -> Unit = {},
     onOpenRow: (FeedRow) -> Unit = {},
+    railAction: String = "Search",
     onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
@@ -205,7 +207,7 @@ fun FeedScreen(
                 exit = slideOutVertically { it } + fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                ContextRail(where = "Feed", detail = railDetail, onSearch = onSearch)
+                ContextRail(where = "Feed", detail = railDetail, action = railAction, onSearch = onSearch)
             }
         }
     }
@@ -756,6 +758,127 @@ private fun SweepBar(
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(next.accent),
+        )
+    }
+}
+
+/**
+ * One board you can put in your feed, or take out of it.
+ *
+ * [id] is the board's short name without the slashes — the screen draws those — and is also what a
+ * toggle reports back, so the caller never has to match on the label it supplied.
+ */
+data class BoardChoice(
+    val id: String,
+    val title: String,
+    val subscribed: Boolean = false,
+)
+
+/**
+ * The board picker: which boards feed the feed.
+ *
+ * Drawn as the settings list is drawn, because it is the same act — a long list of things that are
+ * on or off, where the state of the whole list should be one glance down the right-hand edge. It
+ * was a Material top bar with a back arrow, a refresh icon and a checkbox per row; the checkbox in
+ * particular made the list read as a form to submit rather than a set of switches that take effect
+ * as you press them, which is what it has always actually been.
+ *
+ * The title scrolls away with the rows, like every other title here. Refresh is a word inline
+ * under it rather than an icon pinned in a bar, so it is unambiguous and costs nothing once you
+ * have scrolled past it — the list is not stale twice.
+ */
+@Composable
+fun BoardPickerScreen(
+    boards: List<BoardChoice>,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    showRail: Boolean = true,
+    railAction: String = "Feed",
+    onToggle: (BoardChoice) -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onSearch: () -> Unit = {},
+) {
+    val subscribed = boards.count { it.subscribed }
+    Surface {
+        Box(modifier = modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding =
+                    PaddingValues(bottom = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()),
+            ) {
+                item(key = FEED_HEADER_KEY) {
+                    Column {
+                        ScreenTitle(
+                            text = "Boards",
+                            subtitle = subtitle ?: "$subscribed of ${boards.size} in your feed",
+                        )
+                        Row(modifier = Modifier.padding(start = GUTTER - 4.dp)) {
+                            InlineAction(label = "Refresh", onClick = onRefresh)
+                        }
+                        Gap(12)
+                        Hairline()
+                    }
+                }
+                itemsIndexed(boards, key = { _, board -> board.id }) { index, board ->
+                    Column {
+                        BoardChoiceRow(board = board, onToggle = onToggle)
+                        if (index < boards.lastIndex) Hairline(inset = true)
+                    }
+                }
+            }
+            if (showRail) {
+                ContextRail(
+                    where = "Boards",
+                    detail = "$subscribed subscribed",
+                    action = railAction,
+                    onSearch = onSearch,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A board's row: its dot and name, its title under that, and where it stands on the right.
+ *
+ * The state is a word rather than a checkbox, and both words are spelled out. "Subscribed" against
+ * a blank is a list you have to infer the meaning of; "Subscribed" against "Not subscribed" is one
+ * you can read down.
+ */
+@Composable
+private fun BoardChoiceRow(
+    board: BoardChoice,
+    onToggle: (BoardChoice) -> Unit,
+) {
+    val name = "/${board.id}/"
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Switch) { onToggle(board) }
+                .padding(horizontal = GUTTER, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BoardDot(name, size = 8.dp)
+        WidthSpacer(12)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                fontSize = 15.5.sp,
+                letterSpacing = (-0.1).sp,
+                color = next.ink,
+            )
+            MetaLine(text = board.title, modifier = Modifier.padding(top = 3.dp))
+        }
+        WidthSpacer(12)
+        Text(
+            text = if (board.subscribed) "Subscribed" else "Not subscribed",
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (board.subscribed) next.accent else next.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

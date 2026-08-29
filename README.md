@@ -126,14 +126,20 @@ a row whose attachment is a video plays it — muted — while the row is on scr
 the thread, tap an image to view it full screen. Nothing else: no bottom navigation, no settings
 hub, no search, gallery, downloads, bookmarks, history, notifications, app-lock or themes.
 
-Because there is no settings screen, autoplay is always on rather than a preference. On a feed
-spanning every board you follow that will use mobile data without asking; the full client makes
-the same behaviour opt-in under Settings → Media.
+The screens are the full client's own — the same feed, reader and board picker from `ui-next`,
+which is why the feed here has the same three layouts, the same pull-to-refresh and the same
+floating rail. The rail's one affordance is Boards rather than Search, because the board picker is
+the only other place this app has, and it is the whole of the navigation.
+
+Because there is no settings screen, feed autoplay is off and stays off — it is the full client's
+own setting, and this app has nowhere to turn it on. It used to be forced on here instead, which on
+a feed spanning every board you follow meant using mobile data without asking. Videos still play
+when you open the thread.
 
 It is a different front end over the same layers — identical providers, caching, encrypted storage,
 board filters and the always-on content filter — built from `app-minimal/`. It installs alongside
 the full client under its own applicationId, which also means Android sandboxes their data
-separately: its subscriptions are its own, chosen from the list icon in its top bar.
+separately: its subscriptions are its own, chosen from the board picker behind the rail's Boards.
 
 ## Tech stack
 

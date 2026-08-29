@@ -73,6 +73,9 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":core:designsystem"))
+    // The full client's interface. This app draws the same screens from the same module rather
+    // than keeping a second, smaller set of its own — that pair had already drifted apart once.
+    implementation(project(":ui-next"))
 
     // Providers (registered via Hilt @IntoSet)
     implementation(project(":provider:vichan"))

@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -63,18 +64,36 @@ private val DarkPalette =
 
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
+/**
+ * Whether the palette in scope was chosen by an enclosing [NextTheme] or is just [LocalNext]'s
+ * default. Without it a nested theme cannot tell "somebody decided this" from "nobody has yet",
+ * and every screen here wraps itself in a theme, so that distinction is the whole of nesting.
+ */
+private val LocalNextThemed = staticCompositionLocalOf { false }
+
 /** Shorthand for the palette in scope. */
 val next: NextPalette
     @Composable get() = LocalNext.current
 
+/**
+ * Every screen wraps itself in this rather than the shell wrapping all of them, so that each one
+ * draws correctly wherever it is composed — including in a test that renders it on its own.
+ *
+ * That makes nesting the normal case rather than the exception, so the rule is: an explicit
+ * [darkTheme] wins, an enclosing theme's choice is inherited, and failing both it follows the
+ * system. It used to be a plain `= false`, which meant an outer choice was overwritten by every
+ * screen inside it and the whole app was light whatever the system or the settings said.
+ */
 @Composable
 fun NextTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean? = null,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (darkTheme) DarkPalette else LightPalette
+    val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
+    val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
+    val palette = if (dark) DarkPalette else LightPalette
     val scheme =
-        if (darkTheme) {
+        if (dark) {
             darkColorScheme(
                 background = palette.background,
                 onBackground = palette.ink,
@@ -91,7 +110,7 @@ fun NextTheme(
                 primary = palette.accent,
             )
         }
-    CompositionLocalProvider(LocalNext provides palette) {
+    CompositionLocalProvider(LocalNext provides palette, LocalNextThemed provides true) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
 }

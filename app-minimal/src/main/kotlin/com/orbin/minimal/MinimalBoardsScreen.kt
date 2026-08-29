@@ -1,41 +1,18 @@
 package com.orbin.minimal
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.BoardId
-import com.orbin.core.ui.state.EmptyView
-import com.orbin.core.ui.state.ErrorView
-import com.orbin.core.ui.state.LoadingView
+import com.orbin.uinext.BoardChoice
+import com.orbin.uinext.BoardPickerScreen
+import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextTheme
 
 /** Tick the boards you want in the feed. That is the whole of this build's configuration. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MinimalBoardsScreen(
     onBack: () -> Unit,
@@ -55,8 +32,15 @@ fun MinimalBoardsScreen(
     )
 }
 
-/** The board picker's rendering, detached from its view model so it can be screenshot-tested. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The board picker's rendering, detached from its view model so it can be screenshot-tested.
+ *
+ * The screen itself is the full client's [BoardPickerScreen]; this is only the join, the same
+ * shape as the feed's. The rail's one affordance is Feed, which is where you came from and the
+ * only other place this app has — it is also the whole of the back navigation, which is why the
+ * empty and failed states carry the rail too. Without it a fresh install, which has no boards to
+ * list, would be a screen you could not leave.
+ */
 @Composable
 internal fun MinimalBoardsContent(
     boards: List<SubscribableBoard>,
@@ -66,86 +50,44 @@ internal fun MinimalBoardsContent(
     onRefresh: () -> Unit,
     onToggle: (BoardId, Boolean) -> Unit,
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.minimal_boards_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.minimal_back),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onRefresh, enabled = !isLoading) {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = stringResource(R.string.minimal_refresh),
-                        )
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    NextTheme {
+        val title = stringResource(R.string.minimal_boards_title)
         // An empty list is not the same as a pending one. Showing a spinner for both left a fetch
         // that failed, or a provider with no boards, turning forever with no way to retry.
         if (boards.isEmpty()) {
-            when {
-                isLoading -> LoadingView(Modifier.padding(padding))
-                errorMessage != null ->
-                    ErrorView(
-                        message = errorMessage,
-                        onRetry = onRefresh,
-                        modifier = Modifier.padding(padding),
-                    )
-                else ->
-                    EmptyView(
-                        message = stringResource(R.string.minimal_no_boards_available),
-                        modifier = Modifier.padding(padding),
-                    )
-            }
-            return@Scaffold
-        }
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-            items(boards, key = { it.board.id.value }) { entry ->
-                BoardRow(
-                    entry = entry,
-                    onToggle = { onToggle(entry.board.id, !entry.isSubscribed) },
-                )
-                HorizontalDivider()
-            }
-        }
-    }
-}
-
-@Composable
-private fun BoardRow(
-    entry: SubscribableBoard,
-    onToggle: () -> Unit,
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "/${entry.board.id.value}/",
-                style = MaterialTheme.typography.bodyLarge,
+            MessageScreen(
+                title = title,
+                subtitle =
+                    when {
+                        isLoading -> stringResource(R.string.minimal_boards_loading)
+                        errorMessage != null ->
+                            errorMessage.ifBlank { stringResource(R.string.minimal_boards_load_failed) }
+                        else -> stringResource(R.string.minimal_no_boards_available)
+                    },
+                actionLabel = stringResource(R.string.minimal_refresh).takeUnless { isLoading },
+                onAction = onRefresh,
+                where = title,
+                action = stringResource(R.string.minimal_feed_title),
+                onSearch = onBack,
             )
-            Text(
-                text = entry.board.title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            return@NextTheme
         }
-        Checkbox(checked = entry.isSubscribed, onCheckedChange = { onToggle() })
+        val choices =
+            remember(boards) {
+                boards.map { entry ->
+                    BoardChoice(
+                        id = entry.board.id.value,
+                        title = entry.board.title,
+                        subscribed = entry.isSubscribed,
+                    )
+                }
+            }
+        BoardPickerScreen(
+            boards = choices,
+            railAction = stringResource(R.string.minimal_feed_title),
+            onToggle = { choice -> onToggle(BoardId(choice.id), !choice.subscribed) },
+            onRefresh = onRefresh,
+            onSearch = onBack,
+        )
     }
 }

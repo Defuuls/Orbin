@@ -85,6 +85,18 @@ class ScrollingHeaderTest {
         composeRule.onNodeWithText("All media").assertDoesNotExist()
     }
 
+    @Test
+    fun `the board picker title scrolls away with the list`() {
+        composeRule.setContent {
+            NextTheme { BoardPickerScreen(boards = boardChoices(), showRail = false) }
+        }
+
+        composeRule.onNodeWithText("Boards").assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_BOARD))
+
+        composeRule.onNodeWithText("Boards").assertDoesNotExist()
+    }
+
     private fun scrollToLastRow() = composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
 
     private fun rows() =
@@ -99,6 +111,12 @@ class ScrollingHeaderTest {
             )
         }
 
+    /** The last board is named apart from the rest, so scrolling to it is scrolling to the end. */
+    private fun boardChoices() =
+        List(ROW_COUNT) { index ->
+            BoardChoice(id = if (index == ROW_COUNT - 1) LAST_BOARD.trim('/') else "b$index", title = "Board $index")
+        }
+
     /** The last tile carries a board of its own, so scrolling to it is scrolling to the end. */
     private fun cells() =
         List(ROW_COUNT) { index ->
@@ -108,5 +126,6 @@ class ScrollingHeaderTest {
     private companion object {
         const val ROW_COUNT = 30
         const val LAST_SUBJECT = "The last thread in the list"
+        const val LAST_BOARD = "/zzz/"
     }
 }

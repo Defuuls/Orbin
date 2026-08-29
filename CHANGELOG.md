@@ -6,6 +6,38 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Orbin Minimal draws the same interface as the full client.** It had a Material feed and a
+  Material board picker of its own — a top bar, a list icon, an overflow, checkboxes — which is the
+  interface the full client was rebuilt to get rid of, kept alive in a second app that could only
+  drift further from the first. Its feed *is* the full client's feed now, from `ui-next`: the same
+  rows, the same three layouts, the same pull-to-refresh, the same floating rail. The rail's one
+  affordance is Boards rather than Search, because the board picker is the only other place this
+  app has, and it is the whole of its navigation — which also means the empty and failed states
+  carry the rail, so a fresh install with nothing subscribed is not a screen you cannot leave.
+- **The board picker is a list of boards that are on or off**, drawn the way the settings list is
+  drawn — a board's name, its title under that, and where it stands on the right in the accent
+  colour. It was a checkbox per row, which read as a form to submit rather than switches that take
+  effect as you press them. Its title scrolls away with the list, and Refresh is a word under the
+  title rather than an icon pinned in a bar.
+- **Orbin Minimal's blocked-downgrade screen** is drawn in the same vocabulary as everything else
+  rather than as a Material dialog, which was the last screen in that app still looking like what
+  it replaced.
+- **Feed autoplay in Orbin Minimal is off**, as it is in the full client until you turn it on. It
+  used to be forced on there, on the grounds that an app with no settings screen cannot offer the
+  choice — but on a feed spanning every board you follow that spent mobile data without asking.
+  Videos still play when you open the thread.
+
+### Fixed
+- **Dark mode works.** `NextTheme` defaulted to light, and every screen wraps itself in it, so a
+  theme chosen around a screen was overwritten by the screen inside it — the whole redesigned
+  interface was light whatever the system said. It now inherits an enclosing choice, and follows
+  the system when there is nothing to inherit. The goldens could not catch it: a capture that asked
+  for dark got a light screen back and looked like a light capture.
+- **Orbin Minimal's board list no longer reports an empty provider when a refresh fails** with an
+  exception carrying no message. The failure became a null message, which the screen could not tell
+  from "this provider has no boards".
+
 ## [107-Tsumugi] - 2026-08-29
 
 ### Fixed

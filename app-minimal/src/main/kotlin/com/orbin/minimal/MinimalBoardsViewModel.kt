@@ -112,7 +112,10 @@ class MinimalBoardsViewModel
                     // A provider that cannot be reached is the common case worth reporting; the
                     // screen offers a retry rather than sitting on an empty list.
                     Log.w(TAG, "Could not refresh the board list", e)
-                    _errorMessage.value = e.message
+                    // Empty rather than null when the exception says nothing: a failure with no
+                    // message is still a failure, and null here would have the screen report an
+                    // empty board list instead — the one thing it is not.
+                    _errorMessage.value = e.message.orEmpty()
                 } finally {
                     _isLoading.value = false
                 }

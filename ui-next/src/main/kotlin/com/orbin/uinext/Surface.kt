@@ -43,15 +43,20 @@ import androidx.compose.ui.unit.sp
  * are on.
  *
  * This replaces both: one floating bar, inset from the edges, over content that scrolls beneath it.
- * Where you are on the left; on the right the only affordance that is always available — Search,
- * which is how you get anywhere else. There is no back button because layers are dismissed by
- * dragging them down, and no tab bar because there are no longer tabs.
+ * Where you are on the left; on the right the only affordance that is always available. There is no
+ * back button because layers are dismissed by dragging them down, and no tab bar because there are
+ * no longer tabs.
+ *
+ * [action] names that one affordance. It is Search in the full client, because search is how you
+ * get anywhere else there. Orbin Minimal has nowhere else to get to but its board list, so it says
+ * Boards — one bar with one affordance either way, rather than a bar the smaller app cannot use.
  */
 @Composable
 fun ContextRail(
     where: String,
     modifier: Modifier = Modifier,
     detail: String? = null,
+    action: String = "Search",
     onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
@@ -114,7 +119,7 @@ fun ContextRail(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Search",
+                    text = action,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = next.accent,
@@ -374,6 +379,7 @@ fun MessageScreen(
     actionLabel: String? = null,
     onAction: () -> Unit = {},
     where: String? = null,
+    action: String = "Search",
     onSearch: () -> Unit = {},
 ) {
     Surface {
@@ -389,6 +395,7 @@ fun MessageScreen(
             if (where != null) {
                 ContextRail(
                     where = where,
+                    action = action,
                     onSearch = onSearch,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )

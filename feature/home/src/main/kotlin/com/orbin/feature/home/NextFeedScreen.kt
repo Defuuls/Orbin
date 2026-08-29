@@ -60,6 +60,7 @@ fun NextFeedScreen(
     refreshRequest: Int = 0,
     filter: String = "",
     onClearFilter: () -> Unit = {},
+    railAction: String = "Search",
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     // "Refresh feed" from the command surface, which is where the tablet dock's refresh button and
@@ -81,6 +82,9 @@ fun NextFeedScreen(
                 MessageScreen(
                     title = stringResource(R.string.next_feed_title),
                     subtitle = stringResource(R.string.next_feed_loading),
+                    where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                    action = railAction,
+                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
 
@@ -90,6 +94,9 @@ fun NextFeedScreen(
                     subtitle = state.message,
                     actionLabel = stringResource(R.string.next_feed_try_again),
                     onAction = viewModel::refresh,
+                    where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                    action = railAction,
+                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
 
@@ -115,6 +122,9 @@ fun NextFeedScreen(
                             },
                         actionLabel = if (filtered) stringResource(R.string.next_feed_clear_filter) else null,
                         onAction = onClearFilter,
+                        where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                        action = railAction,
+                        onSearch = onOpenCommands,
                         modifier = modifier,
                     )
                 } else {
@@ -136,6 +146,7 @@ fun NextFeedScreen(
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             scrollToTopRequest = scrollToTopRequest,
+                            railAction = railAction,
                             onSearch = onOpenCommands,
                             onOpenRow = { row ->
                                 byId[row.id]?.let { entry ->

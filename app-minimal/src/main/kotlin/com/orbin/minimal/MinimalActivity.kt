@@ -4,23 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.orbin.core.designsystem.theme.OrbinTheme
 import com.orbin.domain.repository.VersionGuardRepository
+import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import javax.inject.Inject
@@ -47,13 +36,11 @@ class MinimalActivity : ComponentActivity() {
         downgradeBlocked = versionGuardRepository.isDowngrade()
 
         setContent {
-            OrbinTheme {
-                if (downgradeBlocked) {
-                    DowngradeBlocked()
-                } else {
-                    MarkLaunchSucceededAfterDelay()
-                    MinimalNavHost()
-                }
+            if (downgradeBlocked) {
+                DowngradeBlocked()
+            } else {
+                MarkLaunchSucceededAfterDelay()
+                MinimalNavHost()
             }
         }
     }
@@ -62,31 +49,24 @@ class MinimalActivity : ComponentActivity() {
      * The full client refuses to run a build older than one that has already run on this install,
      * and so does this one. Its own applicationId means its own high-water mark: the two APKs
      * guard themselves independently, and neither can block the other.
+     *
+     * Drawn as every other dead end in the app is drawn — a title, what happened, and the one
+     * thing left to do — rather than as a Material dialog, which is the only screen this app had
+     * that still looked like the interface the rest of it replaced.
      */
     @Composable
     private fun DowngradeBlocked() {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.minimal_downgrade_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text =
-                        stringResource(
-                            R.string.minimal_downgrade_body,
-                            versionGuardRepository.highestVersionCodeSeen(),
-                        ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
-                Button(onClick = { finish() }) { Text("Close") }
-            }
+        NextTheme {
+            MessageScreen(
+                title = stringResource(R.string.minimal_downgrade_title),
+                subtitle =
+                    stringResource(
+                        R.string.minimal_downgrade_body,
+                        versionGuardRepository.highestVersionCodeSeen(),
+                    ),
+                actionLabel = stringResource(R.string.minimal_close),
+                onAction = ::finish,
+            )
         }
     }
 
