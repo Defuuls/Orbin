@@ -188,6 +188,12 @@ class ProposalScreenshotTest {
             )
         }
 
+    @Test
+    fun boardPicker() =
+        capture("next_boards") {
+            BoardPickerScreen(boards = boardChoices(), subtitle = "3 of 7 in your feed")
+        }
+
     private fun capture(
         name: String,
         dark: Boolean = false,
@@ -203,6 +209,17 @@ class ProposalScreenshotTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
     }
+
+    private fun boardChoices() =
+        listOf(
+            BoardChoice("g", "Technology", subscribed = true),
+            BoardChoice("a", "Anime & Manga", subscribed = true),
+            BoardChoice("ck", "Food & Cooking", subscribed = true),
+            BoardChoice("lit", "Literature"),
+            BoardChoice("p", "Photography"),
+            BoardChoice("sci", "Science & Math"),
+            BoardChoice("wsg", "Worksafe Gifs, with a title long enough that it has to truncate"),
+        )
 
     private companion object {
         const val SAMPLE_SUBTITLE = "8 threads across 7 boards"

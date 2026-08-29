@@ -3,22 +3,14 @@
     <string name="minimal_app_name">Orbin Minimal</string>
     <string name="minimal_feed_title">Feed</string>
     <string name="minimal_boards_title">Boards</string>
-    <string name="minimal_edit_boards">Choose boards</string>
     <string name="minimal_refresh">Refresh</string>
-    <string name="minimal_back">Back</string>
-    <string name="minimal_no_subscriptions">No boards yet. Tap the list icon to choose some.</string>
-    <string name="minimal_no_threads">Nothing in your boards right now</string>
-    <!-- Shown on a thread whose opening post has neither a subject nor any text. -->
-    <string name="minimal_no_subject">No subject</string>
     <!-- The board list came back empty, which is not the same as still loading. -->
     <string name="minimal_no_boards_available">No boards available from this provider</string>
     <string name="minimal_boards_load_failed">Could not load the board list</string>
+    <!-- Shown while the board list is being fetched and nothing is cached yet. -->
+    <string name="minimal_boards_loading">Fetching the board list</string>
+    <!-- The only thing left to do on the blocked-downgrade screen. -->
+    <string name="minimal_close">Close</string>
     <string name="minimal_downgrade_title">This build is older than one already used here</string>
     <string name="minimal_downgrade_body">Orbin Minimal will not run an older build over a newer one. Install version %1$d or later.</string>
-    <!-- A thread row's board and reply count, e.g. "/g/ · 42 replies". A plural, so a thread
-         with a single reply does not read "1 replies". -->
-    <plurals name="minimal_thread_summary">
-        <item quantity="one">/%1$s/ · %2$d reply</item>
-        <item quantity="other">/%1$s/ · %2$d replies</item>
-    </plurals>
 </resources>

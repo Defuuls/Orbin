@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.feature.gallery.GalleryScreen
+import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.thread.NextThreadScreen
 import kotlinx.serialization.Serializable
 
@@ -21,11 +22,14 @@ fun MinimalNavHost() {
 
     NavHost(navController = navController, startDestination = MinimalRoute.Feed) {
         composable<MinimalRoute.Feed> {
-            MinimalFeedScreen(
+            // The full client's feed, unchanged. The rail's one affordance is Boards rather than
+            // Search, because the board list is the only other place this app has.
+            NextFeedScreen(
                 onOpenThread = { provider, board, thread, title ->
                     navController.navigate(MinimalRoute.Thread(provider, board, thread, title))
                 },
-                onOpenBoards = { navController.navigate(MinimalRoute.Boards) },
+                onOpenCommands = { navController.navigate(MinimalRoute.Boards) },
+                railAction = "Boards",
             )
         }
 
