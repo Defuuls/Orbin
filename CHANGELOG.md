@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [108-Ichika] - 2026-08-29
+
 ### Changed
 - **Orbin Minimal draws the same interface as the full client.** It had a Material feed and a
   Material board picker of its own — a top bar, a list icon, an overflow, checkboxes — which is the
@@ -1733,7 +1735,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v107-Tsumugi...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...HEAD
+[108-Ichika]: https://github.com/Defuuls/Orbin/compare/v107-Tsumugi...v108-Ichika
 [107-Tsumugi]: https://github.com/Defuuls/Orbin/compare/v106-Yuna...v107-Tsumugi
 [106-Yuna]: https://github.com/Defuuls/Orbin/compare/v105-Himari...v106-Yuna
 [105-Himari]: https://github.com/Defuuls/Orbin/compare/v104-Akari...v105-Himari
