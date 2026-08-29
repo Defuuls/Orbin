@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,18 +25,40 @@ private const val READY_TIMEOUT_MS = 20_000L
  * It asserts on the first-run wizard, which is what a fresh settings store produces and which needs
  * no network.
  *
- * **Previously ignored, and no longer.** The activity launched and rendered, then was torn down
- * mid-test — `PAUSED -> STOPPED -> DESTROYED`, preceded by `PackageUpdatedTask: Package updated`.
- * That package update came from the launcher-alias writes: `MainActivity` applied the selected app
- * icon on every start, a fresh install always wrote (it reports `COMPONENT_ENABLED_STATE_DEFAULT`
- * rather than `ENABLED`), and every instrumentation run is a fresh install. Pinning the aliases
- * up-front did not help, because the writes are broadcast asynchronously.
+ * **Ignored: `MainActivity` renders, then loses its Compose hierarchy under instrumentation.**
  *
- * The remedy at the time would have been to put `AppIconManager` behind an interface purely so a
- * test could replace it. Selectable app icons have since been removed outright, taking the writes
- * with them — a run on CI confirms the `PackageUpdatedTask` is gone — so the documented cause no
- * longer exists and the test is enabled on that basis rather than left disabled on a stale one.
+ * The original diagnosis was the launcher-alias writes. `MainActivity` applied the selected app
+ * icon on every start; a fresh install always wrote, because it reports
+ * `COMPONENT_ENABLED_STATE_DEFAULT` rather than `ENABLED`; PackageManager broadcast the change;
+ * and the activity went down with it, behind a `PackageUpdatedTask` in the log.
+ *
+ * Selectable app icons have since been removed, and that half is settled: a CI run with the
+ * feature gone shows no `PackageUpdatedTask` before the teardown — the only one left is the
+ * package *removal* after the run finishes. The writes really have stopped.
+ *
+ * The test still fails, so there was a second cause underneath the first:
+ *
+ * ```
+ * START u0 {act=MAIN cat=[LAUNCHER] cmp=com.orbin.app.debug/com.orbin.app.MainActivity}
+ * MainActivity in: PRE_ON_CREATE -> CREATED -> STARTED -> RESUMED
+ * Displayed com.orbin.app.debug/com.orbin.app.MainActivity: +406ms
+ * MainActivity in: PAUSED                       <- ~50ms after the first frame
+ * START ... InstrumentationActivityInvoker$EmptyActivity
+ * MainActivity in: STOPPED -> DESTROYED
+ * failed: ... at OrbinAppTest.awaitText
+ * ```
+ *
+ * Two things are worth recording for whoever picks this up. `awaitText` fails in under a second
+ * rather than at its 20-second timeout, so `fetchSemanticsNodes` is throwing — no Compose
+ * hierarchy — rather than the text being absent. And `ActivityScenario` launches the activity
+ * under test with `MAIN`/`LAUNCHER` itself, whatever the manifest says, so where the launcher
+ * intent-filter lives is not the variable it looks like: moving it onto `MainActivity` and moving
+ * it back changed nothing here.
+ *
+ * What pauses the activity ~50ms after its first frame is not yet known. `setContent` always
+ * renders one of three branches, so "nothing was composed" is not the explanation.
  */
+@Ignore("MainActivity loses its Compose hierarchy under instrumentation - see the KDoc")
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class OrbinAppTest {

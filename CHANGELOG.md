@@ -11,8 +11,8 @@ All notable changes to Orbin are documented here. The format is based on
   setting offering five was offering four ways to make the app look like something it is not. The
   choice cost more than it looked: five activity aliases in the manifest, a manager that toggled
   their enabled state on every launch, and a package-change broadcast each time — which is what had
-  been tearing the app's only launch smoke test down mid-run, and left that test disabled. It runs
-  again now.
+  been tearing the app's only launch smoke test down mid-run and left it disabled. One alias stays,
+  permanently enabled and drawing no icon of its own, because it is the component a launcher pins.
 - **Ten launcher resources that nothing referenced** went with it — alternate icons for variants
   that had no manifest entry at all, sitting beside the ones that did and looking equally live.
 
