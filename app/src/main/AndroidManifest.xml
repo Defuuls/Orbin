@@ -20,22 +20,43 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Orbin.Starting">
 
-        <!--
-          The launcher entry lives on the activity itself. It used to live on five activity
-          aliases, one per selectable app icon, with exactly one enabled at a time — so removing
-          that feature means moving this intent-filter back here, or the app would vanish from the
-          launcher on update rather than merely stop offering a choice of icon.
-        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Orbin.Starting">
+            android:theme="@style/Theme.Orbin.Starting" />
+
+        <!--
+          One alias, permanently enabled, carrying the launcher entry. There were five, one per
+          selectable app icon, toggled at runtime; the choice is gone but the alias stays, for two
+          reasons.
+
+          It is the component a launcher pins. Deleting it and putting the intent-filter on
+          MainActivity would break every pinned shortcut and every home-screen icon belonging to
+          someone on the default icon — which, the setting being off by default, is nearly
+          everyone. Keeping the name keeps those working, and a component name is an identifier
+          rather than a label, so the fact that it still says "OrbitalOrb" is a matter of history
+          and not of what it draws.
+
+          It also keeps MainActivity out of the LAUNCHER category, which is how the app has always
+          shipped. Putting it there tore down `OrbinAppTest`: ActivityScenario drives the activity
+          under test through its own MAIN/LAUNCHER invoker activity, and two launcher activities in
+          one task is a fight the test loses.
+
+          No `android:icon` here on purpose — the alias inherits the application's, so the icon is
+          declared in exactly one place.
+        -->
+        <activity-alias
+            android:name=".OrbitalOrbIconAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

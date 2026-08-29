@@ -32,8 +32,9 @@ private const val READY_TIMEOUT_MS = 20_000L
  * up-front did not help, because the writes are broadcast asynchronously.
  *
  * The remedy at the time would have been to put `AppIconManager` behind an interface purely so a
- * test could replace it. Selectable app icons have since been removed outright, taking the aliases
- * and the writes with them, so the cause is gone rather than worked around.
+ * test could replace it. Selectable app icons have since been removed outright, taking the writes
+ * with them — a run on CI confirms the `PackageUpdatedTask` is gone — so the documented cause no
+ * longer exists and the test is enabled on that basis rather than left disabled on a stale one.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)

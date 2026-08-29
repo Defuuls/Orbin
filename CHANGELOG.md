@@ -16,10 +16,10 @@ All notable changes to Orbin are documented here. The format is based on
 - **Ten launcher resources that nothing referenced** went with it — alternate icons for variants
   that had no manifest entry at all, sitting beside the ones that did and looking equally live.
 
-  Existing installs keep a launcher entry: it moved from the aliases onto the activity itself, so
-  an update replaces the icon rather than removing the app from the launcher. Anyone who had picked
-  a non-default icon gets the new mark. Backups that still carry an icon choice import fine; the
-  field is simply ignored.
+  Existing installs keep their launcher entry. One alias survives, permanently enabled, because it
+  is the component a launcher pins — deleting it would break every pinned shortcut belonging to
+  someone on the default icon, which is nearly everyone. Anyone who had picked a non-default icon
+  gets the new mark. Backups that still carry an icon choice import fine; the field is ignored.
 
 ### Changed
 - **A new launcher icon: an orbit, and the one body on it.** Two shapes in one terracotta, on the
