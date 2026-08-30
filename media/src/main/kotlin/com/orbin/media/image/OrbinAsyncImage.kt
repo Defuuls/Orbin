@@ -117,6 +117,7 @@ fun MediaThumbnail(
     attachment: MediaAttachment,
     modifier: Modifier = Modifier,
     fullResolution: Boolean = false,
+    contentScale: ContentScale = ContentScale.Crop,
     onClick: () -> Unit = {},
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
@@ -144,6 +145,7 @@ fun MediaThumbnail(
             url = imageUrl,
             contentDescription = attachment.originalFileName,
             modifier = Modifier.fillMaxSize(),
+            contentScale = contentScale,
             // Only meaningful when imageUrl is the full-resolution source; otherwise it is the
             // same URL and the placeholder is skipped.
             placeholderUrl = attachment.thumbnailUrl,
