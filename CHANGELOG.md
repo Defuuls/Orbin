@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [112-Kaede] - 2026-08-30
+
 ### Changed
 - **The list-view thumbnail is landscape now, not square.** 111-Riko stopped list rows cropping
   their attachment, which meant a wide file was drawn whole but small: a 16:9 image came out 68x38
@@ -1853,7 +1855,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v111-Riko...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...HEAD
+[112-Kaede]: https://github.com/Defuuls/Orbin/compare/v111-Riko...v112-Kaede
 [111-Riko]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...v111-Riko
 [110-Nanami]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...v110-Nanami
 [109-Koharu]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...v109-Koharu
