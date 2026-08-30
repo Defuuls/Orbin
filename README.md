@@ -90,10 +90,9 @@ reply, or create threads.
   color palettes (Yotsuba, Tomorrow, Miku, Lain, Penumbra, Windows 95, and more), checked in CI
   against a WCAG AA contrast baseline.
 - **Settings as one scrolling list:** Content & Feed, Notifications, Appearance, Media & Playback,
-  Privacy & Network, and Storage & Backup each get their own screen instead of one long scroll
-  through 35+ options, with a search icon on the hub to jump straight to any setting by name.
+  Privacy & Network and Storage & Backup are headings you scroll past rather than screens you
+  navigate to, with every option editable where it stands and searchable by name.
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
-  larger screens.
 - Predictive back gesture and smooth shared-element transitions.
 
 **Privacy & security**
