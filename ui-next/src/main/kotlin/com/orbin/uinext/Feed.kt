@@ -320,7 +320,16 @@ private fun FeedRowView(
         }
         if (row.hasPreview) {
             WidthSpacer(14)
-            val tile = Modifier.size(68.dp)
+            // Landscape rather than square. The tile fits the whole attachment rather than
+            // cropping it, and against a square that left a wide file rendering tiny — a 16:9
+            // image came out 68x38 with empty bands above and below. Widening to 88 gives it
+            // 88x50 for 20dp of text column, which is the whole trade: a taller or square file
+            // is drawn no smaller than before, it just sits between side gutters instead.
+            //
+            // 88 and not wider because the title is what pays. At 96 the subject on a typical
+            // row wraps to a third line, so every row grows and fewer threads fit on screen —
+            // a worse deal than the extra 8dp of picture is worth.
+            val tile = Modifier.size(width = LIST_TILE_WIDTH, height = LIST_TILE_HEIGHT)
             // A real thumbnail when something supplies one; stand-in artwork when nothing does,
             // which is what keeps this screen renderable on its own.
             if (thumbnail != null) {
@@ -913,6 +922,8 @@ private fun scrollingUp(state: LazyListState): Boolean {
 }
 
 /** Slightly taller than wide, which is the shape most thread images end up being. */
+private val LIST_TILE_WIDTH = 88.dp
+private val LIST_TILE_HEIGHT = 68.dp
 private const val GRID_TILE_ASPECT = 1.1f
 private val GRID_TILE_RADIUS = 16.dp
 private val GRID_CELL_PADDING = 8.dp

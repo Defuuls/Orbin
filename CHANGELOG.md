@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **The list-view thumbnail is landscape now, not square.** 111-Riko stopped list rows cropping
+  their attachment, which meant a wide file was drawn whole but small: a 16:9 image came out 68x38
+  inside a 68dp square, with empty bands above and below it. The tile is 88x68, so that same image
+  is drawn 88x50 — about a third larger in each direction — and a 4:3 file nearly fills the tile.
+
+  A tall or square file is drawn no smaller than it was; it sits between side gutters instead of
+  bands. The extra 20dp comes out of the text column, and 88 is where that stops being worth it:
+  at 96 a typical subject wraps onto a third line, which makes every row taller and fits fewer
+  threads on screen. The tile is still 68dp tall, so row height and scroll position are
+  unchanged.
+
+  The feed and the board catalog share one row, so both move together. Grid and image-wall layouts
+  are untouched. The eight screenshot goldens that show list rows were re-recorded; the grid and
+  image-wall goldens did not change, which is the check that this stayed in the list layout.
+
 ## [111-Riko] - 2026-08-30
 
 ### Fixed
