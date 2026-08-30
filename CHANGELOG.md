@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **List view cut the sides off every attachment.** A list row puts its thumbnail in a fixed 68dp
+  square, and the thumbnail filled that square whatever shape the file was. Imageboard attachments
+  are almost never square, so a wide image lost its left and right edges and a tall one lost its top
+  and bottom — a panel, a screenshot's text, a face — leaving whatever happened to be in the middle.
+  In list view the thumbnail now fits inside the tile instead of filling it, so the whole image is
+  there. Wide files therefore render shorter than the tile is tall, with the row's own background
+  above and below them; the tile stays 68dp, so row heights and scroll position are unchanged.
+
+  Grid and image-wall layouts still fill their tiles. There the tile *is* the content rather than a
+  marker beside text, and fitting would put gaps through the wall. Video previews were never
+  affected — the player has always letterboxed.
+
+  `MediaThumbnailScaleTest` renders the tile and reads the pixels back, since the scale is not
+  visible anywhere else: same layout, same semantics, different raster. It fails if a fitted tile
+  crops, and equally if the default stops cropping, which the grid and the wall depend on.
+
 ## [110-Nanami] - 2026-08-30
 
 ### Fixed

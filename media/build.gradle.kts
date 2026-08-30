@@ -38,4 +38,11 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    // MediaThumbnail's scaling is only visible in the raster it produces, so the test for it
+    // renders the composable and reads pixels back — Robolectric to host the render, coil-test to
+    // serve a thumbnail of a known size without a network.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.coil.test)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

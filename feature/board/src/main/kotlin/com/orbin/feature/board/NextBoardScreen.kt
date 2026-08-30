@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -90,6 +91,10 @@ fun NextBoardScreen(
                     byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                         MediaThumbnail(
                             attachment = attachment,
+                            // Same reason as the feed's: a list row's square tile crops a
+                            // non-square attachment down to whatever happens to be in the middle.
+                            contentScale =
+                                if (layout == FeedLayout.LIST) ContentScale.Fit else ContentScale.Crop,
                             modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                         )
                     }

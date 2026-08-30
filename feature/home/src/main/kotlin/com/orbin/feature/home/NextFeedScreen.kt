@@ -13,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -163,6 +164,14 @@ fun NextFeedScreen(
                                     FeedPreview(
                                         attachment = attachment,
                                         autoplay = settings.autoplayVideosInFeed,
+                                        // A list row's tile is a small square beside the text, and
+                                        // an imageboard's attachments are almost never square, so
+                                        // filling it cut the sides off anything wide and the top
+                                        // off anything tall — which is most of what a thumbnail is
+                                        // there to show. The grid and the image wall still fill,
+                                        // because there the tile is the content and letterboxing
+                                        // would put gaps through the wall.
+                                        fitWholeImage = layout == FeedLayout.LIST,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
                                 }
@@ -187,11 +196,17 @@ private fun FeedPreview(
     attachment: MediaAttachment,
     autoplay: Boolean,
     modifier: Modifier = Modifier,
+    fitWholeImage: Boolean = false,
 ) {
     if (canAutoplayInFeed(attachment, autoplay)) {
+        // The player letterboxes by default, so a video is never cropped whichever layout it is in.
         VideoPlayer(url = attachment.sourceUrl, modifier = modifier, autoPlay = true, muted = true)
     } else {
-        MediaThumbnail(attachment = attachment, modifier = modifier)
+        MediaThumbnail(
+            attachment = attachment,
+            modifier = modifier,
+            contentScale = if (fitWholeImage) ContentScale.Fit else ContentScale.Crop,
+        )
     }
 }
 
