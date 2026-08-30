@@ -20,41 +20,33 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Orbin.Starting">
 
+        <!--
+          The launcher entry is on the activity, and it must stay there.
+
+          It used to be on one of five activity aliases, one per selectable app icon, with exactly
+          one enabled at a time. Removing that feature by deleting four aliases and keeping the
+          fifth looked safe and was not: `AppIconManager` had written *explicit* component enabled
+          states on every launch — the chosen alias ENABLED, the rest DISABLED — and those survive
+          an app update. Anyone who had ever picked a non-default icon therefore carried an
+          explicit DISABLED on the surviving alias, and the alias they were actually using was
+          gone, so the app had no enabled launcher component and could not be opened at all.
+
+          MainActivity is the safe home for it because nothing has ever written an enabled state
+          for MainActivity: it reports COMPONENT_ENABLED_STATE_DEFAULT everywhere, so the manifest
+          decides, on every install, whatever happened before. Do not move this back onto a
+          component whose enabled state the app has ever set. `LauncherEntryManifestTest` fails if
+          anyone tries.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Orbin.Starting" />
-
-        <!--
-          One alias, permanently enabled, carrying the launcher entry. There were five, one per
-          selectable app icon, toggled at runtime; the choice is gone but this one stays, because
-          it is the component a launcher pins. Deleting it and putting the intent-filter on
-          MainActivity would break every pinned shortcut and every home-screen icon belonging to
-          someone on the default icon — which, the setting being off by default, is nearly
-          everyone. Keeping the name keeps those working, and a component name is an identifier
-          rather than a label, so the fact that it still says "OrbitalOrb" is a matter of history
-          and not of what it draws.
-
-          Compatibility is the whole of the reason. An earlier version of this comment also
-          claimed the alias was needed to keep `OrbinAppTest` alive, which was wrong:
-          ActivityScenario launches the activity under test with MAIN/LAUNCHER itself, whatever
-          the manifest says, so moving the filter changes nothing there.
-
-          No `android:icon` here on purpose — the alias inherits the application's, so the icon is
-          declared in exactly one place.
-        -->
-        <activity-alias
-            android:name=".OrbitalOrbIconAlias"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:targetActivity=".MainActivity">
+            android:theme="@style/Theme.Orbin.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias>
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"

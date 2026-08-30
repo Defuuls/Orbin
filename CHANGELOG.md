@@ -7,6 +7,26 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Orbin would not open for anyone who had ever chosen a non-default app icon.** 109-Koharu
+  removed the icon picker by deleting four of its five launcher aliases and keeping the fifth. That
+  looked safe and was not: the manager it removed had spent every launch writing *explicit*
+  component enabled states — the chosen alias enabled, the rest disabled — and those survive an app
+  update. Such an install carried an explicit "disabled" on the alias that survived, with the alias
+  it was actually using deleted, so the app had no enabled launcher component: no icon, no way in.
+
+  The launcher entry now lives on the activity itself, which is the one component whose enabled
+  state nothing has ever written, so the manifest decides on every install regardless of what
+  happened before. **Updating fixes an affected install** — no reinstall, and nothing local is
+  lost. A home-screen icon placed before this update needs adding again from the app drawer, since
+  the component behind it is gone.
+
+  `LauncherEntryManifestTest` now asserts the invariant that prevents this: exactly one launcher
+  entry, on a plain activity, with no aliases at all. It fails against 109-Koharu's manifest, which
+  is how it was checked. Orbin Minimal was never affected — its launcher entry has always been on
+  its activity, and it never had aliases.
+
+
+### Fixed
 - **The app's only launch smoke test runs again.** It had been disabled through two releases for
   two different reasons. The first was the app-icon picker's alias writes, removed in 109-Koharu.
   The second, which that removal exposed, is that `MainActivity` asks for the notification
