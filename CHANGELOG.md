@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The app's only launch smoke test runs again.** It had been disabled through two releases for
+  two different reasons. The first was the app-icon picker's alias writes, removed in 109-Koharu.
+  The second, which that removal exposed, is that `MainActivity` asks for the notification
+  permission as soon as it is ready: the system dialog opens over it and pauses the activity about
+  50ms after its first frame, leaving nothing for the test to query. The API 31 run passing while
+  API 35 failed on the same commit is what named it — `POST_NOTIFICATIONS` did not exist before
+  API 33. The test now grants the permission before the activity starts, which changes nothing
+  about what a real first launch does.
+
+
 ## [109-Koharu] - 2026-08-30
 
 ### Removed
