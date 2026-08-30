@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [109-Koharu] - 2026-08-30
+
 ### Removed
 - **The app-icon picker is gone, and with it the alternate icons.** Orbin has one mark now, so a
   setting offering five was offering four ways to make the app look like something it is not. The
@@ -1783,7 +1785,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...HEAD
+[109-Koharu]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...v109-Koharu
 [108-Ichika]: https://github.com/Defuuls/Orbin/compare/v107-Tsumugi...v108-Ichika
 [107-Tsumugi]: https://github.com/Defuuls/Orbin/compare/v106-Yuna...v107-Tsumugi
 [106-Yuna]: https://github.com/Defuuls/Orbin/compare/v105-Himari...v106-Yuna

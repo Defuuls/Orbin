@@ -15,7 +15,7 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v108 — Ichika** (2026-08-29) |
+| Current release | **v109 — Koharu** (2026-08-30) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
