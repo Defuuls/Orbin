@@ -1,6 +1,6 @@
 [versions]
 # Android / Build
-agp = "9.3.1"
+agp = "9.3.2"
 # Held below 2.4.20 until CodeQL's Kotlin extractor supports it: 2.4.20 (and its prereleases)
 # make the java-kotlin CodeQL analysis hard-fail with KotlinVersionTooRecentError, which silently
 # disables security scanning for every PR. This guard was here before, was deleted as stale when
