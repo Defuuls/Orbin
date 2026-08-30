@@ -178,6 +178,9 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "testRun
 # InstrumentationRegistry for Room's MigrationTestHelper under Robolectric; androidx.test:core
 # ships in lockstep with androidx.test:runner, so it shares the same version.
 androidx-test-core = { module = "androidx.test:core", version.ref = "testRunner" }
+# GrantPermissionRule, so a launch test is not interrupted by a runtime-permission dialog. Same
+# release train as the runner and core above, so it shares their version.
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "testRunner" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }

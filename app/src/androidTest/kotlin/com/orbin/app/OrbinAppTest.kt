@@ -1,15 +1,18 @@
 package com.orbin.app
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.rule.GrantPermissionRule
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 
 private const val READY_TIMEOUT_MS = 20_000L
@@ -25,47 +28,45 @@ private const val READY_TIMEOUT_MS = 20_000L
  * It asserts on the first-run wizard, which is what a fresh settings store produces and which needs
  * no network.
  *
- * **Ignored: `MainActivity` renders, then loses its Compose hierarchy under instrumentation.**
+ * **This test was disabled twice, for two different reasons, and both are now gone.**
  *
- * The original diagnosis was the launcher-alias writes. `MainActivity` applied the selected app
- * icon on every start; a fresh install always wrote, because it reports
- * `COMPONENT_ENABLED_STATE_DEFAULT` rather than `ENABLED`; PackageManager broadcast the change;
- * and the activity went down with it, behind a `PackageUpdatedTask` in the log.
+ * The first was the launcher-alias writes. `MainActivity` applied the selected app icon on every
+ * start; a fresh install always wrote, because it reports `COMPONENT_ENABLED_STATE_DEFAULT` rather
+ * than `ENABLED`; PackageManager broadcast the change; and the activity went down with it, behind
+ * a `PackageUpdatedTask` in the log. Selectable app icons have since been removed, and a CI run
+ * confirmed the broadcast is gone with them.
  *
- * Selectable app icons have since been removed, and that half is settled: a CI run with the
- * feature gone shows no `PackageUpdatedTask` before the teardown — the only one left is the
- * package *removal* after the run finishes. The writes really have stopped.
+ * The test still failed, on API 35 only, which is what identified the second: the runtime
+ * notification-permission request. `MainActivity` asks for `POST_NOTIFICATIONS` as soon as it is
+ * ready, the system dialog opens over it, and the activity is paused about 50ms after its first
+ * frame — after which there is no Compose hierarchy for the test to query, which is why it failed
+ * in under a second rather than at its 20-second timeout. `POST_NOTIFICATIONS` did not exist
+ * before API 33, so the API 31 run passed on the same commit; that split is what named the cause.
  *
- * The test still fails, so there was a second cause underneath the first:
- *
- * ```
- * START u0 {act=MAIN cat=[LAUNCHER] cmp=com.orbin.app.debug/com.orbin.app.MainActivity}
- * MainActivity in: PRE_ON_CREATE -> CREATED -> STARTED -> RESUMED
- * Displayed com.orbin.app.debug/com.orbin.app.MainActivity: +406ms
- * MainActivity in: PAUSED                       <- ~50ms after the first frame
- * START ... InstrumentationActivityInvoker$EmptyActivity
- * MainActivity in: STOPPED -> DESTROYED
- * failed: ... at OrbinAppTest.awaitText
- * ```
- *
- * Two things are worth recording for whoever picks this up. `awaitText` fails in under a second
- * rather than at its 20-second timeout, so `fetchSemanticsNodes` is throwing — no Compose
- * hierarchy — rather than the text being absent. And `ActivityScenario` launches the activity
- * under test with `MAIN`/`LAUNCHER` itself, whatever the manifest says, so where the launcher
- * intent-filter lives is not the variable it looks like: moving it onto `MainActivity` and moving
- * it back changed nothing here.
- *
- * What pauses the activity ~50ms after its first frame is not yet known. `setContent` always
- * renders one of three branches, so "nothing was composed" is not the explanation.
+ * Granting the permission before the activity launches is the fix. It changes no production
+ * behaviour — a real first launch still asks — and it is why the rules below are ordered: the
+ * grant has to wrap the Compose rule, because that rule is what starts the activity.
  */
-@Ignore("MainActivity loses its Compose hierarchy under instrumentation - see the KDoc")
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class OrbinAppTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
+    /**
+     * Granted before the activity starts, so the request `MainActivity` makes when it becomes
+     * ready resolves without a dialog. A no-op below API 33, where the permission does not exist
+     * and asking the platform to grant it would throw.
+     */
     @get:Rule(order = 1)
+    val notificationPermissionRule: TestRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            TestRule { base, _ -> base }
+        }
+
+    @get:Rule(order = 2)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
