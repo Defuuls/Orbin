@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [110-Nanami] - 2026-08-30
+
 ### Fixed
 - **Orbin would not open for anyone who had ever chosen a non-default app icon.** 109-Koharu
   removed the icon picker by deleting four of its five launcher aliases and keeping the fifth. That
@@ -1816,7 +1818,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...HEAD
+[110-Nanami]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...v110-Nanami
 [109-Koharu]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...v109-Koharu
 [108-Ichika]: https://github.com/Defuuls/Orbin/compare/v107-Tsumugi...v108-Ichika
 [107-Tsumugi]: https://github.com/Defuuls/Orbin/compare/v106-Yuna...v107-Tsumugi
