@@ -1,10 +1,16 @@
 package com.orbin.uinext
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -12,6 +18,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -19,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +53,14 @@ import androidx.compose.ui.unit.sp
  *
  * This replaces both: one floating bar, inset from the edges, over content that scrolls beneath it.
  * Where you are on the left; on the right the only affordance that is always available. There is no
- * back button because layers are dismissed by dragging them down, and no tab bar because there are
- * no longer tabs.
+ * tab bar because there are no longer tabs, and no back button because the platform already draws
+ * one — the system back gesture and the navigation bar's button both dismiss a layer.
+ *
+ * This used to claim layers were "dismissed by dragging them down". Nothing in this module has ever
+ * implemented a drag: the affordance the back button was removed in favour of did not exist, and
+ * the comment sent every later reader looking for it. If a drag is wanted it belongs on the layer
+ * container with `AnchoredDraggable`, alongside the system back rather than instead of it, since a
+ * gesture with no keyboard or switch-access equivalent cannot be the only way out of a screen.
  *
  * [action] names that one affordance. It is Search in the full client, because search is how you
  * get anywhere else there. Orbin Minimal has nowhere else to get to but its board list, so it says
@@ -56,7 +71,7 @@ fun ContextRail(
     where: String,
     modifier: Modifier = Modifier,
     detail: String? = null,
-    action: String = "Search",
+    action: String = stringResource(R.string.next_action_search),
     onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
@@ -67,6 +82,8 @@ fun ContextRail(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    // The 58 is generous on purpose: it is the fade above the bar, and it has to
+                    // still clear the bar once enlarged text has grown it past RAIL_HEIGHT.
                     .height(RAIL_HEIGHT + 58.dp + bottomInset())
                     .background(
                         Brush.verticalGradient(
@@ -84,7 +101,10 @@ fun ContextRail(
                     // behind it is what covers that strip.
                     .windowInsetsPadding(railInsets)
                     .padding(horizontal = 14.dp, vertical = 12.dp)
-                    .height(RAIL_HEIGHT)
+                    // A floor rather than a fixed height. At 52dp the bar held its 13.5sp label
+                    // comfortably and clipped it at twice that, which is a size Android offers and
+                    // this had never been rendered at.
+                    .heightIn(min = RAIL_HEIGHT)
                     .clip(RoundedCornerShape(RAIL_HEIGHT / 2))
                     .background(next.raised)
                     .border(1.dp, next.hairline, RoundedCornerShape(RAIL_HEIGHT / 2))
@@ -233,27 +253,39 @@ fun BoardDot(
  * Icons in a top bar are ambiguous and permanent; words are unambiguous and can sit inline with the
  * thing they act on, appearing only where they apply. The active one is filled so the set reads as a
  * choice rather than a row of links.
+ *
+ * [selected] is what turns a row of these into one control. Pass it and the action becomes an
+ * option in a single-choice set: filled when it is the chosen one, and — the part that is not
+ * visual — announced with its selected state. Without it the fill was the *only* record of which
+ * layout was active, so List, Grid and Images reached a screen reader as three identical buttons
+ * and the reader could not tell which one they were already in. Put the set inside a
+ * [Modifier.selectableGroup] row so it is announced as one control rather than three.
+ *
+ * [accent] stays for the actions that are merely emphatic — a "Try again" on an empty screen — and
+ * carries no state with it.
  */
 @Composable
 fun InlineAction(
     label: String,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
+    selected: Boolean? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(15.dp)
+    val filled = selected ?: accent
     val text =
         @Composable {
             Text(
                 text = label,
                 fontSize = 13.5.sp,
-                fontWeight = if (accent) FontWeight.SemiBold else FontWeight.Medium,
-                color = if (accent) next.accent else next.muted,
+                fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (filled) next.accent else next.muted,
                 modifier =
                     Modifier
                         .clip(shape)
-                        .background(if (accent) next.accentSoft else Color.Transparent)
-                        .padding(horizontal = if (accent) 13.dp else 4.dp, vertical = 7.dp),
+                        .background(if (filled) next.accentSoft else Color.Transparent)
+                        .padding(horizontal = if (filled) 13.dp else 4.dp, vertical = 7.dp),
             )
         }
     if (onClick == null) {
@@ -263,12 +295,18 @@ fun InlineAction(
     // The pill keeps its own small size; the box around it is what gets pressed. Set as words
     // rather than as a Material button, an action still has to be a button to a screen reader and
     // still has to be big enough to hit — neither of which a clickable Text gives you.
+    val press =
+        if (selected == null) {
+            Modifier.clickable(role = Role.Button, onClick = onClick)
+        } else {
+            Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+        }
     Box(
         modifier =
             modifier
                 .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
                 .clip(shape)
-                .clickable(role = Role.Button, onClick = onClick),
+                .then(press),
         contentAlignment = Alignment.Center,
     ) {
         text()
@@ -321,9 +359,62 @@ fun MediaTile(
     }
 }
 
+/**
+ * Every screen: the ground, the rail, and the room a scrolling list has to leave for it.
+ *
+ * All four screens wrote this out themselves — the same `Surface { Box { … ContextRail } }`, and
+ * the same `(if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()` arithmetic copied four
+ * times with the 28 unexplained in each. A fifth screen would have copied it again, and the first
+ * screen to get it slightly wrong would have been the only one with the rail over its content.
+ *
+ * [where] doubles as the switch: a screen with nowhere to report draws no rail and gets the
+ * smaller bottom padding. [railVisible] is what lets a screen put the rail away as the reader
+ * scrolls down — hide-on-scroll existed on the feed alone, so the board catalog, documented as
+ * "the same row as the feed", kept its rail pinned while the feed's slid away.
+ */
+@Composable
+fun NextScaffold(
+    where: String?,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+    action: String = stringResource(R.string.next_action_search),
+    onSearch: () -> Unit = {},
+    railVisible: Boolean = true,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val showRail = where != null
+    val bottom = (if (showRail) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
+    Surface {
+        Box(modifier = modifier.fillMaxSize()) {
+            content(PaddingValues(bottom = bottom))
+            if (showRail) {
+                AnimatedVisibility(
+                    visible = railVisible,
+                    enter = slideInVertically { it } + fadeIn(),
+                    exit = slideOutVertically { it } + fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    ContextRail(where = where, detail = detail, action = action, onSearch = onSearch)
+                }
+            }
+        }
+    }
+}
+
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = 20.dp
 val RAIL_HEIGHT = 52.dp
+
+/**
+ * The gap between the last row of a list and the rail floating over it.
+ *
+ * Enough that a row is not read as being tucked under the bar, and it is the rail's own 12dp of
+ * vertical padding plus a little more.
+ */
+private val RAIL_CLEARANCE = 28.dp
+
+/** What a railless screen leaves instead: just enough that the last row is not against the edge. */
+private val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */
 val MIN_TOUCH_TARGET = 48.dp
@@ -379,7 +470,7 @@ fun MessageScreen(
     actionLabel: String? = null,
     onAction: () -> Unit = {},
     where: String? = null,
-    action: String = "Search",
+    action: String = stringResource(R.string.next_action_search),
     onSearch: () -> Unit = {},
 ) {
     Surface {

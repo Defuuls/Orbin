@@ -5,6 +5,13 @@ plugins {
 
 android {
     namespace = "com.orbin.uinext"
+
+    // Opt in: library modules don't ship Android resources by default (see gradle.properties).
+    // This module draws every screen in the app, so every word a reader sees is declared here —
+    // it shipped with them written inline, which meant the whole interface was English-only.
+    androidResources {
+        enable = true
+    }
 }
 
 // The screens are stateless composables fed by sample state, so each one can be rendered and

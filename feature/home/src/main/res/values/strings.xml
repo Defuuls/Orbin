@@ -37,4 +37,22 @@
     <string name="next_feed_try_again">Try again</string>
     <string name="next_feed_no_matches">Nothing in your feed matches “%1$s”.</string>
     <string name="next_feed_clear_filter">Clear filter</string>
+    <!--
+      The feed's subtitle and the rail's board count.
+
+      Both were built by concatenating a number with a hand-rolled "add an s" helper, which is
+      wrong in most languages and in plenty of English nouns. The counts are nested plurals so
+      each half inflects on its own quantity, and the sentence that joins them is a resource too
+      because its word order is not universal.
+    -->
+    <plurals name="next_feed_thread_count">
+        <item quantity="one">%d thread</item>
+        <item quantity="other">%d threads</item>
+    </plurals>
+    <plurals name="next_feed_board_count">
+        <item quantity="one">%d board</item>
+        <item quantity="other">%d boards</item>
+    </plurals>
+    <!-- Thread count, then board count: "8 threads across 7 boards". -->
+    <string name="next_feed_subtitle">%1$s across %2$s</string>
 </resources>

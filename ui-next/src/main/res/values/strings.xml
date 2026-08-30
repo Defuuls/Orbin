@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every word the interface says.
+
+  These lived inline in the composables until now, which made the module the one part of the app
+  that could not be translated — the screens it replaced were localised, so this was a regression
+  rather than a gap. Names are prefixed `next_` because this module's screens sit alongside the
+  older ones in the same application.
+-->
+<resources>
+
+    <!-- Screens -->
+    <string name="next_feed_title">Feed</string>
+    <string name="next_boards_title">Boards</string>
+    <string name="next_all_media_title">All media</string>
+    <string name="next_all_media_subtitle">Every file from every board you follow</string>
+    <string name="next_settings_title">Settings</string>
+
+    <!-- The one affordance on the rail, and the rail's own detail lines -->
+    <string name="next_action_search">Search</string>
+    <string name="next_rail_catalog">catalog</string>
+    <string name="next_rail_swept">%1$d/%2$d swept</string>
+    <string name="next_rail_subscribed">%d subscribed</string>
+
+    <!-- The layout switcher -->
+    <string name="next_layout_list">List</string>
+    <string name="next_layout_grid">Grid</string>
+    <string name="next_layout_images">Images</string>
+
+    <!-- Feed rows -->
+    <plurals name="next_row_replies">
+        <item quantity="one">%d reply</item>
+        <item quantity="other">%d replies</item>
+    </plurals>
+    <plurals name="next_row_files">
+        <item quantity="one">%d file</item>
+        <item quantity="other">%d files</item>
+    </plurals>
+    <!-- Reply count, then file count. Separated by a middle dot with space either side. -->
+    <string name="next_row_counts">%1$s  ·  %2$s</string>
+    <plurals name="next_feed_thread_count">
+        <item quantity="one">%d thread</item>
+        <item quantity="other">%d threads</item>
+    </plurals>
+    <string name="next_row_no_image">no image</string>
+
+    <!-- What pressing something does, for readers who are told rather than shown -->
+    <string name="next_open_thread">Open thread</string>
+    <string name="next_open_file">Open file</string>
+    <!-- Read after the picture in the image-only layouts: the thread's subject, then its board. -->
+    <string name="next_image_cell_description">%1$s, %2$s</string>
+    <string name="next_media_cell_description">File from %1$s</string>
+
+    <!-- The filter, when one is active -->
+    <string name="next_filter_label">filter</string>
+    <string name="next_filter_clear">Clear</string>
+
+    <!-- The board picker -->
+    <string name="next_boards_refresh">Refresh</string>
+    <string name="next_boards_summary">%1$d of %2$d in your feed</string>
+    <string name="next_board_subscribed">Subscribed</string>
+    <string name="next_board_not_subscribed">Not subscribed</string>
+
+    <!-- The media wall's sweep -->
+    <string name="next_sweep_reading">Reading %1$d of %2$d threads</string>
+    <string name="next_sweep_progress">%1$d of %2$d</string>
+    <string name="next_sweep_unreachable">%d unreachable</string>
+
+    <!-- The thread reader -->
+    <string name="next_thread_watch">Watch</string>
+    <string name="next_thread_watching">Watching</string>
+    <string name="next_thread_files">Files</string>
+    <string name="next_thread_download_all">Download all</string>
+    <string name="next_thread_share">Share</string>
+    <string name="next_thread_classic_reader">Classic reader</string>
+    <string name="next_post_expand">Expand post</string>
+    <string name="next_post_collapse">Collapse post</string>
+    <string name="next_post_collapsed_state">Collapsed</string>
+    <string name="next_post_expanded_state">Expanded</string>
+    <string name="next_post_collapsed">collapsed</string>
+    <string name="next_spoiler_reveal">Spoiler — press to reveal</string>
+
+    <!-- The command surface -->
+    <string name="next_command_placeholder">Board, thread, setting, action</string>
+    <string name="next_command_empty">Nothing matches that</string>
+    <string name="next_command_save">Save</string>
+
+</resources>
