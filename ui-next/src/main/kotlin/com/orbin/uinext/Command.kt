@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -87,8 +88,8 @@ fun CommandSheet(
     onQueryChange: (String) -> Unit = {},
     onSelect: (Command) -> Unit = {},
     onDismiss: () -> Unit = {},
-    placeholder: String = "Board, thread, setting, action",
-    emptyLabel: String = "Nothing matches that",
+    placeholder: String = stringResource(R.string.next_command_placeholder),
+    emptyLabel: String = stringResource(R.string.next_command_empty),
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -316,7 +317,7 @@ fun SettingsScreen(
             ) {
                 item {
                     ScreenTitle(
-                        text = "Settings",
+                        text = stringResource(R.string.next_settings_title),
                         subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
                     )
                 }
@@ -348,7 +349,7 @@ fun SettingsScreen(
             }
             if (showRail) {
                 ContextRail(
-                    where = "Settings",
+                    where = stringResource(R.string.next_settings_title),
                     onSearch = onSearch,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
@@ -501,7 +502,11 @@ private fun SettingTextEditor(
             Hairline(modifier = Modifier.padding(top = 26.dp))
         }
         WidthSpacer(8)
-        InlineAction(label = "Save", accent = true, onClick = { onCommitText(item, draft) })
+        InlineAction(
+            label = stringResource(R.string.next_command_save),
+            accent = true,
+            onClick = { onCommitText(item, draft) },
+        )
     }
 }
 

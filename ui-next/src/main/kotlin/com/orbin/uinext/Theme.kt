@@ -24,6 +24,13 @@ import androidx.compose.ui.unit.Density
  * an imageboard rather than to a settings app, and a set of board hues that give a mixed feed some
  * rhythm to scan by. Two greys are all that is left over: [muted] for secondary text, [hairline] for
  * the one separator.
+ *
+ * Every colour here that carries text clears WCAG AA's 4.5:1 against the ground it is drawn on.
+ * That is not a free choice of alpha: [muted] and [faint] began at 0.54/0.34 and 0.56/0.34, which
+ * measured 3.85:1 and 2.18:1 in light and 2.83:1 for dark's faint — so the timestamps, the reply
+ * counts and every read thread were below the floor in all three themes. The alphas are now set
+ * from the measurement rather than by eye, keeping a visible step between the three tiers.
+ * `PaletteContrastTest` recomputes the ratios from these constants and fails if one drops.
  */
 @Immutable
 data class NextPalette(
@@ -40,26 +47,26 @@ data class NextPalette(
     val amoled: Boolean = false,
 )
 
-private val LightPalette =
+internal val LightPalette =
     NextPalette(
         background = Color(0xFFFAF8F5),
         raised = Color(0xFFFFFFFF),
         ink = Color(0xFF16141A),
-        muted = Color(0xFF16141A).copy(alpha = 0.54f),
-        faint = Color(0xFF16141A).copy(alpha = 0.34f),
+        muted = Color(0xFF16141A).copy(alpha = 0.72f),
+        faint = Color(0xFF16141A).copy(alpha = 0.60f),
         hairline = Color(0xFF16141A).copy(alpha = 0.09f),
         accent = Color(0xFFA8431B),
         accentSoft = Color(0xFFA8431B).copy(alpha = 0.10f),
         dark = false,
     )
 
-private val DarkPalette =
+internal val DarkPalette =
     NextPalette(
         background = Color(0xFF0D0D11),
         raised = Color(0xFF17171D),
         ink = Color(0xFFF1EFF2),
-        muted = Color(0xFFF1EFF2).copy(alpha = 0.56f),
-        faint = Color(0xFFF1EFF2).copy(alpha = 0.34f),
+        muted = Color(0xFFF1EFF2).copy(alpha = 0.68f),
+        faint = Color(0xFFF1EFF2).copy(alpha = 0.54f),
         hairline = Color(0xFFF1EFF2).copy(alpha = 0.12f),
         accent = Color(0xFFF08A5A),
         accentSoft = Color(0xFFF08A5A).copy(alpha = 0.14f),
@@ -72,7 +79,7 @@ private val DarkPalette =
  * Only the two surfaces change. The ink, the accent and the board hues are what the palette *is*,
  * and an OLED screen saving power on the background is not a reason to redraw them.
  */
-private val AmoledPalette =
+internal val AmoledPalette =
     DarkPalette.copy(
         background = Color.Black,
         raised = Color(0xFF0A0A0A),
@@ -171,24 +178,71 @@ fun NextTheme(
     }
 }
 
+/** One board colour: the light ground's value and the dark ground's. */
+@Immutable
+internal data class BoardHue(
+    val light: Color,
+    val dark: Color,
+)
+
+/**
+ * The hues a board can be given.
+ *
+ * Ten rather than five because five was not enough to colour a real install: the first version
+ * matched five 4chan board names and returned the accent for everything else, so across two
+ * providers and dozens of boards almost every row came out the same terracotta and the premise
+ * below quietly stopped holding. The first five are the colours those boards already shipped with.
+ *
+ * Every value clears 4.5:1 against both grounds, so a board label is legible whichever hue it
+ * draws — `PaletteContrastTest` checks all twenty.
+ */
+internal val BoardHues =
+    listOf(
+        BoardHue(light = Color(0xFF2C6BC4), dark = Color(0xFF74A9F8)), // blue
+        // Darkened from #B07708, which measured 3.61:1 on the light ground — the one hue of the
+        // original five that missed the floor the others clear comfortably.
+        BoardHue(light = Color(0xFF8F6206), dark = Color(0xFFE9B54C)), // amber
+        BoardHue(light = Color(0xFF1B7A55), dark = Color(0xFF5FC79A)), // green
+        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
+        BoardHue(light = Color(0xFFB83A6E), dark = Color(0xFFEE87B4)), // magenta
+        BoardHue(light = Color(0xFF116C74), dark = Color(0xFF5CC6D0)), // teal
+        BoardHue(light = Color(0xFFA6491F), dark = Color(0xFFEE9468)), // rust
+        BoardHue(light = Color(0xFF4A54C6), dark = Color(0xFF93A0F5)), // indigo
+        BoardHue(light = Color(0xFF5F6F14), dark = Color(0xFFB6CB55)), // olive
+        BoardHue(light = Color(0xFF8C3A8C), dark = Color(0xFFD98BD9)), // plum
+    )
+
+/**
+ * The boards that shipped with a fixed colour, kept on it.
+ *
+ * Hashing alone would reshuffle these, and a reader who has learned that /g/ is the blue one has
+ * earned not having that taken away by an update. New boards hash; these five are pinned.
+ */
+private val PinnedBoardHues =
+    mapOf("/g/" to 0, "/ck/" to 1, "/p/" to 2, "/lit/" to 3, "/aco/" to 4)
+
+/**
+ * Which hue a board draws in, as an index into [BoardHues].
+ *
+ * `String.hashCode` is specified by the JDK rather than left to the implementation, so a board
+ * keeps its colour across launches, devices and releases — which is the whole point of colouring
+ * by board. `Int.mod` rather than `%` because the remainder of a negative hash is negative, and
+ * `Int.MIN_VALUE.absoluteValue` is still negative.
+ */
+internal fun boardHueIndex(board: String): Int = PinnedBoardHues[board] ?: board.hashCode().mod(BoardHues.size)
+
 /**
  * A board's hue.
  *
  * A merged feed is a pile of unrelated boards, and the only thing distinguishing one row's origin
  * from another's today is four grey characters. A colour per board makes the mix legible at a
- * glance without adding a second line to any row.
+ * glance without adding a second line to any row — for every board, not just the five the first
+ * version knew by name.
  */
 @Composable
 fun boardHue(board: String): Color {
-    val dark = next.dark
-    return when (board) {
-        "/g/" -> if (dark) Color(0xFF74A9F8) else Color(0xFF2C6BC4)
-        "/ck/" -> if (dark) Color(0xFFE9B54C) else Color(0xFFB07708)
-        "/p/" -> if (dark) Color(0xFF5FC79A) else Color(0xFF1B7A55)
-        "/lit/" -> if (dark) Color(0xFFB18CF0) else Color(0xFF6D45C0)
-        "/aco/" -> if (dark) Color(0xFFEE87B4) else Color(0xFFB83A6E)
-        else -> next.accent
-    }
+    val hue = BoardHues[boardHueIndex(board)]
+    return if (next.dark) hue.dark else hue.light
 }
 
 /**

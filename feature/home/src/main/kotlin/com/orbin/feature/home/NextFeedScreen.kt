@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -130,13 +131,17 @@ fun NextFeedScreen(
                     )
                 } else {
                     val byId = remember(entries) { entries.associateBy { it.row.id } }
+                    // Remembered for the same reason `byId` is: rebuilt on every recomposition it
+                    // arrived at FeedScreen as a new list each time, so the screen could never skip
+                    // and its whole lazy content lambda re-ran.
+                    val rows = remember(entries) { entries.map { it.row } }
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
                         onRefresh = viewModel::refresh,
                         modifier = modifier.fillMaxSize(),
                     ) {
                         FeedScreen(
-                            rows = entries.map { it.row },
+                            rows = rows,
                             subtitle = feedSubtitle(entries.size, state.boards.size),
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
@@ -249,18 +254,21 @@ internal fun feedEntries(
  * contains, and narrowing it here would quietly lose matches people already rely on.
  */
 internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
-    val token = filter.trim().lowercase()
+    val token = filter.trim()
     if (token.isEmpty()) return true
-    val haystack =
-        listOfNotNull(
-            key.board.value,
-            originalPost.subject,
-            originalPost.comment.raw,
-            originalPost.poster.name,
-            originalPost.poster.tripcode,
-            originalPost.attachments.firstOrNull()?.originalFileName,
-        ).joinToString(" ").lowercase()
-    return haystack.contains(token)
+    // Checked field by field and stopped at the first hit, rather than joined into one lowercased
+    // haystack. The joined version allocated a copy of every post's full markup for every thread on
+    // every keystroke, on the composition thread; this allocates nothing and settles on the subject
+    // for most matches. The field list is unchanged, including the raw markup — searching that is
+    // what lets a filter find a thread by a link or a quote it contains.
+    return sequenceOf(
+        key.board.value,
+        originalPost.subject,
+        originalPost.comment.raw,
+        originalPost.poster.name,
+        originalPost.poster.tripcode,
+        originalPost.attachments.firstOrNull()?.originalFileName,
+    ).any { field -> field?.contains(token, ignoreCase = true) == true }
 }
 
 private fun CatalogThread.activityMillis(): Long =
@@ -290,14 +298,17 @@ private fun CatalogThread.toEntry(
     )
 }
 
+@Composable
 internal fun feedSubtitle(
     threads: Int,
     boards: Int,
-): String = "$threads ${plural(threads, "thread")} across $boards ${plural(boards, "board")}"
+): String =
+    stringResource(
+        R.string.next_feed_subtitle,
+        pluralStringResource(R.plurals.next_feed_thread_count, threads, threads),
+        boardCountLabel(boards),
+    )
 
-internal fun boardCountLabel(boards: Int): String = "$boards ${plural(boards, "board")}"
-
-private fun plural(
-    count: Int,
-    noun: String,
-): String = if (count == 1) noun else "${noun}s"
+@Composable
+internal fun boardCountLabel(boards: Int): String =
+    pluralStringResource(R.plurals.next_feed_board_count, boards, boards)

@@ -6,6 +6,78 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Secondary text was below the accessibility contrast floor in every theme.** The palette's
+  `muted` and `faint` were set by eye, and measured 3.85:1 and 2.18:1 on the light ground against
+  WCAG AA's 4.5:1 requirement — with `faint` also failing in dark (2.83:1) and AMOLED (2.66:1).
+  Those two tokens carry every timestamp, every reply and file count, every subtitle and every read
+  thread, so most of the text on most screens was under the floor. The alphas are now derived from
+  the measurement, keeping a visible step between the three tiers, and one board hue that measured
+  3.61:1 was darkened. `PaletteContrastTest` recomputes every ratio from the palette constants and
+  fails if one drops, so the floor is enforced rather than remembered.
+
+- **The layout switcher never said which layout was active.** List / Grid / Images is a
+  single-choice control, but each option was a plain button whose selected state existed only as a
+  colour, so a screen reader announced three identical buttons. They are a selectable group now.
+
+- **The image layouts could not be used without sight.** An image cell draws a picture and a board
+  badge and nothing else, so a reader heard an attachment's filename and a board name and could not
+  tell one thread from another. The cells carry the subject as a description now, without drawing
+  it. The media wall's tiles had the same gap.
+
+- **Feed and grid rows were not buttons.** They had a tap action with no role and no label, so the
+  row announced as an unlabelled target. Rows on the board picker declared a switch but had nowhere
+  to put its position; they are proper toggles now.
+
+- **The rail clipped its label at large text sizes, and long subjects lost words.** The one
+  large-text screenshot was captured at 1.2× while Android goes to 2.0×, so the fixed 52dp rail had
+  never been drawn holding text that size. The rail takes that as a floor rather than a fixed
+  height, a subject gets more lines as the type grows instead of the same two, and there is a 2.0×
+  golden.
+
+- **Board colours only existed for five boards.** `boardHue` matched five 4chan board names and
+  returned the accent for everything else, so across two providers and dozens of boards almost
+  every row came out the same terracotta — the "colour per board" idea worked in the screenshots
+  and nowhere else. Boards hash into a table of ten hues, all of which clear the contrast floor on
+  both grounds. The five that shipped with a fixed colour keep it.
+
+- **A layout switch scrolled the feed back to the top.** The scroll-to-top effect was keyed on the
+  layout as well as the request, so anyone who had used scroll-to-top once was sent back to the top
+  every time they changed layout thereafter.
+
+- **The rail documented a dismissal gesture that was never built.** Its comment said layers "are
+  dismissed by dragging them down"; nothing in the module has ever implemented a drag. The comment
+  now says what actually dismisses a layer — the system back gesture — and records what building
+  the drag would take.
+
+### Changed
+- **The interface can be translated.** `:ui-next` had no resources directory, so every word in the
+  redesigned interface was an English literal in a composable — a regression against the rest of
+  the project, where `:media` and the feature modules keep their strings in `strings.xml` precisely
+  so they can be translated. All of them have moved, and the counts that were built by appending an
+  "s" to a noun (which read "1 replies") are plural resources.
+
+- **Grids gain columns on wider screens instead of stretching.** All five grids were fixed at two
+  or three columns, while the screens they replaced size themselves adaptively — so the redesign
+  had quietly dropped tablet and landscape layout. The minimums are the widths the fixed counts
+  produced on a phone, so phones are laid out exactly as before.
+
+- **Every screen shares one scaffold.** The ground, the rail and the bottom-padding arithmetic were
+  written out separately in four screens, with the same unexplained constant copied into each.
+  `NextScaffold` owns them, which also makes hide-on-scroll available to the board catalog and the
+  media wall rather than to the feed alone.
+
+- Rows animate into place when the feed reorders, instead of jumping.
+
+### Performance
+- The feed rebuilt its row list on every recomposition, so the screen could never skip and its
+  whole lazy content re-ran; the image layout re-filtered the feed inside the grid's content lambda
+  for the same reason. Both are remembered now.
+- Filtering the feed built a lowercased copy of every post's full markup, for every thread, on
+  every keystroke. It checks the fields in turn and stops at the first match.
+- The two identical scroll-direction trackers are one function, and it no longer writes state from
+  inside a derived-state computation.
+
 ## [112-Kaede] - 2026-08-30
 
 ### Changed

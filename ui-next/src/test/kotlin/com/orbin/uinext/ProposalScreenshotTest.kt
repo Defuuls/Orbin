@@ -55,6 +55,12 @@ class ProposalScreenshotTest {
             FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
         }
 
+    @Test
+    fun feedMaxText() =
+        capture("next_feed_max_text", fontScale = MAX_FONT_SCALE) {
+            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+        }
+
     /** What the feed actually looks like as shipped: inside the app shell, which still owns the
      *  bottom navigation bar, so the rail stays off until the command surface replaces that bar. */
     @Test
@@ -244,6 +250,15 @@ class ProposalScreenshotTest {
     private companion object {
         /** `FontScaleOption.XLARGE`, so the capture tracks the setting rather than a guess at it. */
         const val XL_FONT_SCALE = 1.2f
+
+        /**
+         * The largest text Android will hand a screen.
+         *
+         * The only large-text golden was captured at 1.2, which left everything between there and
+         * the system ceiling unrendered — including the rail, whose height was fixed at 52dp and
+         * had never been drawn holding text this size.
+         */
+        const val MAX_FONT_SCALE = 2.0f
         const val SAMPLE_SUBTITLE = "8 threads across 7 boards"
     }
 

@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -149,13 +150,18 @@ fun ThreadScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         InlineAction(
-                            label = if (watching) "Watching" else "Watch",
+                            label =
+                                if (watching) {
+                                    stringResource(R.string.next_thread_watching)
+                                } else {
+                                    stringResource(R.string.next_thread_watch)
+                                },
                             accent = watching,
                             onClick = onWatch,
                         )
                         WidthSpacer(4)
                         InlineAction(
-                            label = "Files",
+                            label = stringResource(R.string.next_thread_files),
                             accent = layout == ThreadLayout.FILES,
                             onClick = {
                                 onLayoutChange(
@@ -165,17 +171,17 @@ fun ThreadScreen(
                         )
                         WidthSpacer(4)
                         InlineAction(
-                            label = "Download all",
+                            label = stringResource(R.string.next_thread_download_all),
                             onClick = onDownloadAll,
                         )
                         WidthSpacer(4)
-                        InlineAction("Share", onClick = onShare)
+                        InlineAction(stringResource(R.string.next_thread_share), onClick = onShare)
                     }
                     if (onClassicReader != null) {
                         Gap(4)
                         Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
                             InlineAction(
-                                label = "Classic reader",
+                                label = stringResource(R.string.next_thread_classic_reader),
                                 onClick = onClassicReader,
                             )
                         }
@@ -283,14 +289,26 @@ private fun PostView(
             // The quiet line is also the handle: tapping it folds the post away. The old reader
             // put this on a card header; here the line that can already be ignored is the one that
             // makes the rest ignorable.
+            //
+            // Resolved out here because `semantics` and `onClickLabel` are read outside
+            // composition, where `stringResource` cannot be called.
+            val expandLabel = stringResource(R.string.next_post_expand)
+            val collapseLabel = stringResource(R.string.next_post_collapse)
+            val collapsedState = stringResource(R.string.next_post_collapsed_state)
+            val expandedState = stringResource(R.string.next_post_expanded_state)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
                         .clickable(
-                            onClickLabel = if (collapsed) "Expand post" else "Collapse post",
+                            onClickLabel =
+                                if (collapsed) {
+                                    expandLabel
+                                } else {
+                                    collapseLabel
+                                },
                             onClick = { onToggleCollapse(post) },
-                        ).semantics { stateDescription = if (collapsed) "Collapsed" else "Expanded" },
+                        ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
             ) {
                 MetaLine(post.number, color = next.faint)
                 WidthSpacer(8)
@@ -301,7 +319,7 @@ private fun PostView(
                 }
                 if (collapsed) {
                     WidthSpacer(8)
-                    MetaLine("collapsed", color = next.faint)
+                    MetaLine(stringResource(R.string.next_post_collapsed), color = next.faint)
                 }
             }
             if (collapsed) return@Column
@@ -319,7 +337,7 @@ private fun PostView(
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
-                        text = "Spoiler — press to reveal",
+                        text = stringResource(R.string.next_spoiler_reveal),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White.copy(alpha = 0.72f),

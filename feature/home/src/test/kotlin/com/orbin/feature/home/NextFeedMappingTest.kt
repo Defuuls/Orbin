@@ -127,14 +127,6 @@ class NextFeedMappingTest {
     }
 
     @Test
-    fun `counts read as singular or plural`() {
-        assertThat(feedSubtitle(threads = 1, boards = 1)).isEqualTo("1 thread across 1 board")
-        assertThat(feedSubtitle(threads = 8, boards = 7)).isEqualTo("8 threads across 7 boards")
-        assertThat(boardCountLabel(1)).isEqualTo("1 board")
-        assertThat(boardCountLabel(0)).isEqualTo("0 boards")
-    }
-
-    @Test
     fun `the feed filter matches board, subject, comment, poster and filename`() {
         val feeds = listOf(boardFeed("g", thread(1, board = "g", subject = "Home server on ARM")))
 
