@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [111-Riko] - 2026-08-30
+
 ### Fixed
 - **List view cut the sides off every attachment.** A list row puts its thumbnail in a fixed 68dp
   square, and the thumbnail filled that square whatever shape the file was. Imageboard attachments
@@ -1835,7 +1837,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v111-Riko...HEAD
+[111-Riko]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...v111-Riko
 [110-Nanami]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...v110-Nanami
 [109-Koharu]: https://github.com/Defuuls/Orbin/compare/v108-Ichika...v109-Koharu
 [108-Ichika]: https://github.com/Defuuls/Orbin/compare/v107-Tsumugi...v108-Ichika
