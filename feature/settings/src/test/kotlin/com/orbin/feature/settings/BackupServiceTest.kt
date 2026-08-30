@@ -1,7 +1,6 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -58,7 +57,6 @@ class BackupServiceTest {
             dynamicColor = false,
             amoled = true,
             fontScale = 1.2f,
-            appIconVariant = AppIconVariant.DUAL_GRADIENT,
             fullScreenFeedChrome = true,
             thumbnailSize = ThumbnailSize.FILL,
             autoplayVideos = true,

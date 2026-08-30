@@ -118,7 +118,6 @@ class BackupService
                 setDynamicColor(settings.dynamicColor)
                 setAmoled(settings.amoled)
                 setFontScale(settings.fontScale)
-                setAppIconVariant(settings.appIconVariant)
                 setFullScreenFeedChrome(settings.fullScreenFeedChrome)
                 setThumbnailSize(settings.thumbnailSize)
                 setAutoplayVideos(settings.autoplayVideos)

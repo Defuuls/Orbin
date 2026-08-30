@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
@@ -159,8 +158,6 @@ class SettingsViewModel
         fun setInternalUpdater(enabled: Boolean) = update { repository.setInternalUpdaterEnabled(enabled) }
 
         fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
-
-        fun setAppIconVariant(variant: AppIconVariant) = update { repository.setAppIconVariant(variant) }
 
         fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
 

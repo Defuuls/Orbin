@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- The ground the launcher mark sits on: the dark palette's own background, so the icon and
-         the app it opens are the same colour rather than two guesses at one. -->
-    <color name="ic_launcher_orbit_background">#0D0D11</color>
-</resources>

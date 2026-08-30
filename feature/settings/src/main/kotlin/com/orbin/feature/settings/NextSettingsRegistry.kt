@@ -1,6 +1,5 @@
 package com.orbin.feature.settings
 
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
@@ -186,14 +185,6 @@ private class Rows {
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
         toggle("dynamicColor", "Dynamic color", settings.dynamicColor, vm::setDynamicColor),
         toggle("amoled", "AMOLED black", settings.amoled, vm::setAmoled),
-        choice(
-            "appIcon",
-            "App icon",
-            AppIconVariant.entries,
-            settings.appIconVariant,
-            { it.label },
-            vm::setAppIconVariant,
-        ),
         choice(
             "threadPresentation",
             "Open threads as",

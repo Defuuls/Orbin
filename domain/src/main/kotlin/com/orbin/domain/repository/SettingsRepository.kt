@@ -1,6 +1,5 @@
 package com.orbin.domain.repository
 
-import com.orbin.core.model.AppIconVariant
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
@@ -93,8 +92,6 @@ interface SettingsRepository {
     suspend fun setActiveProviderId(id: ProviderId)
 
     suspend fun setColorTheme(theme: ColorTheme)
-
-    suspend fun setAppIconVariant(variant: AppIconVariant)
 
     suspend fun setFullScreenFeedChrome(enabled: Boolean)
 

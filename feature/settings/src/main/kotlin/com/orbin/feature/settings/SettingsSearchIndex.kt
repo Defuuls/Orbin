@@ -41,7 +41,6 @@ val settingsSearchIndex =
         SettingsSearchEntry("themeMode", "Theme", APPEARANCE),
         SettingsSearchEntry("dynamicColor", "Dynamic color", APPEARANCE),
         SettingsSearchEntry("amoled", "AMOLED black", APPEARANCE),
-        SettingsSearchEntry("appIcon", "App icon", APPEARANCE),
         SettingsSearchEntry("threadPresentation", "Open threads as", APPEARANCE),
         SettingsSearchEntry("fullScreenFeed", "Full-screen feed", APPEARANCE),
         SettingsSearchEntry("fontScale", "Font size", APPEARANCE),

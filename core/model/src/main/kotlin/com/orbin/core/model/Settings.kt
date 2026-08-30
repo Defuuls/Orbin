@@ -21,18 +21,6 @@ enum class ColorTheme(
 
 /** App icon variant for home screen. */
 @Serializable
-enum class AppIconVariant(
-    val label: String,
-) {
-    // The constant name is what is persisted and what names the manifest alias, so it stays
-    // DEFAULT; only the label changes, because the icon it names is no longer an orb.
-    DEFAULT("Orbit"),
-    NESTED_RINGS("Nested Rings"),
-    ABSTRACT_FLOW("Abstract Flow"),
-    MINIMALIST_ESSENCE("Minimalist Essence"),
-    DUAL_GRADIENT("Dual Gradient"),
-}
-
 private const val MILLIS_PER_MINUTE = 60_000L
 private const val FIVE_MINUTES_MS = 5 * MILLIS_PER_MINUTE
 private const val FIFTEEN_MINUTES_MS = 15 * MILLIS_PER_MINUTE
@@ -164,7 +152,6 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
-    val appIconVariant: AppIconVariant = AppIconVariant.DEFAULT,
     val fullScreenFeedChrome: Boolean = false,
     val threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,

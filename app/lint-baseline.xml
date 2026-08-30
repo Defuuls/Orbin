@@ -8,7 +8,7 @@
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/kotlin/com/orbin/app/MainActivity.kt"
-            line="414"
+            line="447"
             column="39"/>
     </issue>
 
@@ -19,7 +19,7 @@
         errorLine2="            ~~~~">
         <location
             file="../gradle/libs.versions.toml"
-            line="10"
+            line="17"
             column="13"/>
     </issue>
 
@@ -41,7 +41,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="26"
+            line="32"
             column="13"/>
     </issue>
 
@@ -61,138 +61,6 @@
             file="src/main/res/values/colors.xml"
             line="4"
             column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.ic_launcher_stellar_background` appears to be unused"
-        errorLine1="    &lt;color name=&quot;ic_launcher_stellar_background&quot;>#212121&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="11"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_gradient` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_gradient.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_gradient_round` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_gradient_round.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_minimalist` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_minimalist.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_minimalist_round` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_minimalist_round.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_neon` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_neon.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_neon_round` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_neon_round.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_retro` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_retro.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_retro_round` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_retro_round.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_stellar` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_stellar.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_launcher_stellar_foreground` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_launcher_stellar_foreground.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.mipmap.ic_launcher_stellar_round` appears to be unused"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_stellar_round.xml"
-            line="2"
-            column="1"/>
     </issue>
 
 </issues>

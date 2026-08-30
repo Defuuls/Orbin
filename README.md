@@ -92,7 +92,6 @@ reply, or create threads.
 - **Settings as one scrolling list:** Content & Feed, Notifications, Appearance, Media & Playback,
   Privacy & Network, and Storage & Backup each get their own screen instead of one long scroll
   through 35+ options, with a search icon on the hub to jump straight to any setting by name.
-- Selectable app icons (five launcher variants).
 - Adaptive layouts for tablets, foldables, landscape, and edge-to-edge.
   larger screens.
 - Predictive back gesture and smooth shared-element transitions.

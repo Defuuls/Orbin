@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Removed
+- **The app-icon picker is gone, and with it the alternate icons.** Orbin has one mark now, so a
+  setting offering five was offering four ways to make the app look like something it is not. The
+  choice cost more than it looked: five activity aliases in the manifest, a manager that toggled
+  their enabled state on every launch, and a package-change broadcast each time — which is what had
+  been tearing the app's only launch smoke test down mid-run and left it disabled. One alias stays,
+  permanently enabled and drawing no icon of its own, because it is the component a launcher pins.
+- **Ten launcher resources that nothing referenced** went with it — alternate icons for variants
+  that had no manifest entry at all, sitting beside the ones that did and looking equally live.
+
+  Existing installs keep their launcher entry. One alias survives, permanently enabled, because it
+  is the component a launcher pins — deleting it would break every pinned shortcut belonging to
+  someone on the default icon, which is nearly everyone. Anyone who had picked a non-default icon
+  gets the new mark. Backups that still carry an icon choice import fine; the field is ignored.
+
 ### Changed
 - **A new launcher icon: an orbit, and the one body on it.** Two shapes in one terracotta, on the
   dark palette's own ground. What it replaced was seven paths of hairline strokes and four alpha
