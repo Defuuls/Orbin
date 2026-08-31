@@ -180,6 +180,10 @@ class FakeSettingsRepository(
         update { copy(hideTextOnlyThreads = enabled) }
     }
 
+    override suspend fun setHarshContentFilter(enabled: Boolean) {
+        update { copy(harshContentFilter = enabled) }
+    }
+
     override suspend fun setMediaFilter(filter: MediaFilter) {
         update { copy(mediaFilter = filter) }
     }
