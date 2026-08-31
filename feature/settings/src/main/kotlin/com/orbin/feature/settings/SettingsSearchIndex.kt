@@ -28,6 +28,7 @@ data class SettingsSearchEntry(
 val settingsSearchIndex =
     listOf(
         SettingsSearchEntry("permanentFilter", "Built-in content filter", CONTENT),
+        SettingsSearchEntry("harshFilter", "Filter everyday shock words", CONTENT),
         SettingsSearchEntry("personalized", "Personalized home feed", CONTENT),
         SettingsSearchEntry("hiddenTags", "Hidden tags", CONTENT),
         SettingsSearchEntry("mutedTags", "Muted tags", CONTENT),
