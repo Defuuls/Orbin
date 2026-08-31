@@ -20,8 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.activityMillis
+import com.orbin.core.model.comparator
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
@@ -40,10 +43,9 @@ import com.orbin.uinext.NextTheme
  * between the two: it collects the same [SubscribedFeedViewModel] the current feed uses, turns
  * catalog threads into rows, and hands clicks back as navigation.
  *
- * The feed it replaced was a list of boards each containing threads, so a quiet board's stale
- * thread sat above a busy board's live one purely because of alphabetical board order. This merges
- * every subscribed board into one list ordered by when each thread last moved, which is the order
- * someone opening a feed is actually looking for.
+ * The feed it replaced was a list of boards each containing threads. This still merges every
+ * subscribed board into one list; the default order is board code A-Z so a quiet board is not
+ * buried under a busy one. The chip cycles that to activity, replies, images, created or title.
  *
  * The rail is on: it is the screen's only chrome, and the shell no longer draws a bottom navigation
  * bar here. Its Search opens the command surface, which is how every other destination is reached
@@ -107,8 +109,14 @@ fun NextFeedScreen(
                 // times are resolved here rather than per row so every row on one pass reads
                 // against the same clock.
                 val entries =
-                    remember(state.boards, visited, filter) {
-                        feedEntries(state.boards, visited, System.currentTimeMillis(), filter)
+                    remember(state.boards, visited, filter, settings.feedSort) {
+                        feedEntries(
+                            state.boards,
+                            visited,
+                            System.currentTimeMillis(),
+                            filter,
+                            settings.feedSort,
+                        )
                     }
                 if (entries.isEmpty()) {
                     // A filter that matches nothing is not an empty feed, and offering "subscribe
@@ -147,6 +155,8 @@ fun NextFeedScreen(
                             showRail = showRail,
                             layout = layout,
                             onLayoutChange = { layout = it },
+                            sortLabel = settings.feedSort.label,
+                            onSort = viewModel::cycleFeedSort,
                             filter = filter.takeIf { it.isNotBlank() },
                             onClearFilter = onClearFilter,
                             hideRailOnScroll = hideRailOnScroll,
@@ -227,22 +237,24 @@ internal data class FeedEntry(
 )
 
 /**
- * Flattens the per-board feeds into one list, most recently active first.
+ * Flattens the per-board feeds into one list ordered by [sort].
  *
- * Threads carry `lastModifiedMillis` from the catalog; where an engine does not supply it the
- * opening post's own timestamp stands in, so a thread with no bump information sorts by age rather
- * than falling to the bottom as if it were from 1970.
+ * Default is board code A-Z, then most recently active within that board. Threads carry
+ * `lastModifiedMillis` from the catalog; where an engine does not supply it the opening post's
+ * own timestamp stands in, so a thread with no bump information sorts by age rather than falling
+ * to the bottom as if it were from 1970.
  */
 internal fun feedEntries(
     feeds: List<SubscribedBoardFeed>,
     visited: Set<ThreadKey>,
     nowMillis: Long,
     filter: String = "",
+    sort: FeedSort = FeedSort.BOARD,
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }
         .filter { thread -> thread.matchesFeedFilter(filter) }
-        .sortedByDescending { thread -> thread.activityMillis() }
+        .sortedWith(sort.comparator())
         .map { thread -> thread.toEntry(visited, nowMillis) }
 
 /**
@@ -270,9 +282,6 @@ internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
         originalPost.attachments.firstOrNull()?.originalFileName,
     ).any { field -> field?.contains(token, ignoreCase = true) == true }
 }
-
-private fun CatalogThread.activityMillis(): Long =
-    if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis
 
 private fun CatalogThread.toEntry(
     visited: Set<ThreadKey>,
