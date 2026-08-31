@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [114-Yui] - 2026-08-31
+
 ### Added
 - **A setting for the everyday shock words the built-in filter leaves alone.** The permanent filter
   is always on and stays that way; "Filter everyday shock words" is a separate opt-in for the
@@ -1959,7 +1961,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v114-Yui...HEAD
+[114-Yui]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...v114-Yui
 [113-Nagisa]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...v113-Nagisa
 [112-Kaede]: https://github.com/Defuuls/Orbin/compare/v111-Riko...v112-Kaede
 [111-Riko]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...v111-Riko
