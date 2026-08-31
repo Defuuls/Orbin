@@ -262,20 +262,38 @@ class SettingsViewModel
 
 sealed interface DiagnosticsStatus {
     data object Exported : DiagnosticsStatus
+
     data object Empty : DiagnosticsStatus
+
     data object Cleared : DiagnosticsStatus
-    data class Failed(val message: String) : DiagnosticsStatus
+
+    data class Failed(
+        val message: String,
+    ) : DiagnosticsStatus
 }
 
 sealed interface BackupStatus {
     data object Exported : BackupStatus
-    data class Imported(val summary: BackupSummary) : BackupStatus
-    data class Failed(val message: String) : BackupStatus
+
+    data class Imported(
+        val summary: BackupSummary,
+    ) : BackupStatus
+
+    data class Failed(
+        val message: String,
+    ) : BackupStatus
 }
 
 sealed interface UpdateCheckState {
     data object Idle : UpdateCheckState
+
     data object Checking : UpdateCheckState
-    data class Result(val status: UpdateStatus) : UpdateCheckState
-    data class Failed(val message: String) : UpdateCheckState
+
+    data class Result(
+        val status: UpdateStatus,
+    ) : UpdateCheckState
+
+    data class Failed(
+        val message: String,
+    ) : UpdateCheckState
 }
