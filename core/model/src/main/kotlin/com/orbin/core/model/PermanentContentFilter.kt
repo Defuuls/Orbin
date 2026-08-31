@@ -130,13 +130,18 @@ object PermanentContentFilter {
 
     fun matches(text: String?): Boolean = matches(text, includeHarsh = false)
 
-    fun matches(text: String?, includeHarsh: Boolean): Boolean {
+    fun matches(
+        text: String?,
+        includeHarsh: Boolean,
+    ): Boolean {
         if (text.isNullOrBlank()) return false
         return (if (includeHarsh) harshPattern else alwaysPattern).containsMatchIn(text)
     }
 
-    fun matchesAny(texts: Iterable<String?>, includeHarsh: Boolean = false): Boolean =
-        texts.any { matches(it, includeHarsh) }
+    fun matchesAny(
+        texts: Iterable<String?>,
+        includeHarsh: Boolean = false,
+    ): Boolean = texts.any { matches(it, includeHarsh) }
 
     private fun compile(source: Set<String>): Regex =
         Regex(
