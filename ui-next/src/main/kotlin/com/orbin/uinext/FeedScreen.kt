@@ -24,6 +24,8 @@ fun FeedScreen(
     showRail: Boolean = true,
     layout: FeedLayout = FeedLayout.LIST,
     onLayoutChange: (FeedLayout) -> Unit = {},
+    sortLabel: String? = null,
+    onSort: () -> Unit = {},
     filter: String? = null,
     onClearFilter: () -> Unit = {},
     onOpenRow: (FeedRow) -> Unit = {},
@@ -68,6 +70,8 @@ fun FeedScreen(
                 subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
                 layout = layout,
                 onLayoutChange = onLayoutChange,
+                sortLabel = sortLabel,
+                onSort = onSort,
                 filter = filter,
                 onClearFilter = onClearFilter,
             )
