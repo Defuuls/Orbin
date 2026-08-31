@@ -1,0 +1,20 @@
+{
+  "id": "com.orbin.app",
+  "url": "https://github.com/Defuuls/Orbin",
+  "author": "Defuuls",
+  "name": "Orbin",
+  "installedVersion": null,
+  "latestVersion": null,
+  "additionalSettings": {
+    "includePrereleases": false,
+    "fallbackToOlderReleases": true,
+    "trackOnly": false,
+    "versionDetection": true,
+    "releaseTitleAsVersion": false,
+    "useReleaseDateAsVersion": false,
+    "apkFilterRegEx": "orbin-v.*\\.apk$",
+    "invertAPKFilter": false,
+    "autoApkFilterByArch": true
+  },
+  "overrideSource": "GitHub"
+}

@@ -8,6 +8,18 @@ enum class CatalogSort {
     REPLY_COUNT,
     IMAGE_COUNT,
     LAST_REPLY,
+    ;
+
+    /** Short label for the catalog sort chip. */
+    val label: String
+        get() =
+            when (this) {
+                BUMP_ORDER -> "Bump"
+                CREATION_DATE -> "Created"
+                REPLY_COUNT -> "Replies"
+                IMAGE_COUNT -> "Images"
+                LAST_REPLY -> "Latest"
+            }
 }
 
 /** A request for a page of a board catalog. */

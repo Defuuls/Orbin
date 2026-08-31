@@ -134,42 +134,23 @@ class PermanentContentFilterTest {
         assertThat(ordinary.isPermanentlyFiltered()).isFalse()
     }
 
-    /**
-     * `rent` was requested alongside gore and is filtered as a standalone word, which does mean the
-     * housing sense of the word goes with it. Pinned here so the trade-off is visible rather than
-     * discovered: whole-word matching keeps `parent`/`current`/`torrent` readable (asserted above),
-     * but a post that says "rent" on its own is filtered.
-     */
     @Test
-    fun `filters the standalone word rent, including its everyday sense`() {
-        assertThat(PermanentContentFilter.matches("rent is too high")).isTrue()
+    fun `does not filter the standalone word rent unless harsh mode is on`() {
+        assertThat(PermanentContentFilter.matches("rent is too high")).isFalse()
+        assertThat(PermanentContentFilter.matches("rent is too high", includeHarsh = true)).isTrue()
     }
 
     @Test
-    fun `filters the broad violence terms`() {
-        listOf(
-            "death",
-            "murder",
-            "violence",
-            "gun",
-            "hanging",
-            "suicide",
-            "rekt",
-            "goro",
-        ).forEach { term ->
+    fun `filters the broad violence terms only when harsh mode is on`() {
+        listOf("death", "murder", "violence", "gun", "hanging", "suicide").forEach { term ->
+            assertThat(PermanentContentFilter.matches("a thread about $term")).isFalse()
+            assertThat(PermanentContentFilter.matches("a thread about $term", includeHarsh = true)).isTrue()
+        }
+        listOf("rekt", "goro").forEach { term ->
             assertThat(PermanentContentFilter.matches("a thread about $term")).isTrue()
         }
     }
 
-    /**
-     * The cost of the broad terms, written down on purpose.
-     *
-     * Every string here is ordinary discussion that the filter now removes app-wide with no way to
-     * turn it off. None of this is a bug to be fixed by loosening the matcher — it follows directly
-     * from filtering bare words like `death` and `gun` — but it should fail loudly if someone
-     * later trims the term list expecting these back, and it should be the first thing read if the
-     * filter is ever reported as too aggressive.
-     */
     @Test
     fun `broad terms also remove ordinary discussion`() {
         listOf(
@@ -180,11 +161,11 @@ class PermanentContentFilterTest {
             "violence in video games essay",
             "suicide prevention hotline",
         ).forEach { text ->
-            assertThat(PermanentContentFilter.matches(text)).isTrue()
+            assertThat(PermanentContentFilter.matches(text)).isFalse()
+            assertThat(PermanentContentFilter.matches(text, includeHarsh = true)).isTrue()
         }
     }
 
-    /** Whole-word matching is what stops the broad terms from being unusable rather than merely blunt. */
     @Test
     fun `broad terms do not fire inside longer words`() {
         listOf(
@@ -205,11 +186,6 @@ class PermanentContentFilterTest {
         assertThat(board(id = "g", title = "Technology").isPermanentlyFiltered()).isFalse()
     }
 
-    /**
-     * The guarantee the whole change rests on: an empty token set means the reader hid nothing, not
-     * that nothing is hidden. Every screen calls [matchesFilterTokens], so this is what makes the
-     * filter unavoidable rather than something each screen has to remember.
-     */
     @Test
     fun `applies through matchesFilterTokens even with no reader tokens`() {
         assertThat(post(comment = "gore").matchesFilterTokens(emptySet())).isTrue()

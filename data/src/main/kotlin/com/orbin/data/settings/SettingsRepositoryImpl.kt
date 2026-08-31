@@ -77,6 +77,10 @@ class SettingsRepositoryImpl
             edit { it[Keys.hideTextOnlyThreads] = enabled }
         }
 
+        override suspend fun setHarshContentFilter(enabled: Boolean) {
+            edit { it[Keys.harshContentFilter] = enabled }
+        }
+
         override suspend fun setDeepMediaScan(enabled: Boolean) {
             edit { it[Keys.deepMediaScan] = enabled }
         }
@@ -298,6 +302,7 @@ class SettingsRepositoryImpl
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
+                harshContentFilter = this[Keys.harshContentFilter] ?: false,
                 deepMediaScan = this[Keys.deepMediaScan] ?: false,
                 mediaFilter =
                     this[Keys.mediaFilter]?.toEnumOrDefault(MediaFilter.ALL)
@@ -385,6 +390,7 @@ class SettingsRepositoryImpl
             val mutedTags = stringPreferencesKey("muted_tags")
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
+            val harshContentFilter = booleanPreferencesKey("harsh_content_filter")
             val deepMediaScan = booleanPreferencesKey("deep_media_scan")
             val mediaFilter = stringPreferencesKey("media_filter")
             val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")

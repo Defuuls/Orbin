@@ -20,7 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.core.ui.state.EmptyView
-import com.orbin.feature.board.BoardScreen
+import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
 import kotlinx.serialization.Serializable
 
@@ -31,11 +31,11 @@ import kotlinx.serialization.Serializable
  * trade when the screen only fits one, and the wrong one when it fits two: a tablet reader loses
  * the catalog they are working through every time they open a reply.
  *
- * The detail pane is its own [NavHost] rather than a plain composable. [ThreadScreen]'s ViewModel
- * reads `provider`/`board`/`thread` out of its `SavedStateHandle`, which only a navigation entry
- * populates — rendering it inline would hand it the *catalog's* arguments and load thread 0. A
- * nested graph also gives the pane a back stack of its own, so Back closes the thread and leaves
- * the catalog standing.
+ * The detail pane is its own [NavHost] rather than a plain composable. [NextThreadScreen]'s
+ * ViewModel reads `provider`/`board`/`thread` out of its `SavedStateHandle`, which only a
+ * navigation entry populates — rendering it inline would hand it the *catalog's* arguments and
+ * load thread 0. A nested graph also gives the pane a back stack of its own, so Back closes the
+ * thread and leaves the catalog standing.
  */
 @Composable
 fun BoardDetailTwoPane(
@@ -43,6 +43,7 @@ fun BoardDetailTwoPane(
     onThreadSelected: (Route.Thread?) -> Unit,
     onOpenGallery: (provider: String, board: String, thread: Long, index: Int) -> Unit,
     onOpenCommands: () -> Unit,
+    /** Leaves the catalog. Called only once the detail pane has no thread left to close. */
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -65,10 +66,16 @@ fun BoardDetailTwoPane(
     }
 
     // Back closes the open thread first and only then leaves the catalog, matching what the panes
-    // show: the thread is the most recent thing the reader opened.
-    BackHandler(enabled = threadOpen) {
-        onThreadSelected(null)
-        detailNavController.popBackStack()
+    // show: the thread is the most recent thing the reader opened. Handled in one place for both
+    // steps rather than only while a thread is open, so the pane's Back never falls through to a
+    // host that would take the reader somewhere else.
+    BackHandler {
+        if (threadOpen) {
+            onThreadSelected(null)
+            detailNavController.popBackStack()
+        } else {
+            onBack()
+        }
     }
 
     Row(modifier = modifier.fillMaxSize()) {
@@ -79,14 +86,14 @@ fun BoardDetailTwoPane(
                     .weight(LIST_PANE_WEIGHT)
                     .fillMaxHeight(),
         ) {
-            BoardScreen(
+            NextBoardScreen(
                 onOpenThread = { provider, board, thread, title ->
                     // Recorded as well as navigated: the record is what survives the panes
                     // collapsing on rotation, and it drives the navigate through the LaunchedEffect
                     // above rather than duplicating it here.
                     onThreadSelected(Route.Thread(provider, board, thread, title))
                 },
-                onBack = onBack,
+                onOpenCommands = onOpenCommands,
             )
         }
 

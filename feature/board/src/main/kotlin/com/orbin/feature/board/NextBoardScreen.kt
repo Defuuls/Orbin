@@ -34,8 +34,7 @@ import com.orbin.uinext.NextTheme
  * index is what asks Paging for the page containing it. Collecting the pages into a list first
  * would show whatever had already loaded and then never load another.
  *
- * No sort control is drawn. The catalog stream is fixed to bump order and the view model offers no
- * alternative, so a "Recent" chip here would be a control that does nothing.
+ * Sort is a chip that cycles the catalog: Bump, Created, Replies, Images, Latest.
  */
 @Composable
 fun NextBoardScreen(
@@ -48,6 +47,8 @@ fun NextBoardScreen(
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
+    val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
+    val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
     var layout by rememberSaveable { mutableStateOf(FeedLayout.LIST) }
 
     val board = "/${viewModel.boardId}/"
@@ -58,7 +59,7 @@ fun NextBoardScreen(
             threads.itemSnapshotList.items.associateBy { it.key.thread.value }
         }
     val rowFor: (Int) -> FeedRow? = { index ->
-        threads[index]?.toRow(board, visitedThreadIds)
+        threads[index]?.toRow(board, visitedThreadIds, watchedUnread)
     }
 
     NextTheme {
@@ -77,6 +78,8 @@ fun NextBoardScreen(
             rowAt = rowFor,
             layout = layout,
             onLayoutChange = { layout = it },
+            sortLabel = catalogSort.label,
+            onSort = viewModel::cycleCatalogSort,
             onSearch = onOpenCommands,
             onOpenRow = { row ->
                 row.threadId()?.let { id ->
@@ -115,6 +118,7 @@ private fun FeedRow.threadId(): Long? = id.substringAfterLast('/').toLongOrNull(
 private fun CatalogThread.toRow(
     board: String,
     visited: Set<Long>,
+    unreadByThread: Map<Long, Int> = emptyMap(),
 ): FeedRow =
     FeedRow(
         id = "${key.board.value}/${key.thread.value}",
@@ -128,4 +132,5 @@ private fun CatalogThread.toRow(
         media = stats.imageCount,
         hasPreview = originalPost.attachments.isNotEmpty(),
         read = key.thread.value in visited,
+        unread = unreadByThread[key.thread.value] ?: 0,
     )

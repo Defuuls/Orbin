@@ -131,6 +131,12 @@ private class Rows {
     ) = listOf(
         // Stated, never offered: the permanent filter has no setter and never will.
         info("permanentFilter", "Built-in content filter", "Always on"),
+        toggle(
+            "harshFilter",
+            "Filter everyday shock words",
+            settings.harshContentFilter,
+            vm::setHarshContentFilter,
+        ),
         toggle("personalized", "Personalized home feed", settings.personalizedHomeFeed, vm::setPersonalizedHomeFeed),
         text(
             "hiddenTags",

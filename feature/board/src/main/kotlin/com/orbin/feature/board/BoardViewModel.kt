@@ -23,11 +23,14 @@ import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,6 +40,7 @@ import javax.inject.Inject
  * Backs the board catalog screen. Navigation arguments are read from [SavedStateHandle] by the
  * field names of the type-safe route, so this feature does not depend on the app's route types.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class BoardViewModel
     @Inject
@@ -62,16 +66,29 @@ class BoardViewModel
         private val hiddenTokens: Flow<Set<String>> =
             settingsRepository.settings.map { it.hiddenTagTokens() }.distinctUntilChanged()
 
+        private val includeHarsh: Flow<Boolean> =
+            settingsRepository.settings.map { it.harshContentFilter }.distinctUntilChanged()
+
+        private val sort = MutableStateFlow(CatalogSort.BUMP_ORDER)
+
+        val catalogSort: StateFlow<CatalogSort> = sort
+
+        fun cycleCatalogSort() {
+            val values = CatalogSort.entries
+            sort.value = values[(values.indexOf(sort.value) + 1) % values.size]
+        }
+
         /**
          * The catalog as the grid shows it: cached pages, filtered per collection. Filtering after
          * [cachedIn] means changing the setting re-filters the pages already loaded instead of
-         * re-fetching the board.
+         * re-fetching the board. Changing [catalogSort] starts a new stream.
          */
         val catalog: Flow<PagingData<CatalogThread>> =
-            catalogRepository
-                .catalogStream(ProviderId(providerId), BoardId(boardId), CatalogSort.BUMP_ORDER)
-                .cachedIn(viewModelScope)
-                .hidingMatches(hiddenTokens)
+            sort
+                .flatMapLatest { current ->
+                    catalogRepository.catalogStream(ProviderId(providerId), BoardId(boardId), current)
+                }.cachedIn(viewModelScope)
+                .hidingMatches(hiddenTokens, includeHarsh)
                 .filteredBy(mediaFilter)
 
         val watchedThreadIds: StateFlow<Set<Long>> =
@@ -87,6 +104,19 @@ class BoardViewModel
                         .toSet()
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
+        val watchedUnread: StateFlow<Map<Long, Int>> =
+            bookmarkRepository
+                .observeBookmarks()
+                .map { bookmarks ->
+                    bookmarks
+                        .filter {
+                            it.isWatched &&
+                                it.hasUnread &&
+                                it.key.provider.value == providerId &&
+                                it.key.board.value == boardId
+                        }.associate { it.key.thread.value to it.unreadCount }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
+
         /** Thread ids on this board already present in reading history, for "already read" title styling. */
         val visitedThreadIds: StateFlow<Set<Long>> =
             historyRepository
@@ -97,8 +127,6 @@ class BoardViewModel
                         .mapTo(mutableSetOf()) { it.thread.value }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
-        // The default for this session, from Settings. The grid's size toggle can temporarily
-        // override it without changing the persisted preference.
         val thumbnailSize: StateFlow<ThumbnailSize> =
             settingsRepository.settings
                 .map { it.thumbnailSize }
@@ -137,23 +165,13 @@ class BoardViewModel
         }
     }
 
-/**
- * Drops threads whose opening post matches one of the reader's hidden keywords, or is caught by
- * the permanent filter.
- *
- * There is no "nothing to do" fast path for an empty token set any more: the permanent filter has
- * no setting behind it, so an empty set still has to be filtered.
- */
-internal fun Flow<PagingData<CatalogThread>>.hidingMatches(tokens: Flow<Set<String>>): Flow<PagingData<CatalogThread>> =
-    combine(this, tokens) { pagingData, hidden ->
-        pagingData.filter { thread -> !thread.matchesFilterTokens(hidden) }
+internal fun Flow<PagingData<CatalogThread>>.hidingMatches(
+    tokens: Flow<Set<String>>,
+    includeHarsh: Flow<Boolean>,
+): Flow<PagingData<CatalogThread>> =
+    combine(this, tokens, includeHarsh) { pagingData, hidden, harsh ->
+        pagingData.filter { thread -> !thread.matchesFilterTokens(hidden, harsh) }
     }
-
-/**
- * Applies the reader's [filters] to a catalog stream: each thread keeps only the media its filter
- * allows, and threads left with none drop out — a catalog cell is its OP's thumbnail, so a thread
- * with nothing to show would be an empty tile.
- */
 
 internal fun Flow<PagingData<CatalogThread>>.filteredBy(filters: Flow<MediaFilter>): Flow<PagingData<CatalogThread>> =
     combine(this, filters) { pagingData, filter ->

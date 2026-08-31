@@ -226,7 +226,7 @@ class SubscribedFeedViewModel
                     // A board the permanent filter catches is dropped even if it is subscribed:
                     // the subscription may predate the filter, and honouring it would fetch the
                     // board's catalog into the feed.
-                    .filterNot { board -> board.isPermanentlyFiltered() }
+                    .filterNot { board -> board.isPermanentlyFiltered(settings.harshContentFilter) }
                     .sortedBy { it.id.value }
 
             if (subscribedBoards.isEmpty()) {
@@ -268,8 +268,13 @@ class SubscribedFeedViewModel
             val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
             val effectiveLimit = limitOverride ?: settings.feedThreadLimit
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
-                .filterNot { thread -> thread.matchesFilterTokens(settings.hiddenTagTokens()) }
-                .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
+                // The reader's own hidden keywords, and — when they have asked for it — the
+                // everyday shock words the always-on filter deliberately leaves alone. The setting
+                // reached the board catalog and stopped there, so turning it on filtered the board
+                // you opened but not the feed you opened it from.
+                .filterNot { thread ->
+                    thread.matchesFilterTokens(settings.hiddenTagTokens(), settings.harshContentFilter)
+                }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
                 // Media filtering comes last so it acts on what the feed would otherwise show:
                 // threads left with no matching attachment drop out rather than showing a blank cell.
                 .filteredCatalogBy(settings.mediaFilter)

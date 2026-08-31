@@ -49,6 +49,7 @@ class BackupServiceTest {
             mutedTags = "wip",
             hideNsfwBoards = true,
             hideTextOnlyThreads = true,
+            harshContentFilter = true,
             mediaFilter = MediaFilter.VIDEOS,
             feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
             threadPresentation = ThreadPresentation.OVERLAY,

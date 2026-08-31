@@ -104,6 +104,8 @@ class SettingsViewModel
 
         fun setHideTextOnlyThreads(enabled: Boolean) = update { repository.setHideTextOnlyThreads(enabled) }
 
+        fun setHarshContentFilter(enabled: Boolean) = update { repository.setHarshContentFilter(enabled) }
+
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
 
         fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
@@ -187,10 +189,6 @@ class SettingsViewModel
                 downloadRepository.clearHistory()
             }
 
-        /**
-         * Writes a backup through [sink], which receives the JSON and performs the actual file IO.
-         * Keeping the IO in the caller keeps `ContentResolver` and SAF URIs out of the ViewModel.
-         */
         fun exportBackup(
             appVersionName: String,
             sink: suspend (String) -> Unit,
@@ -203,7 +201,6 @@ class SettingsViewModel
                     )
         }
 
-        /** Restores a backup produced by [exportBackup]; [source] reads the chosen file. */
         fun importBackup(source: suspend () -> String) =
             update {
                 _backupStatus.value =
@@ -215,7 +212,6 @@ class SettingsViewModel
                         )
             }
 
-        /** Asks GitHub whether a newer release exists. [currentVersionName] is the running build. */
         fun checkForUpdate(currentVersionName: String) =
             update {
                 _updateCheck.value = UpdateCheckState.Checking
@@ -226,11 +222,6 @@ class SettingsViewModel
                     }
             }
 
-        /**
-         * Writes the recorded crash reports through [sink], mirroring [exportBackup] so SAF URIs
-         * stay out of the ViewModel. Reports what happened so the UI can say "nothing to export"
-         * rather than silently writing an empty file.
-         */
         fun exportDiagnostics(sink: suspend (String) -> Unit) =
             update {
                 val report = diagnosticsRepository.exportReport()
@@ -269,11 +260,9 @@ class SettingsViewModel
         }
     }
 
-/** Outcome of exporting or clearing local crash diagnostics. */
 sealed interface DiagnosticsStatus {
     data object Exported : DiagnosticsStatus
 
-    /** Nothing has been recorded — worth saying, rather than writing an empty file. */
     data object Empty : DiagnosticsStatus
 
     data object Cleared : DiagnosticsStatus
@@ -283,7 +272,6 @@ sealed interface DiagnosticsStatus {
     ) : DiagnosticsStatus
 }
 
-/** Outcome of the most recent backup export or import. */
 sealed interface BackupStatus {
     data object Exported : BackupStatus
 
@@ -296,7 +284,6 @@ sealed interface BackupStatus {
     ) : BackupStatus
 }
 
-/** Progress and outcome of a manual update check. */
 sealed interface UpdateCheckState {
     data object Idle : UpdateCheckState
 

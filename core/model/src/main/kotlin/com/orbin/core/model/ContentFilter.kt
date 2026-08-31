@@ -38,22 +38,31 @@ private const val CAP_PREFIX = "cap:"
  * The permanent check runs first and runs unconditionally — an empty [tokens] means the reader
  * hid nothing, not that nothing is hidden.
  */
-fun Post.matchesFilterTokens(tokens: Set<String>): Boolean {
-    if (isPermanentlyFiltered()) return true
+fun Post.matchesFilterTokens(
+    tokens: Set<String>,
+    includeHarsh: Boolean = false,
+): Boolean {
+    if (isPermanentlyFiltered(includeHarsh)) return true
     if (tokens.isEmpty()) return false
     val text = listOfNotNull(subject, comment.raw).joinToString(" ").lowercase()
     return tokens.any { token -> matches(token, text) }
 }
 
 /** Whether any of [tokens] matches the thread's opening post. */
-fun CatalogThread.matchesFilterTokens(tokens: Set<String>): Boolean = originalPost.matchesFilterTokens(tokens)
+fun CatalogThread.matchesFilterTokens(
+    tokens: Set<String>,
+    includeHarsh: Boolean = false,
+): Boolean = originalPost.matchesFilterTokens(tokens, includeHarsh)
 
 /**
  * Whether this board is hidden: caught by the permanent filter, or matched by any of [tokens]
  * against its id, title or description.
  */
-fun Board.matchesFilterTokens(tokens: Set<String>): Boolean {
-    if (isPermanentlyFiltered()) return true
+fun Board.matchesFilterTokens(
+    tokens: Set<String>,
+    includeHarsh: Boolean = false,
+): Boolean {
+    if (isPermanentlyFiltered(includeHarsh)) return true
     if (tokens.isEmpty()) return false
     val haystack = listOf(id.value, title, description).joinToString(" ").lowercase()
     return tokens.any { token -> haystack.contains(token) }

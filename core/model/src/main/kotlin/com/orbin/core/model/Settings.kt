@@ -130,6 +130,11 @@ data class AppSettings(
     val hideNsfwBoards: Boolean = false,
     val hideTextOnlyThreads: Boolean = false,
     /**
+     * When true, the built-in filter also hides everyday words (`death`, `gun`, `suicide`,
+     * `rent`, …). Off by default so ordinary discussion stays readable.
+     */
+    val harshContentFilter: Boolean = false,
+    /**
      * Whether the all-media wall follows its catalog sweep with a slow pass through every thread
      * it found, pulling in the media attached to replies.
      *
