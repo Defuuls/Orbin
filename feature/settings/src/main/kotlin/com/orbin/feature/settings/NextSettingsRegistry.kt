@@ -193,7 +193,14 @@ private class Rows {
             { it.label },
             vm::setThreadPresentation,
         ),
-        toggle("fullScreenFeed", "Full-screen feed", settings.fullScreenFeedChrome, vm::setFullScreenFeedChrome),
+        // The label, not the id or the stored key: renaming either would reset the preference for
+        // everyone who has it on. It covers the catalog and the media wall now as well as the feed.
+        toggle(
+            "fullScreenFeed",
+            "Full-screen browsing",
+            settings.fullScreenFeedChrome,
+            vm::setFullScreenFeedChrome,
+        ),
         choice(
             "fontScale",
             "Font size",

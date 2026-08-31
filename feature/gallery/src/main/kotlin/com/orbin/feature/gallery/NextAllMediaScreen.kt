@@ -32,6 +32,8 @@ fun NextAllMediaScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
     onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -44,6 +46,8 @@ fun NextAllMediaScreen(
         onOpenMedia = onOpenMedia,
         onOpenCommands = onOpenCommands,
         modifier = modifier,
+        hideRailOnScroll = hideRailOnScroll,
+        onChromeVisibleChange = onChromeVisibleChange,
     )
 }
 
@@ -57,6 +61,8 @@ fun NextAllMediaScreen(
 fun NextAllMediaContent(
     uiState: AllMediaUiState,
     isRefreshing: Boolean,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
     onRefresh: () -> Unit,
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
     onOpenCommands: () -> Unit,
@@ -100,6 +106,8 @@ fun NextAllMediaContent(
                 deepScanning = uiState.isDeepScanning,
                 deepScanned = uiState.threadsScanned,
                 deepTotal = uiState.threadsTotal,
+                hideRailOnScroll = hideRailOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
                 onSearch = onOpenCommands,
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->

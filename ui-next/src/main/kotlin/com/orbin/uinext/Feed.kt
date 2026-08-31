@@ -31,11 +31,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -502,6 +502,7 @@ fun BoardScreen(
     onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -515,6 +516,7 @@ fun BoardScreen(
         } else {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
+    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     NextScaffold(
         where = board.takeIf { showRail },
         modifier = modifier,
@@ -729,6 +731,7 @@ fun MediaWallScreen(
     onSearch: () -> Unit = {},
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
     val gridState = rememberLazyGridState()
     val railVisible =
@@ -737,6 +740,7 @@ fun MediaWallScreen(
         } else {
             true
         }
+    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     NextScaffold(
         where = stringResource(R.string.next_all_media_title).takeIf { showRail },
         modifier = modifier,
@@ -992,33 +996,37 @@ private fun BoardChoiceRow(
  * Compared by item index and offset rather than by a raw delta so a fling reads as one direction
  * rather than flickering, and so the rail is always present at the top of the list.
  *
- * One function over both list and grid: these were two byte-identical copies, differing only in
- * which state type they read. The previous position is updated from an effect rather than from
- * inside the derivation — writing snapshot state while computing a derived value is a side effect
- * in a read-only context, and it only holds while exactly one caller reads it.
+ * One function over both list and grid: these were two byte-identical copies differing only in
+ * which state type they read.
+ *
+ * The previous position lives in the collector's own locals rather than in snapshot state. Two
+ * earlier shapes were wrong in opposite ways. Writing it from inside `derivedStateOf` computes the
+ * right answer but does it as a side effect of a read, which only holds while exactly one caller
+ * reads the value. Writing it from a `LaunchedEffect` keyed on the position looks tidier and is
+ * broken: the effect sets the previous position equal to the current one, the derivation reads
+ * that and concludes the list has not moved, and the rail never goes away — which is what happened
+ * to hide-on-scroll, on every screen, until `RailHidesOnScrollTest` asked.
  */
 @Composable
 private fun scrollingUp(
     firstVisibleItemIndex: () -> Int,
     firstVisibleItemScrollOffset: () -> Int,
 ): Boolean {
-    var lastIndex by remember { mutableIntStateOf(0) }
-    var lastOffset by remember { mutableIntStateOf(0) }
-    val up =
-        remember {
-            derivedStateOf {
-                val index = firstVisibleItemIndex()
-                val offset = firstVisibleItemScrollOffset()
-                when {
-                    index == 0 && offset == 0 -> true
-                    lastIndex != index -> lastIndex > index
-                    else -> lastOffset >= offset
-                }
+    var up by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        var lastIndex = firstVisibleItemIndex()
+        var lastOffset = firstVisibleItemScrollOffset()
+        snapshotFlow { firstVisibleItemIndex() to firstVisibleItemScrollOffset() }
+            .collect { (index, offset) ->
+                up =
+                    when {
+                        index == 0 && offset == 0 -> true
+                        lastIndex != index -> lastIndex > index
+                        else -> lastOffset >= offset
+                    }
+                lastIndex = index
+                lastOffset = offset
             }
-        }.value
-    LaunchedEffect(firstVisibleItemIndex(), firstVisibleItemScrollOffset()) {
-        lastIndex = firstVisibleItemIndex()
-        lastOffset = firstVisibleItemScrollOffset()
     }
     return up
 }
