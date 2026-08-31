@@ -36,6 +36,8 @@ internal fun FeedHeader(
     onLayoutChange: (FeedLayout) -> Unit,
     filter: String?,
     onClearFilter: () -> Unit,
+    sortLabel: String? = null,
+    onSort: () -> Unit = {},
 ) {
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
@@ -60,6 +62,10 @@ internal fun FeedHeader(
                 selected = layout == FeedLayout.IMAGES,
                 onClick = { onLayoutChange(FeedLayout.IMAGES) },
             )
+            Box(modifier = Modifier.weight(1f))
+            if (sortLabel != null) {
+                InlineAction("$sortLabel ▾", onClick = onSort)
+            }
         }
         if (filter != null) {
             Gap(10)
