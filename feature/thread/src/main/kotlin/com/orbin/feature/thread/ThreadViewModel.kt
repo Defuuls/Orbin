@@ -125,6 +125,17 @@ class ThreadViewModel
                 .map { it.hiddenTagTokens() }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
+        /**
+         * Whether the reader has opted into filtering everyday shock words as well.
+         *
+         * The setting reached the board catalog and stopped there, so a reader who turned it on
+         * found the thread they opened unfiltered — which is where the words are actually read.
+         */
+        private val includeHarsh: StateFlow<Boolean> =
+            settingsRepository.settings
+                .map { it.harshContentFilter }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
         val uiState: StateFlow<ThreadUiState> =
             combine(
                 reloads
@@ -141,16 +152,17 @@ class ThreadViewModel
                     },
                 mediaFilter,
                 hiddenTokens,
-            ) { result, filter, hidden ->
+                includeHarsh,
+            ) { result, filter, hidden, harsh ->
                 result.fold(
                     onSuccess = {
                         // Checked before anything is rendered, and checked on the saved copy too:
                         // a thread can be reached by direct link, history or a bookmark made
                         // before the OP was edited, none of which pass through a catalog.
-                        if (it.isPermanentlyFiltered()) {
+                        if (it.isPermanentlyFiltered(harsh)) {
                             ThreadUiState.Blocked
                         } else {
-                            ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden))
+                            ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden, harsh))
                         }
                     },
                     onFailure = { error ->
@@ -160,10 +172,10 @@ class ThreadViewModel
                         val saved = savedThreadRepository.load(threadKey)
                         when {
                             saved == null -> ThreadUiState.Error(error.message)
-                            saved.isPermanentlyFiltered() -> ThreadUiState.Blocked
+                            saved.isPermanentlyFiltered(harsh) -> ThreadUiState.Blocked
                             else ->
                                 ThreadUiState.Success(
-                                    thread = saved.filteredBy(filter).hidingMatches(hidden),
+                                    thread = saved.filteredBy(filter).hidingMatches(hidden, harsh),
                                     fromSavedCopy = true,
                                 )
                         }
@@ -368,5 +380,13 @@ data class ThreadScrollPosition(
  * handled a step up in [ThreadViewModel] by refusing to show the thread at all: "you opened it on
  * purpose" is not a reason to render content the app is never allowed to render.
  */
-internal fun Thread.hidingMatches(tokens: Set<String>): Thread =
-    copy(replies = replies.filterNot { reply -> reply.matchesFilterTokens(tokens) }.toImmutableList())
+internal fun Thread.hidingMatches(
+    tokens: Set<String>,
+    includeHarsh: Boolean = false,
+): Thread =
+    copy(
+        replies =
+            replies
+                .filterNot { reply -> reply.matchesFilterTokens(tokens, includeHarsh) }
+                .toImmutableList(),
+    )

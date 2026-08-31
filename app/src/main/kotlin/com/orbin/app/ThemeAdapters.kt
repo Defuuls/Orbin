@@ -12,6 +12,10 @@ import com.orbin.core.model.ColorTheme
  *
  * Kept out of [MainActivity] so the activity file stays the splash / lock / permission host
  * rather than also owning enum adapters.
+ *
+ * [isDark] is the same choice as [toDesignSystem], resolved to a plain boolean for `:ui-next`,
+ * which has one dark palette and one light one rather than a mode. SYSTEM is answered here rather
+ * than left to NextTheme's own default, so both theme layers read the setting in one composition.
  */
 @Composable
 internal fun AppThemeMode.isDark(): Boolean =
@@ -28,5 +32,7 @@ internal fun AppThemeMode.toDesignSystem(): ThemeMode =
         AppThemeMode.DARK -> ThemeMode.DARK
     }
 
+// The two enums are kept name-for-name in sync (core:model persists the setting; the design
+// system owns the palettes), so map by name and fall back to Orbin if they ever diverge.
 internal fun ColorTheme.toDesignSystem(): ColorSchemeVariant =
     runCatching { ColorSchemeVariant.valueOf(name) }.getOrDefault(ColorSchemeVariant.ORBIN)

@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **A setting for the everyday shock words the built-in filter leaves alone.** The permanent filter
+  is always on and stays that way; "Filter everyday shock words" is a separate opt-in for the
+  broader terms — death, violence and the like — that catch ordinary discussion as readily as the
+  things the permanent filter exists for. It applies to the subscribed feed, the board catalog and
+  the thread reader, so turning it on filters what you browse and what you open from it.
+- Catalog sort, wired to the chip that was already drawn: bump order, created, replies, images or
+  latest.
+- Watched threads carry their unread count on the catalog row.
+- Obtainium and F-Droid metadata, so the APK can be tracked for updates without the Play Store.
+
 ## [113-Nagisa] - 2026-08-31
 
 ### Fixed
