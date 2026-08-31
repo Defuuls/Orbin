@@ -10,6 +10,7 @@ import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
@@ -135,6 +136,8 @@ class SettingsViewModel
         fun setPreloadThrottleMode(mode: PreloadThrottleMode) = update { repository.setPreloadThrottleMode(mode) }
 
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
+
+        fun setFeedSort(sort: FeedSort) = update { repository.setFeedSort(sort) }
 
         fun setImageCacheLimitMb(megabytes: Int) = update { repository.setImageCacheLimitMb(megabytes) }
 

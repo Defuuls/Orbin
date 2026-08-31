@@ -17,6 +17,7 @@ import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
@@ -155,6 +156,10 @@ class SettingsRepositoryImpl
 
         override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
             edit { it[Keys.feedThreadLimit] = limit.name }
+        }
+
+        override suspend fun setFeedSort(sort: FeedSort) {
+            edit { it[Keys.feedSort] = sort.name }
         }
 
         override suspend fun setImageCacheLimitMb(megabytes: Int) {
@@ -338,6 +343,9 @@ class SettingsRepositoryImpl
                     this[Keys.feedThreadLimit]
                         ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
                         ?: FeedThreadLimit.TWELVE,
+                feedSort =
+                    this[Keys.feedSort]?.toEnumOrDefault(FeedSort.BOARD)
+                        ?: FeedSort.BOARD,
                 imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 downloadOrganization =
@@ -411,6 +419,7 @@ class SettingsRepositoryImpl
             val preloadOption = stringPreferencesKey("preload_option")
             val preloadThrottleMode = stringPreferencesKey("preload_throttle_mode")
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
+            val feedSort = stringPreferencesKey("feed_sort")
             val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val downloadOrganization = stringPreferencesKey("download_organization")
