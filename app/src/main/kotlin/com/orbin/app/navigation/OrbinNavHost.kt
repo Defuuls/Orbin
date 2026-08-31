@@ -63,13 +63,14 @@ fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: Route = Route.NextFeed,
-    subscribedFeedChromeHidesOnScroll: Boolean = false,
+    /** Hide the rail as the reader scrolls down, on every screen that has one. */
+    chromeHidesOnScroll: Boolean = false,
     /** Show the catalog and the selected thread side by side instead of one replacing the other. */
     twoPaneBoardDetail: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
     subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
-    onFeedChromeVisibleChange: (Boolean) -> Unit = {},
+    onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenCommands: () -> Unit = {},
     feedFilter: String = "",
     onClearFeedFilter: () -> Unit = {},
@@ -125,8 +126,8 @@ fun OrbinNavHost(
             NextFeedScreen(
                 onOpenThread = openThread,
                 onOpenCommands = onOpenCommands,
-                hideRailOnScroll = subscribedFeedChromeHidesOnScroll,
-                onChromeVisibleChange = onFeedChromeVisibleChange,
+                hideRailOnScroll = chromeHidesOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
                 scrollToTopRequest = subscribedFeedScrollToTopRequest,
                 refreshRequest = subscribedFeedRefreshRequest,
                 filter = feedFilter,
@@ -169,6 +170,8 @@ fun OrbinNavHost(
 
         composable<Route.AllMedia> {
             NextAllMediaScreen(
+                hideRailOnScroll = chromeHidesOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
                 onOpenMedia = { provider, board, thread, attachmentId ->
                     navController.navigate(
                         Route.Gallery(provider, board, thread, startIndex = 0, attachmentId = attachmentId),
@@ -207,7 +210,12 @@ fun OrbinNavHost(
                     onBack = navController::navigateUp,
                 )
             } else {
-                NextBoardScreen(onOpenThread = openThread, onOpenCommands = onOpenCommands)
+                NextBoardScreen(
+                    onOpenThread = openThread,
+                    onOpenCommands = onOpenCommands,
+                    hideRailOnScroll = chromeHidesOnScroll,
+                    onChromeVisibleChange = onChromeVisibleChange,
+                )
             }
         }
 

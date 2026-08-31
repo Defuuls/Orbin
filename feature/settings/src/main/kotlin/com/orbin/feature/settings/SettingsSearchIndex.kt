@@ -42,7 +42,7 @@ val settingsSearchIndex =
         SettingsSearchEntry("dynamicColor", "Dynamic color", APPEARANCE),
         SettingsSearchEntry("amoled", "AMOLED black", APPEARANCE),
         SettingsSearchEntry("threadPresentation", "Open threads as", APPEARANCE),
-        SettingsSearchEntry("fullScreenFeed", "Full-screen feed", APPEARANCE),
+        SettingsSearchEntry("fullScreenFeed", "Full-screen browsing", APPEARANCE),
         SettingsSearchEntry("fontScale", "Font size", APPEARANCE),
         SettingsSearchEntry("thumbnailSize", "Thumbnail size", APPEARANCE),
         SettingsSearchEntry("autoplay", "Autoplay videos", MEDIA),

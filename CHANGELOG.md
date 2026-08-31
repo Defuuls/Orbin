@@ -7,6 +7,25 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Hiding the rail as you scroll had stopped working entirely.** The audit's tidy-up of the
+  scroll-direction tracker moved the previous-position bookkeeping out of the derived-state
+  computation and into an effect keyed on the position — which reads better and is wrong: the
+  effect sets the previous position equal to the current one, the derivation concludes the list has
+  not moved, and the rail never goes away. It is a collector holding the previous position in its
+  own locals now, which is neither a side effect in a read nor self-defeating.
+
+  Nothing caught this because nothing tested it. `RailHidesOnScrollTest` does: it scrolls each
+  screen and asserts the rail leaves, and it is what found the regression.
+
+### Changed
+- **Full-screen browsing covers the catalog and the media wall, not just the feed.** The setting
+  reached only the subscribed feed, so a reader who turned it on watched the rail slide away there
+  and stay pinned on a board catalog drawn from the identical row in the identical layouts. All
+  three screens now hide the rail together and take the system bars with them. The setting is
+  renamed from "Full-screen feed" to say so; its stored key is untouched, so nobody's preference
+  resets.
+
+### Fixed
 - **Secondary text was below the accessibility contrast floor in every theme.** The palette's
   `muted` and `faint` were set by eye, and measured 3.85:1 and 2.18:1 on the light ground against
   WCAG AA's 4.5:1 requirement — with `faint` also failing in dark (2.83:1) and AMOLED (2.66:1).

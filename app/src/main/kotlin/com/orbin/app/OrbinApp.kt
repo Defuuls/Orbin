@@ -82,19 +82,27 @@ fun OrbinApp(
 
         val topLevel = TopLevelDestination.entries
         val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
+        // The three screens built out of the same scrolling list and the same floating rail. The
+        // setting used to reach only the feed, so a reader who had turned it on watched the rail
+        // slide away there and stay pinned on a catalog drawn from the identical row — which reads
+        // as a bug rather than as a distinction, because it is not one.
+        val scrollAwayScreen =
+            isNextFeed ||
+                currentDestination?.hasRoute(Route.Board::class) == true ||
+                currentDestination?.hasRoute(Route.AllMedia::class) == true
         // The redesigned feed carries its own rail, and the rail is what replaces this bar. Showing
         // both would stack two pieces of navigation chrome on a screen whose whole argument is that
         // it needs none.
         val showBottomBar =
             !isNextFeed && topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
-        val feedChromeHidesOnScroll =
-            isNextFeed && (fullScreenFeedChrome || tabletFeedChrome)
-        var feedChromeVisible by rememberSaveable { mutableStateOf(true) }
+        val chromeHidesOnScroll =
+            scrollAwayScreen && (fullScreenFeedChrome || tabletFeedChrome)
+        var chromeVisible by rememberSaveable { mutableStateOf(true) }
         var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
         var commandsOpen by rememberSaveable { mutableStateOf(false) }
         var feedFilter by rememberSaveable { mutableStateOf("") }
-        val bottomBarVisible = showBottomBar && (!feedChromeHidesOnScroll || feedChromeVisible)
+        val bottomBarVisible = showBottomBar && (!chromeHidesOnScroll || chromeVisible)
         // All three navigation surfaces ask the same question; the null-safe call also drops a
         // redundant guard the compiler could already prove true in the tablet-dock branch.
         val destinationMatches: (TopLevelDestination) -> Boolean = { destination ->
@@ -102,21 +110,28 @@ fun OrbinApp(
         }
         val useTabletDock = showBottomBar && tabletFeedChrome
 
-        LaunchedEffect(feedChromeHidesOnScroll) {
-            if (!feedChromeHidesOnScroll) {
-                feedChromeVisible = true
+        LaunchedEffect(chromeHidesOnScroll) {
+            if (!chromeHidesOnScroll) {
+                chromeVisible = true
+            }
+        }
+        // Leaving a scroll-away screen must not carry its hidden state onto the next one, which
+        // may have no rail to bring back.
+        LaunchedEffect(scrollAwayScreen) {
+            if (!scrollAwayScreen) {
+                chromeVisible = true
             }
         }
 
-        // True full screen: while the feed chrome is scrolled away, also hide the status and
-        // navigation bars so the feed uses the entire display instead of leaving inset strips.
+        // True full screen: while the rail is scrolled away, also hide the status and navigation
+        // bars so the screen uses the entire display instead of leaving inset strips.
         val view = LocalView.current
-        val immersiveFeed = isNextFeed && fullScreenFeedChrome && !feedChromeVisible
-        DisposableEffect(view, immersiveFeed) {
+        val immersive = scrollAwayScreen && fullScreenFeedChrome && !chromeVisible
+        DisposableEffect(view, immersive) {
             val window = view.context.findActivity()?.window
             val controller = window?.let { WindowCompat.getInsetsController(it, view) }
             if (controller != null) {
-                if (immersiveFeed) {
+                if (immersive) {
                     controller.systemBarsBehavior =
                         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     controller.hide(WindowInsetsCompat.Type.systemBars())
@@ -125,7 +140,7 @@ fun OrbinApp(
                 }
             }
             onDispose {
-                if (immersiveFeed) {
+                if (immersive) {
                     controller?.show(WindowInsetsCompat.Type.systemBars())
                 }
             }
@@ -178,12 +193,12 @@ fun OrbinApp(
                     navController = navController,
                     modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
                     startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
-                    subscribedFeedChromeHidesOnScroll = feedChromeHidesOnScroll,
+                    chromeHidesOnScroll = chromeHidesOnScroll,
                     twoPaneBoardDetail = twoPaneBoardDetail,
                     subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
                     subscribedFeedRefreshRequest = feedRefreshRequest,
                     threadPresentation = threadPresentation,
-                    onFeedChromeVisibleChange = { feedChromeVisible = it },
+                    onChromeVisibleChange = { chromeVisible = it },
                     onOpenCommands = { commandsOpen = true },
                     feedFilter = feedFilter,
                     onClearFeedFilter = { feedFilter = "" },

@@ -42,6 +42,8 @@ fun NextBoardScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
@@ -86,6 +88,8 @@ fun NextBoardScreen(
                     )
                 }
             },
+            hideRailOnScroll = hideRailOnScroll,
+            onChromeVisibleChange = onChromeVisibleChange,
             thumbnail = { row, tileModifier ->
                 row.threadId()?.let { id ->
                     byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
