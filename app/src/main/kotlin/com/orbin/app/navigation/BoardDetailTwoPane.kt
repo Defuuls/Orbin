@@ -59,9 +59,13 @@ fun BoardDetailTwoPane(
         }
     }
 
-    BackHandler(enabled = threadOpen) {
-        onThreadSelected(null)
-        detailNavController.popBackStack()
+    BackHandler {
+        if (threadOpen) {
+            onThreadSelected(null)
+            detailNavController.popBackStack()
+        } else {
+            onBack()
+        }
     }
 
     Row(modifier = modifier.fillMaxSize()) {

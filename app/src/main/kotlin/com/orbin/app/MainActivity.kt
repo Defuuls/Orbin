@@ -12,7 +12,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,11 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
 import com.orbin.core.common.lock.AppLockController
-import com.orbin.core.designsystem.theme.ColorSchemeVariant
-import com.orbin.core.designsystem.theme.ThemeMode
 import com.orbin.core.model.AppSettings
-import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.NextTheme
@@ -550,31 +545,6 @@ private fun LockedScreen(
         }
     }
 }
-
-/**
- * The same choice as [toDesignSystem], resolved to a plain boolean for `:ui-next`, which has one
- * dark palette and one light one rather than a mode. SYSTEM is answered here rather than left to
- * NextTheme's own default so both themes read the same setting in the same composition.
- */
-@Composable
-private fun AppThemeMode.isDark(): Boolean =
-    when (this) {
-        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
-        AppThemeMode.LIGHT -> false
-        AppThemeMode.DARK -> true
-    }
-
-private fun AppThemeMode.toDesignSystem(): ThemeMode =
-    when (this) {
-        AppThemeMode.SYSTEM -> ThemeMode.SYSTEM
-        AppThemeMode.LIGHT -> ThemeMode.LIGHT
-        AppThemeMode.DARK -> ThemeMode.DARK
-    }
-
-// The two enums are kept name-for-name in sync (core:model persists the setting; the design
-// system owns the palettes), so map by name and fall back to Orbin if they ever diverge.
-private fun ColorTheme.toDesignSystem(): ColorSchemeVariant =
-    runCatching { ColorSchemeVariant.valueOf(name) }.getOrDefault(ColorSchemeVariant.ORBIN)
 
 private fun shouldRequestNotificationPermission(
     ready: Boolean,
