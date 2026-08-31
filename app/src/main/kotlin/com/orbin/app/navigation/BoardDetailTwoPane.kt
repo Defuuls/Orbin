@@ -43,6 +43,8 @@ fun BoardDetailTwoPane(
     onThreadSelected: (Route.Thread?) -> Unit,
     onOpenGallery: (provider: String, board: String, thread: Long, index: Int) -> Unit,
     onOpenCommands: () -> Unit,
+    /** Leaves the catalog. Called only once the detail pane has no thread left to close. */
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val detailNavController = rememberNavController()
@@ -64,10 +66,16 @@ fun BoardDetailTwoPane(
     }
 
     // Back closes the open thread first and only then leaves the catalog, matching what the panes
-    // show: the thread is the most recent thing the reader opened.
-    BackHandler(enabled = threadOpen) {
-        onThreadSelected(null)
-        detailNavController.popBackStack()
+    // show: the thread is the most recent thing the reader opened. Handled in one place for both
+    // steps rather than only while a thread is open, so the pane's Back never falls through to a
+    // host that would take the reader somewhere else.
+    BackHandler {
+        if (threadOpen) {
+            onThreadSelected(null)
+            detailNavController.popBackStack()
+        } else {
+            onBack()
+        }
     }
 
     Row(modifier = modifier.fillMaxSize()) {

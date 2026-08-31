@@ -207,6 +207,7 @@ fun OrbinNavHost(
                         navController.navigate(Route.Gallery(provider, board, thread, index))
                     },
                     onOpenCommands = onOpenCommands,
+                    onBack = navController::navigateUp,
                 )
             } else {
                 NextBoardScreen(
