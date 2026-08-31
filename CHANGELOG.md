@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [113-Nagisa] - 2026-08-31
+
 ### Fixed
 - **Hiding the rail as you scroll had stopped working entirely.** The audit's tidy-up of the
   scroll-direction tracker moved the previous-position bookkeeping out of the derived-state
@@ -1946,7 +1948,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...HEAD
+[113-Nagisa]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...v113-Nagisa
 [112-Kaede]: https://github.com/Defuuls/Orbin/compare/v111-Riko...v112-Kaede
 [111-Riko]: https://github.com/Defuuls/Orbin/compare/v110-Nanami...v111-Riko
 [110-Nanami]: https://github.com/Defuuls/Orbin/compare/v109-Koharu...v110-Nanami

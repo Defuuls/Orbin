@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [112 — Kaede](https://github.com/Defuuls/Orbin/releases/tag/v112-Kaede)
+**Current release:** [113 — Nagisa](https://github.com/Defuuls/Orbin/releases/tag/v113-Nagisa)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
