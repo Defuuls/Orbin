@@ -1,0 +1,42 @@
+# F-Droid metadata stub for a future inclusion request.
+# Not submitted to fdroiddata yet — Obtainium and GitHub Releases are the
+# current distribution paths. Keep this file in sync with the shipped
+# applicationId and license if/when a request is opened.
+Categories:
+  - Internet
+  - Reading
+License: AGPL-3.0-only
+AuthorName: Defuuls
+SourceCode: https://github.com/Defuuls/Orbin
+IssueTracker: https://github.com/Defuuls/Orbin/issues
+Changelog: https://github.com/Defuuls/Orbin/blob/HEAD/CHANGELOG.md
+
+AutoName: Orbin
+Summary: Read-only Android client for imageboards, starting with 4chan
+Description: |-
+    Orbin is a browsing client for imageboards. It reads boards, catalogs
+    and threads. It does not post, reply, or create threads.
+
+    4chan is a first-class site via the bundled Vichan-compatible provider.
+    BBW Chan is included via LynxChan. Additional engines can be added
+    through the ImageBoardProvider interface.
+
+    Local data is encrypted at rest (SQLCipher and an encrypted DataStore).
+    An always-on keyword filter hides shock and illegal terms; an optional
+    setting extends that list with everyday words.
+
+RepoType: git
+Repo: https://github.com/Defuuls/Orbin.git
+
+Builds:
+  - versionName: '113-Nagisa'
+    versionCode: 131
+    commit: v113-Nagisa
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9]+
+CurrentVersion: '113-Nagisa'
+CurrentVersionCode: 131
