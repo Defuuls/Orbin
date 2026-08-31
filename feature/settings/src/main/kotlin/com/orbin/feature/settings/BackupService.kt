@@ -109,6 +109,7 @@ class BackupService
                 setMutedTags(settings.mutedTags)
                 setHideNsfwBoards(settings.hideNsfwBoards)
                 setHideTextOnlyThreads(settings.hideTextOnlyThreads)
+                setHarshContentFilter(settings.harshContentFilter)
                 setDeepMediaScan(settings.deepMediaScan)
                 setMediaFilter(settings.mediaFilter)
                 setFeedRefreshInterval(settings.feedRefreshInterval)
