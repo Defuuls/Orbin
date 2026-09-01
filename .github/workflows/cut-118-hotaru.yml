@@ -1,0 +1,142 @@
+name: Cut Orbin 118 Hotaru
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/cut-118-hotaru.yml'
+      - 'gradle.properties'
+      - 'CHANGELOG.md'
+      - 'README.md'
+      - 'docs/wiki/Home.md'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  cut:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Decide whether to prepare or publish
+        id: state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -qx 'orbin.versionName=118-Hotaru' gradle.properties; then
+            echo 'mode=publish' >> "$GITHUB_OUTPUT"
+          else
+            echo 'mode=prepare' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate release name
+        if: steps.state.outputs.mode == 'prepare'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git tag --list | grep -Eiq '(^|[-])Hotaru$'; then
+            echo '::error::Hotaru is already used by an existing release tag'; exit 1
+          fi
+          test -z "$(git tag --list 'v118-Hotaru')"
+
+      - name: Prepare release metadata
+        if: steps.state.outputs.mode == 'prepare'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import re
+          from datetime import date
+          from pathlib import Path
+
+          today = date.today().isoformat()
+          base = 'https://github.com/Defuuls/Orbin'
+
+          props = Path('gradle.properties')
+          text = props.read_text()
+          text = re.sub(r'^orbin\.versionCode=\d+$', 'orbin.versionCode=136', text, count=1, flags=re.M)
+          text = re.sub(r'^orbin\.versionName=.+$', 'orbin.versionName=118-Hotaru', text, count=1, flags=re.M)
+          props.write_text(text)
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text()
+          if '## [118-Hotaru]' not in text:
+              section = f'''## [118-Hotaru] - {today}\n\n### Added\n- Added a dedicated Settings shortcut beside Search on the subscribed-feed rail, providing direct access to Settings even when search or command-sheet behavior is unavailable.\n'''
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n{section}\n', 1)
+              text = re.sub(
+                  r'^\[Unreleased\]: .*$',
+                  f'[Unreleased]: {base}/compare/v118-Hotaru...HEAD\n[118-Hotaru]: {base}/compare/v117-Nao...v118-Hotaru',
+                  text,
+                  count=1,
+                  flags=re.M,
+              )
+          changelog.write_text(text)
+
+          readme = Path('README.md')
+          text = readme.read_text()
+          text = re.sub(
+              r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)',
+              f'**Current release:** [118 — Hotaru]({base}/releases/tag/v118-Hotaru)',
+              text,
+              count=1,
+          )
+          readme.write_text(text)
+
+          home = Path('docs/wiki/Home.md')
+          text = home.read_text()
+          text = re.sub(
+              r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|',
+              f'| Current release | **v118 — Hotaru** ({today}) |',
+              text,
+              count=1,
+          )
+          home.write_text(text)
+          PY
+          python3 scripts/validate_repo.py
+
+      - name: Push release-prep branch and open PR
+        if: steps.state.outputs.mode == 'prepare'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B release/prep-v118-hotaru
+          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md
+          git commit -m 'chore: Prepare Orbin 118 Hotaru release'
+          git push --force-with-lease --set-upstream origin release/prep-v118-hotaru
+          if ! gh pr view release/prep-v118-hotaru --json number >/dev/null 2>&1; then
+            gh pr create --base main --head release/prep-v118-hotaru \
+              --title 'chore: Prepare v118-Hotaru release' \
+              --body $'## Summary\n- bump Orbin to 118-Hotaru / versionCode 136\n- close the Unreleased changelog section with the Settings shortcut change\n- update current-release documentation\n\nAfter this PR merges, the cutter dispatches the signed v118-Hotaru release.'
+          fi
+
+      - name: Validate merged release metadata
+        if: steps.state.outputs.mode == 'publish'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          grep -qx 'orbin.versionCode=136' gradle.properties
+          grep -qx 'orbin.versionName=118-Hotaru' gradle.properties
+          test -z "$(git tag --list 'v118-Hotaru')"
+          python3 scripts/validate_repo.py
+
+      - name: Dispatch signed release build
+        if: steps.state.outputs.mode == 'publish'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag=v118-Hotaru -f base_ref=main
