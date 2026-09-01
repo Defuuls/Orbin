@@ -1,0 +1,144 @@
+name: Cut Orbin 117 Nao
+
+on:
+  push:
+    branches:
+      - main
+      - release/v117-nao
+    paths:
+      - '.github/workflows/cut-117-nao.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  prepare:
+    if: github.ref_name == 'release/v117-nao'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: release/v117-nao
+          fetch-depth: 0
+
+      - name: Validate release name
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git tag --list | grep -Eiq '(^|[-])Nao$'; then
+            echo '::error::Nao is already used by an existing release tag'; exit 1
+          fi
+          test -z "$(git tag --list 'v117-Nao')"
+
+      - name: Prepare release metadata and remove stale Minimal docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import re
+          from datetime import date
+          from pathlib import Path
+
+          today = date.today().isoformat()
+          base = 'https://github.com/Defuuls/Orbin'
+
+          props = Path('gradle.properties')
+          text = props.read_text()
+          text = re.sub(r'^orbin\.versionCode=\d+$', 'orbin.versionCode=135', text, count=1, flags=re.M)
+          text = re.sub(r'^orbin\.versionName=.+$', 'orbin.versionName=117-Nao', text, count=1, flags=re.M)
+          props.write_text(text)
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text()
+          if '## [117-Nao]' not in text:
+              section = f'''## [117-Nao] - {today}\n\n### Changed\n- Removed Orbin Minimal from this repository's build and release surface now that it is maintained as a separate repository. Future Orbin releases build and publish only the main client.\n- Cleaned current release documentation so removed Minimal modules and release automation are no longer advertised as part of this codebase.\n'''
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n{section}\n', 1)
+              text = re.sub(
+                  r'^\[Unreleased\]: .*$',
+                  f'[Unreleased]: {base}/compare/v117-Nao...HEAD\n[117-Nao]: {base}/compare/v116-Miku...v117-Nao',
+                  text,
+                  count=1,
+                  flags=re.M,
+              )
+          changelog.write_text(text)
+
+          readme = Path('README.md')
+          text = readme.read_text()
+          text = re.sub(
+              r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)',
+              f'**Current release:** [117 — Nao]({base}/releases/tag/v117-Nao)',
+              text,
+              count=1,
+          )
+          text = re.sub(r'\n## Orbin Minimal\n.*?(?=\n## Tech stack\n)', '\n', text, flags=re.S)
+          text = text.replace('├── app-minimal/              # Second shipped APK: subscribed boards as one flat feed, nothing else\n', '')
+          readme.write_text(text)
+
+          home = Path('docs/wiki/Home.md')
+          text = home.read_text()
+          text = re.sub(
+              r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|',
+              f'| Current release | **v117 — Nao** ({today}) |',
+              text,
+              count=1,
+          )
+          text = text.replace('popular Japanese female names from v100 (shared with Orbin Minimal from `minimal-v4`);', 'popular Japanese female names from v100;')
+          home.write_text(text)
+
+          release = Path('.github/workflows/release.yml')
+          text = release.read_text()
+          text = re.sub(
+              r'# Orbin Minimal is NOT released here\..*?# workflow_dispatch allows triggering a release manually when tag-push is unavailable\.',
+              '# This workflow publishes the Orbin main client only.\n# workflow_dispatch allows triggering a release manually when tag-push is unavailable.',
+              text,
+              count=1,
+              flags=re.S,
+          )
+          text = text.replace(
+              '# the two lines read the same way on a releases page that mixes them: v101-Hana becomes\n# "Orbin 101 - Hana" and minimal-v5-Aoi becomes "Orbin Minimal 5 - Aoi". It used to be\n# whatever the tag message said, which is how the full client\'s releases came to be titled\n# with a bare codename ("Hana") while Orbin Minimal\'s spelled out the app and its number.\n',
+              '# release titles remain deterministic: v101-Hana becomes "Orbin 101 - Hana" rather than\n# depending on free-text tag messages.\n'
+          )
+          release.write_text(text)
+          PY
+
+          python3 scripts/validate_repo.py
+
+      - name: Commit prepared release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md .github/workflows/release.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'chore: Prepare Orbin 117 Nao release'
+          git push origin HEAD:release/v117-nao
+
+  publish:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate merged release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          grep -qx 'orbin.versionCode=135' gradle.properties
+          grep -qx 'orbin.versionName=117-Nao' gradle.properties
+          test -z "$(git tag --list 'v117-Nao')"
+          python3 scripts/validate_repo.py
+
+      - name: Dispatch signed release build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag=v117-Nao -f base_ref=main
