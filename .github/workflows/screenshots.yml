@@ -6,11 +6,9 @@ name: Screenshots
 # the screenshot job green.
 #
 # Roborazzi renders through Robolectric on the JVM, which is reproducible
-# across machines: re-recording the :core:designsystem goldens on a different
-# host reproduced them byte for byte, as did verifying :ui-next's here after
-# recording them elsewhere. If a legitimate UI change makes this
-# fail, re-record locally (./gradlew recordRoborazziDebug) and commit the new
-# goldens, or download the roborazzi-diffs artifact to see what moved.
+# across machines. If a legitimate UI change makes this fail, re-record locally
+# (./gradlew recordRoborazziDebug) and commit the new goldens, or download the
+# roborazzi-diffs artifact to see what moved.
 on:
   workflow_dispatch:
   pull_request:
@@ -18,7 +16,6 @@ on:
       - 'core/designsystem/**'
       - 'core/ui/**'
       - 'feature/**'
-      - 'app-minimal/**'
       - 'media/**'
       - 'ui-next/**'
 
@@ -44,8 +41,6 @@ jobs:
       - name: Verify Roborazzi screenshots
         run: ./gradlew verifyRoborazziDebug
 
-      # Only useful when the step above fails: these are the actual/diff images
-      # showing what changed against the committed golden.
       - name: Upload comparison images
         if: failure()
         uses: actions/upload-artifact@v7

@@ -1,26 +1,18 @@
 name: New Version
 
-# Prepares a release PR for the full client: bumps the version, closes the
-# [Unreleased] changelog section, and moves every doc that quotes the release.
-#
-# Orbin Minimal is NOT prepared here. It is a separate app on its own version
-# line (orbin.minimalVersionCode/Name) with its own cadence.
+# Prepares a release PR for Orbin: bumps the version, closes the [Unreleased]
+# changelog section, and updates documentation that quotes the current release.
 #
 # The version is a number and a codename that travel together — "100" +
-# "Sakura" become versionName "100-Sakura" and tag "v100-Sakura". They are
-# separate inputs so the branch, tag, changelog heading and APK name are all
-# derived from one place rather than re-typed.
-#
-# Codenames are popular Japanese female names, from v100 onward. They replace
-# the pasta names used for v91-v99, which replaced star names before that.
-# Orbin Minimal uses the same pool from minimal-v4 — one pool across both
-# apps, never reusing a name, so a codename always identifies one release.
+# "Sakura" become versionName "100-Sakura" and tag "v100-Sakura".
+# Codenames are popular Japanese female names from v100 onward; do not reuse an
+# existing Orbin release codename.
 
 on:
   workflow_dispatch:
     inputs:
       version_number:
-        description: 'Release number, for example 97'
+        description: 'Release number, for example 117'
         required: true
         type: string
       codename:
@@ -66,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           if ! [[ "$VERSION_NUMBER" =~ ^[0-9]+$ ]]; then
-            echo "::error::version_number must be a whole number, for example 97"; exit 1
+            echo "::error::version_number must be a whole number"; exit 1
           fi
           if ! [[ "$CODENAME" =~ ^[A-Za-z][A-Za-z0-9\ \'-]*$ ]]; then
             echo "::error::codename must be a readable name, e.g. Sakura"; exit 1
@@ -74,9 +66,6 @@ jobs:
           if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
             echo "::error::version_code must be a whole number"; exit 1
           fi
-          # The version lives in gradle.properties; it moved out of
-          # app/build.gradle.kts, and reading the old location silently
-          # produced an empty value that compared as "not greater".
           CURRENT_CODE=$(grep -E '^orbin\.versionCode=[0-9]+$' gradle.properties | cut -d= -f2)
           if [ -z "$CURRENT_CODE" ]; then
             echo "::error::could not read orbin.versionCode from gradle.properties"; exit 1
@@ -105,14 +94,12 @@ jobs:
           today = date.today().isoformat()
           base = "https://github.com/Defuuls/Orbin"
 
-          # 1. The single source of truth for both APKs' versions.
           props = Path("gradle.properties")
           text = props.read_text()
           text = re.sub(r'^orbin\.versionCode=\d+$', f'orbin.versionCode={version_code}', text, count=1, flags=re.M)
           text = re.sub(r'^orbin\.versionName=.+$', f'orbin.versionName={version_name}', text, count=1, flags=re.M)
           props.write_text(text)
 
-          # 2. Close [Unreleased] as this release, and add its compare link.
           changelog = Path("CHANGELOG.md")
           text = changelog.read_text()
           if f"## [{version_name}]" in text:
@@ -121,7 +108,6 @@ jobs:
           if not previous:
               raise SystemExit("Could not find the previous released version in CHANGELOG.md")
           previous = previous.group(1)
-
           text = text.replace("## [Unreleased]\n", f"## [Unreleased]\n\n## [{version_name}] - {today}\n", 1)
           text = re.sub(
               r'^\[Unreleased\]: .*$',
@@ -131,8 +117,6 @@ jobs:
           )
           changelog.write_text(text)
 
-          # 3. The docs that quote the current release. Left un-updated, these
-          #    silently go a release stale, which has happened before.
           readme = Path("README.md")
           readme.write_text(re.sub(
               r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)',
@@ -164,15 +148,9 @@ jobs:
 
           BODY=$(cat <<EOF
           ## Summary
-          - bump the full client to ${VERSION_NAME} / versionCode ${VERSION_CODE}
+          - bump Orbin to ${VERSION_NAME} / versionCode ${VERSION_CODE}
           - close the [Unreleased] changelog section as ${VERSION_NAME}
-          - move the current-release pointers in README.md and docs/wiki/Home.md
-
-          Orbin Minimal is untouched — it releases on its own \`minimal-v*\` line.
-
-          ## Release note
-          Codenames are popular Japanese female names, in use from v100. The pool is
-          shared with Orbin Minimal and a name is never reused across either line.
+          - update current-release pointers in README.md and docs/wiki/Home.md
 
           After merging, push the tag to publish:
           \`\`\`

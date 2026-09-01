@@ -6,7 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -21,10 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The consistency check verifies CHANGELOG link refs against the real
-          # tag list. A default checkout is shallow and carries no tags, which
-          # would make every ref look like it points at a missing tag. Tags
-          # only — full history is not needed here.
           fetch-tags: true
           fetch-depth: 0
 
@@ -43,23 +38,12 @@ jobs:
       - name: detekt
         run: ./gradlew detekt --continue
 
-      # ktlint and detekt read Kotlin as a language; only Android Lint knows about API levels,
-      # manifests and resources. Existing findings are recorded in per-module lint-baseline.xml,
-      # so this gates new ones.
       - name: Android Lint
         run: ./gradlew lint --continue
 
-      # The version is written in gradle.properties but quoted in README,
-      # docs/wiki/Home.md and CHANGELOG. Nothing used to hold those in step:
-      # v85-v89 all shipped versionCode 107, and README has been left a
-      # release behind more than once. This also checks the CHANGELOG's link
-      # refs resolve to real tags — 38 of 102 headings once had none at all.
       - name: Repository consistency
         run: python3 scripts/validate_repo.py
 
-      # Prose only. Kotlin source is excluded in .codespellrc: API names like
-      # OptIn and launchIn trip the dictionary, and a check with 40 false
-      # positives is one nobody reads.
       - name: Spell check prose
         run: |
           python3 -m pip install --quiet codespell
@@ -122,19 +106,12 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug -Porbin.warningsAsErrors=true
 
-      # Compiles the androidTest sources in app, feature:settings and feature:downloads. They are
-      # not executed here — that needs an emulator — but without this they are built nowhere in CI
-      # and can rot silently against the code they are meant to guard.
       - name: Compile instrumentation tests
         run: ./gradlew assembleDebugAndroidTest -Porbin.warningsAsErrors=true
 
-      - name: Upload debug APKs
+      - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
           name: orbin-debug-apk
-          # Both shipped apps: the full client and the pared-back subscription reader. They are
-          # separate applicationIds and install side by side, so both are worth having to hand.
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app-minimal/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
