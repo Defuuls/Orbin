@@ -93,6 +93,10 @@ internal fun FeedRowView(
     onClick: (FeedRow) -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
 ) {
+    if (row.muted) {
+        CollapsedFeedRow(row = row, modifier = modifier, showBoard = showBoard, onClick = onClick)
+        return
+    }
     Row(
         modifier =
             modifier
@@ -154,6 +158,10 @@ internal fun FeedGridCell(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    if (row.muted) {
+        CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
+        return
+    }
     Column(
         modifier =
             modifier
@@ -217,6 +225,10 @@ internal fun FeedImageCell(
     onClick: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
 ) {
+    if (row.muted) {
+        CollapsedFeedRow(row = row, modifier = Modifier.padding(2.5.dp), onClick = onClick)
+        return
+    }
     val description =
         stringResource(R.string.next_image_cell_description, row.subject, row.board)
     Box(
@@ -237,6 +249,50 @@ internal fun FeedImageCell(
             text = row.board,
             tint = boardHue(row.board),
             modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
+        )
+    }
+}
+
+/** A muted thread stays reachable, but loses its preview and metadata until the reader opens it. */
+@Composable
+private fun CollapsedFeedRow(
+    row: FeedRow,
+    modifier: Modifier = Modifier,
+    showBoard: Boolean = true,
+    onClick: (FeedRow) -> Unit,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = stringResource(R.string.next_open_thread),
+                ) { onClick(row) }
+                .padding(horizontal = GUTTER, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (showBoard) {
+            BoardDot(row.board, size = 5.dp)
+            WidthSpacer(7)
+            Text(
+                text = row.board,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = next.muted,
+            )
+            WidthSpacer(9)
+        }
+        Text(
+            text = row.subject,
+            modifier = Modifier.weight(1f),
+            fontSize = 13.5.sp,
+            lineHeight = 17.sp,
+            fontWeight = FontWeight.Normal,
+            color = next.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
