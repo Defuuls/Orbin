@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -56,22 +55,21 @@ class BoardViewModel
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
-        private val mediaFilter: Flow<MediaFilter> =
-            settingsRepository.settings.map { it.mediaFilter }.distinctUntilChanged()
-
-        private val mediaScroll: Flow<Boolean> =
-            settingsRepository.settings.map { it.mediaScrollBoardView }.distinctUntilChanged()
-
         /**
-         * The reader's hidden keywords. The subscribed feed has always applied these; the board
-         * catalog never did, so a keyword you had hidden reappeared the moment you opened the
-         * board it was posted on — which is where you actually read.
+         * Every local choice that changes how an already-loaded catalog is presented. Keeping them
+         * in one value means a settings emission produces one PagingData transform instead of three
+         * independent combine/map/filter chains walking the same pages.
          */
-        private val hiddenTokens: Flow<Set<String>> =
-            settingsRepository.settings.map { it.hiddenTagTokens() }.distinctUntilChanged()
-
-        private val includeHarsh: Flow<Boolean> =
-            settingsRepository.settings.map { it.harshContentFilter }.distinctUntilChanged()
+        private val presentationSettings: Flow<CatalogPresentationSettings> =
+            settingsRepository.settings
+                .map { settings ->
+                    CatalogPresentationSettings(
+                        hiddenTokens = settings.hiddenTagTokens(),
+                        includeHarsh = settings.harshContentFilter,
+                        mediaFilter = settings.mediaFilter,
+                        mediaScroll = settings.mediaScrollBoardView,
+                    )
+                }.distinctUntilChanged()
 
         private val sort = MutableStateFlow(CatalogSort.BUMP_ORDER)
 
@@ -83,44 +81,40 @@ class BoardViewModel
         }
 
         /**
-         * The catalog as the grid shows it: cached pages, filtered per collection. Filtering after
-         * [cachedIn] means changing the setting re-filters the pages already loaded instead of
-         * re-fetching the board. Changing [catalogSort] starts a new stream.
+         * The catalog as the grid shows it. Network pages are cached first; local settings then
+         * transform those cached pages in one pass, so display changes never refetch the board.
          */
         val catalog: Flow<PagingData<CatalogThread>> =
             sort
                 .flatMapLatest { current ->
                     catalogRepository.catalogStream(ProviderId(providerId), BoardId(boardId), current)
                 }.cachedIn(viewModelScope)
-                .hidingMatches(hiddenTokens, includeHarsh)
-                .filteredBy(mediaFilter)
-                .withMediaScroll(mediaScroll)
+                .presentedBy(presentationSettings)
+
+        /**
+         * One bookmark scan produces both watched ids and unread counts. The previous version
+         * subscribed to the full bookmark table twice and independently filtered/allocated both
+         * collections on every database emission.
+         */
+        private val bookmarkState: StateFlow<BoardBookmarkState> =
+            bookmarkRepository
+                .observeBookmarks()
+                .map { bookmarks -> bookmarks.toBoardState(providerId, boardId) }
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                    BoardBookmarkState(),
+                )
 
         val watchedThreadIds: StateFlow<Set<Long>> =
-            bookmarkRepository
-                .observeBookmarks()
-                .map { bookmarks ->
-                    bookmarks
-                        .filter {
-                            it.isWatched &&
-                                it.key.provider.value == providerId &&
-                                it.key.board.value == boardId
-                        }.map { it.key.thread.value }
-                        .toSet()
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+            bookmarkState
+                .map { it.watchedIds }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val watchedUnread: StateFlow<Map<Long, Int>> =
-            bookmarkRepository
-                .observeBookmarks()
-                .map { bookmarks ->
-                    bookmarks
-                        .filter {
-                            it.isWatched &&
-                                it.hasUnread &&
-                                it.key.provider.value == providerId &&
-                                it.key.board.value == boardId
-                        }.associate { it.key.thread.value to it.unreadCount }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
+            bookmarkState
+                .map { it.unreadByThread }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
 
         /** Thread ids on this board already present in reading history, for "already read" title styling. */
         val visitedThreadIds: StateFlow<Set<Long>> =
@@ -135,6 +129,7 @@ class BoardViewModel
         val thumbnailSize: StateFlow<ThumbnailSize> =
             settingsRepository.settings
                 .map { it.thumbnailSize }
+                .distinctUntilChanged()
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
 
         fun toggleThreadSubscription(thread: CatalogThread) {
@@ -170,47 +165,56 @@ class BoardViewModel
         }
     }
 
-internal fun Flow<PagingData<CatalogThread>>.hidingMatches(
-    tokens: Flow<Set<String>>,
-    includeHarsh: Flow<Boolean>,
-): Flow<PagingData<CatalogThread>> =
-    combine(this, tokens, includeHarsh) { pagingData, hidden, harsh ->
-        pagingData.filter { thread -> !thread.matchesFilterTokens(hidden, harsh) }
-    }
+private data class CatalogPresentationSettings(
+    val hiddenTokens: Set<String>,
+    val includeHarsh: Boolean,
+    val mediaFilter: MediaFilter,
+    val mediaScroll: Boolean,
+)
 
-internal fun Flow<PagingData<CatalogThread>>.filteredBy(filters: Flow<MediaFilter>): Flow<PagingData<CatalogThread>> =
-    combine(this, filters) { pagingData, filter ->
-        if (!filter.isActive) {
-            pagingData
-        } else {
-            pagingData
-                .map { thread -> thread.filteredBy(filter) }
-                .filter { thread -> thread.originalPost.attachments.isNotEmpty() }
+private data class BoardBookmarkState(
+    val watchedIds: Set<Long> = emptySet(),
+    val unreadByThread: Map<Long, Int> = emptyMap(),
+)
+
+private fun List<Bookmark>.toBoardState(
+    providerId: String,
+    boardId: String,
+): BoardBookmarkState {
+    val watched = mutableSetOf<Long>()
+    val unread = mutableMapOf<Long, Int>()
+    for (bookmark in this) {
+        if (!bookmark.isWatched || bookmark.key.provider.value != providerId || bookmark.key.board.value != boardId) {
+            continue
         }
+        val threadId = bookmark.key.thread.value
+        watched += threadId
+        if (bookmark.hasUnread) unread[threadId] = bookmark.unreadCount
     }
+    return BoardBookmarkState(watched, unread)
+}
 
-/**
- * The board's media-scroll preference controls whether a catalog card can page through every OP
- * attachment. With scrolling off the card still shows its first attachment, but no extra files are
- * supplied to its pager. Thread data and media counts are untouched outside this presentation flow.
- */
-internal fun Flow<PagingData<CatalogThread>>.withMediaScroll(enabled: Flow<Boolean>): Flow<PagingData<CatalogThread>> =
-    combine(this, enabled) { pagingData, scrollable ->
-        if (scrollable) {
-            pagingData
-        } else {
-            pagingData.map { thread ->
-                val attachments = thread.originalPost.attachments
-                if (attachments.size <= 1) {
+private fun Flow<PagingData<CatalogThread>>.presentedBy(
+    settings: Flow<CatalogPresentationSettings>,
+): Flow<PagingData<CatalogThread>> =
+    kotlinx.coroutines.flow.combine(this, settings) { pagingData, presentation ->
+        pagingData
+            .filter { thread ->
+                !thread.matchesFilterTokens(presentation.hiddenTokens, presentation.includeHarsh)
+            }.map { thread ->
+                if (presentation.mediaFilter.isActive) thread.filteredBy(presentation.mediaFilter) else thread
+            }.filter { thread ->
+                !presentation.mediaFilter.isActive || thread.originalPost.attachments.isNotEmpty()
+            }.map { thread ->
+                if (presentation.mediaScroll || thread.originalPost.attachments.size <= 1) {
                     thread
                 } else {
                     thread.copy(
                         originalPost =
                             thread.originalPost.copy(
-                                attachments = attachments.take(1).toImmutableList(),
+                                attachments = thread.originalPost.attachments.take(1).toImmutableList(),
                             ),
                     )
                 }
             }
-        }
     }
