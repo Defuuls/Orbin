@@ -40,103 +40,107 @@ class SettingsRepositoryImplTest {
         runTest {
             val repository = repository()
 
-            repository.setPersonalizedHomeFeed(false)
-            repository.setHiddenTags("hidden")
-            repository.setMutedTags("muted")
-            repository.setHideNsfwBoards(true)
-            repository.setHideTextOnlyThreads(true)
-            repository.setHarshContentFilter(true)
-            repository.setDeepMediaScan(true)
-            repository.setMediaFilter(MediaFilter.VIDEOS)
-            repository.setFeedRefreshInterval(FeedRefreshInterval.FIFTEEN_MINUTES)
-            repository.setThreadPresentation(ThreadPresentation.OVERLAY)
-            repository.setThemeMode(AppThemeMode.DARK)
-            repository.setColorTheme(ColorTheme.TOMORROW_NIGHT)
-            repository.setDynamicColor(false)
-            repository.setAmoled(true)
-            repository.setFontScale(1.2f)
-            repository.setFullScreenFeedChrome(true)
-            repository.setThumbnailSize(ThumbnailSize.LARGE)
-            repository.setAutoplayVideos(true)
-            repository.setMuteByDefault(false)
-            repository.setFullscreenVideoPlayback(true)
-            repository.setAutoRotateVideoFullscreen(true)
-            repository.setPreloadImages(false)
-            repository.setPreloadOption(PreloadOption.ALL)
-            repository.setPreloadThrottleMode(PreloadThrottleMode.AGGRESSIVE)
-            repository.setFeedThreadLimit(FeedThreadLimit.ALL)
-            repository.setFeedSort(FeedSort.TITLE)
-            repository.setImageCacheLimitMb(512)
-            repository.setDownloadFolderUri("content://downloads/tree/orbin")
-            repository.setDownloadOrganization(DownloadOrganization.BY_THREAD)
-            repository.setUserAgent("Orbin-Test/1.0")
-            repository.setDohProvider(DohProvider.NEXTDNS)
-            repository.setConnectTimeoutSeconds(60)
-            repository.setReadTimeoutSeconds(120)
-            repository.setDisableOcspChecking(false)
-            repository.setBiometricLockEnabled(true)
-            repository.setSaveRecentSearches(true)
-            repository.setInternalUpdaterEnabled(false)
-            repository.setThreadWatchNotificationsEnabled(false)
-            repository.setQuietHoursStart("22:00")
-            repository.setQuietHoursEnd("07:00")
-            repository.setActiveProviderId(ProviderId("test-provider"))
-            repository.setOnboardingCompleted(true)
-            repository.setMediaScrollThreadView(false)
-            repository.setMediaScrollBoardView(true)
-            repository.setAutoplayVideosInFeed(true)
+            applyAllSettings(repository)
 
-            val expected =
-                AppSettings.Default.copy(
-                    personalizedHomeFeed = false,
-                    hiddenTags = "hidden",
-                    mutedTags = "muted",
-                    hideNsfwBoards = true,
-                    hideTextOnlyThreads = true,
-                    harshContentFilter = true,
-                    deepMediaScan = true,
-                    mediaFilter = MediaFilter.VIDEOS,
-                    feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
-                    themeMode = AppThemeMode.DARK,
-                    colorTheme = ColorTheme.TOMORROW_NIGHT,
-                    dynamicColor = false,
-                    amoled = true,
-                    fontScale = 1.2f,
-                    fullScreenFeedChrome = true,
-                    threadPresentation = ThreadPresentation.OVERLAY,
-                    thumbnailSize = ThumbnailSize.LARGE,
-                    autoplayVideos = true,
-                    muteByDefault = false,
-                    fullscreenVideoPlayback = true,
-                    autoRotateVideoFullscreen = true,
-                    preloadImages = false,
-                    preloadOption = PreloadOption.ALL,
-                    preloadThrottleMode = PreloadThrottleMode.AGGRESSIVE,
-                    imageCacheLimitMb = 512,
-                    feedThreadLimit = FeedThreadLimit.ALL,
-                    feedSort = FeedSort.TITLE,
-                    downloadFolderUri = "content://downloads/tree/orbin",
-                    downloadOrganization = DownloadOrganization.BY_THREAD,
-                    userAgent = "Orbin-Test/1.0",
-                    dohProvider = DohProvider.NEXTDNS,
-                    connectTimeoutSeconds = 60,
-                    readTimeoutSeconds = 120,
-                    disableOcspChecking = false,
-                    biometricLockEnabled = true,
-                    saveRecentSearches = true,
-                    internalUpdaterEnabled = false,
-                    threadWatchNotificationsEnabled = false,
-                    quietHoursStart = "22:00",
-                    quietHoursEnd = "07:00",
-                    activeProviderId = "test-provider",
-                    onboardingCompleted = true,
-                    mediaScrollThreadView = false,
-                    mediaScrollBoardView = true,
-                    autoplayVideosInFeed = true,
-                )
-
-            assertThat(repository.settings.first()).isEqualTo(expected)
+            assertThat(repository.settings.first()).isEqualTo(expectedSettings())
         }
+
+    private suspend fun applyAllSettings(repository: SettingsRepositoryImpl) {
+        repository.setPersonalizedHomeFeed(false)
+        repository.setHiddenTags("hidden")
+        repository.setMutedTags("muted")
+        repository.setHideNsfwBoards(true)
+        repository.setHideTextOnlyThreads(true)
+        repository.setHarshContentFilter(true)
+        repository.setDeepMediaScan(true)
+        repository.setMediaFilter(MediaFilter.VIDEOS)
+        repository.setFeedRefreshInterval(FeedRefreshInterval.FIFTEEN_MINUTES)
+        repository.setThreadPresentation(ThreadPresentation.OVERLAY)
+        repository.setThemeMode(AppThemeMode.DARK)
+        repository.setColorTheme(ColorTheme.TOMORROW_NIGHT)
+        repository.setDynamicColor(false)
+        repository.setAmoled(true)
+        repository.setFontScale(1.2f)
+        repository.setFullScreenFeedChrome(true)
+        repository.setThumbnailSize(ThumbnailSize.LARGE)
+        repository.setAutoplayVideos(true)
+        repository.setMuteByDefault(false)
+        repository.setFullscreenVideoPlayback(true)
+        repository.setAutoRotateVideoFullscreen(true)
+        repository.setPreloadImages(false)
+        repository.setPreloadOption(PreloadOption.ALL)
+        repository.setPreloadThrottleMode(PreloadThrottleMode.AGGRESSIVE)
+        repository.setFeedThreadLimit(FeedThreadLimit.ALL)
+        repository.setFeedSort(FeedSort.TITLE)
+        repository.setImageCacheLimitMb(512)
+        repository.setDownloadFolderUri("content://downloads/tree/orbin")
+        repository.setDownloadOrganization(DownloadOrganization.BY_THREAD)
+        repository.setUserAgent("Orbin-Test/1.0")
+        repository.setDohProvider(DohProvider.NEXTDNS)
+        repository.setConnectTimeoutSeconds(60)
+        repository.setReadTimeoutSeconds(120)
+        repository.setDisableOcspChecking(false)
+        repository.setBiometricLockEnabled(true)
+        repository.setSaveRecentSearches(true)
+        repository.setInternalUpdaterEnabled(false)
+        repository.setThreadWatchNotificationsEnabled(false)
+        repository.setQuietHoursStart("22:00")
+        repository.setQuietHoursEnd("07:00")
+        repository.setActiveProviderId(ProviderId("test-provider"))
+        repository.setOnboardingCompleted(true)
+        repository.setMediaScrollThreadView(false)
+        repository.setMediaScrollBoardView(true)
+        repository.setAutoplayVideosInFeed(true)
+    }
+
+    private fun expectedSettings(): AppSettings =
+        AppSettings.Default.copy(
+            personalizedHomeFeed = false,
+            hiddenTags = "hidden",
+            mutedTags = "muted",
+            hideNsfwBoards = true,
+            hideTextOnlyThreads = true,
+            harshContentFilter = true,
+            deepMediaScan = true,
+            mediaFilter = MediaFilter.VIDEOS,
+            feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
+            themeMode = AppThemeMode.DARK,
+            colorTheme = ColorTheme.TOMORROW_NIGHT,
+            dynamicColor = false,
+            amoled = true,
+            fontScale = 1.2f,
+            fullScreenFeedChrome = true,
+            threadPresentation = ThreadPresentation.OVERLAY,
+            thumbnailSize = ThumbnailSize.LARGE,
+            autoplayVideos = true,
+            muteByDefault = false,
+            fullscreenVideoPlayback = true,
+            autoRotateVideoFullscreen = true,
+            preloadImages = false,
+            preloadOption = PreloadOption.ALL,
+            preloadThrottleMode = PreloadThrottleMode.AGGRESSIVE,
+            imageCacheLimitMb = 512,
+            feedThreadLimit = FeedThreadLimit.ALL,
+            feedSort = FeedSort.TITLE,
+            downloadFolderUri = "content://downloads/tree/orbin",
+            downloadOrganization = DownloadOrganization.BY_THREAD,
+            userAgent = "Orbin-Test/1.0",
+            dohProvider = DohProvider.NEXTDNS,
+            connectTimeoutSeconds = 60,
+            readTimeoutSeconds = 120,
+            disableOcspChecking = false,
+            biometricLockEnabled = true,
+            saveRecentSearches = true,
+            internalUpdaterEnabled = false,
+            threadWatchNotificationsEnabled = false,
+            quietHoursStart = "22:00",
+            quietHoursEnd = "07:00",
+            activeProviderId = "test-provider",
+            onboardingCompleted = true,
+            mediaScrollThreadView = false,
+            mediaScrollBoardView = true,
+            autoplayVideosInFeed = true,
+        )
 
     private fun kotlinx.coroutines.test.TestScope.repository(): SettingsRepositoryImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
