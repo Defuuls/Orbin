@@ -26,7 +26,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -45,7 +44,7 @@ import javax.inject.Inject
 class BoardViewModel
     @Inject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        private val savedStateHandle: SavedStateHandle,
         catalogRepository: CatalogRepository,
         private val bookmarkRepository: BookmarkRepository,
         historyRepository: HistoryRepository,
@@ -55,11 +54,6 @@ class BoardViewModel
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
-        /**
-         * Every local choice that changes how an already-loaded catalog is presented. Keeping them
-         * in one value means a settings emission produces one PagingData transform instead of three
-         * independent combine/map/filter chains walking the same pages.
-         */
         private val presentationSettings: Flow<CatalogPresentationSettings> =
             settingsRepository.settings
                 .map { settings ->
@@ -71,13 +65,13 @@ class BoardViewModel
                     )
                 }.distinctUntilChanged()
 
-        private val sort = MutableStateFlow(CatalogSort.BUMP_ORDER)
-
-        val catalogSort: StateFlow<CatalogSort> = sort
+        val catalogSort: StateFlow<CatalogSort> =
+            savedStateHandle.getStateFlow(CATALOG_SORT_KEY, CatalogSort.BUMP_ORDER)
 
         fun cycleCatalogSort() {
             val values = CatalogSort.entries
-            sort.value = values[(values.indexOf(sort.value) + 1) % values.size]
+            val current = catalogSort.value
+            savedStateHandle[CATALOG_SORT_KEY] = values[(values.indexOf(current) + 1) % values.size]
         }
 
         /**
@@ -85,17 +79,13 @@ class BoardViewModel
          * transform those cached pages in one pass, so display changes never refetch the board.
          */
         val catalog: Flow<PagingData<CatalogThread>> =
-            sort
+            catalogSort
                 .flatMapLatest { current ->
                     catalogRepository.catalogStream(ProviderId(providerId), BoardId(boardId), current)
                 }.cachedIn(viewModelScope)
                 .presentedBy(presentationSettings)
 
-        /**
-         * One bookmark scan produces both watched ids and unread counts. The previous version
-         * subscribed to the full bookmark table twice and independently filtered/allocated both
-         * collections on every database emission.
-         */
+        /** One bookmark scan produces both watched ids and unread counts. */
         private val bookmarkState: StateFlow<BoardBookmarkState> =
             bookmarkRepository
                 .observeBookmarks()
@@ -162,6 +152,7 @@ class BoardViewModel
 
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
+            const val CATALOG_SORT_KEY = "catalogSort"
         }
     }
 
