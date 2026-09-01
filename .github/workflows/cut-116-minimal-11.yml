@@ -1,0 +1,121 @@
+name: Cut Orbin 116 and Minimal 11
+
+on:
+  push:
+    branches:
+      - main
+      - release/v116-miku-minimal-v11-reina
+    paths:
+      - '.github/workflows/cut-116-minimal-11.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  prepare:
+    if: github.ref_name == 'release/v116-miku-minimal-v11-reina'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: release/v116-miku-minimal-v11-reina
+          fetch-depth: 0
+      - name: Validate shared codename pool
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git tag --list | grep -Eiq '(^|[-])Miku$'; then echo '::error::Miku already used'; exit 1; fi
+          if git tag --list | grep -Eiq '(^|[-])Reina$'; then echo '::error::Reina already used'; exit 1; fi
+          test -z "$(git tag --list 'v116-Miku')"
+          test -z "$(git tag --list 'minimal-v11-Reina')"
+      - name: Prepare release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import re
+          from datetime import date
+          from pathlib import Path
+
+          today = date.today().isoformat()
+          base = 'https://github.com/Defuuls/Orbin'
+
+          props = Path('gradle.properties')
+          text = props.read_text()
+          text = re.sub(r'^orbin\.versionCode=\d+$', 'orbin.versionCode=134', text, count=1, flags=re.M)
+          text = re.sub(r'^orbin\.versionName=.+$', 'orbin.versionName=116-Miku', text, count=1, flags=re.M)
+          text = re.sub(r'^orbin\.minimalVersionCode=\d+$', 'orbin.minimalVersionCode=11', text, count=1, flags=re.M)
+          text = re.sub(r'^orbin\.minimalVersionName=.+$', 'orbin.minimalVersionName=11-Reina', text, count=1, flags=re.M)
+          props.write_text(text)
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text()
+          if '## [116-Miku]' not in text:
+              section = f'''## [116-Miku] - {today}\n\n### Changed\n- Advanced the signed release train after the completed Orbin and Orbin Minimal audit rollout. Application behavior is unchanged from 115-Misaki / Minimal 10-Ayaka; this release advances version metadata and signed artifacts only.\n'''
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n{section}\n', 1)
+              text = re.sub(
+                  r'^\[Unreleased\]: .*$',
+                  f'[Unreleased]: {base}/compare/v116-Miku...HEAD\n[116-Miku]: {base}/compare/v115-Misaki...v116-Miku',
+                  text,
+                  count=1,
+                  flags=re.M,
+              )
+          changelog.write_text(text)
+
+          readme = Path('README.md')
+          readme.write_text(re.sub(
+              r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)',
+              f'**Current release:** [116 — Miku]({base}/releases/tag/v116-Miku)',
+              readme.read_text(),
+              count=1,
+          ))
+
+          home = Path('docs/wiki/Home.md')
+          home.write_text(re.sub(
+              r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|',
+              f'| Current release | **v116 — Miku** ({today}) |',
+              home.read_text(),
+              count=1,
+          ))
+          PY
+          python3 scripts/validate_repo.py
+      - name: Commit prepared metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'chore: Prepare Orbin 116 Miku and Minimal 11 Reina releases'
+          git push origin HEAD:release/v116-miku-minimal-v11-reina
+
+  publish:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate merged release metadata and names
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          grep -qx 'orbin.versionCode=134' gradle.properties
+          grep -qx 'orbin.versionName=116-Miku' gradle.properties
+          grep -qx 'orbin.minimalVersionCode=11' gradle.properties
+          grep -qx 'orbin.minimalVersionName=11-Reina' gradle.properties
+          test -z "$(git tag --list 'v116-Miku')"
+          test -z "$(git tag --list 'minimal-v11-Reina')"
+      - name: Dispatch signed release builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag=v116-Miku -f base_ref=main
+          gh workflow run release-minimal.yml --ref main -f tag=minimal-v11-Reina -f base_ref=main -f notes_only=false
