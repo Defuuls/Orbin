@@ -4,25 +4,41 @@ on:
   push:
     branches:
       - main
-      - release/v117-nao
     paths:
       - '.github/workflows/cut-117-nao.yml'
+      - 'gradle.properties'
+      - 'CHANGELOG.md'
+      - 'README.md'
+      - 'docs/wiki/Home.md'
+      - '.github/workflows/release.yml'
 
 permissions:
   contents: write
+  pull-requests: write
   actions: write
 
 jobs:
-  prepare:
-    if: github.ref_name == 'release/v117-nao'
+  cut:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: release/v117-nao
+          ref: main
           fetch-depth: 0
 
+      - name: Decide whether to prepare or publish
+        id: state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -qx 'orbin.versionName=117-Nao' gradle.properties; then
+            echo 'mode=publish' >> "$GITHUB_OUTPUT"
+          else
+            echo 'mode=prepare' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate release name
+        if: steps.state.outputs.mode == 'prepare'
         shell: bash
         run: |
           set -euo pipefail
@@ -33,6 +49,7 @@ jobs:
           test -z "$(git tag --list 'v117-Nao')"
 
       - name: Prepare release metadata and remove stale Minimal docs
+        if: steps.state.outputs.mode == 'prepare'
         shell: bash
         run: |
           set -euo pipefail
@@ -102,30 +119,29 @@ jobs:
           )
           release.write_text(text)
           PY
-
           python3 scripts/validate_repo.py
 
-      - name: Commit prepared release
+      - name: Push release-prep branch and open PR
+        if: steps.state.outputs.mode == 'prepare'
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B release/v117-nao
           git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md .github/workflows/release.yml
-          if git diff --cached --quiet; then exit 0; fi
           git commit -m 'chore: Prepare Orbin 117 Nao release'
-          git push origin HEAD:release/v117-nao
-
-  publish:
-    if: github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
+          git push --force-with-lease --set-upstream origin release/v117-nao
+          if ! gh pr view release/v117-nao --json number >/dev/null 2>&1; then
+            gh pr create --base main --head release/v117-nao \
+              --title 'chore: Prepare v117-Nao release' \
+              --body $'## Summary\n- bump Orbin to 117-Nao / versionCode 135\n- close the Unreleased changelog section\n- remove stale Orbin Minimal references from current release docs\n- keep future releases scoped to the main Orbin client\n\nAfter this PR merges, the cutter dispatches the signed v117-Nao release.'
+          fi
 
       - name: Validate merged release metadata
+        if: steps.state.outputs.mode == 'publish'
         shell: bash
         run: |
           set -euo pipefail
@@ -136,6 +152,7 @@ jobs:
           python3 scripts/validate_repo.py
 
       - name: Dispatch signed release build
+        if: steps.state.outputs.mode == 'publish'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
