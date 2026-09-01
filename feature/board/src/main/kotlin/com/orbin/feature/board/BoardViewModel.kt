@@ -23,6 +23,7 @@ import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +59,9 @@ class BoardViewModel
         private val mediaFilter: Flow<MediaFilter> =
             settingsRepository.settings.map { it.mediaFilter }.distinctUntilChanged()
 
+        private val mediaScroll: Flow<Boolean> =
+            settingsRepository.settings.map { it.mediaScrollBoardView }.distinctUntilChanged()
+
         /**
          * The reader's hidden keywords. The subscribed feed has always applied these; the board
          * catalog never did, so a keyword you had hidden reappeared the moment you opened the
@@ -90,6 +94,7 @@ class BoardViewModel
                 }.cachedIn(viewModelScope)
                 .hidingMatches(hiddenTokens, includeHarsh)
                 .filteredBy(mediaFilter)
+                .withMediaScroll(mediaScroll)
 
         val watchedThreadIds: StateFlow<Set<Long>> =
             bookmarkRepository
@@ -181,5 +186,31 @@ internal fun Flow<PagingData<CatalogThread>>.filteredBy(filters: Flow<MediaFilte
             pagingData
                 .map { thread -> thread.filteredBy(filter) }
                 .filter { thread -> thread.originalPost.attachments.isNotEmpty() }
+        }
+    }
+
+/**
+ * The board's media-scroll preference controls whether a catalog card can page through every OP
+ * attachment. With scrolling off the card still shows its first attachment, but no extra files are
+ * supplied to its pager. Thread data and media counts are untouched outside this presentation flow.
+ */
+internal fun Flow<PagingData<CatalogThread>>.withMediaScroll(enabled: Flow<Boolean>): Flow<PagingData<CatalogThread>> =
+    combine(this, enabled) { pagingData, scrollable ->
+        if (scrollable) {
+            pagingData
+        } else {
+            pagingData.map { thread ->
+                val attachments = thread.originalPost.attachments
+                if (attachments.size <= 1) {
+                    thread
+                } else {
+                    thread.copy(
+                        originalPost =
+                            thread.originalPost.copy(
+                                attachments = attachments.take(1).toImmutableList(),
+                            ),
+                    )
+                }
+            }
         }
     }
