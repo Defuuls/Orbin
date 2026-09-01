@@ -27,7 +27,7 @@ class MinimalExperiencePolicyTest {
                         mediaFilter = MediaFilter.VIDEOS,
                         feedRefreshInterval = FeedRefreshInterval.NEVER,
                         feedThreadLimit = FeedThreadLimit.ALL,
-                        feedSort = FeedSort.NEWEST,
+                        feedSort = FeedSort.ACTIVITY,
                         threadPresentation = ThreadPresentation.OVERLAY,
                         autoplayVideos = true,
                         autoplayVideosInFeed = true,
