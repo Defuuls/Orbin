@@ -1,0 +1,35 @@
+name: Audit branch format
+
+on:
+  push:
+    branches:
+      - audit/efficiency-qol
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: audit/efficiency-qol
+      - uses: actions/setup-java@v6.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Format Kotlin
+        run: ./gradlew ktlintFormat
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git commit -m 'style: apply canonical Kotlin formatting'
+          git push origin HEAD:audit/efficiency-qol
