@@ -153,8 +153,7 @@ fun FeedScreen(
                         .align(Alignment.BottomEnd)
                         .windowInsetsPadding(
                             WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-                        )
-                        .padding(end = 92.dp, bottom = 14.dp),
+                        ).padding(end = 92.dp, bottom = 14.dp),
             )
         }
     }
