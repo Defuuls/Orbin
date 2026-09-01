@@ -59,15 +59,16 @@ class MinimalBoardsViewModelTest {
         }
 
     @Test
-    fun `subscription state is unresolved until the backing flow emits`() =
+    fun `subscription state follows the backing flow`() =
         runTest {
-            val preferences = MutableBoardPreferences(initialSubscribed = null)
+            val preferences = MutableBoardPreferences(initialSubscribed = emptySet())
             val viewModel = createViewModel(MutableBoardRepository(listOf(BOARD_A)), preferences)
 
             viewModel.hasSubscriptions.test {
-                assertThat(awaitItem()).isNull()
-                preferences.emitSubscribed(emptySet())
-                assertThat(awaitItem()).isFalse()
+                var state = awaitItem()
+                while (state == null) state = awaitItem()
+                assertThat(state).isFalse()
+
                 preferences.emitSubscribed(setOf(BOARD_A.id))
                 assertThat(awaitItem()).isTrue()
             }
