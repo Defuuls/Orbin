@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -65,7 +66,10 @@ class NextSettingsListTest {
         composeTestRule.waitForIdle()
         assertThat(repository.current.userAgent).isEmpty()
 
-        scrollTo("Save").performClick()
+        composeTestRule
+            .onNode(hasScrollAction())
+            .performScrollToNode(hasTextExactly("Save"))
+        composeTestRule.onNode(hasTextExactly("Save")).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(repository.current.userAgent).isEqualTo("Orbin/1.0")
