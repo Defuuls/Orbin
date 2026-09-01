@@ -54,6 +54,9 @@ class BoardViewModel
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
+        private val provider = ProviderId(providerId)
+        private val board = BoardId(boardId)
+
         private val presentationSettings: Flow<CatalogPresentationSettings> =
             settingsRepository.settings
                 .map { settings ->
@@ -80,16 +83,15 @@ class BoardViewModel
          */
         val catalog: Flow<PagingData<CatalogThread>> =
             catalogSort
-                .flatMapLatest { current ->
-                    catalogRepository.catalogStream(ProviderId(providerId), BoardId(boardId), current)
-                }.cachedIn(viewModelScope)
+                .flatMapLatest { current -> catalogRepository.catalogStream(provider, board, current) }
+                .cachedIn(viewModelScope)
                 .presentedBy(presentationSettings)
 
-        /** One bookmark scan produces both watched ids and unread counts. */
+        /** One board-scoped bookmark query produces both watched ids and unread counts. */
         private val bookmarkState: StateFlow<BoardBookmarkState> =
             bookmarkRepository
-                .observeBookmarks()
-                .map { bookmarks -> bookmarks.toBoardState(providerId, boardId) }
+                .observeBookmarks(provider, board)
+                .map(List<Bookmark>::toBoardState)
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -112,7 +114,7 @@ class BoardViewModel
                 .observeVisitedKeys()
                 .map { keys ->
                     keys
-                        .filter { it.provider.value == providerId && it.board.value == boardId }
+                        .filter { it.provider == provider && it.board == board }
                         .mapTo(mutableSetOf()) { it.thread.value }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
@@ -140,7 +142,7 @@ class BoardViewModel
 
         private fun CatalogThread.toWatchedBookmark(): Bookmark =
             Bookmark(
-                key = ThreadKey(ProviderId(providerId), BoardId(boardId), key.thread),
+                key = ThreadKey(provider, board, key.thread),
                 title = originalPost.subject ?: "/$boardId/",
                 thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
                 createdAtMillis = System.currentTimeMillis(),
@@ -168,16 +170,10 @@ private data class BoardBookmarkState(
     val unreadByThread: Map<Long, Int> = emptyMap(),
 )
 
-private fun List<Bookmark>.toBoardState(
-    providerId: String,
-    boardId: String,
-): BoardBookmarkState {
+private fun List<Bookmark>.toBoardState(): BoardBookmarkState {
     val watched = mutableSetOf<Long>()
     val unread = mutableMapOf<Long, Int>()
     for (bookmark in this) {
-        if (!bookmark.isWatched || bookmark.key.provider.value != providerId || bookmark.key.board.value != boardId) {
-            continue
-        }
         val threadId = bookmark.key.thread.value
         watched += threadId
         if (bookmark.hasUnread) unread[threadId] = bookmark.unreadCount
