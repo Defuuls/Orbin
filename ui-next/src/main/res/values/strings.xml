@@ -26,6 +26,10 @@
     <string name="next_layout_list">List</string>
     <string name="next_layout_grid">Grid</string>
     <string name="next_layout_images">Images</string>
+    <plurals name="next_feed_images_omitted">
+        <item quantity="one">%d text-only thread hidden in Images</item>
+        <item quantity="other">%d text-only threads hidden in Images</item>
+    </plurals>
 
     <!-- Feed rows -->
     <plurals name="next_row_replies">
