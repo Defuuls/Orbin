@@ -3,6 +3,7 @@ package com.orbin.feature.thread
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -229,17 +230,22 @@ private fun PostMedia(
     val shape = RoundedCornerShape(14.dp)
     if (attachments.size == 1) {
         val only = attachments.first()
-        MediaThumbnail(attachment = only, modifier = modifier.clip(shape), onClick = { onOpen(only.id) })
+        MediaThumbnail(
+            attachment = only,
+            modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
+            onClick = { onOpen(only.id) },
+        )
         return
     }
     if (scrollable) {
         val pagerState = rememberPagerState(pageCount = { attachments.size })
+        val stableAspectRatio = attachments.first().threadAspectRatio()
         Column {
             HorizontalPager(state = pagerState) { page ->
                 val attachment = attachments[page]
                 MediaThumbnail(
                     attachment = attachment,
-                    modifier = modifier.clip(shape),
+                    modifier = modifier.aspectRatio(stableAspectRatio).clip(shape),
                     onClick = { onOpen(attachment.id) },
                 )
             }
@@ -256,13 +262,15 @@ private fun PostMedia(
         attachments.forEachIndexed { index, attachment ->
             MediaThumbnail(
                 attachment = attachment,
-                modifier = modifier.clip(shape),
+                modifier = modifier.aspectRatio(attachment.threadAspectRatio()).clip(shape),
                 onClick = { onOpen(attachment.id) },
             )
             if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
+
+private fun MediaAttachment.threadAspectRatio(): Float = aspectRatio.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT)
 
 internal data class ThreadRow(
     val post: com.orbin.core.model.Post,
@@ -308,3 +316,5 @@ private const val COMPACT_COLUMNS = 4
 private const val MEDIUM_COLUMNS = 3
 private const val LARGE_COLUMNS = 2
 private const val FILL_COLUMNS = 1
+private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
+private const val MAX_THREAD_MEDIA_ASPECT = 2f
