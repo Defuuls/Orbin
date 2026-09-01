@@ -7,16 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.uinext.NextTheme
+import kotlinx.collections.immutable.toPersistentList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,14 +29,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/**
- * Renders the one screen Orbin Minimal still draws for itself, in every state a reader can land on.
- *
- * The feed and the reader are the full client's own screens now, and are captured in `:ui-next`
- * and `:feature:gallery` where they live — capturing them a second time here would only assert
- * that this app calls them, which its navigation graph already says. The board picker is the join
- * this app owns: which of the shared screen's states each of its own states maps onto.
- */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
@@ -42,30 +39,36 @@ class MinimalScreenshotTest {
     @Test
     fun boardsPopulated() = capture("minimal_boards_populated") { Boards(sampleBoards()) }
 
-    /** The same list in the dark palette, which the picker follows the system into. */
     @Test
     fun boardsPopulatedDark() = capture("minimal_boards_populated_dark", dark = true) { Boards(sampleBoards()) }
 
-    /** Fetch in flight and nothing cached yet — the only case that offers no retry. */
     @Test
     fun boardsLoading() = capture("minimal_boards_loading") { Boards(emptyList(), isLoading = true) }
 
-    /** The provider answered with no boards. Previously indistinguishable from still loading. */
     @Test
     fun boardsEmpty() = capture("minimal_boards_empty") { Boards(emptyList()) }
 
-    /** The fetch failed. Previously a spinner with no way out; now it offers a retry. */
     @Test
     fun boardsError() = capture("minimal_boards_error") { Boards(emptyList(), error = FETCH_ERROR) }
 
-    /**
-     * The launcher icon, drawn at its own 108dp viewport.
-     *
-     * Not vanity: the mark is an arc, and an arc in a `pathData` is an `A` command, which nothing
-     * else in this project uses. A vector that fails to parse does not fail the build — it draws
-     * nothing, on a surface no test otherwise looks at, and the first person to find out is
-     * whoever installs the APK. Rendering it here is what makes that a caught failure.
-     */
+    @Test
+    fun boardsCachedError() =
+        capture("minimal_boards_cached_error") {
+            Boards(sampleBoards(), error = FETCH_ERROR)
+        }
+
+    @Test
+    fun boardsMaxText() =
+        capture("minimal_boards_max_text", fontScale = 2f) {
+            Boards(sampleBoards())
+        }
+
+    @Test
+    fun boardsNarrow() =
+        capture("minimal_boards_narrow", width = 320.dp, height = 700.dp) {
+            Boards(sampleBoards())
+        }
+
     @Test
     fun launcherIcon() {
         composeRule.setContent {
@@ -92,9 +95,12 @@ class MinimalScreenshotTest {
         isLoading: Boolean = false,
         error: String? = null,
     ) = MinimalBoardsContent(
-        boards = boards,
-        isLoading = isLoading,
-        errorMessage = error,
+        state =
+            MinimalBoardsUiState(
+                boards = boards.toPersistentList(),
+                isRefreshing = isLoading,
+                refreshError = error,
+            ),
         onBack = {},
         onRefresh = {},
         onToggle = { _, _ -> },
@@ -103,13 +109,19 @@ class MinimalScreenshotTest {
     private fun capture(
         name: String,
         dark: Boolean = false,
+        fontScale: Float = 1f,
+        width: Dp = 411.dp,
+        height: Dp = 891.dp,
         content: @Composable () -> Unit,
     ) {
         composeRule.setContent {
-            // The screen brings its own theme; this only forces the palette the capture is of, and
-            // gives the content a fixed phone-sized frame to fill rather than an unbounded root.
-            NextTheme(darkTheme = dark) {
-                Surface(modifier = Modifier.size(411.dp, 891.dp)) { Box { content() } }
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale),
+            ) {
+                NextTheme(darkTheme = dark) {
+                    Surface(modifier = Modifier.size(width, height)) { Box { content() } }
+                }
             }
         }
         composeRule.waitForIdle()
@@ -125,7 +137,6 @@ class MinimalScreenshotTest {
         )
 
     private companion object {
-        /** The adaptive icon's own viewport, so the capture is the drawable rather than a crop. */
         val ICON_SIZE = 108.dp
         val TECH = Board(BoardId("g"), "Technology")
         val ANIME = Board(BoardId("a"), "Anime & Manga")
