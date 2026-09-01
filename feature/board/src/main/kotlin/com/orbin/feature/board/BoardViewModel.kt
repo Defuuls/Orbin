@@ -156,7 +156,7 @@ class BoardViewModel
         }
     }
 
-private data class CatalogPresentationSettings(
+internal data class CatalogPresentationSettings(
     val hiddenTokens: Set<String>,
     val includeHarsh: Boolean,
     val mediaFilter: MediaFilter,
@@ -185,7 +185,7 @@ private fun List<Bookmark>.toBoardState(
     return BoardBookmarkState(watched, unread)
 }
 
-private fun Flow<PagingData<CatalogThread>>.presentedBy(
+internal fun Flow<PagingData<CatalogThread>>.presentedBy(
     settings: Flow<CatalogPresentationSettings>,
 ): Flow<PagingData<CatalogThread>> =
     kotlinx.coroutines.flow.combine(this, settings) { pagingData, presentation ->
