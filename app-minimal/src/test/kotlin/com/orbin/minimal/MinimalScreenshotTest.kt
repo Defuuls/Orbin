@@ -1,5 +1,6 @@
 package com.orbin.minimal
 
+import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -31,7 +32,11 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
+@Config(
+    sdk = [35],
+    qualifiers = "w411dp-h891dp-xhdpi",
+    application = Application::class,
+)
 class MinimalScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
