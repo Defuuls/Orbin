@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [116 — Miku](https://github.com/Defuuls/Orbin/releases/tag/v116-Miku)
+**Current release:** [117 — Nao](https://github.com/Defuuls/Orbin/releases/tag/v117-Nao)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
@@ -109,35 +109,6 @@ reply, or create threads.
   reinstall. Importing merges rather than replaces, so a restore cannot destroy an existing
   setup. The file is plain JSON and is not encrypted — keep it somewhere you trust.
 
-## Orbin Minimal
-
-**Orbin Minimal releases separately**, under
-[`minimal-v*` tags](https://github.com/Defuuls/Orbin/releases?q=minimal&expanded=true) numbered
-from 1 — and, from `minimal-v4`, carrying a codename the way the full client's tags do — on its
-own cadence — it is not bundled with the full client's release. Because both apps
-are tagged in this repository, "latest release" resolves by date across the two: pick by the
-filename (`orbin-minimal-…apk` versus `orbin-v…apk`) rather than by whichever release is on top.
-It is a pared-back app whose whole
-interface is your subscribed boards as one flat feed, merged across every board you follow and
-sorted by latest activity. Each row carries the opening post's first attachment as a preview, and
-a row whose attachment is a video plays it — muted — while the row is on screen. Tap a row to read
-the thread, tap an image to view it full screen. Nothing else: no bottom navigation, no settings
-hub, no search, gallery, downloads, bookmarks, history, notifications, app-lock or themes.
-
-The screens are the full client's own — the same feed, reader and board picker from `ui-next`,
-which is why the feed here has the same three layouts, the same pull-to-refresh and the same
-floating rail. The rail's one affordance is Boards rather than Search, because the board picker is
-the only other place this app has, and it is the whole of the navigation.
-
-Because there is no settings screen, feed autoplay is off and stays off — it is the full client's
-own setting, and this app has nowhere to turn it on. It used to be forced on here instead, which on
-a feed spanning every board you follow meant using mobile data without asking. Videos still play
-when you open the thread.
-
-It is a different front end over the same layers — identical providers, caching, encrypted storage,
-board filters and the always-on content filter — built from `app-minimal/`. It installs alongside
-the full client under its own applicationId, which also means Android sandboxes their data
-separately: its subscriptions are its own, chosen from the board picker behind the rail's Boards.
 
 ## Tech stack
 
@@ -159,7 +130,6 @@ Exact versions are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.
 ```
 Orbin/
 ├── app/                      # Application, MainActivity, navigation host, DI aggregation
-├── app-minimal/              # Second shipped APK: subscribed boards as one flat feed, nothing else
 ├── benchmark/                # Baseline profile generation (startup + feed path)
 ├── build-logic/              # Gradle convention plugins (the build's backbone)
 ├── core/

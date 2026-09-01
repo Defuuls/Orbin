@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [117-Nao] - 2026-09-01
+
+### Changed
+- Removed Orbin Minimal from this repository's build and release surface now that it is maintained as a separate repository. Future Orbin releases build and publish only the main client.
+- Cleaned current release documentation so removed Minimal modules and release automation are no longer advertised as part of this codebase.
+
+
 ## [116-Miku] - 2026-09-01
 
 ### Changed
@@ -1982,7 +1989,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v116-Miku...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v117-Nao...HEAD
+[117-Nao]: https://github.com/Defuuls/Orbin/compare/v116-Miku...v117-Nao
 [116-Miku]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...v116-Miku
 [115-Misaki]: https://github.com/Defuuls/Orbin/compare/v114-Yui...v115-Misaki
 [114-Yui]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...v114-Yui
