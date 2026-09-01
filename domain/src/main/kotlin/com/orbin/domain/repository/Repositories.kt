@@ -55,15 +55,6 @@ interface BoardPreferencesRepository {
         board: BoardId,
     ): Flow<FeedThreadLimit?>
 
-    /**
-     * All requested per-board thread-limit overrides from one upstream preferences observation.
-     * Missing entries mean the board follows the global default.
-     */
-    fun observeFeedThreadLimits(
-        provider: ProviderId,
-        boards: Set<BoardId>,
-    ): Flow<Map<BoardId, FeedThreadLimit?>>
-
     suspend fun setFeedThreadLimit(
         provider: ProviderId,
         board: BoardId,
