@@ -10,6 +10,7 @@ enum class CatalogSort {
     REPLY_COUNT,
     IMAGE_COUNT,
     LAST_REPLY,
+
     /** Subject A–Z, then thread number. */
     SUBJECT,
     ;
