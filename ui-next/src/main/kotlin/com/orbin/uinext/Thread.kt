@@ -38,19 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-/** What the reader is showing: the conversation, or just its files. */
 enum class ThreadLayout {
     POSTS,
     FILES,
 }
 
-/**
- * One post in a thread.
- *
- * [depth] is how far down a chain of replies this post sits, not a position in a re-ordered tree:
- * posts stay in the order they were made. [id] is what the list keys on and what a scroll request
- * names, so the screen never has to know what a post actually is.
- */
 data class Post(
     val number: String,
     val time: String,
@@ -87,6 +79,7 @@ fun ThreadScreen(
     onPostClick: (Post) -> Unit = {},
     listState: LazyListState? = null,
     scrollToPostId: String? = null,
+    firstUnreadPostId: String? = null,
     onScrollConsumed: () -> Unit = {},
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
@@ -221,6 +214,16 @@ fun ThreadScreen(
                         label = stringResource(R.string.next_thread_jump_top),
                         onClick = { scope.launch { state.animateScrollToItem(0) } },
                     )
+                    if (firstUnreadPostId != null) {
+                        InlineAction(
+                            label = stringResource(R.string.next_thread_jump_unread),
+                            accent = true,
+                            onClick = {
+                                val target = posts.indexOfFirst { it.id == firstUnreadPostId }
+                                if (target >= 0) scope.launch { state.animateScrollToItem(target + 1) }
+                            },
+                        )
+                    }
                     InlineAction(
                         label = stringResource(R.string.next_thread_jump_bottom),
                         onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
@@ -239,7 +242,6 @@ fun ThreadScreen(
     }
 }
 
-/** How far a reply is indented before the step stops growing. */
 const val MAX_REPLY_DEPTH = 3
 
 @Composable
@@ -291,12 +293,7 @@ private fun PostView(
                 modifier =
                     Modifier
                         .clickable(
-                            onClickLabel =
-                                if (collapsed) {
-                                    expandLabel
-                                } else {
-                                    collapseLabel
-                                },
+                            onClickLabel = if (collapsed) expandLabel else collapseLabel,
                             onClick = { onToggleCollapse(post) },
                         ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
             ) {
