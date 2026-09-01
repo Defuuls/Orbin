@@ -55,6 +55,9 @@ interface BoardPreferencesRepository {
         board: BoardId,
     ): Flow<FeedThreadLimit?>
 
+    /** All explicit per-board thread-count overrides for [provider], keyed by board. */
+    fun observeFeedThreadLimits(provider: ProviderId): Flow<Map<BoardId, FeedThreadLimit>>
+
     suspend fun setFeedThreadLimit(
         provider: ProviderId,
         board: BoardId,
@@ -95,6 +98,12 @@ interface ThreadRepository {
 
 interface BookmarkRepository {
     fun observeBookmarks(): Flow<List<Bookmark>>
+
+    /** Bookmarks scoped at the data source to one provider/board. */
+    fun observeBookmarks(
+        provider: ProviderId,
+        board: BoardId,
+    ): Flow<List<Bookmark>>
 
     fun observeBookmark(key: ThreadKey): Flow<Bookmark?>
 
