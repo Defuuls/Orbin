@@ -5,7 +5,10 @@ plugins {
 
 android {
     namespace = "com.orbin.benchmark.minimal"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -14,7 +17,10 @@ android {
 
     defaultConfig {
         minSdk = 28
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
