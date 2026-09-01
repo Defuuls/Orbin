@@ -6,13 +6,15 @@ import coil3.ImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
+import com.orbin.core.common.dispatchers.Dispatcher
+import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -33,6 +35,7 @@ class MediaPreloader
         @ApplicationContext private val context: Context,
         private val imageLoader: ImageLoader,
         @BaseOkHttp private val okHttpClient: OkHttpClient,
+        @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun preload(
             attachments: List<MediaAttachment>,
@@ -46,12 +49,8 @@ class MediaPreloader
             val targets = attachments.preloadTargets(option).take(plan.maxTargets)
             if (targets.isEmpty()) return 0
 
-            // Keep coroutine fan-out bounded as well as network concurrency. A hostile or enormous
-            // thread can expose many media targets; launching one coroutine per target would create
-            // avoidable CPU/memory pressure even though requests are semaphore-gated. A small worker
-            // pool preserves configured parallelism without unbounded job creation.
             val completed = AtomicInteger(0)
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 coroutineScope {
                     val queue = Channel<PreloadTarget>(capacity = plan.workerCount)
                     repeat(plan.workerCount) {
@@ -97,8 +96,6 @@ class MediaPreloader
                         workerCount = 3,
                         maxTargets = 160,
                     )
-                // High-throughput mode: faster than aggressive, but still bounded and backoff-aware.
-                // A literal no-limit mode causes CDN throttling and hurts browsing reliability.
                 PreloadThrottleMode.UNLIMITED ->
                     PreloadPlan(
                         throttler = RequestThrottler(maxConcurrent = 4, delayBetweenRequests = 75, maxPerMinute = 180),
@@ -129,9 +126,6 @@ class MediaPreloader
             url: String,
             throttler: RequestThrottler,
         ) {
-            // Preload video by fetching metadata via HEAD request. This validates that the URL is
-            // reachable without downloading the full video body, and feeds 429/503 back into the
-            // throttler so subsequent workers pause instead of amplifying a rate-limit response.
             runCatching {
                 okHttpClient
                     .newCall(
@@ -158,8 +152,7 @@ class MediaPreloader
                     val shouldPreloadImage =
                         option.includesImages() &&
                             (attachment.type == MediaType.IMAGE || attachment.type == MediaType.ANIMATED_IMAGE)
-                    val shouldPreloadVideo =
-                        option.includesVideos() && attachment.type == MediaType.VIDEO
+                    val shouldPreloadVideo = option.includesVideos() && attachment.type == MediaType.VIDEO
 
                     if (shouldPreloadThumbnail && attachment.thumbnailUrl.isNotBlank()) {
                         add(
