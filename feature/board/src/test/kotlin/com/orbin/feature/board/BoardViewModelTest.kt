@@ -48,7 +48,6 @@ class BoardViewModelTest {
                     listOf(
                         bookmark(BOARD, 1L, watched = true),
                         bookmark(BOARD, 2L, watched = false),
-                        // Same thread id, different board: must not leak in.
                         bookmark("v", 1L, watched = true),
                     ),
                 )
@@ -90,7 +89,10 @@ class BoardViewModelTest {
     @Test
     fun `the catalog keeps every thread when no media filter is set`() =
         runTest {
-            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.ALL)).asSnapshot()
+            val threads =
+                catalogFlow()
+                    .presentedBy(flowOf(presentation(MediaFilter.ALL)))
+                    .asSnapshot()
 
             assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L, 3L).inOrder()
         }
@@ -98,29 +100,49 @@ class BoardViewModelTest {
     @Test
     fun `videos-only drops catalog threads whose OP has no video`() =
         runTest {
-            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.VIDEOS)).asSnapshot()
+            val threads =
+                catalogFlow()
+                    .presentedBy(flowOf(presentation(MediaFilter.VIDEOS)))
+                    .asSnapshot()
 
             assertThat(threads.map { it.key.thread.value }).containsExactly(1L)
-            assertThat(
-                threads
-                    .single()
-                    .originalPost.attachments
-                    .map { it.id },
-            ).containsExactly("webm")
+            assertThat(threads.single().originalPost.attachments.map { it.id }).containsExactly("webm")
         }
 
     @Test
-    fun `images-only keeps the image threads and strips their videos`() =
+    fun `images-only keeps image threads and strips their videos`() =
         runTest {
-            val threads = catalogFlow().filteredBy(flowOf(MediaFilter.IMAGES)).asSnapshot()
+            val threads =
+                catalogFlow()
+                    .presentedBy(flowOf(presentation(MediaFilter.IMAGES)))
+                    .asSnapshot()
 
             assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L).inOrder()
-            assertThat(
-                threads
-                    .first()
-                    .originalPost.attachments
-                    .map { it.id },
-            ).containsExactly("jpg")
+            assertThat(threads.first().originalPost.attachments.map { it.id }).containsExactly("jpg")
+        }
+
+    @Test
+    fun `media scrolling off exposes only the first attachment`() =
+        runTest {
+            val threads =
+                catalogFlow()
+                    .presentedBy(flowOf(presentation(MediaFilter.ALL, mediaScroll = false)))
+                    .asSnapshot()
+
+            assertThat(threads.first().originalPost.attachments.map { it.id }).containsExactly("webm")
+        }
+
+    @Test
+    fun `catalog sort survives view model recreation`() =
+        runTest {
+            val handle = SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title"))
+            val first = createViewModel(savedStateHandle = handle)
+
+            first.cycleCatalogSort()
+            val selected = first.catalogSort.value
+
+            val recreated = createViewModel(savedStateHandle = handle)
+            assertThat(recreated.catalogSort.value).isEqualTo(selected)
         }
 
     @Test
@@ -144,8 +166,6 @@ class BoardViewModelTest {
             val bookmarks = FakeBookmarkRepository(listOf(bookmark(BOARD, 9L, watched = true)))
             val viewModel = createViewModel(bookmarkRepository = bookmarks)
 
-            // watchedThreadIds must actually be collected before toggling, since it is what
-            // toggleThreadSubscription reads to decide whether to watch or unwatch.
             viewModel.watchedThreadIds.test {
                 assertThat(awaitItem()).containsExactly(9L)
                 viewModel.toggleThreadSubscription(catalogThread(BOARD, 9L))
@@ -158,12 +178,24 @@ class BoardViewModelTest {
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         catalogRepository: CatalogRepository = FakeCatalogRepository,
+        savedStateHandle: SavedStateHandle =
+            SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title")),
     ) = BoardViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title")),
+        savedStateHandle = savedStateHandle,
         catalogRepository = catalogRepository,
         bookmarkRepository = bookmarkRepository,
         historyRepository = historyRepository,
         settingsRepository = settingsRepository,
+    )
+
+    private fun presentation(
+        filter: MediaFilter,
+        mediaScroll: Boolean = true,
+    ) = CatalogPresentationSettings(
+        hiddenTokens = emptySet(),
+        includeHarsh = false,
+        mediaFilter = filter,
+        mediaScroll = mediaScroll,
     )
 
     private fun bookmark(
@@ -203,7 +235,6 @@ class BoardViewModelTest {
         stats = ThreadStats(replyCount = 3),
     )
 
-    /** One thread with both kinds, one with only an image, and one with nothing attached. */
     private fun catalogFlow(): Flow<PagingData<CatalogThread>> =
         flowOf(
             PagingData.from(
@@ -232,10 +263,6 @@ class BoardViewModelTest {
     )
 }
 
-/**
- * The catalog's own paging content is covered by the [filteredBy] tests above, which drive the
- * stream directly; BoardViewModel's remaining logic is in the derived flows.
- */
 private object FakeCatalogRepository : CatalogRepository {
     override fun catalogStream(
         provider: ProviderId,
