@@ -37,18 +37,12 @@ class ProposalScreenshotTest {
             FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
         }
 
-    /**
-     * The AMOLED ground, which is a setting the redesigned screens used to ignore entirely. Worth a
-     * capture of its own because true black against this palette's warm ink is the case where a
-     * near-black that looked fine could turn out not to.
-     */
     @Test
     fun feedAmoled() =
         capture("next_feed_amoled", dark = true, amoled = true) {
             FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
         }
 
-    /** The same feed at XL, the largest font size the settings offer, where a row runs out of width. */
     @Test
     fun feedLargeText() =
         capture("next_feed_large_text", fontScale = XL_FONT_SCALE) {
@@ -61,8 +55,6 @@ class ProposalScreenshotTest {
             FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
         }
 
-    /** What the feed actually looks like as shipped: inside the app shell, which still owns the
-     *  bottom navigation bar, so the rail stays off until the command surface replaces that bar. */
     @Test
     fun feedInShell() =
         capture("next_feed_in_shell") {
@@ -91,7 +83,6 @@ class ProposalScreenshotTest {
             )
         }
 
-    /** The feed narrowed by the command surface, which is where its search bar went. */
     @Test
     fun feedFiltered() =
         capture("next_feed_filtered") {
@@ -137,7 +128,17 @@ class ProposalScreenshotTest {
             )
         }
 
-    /** Two posts folded away, which is how a long thread is skimmed. */
+    @Test
+    fun threadMaxText() =
+        capture("next_thread_max_text", fontScale = MAX_FONT_SCALE) {
+            ThreadScreen(
+                subject = "Anyone else running a home server on ARM?",
+                board = "/g/",
+                posts = posts(),
+                watching = true,
+            )
+        }
+
     @Test
     fun threadCollapsed() =
         capture("next_thread_collapsed") {
@@ -150,7 +151,6 @@ class ProposalScreenshotTest {
             )
         }
 
-    /** The same thread as a wall of its files, which is what "Files" switches to. */
     @Test
     fun threadFiles() =
         capture("next_thread_files") {
@@ -166,37 +166,33 @@ class ProposalScreenshotTest {
 
     @Test
     fun command() =
-        capture("next_command") {
-            // Drawn over the real feed, because that is how it appears: a layer, not a screen.
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
-            CommandSheet(
-                query = "auto",
-                results =
-                    listOf(
-                        Command("Autoplay videos", "setting", "Media · currently on"),
-                        Command("Autoplay videos in feed", "setting", "Media · currently off"),
-                        Command("Auto-rotate video", "setting", "Media · currently on"),
-                        Command("/aco/", "board", "Adult Cartoons · subscribed"),
-                        Command("Automotive threads", "search", "12 saved results"),
-                        Command("Automotive detailing general", "thread", "/o/ · 84 replies · open"),
-                    ),
-            )
-        }
+        capture("next_command") { commandContent() }
+
+    @Test
+    fun commandMaxText() =
+        capture("next_command_max_text", fontScale = MAX_FONT_SCALE) { commandContent() }
 
     @Test
     fun settings() =
         capture("next_settings") {
-            // With one choice open, which is the interaction the single list rests on.
             SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
         }
 
-    /**
-     * The two shapes that replaced the rows which used to navigate: a string edited under its own
-     * row, and an action that states its consequence and runs where it stands.
-     */
+    @Test
+    fun settingsMaxText() =
+        capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
+            SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
+        }
+
     @Test
     fun settingsEditing() =
         capture("next_settings_editing") {
+            SettingsScreen(groups = settingsGroups(), expandedId = "hiddenTags")
+        }
+
+    @Test
+    fun settingsEditingMaxText() =
+        capture("next_settings_editing_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(groups = settingsGroups(), expandedId = "hiddenTags")
         }
 
@@ -213,10 +209,45 @@ class ProposalScreenshotTest {
         }
 
     @Test
+    fun mediaWallMaxText() =
+        capture("next_media_max_text", fontScale = MAX_FONT_SCALE) {
+            MediaWallScreen(
+                scanned = 42,
+                total = 70,
+                failed = 3,
+                scanning = true,
+                cells = mediaCells(),
+            )
+        }
+
+    @Test
     fun boardPicker() =
         capture("next_boards") {
             BoardPickerScreen(boards = boardChoices(), subtitle = "3 of 7 in your feed")
         }
+
+    @Test
+    fun boardPickerMaxText() =
+        capture("next_boards_max_text", fontScale = MAX_FONT_SCALE) {
+            BoardPickerScreen(boards = boardChoices(), subtitle = "3 of 7 in your feed")
+        }
+
+    @androidx.compose.runtime.Composable
+    private fun commandContent() {
+        FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
+        CommandSheet(
+            query = "auto",
+            results =
+                listOf(
+                    Command("Autoplay videos", "setting", "Media · currently on"),
+                    Command("Autoplay videos in feed", "setting", "Media · currently off"),
+                    Command("Auto-rotate video", "setting", "Media · currently on"),
+                    Command("/aco/", "board", "Adult Cartoons · subscribed"),
+                    Command("Automotive threads", "search", "12 saved results"),
+                    Command("Automotive detailing general", "thread", "/o/ · 84 replies · open"),
+                ),
+        )
+    }
 
     private fun capture(
         name: String,
@@ -248,16 +279,7 @@ class ProposalScreenshotTest {
         )
 
     private companion object {
-        /** `FontScaleOption.XLARGE`, so the capture tracks the setting rather than a guess at it. */
         const val XL_FONT_SCALE = 1.2f
-
-        /**
-         * The largest text Android will hand a screen.
-         *
-         * The only large-text golden was captured at 1.2, which left everything between there and
-         * the system ceiling unrendered — including the rail, whose height was fixed at 52dp and
-         * had never been drawn holding text this size.
-         */
         const val MAX_FONT_SCALE = 2.0f
         const val SAMPLE_SUBTITLE = "8 threads across 7 boards"
     }
