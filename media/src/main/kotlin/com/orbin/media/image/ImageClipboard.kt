@@ -5,9 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.orbin.core.common.dispatchers.Dispatcher
+import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -24,17 +26,6 @@ enum class ImageCopyResult {
 
 /**
  * Copies a viewed image to the system clipboard, fetching it through the app's own HTTP stack.
- *
- * It used to open a raw [java.net.HttpURLConnection]. That still spoke HTTPS — the platform
- * enforces it — but it went around everything the shared client exists to provide: the request
- * resolved through the system resolver rather than DNS-over-HTTPS, so it announced to the network
- * which host was being read from at the moment of the copy, and it carried the JVM's default
- * user-agent rather than the configured one, making that single request identifiably different
- * from every other request the app makes. One copy was enough to undo settings the user had
- * deliberately turned on.
- *
- * Lives in :media rather than the gallery feature because this is the layer that already holds a
- * network client, and a feature reaching for OkHttp directly is how that boundary erodes.
  */
 @Singleton
 class ImageClipboard
@@ -42,6 +33,7 @@ class ImageClipboard
     constructor(
         @ApplicationContext private val context: Context,
         @BaseOkHttp private val okHttpClient: OkHttpClient,
+        @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
         /**
          * Puts [imageUrl]'s contents on the clipboard, falling back to the URL as plain text when
@@ -61,7 +53,7 @@ class ImageClipboard
         }
 
         private suspend fun cache(imageUrl: String): Uri =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 okHttpClient
                     .newCall(Request.Builder().url(imageUrl).build())
                     .execute()
@@ -71,9 +63,6 @@ class ImageClipboard
                         }
                         val body = response.body
 
-                        // A declared length over the cap is refused before a byte is read; the
-                        // running total below is what catches a server that under-declares or
-                        // sends no length at all.
                         val declaredLength = body.contentLength()
                         check(declaredLength <= MAX_IMAGE_BYTES) {
                             "Image exceeds clipboard cache limit"
@@ -135,9 +124,4 @@ private fun String.sha256(): String =
 
 private const val CLIPBOARD_DIRECTORY = "clipboard_images"
 private const val MAX_IMAGE_BYTES = 50L * 1024L * 1024L
-
-/**
- * The shape a URL's trailing segment must have to be treated as a file extension. Compiled once;
- * it was being rebuilt for every image copied to the clipboard.
- */
 private val FILE_EXTENSION = Regex("[a-z0-9]{2,5}")
