@@ -4,12 +4,14 @@
     <string name="minimal_feed_title">Feed</string>
     <string name="minimal_boards_title">Boards</string>
     <string name="minimal_refresh">Refresh</string>
-    <!-- The board list came back empty, which is not the same as still loading. -->
     <string name="minimal_no_boards_available">No boards available from this provider</string>
     <string name="minimal_boards_load_failed">Could not load the board list</string>
-    <!-- Shown while the board list is being fetched and nothing is cached yet. -->
     <string name="minimal_boards_loading">Fetching the board list</string>
-    <!-- The only thing left to do on the blocked-downgrade screen. -->
+    <string name="minimal_boards_refreshing">Refreshing boards…</string>
+    <string name="minimal_boards_cached_error">Showing saved boards · refresh failed</string>
+    <string name="minimal_boards_summary">%1$d of %2$d boards in your feed</string>
+    <string name="minimal_preparing">Preparing the reader</string>
+    <string name="minimal_choose_boards">Choose boards for your feed</string>
     <string name="minimal_close">Close</string>
     <string name="minimal_downgrade_title">This build is older than one already used here</string>
     <string name="minimal_downgrade_body">Orbin Minimal will not run an older build over a newer one. Install version %1$d or later.</string>
