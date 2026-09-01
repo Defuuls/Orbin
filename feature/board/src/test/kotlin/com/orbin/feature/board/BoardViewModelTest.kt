@@ -94,7 +94,9 @@ class BoardViewModelTest {
                     .presentedBy(flowOf(presentation(MediaFilter.ALL)))
                     .asSnapshot()
 
-            assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L, 3L).inOrder()
+            assertThat(threads.map { it.key.thread.value })
+                .containsExactly(1L, 2L, 3L)
+                .inOrder()
         }
 
     @Test
@@ -117,7 +119,9 @@ class BoardViewModelTest {
                     .presentedBy(flowOf(presentation(MediaFilter.IMAGES)))
                     .asSnapshot()
 
-            assertThat(threads.map { it.key.thread.value }).containsExactly(1L, 2L).inOrder()
+            assertThat(threads.map { it.key.thread.value })
+                .containsExactly(1L, 2L)
+                .inOrder()
             assertThat(threads.first().originalPost.attachments.map { it.id }).containsExactly("jpg")
         }
 
