@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 """Repository consistency checks.
 
-These guard the things that have actually drifted here rather than a generic
-lint pass. Each check exists because the problem it catches had already
-happened at least once:
-
-- Version metadata lives in gradle.properties but is *quoted* in four other
-  files. v85 through v89 all shipped versionCode 107 because one of them was
-  missed; README and the wiki have each been left a release behind.
-- CHANGELOG link refs are written by hand at the bottom of a 1400-line file.
-  38 of 102 headings had no ref at all, and three pointed at tags that never
-  existed (v10.0/v11.0, where the real tags are v10.0-tiramisu/v11.0-coconut).
-- Changelog headings use spaces ("48-Sirius B") while the git tags use hyphens
-  ("v48-Sirius-B"), which is exactly the kind of thing a generator gets wrong.
-
 Run: python3 scripts/validate_repo.py [--fix-links]
 """
 
@@ -59,7 +46,6 @@ def gradle_version() -> tuple[str, str]:
 
 
 def tag_for(version: str, tags: set[str]) -> str | None:
-    """Changelog headings use spaces; the git tags use hyphens."""
     for candidate in (f"v{version}", "v" + version.replace(" ", "-")):
         if candidate in tags:
             return candidate
@@ -67,7 +53,6 @@ def tag_for(version: str, tags: set[str]) -> str | None:
 
 
 def check_version_consistency(version_name: str) -> None:
-    """Every place that quotes the shipped version must agree with gradle.properties."""
     number = version_name.split("-", 1)[0]
     codename = version_name.split("-", 1)[1] if "-" in version_name else ""
 
@@ -86,27 +71,11 @@ def check_version_consistency(version_name: str) -> None:
         fail("version", f"CHANGELOG.md has no dated '## [{version_name}]' heading")
         return
 
-    # A heading alone is not release notes. Closing [Unreleased] when nothing was written into it
-    # produces a released version documenting nothing, which is how v98 nearly shipped: three
-    # merged pull requests had each deferred their entry to "the next release".
     section = re.split(
         r"^## \[", changelog.split(f"## [{version_name}] - ", 1)[1], maxsplit=1, flags=re.M
     )[0]
     if not re.search(r"^- ", section, re.M):
         fail("version", f"CHANGELOG.md's '{version_name}' section has no entries")
-
-
-def check_minimal_version_present() -> None:
-    """Orbin Minimal is a separate line; it must not silently vanish or collide."""
-    text = read("gradle.properties")
-    code = re.search(r"^orbin\.minimalVersionCode=(\d+)$", text, re.M)
-    name = re.search(r"^orbin\.minimalVersionName=(.+)$", text, re.M)
-    if not code or not name:
-        fail("version", "gradle.properties is missing orbin.minimalVersionCode/Name")
-        return
-    app_minimal = read("app-minimal/build.gradle.kts")
-    if "orbin.minimalVersionCode" not in app_minimal:
-        fail("version", "app-minimal does not read orbin.minimalVersionCode — it may be on the full client's line")
 
 
 def changelog_parts() -> tuple[list[str], dict[str, str], str]:
@@ -127,16 +96,10 @@ def check_changelog_links(tags: set[str], fix: bool) -> None:
     if missing and not fix:
         fail("changelog", f"{len(missing)} heading(s) with no link ref: {missing[:8]}")
 
-    # Every tag named by a ref must actually exist, or the link 404s. This can
-    # only be judged when tags are actually present: a shallow CI checkout has
-    # none, and validating against an empty set reports all 200-odd refs as
-    # broken. Structural checks above still run either way.
     if not tags:
         notes.append("skipping tag-existence checks — no tags in this checkout")
         return
 
-    # The one legitimate exception is the release being prepared in this very
-    # commit, whose tag is not pushed until after the release PR merges.
     pending = {f"v{headings[0]}", "v" + headings[0].replace(" ", "-")} if headings else set()
     unknown: list[str] = []
     for name, url in refs.items():
@@ -183,11 +146,8 @@ def _backfill_refs(headings: list[str], refs: dict[str, str], text: str, tags: s
 
 
 def check_relative_links() -> None:
-    """A moved or renamed doc should not leave a dead link behind."""
     link_re = re.compile(r"\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
-    tracked = subprocess.check_output(
-        ["git", "ls-files", "*.md"], cwd=ROOT, text=True
-    ).split()
+    tracked = subprocess.check_output(["git", "ls-files", "*.md"], cwd=ROOT, text=True).split()
     for rel in tracked:
         path = ROOT / rel
         for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
@@ -200,25 +160,13 @@ def check_relative_links() -> None:
 
 
 def check_release_tooling() -> None:
-    """new-version.yml rewrote app/build.gradle.kts long after the version moved out of it.
-
-    Mentions in comments are fine — what matters is whether the workflow still
-    *acts* on the old location, so comment lines are stripped before looking.
-    """
     workflow = read(".github/workflows/new-version.yml")
-    code = "\n".join(
-        line for line in workflow.splitlines() if not line.lstrip().startswith("#")
-    )
+    code = "\n".join(line for line in workflow.splitlines() if not line.lstrip().startswith("#"))
     if "app/build.gradle.kts" in code:
-        fail(
-            "release-tooling",
-            "new-version.yml still acts on app/build.gradle.kts; the version lives in gradle.properties",
-        )
+        fail("release-tooling", "new-version.yml still acts on app/build.gradle.kts; the version lives in gradle.properties")
     for expected in ("orbin.versionCode", "orbin.versionName", "gradle.properties"):
         if expected not in code:
             fail("release-tooling", f"new-version.yml never references {expected}")
-    # The docs that quote the release have each gone stale before; the
-    # workflow is the only thing that can keep them in step automatically.
     for doc in ("README.md", "docs/wiki/Home.md"):
         if doc not in code:
             fail("release-tooling", f"new-version.yml does not update {doc}")
@@ -236,7 +184,6 @@ def main() -> int:
     _, version_name = gradle_version()
     if version_name:
         check_version_consistency(version_name)
-    check_minimal_version_present()
     check_changelog_links(tags, args.fix_links)
     check_relative_links()
     check_release_tooling()

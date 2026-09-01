@@ -28,9 +28,7 @@ rootProject.name = "Orbin"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":app")
-include(":app-minimal")
 include(":benchmark")
-include(":benchmark-minimal")
 
 include(":core:common")
 include(":core:model")
