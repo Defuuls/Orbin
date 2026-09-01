@@ -22,6 +22,7 @@ import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.UpdateRepository
@@ -54,10 +55,14 @@ class SettingsViewModel
         private val diagnosticsRepository: DiagnosticsRepository,
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
+        private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
         private val _diagnosticsStatus = MutableStateFlow<DiagnosticsStatus?>(null)
+        private val _imageCacheUsageBytes = MutableStateFlow(0L)
+
+        val imageCacheUsageBytes: StateFlow<Long> = _imageCacheUsageBytes.asStateFlow()
 
         /** Result of the last diagnostics export or clear, for a snackbar. */
         val diagnosticsStatus: StateFlow<DiagnosticsStatus?> = _diagnosticsStatus.asStateFlow()
@@ -92,6 +97,10 @@ class SettingsViewModel
                 .map { appSettings ->
                     providers.firstOrNull { it.id.value == appSettings.activeProviderId } ?: defaultProviderMetadata
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), defaultProviderMetadata)
+
+        init {
+            refreshImageCacheUsage()
+        }
 
         fun setActiveProvider(id: ProviderId) = update { repository.setActiveProviderId(id) }
 
@@ -140,6 +149,17 @@ class SettingsViewModel
         fun setFeedSort(sort: FeedSort) = update { repository.setFeedSort(sort) }
 
         fun setImageCacheLimitMb(megabytes: Int) = update { repository.setImageCacheLimitMb(megabytes) }
+
+        fun refreshImageCacheUsage() =
+            update {
+                _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+            }
+
+        fun clearImageCache() =
+            update {
+                imageCacheRepository.clear()
+                _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+            }
 
         fun setUserAgent(userAgent: String) = update { repository.setUserAgent(userAgent) }
 
@@ -262,6 +282,12 @@ class SettingsViewModel
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
+
+private object EmptyImageCacheRepository : ImageCacheRepository {
+    override suspend fun usageBytes(): Long = 0L
+
+    override suspend fun clear() = Unit
+}
 
 sealed interface DiagnosticsStatus {
     data object Exported : DiagnosticsStatus
