@@ -161,7 +161,8 @@ class ThreadViewModel
                 } else {
                     success.thread.replies.getOrNull(savedBookmark.lastSeenReplyCount)?.id
                 }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+            }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
         fun refresh() {
             _isRefreshing.value = true
@@ -275,7 +276,10 @@ class ThreadViewModel
                     HistoryEntry(
                         key = key,
                         title = title.ifBlank { thread.subject ?: "/${board.value}/" },
-                        thumbnailUrl = thread.originalPost.attachments.firstOrNull()?.thumbnailUrl,
+                        thumbnailUrl =
+                            thread.originalPost.attachments
+                                .firstOrNull()
+                                ?.thumbnailUrl,
                         lastVisitedMillis = System.currentTimeMillis(),
                         lastReadPostId = thread.originalPost.id,
                     ),
@@ -288,7 +292,12 @@ class ThreadViewModel
             return Bookmark(
                 key = key,
                 title = title.ifBlank { thread?.subject ?: "/${board.value}/" },
-                thumbnailUrl = thread?.originalPost?.attachments?.firstOrNull()?.thumbnailUrl,
+                thumbnailUrl =
+                    thread
+                        ?.originalPost
+                        ?.attachments
+                        ?.firstOrNull()
+                        ?.thumbnailUrl,
                 createdAtMillis = System.currentTimeMillis(),
                 lastSeenReplyCount = thread?.stats?.replyCount ?: 0,
                 latestReplyCount = thread?.stats?.replyCount ?: 0,
