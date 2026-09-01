@@ -22,7 +22,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -77,12 +76,17 @@ class MinimalBoardsViewModel
                     .toImmutableList()
             }
 
-        private val _refreshing = MutableStateFlow(true)
-        private val _refreshError = MutableStateFlow<String?>(null)
-        private val _subscriptionError = MutableStateFlow<String?>(null)
+        private val refreshingState = MutableStateFlow(true)
+        private val refreshErrorState = MutableStateFlow<String?>(null)
+        private val subscriptionErrorState = MutableStateFlow<String?>(null)
 
         val uiState: StateFlow<MinimalBoardsUiState> =
-            combine(content, _refreshing, _refreshError, _subscriptionError) { boards, refreshing, refreshError, subscriptionError ->
+            combine(
+                content,
+                refreshingState,
+                refreshErrorState,
+                subscriptionErrorState,
+            ) { boards, refreshing, refreshError, subscriptionError ->
                 MinimalBoardsUiState(
                     boards = boards,
                     isRefreshing = refreshing,
@@ -115,14 +119,14 @@ class MinimalBoardsViewModel
         ) {
             val provider = activeProvider.value.metadata.id
             viewModelScope.launch {
-                _subscriptionError.value = null
+                subscriptionErrorState.value = null
                 try {
                     boardPreferencesRepository.setSubscribedBoard(provider, board, subscribed)
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Throwable) {
                     Log.w(TAG, "Could not update board subscription", error)
-                    _subscriptionError.value = error.message.orEmpty().ifBlank { SUBSCRIPTION_ERROR }
+                    subscriptionErrorState.value = error.message.orEmpty().ifBlank { SUBSCRIPTION_ERROR }
                 }
             }
         }
@@ -135,14 +139,14 @@ class MinimalBoardsViewModel
             refreshJob?.cancel()
             refreshJob =
                 viewModelScope.launch {
-                    _refreshing.value = true
-                    _refreshError.value = null
+                    refreshingState.value = true
+                    refreshErrorState.value = null
                     try {
                         when (val result = boardRepository.refreshBoards(provider)) {
                             is OrbinResult.Success -> Unit
                             is OrbinResult.Failure -> {
                                 if (activeProvider.value.metadata.id == provider) {
-                                    _refreshError.value = result.error.message
+                                    refreshErrorState.value = result.error.message
                                 }
                             }
                         }
@@ -151,11 +155,11 @@ class MinimalBoardsViewModel
                     } catch (error: Throwable) {
                         Log.w(TAG, "Could not refresh the board list", error)
                         if (activeProvider.value.metadata.id == provider) {
-                            _refreshError.value = error.message.orEmpty().ifBlank { REFRESH_ERROR }
+                            refreshErrorState.value = error.message.orEmpty().ifBlank { REFRESH_ERROR }
                         }
                     } finally {
                         if (activeProvider.value.metadata.id == provider) {
-                            _refreshing.value = false
+                            refreshingState.value = false
                         }
                     }
                 }
