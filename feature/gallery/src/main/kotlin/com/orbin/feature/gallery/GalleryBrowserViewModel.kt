@@ -9,6 +9,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredBy
@@ -168,7 +169,7 @@ class GalleryBrowserViewModel
                         val warmed =
                             mediaPreloader.preload(
                                 media,
-                                option = settings.preloadOption,
+                                option = if (settings.preloadImages) settings.preloadOption else PreloadOption.NONE,
                                 throttleMode = settings.preloadThrottleMode,
                             ) { current, total, label ->
                                 _uiState.update {
