@@ -349,8 +349,8 @@ class SettingsRepositoryImpl
                 imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 downloadOrganization =
-                    this[Keys.downloadOrganization]?.toEnumOrDefault(DownloadOrganization.FLAT)
-                        ?: DownloadOrganization.FLAT,
+                    this[Keys.downloadOrganization]?.toEnumOrDefault(AppSettings.Default.downloadOrganization)
+                        ?: AppSettings.Default.downloadOrganization,
                 userAgent = this[Keys.userAgent] ?: "",
                 dohProvider =
                     this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
