@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,7 +64,8 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    var layout by rememberSaveable { mutableStateOf(FeedLayout.LIST) }
+    val layoutName by viewModel.feedLayoutName.collectAsStateWithLifecycle()
+    val layout = FeedLayout.entries.firstOrNull { it.name == layoutName } ?: FeedLayout.LIST
     val nowMillis by
         produceState(initialValue = System.currentTimeMillis()) {
             while (true) {
@@ -177,7 +177,7 @@ fun NextFeedScreen(
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
                             layout = layout,
-                            onLayoutChange = { layout = it },
+                            onLayoutChange = { viewModel.setFeedLayoutName(it.name) },
                             sortLabel = settings.feedSort.label,
                             onSort = viewModel::cycleFeedSort,
                             filter = filter.takeIf { it.isNotBlank() },
