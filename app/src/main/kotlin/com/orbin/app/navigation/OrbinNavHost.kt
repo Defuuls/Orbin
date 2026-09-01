@@ -126,6 +126,7 @@ fun OrbinNavHost(
             NextFeedScreen(
                 onOpenThread = openThread,
                 onOpenCommands = onOpenCommands,
+                onOpenSettings = { navController.navigate(Route.Settings()) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 scrollToTopRequest = subscribedFeedScrollToTopRequest,
