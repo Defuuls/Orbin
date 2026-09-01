@@ -342,12 +342,21 @@ private fun PostView(
             }
             if (post.hasMedia) {
                 Gap(12)
-                val tile = Modifier.fillMaxWidth().height(158.dp)
-                if (media != null) media(post, tile) else MediaTile(modifier = tile, seed = seed + 1, radius = 14.dp)
+                val tile = Modifier.fillMaxWidth()
+                if (media != null) {
+                    media(post, tile)
+                } else {
+                    MediaTile(
+                        modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
+                        seed = seed + 1,
+                        radius = 14.dp,
+                    )
+                }
             }
         }
     }
 }
 
 private const val SPOILER_SCRIM = 0.88f
+private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 62.dp
