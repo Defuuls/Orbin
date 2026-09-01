@@ -12,6 +12,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredCatalogBy
 import com.orbin.core.model.hiddenTagTokens
@@ -23,12 +24,12 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
-import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -57,6 +59,9 @@ sealed interface SubscribedFeedUiState {
 
     data class Success(
         val boards: ImmutableList<SubscribedBoardFeed>,
+        val failedBoards: ImmutableList<BoardId> = persistentListOf(),
+        val loadedAtMillis: Long = System.currentTimeMillis(),
+        val stale: Boolean = false,
     ) : SubscribedFeedUiState
 }
 
@@ -95,6 +100,21 @@ class SubscribedFeedViewModel
             settingsRepository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
+        /**
+         * Only settings that actually alter fetched/filtered feed content participate in the load
+         * cache key. Appearance, playback, downloads, privacy and other unrelated preferences can
+         * now change without invalidating every subscribed catalog.
+         */
+        private val loadSettings: StateFlow<FeedLoadSettings> =
+            settingsRepository.settings
+                .map(AppSettings::toFeedLoadSettings)
+                .distinctUntilChanged()
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                    AppSettings.Default.toFeedLoadSettings(),
+                )
+
         /** Threads already present in reading history, for "already read" title styling in the feed. */
         val visitedThreadKeys: StateFlow<Set<ThreadKey>> =
             historyRepository
@@ -110,20 +130,26 @@ class SubscribedFeedViewModel
                             combine(
                                 boardRepository.observeBoards(provider.metadata.id),
                                 observeThreadLimitOverrides(provider, subscribedIds),
-                                settings,
+                                loadSettings,
                                 refreshRequests,
-                            ) { boards, limitOverrides, settings, refreshCount ->
+                            ) { boards, limitOverrides, feedSettings, refreshCount ->
                                 val inputs =
                                     FeedInputs(
-                                        provider.metadata.id.value,
-                                        subscribedIds,
-                                        boards,
-                                        limitOverrides,
-                                        settings,
-                                        refreshCount,
+                                        providerId = provider.metadata.id.value,
+                                        subscribedIds = subscribedIds,
+                                        boards = boards,
+                                        limitOverrides = limitOverrides,
+                                        settings = feedSettings,
+                                        refreshCount = refreshCount,
                                     )
                                 loadOrReuseFeeds(inputs) {
-                                    loadSubscribedFeeds(provider, boards, subscribedIds, limitOverrides, settings)
+                                    loadSubscribedFeeds(
+                                        provider,
+                                        boards,
+                                        subscribedIds,
+                                        limitOverrides,
+                                        feedSettings,
+                                    )
                                 }
                             }
                         }
@@ -136,20 +162,8 @@ class SubscribedFeedViewModel
 
         private val _isRefreshing = MutableStateFlow(false)
 
-        /**
-         * Drives the pull-to-refresh indicator. Cleared when [uiState] next emits rather than when
-         * [refresh] returns: refresh only bumps [refreshRequests], and the load it provokes happens
-         * downstream, so clearing it at the call site would retract the spinner before the feed
-         * had actually reloaded.
-         */
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        /**
-         * Leaving the feed for longer than [STOP_TIMEOUT_MS] (e.g. while reading a thread) stops
-         * the upstream flow, and returning restarts it with the same inputs. "Refresh feed on
-         * return" decides whether that restart reloads: the last successful load is kept, and
-         * reused when the inputs are unchanged and it is still within the chosen interval.
-         */
         private var lastLoad: CachedFeed? = null
 
         private suspend fun loadOrReuseFeeds(
@@ -162,10 +176,25 @@ class SubscribedFeedViewModel
                     return cached.state
                 }
             }
-            return load().also { state ->
-                if (state is SubscribedFeedUiState.Success) {
-                    lastLoad = CachedFeed(inputs, state, System.currentTimeMillis())
+
+            return try {
+                when (val state = load()) {
+                    is SubscribedFeedUiState.Success -> {
+                        val merged = state.withCachedFailures(lastLoad?.state)
+                        if (merged.failedBoards.size < merged.boards.size || merged.boards.isEmpty()) {
+                            lastLoad = CachedFeed(inputs, merged, merged.loadedAtMillis)
+                        }
+                        merged
+                    }
+
+                    else -> state
                 }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w(TAG, "Failed to refresh subscribed feed", error)
+                lastLoad?.state?.copy(stale = true)
+                    ?: SubscribedFeedUiState.Error(error.message ?: "Feed refresh failed")
             }
         }
 
@@ -176,8 +205,17 @@ class SubscribedFeedViewModel
         fun refresh() {
             _isRefreshing.value = true
             viewModelScope.launch {
-                boardRepository.refreshBoards(activeProvider.value.metadata.id)
-                refreshRequests.value += 1
+                try {
+                    boardRepository.refreshBoards(activeProvider.value.metadata.id)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Log.w(TAG, "Failed to refresh board index", error)
+                } finally {
+                    // Always trigger the catalog pass. If board-index refresh failed, the existing
+                    // board list can still refresh and stale content remains available on failure.
+                    refreshRequests.value += 1
+                }
             }
         }
 
@@ -223,70 +261,69 @@ class SubscribedFeedViewModel
             boards: List<Board>,
             subscribedIds: Set<BoardId>,
             limitOverrides: Map<BoardId, FeedThreadLimit?>,
-            settings: AppSettings,
+            settings: FeedLoadSettings,
         ): SubscribedFeedUiState {
             if (subscribedIds.isEmpty()) {
-                return SubscribedFeedUiState.Success(emptyList<SubscribedBoardFeed>().toImmutableList())
+                return SubscribedFeedUiState.Success(persistentListOf())
             }
 
             val subscribedBoards =
                 boards
                     .filter { it.id in subscribedIds }
                     .filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
-                    // A board the permanent filter catches is dropped even if it is subscribed:
-                    // the subscription may predate the filter, and honouring it would fetch the
-                    // board's catalog into the feed.
                     .filterNot { board -> board.isPermanentlyFiltered(settings.harshContentFilter) }
                     .sortedBy { it.id.value }
 
             if (subscribedBoards.isEmpty()) {
-                return SubscribedFeedUiState.Success(emptyList<SubscribedBoardFeed>().toImmutableList())
+                return SubscribedFeedUiState.Success(persistentListOf())
             }
 
             val requestLimit = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
-            val feeds =
+            val results =
                 kotlinx.coroutines.coroutineScope {
                     subscribedBoards
                         .map { board ->
                             async {
                                 val override = limitOverrides[board.id]
-                                // Isolated per board: one dead/pruned board 404ing must not cancel
-                                // the sibling loads and wipe out every other board's feed with a
-                                // blanket error. It just comes back with no threads this refresh.
-                                val threads =
-                                    try {
+                                try {
+                                    val threads =
                                         requestLimit.withPermit {
                                             loadBoardThreads(provider, board, override, settings)
                                         }
-                                    } catch (e: ProviderException) {
-                                        Log.w(TAG, "Failed to load catalog for /${board.id.value}/", e)
-                                        persistentListOf()
-                                    }
-                                SubscribedBoardFeed(board, threads, override)
+                                    BoardLoadResult(SubscribedBoardFeed(board, threads, override))
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    Log.w(TAG, "Failed to load catalog for /${board.id.value}/", error)
+                                    BoardLoadResult(
+                                        feed = SubscribedBoardFeed(board, persistentListOf(), override),
+                                        failed = true,
+                                    )
+                                }
                             }
                         }.map { it.await() }
                 }
-            return SubscribedFeedUiState.Success(feeds.toImmutableList())
+
+            return SubscribedFeedUiState.Success(
+                boards = results.map { it.feed }.toImmutableList(),
+                failedBoards = results.filter { it.failed }.map { it.feed.board.id }.toImmutableList(),
+                loadedAtMillis = System.currentTimeMillis(),
+                stale = results.any { it.failed },
+            )
         }
 
         private suspend fun loadBoardThreads(
             provider: ImageBoardProvider,
             board: Board,
             limitOverride: FeedThreadLimit?,
-            settings: AppSettings,
+            settings: FeedLoadSettings,
         ): ImmutableList<CatalogThread> {
             val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
             val effectiveLimit = limitOverride ?: settings.feedThreadLimit
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
-                // The reader's own hidden keywords, and — when they have asked for it — the
-                // everyday shock words the always-on filter deliberately leaves alone. The setting
-                // reached the board catalog and stopped there, so turning it on filtered the board
-                // you opened but not the feed you opened it from.
                 .filterNot { thread ->
-                    thread.matchesFilterTokens(settings.hiddenTagTokens(), settings.harshContentFilter)
+                    thread.matchesFilterTokens(settings.hiddenTokens, settings.harshContentFilter)
                 }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
-                // Media filtering comes last so it acts on what the feed would otherwise show:
-                // threads left with no matching attachment drop out rather than showing a blank cell.
                 .filteredCatalogBy(settings.mediaFilter)
                 .toImmutableList()
         }
@@ -298,17 +335,41 @@ class SubscribedFeedViewModel
         }
     }
 
+private data class BoardLoadResult(
+    val feed: SubscribedBoardFeed,
+    val failed: Boolean = false,
+)
+
+private data class FeedLoadSettings(
+    val feedThreadLimit: FeedThreadLimit,
+    val hideNsfwBoards: Boolean,
+    val hideTextOnlyThreads: Boolean,
+    val harshContentFilter: Boolean,
+    val hiddenTokens: Set<String>,
+    val mediaFilter: MediaFilter,
+    val feedRefreshInterval: FeedRefreshInterval,
+)
+
+private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
+    FeedLoadSettings(
+        feedThreadLimit = feedThreadLimit,
+        hideNsfwBoards = hideNsfwBoards,
+        hideTextOnlyThreads = hideTextOnlyThreads,
+        harshContentFilter = harshContentFilter,
+        hiddenTokens = hiddenTagTokens(),
+        mediaFilter = mediaFilter,
+        feedRefreshInterval = feedRefreshInterval,
+    )
+
 /**
- * Cache key for a subscribed-feed load: every local input that goes into it. Equal keys mean the
- * flow merely restarted (nothing was subscribed, refreshed, or reconfigured in between), so the
- * previous result can stand in for a re-fetch.
+ * Cache key for a subscribed-feed load: every local input that actually changes loaded content.
  */
 private data class FeedInputs(
     val providerId: String,
     val subscribedIds: Set<BoardId>,
     val boards: List<Board>,
     val limitOverrides: Map<BoardId, FeedThreadLimit?>,
-    val settings: AppSettings,
+    val settings: FeedLoadSettings,
     val refreshCount: Int,
 )
 
@@ -320,11 +381,25 @@ private data class CachedFeed(
 )
 
 /**
- * Whether a cached feed [ageMillis] old is still fresh enough to show instead of reloading.
- *
- * The two ends carry the behaviour of the on/off setting this replaced: `ALWAYS` has a staleness
- * bound of zero, so nothing is ever fresh enough, and `NEVER` has none at all, so everything is.
+ * Preserve the last good rows for boards that failed this pass. Users see fresh data where it was
+ * available and stale data where it was not, rather than having a temporary network error erase a
+ * board from the combined feed.
  */
+private fun SubscribedFeedUiState.Success.withCachedFailures(
+    cached: SubscribedFeedUiState.Success?,
+): SubscribedFeedUiState.Success {
+    if (failedBoards.isEmpty() || cached == null) return this
+    val cachedByBoard = cached.boards.associateBy { it.board.id }
+    return copy(
+        boards =
+            boards
+                .map { current ->
+                    if (current.board.id in failedBoards) cachedByBoard[current.board.id] ?: current else current
+                }.toImmutableList(),
+        stale = true,
+    )
+}
+
 internal fun FeedRefreshInterval.allowsReuse(ageMillis: Long): Boolean {
     val staleAfter = staleAfterMillis ?: return true
     return ageMillis < staleAfter
