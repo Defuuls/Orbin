@@ -47,6 +47,7 @@ private const val RELATIVE_TIME_TICK_MS = 60_000L
 fun NextFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenCommands: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
     hideRailOnScroll: Boolean = false,
@@ -188,6 +189,7 @@ fun NextFeedScreen(
                             scrollToTopRequest = scrollToTopRequest,
                             railAction = railAction,
                             onSearch = onOpenCommands,
+                            onSettings = onOpenSettings,
                             onOpenRow = { row ->
                                 byId[row.id]?.let { entry ->
                                     onOpenThread(
