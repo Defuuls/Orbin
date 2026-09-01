@@ -270,7 +270,11 @@ private fun PostMedia(
     }
 }
 
-private fun MediaAttachment.threadAspectRatio(): Float = aspectRatio.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT)
+private fun MediaAttachment.threadAspectRatio(): Float =
+    aspectRatio.coerceIn(
+        MIN_THREAD_MEDIA_ASPECT,
+        MAX_THREAD_MEDIA_ASPECT,
+    )
 
 internal data class ThreadRow(
     val post: com.orbin.core.model.Post,
