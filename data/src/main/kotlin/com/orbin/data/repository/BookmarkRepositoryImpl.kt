@@ -1,6 +1,8 @@
 package com.orbin.data.repository
 
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.BookmarkDao
@@ -28,6 +30,14 @@ class BookmarkRepositoryImpl
          */
         override fun observeBookmarks(): Flow<List<Bookmark>> =
             dao.observeAll().map { list ->
+                list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
+            }
+
+        override fun observeBookmarks(
+            provider: ProviderId,
+            board: BoardId,
+        ): Flow<List<Bookmark>> =
+            dao.observeWatchedOnBoard(provider.value, board.value).map { list ->
                 list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
             }
 
