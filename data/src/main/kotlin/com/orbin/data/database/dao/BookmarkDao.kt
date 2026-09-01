@@ -13,6 +13,16 @@ interface BookmarkDao {
     fun observeAll(): Flow<List<BookmarkEntity>>
 
     @Query(
+        "SELECT * FROM bookmarks " +
+            "WHERE provider = :provider AND board = :board AND isWatched = 1 " +
+            "ORDER BY createdAtMillis DESC",
+    )
+    fun observeWatchedOnBoard(
+        provider: String,
+        board: String,
+    ): Flow<List<BookmarkEntity>>
+
+    @Query(
         "SELECT * FROM bookmarks WHERE provider = :provider AND board = :board AND thread = :thread LIMIT 1",
     )
     fun observeOne(
