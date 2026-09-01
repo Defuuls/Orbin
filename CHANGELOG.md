@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [115-Misaki] - 2026-09-01
+
+### Added
+- Subscribed-feed sorting with board A–Z as the default, plus subject-aware catalog sorting.
+- Live per-file download progress, image-cache usage and clear-cache controls, thread jump controls, and recent-thread command shortcuts.
+
+### Changed
+- Settings, command, feed and thread layouts adapt more cleanly to large text and narrow screens, with expanded accessibility and screenshot coverage.
+- Orbin Minimal now has an explicit minimal experience profile, first-run board selection, clearer refresh/subscription feedback, and its own baseline-profile benchmark target.
+
+### Performance
+- Board bookmark lookups moved to scoped database queries, feed limits can be loaded in bulk, presentation work is moved off the main thread, and media helpers use injected IO dispatchers without production `runBlocking`.
+- Minimal board state now serializes refreshes, cancels stale provider work, avoids unnecessary re-sorts, and trims unused dependency surface.
+
+
 ## [114-Yui] - 2026-08-31
 
 ### Added
@@ -1961,7 +1976,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v114-Yui...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...HEAD
+[115-Misaki]: https://github.com/Defuuls/Orbin/compare/v114-Yui...v115-Misaki
 [114-Yui]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...v114-Yui
 [113-Nagisa]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...v113-Nagisa
 [112-Kaede]: https://github.com/Defuuls/Orbin/compare/v111-Riko...v112-Kaede
