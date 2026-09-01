@@ -1,3 +1,5 @@
+@file:Suppress("CyclomaticComplexMethod")
+
 package com.orbin.feature.settings
 
 import android.content.Intent
@@ -164,7 +166,6 @@ fun NextSettingsScreen(
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE -> model.toggle(item.id)
-                    // Pressing an open row closes it again, so a row is never a one-way door.
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
@@ -220,12 +221,6 @@ fun NextSettingsScreen(
     }
 }
 
-/**
- * What an action row does, by id.
- *
- * A `when` over ids rather than a lambda on the row, because these need the launchers, which only
- * exist inside a composable — the registry builds the rows and this decides what pressing one does.
- */
 @Suppress("LongParameterList")
 private fun dispatch(
     item: SettingItem,
@@ -278,11 +273,9 @@ private fun DiagnosticsStatus.message(): String =
         is DiagnosticsStatus.Failed -> message
     }
 
-/** The newer release this check found, or null when there is nothing to offer. */
 private fun UpdateCheckState.availableRelease(): UpdateStatus.Available? =
     (this as? UpdateCheckState.Result)?.status as? UpdateStatus.Available
 
-/** Null while the check is still in flight or has not been run: there is nothing to announce yet. */
 private fun UpdateCheckState.snackbarMessage(): String? =
     when (this) {
         UpdateCheckState.Idle, UpdateCheckState.Checking -> null
@@ -294,7 +287,6 @@ private fun UpdateCheckState.snackbarMessage(): String? =
             }
     }
 
-/** What the check's own row reads as its value — the state of the last check, in a few words. */
 private fun UpdateCheckState.rowValue(context: android.content.Context): String =
     when (this) {
         UpdateCheckState.Idle -> appVersionName(context).ifBlank { "Unknown build" }
