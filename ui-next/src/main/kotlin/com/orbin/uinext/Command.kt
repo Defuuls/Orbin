@@ -165,10 +165,10 @@ fun CommandSheet(
 
 private fun commandSheetFraction(resultCount: Int): Float =
     when {
-        resultCount <= 1 -> 0.42f
-        resultCount <= 3 -> 0.48f
-        resultCount <= 6 -> 0.60f
-        else -> 0.72f
+        resultCount <= SMALL_RESULT_COUNT -> SMALL_SHEET_FRACTION
+        resultCount <= MEDIUM_RESULT_COUNT -> MEDIUM_SHEET_FRACTION
+        resultCount <= LARGE_RESULT_COUNT -> LARGE_SHEET_FRACTION
+        else -> MAX_SHEET_FRACTION
     }
 
 @Composable
@@ -447,6 +447,14 @@ private fun SettingTextEditor(
 private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
 
 private val STATED_KINDS = setOf(SettingKind.ACTION, SettingKind.INFO)
+
+private const val SMALL_RESULT_COUNT = 1
+private const val MEDIUM_RESULT_COUNT = 3
+private const val LARGE_RESULT_COUNT = 6
+private const val SMALL_SHEET_FRACTION = 0.42f
+private const val MEDIUM_SHEET_FRACTION = 0.48f
+private const val LARGE_SHEET_FRACTION = 0.60f
+private const val MAX_SHEET_FRACTION = 0.72f
 
 const val ON_LABEL = "On"
 const val OFF_LABEL = "Off"
