@@ -1,6 +1,13 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -11,9 +18,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun FeedScreen(
@@ -31,6 +40,7 @@ fun FeedScreen(
     onOpenRow: (FeedRow) -> Unit = {},
     railAction: String = stringResource(R.string.next_action_search),
     onSearch: () -> Unit = {},
+    onSettings: (() -> Unit)? = null,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -58,78 +68,94 @@ fun FeedScreen(
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     val withPreview = remember(rows) { rows.filter { it.hasPreview } }
     val omittedWithoutPreview = rows.size - withPreview.size
-    NextScaffold(
-        where = stringResource(R.string.next_feed_title).takeIf { showRail },
-        modifier = modifier,
-        detail = railDetail,
-        action = railAction,
-        onSearch = onSearch,
-        railVisible = railVisible,
-    ) { bottomPad ->
-        val header: @Composable () -> Unit = {
-            FeedHeader(
-                subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
-                layout = layout,
-                onLayoutChange = onLayoutChange,
-                sortLabel = sortLabel,
-                onSort = onSort,
-                filter = filter,
-                onClearFilter = onClearFilter,
-                omittedWithoutPreview = omittedWithoutPreview,
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = stringResource(R.string.next_feed_title).takeIf { showRail },
+            modifier = Modifier.fillMaxSize(),
+            detail = railDetail,
+            action = railAction,
+            onSearch = onSearch,
+            railVisible = railVisible,
+        ) { bottomPad ->
+            val header: @Composable () -> Unit = {
+                FeedHeader(
+                    subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
+                    layout = layout,
+                    onLayoutChange = onLayoutChange,
+                    sortLabel = sortLabel,
+                    onSort = onSort,
+                    filter = filter,
+                    onClearFilter = onClearFilter,
+                    omittedWithoutPreview = omittedWithoutPreview,
+                )
+            }
+            val insets = Modifier.fillMaxSize().contentInsets()
+            when (layout) {
+                FeedLayout.LIST ->
+                    LazyColumn(
+                        state = listState,
+                        modifier = insets,
+                        contentPadding = bottomPad,
+                    ) {
+                        item(key = FEED_HEADER_KEY) { header() }
+                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                            FeedRowView(
+                                row,
+                                seed = index,
+                                modifier = Modifier.animateItem(),
+                                onClick = onOpenRow,
+                                thumbnail = thumbnail,
+                            )
+                            if (index < rows.lastIndex) Hairline(inset = true)
+                        }
+                    }
+
+                FeedLayout.GRID ->
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(GRID_MIN_CELL),
+                        state = gridState,
+                        modifier = insets,
+                        contentPadding = gridPadding(bottomPad),
+                    ) {
+                        fullWidthItem { header() }
+                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                            FeedGridCell(
+                                row,
+                                seed = index,
+                                onClick = onOpenRow,
+                                thumbnail = thumbnail,
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                    }
+
+                FeedLayout.IMAGES ->
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(IMAGE_MIN_CELL),
+                        state = gridState,
+                        modifier = insets,
+                        contentPadding = gridPadding(bottomPad),
+                    ) {
+                        fullWidthItem { header() }
+                        itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
+                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                        }
+                    }
+            }
         }
-        val insets = Modifier.fillMaxSize().contentInsets()
-        when (layout) {
-            FeedLayout.LIST ->
-                LazyColumn(
-                    state = listState,
-                    modifier = insets,
-                    contentPadding = bottomPad,
-                ) {
-                    item(key = FEED_HEADER_KEY) { header() }
-                    itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                        FeedRowView(
-                            row,
-                            seed = index,
-                            modifier = Modifier.animateItem(),
-                            onClick = onOpenRow,
-                            thumbnail = thumbnail,
-                        )
-                        if (index < rows.lastIndex) Hairline(inset = true)
-                    }
-                }
 
-            FeedLayout.GRID ->
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(GRID_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
-                ) {
-                    fullWidthItem { header() }
-                    itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                        FeedGridCell(
-                            row,
-                            seed = index,
-                            onClick = onOpenRow,
-                            thumbnail = thumbnail,
-                            modifier = Modifier.animateItem(),
+        if (showRail && railVisible && onSettings != null) {
+            InlineAction(
+                label = stringResource(R.string.next_settings_title),
+                onClick = onSettings,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
                         )
-                    }
-                }
-
-            FeedLayout.IMAGES ->
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(IMAGE_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
-                ) {
-                    fullWidthItem { header() }
-                    itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
-                        FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                    }
-                }
+                        .padding(end = 92.dp, bottom = 14.dp),
+            )
         }
     }
 }
