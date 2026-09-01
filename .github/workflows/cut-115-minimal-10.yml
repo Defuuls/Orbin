@@ -41,7 +41,8 @@ jobs:
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text()
           if '## [115-Misaki]' not in text:
-              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n## [115-Misaki] - {today}\n', 1)
+              section = f'''## [115-Misaki] - {today}\n\n### Added\n- Subscribed-feed sorting with board A–Z as the default, plus subject-aware catalog sorting.\n- Live per-file download progress, image-cache usage and clear-cache controls, thread jump controls, and recent-thread command shortcuts.\n\n### Changed\n- Settings, command, feed and thread layouts adapt more cleanly to large text and narrow screens, with expanded accessibility and screenshot coverage.\n- Orbin Minimal now has an explicit minimal experience profile, first-run board selection, clearer refresh/subscription feedback, and its own baseline-profile benchmark target.\n\n### Performance\n- Board bookmark lookups moved to scoped database queries, feed limits can be loaded in bulk, presentation work is moved off the main thread, and media helpers use injected IO dispatchers without production `runBlocking`.\n- Minimal board state now serializes refreshes, cancels stale provider work, avoids unnecessary re-sorts, and trims unused dependency surface.\n'''
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n{section}\n', 1)
               text = re.sub(r'^\[Unreleased\]: .*$', f'[Unreleased]: {base}/compare/v115-Misaki...HEAD\n[115-Misaki]: {base}/compare/v114-Yui...v115-Misaki', text, count=1, flags=re.M)
           changelog.write_text(text)
           readme = Path('README.md')
