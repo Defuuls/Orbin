@@ -57,6 +57,7 @@ fun FeedScreen(
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     val withPreview = remember(rows) { rows.filter { it.hasPreview } }
+    val omittedWithoutPreview = rows.size - withPreview.size
     NextScaffold(
         where = stringResource(R.string.next_feed_title).takeIf { showRail },
         modifier = modifier,
@@ -74,6 +75,7 @@ fun FeedScreen(
                 onSort = onSort,
                 filter = filter,
                 onClearFilter = onClearFilter,
+                omittedWithoutPreview = omittedWithoutPreview,
             )
         }
         val insets = Modifier.fillMaxSize().contentInsets()
