@@ -1,5 +1,6 @@
 package com.orbin.minimal
 
+import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
@@ -43,7 +44,11 @@ class MinimalBoardsViewModelTest {
     @Test
     fun `failed refresh keeps cached boards visible and reports the failure`() =
         runTest {
-            val repository = MutableBoardRepository(listOf(BOARD_A), refreshResult = OrbinResult.Failure(DataError.Offline()))
+            val repository =
+                MutableBoardRepository(
+                    initialBoards = listOf(BOARD_A),
+                    refreshResult = OrbinResult.Failure(DataError.Offline()),
+                )
             val viewModel = createViewModel(repository, MutableBoardPreferences(setOf(BOARD_A.id)))
 
             viewModel.uiState.test {
@@ -97,7 +102,7 @@ class MinimalBoardsViewModelTest {
         )
     }
 
-    private suspend fun app.cash.turbine.ReceiveTurbine<MinimalBoardsUiState>.awaitState(
+    private suspend fun ReceiveTurbine<MinimalBoardsUiState>.awaitState(
         predicate: (MinimalBoardsUiState) -> Boolean,
     ): MinimalBoardsUiState {
         var item = awaitItem()
@@ -126,22 +131,31 @@ class MinimalBoardsViewModelTest {
             subscribed.value = value
         }
 
-        override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
-            MutableStateFlow(emptySet())
+        override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = MutableStateFlow(emptySet())
 
         override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> =
             subscribed.map { it ?: emptySet() }
 
-        override suspend fun setFavoriteBoard(provider: ProviderId, board: BoardId, favorite: Boolean) = Unit
+        override suspend fun setFavoriteBoard(
+            provider: ProviderId,
+            board: BoardId,
+            favorite: Boolean,
+        ) = Unit
 
-        override suspend fun setSubscribedBoard(provider: ProviderId, board: BoardId, subscribed: Boolean) {
+        override suspend fun setSubscribedBoard(
+            provider: ProviderId,
+            board: BoardId,
+            subscribed: Boolean,
+        ) {
             if (failWrites) error("Could not update subscription")
             val current = this.subscribed.value ?: emptySet()
             this.subscribed.value = if (subscribed) current + board else current - board
         }
 
-        override fun observeFeedThreadLimit(provider: ProviderId, board: BoardId): Flow<FeedThreadLimit?> =
-            MutableStateFlow(null)
+        override fun observeFeedThreadLimit(
+            provider: ProviderId,
+            board: BoardId,
+        ): Flow<FeedThreadLimit?> = MutableStateFlow(null)
 
         override suspend fun setFeedThreadLimit(
             provider: ProviderId,
