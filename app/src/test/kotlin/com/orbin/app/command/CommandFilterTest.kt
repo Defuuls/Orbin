@@ -10,14 +10,20 @@ import org.junit.Test
  */
 class CommandFilterTest {
     @Test
-    fun `an empty query offers places and actions, not the whole catalogue`() {
+    fun `an empty query offers recents places and actions, not the whole catalogue`() {
         val results = filterCommands(catalogue(), "")
 
         assertThat(results).isNotEmpty()
-        assertThat(results.all { it is CommandTarget.Go || it is CommandTarget.Act }).isTrue()
-        // Someone who opened the surface without a word in mind wants somewhere to go, not 59
-        // settings and every board on the site.
-        assertThat(results.none { it is CommandTarget.OpenSetting }).isTrue()
+        assertThat(
+            results.all {
+                it is CommandTarget.OpenThread || it is CommandTarget.Go || it is CommandTarget.Act
+            },
+        ).isTrue()
+        // Someone who opened the surface without a word in mind gets useful recent context plus
+        // destinations/actions, not every setting and board in the catalogue.
+        assertThat(results.none { it is CommandTarget.OpenSetting || it is CommandTarget.OpenBoard }).isTrue()
+        assertThat(results.filterIsInstance<CommandTarget.OpenThread>().map { it.label })
+            .containsExactly("Automotive detailing general")
     }
 
     @Test
