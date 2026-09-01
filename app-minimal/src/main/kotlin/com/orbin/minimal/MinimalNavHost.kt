@@ -16,9 +16,7 @@ import com.orbin.uinext.MessageScreen
 import kotlinx.serialization.Serializable
 
 @Composable
-fun MinimalNavHost(
-    boardsViewModel: MinimalBoardsViewModel = hiltViewModel(),
-) {
+fun MinimalNavHost(boardsViewModel: MinimalBoardsViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val hasSubscriptions by boardsViewModel.hasSubscriptions.collectAsStateWithLifecycle()
 
