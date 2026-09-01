@@ -37,6 +37,12 @@
     <string name="next_feed_try_again">Try again</string>
     <string name="next_feed_no_matches">Nothing in your feed matches “%1$s”.</string>
     <string name="next_feed_clear_filter">Clear filter</string>
+    <string name="next_feed_stale_status">%1$s · showing saved data</string>
+    <string name="next_feed_updated_status">%1$s · updated %2$s ago</string>
+    <plurals name="next_feed_failed_boards">
+        <item quantity="one">%d board couldn’t refresh</item>
+        <item quantity="other">%d boards couldn’t refresh</item>
+    </plurals>
     <!--
       The feed's subtitle and the rail's board count.
 
