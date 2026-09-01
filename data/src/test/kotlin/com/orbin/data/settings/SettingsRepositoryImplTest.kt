@@ -23,9 +23,13 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.util.UUID
 
+private const val ROBOLECTRIC_SDK = 35
+
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [ROBOLECTRIC_SDK])
 class SettingsRepositoryImplTest {
     @Test
     fun `empty preferences read exactly as app defaults`() =
