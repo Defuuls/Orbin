@@ -74,6 +74,8 @@
     <string name="next_thread_download_all">Download all</string>
     <string name="next_thread_share">Share</string>
     <string name="next_thread_classic_reader">Classic reader</string>
+    <string name="next_thread_jump_top">Top</string>
+    <string name="next_thread_jump_bottom">Bottom</string>
     <string name="next_post_expand">Expand post</string>
     <string name="next_post_collapse">Collapse post</string>
     <string name="next_post_collapsed_state">Collapsed</string>
