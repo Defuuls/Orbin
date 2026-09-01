@@ -26,8 +26,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --force
-          if git tag --list | grep -Eiq '(^|[-])Akari$'; then echo '::error::Akari already used'; exit 1; fi
-          if git tag --list | grep -Eiq '(^|[-])Noa$'; then echo '::error::Noa already used'; exit 1; fi
+          if git tag --list | grep -Eiq '(^|[-])Misaki$'; then echo '::error::Misaki already used'; exit 1; fi
+          if git tag --list | grep -Eiq '(^|[-])Ayaka$'; then echo '::error::Ayaka already used'; exit 1; fi
       - name: Prepare release metadata
         shell: bash
         run: |
@@ -40,14 +40,14 @@ jobs:
           base = 'https://github.com/Defuuls/Orbin'
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text()
-          if '## [115-Akari]' not in text:
-              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n## [115-Akari] - {today}\n', 1)
-              text = re.sub(r'^\[Unreleased\]: .*$', f'[Unreleased]: {base}/compare/v115-Akari...HEAD\n[115-Akari]: {base}/compare/v114-Yui...v115-Akari', text, count=1, flags=re.M)
+          if '## [115-Misaki]' not in text:
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n## [115-Misaki] - {today}\n', 1)
+              text = re.sub(r'^\[Unreleased\]: .*$', f'[Unreleased]: {base}/compare/v115-Misaki...HEAD\n[115-Misaki]: {base}/compare/v114-Yui...v115-Misaki', text, count=1, flags=re.M)
           changelog.write_text(text)
           readme = Path('README.md')
-          readme.write_text(re.sub(r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)', f'**Current release:** [115 — Akari]({base}/releases/tag/v115-Akari)', readme.read_text(), count=1))
+          readme.write_text(re.sub(r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)', f'**Current release:** [115 — Misaki]({base}/releases/tag/v115-Misaki)', readme.read_text(), count=1))
           home = Path('docs/wiki/Home.md')
-          home.write_text(re.sub(r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|', f'| Current release | **v115 — Akari** ({today}) |', home.read_text(), count=1))
+          home.write_text(re.sub(r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|', f'| Current release | **v115 — Misaki** ({today}) |', home.read_text(), count=1))
           PY
           python3 scripts/validate_repo.py
       - name: Commit prepared metadata
@@ -58,7 +58,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add CHANGELOG.md README.md docs/wiki/Home.md
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'chore: Prepare v115-Akari release metadata'
+          git commit -m 'chore: Prepare v115-Misaki release metadata'
           git push origin HEAD:release/v115-akari-minimal-v10-noa
 
   publish:
@@ -75,16 +75,16 @@ jobs:
           set -euo pipefail
           git fetch --tags --force
           grep -qx 'orbin.versionCode=133' gradle.properties
-          grep -qx 'orbin.versionName=115-Akari' gradle.properties
+          grep -qx 'orbin.versionName=115-Misaki' gradle.properties
           grep -qx 'orbin.minimalVersionCode=10' gradle.properties
-          grep -qx 'orbin.minimalVersionName=10-Noa' gradle.properties
-          test -z "$(git tag --list 'v115-Akari')"
-          test -z "$(git tag --list 'minimal-v10-Noa')"
+          grep -qx 'orbin.minimalVersionName=10-Ayaka' gradle.properties
+          test -z "$(git tag --list 'v115-Misaki')"
+          test -z "$(git tag --list 'minimal-v10-Ayaka')"
       - name: Dispatch signed release builds
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh workflow run release.yml --ref main -f tag=v115-Akari -f base_ref=main
-          gh workflow run release-minimal.yml --ref main -f tag=minimal-v10-Noa -f base_ref=main -f notes_only=false
+          gh workflow run release.yml --ref main -f tag=v115-Misaki -f base_ref=main
+          gh workflow run release-minimal.yml --ref main -f tag=minimal-v10-Ayaka -f base_ref=main -f notes_only=false
