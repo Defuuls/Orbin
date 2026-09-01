@@ -27,5 +27,5 @@ class ImageCacheSettings
             settingsRepository.settings.stateIn(scope, SharingStarted.Eagerly, AppSettings.Default)
 
         val limitMb: Long
-            get() = settings.value.imageCacheLimitMb
+            get() = settings.value.imageCacheLimitMb.toLong()
     }
