@@ -95,10 +95,11 @@ class MinimalBoardsViewModel
                 MinimalBoardsUiState(),
             )
 
-        val hasSubscriptions: StateFlow<Boolean> =
+        /** Null until the active provider's subscription flow has emitted at least once. */
+        val hasSubscriptions: StateFlow<Boolean?> =
             subscribedBoards
-                .map { it.isNotEmpty() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+                .map<Set<BoardId>, Boolean?> { it.isNotEmpty() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
         private var refreshJob: Job? = null
 
