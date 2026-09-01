@@ -2,8 +2,10 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 /** What the reader is showing: the conversation, or just its files. */
 enum class ThreadLayout {
@@ -58,26 +62,6 @@ data class Post(
     val id: String = number,
 )
 
-/**
- * The thread reader.
- *
- * The current reader puts a title bar on top carrying back, refresh, watch, save, download-all,
- * export and a layout toggle, and draws every post as an elevated card in one flat chronological
- * list. Nothing in it shows which post a reply is answering except the quote link inside the text.
- *
- * Two changes here. The bar's actions become words set beneath the title, where they scroll away
- * with it instead of occupying the top of the screen for the life of the thread. And a reply is
- * indented one step per link in the chain it hangs off, with a hairline in the board's colour
- * marking each step — so the shape of a conversation is visible without opening anything.
- *
- * The indent is capped, because the point is to show structure, not to surrender the text column
- * to it; past the cap a reply stays at the deepest indent rather than marching off the edge. Order
- * is never changed: an imageboard thread is read in the order it was written, and re-ordering it
- * into a tree would cost more than the nesting buys.
- *
- * A spoiler stays blacked out until pressed, exactly as now — that behaviour is load-bearing and
- * survives unchanged.
- */
 @Composable
 fun ThreadScreen(
     subject: String,
@@ -108,8 +92,7 @@ fun ThreadScreen(
     media: (@Composable (Post, Modifier) -> Unit)? = null,
 ) {
     val state = listState ?: rememberLazyListState()
-    // A quote link names a post, not a row: the header occupies index 0, so the offset is applied
-    // here rather than being baked into whatever asked for the jump.
+    val scope = rememberCoroutineScope()
     LaunchedEffect(scrollToPostId, posts) {
         val target = posts.indexOfFirst { it.id == scrollToPostId }
         if (scrollToPostId != null && target >= 0) {
@@ -124,7 +107,9 @@ fun ThreadScreen(
                 modifier = Modifier.contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        bottom = (if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset(),
+                        bottom =
+                            (if (showRail) RAIL_HEIGHT + THREAD_JUMP_CLEARANCE else THREAD_JUMP_CLEARANCE) +
+                                bottomInset(),
                     ),
             ) {
                 item {
@@ -145,9 +130,10 @@ fun ThreadScreen(
                         MetaLine(subtitle ?: "${posts.size} posts", color = next.faint)
                     }
                     ScreenTitle(text = subject, size = 26)
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         InlineAction(
                             label =
@@ -159,7 +145,6 @@ fun ThreadScreen(
                             accent = watching,
                             onClick = onWatch,
                         )
-                        WidthSpacer(4)
                         InlineAction(
                             label = stringResource(R.string.next_thread_files),
                             accent = layout == ThreadLayout.FILES,
@@ -169,17 +154,12 @@ fun ThreadScreen(
                                 )
                             },
                         )
-                        WidthSpacer(4)
                         InlineAction(
                             label = stringResource(R.string.next_thread_download_all),
                             onClick = onDownloadAll,
                         )
-                        WidthSpacer(4)
                         InlineAction(stringResource(R.string.next_thread_share), onClick = onShare)
-                    }
-                    if (onClassicReader != null) {
-                        Gap(4)
-                        Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
+                        if (onClassicReader != null) {
                             InlineAction(
                                 label = stringResource(R.string.next_thread_classic_reader),
                                 onClick = onClassicReader,
@@ -204,8 +184,6 @@ fun ThreadScreen(
                         if (index < posts.lastIndex) Hairline(inset = true)
                     }
                 } else {
-                    // The thread's files, as a wall. The same shape as All media, because it is the
-                    // same question asked of one thread.
                     items(files.chunked(fileColumns)) { rowOfFiles ->
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp)) {
                             rowOfFiles.forEach { cell ->
@@ -221,12 +199,32 @@ fun ThreadScreen(
                                     if (fileTile != null) fileTile(cell, shape) else MediaTile(modifier = shape)
                                 }
                             }
-                            // Keeps a short last row aligned with the ones above it.
                             repeat(fileColumns - rowOfFiles.size) {
                                 Box(modifier = Modifier.weight(1f))
                             }
                         }
                     }
+                }
+            }
+            if (layout == ThreadLayout.POSTS && posts.size > 1) {
+                Row(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(
+                                end = GUTTER - 4.dp,
+                                bottom = (if (showRail) RAIL_HEIGHT + 30.dp else 12.dp) + bottomInset(),
+                            ),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    InlineAction(
+                        label = stringResource(R.string.next_thread_jump_top),
+                        onClick = { scope.launch { state.animateScrollToItem(0) } },
+                    )
+                    InlineAction(
+                        label = stringResource(R.string.next_thread_jump_bottom),
+                        onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
+                    )
                 }
             }
             if (showRail) {
@@ -255,8 +253,6 @@ private fun PostView(
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
 ) {
-    // Intrinsic height so each depth rule runs the full height of the post it belongs to, rather
-    // than being a tick at the top of it.
     Row(
         modifier =
             Modifier
@@ -286,12 +282,6 @@ private fun PostView(
                         bottom = 15.dp,
                     ),
         ) {
-            // The quiet line is also the handle: tapping it folds the post away. The old reader
-            // put this on a card header; here the line that can already be ignored is the one that
-            // makes the rest ignorable.
-            //
-            // Resolved out here because `semantics` and `onClickLabel` are read outside
-            // composition, where `stringResource` cannot be called.
             val expandLabel = stringResource(R.string.next_post_expand)
             val collapseLabel = stringResource(R.string.next_post_collapse)
             val collapsedState = stringResource(R.string.next_post_collapsed_state)
@@ -325,8 +315,6 @@ private fun PostView(
             if (collapsed) return@Column
             Gap(8)
             if (post.spoiler) {
-                // The same scrim the shipped app uses: black regardless of theme, so a spoiler is
-                // still hidden in dark mode rather than turning into a bright block.
                 Box(
                     modifier =
                         Modifier
@@ -345,8 +333,6 @@ private fun PostView(
                     )
                 }
             } else if (body != null) {
-                // Real posts are marked-up text — quote links, greentext, inline spoilers — so the
-                // caller renders them. The plain string is what keeps this screen drawable alone.
                 body(post)
             } else {
                 Text(
@@ -367,3 +353,4 @@ private fun PostView(
 }
 
 private const val SPOILER_SCRIM = 0.88f
+private val THREAD_JUMP_CLEARANCE = 62.dp
