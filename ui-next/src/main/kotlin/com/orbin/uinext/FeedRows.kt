@@ -2,8 +2,10 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,34 +40,45 @@ internal fun FeedHeader(
     onClearFilter: () -> Unit,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
+    omittedWithoutPreview: Int = 0,
 ) {
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().selectableGroup().padding(horizontal = GUTTER - 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             InlineAction(
                 label = stringResource(R.string.next_layout_list),
                 selected = layout == FeedLayout.LIST,
                 onClick = { onLayoutChange(FeedLayout.LIST) },
             )
-            WidthSpacer(4)
             InlineAction(
                 label = stringResource(R.string.next_layout_grid),
                 selected = layout == FeedLayout.GRID,
                 onClick = { onLayoutChange(FeedLayout.GRID) },
             )
-            WidthSpacer(4)
             InlineAction(
                 label = stringResource(R.string.next_layout_images),
                 selected = layout == FeedLayout.IMAGES,
                 onClick = { onLayoutChange(FeedLayout.IMAGES) },
             )
-            Box(modifier = Modifier.weight(1f))
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
             }
+        }
+        if (layout == FeedLayout.IMAGES && omittedWithoutPreview > 0) {
+            Gap(8)
+            MetaLine(
+                pluralStringResource(
+                    R.plurals.next_feed_images_omitted,
+                    omittedWithoutPreview,
+                    omittedWithoutPreview,
+                ),
+                modifier = Modifier.padding(horizontal = GUTTER),
+                color = next.faint,
+            )
         }
         if (filter != null) {
             Gap(10)
@@ -229,8 +242,7 @@ internal fun FeedImageCell(
         CollapsedFeedRow(row = row, modifier = Modifier.padding(2.5.dp), onClick = onClick)
         return
     }
-    val description =
-        stringResource(R.string.next_image_cell_description, row.subject, row.board)
+    val description = stringResource(R.string.next_image_cell_description, row.subject, row.board)
     Box(
         modifier =
             Modifier

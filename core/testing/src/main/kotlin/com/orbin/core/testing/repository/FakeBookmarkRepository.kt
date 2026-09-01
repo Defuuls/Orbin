@@ -1,6 +1,8 @@
 package com.orbin.core.testing.repository
 
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +16,16 @@ class FakeBookmarkRepository(
     private val state = MutableStateFlow(initial.associateBy { it.key })
 
     override fun observeBookmarks(): Flow<List<Bookmark>> = state.map { it.values.toList() }
+
+    override fun observeBookmarks(
+        provider: ProviderId,
+        board: BoardId,
+    ): Flow<List<Bookmark>> =
+        state.map { bookmarks ->
+            bookmarks.values.filter {
+                it.isWatched && it.key.provider == provider && it.key.board == board
+            }
+        }
 
     override fun observeBookmark(key: ThreadKey): Flow<Bookmark?> = state.map { it[key] }
 

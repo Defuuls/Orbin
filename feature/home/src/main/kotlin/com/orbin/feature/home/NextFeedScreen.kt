@@ -8,8 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,23 +36,12 @@ import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
-/**
- * The proposed feed, wired to the real subscribed-feed state.
- *
- * The screen itself lives in `:ui-next` and knows nothing about threads, providers or repositories;
- * everything it renders arrives as already-formatted [FeedRow]s. This file is the whole of the join
- * between the two: it collects the same [SubscribedFeedViewModel] the current feed uses, turns
- * catalog threads into rows, and hands clicks back as navigation.
- *
- * The feed it replaced was a list of boards each containing threads. This still merges every
- * subscribed board into one list; the default order is board code A-Z so a quiet board is not
- * buried under a busy one. The chip cycles that to activity, replies, images, created or title.
- *
- * The rail is on: it is the screen's only chrome, and the shell no longer draws a bottom navigation
- * bar here. Its Search opens the command surface, which is how every other destination is reached
- * now that there are no tabs.
- */
+private const val RELATIVE_TIME_TICK_MS = 60_000L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextFeedScreen(
@@ -69,8 +58,6 @@ fun NextFeedScreen(
     railAction: String = "Search",
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
-    // "Refresh feed" from the command surface, which is where the tablet dock's refresh button and
-    // the old top bar's overflow item both ended up.
     LaunchedEffect(refreshRequest) {
         if (refreshRequest > 0) viewModel.refresh()
     }
@@ -78,9 +65,15 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    // Survives rotation but not the process: a layout is how you are reading right now, not a
-    // preference, which is why the previous feed did not persist it either.
-    var layout by rememberSaveable { mutableStateOf(FeedLayout.LIST) }
+    val layoutName by viewModel.feedLayoutName.collectAsStateWithLifecycle()
+    val layout = FeedLayout.entries.firstOrNull { it.name == layoutName } ?: FeedLayout.LIST
+    val nowMillis by
+        produceState(initialValue = System.currentTimeMillis()) {
+            while (true) {
+                delay(RELATIVE_TIME_TICK_MS)
+                value = System.currentTimeMillis()
+            }
+        }
 
     NextTheme {
         when (val state = uiState) {
@@ -107,24 +100,34 @@ fun NextFeedScreen(
                 )
 
             is SubscribedFeedUiState.Success -> {
-                // Recomputed only when the feed or the read-set actually changes; the relative
-                // times are resolved here rather than per row so every row on one pass reads
-                // against the same clock.
                 val mutedTokens = remember(settings.mutedTags) { settings.mutedTagTokens() }
-                val entries =
-                    remember(state.boards, visited, filter, settings.feedSort, mutedTokens) {
-                        feedEntries(
-                            state.boards,
-                            visited,
-                            System.currentTimeMillis(),
-                            filter,
-                            settings.feedSort,
-                            mutedTokens,
-                        )
-                    }
-                if (entries.isEmpty()) {
-                    // A filter that matches nothing is not an empty feed, and offering "subscribe
-                    // to a board" to someone who just mistyped a search would be nonsense.
+                var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
+                var presentationReady by remember { mutableStateOf(false) }
+                LaunchedEffect(state.boards, visited, filter, settings.feedSort, mutedTokens, nowMillis) {
+                    entries =
+                        withContext(Dispatchers.Default) {
+                            feedEntries(
+                                feeds = state.boards,
+                                visited = visited,
+                                nowMillis = nowMillis,
+                                filter = filter,
+                                sort = settings.feedSort,
+                                mutedTokens = mutedTokens,
+                            )
+                        }
+                    presentationReady = true
+                }
+
+                if (!presentationReady) {
+                    MessageScreen(
+                        title = stringResource(R.string.next_feed_title),
+                        subtitle = stringResource(R.string.next_feed_loading),
+                        where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                        action = railAction,
+                        onSearch = onOpenCommands,
+                        modifier = modifier,
+                    )
+                } else if (entries.isEmpty()) {
                     val filtered = filter.isNotBlank()
                     MessageScreen(
                         title = stringResource(R.string.next_feed_title),
@@ -143,10 +146,27 @@ fun NextFeedScreen(
                     )
                 } else {
                     val byId = remember(entries) { entries.associateBy { it.row.id } }
-                    // Remembered for the same reason `byId` is: rebuilt on every recomposition it
-                    // arrived at FeedScreen as a new list each time, so the screen could never skip
-                    // and its whole lazy content lambda re-ran.
                     val rows = remember(entries) { entries.map { it.row } }
+                    val baseSubtitle = feedSubtitle(entries.size, state.boards.size)
+                    val statusSubtitle =
+                        when {
+                            state.failedBoards.isNotEmpty() ->
+                                "$baseSubtitle · ${pluralStringResource(
+                                    R.plurals.next_feed_failed_boards,
+                                    state.failedBoards.size,
+                                    state.failedBoards.size,
+                                )}"
+
+                            state.stale -> stringResource(R.string.next_feed_stale_status, baseSubtitle)
+                            else -> {
+                                val ageMinutes = ((nowMillis - state.loadedAtMillis) / RELATIVE_TIME_TICK_MS).toInt()
+                                if (ageMinutes > 0) {
+                                    stringResource(R.string.next_feed_updated_status, baseSubtitle, "${ageMinutes}m")
+                                } else {
+                                    baseSubtitle
+                                }
+                            }
+                        }
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
                         onRefresh = viewModel::refresh,
@@ -154,11 +174,11 @@ fun NextFeedScreen(
                     ) {
                         FeedScreen(
                             rows = rows,
-                            subtitle = feedSubtitle(entries.size, state.boards.size),
+                            subtitle = statusSubtitle,
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
                             layout = layout,
-                            onLayoutChange = { layout = it },
+                            onLayoutChange = { viewModel.setFeedLayoutName(it.name) },
                             sortLabel = settings.feedSort.label,
                             onSort = viewModel::cycleFeedSort,
                             filter = filter.takeIf { it.isNotBlank() },
@@ -183,13 +203,6 @@ fun NextFeedScreen(
                                     FeedPreview(
                                         attachment = attachment,
                                         autoplay = settings.autoplayVideosInFeed,
-                                        // A list row's tile is a small square beside the text, and
-                                        // an imageboard's attachments are almost never square, so
-                                        // filling it cut the sides off anything wide and the top
-                                        // off anything tall — which is most of what a thumbnail is
-                                        // there to show. The grid and the image wall still fill,
-                                        // because there the tile is the content and letterboxing
-                                        // would put gaps through the wall.
                                         fitWholeImage = layout == FeedLayout.LIST,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
@@ -203,13 +216,6 @@ fun NextFeedScreen(
     }
 }
 
-/**
- * A thread's preview: a playing video where the setting allows it, the static thumbnail otherwise.
- *
- * Feed autoplay is always muted regardless of "Mute by default" — it is ambient, and a feed that
- * starts talking while you scroll is not what that setting is asking for. The same rule the
- * previous feed applied, and the reason [canAutoplayInFeed] exists.
- */
 @Composable
 private fun FeedPreview(
     attachment: MediaAttachment,
@@ -218,7 +224,6 @@ private fun FeedPreview(
     fitWholeImage: Boolean = false,
 ) {
     if (canAutoplayInFeed(attachment, autoplay)) {
-        // The player letterboxes by default, so a video is never cropped whichever layout it is in.
         VideoPlayer(url = attachment.sourceUrl, modifier = modifier, autoPlay = true, muted = true)
     } else {
         MediaThumbnail(
@@ -229,10 +234,6 @@ private fun FeedPreview(
     }
 }
 
-/**
- * A row, plus what the row deliberately does not carry: which thread it is and what to draw in its
- * tile. [FeedRow.id] is the join between the two.
- */
 internal data class FeedEntry(
     val key: ThreadKey,
     val title: String,
@@ -240,15 +241,6 @@ internal data class FeedEntry(
     val row: FeedRow,
 )
 
-/**
- * Flattens the per-board feeds into one list ordered by [sort]. Muted tags keep their threads in
- * the list but mark the corresponding rows for compact presentation rather than removing them.
- *
- * Default is board code A-Z, then most recently active within that board. Threads carry
- * `lastModifiedMillis` from the catalog; where an engine does not supply it the opening post's
- * own timestamp stands in, so a thread with no bump information sorts by age rather than falling
- * to the bottom as if it were from 1970.
- */
 internal fun feedEntries(
     feeds: List<SubscribedBoardFeed>,
     visited: Set<ThreadKey>,
@@ -269,30 +261,18 @@ internal fun feedEntries(
             )
         }
 
-/**
- * Whether a thread survives the feed filter.
- *
- * The haystack is the previous feed's, unchanged: board, subject, the comment's raw markup, the
- * poster's name and tripcode, and the first attachment's original filename. Searching the raw
- * markup rather than the rendered text is what lets a filter find a thread by a link or a quote it
- * contains, and narrowing it here would quietly lose matches people already rely on.
- */
 internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
     val token = filter.trim()
     if (token.isEmpty()) return true
-    // Checked field by field and stopped at the first hit, rather than joined into one lowercased
-    // haystack. The joined version allocated a copy of every post's full markup for every thread on
-    // every keystroke, on the composition thread; this allocates nothing and settles on the subject
-    // for most matches. The field list is unchanged, including the raw markup — searching that is
-    // what lets a filter find a thread by a link or a quote it contains.
-    return sequenceOf(
-        key.board.value,
-        originalPost.subject,
-        originalPost.comment.raw,
-        originalPost.poster.name,
-        originalPost.poster.tripcode,
-        originalPost.attachments.firstOrNull()?.originalFileName,
-    ).any { field -> field?.contains(token, ignoreCase = true) == true }
+    return key.board.value.contains(token, ignoreCase = true) ||
+        originalPost.subject?.contains(token, ignoreCase = true) == true ||
+        originalPost.comment.raw.contains(token, ignoreCase = true) ||
+        originalPost.poster.name?.contains(token, ignoreCase = true) == true ||
+        originalPost.poster.tripcode?.contains(token, ignoreCase = true) == true ||
+        originalPost.attachments
+            .firstOrNull()
+            ?.originalFileName
+            ?.contains(token, ignoreCase = true) == true
 }
 
 private fun CatalogThread.toEntry(
@@ -300,7 +280,6 @@ private fun CatalogThread.toEntry(
     nowMillis: Long,
     muted: Boolean,
 ): FeedEntry {
-    // The same fallback the current feed uses, so a subjectless thread reads the same in both.
     val title = originalPost.subject ?: "No.${key.thread.value}"
     return FeedEntry(
         key = key,

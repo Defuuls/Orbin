@@ -15,28 +15,27 @@ import com.orbin.feature.settings.settingsSearchIndex
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 /**
  * Everything the command surface can reach, and the filtering that narrows it.
  *
- * The old interface reached its destinations through a two-item bottom bar, per-screen top-bar
- * icons, overflow menus, and a settings hub of seven screens with a search screen bolted on to
- * find your way around them. This is the replacement: one list, everything in it, filtered by
- * what you type. To someone typing "auto" there is no meaningful difference between a screen
- * called Media & Playback and the toggle inside it that they actually wanted, so both are here.
- *
- * The settings entries are the same [settingsSearchIndex] the settings search screen already uses
- * — the point is that it stops being a screen you must first find, not that it is rebuilt.
+ * The query itself remains immediate so the text field never lags behind typing. Only the larger
+ * catalogue match is debounced and moved to Default; that keeps rapid typing from repeatedly
+ * walking boards, history and settings on the composition thread.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class CommandViewModel
     @Inject
@@ -66,9 +65,14 @@ class CommandViewModel
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), staticTargets())
 
+        private val filteredResults =
+            combine(query.debounce(COMMAND_DEBOUNCE_MS), catalogue) { text, targets ->
+                filterCommands(targets, text)
+            }.flowOn(Dispatchers.Default)
+
         val state: StateFlow<CommandUiState> =
-            combine(query, catalogue) { text, targets ->
-                CommandUiState(query = text, results = filterCommands(targets, text))
+            combine(query, filteredResults) { text, results ->
+                CommandUiState(query = text, results = results)
             }.stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -84,11 +88,6 @@ class CommandViewModel
             query.value = ""
         }
 
-        /**
-         * Locks the app now rather than waiting for the timeout. Handled here rather than passed up
-         * to navigation because it is not somewhere you go, and because the surface offering it must
-         * not depend on which screen is behind it.
-         */
         fun lockNow() {
             appLockController.requestLock()
         }
@@ -113,8 +112,6 @@ class CommandViewModel
                     )
                 }
                 boards
-                    // A board the permanent filter catches is not somewhere to be sent, whether or
-                    // not it is subscribed — the same rule the feed applies when loading.
                     .filterNot { board -> board.isPermanentlyFiltered() }
                     .sortedBy { board -> board.id.value }
                     .forEach { board ->
@@ -140,6 +137,7 @@ class CommandViewModel
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
             const val RECENT_THREADS = 8
+            const val COMMAND_DEBOUNCE_MS = 120L
         }
     }
 

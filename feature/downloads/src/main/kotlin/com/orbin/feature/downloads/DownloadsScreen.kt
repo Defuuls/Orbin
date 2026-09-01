@@ -1,7 +1,9 @@
 package com.orbin.feature.downloads
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,9 +27,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.designsystem.component.ModernConfirmDialog
+import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.ui.state.EmptyView
 
@@ -68,7 +73,7 @@ fun DownloadsScreen(
             items(downloads, key = { it.id }) { record ->
                 ListItem(
                     headlineContent = { Text(record.fileName) },
-                    supportingContent = { Text(stringResource(record.status.labelRes())) },
+                    supportingContent = { DownloadProgress(record) },
                     trailingContent = {
                         if (record.status == DownloadStatus.FAILED) {
                             IconButton(onClick = { viewModel.retry(record.id) }) {
@@ -97,6 +102,32 @@ fun DownloadsScreen(
         )
     }
 }
+
+@Composable
+private fun DownloadProgress(record: DownloadRecord) {
+    val fraction = record.progressFraction
+    Column {
+        Text(
+            if (fraction != null && record.status in ACTIVE_DOWNLOAD_STATUSES) {
+                "${stringResource(record.status.labelRes())} · ${(fraction * 100).toInt()}%"
+            } else {
+                stringResource(record.status.labelRes())
+            },
+        )
+        if (record.status in ACTIVE_DOWNLOAD_STATUSES) {
+            if (fraction != null) {
+                LinearProgressIndicator(
+                    progress = { fraction },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                )
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+            }
+        }
+    }
+}
+
+private val ACTIVE_DOWNLOAD_STATUSES = setOf(DownloadStatus.QUEUED, DownloadStatus.RUNNING)
 
 @StringRes
 private fun DownloadStatus.labelRes(): Int =

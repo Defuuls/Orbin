@@ -1,5 +1,6 @@
 package com.orbin.feature.home
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.lock.AppLockController
@@ -35,8 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * A single dead/pruned board 404ing must not wipe out every other subscribed board's feed with a
- * blanket error — the whole point of catching per board in [SubscribedFeedViewModel].
+ * A single dead/pruned board must not wipe out every other subscribed board's feed.
  */
 class SubscribedFeedViewModelTest {
     @get:Rule
@@ -77,7 +77,7 @@ class SubscribedFeedViewModelTest {
         }
 
     @Test
-    fun `one board 404ing does not fail the whole feed`() =
+    fun `one board failing keeps healthy boards and reports partial failure`() =
         runTest {
             val provider =
                 object : ImageBoardProvider {
@@ -126,6 +126,7 @@ class SubscribedFeedViewModelTest {
                     settingsRepository = settingsRepository,
                     historyRepository = FakeHistoryRepository(),
                     appLockController = AppLockController(),
+                    savedStateHandle = SavedStateHandle(),
                 )
 
             viewModel.uiState.test {
@@ -135,13 +136,30 @@ class SubscribedFeedViewModelTest {
                 assertThat(state.boards.map { it.board.id }).containsExactly(healthyBoard, deadBoard)
                 assertThat(state.boards.first { it.board.id == healthyBoard }.threads).hasSize(1)
                 assertThat(state.boards.first { it.board.id == deadBoard }.threads).isEmpty()
+                assertThat(state.failedBoards).containsExactly(deadBoard)
+                assertThat(state.stale).isTrue()
             }
+        }
+
+    @Test
+    fun `feed layout state survives view model recreation`() =
+        runTest {
+            val registry = FakeProviderRegistry(catalogProvider(emptyList()))
+            val settingsRepository = FakeSettingsRepository()
+            val handle = SavedStateHandle()
+            val first = createViewModel(registry, settingsRepository, emptySet(), handle)
+
+            first.setFeedLayoutName("IMAGES")
+
+            val recreated = createViewModel(registry, settingsRepository, emptySet(), handle)
+            assertThat(recreated.feedLayoutName.value).isEqualTo("IMAGES")
         }
 
     private fun createViewModel(
         registry: FakeProviderRegistry,
         settingsRepository: FakeSettingsRepository,
         subscribed: Set<BoardId>,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
     ) = SubscribedFeedViewModel(
         registry = registry,
         observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
@@ -150,6 +168,7 @@ class SubscribedFeedViewModelTest {
         settingsRepository = settingsRepository,
         historyRepository = FakeHistoryRepository(),
         appLockController = AppLockController(),
+        savedStateHandle = savedStateHandle,
     )
 
     /** A provider that answers every catalog request with [threads]. */

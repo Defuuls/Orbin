@@ -19,9 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -86,30 +84,17 @@ class SubscriptionsViewModel
             }
         }
 
-        /**
-         * Each subscribed board's thread-count override, or absent where it follows the global
-         * default. Observed for every board so the row can show what it is set to without the
-         * screen asking board by board.
-         */
+        /** Explicit per-board thread-count overrides, observed through one backing-store flow. */
         val threadLimits: StateFlow<Map<String, FeedThreadLimit>> =
             activeProvider
                 .flatMapLatest { provider ->
                     boardPreferencesRepository
                         .observeSubscribedBoards(provider.metadata.id)
                         .flatMapLatest { subscribed ->
-                            if (subscribed.isEmpty()) {
-                                flowOf(emptyMap())
-                            } else {
-                                combine(
-                                    subscribed.map { id ->
-                                        boardPreferencesRepository
-                                            .observeFeedThreadLimit(provider.metadata.id, id)
-                                            .map { limit -> id.value to limit }
-                                    },
-                                ) { pairs -> pairs.mapNotNull { (id, l) -> l?.let { id to it } }.toMap() }
-                            }
+                            boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribed)
                         }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
+                }.map { limits -> limits.mapKeys { (board, _) -> board.value } }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
 
         /**
          * Sets one board's thread count, or clears it back to the global default.

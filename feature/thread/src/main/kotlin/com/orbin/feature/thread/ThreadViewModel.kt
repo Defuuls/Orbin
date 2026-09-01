@@ -41,13 +41,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Observes a thread, records reading history, and toggles bookmarking.
- *
- * [flatMapLatest], which restarts the load on refresh, is still experimental. The opt-in sits at
- * class level to match `SubscribedFeedViewModel` and the other ViewModels that switch streams the
- * same way.
- */
+/** Observes a thread, records reading history, and owns reader actions/state. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ThreadViewModel
@@ -73,17 +67,6 @@ class ThreadViewModel
 
         private val _initialScrollPosition = MutableStateFlow<ThreadScrollPosition?>(null)
 
-        /**
-         * Where to put the reader if the thread view has to restore its position: seeded from
-         * history when the thread opens, and kept current by [saveScrollPosition] afterwards.
-         *
-         * Staying current is the point. This used to be a one-time snapshot of where the reader
-         * left off *last* time, which was fine while the view restored once and never again. It
-         * stopped being fine when the restore became per-composition: rotating, or a reload that
-         * dips through the loading state, drops and rebuilds the list, and the restore then fired
-         * against a value from when the thread was opened — rewinding the reader, after which the
-         * debounced save wrote that stale position over the real one.
-         */
         val initialScrollPosition: StateFlow<ThreadScrollPosition?> = _initialScrollPosition.asStateFlow()
 
         init {
@@ -96,41 +79,24 @@ class ThreadViewModel
 
         private val _exportMessage = MutableStateFlow<String?>(null)
 
-        /** One-shot status message for the last [exportLinks] call; cleared via [consumeExportMessage]. */
+        /** Shared one-shot feedback channel for exports, saves and download queue actions. */
         val exportMessage: StateFlow<String?> = _exportMessage.asStateFlow()
 
-        /** Incremented by [refresh]; every value past the first is a user-initiated reload. */
         private val reloads = MutableStateFlow(0)
-
         private val _isRefreshing = MutableStateFlow(false)
 
-        /** Drives the pull-to-refresh indicator; false again once the reload settles. */
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        /**
-         * The reader's media filter. Eager so [downloadAllMedia] can read it synchronously and
-         * download exactly what the thread is showing.
-         */
         private val mediaFilter: StateFlow<MediaFilter> =
             settingsRepository.settings
                 .map { it.mediaFilter }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
 
-        /**
-         * The reader's hidden keywords. The catalog hides whole threads that match; inside a
-         * thread the same keywords hide individual replies, which is the half that never existed.
-         */
         private val hiddenTokens: StateFlow<Set<String>> =
             settingsRepository.settings
                 .map { it.hiddenTagTokens() }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
-        /**
-         * Whether the reader has opted into filtering everyday shock words as well.
-         *
-         * The setting reached the board catalog and stopped there, so a reader who turned it on
-         * found the thread they opened unfiltered — which is where the words are actually read.
-         */
         private val includeHarsh: StateFlow<Boolean> =
             settingsRepository.settings
                 .map { it.harshContentFilter }
@@ -140,13 +106,8 @@ class ThreadViewModel
             combine(
                 reloads
                     .flatMapLatest { attempt ->
-                        // The initial load may serve the cache for instant display. A reload must
-                        // not: the reader is asking whether there are new replies, and the answer
-                        // cannot be the snapshot they are already looking at.
                         observeThread(provider, board, threadId, forceRefresh = attempt > 0)
                     }.onEach { result ->
-                        // Deliberately upstream of the filter, so history and the loaded snapshot
-                        // are recorded once per load rather than again on every settings change.
                         if (result is OrbinResult.Success) onThreadLoaded(result.data)
                         _isRefreshing.value = false
                     },
@@ -156,9 +117,6 @@ class ThreadViewModel
             ) { result, filter, hidden, harsh ->
                 result.fold(
                     onSuccess = {
-                        // Checked before anything is rendered, and checked on the saved copy too:
-                        // a thread can be reached by direct link, history or a bookmark made
-                        // before the OP was edited, none of which pass through a catalog.
                         if (it.isPermanentlyFiltered(harsh)) {
                             ThreadUiState.Blocked
                         } else {
@@ -166,9 +124,6 @@ class ThreadViewModel
                         }
                     },
                     onFailure = { error ->
-                        // A thread that will not load is usually one that was pruned, which is
-                        // exactly the case a saved copy exists for. Serving it beats an error the
-                        // reader can do nothing about.
                         val saved = savedThreadRepository.load(threadKey)
                         when {
                             saved == null -> ThreadUiState.Error(error.message)
@@ -183,20 +138,38 @@ class ThreadViewModel
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
 
-        /** Reloads the thread from the network, bypassing the cache. */
+        /** The full bookmark supplies both watched state and the last seen reply count. */
+        val bookmark: StateFlow<Bookmark?> =
+            bookmarkRepository
+                .observeBookmark(key)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+        val isBookmarked: StateFlow<Boolean> =
+            bookmark
+                .map { it != null }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
+        /**
+         * First reply after the bookmark's last seen reply count. Null means there is no unread
+         * reply (or the thread is not watched), so the UI does not offer a dead jump target.
+         */
+        val firstUnreadPostId: StateFlow<PostId?> =
+            combine(bookmark, uiState) { savedBookmark, state ->
+                val success = state as? ThreadUiState.Success
+                if (savedBookmark == null || success == null) {
+                    null
+                } else {
+                    success.thread.replies
+                        .getOrNull(savedBookmark.lastSeenReplyCount)
+                        ?.id
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
         fun refresh() {
             _isRefreshing.value = true
             reloads.update { it + 1 }
         }
 
-        val isBookmarked: StateFlow<Boolean> =
-            bookmarkRepository
-                .observeBookmark(key)
-                .map { it != null }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
-
-        // The default for this session, from Settings. The grid's size toggle can temporarily
-        // override it without changing the persisted preference.
         val thumbnailSize: StateFlow<ThumbnailSize> =
             settingsRepository.settings
                 .map { it.thumbnailSize }
@@ -220,34 +193,34 @@ class ThreadViewModel
         fun downloadAllMedia() {
             val thread = loadedThread ?: return
             val threadTitle = title.ifBlank { thread.subject }
-            viewModelScope.launch {
+            val attachments =
                 thread.allPosts
                     .flatMap { it.attachments }
-                    // Downloads what the thread is showing: a reader browsing videos only does not
-                    // expect "download all media" to pull in every image as well.
                     .filteredBy(mediaFilter.value)
-                    .forEach { attachment ->
-                        downloadRepository.enqueue(
-                            url = attachment.sourceUrl,
-                            fileName = attachment.downloadFileName(),
-                            boardId = board.value,
-                            threadId = threadId.value,
-                            threadTitle = threadTitle,
-                        )
+            viewModelScope.launch {
+                attachments.forEach { attachment ->
+                    downloadRepository.enqueue(
+                        url = attachment.sourceUrl,
+                        fileName = attachment.downloadFileName(),
+                        boardId = board.value,
+                        threadId = threadId.value,
+                        threadTitle = threadTitle,
+                    )
+                }
+                _exportMessage.value =
+                    when (attachments.size) {
+                        0 -> "No matching media to download"
+                        1 -> "Queued 1 file for download"
+                        else -> "Queued ${attachments.size} files for download"
                     }
             }
         }
 
-        /** True while this thread has a saved copy, so the menu can offer to forget it instead. */
         val isSaved: StateFlow<Boolean> =
             savedThreadRepository
                 .isSaved(threadKey)
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
-        /**
-         * Keeps the thread as it currently reads. Saving again captures replies posted since, which
-         * is the only way a saved copy stays current — nothing refreshes it in the background.
-         */
         fun saveThread() {
             val thread = loadedThread ?: return
             viewModelScope.launch {
@@ -263,7 +236,6 @@ class ThreadViewModel
             }
         }
 
-        /** Exports every external link found in the thread's posts as a `.txt` file, one per line. */
         fun exportLinks() {
             val thread = loadedThread ?: return
             viewModelScope.launch {
@@ -287,14 +259,10 @@ class ThreadViewModel
             _exportMessage.value = null
         }
 
-        /** Persists where the reader has scrolled to, so reopening this thread resumes there. */
         fun saveScrollPosition(
             postId: PostId,
             offsetPx: Int,
         ) {
-            // Updated in step with the database so a later restore resumes here rather than
-            // rewinding to wherever the thread was opened. Set before the write, not after it, so
-            // a restore racing a slow database write still reads the newer position.
             _initialScrollPosition.value = ThreadScrollPosition(postId, offsetPx)
             viewModelScope.launch {
                 historyRepository.updateScrollPosition(key, postId, offsetPx)
@@ -302,14 +270,9 @@ class ThreadViewModel
         }
 
         private fun onThreadLoaded(thread: Thread) {
-            // A permanently filtered thread is never shown, so it must not leave a trace either:
-            // recording it would put its subject and thumbnail in the history list, which is one
-            // more surface showing exactly what the filter exists to keep out.
             if (thread.isPermanentlyFiltered()) return
             loadedThread = thread
             viewModelScope.launch {
-                // record() preserves any existing scroll anchor; only metadata (title, thumbnail,
-                // last-visited time) is refreshed here.
                 historyRepository.record(
                     HistoryEntry(
                         key = key,
@@ -351,35 +314,16 @@ class ThreadViewModel
         }
 
         private companion object {
-            /**
-             * Compiled once rather than per attachment. The download repository sanitizes the name
-             * again on the way to disk; this keeps it readable in the meantime.
-             */
             val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
-
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
 
-/** A saved reading position: the last post the reader had scrolled to, and its pixel offset. */
 data class ThreadScrollPosition(
     val postId: PostId,
     val offsetPx: Int,
 )
 
-/**
- * Drops replies matching the reader's hidden keywords or caught by the permanent filter. No fast
- * path for an empty token set: the permanent filter applies regardless of what the reader set.
- *
- * For hidden keywords the opening post is deliberately never dropped: the catalog already hides
- * threads whose OP matches, so a thread opened from anywhere else was opened on purpose, and
- * blanking its first post would leave an unexplained empty shell. Quote links pointing at a hidden
- * reply are left alone — they resolve to nothing, the same as a quote of a post pruned upstream.
- *
- * A permanently filtered OP is the one case that does not survive that reasoning, and it is
- * handled a step up in [ThreadViewModel] by refusing to show the thread at all: "you opened it on
- * purpose" is not a reason to render content the app is never allowed to render.
- */
 internal fun Thread.hidingMatches(
     tokens: Set<String>,
     includeHarsh: Boolean = false,

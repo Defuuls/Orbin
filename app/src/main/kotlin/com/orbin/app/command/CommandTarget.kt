@@ -110,20 +110,20 @@ internal fun staticTargets(): List<CommandTarget> =
 /**
  * Narrows the catalogue to what was typed.
  *
- * An empty query is not an empty list: it is the places and actions, which is what someone who
- * opened the surface without knowing what they wanted is looking for. Ranking puts a label that
- * starts with the query above one that merely contains it, so typing "his" reaches History rather
- * than every board whose description happens to contain those letters.
+ * At empty query the command surface is a useful launchpad rather than a fixed menu: recent threads
+ * lead, followed by destinations and actions. Once text is entered, prefix matches still outrank
+ * simple contains matches.
  */
 internal fun filterCommands(
     targets: List<CommandTarget>,
     query: String,
 ): List<CommandTarget> {
     val trimmed = query.trim()
-    if (trimmed.isEmpty()) return targets.filter { it is CommandTarget.Go || it is CommandTarget.Act }
-    // Filtering the feed is offered first for any query, because it is the one result that cannot
-    // be listed in advance: it is made out of what you just typed. This is where the previous
-    // feed's search bar went — the text field already exists, so the feature did not need a second.
+    if (trimmed.isEmpty()) {
+        val recentThreads = targets.filterIsInstance<CommandTarget.OpenThread>().take(EMPTY_QUERY_RECENTS)
+        val destinations = targets.filter { it is CommandTarget.Go || it is CommandTarget.Act }
+        return recentThreads + destinations
+    }
     val filterFeed =
         CommandTarget.Act(
             label = "Filter feed for \u201C$trimmed\u201D",
@@ -142,3 +142,5 @@ internal fun filterCommands(
                 ),
             )
 }
+
+private const val EMPTY_QUERY_RECENTS = 5

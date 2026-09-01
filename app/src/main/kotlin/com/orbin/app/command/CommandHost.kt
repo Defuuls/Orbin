@@ -2,6 +2,7 @@ package com.orbin.app.command
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.uinext.Command
@@ -21,11 +22,12 @@ fun CommandHost(
     viewModel: CommandViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val byId = state.results.associateBy { it.commandId() }
+    val byId = remember(state.results) { state.results.associateBy { it.commandId() } }
+    val commands = remember(state.results) { state.results.map { it.toCommand() } }
     NextTheme {
         CommandSheet(
             query = state.query,
-            results = state.results.map { it.toCommand() },
+            results = commands,
             onQueryChange = viewModel::onQueryChange,
             onSelect = { command ->
                 byId[command.id]?.let { target ->

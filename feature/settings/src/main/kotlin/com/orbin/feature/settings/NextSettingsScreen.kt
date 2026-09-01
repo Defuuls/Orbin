@@ -1,3 +1,5 @@
+@file:Suppress("CyclomaticComplexMethod")
+
 package com.orbin.feature.settings
 
 import android.content.Intent
@@ -30,6 +32,7 @@ import kotlinx.coroutines.withContext
 
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
+private const val BYTES_PER_MB = 1024L * 1024L
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -57,6 +60,7 @@ fun NextSettingsScreen(
     val diagnosticsStatus by viewModel.diagnosticsStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
+    val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -131,18 +135,37 @@ fun NextSettingsScreen(
         remember(settings, updateCheck, dnsFallbackActive) {
             buildSettings(settings, viewModel, updateCheck.rowValue(context), dnsFallbackActive)
         }
+    val groups =
+        remember(model, imageCacheUsageBytes) {
+            model.groups.map { (name, items) ->
+                if (name == "Storage & backup") {
+                    name to
+                        (
+                            items +
+                                SettingItem(
+                                    id = "clearImageCache",
+                                    label = "Image cache usage",
+                                    value = imageCacheUsageBytes.cacheSizeLabel(),
+                                    kind = SettingKind.ACTION,
+                                    hint = "Deletes cached image files. They will be downloaded again when needed.",
+                                )
+                        )
+                } else {
+                    name to items
+                }
+            }
+        }
 
     NextTheme {
         SettingsScreen(
-            groups = model.groups,
-            subtitle = "${model.count} of them, in one list",
+            groups = groups,
+            subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
             focusId = focusId,
             onSearch = onOpenCommands,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE -> model.toggle(item.id)
-                    // Pressing an open row closes it again, so a row is never a one-way door.
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
@@ -153,6 +176,7 @@ fun NextSettingsScreen(
                             onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
                             onDiagnostics = { diagnosticsExporter.launch(DIAGNOSTICS_FILE_NAME) },
                             onClear = { confirmClear = true },
+                            onClearImageCache = viewModel::clearImageCache,
                             onCheckUpdates = {
                                 if (updateCheck != UpdateCheckState.Checking) {
                                     viewModel.checkForUpdate(appVersionName(context))
@@ -197,12 +221,6 @@ fun NextSettingsScreen(
     }
 }
 
-/**
- * What an action row does, by id.
- *
- * A `when` over ids rather than a lambda on the row, because these need the launchers, which only
- * exist inside a composable — the registry builds the rows and this decides what pressing one does.
- */
 @Suppress("LongParameterList")
 private fun dispatch(
     item: SettingItem,
@@ -211,6 +229,7 @@ private fun dispatch(
     onImport: () -> Unit,
     onDiagnostics: () -> Unit,
     onClear: () -> Unit,
+    onClearImageCache: () -> Unit,
     onCheckUpdates: () -> Unit,
     onRunSetup: () -> Unit,
 ) {
@@ -220,9 +239,16 @@ private fun dispatch(
         "importBackup" -> onImport()
         "crashDetails" -> onDiagnostics()
         "clearActivity" -> onClear()
+        "clearImageCache" -> onClearImageCache()
         "checkUpdates" -> onCheckUpdates()
         "runSetup" -> onRunSetup()
     }
+}
+
+private fun Long.cacheSizeLabel(): String {
+    if (this <= 0L) return "Empty · Clear"
+    val megabytes = this.toDouble() / BYTES_PER_MB
+    return if (megabytes < 1.0) "<1 MB · Clear" else "${megabytes.toInt()} MB · Clear"
 }
 
 private fun BackupStatus.message(): String =
@@ -247,11 +273,9 @@ private fun DiagnosticsStatus.message(): String =
         is DiagnosticsStatus.Failed -> message
     }
 
-/** The newer release this check found, or null when there is nothing to offer. */
 private fun UpdateCheckState.availableRelease(): UpdateStatus.Available? =
     (this as? UpdateCheckState.Result)?.status as? UpdateStatus.Available
 
-/** Null while the check is still in flight or has not been run: there is nothing to announce yet. */
 private fun UpdateCheckState.snackbarMessage(): String? =
     when (this) {
         UpdateCheckState.Idle, UpdateCheckState.Checking -> null
@@ -263,7 +287,6 @@ private fun UpdateCheckState.snackbarMessage(): String? =
             }
     }
 
-/** What the check's own row reads as its value — the state of the last check, in a few words. */
 private fun UpdateCheckState.rowValue(context: android.content.Context): String =
     when (this) {
         UpdateCheckState.Idle -> appVersionName(context).ifBlank { "Unknown build" }

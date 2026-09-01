@@ -26,6 +26,10 @@
     <string name="next_layout_list">List</string>
     <string name="next_layout_grid">Grid</string>
     <string name="next_layout_images">Images</string>
+    <plurals name="next_feed_images_omitted">
+        <item quantity="one">%d text-only thread hidden in Images</item>
+        <item quantity="other">%d text-only threads hidden in Images</item>
+    </plurals>
 
     <!-- Feed rows -->
     <plurals name="next_row_replies">
@@ -36,7 +40,6 @@
         <item quantity="one">%d file</item>
         <item quantity="other">%d files</item>
     </plurals>
-    <!-- Reply count, then file count. Separated by a middle dot with space either side. -->
     <string name="next_row_counts">%1$s  ·  %2$s</string>
     <string name="next_row_counts_unread">%1$s  ·  +%2$d</string>
     <plurals name="next_feed_thread_count">
@@ -48,7 +51,6 @@
     <!-- What pressing something does, for readers who are told rather than shown -->
     <string name="next_open_thread">Open thread</string>
     <string name="next_open_file">Open file</string>
-    <!-- Read after the picture in the image-only layouts: the thread's subject, then its board. -->
     <string name="next_image_cell_description">%1$s, %2$s</string>
     <string name="next_media_cell_description">File from %1$s</string>
 
@@ -74,6 +76,9 @@
     <string name="next_thread_download_all">Download all</string>
     <string name="next_thread_share">Share</string>
     <string name="next_thread_classic_reader">Classic reader</string>
+    <string name="next_thread_jump_top">Top</string>
+    <string name="next_thread_jump_unread">Unread</string>
+    <string name="next_thread_jump_bottom">Bottom</string>
     <string name="next_post_expand">Expand post</string>
     <string name="next_post_collapse">Collapse post</string>
     <string name="next_post_collapsed_state">Collapsed</string>
@@ -85,5 +90,9 @@
     <string name="next_command_placeholder">Board, thread, setting, action</string>
     <string name="next_command_empty">Nothing matches that</string>
     <string name="next_command_save">Save</string>
+    <plurals name="next_command_results">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
 
 </resources>
