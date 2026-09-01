@@ -25,6 +25,8 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
+import com.orbin.core.model.matchesFilterTokens
+import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
@@ -108,14 +110,16 @@ fun NextFeedScreen(
                 // Recomputed only when the feed or the read-set actually changes; the relative
                 // times are resolved here rather than per row so every row on one pass reads
                 // against the same clock.
+                val mutedTokens = remember(settings.mutedTags) { settings.mutedTagTokens() }
                 val entries =
-                    remember(state.boards, visited, filter, settings.feedSort) {
+                    remember(state.boards, visited, filter, settings.feedSort, mutedTokens) {
                         feedEntries(
                             state.boards,
                             visited,
                             System.currentTimeMillis(),
                             filter,
                             settings.feedSort,
+                            mutedTokens,
                         )
                     }
                 if (entries.isEmpty()) {
@@ -237,7 +241,8 @@ internal data class FeedEntry(
 )
 
 /**
- * Flattens the per-board feeds into one list ordered by [sort].
+ * Flattens the per-board feeds into one list ordered by [sort]. Muted tags keep their threads in
+ * the list but mark the corresponding rows for compact presentation rather than removing them.
  *
  * Default is board code A-Z, then most recently active within that board. Threads carry
  * `lastModifiedMillis` from the catalog; where an engine does not supply it the opening post's
@@ -250,12 +255,19 @@ internal fun feedEntries(
     nowMillis: Long,
     filter: String = "",
     sort: FeedSort = FeedSort.BOARD,
+    mutedTokens: Set<String> = emptySet(),
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }
         .filter { thread -> thread.matchesFeedFilter(filter) }
         .sortedWith(sort.comparator())
-        .map { thread -> thread.toEntry(visited, nowMillis) }
+        .map { thread ->
+            thread.toEntry(
+                visited = visited,
+                nowMillis = nowMillis,
+                muted = mutedTokens.isNotEmpty() && thread.matchesFilterTokens(mutedTokens),
+            )
+        }
 
 /**
  * Whether a thread survives the feed filter.
@@ -286,6 +298,7 @@ internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
 private fun CatalogThread.toEntry(
     visited: Set<ThreadKey>,
     nowMillis: Long,
+    muted: Boolean,
 ): FeedEntry {
     // The same fallback the current feed uses, so a subjectless thread reads the same in both.
     val title = originalPost.subject ?: "No.${key.thread.value}"
@@ -303,6 +316,7 @@ private fun CatalogThread.toEntry(
                 media = stats.imageCount,
                 hasPreview = originalPost.attachments.isNotEmpty(),
                 read = key in visited,
+                muted = muted,
             ),
     )
 }
