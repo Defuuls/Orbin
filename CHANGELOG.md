@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [116-Miku] - 2026-09-01
+
+### Changed
+- Advanced the signed release train after the completed Orbin and Orbin Minimal audit rollout. Application behavior is unchanged from 115-Misaki / Minimal 10-Ayaka; this release advances version metadata and signed artifacts only.
+
+
 ## [115-Misaki] - 2026-09-01
 
 ### Added
@@ -1976,7 +1982,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v116-Miku...HEAD
+[116-Miku]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...v116-Miku
 [115-Misaki]: https://github.com/Defuuls/Orbin/compare/v114-Yui...v115-Misaki
 [114-Yui]: https://github.com/Defuuls/Orbin/compare/v113-Nagisa...v114-Yui
 [113-Nagisa]: https://github.com/Defuuls/Orbin/compare/v112-Kaede...v113-Nagisa
