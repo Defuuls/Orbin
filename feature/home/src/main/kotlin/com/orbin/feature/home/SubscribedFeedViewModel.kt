@@ -32,7 +32,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +42,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -140,7 +138,7 @@ class SubscribedFeedViewModel
                         .flatMapLatest { subscribedIds ->
                             combine(
                                 boardRepository.observeBoards(provider.metadata.id),
-                                observeThreadLimitOverrides(provider, subscribedIds),
+                                boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribedIds),
                                 loadSettings,
                                 refreshRequests,
                             ) { boards, limitOverrides, feedSettings, refreshCount ->
@@ -164,7 +162,8 @@ class SubscribedFeedViewModel
                                 }
                             }
                         }
-                }.onEach { _isRefreshing.value = false }
+                }
+                .onEach { _isRefreshing.value = false }
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -253,25 +252,11 @@ class SubscribedFeedViewModel
             }
         }
 
-        private fun observeThreadLimitOverrides(
-            provider: ImageBoardProvider,
-            subscribedIds: Set<BoardId>,
-        ): Flow<Map<BoardId, FeedThreadLimit?>> {
-            if (subscribedIds.isEmpty()) return flowOf(emptyMap())
-            return combine(
-                subscribedIds.map { id ->
-                    boardPreferencesRepository
-                        .observeFeedThreadLimit(provider.metadata.id, id)
-                        .map { id to it }
-                },
-            ) { pairs -> pairs.toMap() }
-        }
-
         private suspend fun loadSubscribedFeeds(
             provider: ImageBoardProvider,
             boards: List<Board>,
             subscribedIds: Set<BoardId>,
-            limitOverrides: Map<BoardId, FeedThreadLimit?>,
+            limitOverrides: Map<BoardId, FeedThreadLimit>,
             settings: FeedLoadSettings,
         ): SubscribedFeedUiState {
             if (subscribedIds.isEmpty()) {
@@ -307,7 +292,8 @@ class SubscribedFeedViewModel
                                     ),
                             )
                         }
-                    }.toList()
+                    }
+                    .toList()
                     .sortedBy { it.first }
                     .map { it.second }
 
@@ -354,7 +340,8 @@ class SubscribedFeedViewModel
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
                 .filterNot { thread ->
                     thread.matchesFilterTokens(settings.hiddenTokens, settings.harshContentFilter)
-                }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
+                }
+                .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
                 .filteredCatalogBy(settings.mediaFilter)
                 .toImmutableList()
         }
@@ -398,7 +385,7 @@ private data class FeedInputs(
     val providerId: String,
     val subscribedIds: Set<BoardId>,
     val boards: List<Board>,
-    val limitOverrides: Map<BoardId, FeedThreadLimit?>,
+    val limitOverrides: Map<BoardId, FeedThreadLimit>,
     val settings: FeedLoadSettings,
     val refreshCount: Int,
 )
@@ -419,7 +406,8 @@ private fun SubscribedFeedUiState.Success.withCachedFailures(
             boards
                 .map { current ->
                     if (current.board.id in failedBoards) cachedByBoard[current.board.id] ?: current else current
-                }.toImmutableList(),
+                }
+                .toImmutableList(),
         stale = true,
     )
 }
