@@ -36,7 +36,6 @@
         <item quantity="one">%d file</item>
         <item quantity="other">%d files</item>
     </plurals>
-    <!-- Reply count, then file count. Separated by a middle dot with space either side. -->
     <string name="next_row_counts">%1$s  ·  %2$s</string>
     <string name="next_row_counts_unread">%1$s  ·  +%2$d</string>
     <plurals name="next_feed_thread_count">
@@ -48,7 +47,6 @@
     <!-- What pressing something does, for readers who are told rather than shown -->
     <string name="next_open_thread">Open thread</string>
     <string name="next_open_file">Open file</string>
-    <!-- Read after the picture in the image-only layouts: the thread's subject, then its board. -->
     <string name="next_image_cell_description">%1$s, %2$s</string>
     <string name="next_media_cell_description">File from %1$s</string>
 
@@ -87,5 +85,9 @@
     <string name="next_command_placeholder">Board, thread, setting, action</string>
     <string name="next_command_empty">Nothing matches that</string>
     <string name="next_command_save">Save</string>
+    <plurals name="next_command_results">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
 
 </resources>
