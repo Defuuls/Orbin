@@ -11,7 +11,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.feature.gallery.GalleryScreen
-import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.MessageScreen
 import kotlinx.serialization.Serializable
@@ -43,13 +42,11 @@ fun MinimalNavHost(
         }
 
         composable<MinimalRoute.Feed> {
-            val boardsLabel = stringResource(R.string.minimal_boards_title)
-            NextFeedScreen(
+            MinimalFeedScreen(
                 onOpenThread = { provider, board, thread, title ->
                     navController.navigate(MinimalRoute.Thread(provider, board, thread, title))
                 },
-                onOpenCommands = { navController.navigate(MinimalRoute.Boards) },
-                railAction = boardsLabel,
+                onOpenBoards = { navController.navigate(MinimalRoute.Boards) },
             )
         }
 
