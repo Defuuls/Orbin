@@ -21,9 +21,15 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -33,8 +39,8 @@ import javax.inject.Singleton
 /**
  * Downloads media via the platform [DownloadManager], which provides notifications, resume and
  * retry natively, saving into the public Downloads/Orbin directory. A lightweight Room table keeps
- * download history for the in-app downloads screen; statuses are refreshed on demand from the
- * platform manager.
+ * download history for the in-app downloads screen; active transfers are enriched with byte-level
+ * progress so the UI can report useful live state instead of only queued/running/completed.
  */
 @Singleton
 class DownloadRepositoryImpl
@@ -49,8 +55,28 @@ class DownloadRepositoryImpl
         private val downloadManager: DownloadManager
             get() = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
+        /** Progress for custom SAF downloads, which bypass the platform DownloadManager. */
+        private val directProgress = MutableStateFlow<Map<Long, TransferSnapshot>>(emptyMap())
+
         override fun observeDownloads(): Flow<List<DownloadRecord>> =
-            dao.observeAll().map { list -> list.map { it.toDomain() } }
+            combine(dao.observeAll(), directProgress) { entities, direct -> entities to direct }
+                .flatMapLatest { (entities, direct) ->
+                    flow {
+                        do {
+                            val records =
+                                withContext(ioDispatcher) {
+                                    entities.map { entity ->
+                                        val snapshot =
+                                            if (entity.id >= 0L) queryTransferSnapshot(entity.id) else direct[entity.id]
+                                        entity.toDomain(snapshot)
+                                    }
+                                }
+                            emit(records)
+                            val hasActive = records.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.RUNNING }
+                            if (hasActive) delay(PROGRESS_POLL_MS)
+                        } while (hasActive && currentCoroutineContext().isActive)
+                    }
+                }
 
         override suspend fun enqueue(
             url: String,
@@ -140,8 +166,22 @@ class DownloadRepositoryImpl
                     .use { response ->
                         if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
                         val body = response.body
+                        val total = body.contentLength().takeIf { it > 0L }
+                        directProgress.value = directProgress.value + (id to TransferSnapshot(DownloadStatus.RUNNING, 0L, total))
                         context.contentResolver.openOutputStream(target)?.use { output ->
-                            body.byteStream().use { input -> input.copyTo(output) }
+                            body.byteStream().use { input ->
+                                val buffer = ByteArray(COPY_BUFFER_SIZE)
+                                var downloaded = 0L
+                                while (true) {
+                                    val count = input.read(buffer)
+                                    if (count < 0) break
+                                    output.write(buffer, 0, count)
+                                    downloaded += count
+                                    directProgress.value =
+                                        directProgress.value +
+                                            (id to TransferSnapshot(DownloadStatus.RUNNING, downloaded, total))
+                                }
+                            }
                         } ?: error("Unable to open selected folder")
                     }
             }.onSuccess {
@@ -149,6 +189,7 @@ class DownloadRepositoryImpl
             }.onFailure {
                 dao.updateStatus(id, DownloadStatus.FAILED.name)
             }
+            directProgress.value = directProgress.value - id
             return id
         }
 
@@ -232,8 +273,9 @@ class DownloadRepositoryImpl
 
         override suspend fun refreshStatuses() =
             withContext(ioDispatcher) {
-                dao.all().forEach { entity ->
-                    val status = queryStatus(entity.id)
+                // Negative ids are direct SAF transfers whose status is maintained by this repository.
+                dao.all().filter { it.id >= 0L }.forEach { entity ->
+                    val status = queryTransferSnapshot(entity.id)?.status ?: DownloadStatus.FAILED
                     if (status.name != entity.status) dao.updateStatus(entity.id, status.name)
                 }
             }
@@ -330,26 +372,35 @@ class DownloadRepositoryImpl
             }.isSuccess
         }
 
-        private fun queryStatus(id: Long): DownloadStatus {
+        private fun queryTransferSnapshot(id: Long): TransferSnapshot? {
             downloadManager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
-                if (!cursor.moveToFirst()) return DownloadStatus.FAILED
-                val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                return when (cursor.getInt(statusIndex)) {
-                    DownloadManager.STATUS_SUCCESSFUL -> DownloadStatus.COMPLETED
-                    DownloadManager.STATUS_RUNNING -> DownloadStatus.RUNNING
-                    DownloadManager.STATUS_PAUSED, DownloadManager.STATUS_PENDING -> DownloadStatus.QUEUED
-                    else -> DownloadStatus.FAILED
-                }
+                if (!cursor.moveToFirst()) return null
+                val status =
+                    when (cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))) {
+                        DownloadManager.STATUS_SUCCESSFUL -> DownloadStatus.COMPLETED
+                        DownloadManager.STATUS_RUNNING -> DownloadStatus.RUNNING
+                        DownloadManager.STATUS_PAUSED, DownloadManager.STATUS_PENDING -> DownloadStatus.QUEUED
+                        else -> DownloadStatus.FAILED
+                    }
+                val downloaded =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                        .coerceAtLeast(0L)
+                val total =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                        .takeIf { it > 0L }
+                return TransferSnapshot(status, downloaded, total)
             }
         }
 
-        private fun DownloadEntity.toDomain(): DownloadRecord =
+        private fun DownloadEntity.toDomain(snapshot: TransferSnapshot? = null): DownloadRecord =
             DownloadRecord(
                 id = id,
                 url = url,
                 fileName = fileName,
-                status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
+                status = snapshot?.status ?: runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
                 createdAtMillis = createdAtMillis,
+                downloadedBytes = snapshot?.downloadedBytes ?: 0L,
+                totalBytes = snapshot?.totalBytes,
             )
 
         private companion object {
@@ -357,9 +408,17 @@ class DownloadRepositoryImpl
             const val MAX_FILENAME_LENGTH = 200
             const val MIME_OCTET_STREAM = "application/octet-stream"
             const val MIME_TEXT_PLAIN = "text/plain"
+            const val PROGRESS_POLL_MS = 1_000L
+            const val COPY_BUFFER_SIZE = 32 * 1024
             val ALLOWED_SCHEMES = setOf("https")
         }
     }
+
+private data class TransferSnapshot(
+    val status: DownloadStatus,
+    val downloadedBytes: Long,
+    val totalBytes: Long?,
+)
 
 private const val MAX_PATH_SEGMENT_LENGTH = 80
 
