@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -48,12 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * One thing you can go to or do, whatever kind of thing it is.
- *
- * [id] is what selection reports back, so the sheet never has to know what a board, a thread, a
- * setting or an action actually is — only that they are all things with a name you can type.
- */
 data class Command(
     val label: String,
     val kind: String,
@@ -61,25 +56,6 @@ data class Command(
     val id: String = "$kind:$label",
 )
 
-/**
- * The command surface — the single answer to "there are too many screens".
- *
- * The current app reaches its twenty-one destinations through a two-item bottom bar, icons in each
- * screen's top bar, overflow menus, and a settings hub of seven category screens with a search
- * screen bolted on to find your way around them. That search screen is the tell: the interface had
- * already grown past the point where anyone could remember where anything lived, and the fix was
- * another screen.
- *
- * So make that the primary way in, for everything, not a last resort for settings. One sheet over
- * whatever you are reading — the page behind it stays visible under a scrim, so you have not left
- * where you were. Type a few letters and it matches boards, threads you have open, settings, and
- * actions in the same list, each tagged with what kind of thing it is, because to the person typing
- * "auto" there is no meaningful difference between a screen called Media & Playback and the toggle
- * inside it that they actually wanted.
- *
- * Nothing here is a destination you must first know exists. That is what removes the screens without
- * removing the features.
- */
 @Composable
 fun CommandSheet(
     query: String,
@@ -94,8 +70,8 @@ fun CommandSheet(
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val sheetInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    val sheetFraction = commandSheetFraction(results.size)
     Box(modifier = modifier.fillMaxSize()) {
-        // Tapping what you were reading puts you back in it. The sheet is a layer, not a screen.
         Box(
             modifier =
                 Modifier
@@ -111,12 +87,8 @@ fun CommandSheet(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.72f)
+                    .fillMaxHeight(sheetFraction)
                     .align(Alignment.BottomCenter)
-                    // The keyboard moves the whole sheet, since a search sheet whose results are
-                    // behind the keyboard is a search sheet you cannot read. The navigation bar
-                    // only insets the content: the sheet's own background still runs to the bottom
-                    // edge, so it reads as attached to it rather than floating above a gap.
                     .imePadding()
                     .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
                     .background(next.background)
@@ -166,7 +138,10 @@ fun CommandSheet(
                     )
                 }
                 WidthSpacer(12)
-                MetaLine("${results.size}", color = next.faint)
+                MetaLine(
+                    pluralStringResource(R.plurals.next_command_results, results.size, results.size),
+                    color = next.faint,
+                )
             }
             Hairline()
             if (results.isEmpty()) {
@@ -187,6 +162,14 @@ fun CommandSheet(
         }
     }
 }
+
+private fun commandSheetFraction(resultCount: Int): Float =
+    when {
+        resultCount <= 1 -> 0.42f
+        resultCount <= 3 -> 0.48f
+        resultCount <= 6 -> 0.60f
+        else -> 0.72f
+    }
 
 @Composable
 private fun CommandRow(
@@ -228,13 +211,6 @@ private fun kindTint(kind: String): Color =
         else -> next.accent
     }
 
-/**
- * One setting, as the list draws it. [kind] decides what happens when it is pressed.
- *
- * [value] is what the row shows on the right; for a [SettingKind.TEXT] row that may be a summary
- * ("3 tags"), so [text] carries the raw string the editor is seeded with. [hint] is the line that
- * appears under the label while a row is open, for the settings whose format has to be explained.
- */
 data class SettingItem(
     val id: String,
     val label: String,
@@ -247,45 +223,14 @@ data class SettingItem(
 )
 
 enum class SettingKind {
-    /** Pressing flips it. The value reads On or Off. */
     TOGGLE,
-
-    /** Pressing opens its options in place, under the row. */
     CHOICE,
-
-    /** Pressing opens a text field in place, under the row. */
     TEXT,
-
-    /**
-     * Pressing does something here — a file picker, an export, a check.
-     *
-     * Not a link: the interface it belongs to is the one you are already in, and where a system
-     * picker is the right editor that picker opens over this screen rather than a screen of ours
-     * opening under it.
-     */
     ACTION,
-
-    /** States something and cannot be pressed: the settings that are guarantees, not choices. */
     INFO,
 }
 
-/**
- * Settings: all of them, on one screen.
- *
- * They were spread over a hub and seven category screens, which is why a settings *search* screen
- * had to be added — the interface had outgrown anyone's memory of where things lived, and the fix
- * was another screen. Categories are not wrong, but they should be waypoints in one scrolling list
- * rather than places you navigate to and back from: you can flick past a heading, and you cannot
- * flick past a screen.
- *
- * Each row is its label and its current value. No switches drawn as switches, no chevrons, no
- * secondary description repeating the label in a longer form: the value *is* the description. A
- * setting that is on says so in the accent colour, so the state of a whole section is one glance
- * down the right-hand edge.
- *
- * A choice opens under the row that owns it rather than in a dialog, so the list never moves out
- * from under the thing you were reading.
- */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreen(
     groups: List<Pair<String, List<SettingItem>>>,
@@ -299,8 +244,6 @@ fun SettingsScreen(
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
     onSearch: () -> Unit = {},
 ) {
-    // Flattened once so the list is lazy and a row can be reached by index: arriving from the
-    // command surface having typed a setting's name should land on that setting, not near it.
     val entries = remember(groups) { groups.flatten() }
     val state = rememberLazyListState()
     LaunchedEffect(focusId, entries) {
@@ -318,32 +261,24 @@ fun SettingsScreen(
                 item {
                     ScreenTitle(
                         text = stringResource(R.string.next_settings_title),
-                        subtitle = subtitle ?: "${groups.sumOf { it.second.size }} of them, in one list",
+                        subtitle = subtitle,
                     )
                 }
-                items(entries, key = SettingsEntry::key) { entry ->
-                    when (entry) {
-                        is SettingsEntry.Heading ->
-                            Text(
-                                text = entry.text.uppercase(),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp,
-                                color = next.accent,
-                                modifier = Modifier.padding(start = GUTTER, top = 22.dp, bottom = 8.dp),
+                groups.forEach { (heading, rows) ->
+                    stickyHeader {
+                        SettingsHeading(heading)
+                    }
+                    items(rows, key = { item -> "row:${item.id}" }) { item ->
+                        Column {
+                            SettingRow(
+                                item = item,
+                                expanded = item.id == expandedId,
+                                onActivate = onActivate,
+                                onSelectOption = onSelectOption,
+                                onCommitText = onCommitText,
                             )
-
-                        is SettingsEntry.Row ->
-                            Column {
-                                SettingRow(
-                                    item = entry.item,
-                                    expanded = entry.item.id == expandedId,
-                                    onActivate = onActivate,
-                                    onSelectOption = onSelectOption,
-                                    onCommitText = onCommitText,
-                                )
-                                if (!entry.last) Hairline(inset = true)
-                            }
+                            if (item != rows.last()) Hairline(inset = true)
+                        }
                     }
                 }
             }
@@ -358,7 +293,22 @@ fun SettingsScreen(
     }
 }
 
-/** A heading or a row, in the order they are drawn, so the list can be lazy and addressable. */
+@Composable
+private fun SettingsHeading(text: String) {
+    Text(
+        text = text.uppercase(),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp,
+        color = next.accent,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(next.background)
+                .padding(start = GUTTER, top = 12.dp, bottom = 8.dp),
+    )
+}
+
 private sealed interface SettingsEntry {
     val key: String
 
@@ -368,7 +318,6 @@ private sealed interface SettingsEntry {
         override val key: String get() = "heading:$text"
     }
 
-    /** [last] suppresses the separator after a group's final row, which its heading replaces. */
     data class Row(
         val item: SettingItem,
         val last: Boolean,
@@ -396,8 +345,6 @@ private fun SettingRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    // An INFO row states a guarantee. Nothing happens when it is pressed, so it
-                    // does not offer a press: no ripple, and no button role for a screen reader.
                     .then(
                         if (item.kind == SettingKind.INFO) {
                             Modifier
@@ -414,10 +361,6 @@ private fun SettingRow(
                     letterSpacing = (-0.1).sp,
                     color = next.ink,
                 )
-                // An action states its consequence without being pressed: "merges rather than
-                // replaces" is not something to find out afterwards, and a stated guarantee is
-                // only worth stating in full. Toggles and choices don't get this — for them the
-                // value is the description, and a second line would be noise.
                 if (item.kind in STATED_KINDS && item.hint != null) {
                     Text(
                         text = item.hint,
@@ -465,20 +408,11 @@ private fun SettingRow(
     }
 }
 
-/**
- * The text editor for a setting that is a string rather than a choice — tags, a user agent, a time.
- *
- * It opens under its own row exactly as a choice does, so the one thing the list never does is move
- * out from under what you were reading. The draft is local until Save, because a setting that wrote
- * on every keystroke would persist every half-typed intermediate state of it.
- */
 @Composable
 private fun SettingTextEditor(
     item: SettingItem,
     onCommitText: (SettingItem, String) -> Unit,
 ) {
-    // Keyed on the row, so opening a different one starts from that row's value rather than the
-    // last one's, and a value changed elsewhere is picked up on reopening.
     var draft by remember(item.id, item.text) { mutableStateOf(item.text) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(item.id) { focus.requestFocus() }
@@ -510,7 +444,6 @@ private fun SettingTextEditor(
     }
 }
 
-/** Whether the value should read as active. Only toggles have an "on"; a choice is never accented. */
 private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
 
 private val STATED_KINDS = setOf(SettingKind.ACTION, SettingKind.INFO)
