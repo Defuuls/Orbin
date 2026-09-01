@@ -1,6 +1,7 @@
 package com.orbin.feature.home
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.lock.AppLockController
@@ -31,23 +32,24 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import javax.inject.Inject
 
 sealed interface SubscribedFeedUiState {
@@ -84,6 +86,7 @@ class SubscribedFeedViewModel
         private val settingsRepository: SettingsRepository,
         historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -93,6 +96,14 @@ class SubscribedFeedViewModel
             activeProvider
                 .map { it.metadata.id.value }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, activeProvider.value.metadata.id.value)
+
+        /** Reading layout is session UI state, but SavedStateHandle lets it survive process recreation. */
+        val feedLayoutName: StateFlow<String> =
+            savedStateHandle.getStateFlow(FEED_LAYOUT_KEY, DEFAULT_FEED_LAYOUT)
+
+        fun setFeedLayoutName(name: String) {
+            savedStateHandle[FEED_LAYOUT_KEY] = name
+        }
 
         private val refreshRequests = MutableStateFlow(0)
 
@@ -278,31 +289,27 @@ class SubscribedFeedViewModel
                 return SubscribedFeedUiState.Success(persistentListOf())
             }
 
-            val requestLimit = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
+            // flatMapMerge keeps only MAX_CONCURRENT_BOARD_LOADS child flows active. The old
+            // async+semaphore version created one suspended coroutine for every subscribed board.
             val results =
-                kotlinx.coroutines.coroutineScope {
-                    subscribedBoards
-                        .map { board ->
-                            async {
-                                val override = limitOverrides[board.id]
-                                try {
-                                    val threads =
-                                        requestLimit.withPermit {
-                                            loadBoardThreads(provider, board, override, settings)
-                                        }
-                                    BoardLoadResult(SubscribedBoardFeed(board, threads, override))
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
-                                } catch (error: Exception) {
-                                    Log.w(TAG, "Failed to load catalog for /${board.id.value}/", error)
-                                    BoardLoadResult(
-                                        feed = SubscribedBoardFeed(board, persistentListOf(), override),
-                                        failed = true,
-                                    )
-                                }
-                            }
-                        }.map { it.await() }
-                }
+                subscribedBoards
+                    .withIndex()
+                    .asFlow()
+                    .flatMapMerge(concurrency = MAX_CONCURRENT_BOARD_LOADS) { indexed ->
+                        flow {
+                            emit(
+                                indexed.index to
+                                    loadBoardResult(
+                                        provider = provider,
+                                        board = indexed.value,
+                                        override = limitOverrides[indexed.value.id],
+                                        settings = settings,
+                                    ),
+                            )
+                        }
+                    }.toList()
+                    .sortedBy { it.first }
+                    .map { it.second }
 
             return SubscribedFeedUiState.Success(
                 boards = results.map { it.feed }.toImmutableList(),
@@ -311,6 +318,30 @@ class SubscribedFeedViewModel
                 stale = results.any { it.failed },
             )
         }
+
+        private suspend fun loadBoardResult(
+            provider: ImageBoardProvider,
+            board: Board,
+            override: FeedThreadLimit?,
+            settings: FeedLoadSettings,
+        ): BoardLoadResult =
+            try {
+                BoardLoadResult(
+                    SubscribedBoardFeed(
+                        board = board,
+                        threads = loadBoardThreads(provider, board, override, settings),
+                        threadLimitOverride = override,
+                    ),
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w(TAG, "Failed to load catalog for /${board.id.value}/", error)
+                BoardLoadResult(
+                    feed = SubscribedBoardFeed(board, persistentListOf(), override),
+                    failed = true,
+                )
+            }
 
         private suspend fun loadBoardThreads(
             provider: ImageBoardProvider,
@@ -332,6 +363,8 @@ class SubscribedFeedViewModel
             const val TAG = "SubscribedFeedViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
             const val MAX_CONCURRENT_BOARD_LOADS = 4
+            const val FEED_LAYOUT_KEY = "feedLayout"
+            const val DEFAULT_FEED_LAYOUT = "LIST"
         }
     }
 
@@ -361,9 +394,6 @@ private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
         feedRefreshInterval = feedRefreshInterval,
     )
 
-/**
- * Cache key for a subscribed-feed load: every local input that actually changes loaded content.
- */
 private data class FeedInputs(
     val providerId: String,
     val subscribedIds: Set<BoardId>,
@@ -373,18 +403,12 @@ private data class FeedInputs(
     val refreshCount: Int,
 )
 
-/** A feed load kept for reuse, with the moment it was loaded so its age can be judged. */
 private data class CachedFeed(
     val inputs: FeedInputs,
     val state: SubscribedFeedUiState.Success,
     val loadedAtMillis: Long,
 )
 
-/**
- * Preserve the last good rows for boards that failed this pass. Users see fresh data where it was
- * available and stale data where it was not, rather than having a temporary network error erase a
- * board from the combined feed.
- */
 private fun SubscribedFeedUiState.Success.withCachedFailures(
     cached: SubscribedFeedUiState.Success?,
 ): SubscribedFeedUiState.Success {
