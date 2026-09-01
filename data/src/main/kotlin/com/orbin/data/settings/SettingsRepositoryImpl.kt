@@ -287,11 +287,12 @@ class SettingsRepositoryImpl
             boards: Set<BoardId>,
         ): Flow<Map<BoardId, FeedThreadLimit>> =
             dataStore.data.map { preferences ->
-                boards.mapNotNull { board ->
-                    preferences[Keys.boardFeedThreadLimit(provider, board)]
-                        ?.let { stored -> runCatching { enumValueOf<FeedThreadLimit>(stored) }.getOrNull() }
-                        ?.let { limit -> board to limit }
-                }.toMap()
+                boards
+                    .mapNotNull { board ->
+                        preferences[Keys.boardFeedThreadLimit(provider, board)]
+                            ?.let { stored -> runCatching { enumValueOf<FeedThreadLimit>(stored) }.getOrNull() }
+                            ?.let { limit -> board to limit }
+                    }.toMap()
             }
 
         override suspend fun setFeedThreadLimit(

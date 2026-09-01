@@ -72,7 +72,11 @@ class DownloadRepositoryImpl
                                     }
                                 }
                             emit(records)
-                            val hasActive = records.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.RUNNING }
+                            val hasActive =
+                                records.any {
+                                    it.status == DownloadStatus.QUEUED ||
+                                        it.status == DownloadStatus.RUNNING
+                                }
                             if (hasActive) delay(PROGRESS_POLL_MS)
                         } while (hasActive && currentCoroutineContext().isActive)
                     }
@@ -167,7 +171,8 @@ class DownloadRepositoryImpl
                         if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
                         val body = response.body
                         val total = body.contentLength().takeIf { it > 0L }
-                        directProgress.value = directProgress.value + (id to TransferSnapshot(DownloadStatus.RUNNING, 0L, total))
+                        directProgress.value =
+                            directProgress.value + (id to TransferSnapshot(DownloadStatus.RUNNING, 0L, total))
                         context.contentResolver.openOutputStream(target)?.use { output ->
                             body.byteStream().use { input ->
                                 val buffer = ByteArray(COPY_BUFFER_SIZE)
@@ -179,7 +184,7 @@ class DownloadRepositoryImpl
                                     downloaded += count
                                     directProgress.value =
                                         directProgress.value +
-                                            (id to TransferSnapshot(DownloadStatus.RUNNING, downloaded, total))
+                                        (id to TransferSnapshot(DownloadStatus.RUNNING, downloaded, total))
                                 }
                             }
                         } ?: error("Unable to open selected folder")
@@ -383,10 +388,12 @@ class DownloadRepositoryImpl
                         else -> DownloadStatus.FAILED
                     }
                 val downloaded =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                    cursor
+                        .getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                         .coerceAtLeast(0L)
                 val total =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                    cursor
+                        .getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                         .takeIf { it > 0L }
                 return TransferSnapshot(status, downloaded, total)
             }
@@ -397,7 +404,9 @@ class DownloadRepositoryImpl
                 id = id,
                 url = url,
                 fileName = fileName,
-                status = snapshot?.status ?: runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
+                status =
+                    snapshot?.status
+                        ?: runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
                 createdAtMillis = createdAtMillis,
                 downloadedBytes = snapshot?.downloadedBytes ?: 0L,
                 totalBytes = snapshot?.totalBytes,

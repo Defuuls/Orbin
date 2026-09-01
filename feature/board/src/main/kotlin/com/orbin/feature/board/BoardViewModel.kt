@@ -188,21 +188,21 @@ internal fun Flow<PagingData<CatalogThread>>.presentedBy(
         pagingData
             .filter { thread ->
                 !thread.matchesFilterTokens(presentation.hiddenTokens, presentation.includeHarsh)
-            }
-            .map { thread ->
+            }.map { thread ->
                 if (presentation.mediaFilter.isActive) thread.filteredBy(presentation.mediaFilter) else thread
-            }
-            .filter { thread ->
+            }.filter { thread ->
                 !presentation.mediaFilter.isActive || thread.originalPost.attachments.isNotEmpty()
-            }
-            .map { thread ->
+            }.map { thread ->
                 if (presentation.mediaScroll || thread.originalPost.attachments.size <= 1) {
                     thread
                 } else {
                     thread.copy(
                         originalPost =
                             thread.originalPost.copy(
-                                attachments = thread.originalPost.attachments.take(1).toImmutableList(),
+                                attachments =
+                                    thread.originalPost.attachments
+                                        .take(1)
+                                        .toImmutableList(),
                             ),
                     )
                 }

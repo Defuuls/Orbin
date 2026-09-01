@@ -138,14 +138,16 @@ fun NextSettingsScreen(
             model.groups.map { (name, items) ->
                 if (name == "Storage & backup") {
                     name to
-                        (items +
-                            SettingItem(
-                                id = "clearImageCache",
-                                label = "Image cache usage",
-                                value = imageCacheUsageBytes.cacheSizeLabel(),
-                                kind = SettingKind.ACTION,
-                                hint = "Deletes cached image files. They will be downloaded again when needed.",
-                            ))
+                        (
+                            items +
+                                SettingItem(
+                                    id = "clearImageCache",
+                                    label = "Image cache usage",
+                                    value = imageCacheUsageBytes.cacheSizeLabel(),
+                                    kind = SettingKind.ACTION,
+                                    hint = "Deletes cached image files. They will be downloaded again when needed.",
+                                )
+                        )
                 } else {
                     name to items
                 }

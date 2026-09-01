@@ -159,10 +159,11 @@ class ThreadViewModel
                 if (savedBookmark == null || success == null) {
                     null
                 } else {
-                    success.thread.replies.getOrNull(savedBookmark.lastSeenReplyCount)?.id
+                    success.thread.replies
+                        .getOrNull(savedBookmark.lastSeenReplyCount)
+                        ?.id
                 }
-            }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
         fun refresh() {
             _isRefreshing.value = true

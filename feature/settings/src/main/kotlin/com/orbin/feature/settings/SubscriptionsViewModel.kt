@@ -93,8 +93,7 @@ class SubscriptionsViewModel
                         .flatMapLatest { subscribed ->
                             boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribed)
                         }
-                }
-                .map { limits -> limits.mapKeys { (board, _) -> board.value } }
+                }.map { limits -> limits.mapKeys { (board, _) -> board.value } }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
 
         /**

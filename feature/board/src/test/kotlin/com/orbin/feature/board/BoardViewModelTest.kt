@@ -108,7 +108,12 @@ class BoardViewModelTest {
                     .asSnapshot()
 
             assertThat(threads.map { it.key.thread.value }).containsExactly(1L)
-            assertThat(threads.single().originalPost.attachments.map { it.id }).containsExactly("webm")
+            assertThat(
+                threads
+                    .single()
+                    .originalPost.attachments
+                    .map { it.id },
+            ).containsExactly("webm")
         }
 
     @Test
@@ -122,7 +127,12 @@ class BoardViewModelTest {
             assertThat(threads.map { it.key.thread.value })
                 .containsExactly(1L, 2L)
                 .inOrder()
-            assertThat(threads.first().originalPost.attachments.map { it.id }).containsExactly("jpg")
+            assertThat(
+                threads
+                    .first()
+                    .originalPost.attachments
+                    .map { it.id },
+            ).containsExactly("jpg")
         }
 
     @Test
@@ -133,7 +143,12 @@ class BoardViewModelTest {
                     .presentedBy(flowOf(presentation(MediaFilter.ALL, mediaScroll = false)))
                     .asSnapshot()
 
-            assertThat(threads.first().originalPost.attachments.map { it.id }).containsExactly("webm")
+            assertThat(
+                threads
+                    .first()
+                    .originalPost.attachments
+                    .map { it.id },
+            ).containsExactly("webm")
         }
 
     @Test

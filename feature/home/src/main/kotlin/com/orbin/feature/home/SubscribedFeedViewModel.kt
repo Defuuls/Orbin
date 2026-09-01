@@ -162,8 +162,7 @@ class SubscribedFeedViewModel
                                 }
                             }
                         }
-                }
-                .onEach { _isRefreshing.value = false }
+                }.onEach { _isRefreshing.value = false }
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -292,8 +291,7 @@ class SubscribedFeedViewModel
                                     ),
                             )
                         }
-                    }
-                    .toList()
+                    }.toList()
                     .sortedBy { it.first }
                     .map { it.second }
 
@@ -340,8 +338,7 @@ class SubscribedFeedViewModel
             return (effectiveLimit.count?.let(catalog::take) ?: catalog)
                 .filterNot { thread ->
                     thread.matchesFilterTokens(settings.hiddenTokens, settings.harshContentFilter)
-                }
-                .filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
+                }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
                 .filteredCatalogBy(settings.mediaFilter)
                 .toImmutableList()
         }
@@ -406,8 +403,7 @@ private fun SubscribedFeedUiState.Success.withCachedFailures(
             boards
                 .map { current ->
                     if (current.board.id in failedBoards) cachedByBoard[current.board.id] ?: current else current
-                }
-                .toImmutableList(),
+                }.toImmutableList(),
         stale = true,
     )
 }
