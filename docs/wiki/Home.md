@@ -15,11 +15,11 @@ create threads.
 
 | | |
 | --- | --- |
-| Current release | **v116 — Miku** (2026-09-01) |
+| Current release | **v117 — Nao** (2026-09-01) |
 | Website | https://defuuls.github.io/Orbin/ |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan (Vichan, read-only example instance), BBW Chan (LynxChan) |
-| Codename scheme | Per-release codenames by era: popular Japanese female names from v100 (shared with Orbin Minimal from `minimal-v4`); pasta for v91–v99; stars for v30–v90 |
+| Codename scheme | Per-release codenames by era: popular Japanese female names from v100; pasta for v91–v99; stars for v30–v90 |
 
 Orbin is under active development with regular signed releases. The architecture, build system,
 domain core, networking, media pipeline, encrypted data layer, and two reference providers
