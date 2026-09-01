@@ -1,3 +1,5 @@
+@file:Suppress("TooGenericExceptionCaught")
+
 package com.orbin.feature.home
 
 import android.util.Log
