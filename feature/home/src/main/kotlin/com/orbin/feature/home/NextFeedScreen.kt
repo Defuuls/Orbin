@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
@@ -268,7 +269,10 @@ internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
         originalPost.comment.raw.contains(token, ignoreCase = true) ||
         originalPost.poster.name?.contains(token, ignoreCase = true) == true ||
         originalPost.poster.tripcode?.contains(token, ignoreCase = true) == true ||
-        originalPost.attachments.firstOrNull()?.originalFileName?.contains(token, ignoreCase = true) == true
+        originalPost.attachments
+            .firstOrNull()
+            ?.originalFileName
+            ?.contains(token, ignoreCase = true) == true
 }
 
 private fun CatalogThread.toEntry(
