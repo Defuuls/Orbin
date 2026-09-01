@@ -27,6 +27,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # Screenshot tests use a plain Robolectric Application; production Hilt/Keystore startup
+      # is intentionally outside this pure rendering suite.
       - name: Record Minimal Roborazzi goldens
         run: ./gradlew :app-minimal:recordRoborazziDebug
 
