@@ -113,6 +113,7 @@ class MinimalBoardsViewModel
                 .launchIn(viewModelScope)
         }
 
+        @Suppress("TooGenericExceptionCaught")
         fun setSubscribed(
             board: BoardId,
             subscribed: Boolean,
@@ -125,6 +126,9 @@ class MinimalBoardsViewModel
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Throwable) {
+                    // Repository implementations do not expose a common write exception. This is
+                    // the UI boundary, so unknown failures become visible state instead of a lost
+                    // coroutine while cancellation still propagates normally.
                     Log.w(TAG, "Could not update board subscription", error)
                     subscriptionErrorState.value = error.message.orEmpty().ifBlank { SUBSCRIPTION_ERROR }
                 }
@@ -135,6 +139,7 @@ class MinimalBoardsViewModel
             refresh(activeProvider.value.metadata.id)
         }
 
+        @Suppress("TooGenericExceptionCaught")
         private fun refresh(provider: ProviderId) {
             refreshJob?.cancel()
             refreshJob =
@@ -153,6 +158,8 @@ class MinimalBoardsViewModel
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (error: Throwable) {
+                        // refreshBoards normally reports OrbinResult, but a boundary-level catch
+                        // prevents implementation bugs from leaving the screen stuck refreshing.
                         Log.w(TAG, "Could not refresh the board list", error)
                         if (activeProvider.value.metadata.id == provider) {
                             refreshErrorState.value = error.message.orEmpty().ifBlank { REFRESH_ERROR }
