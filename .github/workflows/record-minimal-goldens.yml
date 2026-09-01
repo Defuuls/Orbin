@@ -1,0 +1,44 @@
+name: Record Minimal goldens
+
+on:
+  push:
+    branches:
+      - audit/minimal-all-phases
+    paths:
+      - '.github/workflows/record-minimal-goldens.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: audit/minimal-all-phases
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Record Minimal Roborazzi goldens
+        run: ./gradlew :app-minimal:recordRoborazziDebug
+
+      - name: Commit intended Minimal goldens
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-minimal/src/test/screenshots
+          if git diff --cached --quiet; then
+            echo "No golden changes to commit"
+            exit 0
+          fi
+          git commit -m "test: record Minimal audit goldens"
+          git push origin HEAD:audit/minimal-all-phases
