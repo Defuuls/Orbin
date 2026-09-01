@@ -1,0 +1,90 @@
+name: Cut Orbin 115 and Minimal 10
+
+on:
+  push:
+    branches:
+      - main
+      - release/v115-akari-minimal-v10-noa
+    paths:
+      - '.github/workflows/cut-115-minimal-10.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  prepare:
+    if: github.ref_name == 'release/v115-akari-minimal-v10-noa'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: release/v115-akari-minimal-v10-noa
+          fetch-depth: 0
+      - name: Validate shared codename pool
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git tag --list | grep -Eiq '(^|[-])Akari$'; then echo '::error::Akari already used'; exit 1; fi
+          if git tag --list | grep -Eiq '(^|[-])Noa$'; then echo '::error::Noa already used'; exit 1; fi
+      - name: Prepare release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import re
+          from datetime import date
+          from pathlib import Path
+          today = date.today().isoformat()
+          base = 'https://github.com/Defuuls/Orbin'
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text()
+          if '## [115-Akari]' not in text:
+              text = text.replace('## [Unreleased]\n', f'## [Unreleased]\n\n## [115-Akari] - {today}\n', 1)
+              text = re.sub(r'^\[Unreleased\]: .*$', f'[Unreleased]: {base}/compare/v115-Akari...HEAD\n[115-Akari]: {base}/compare/v114-Yui...v115-Akari', text, count=1, flags=re.M)
+          changelog.write_text(text)
+          readme = Path('README.md')
+          readme.write_text(re.sub(r'\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)', f'**Current release:** [115 — Akari]({base}/releases/tag/v115-Akari)', readme.read_text(), count=1))
+          home = Path('docs/wiki/Home.md')
+          home.write_text(re.sub(r'\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|', f'| Current release | **v115 — Akari** ({today}) |', home.read_text(), count=1))
+          PY
+          python3 scripts/validate_repo.py
+      - name: Commit prepared metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CHANGELOG.md README.md docs/wiki/Home.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'chore: Prepare v115-Akari release metadata'
+          git push origin HEAD:release/v115-akari-minimal-v10-noa
+
+  publish:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate merged release metadata and names
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          grep -qx 'orbin.versionCode=133' gradle.properties
+          grep -qx 'orbin.versionName=115-Akari' gradle.properties
+          grep -qx 'orbin.minimalVersionCode=10' gradle.properties
+          grep -qx 'orbin.minimalVersionName=10-Noa' gradle.properties
+          test -z "$(git tag --list 'v115-Akari')"
+          test -z "$(git tag --list 'minimal-v10-Noa')"
+      - name: Dispatch signed release builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag=v115-Akari -f base_ref=main
+          gh workflow run release-minimal.yml --ref main -f tag=minimal-v10-Noa -f base_ref=main -f notes_only=false
