@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [118-Hotaru] - 2026-09-01
+
+### Added
+- Added a dedicated Settings shortcut beside Search on the subscribed-feed rail, providing direct access to Settings even when search or command-sheet behavior is unavailable.
+
+
 ## [117-Nao] - 2026-09-01
 
 ### Changed
@@ -1989,7 +1995,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v117-Nao...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...HEAD
+[118-Hotaru]: https://github.com/Defuuls/Orbin/compare/v117-Nao...v118-Hotaru
 [117-Nao]: https://github.com/Defuuls/Orbin/compare/v116-Miku...v117-Nao
 [116-Miku]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...v116-Miku
 [115-Misaki]: https://github.com/Defuuls/Orbin/compare/v114-Yui...v115-Misaki
