@@ -18,6 +18,9 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository contracts owned by the domain layer and implemented by `:data`. The domain depends
@@ -55,8 +58,21 @@ interface BoardPreferencesRepository {
         board: BoardId,
     ): Flow<FeedThreadLimit?>
 
-    /** All explicit per-board thread-count overrides for [provider], keyed by board. */
-    fun observeFeedThreadLimits(provider: ProviderId): Flow<Map<BoardId, FeedThreadLimit>>
+    /**
+     * All explicit thread-count overrides for [boards]. Implementations can override this with a
+     * single backing-store observation; the default preserves compatibility for test doubles.
+     */
+    fun observeFeedThreadLimits(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ): Flow<Map<BoardId, FeedThreadLimit>> {
+        if (boards.isEmpty()) return flowOf(emptyMap())
+        return combine(
+            boards.map { board ->
+                observeFeedThreadLimit(provider, board).map { limit -> board to limit }
+            },
+        ) { pairs -> pairs.mapNotNull { (board, limit) -> limit?.let { board to it } }.toMap() }
+    }
 
     suspend fun setFeedThreadLimit(
         provider: ProviderId,
@@ -99,11 +115,16 @@ interface ThreadRepository {
 interface BookmarkRepository {
     fun observeBookmarks(): Flow<List<Bookmark>>
 
-    /** Bookmarks scoped at the data source to one provider/board. */
+    /** Bookmarks scoped to one provider/board. Room-backed implementations override this query. */
     fun observeBookmarks(
         provider: ProviderId,
         board: BoardId,
-    ): Flow<List<Bookmark>>
+    ): Flow<List<Bookmark>> =
+        observeBookmarks().map { bookmarks ->
+            bookmarks.filter {
+                it.isWatched && it.key.provider == provider && it.key.board == board
+            }
+        }
 
     fun observeBookmark(key: ThreadKey): Flow<Bookmark?>
 
