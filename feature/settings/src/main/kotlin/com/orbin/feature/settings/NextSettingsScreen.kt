@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
+private const val BYTES_PER_MB = 1024L * 1024L
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -57,6 +58,7 @@ fun NextSettingsScreen(
     val diagnosticsStatus by viewModel.diagnosticsStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
+    val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -131,11 +133,29 @@ fun NextSettingsScreen(
         remember(settings, updateCheck, dnsFallbackActive) {
             buildSettings(settings, viewModel, updateCheck.rowValue(context), dnsFallbackActive)
         }
+    val groups =
+        remember(model, imageCacheUsageBytes) {
+            model.groups.map { (name, items) ->
+                if (name == "Storage & backup") {
+                    name to
+                        (items +
+                            SettingItem(
+                                id = "clearImageCache",
+                                label = "Image cache usage",
+                                value = imageCacheUsageBytes.cacheSizeLabel(),
+                                kind = SettingKind.ACTION,
+                                hint = "Deletes cached image files. They will be downloaded again when needed.",
+                            ))
+                } else {
+                    name to items
+                }
+            }
+        }
 
     NextTheme {
         SettingsScreen(
-            groups = model.groups,
-            subtitle = "${model.count} of them, in one list",
+            groups = groups,
+            subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
             focusId = focusId,
             onSearch = onOpenCommands,
@@ -153,6 +173,7 @@ fun NextSettingsScreen(
                             onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
                             onDiagnostics = { diagnosticsExporter.launch(DIAGNOSTICS_FILE_NAME) },
                             onClear = { confirmClear = true },
+                            onClearImageCache = viewModel::clearImageCache,
                             onCheckUpdates = {
                                 if (updateCheck != UpdateCheckState.Checking) {
                                     viewModel.checkForUpdate(appVersionName(context))
@@ -211,6 +232,7 @@ private fun dispatch(
     onImport: () -> Unit,
     onDiagnostics: () -> Unit,
     onClear: () -> Unit,
+    onClearImageCache: () -> Unit,
     onCheckUpdates: () -> Unit,
     onRunSetup: () -> Unit,
 ) {
@@ -220,9 +242,16 @@ private fun dispatch(
         "importBackup" -> onImport()
         "crashDetails" -> onDiagnostics()
         "clearActivity" -> onClear()
+        "clearImageCache" -> onClearImageCache()
         "checkUpdates" -> onCheckUpdates()
         "runSetup" -> onRunSetup()
     }
+}
+
+private fun Long.cacheSizeLabel(): String {
+    if (this <= 0L) return "Empty · Clear"
+    val megabytes = this.toDouble() / BYTES_PER_MB
+    return if (megabytes < 1.0) "<1 MB · Clear" else "${megabytes.toInt()} MB · Clear"
 }
 
 private fun BackupStatus.message(): String =
