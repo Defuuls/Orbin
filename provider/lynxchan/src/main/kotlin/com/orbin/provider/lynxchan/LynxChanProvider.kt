@@ -7,6 +7,7 @@ import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.comparator
 import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
@@ -55,6 +56,7 @@ class LynxChanProvider(
                     CatalogSort.REPLY_COUNT,
                     CatalogSort.IMAGE_COUNT,
                     CatalogSort.LAST_REPLY,
+                    CatalogSort.SUBJECT,
                 ),
         )
 
@@ -95,18 +97,6 @@ class LynxChanProvider(
         }
 
     private fun HttpException.retryAfterSeconds(): Long? = response()?.headers()?.get("Retry-After")?.toLongOrNull()
-
-    private fun CatalogSort.comparator(): Comparator<CatalogThread> =
-        when (this) {
-            CatalogSort.CREATION_DATE ->
-                compareByDescending { it.originalPost.createdAtMillis }
-            CatalogSort.REPLY_COUNT ->
-                compareByDescending { it.stats.replyCount }
-            CatalogSort.IMAGE_COUNT ->
-                compareByDescending { it.stats.imageCount }
-            CatalogSort.BUMP_ORDER, CatalogSort.LAST_REPLY ->
-                compareByDescending { it.stats.lastModifiedMillis }
-        }
 
     private companion object {
         const val HTTP_NOT_FOUND = 404

@@ -122,7 +122,9 @@ class DownloadRepositoryImpl
                 ),
             )
 
-            val parentDirUri = resolveTargetDirectory(folderUri.toParentDocumentUri(), relativeDir)
+            val parentDirUri =
+                resolveTargetDirectory(folderUri.toParentDocumentUri(), relativeDir)
+                    ?: return id.also { dao.updateStatus(id, DownloadStatus.FAILED.name) }
             val target =
                 DocumentsContract.createDocument(
                     context.contentResolver,
@@ -153,16 +155,19 @@ class DownloadRepositoryImpl
         /**
          * Walks [relativeDir]'s segments under [rootUri], creating each subdirectory (via SAF) the
          * first time it's needed and reusing it on every later download into the same board/thread.
+         * Returns null instead of falling back to an ancestor if any requested directory cannot be
+         * resolved, so organization failures can never silently flatten a download into the root.
          */
         private fun resolveTargetDirectory(
             rootUri: Uri,
             relativeDir: String,
-        ): Uri {
+        ): Uri? {
             if (relativeDir.isBlank()) return rootUri
-            return relativeDir
-                .trim('/')
-                .split('/')
-                .fold(rootUri) { parent, segment -> findOrCreateDirectory(parent, segment) ?: parent }
+            var current = rootUri
+            for (segment in relativeDir.trim('/').split('/')) {
+                current = findOrCreateDirectory(current, segment) ?: return null
+            }
+            return current
         }
 
         private fun findOrCreateDirectory(

@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
@@ -19,9 +20,8 @@ import org.junit.Test
 /**
  * The join between the subscribed-feed state and the redesigned feed's rows.
  *
- * The ordering case is the one that matters: the previous feed groups by board, so a quiet board's
- * stale thread outranks a busy board's live one purely on alphabetical board order. Merging is the
- * point of the new feed, and it is only correct if the merge sorts by activity across boards.
+ * Default order is board code A-Z so a quiet board is not buried under a busy one. Activity,
+ * replies and the rest are explicit alternatives.
  */
 class NextFeedMappingTest {
     private companion object {
@@ -30,7 +30,31 @@ class NextFeedMappingTest {
     }
 
     @Test
-    fun `merges boards into one list ordered by most recent activity`() {
+    fun `defaults to board code A-Z then activity within that board`() {
+        val entries =
+            feedEntries(
+                feeds =
+                    listOf(
+                        boardFeed(
+                            "z",
+                            thread(3, board = "z", bumped = 9_000L),
+                        ),
+                        boardFeed(
+                            "a",
+                            thread(1, board = "a", bumped = 1_000L),
+                            thread(2, board = "a", bumped = 5_000L),
+                        ),
+                    ),
+                visited = emptySet(),
+                nowMillis = 10_000L,
+            )
+
+        assertThat(entries.map { it.key.thread.value }).containsExactly(2L, 1L, 3L).inOrder()
+        assertThat(entries.map { it.key.board.value }).containsExactly("a", "a", "z").inOrder()
+    }
+
+    @Test
+    fun `activity sort flattens boards by most recent bump`() {
         val entries =
             feedEntries(
                 feeds =
@@ -44,9 +68,27 @@ class NextFeedMappingTest {
                     ),
                 visited = emptySet(),
                 nowMillis = 10_000L,
+                sort = FeedSort.ACTIVITY,
             )
 
         assertThat(entries.map { it.key.thread.value }).containsExactly(2L, 3L, 1L).inOrder()
+    }
+
+    @Test
+    fun `replies sort ranks the busiest thread first`() {
+        val entries =
+            feedEntries(
+                feeds =
+                    listOf(
+                        boardFeed("a", thread(1, board = "a", replies = 2, bumped = 9_000L)),
+                        boardFeed("z", thread(2, board = "z", replies = 40, bumped = 1_000L)),
+                    ),
+                visited = emptySet(),
+                nowMillis = 10_000L,
+                sort = FeedSort.REPLIES,
+            )
+
+        assertThat(entries.map { it.key.thread.value }).containsExactly(2L, 1L).inOrder()
     }
 
     @Test
@@ -63,6 +105,7 @@ class NextFeedMappingTest {
                     ),
                 visited = emptySet(),
                 nowMillis = 10_000L,
+                sort = FeedSort.ACTIVITY,
             )
 
         // Without the fallback the unbumped thread would sort as if it were from 1970.
@@ -157,7 +200,7 @@ class NextFeedMappingTest {
                 ),
             )
 
-        val kept = feedEntries(feeds, emptySet(), NOW, "keep")
+        val kept = feedEntries(feeds, emptySet(), NOW, "keep", FeedSort.ACTIVITY)
         assertThat(kept.map { it.key.thread.value }).containsExactly(3L, 1L).inOrder()
     }
 

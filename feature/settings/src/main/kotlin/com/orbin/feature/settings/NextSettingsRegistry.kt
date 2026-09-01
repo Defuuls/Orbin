@@ -6,6 +6,7 @@ import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
@@ -180,6 +181,14 @@ private class Rows {
             settings.feedThreadLimit,
             { it.label },
             vm::setFeedThreadLimit,
+        ),
+        choice(
+            "feedSort",
+            "Sort feed by",
+            FeedSort.entries,
+            settings.feedSort,
+            { it.label },
+            vm::setFeedSort,
         ),
     )
 

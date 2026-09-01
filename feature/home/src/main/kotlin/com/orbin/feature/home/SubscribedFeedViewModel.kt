@@ -10,6 +10,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedRefreshInterval
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredCatalogBy
@@ -75,7 +76,7 @@ class SubscribedFeedViewModel
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val boardPreferencesRepository: BoardPreferencesRepository,
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
         historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
     ) : ViewModel() {
@@ -191,6 +192,15 @@ class SubscribedFeedViewModel
         ) {
             viewModelScope.launch {
                 boardPreferencesRepository.setFeedThreadLimit(activeProvider.value.metadata.id, board, limit)
+            }
+        }
+
+        /** Cycles Board → Active → Replies → Images → Created → A-Z and persists the choice. */
+        fun cycleFeedSort() {
+            viewModelScope.launch {
+                val values = FeedSort.entries
+                val current = settings.value.feedSort
+                settingsRepository.setFeedSort(values[(values.indexOf(current) + 1) % values.size])
             }
         }
 

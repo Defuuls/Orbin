@@ -16,4 +16,5 @@ data class FeedRow(
     val read: Boolean = false,
     val unread: Int = 0,
     val id: String = "$board:$subject",
+    val muted: Boolean = false,
 )

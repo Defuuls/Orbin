@@ -11,6 +11,7 @@ import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedRefreshInterval
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PreloadOption
@@ -246,6 +247,10 @@ class FakeSettingsRepository(
 
     override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
         update { copy(feedThreadLimit = limit) }
+    }
+
+    override suspend fun setFeedSort(sort: FeedSort) {
+        update { copy(feedSort = sort) }
     }
 
     override suspend fun setImageCacheLimitMb(megabytes: Int) {

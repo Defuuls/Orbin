@@ -38,6 +38,7 @@ val settingsSearchIndex =
         SettingsSearchEntry("mediaFilter", "Show only", CONTENT),
         SettingsSearchEntry("refreshInterval", "Refresh feed on return", CONTENT),
         SettingsSearchEntry("threadLimit", "Threads per board", CONTENT),
+        SettingsSearchEntry("feedSort", "Sort feed by", CONTENT),
         SettingsSearchEntry("colorTheme", "Color theme", APPEARANCE),
         SettingsSearchEntry("themeMode", "Theme", APPEARANCE),
         SettingsSearchEntry("dynamicColor", "Dynamic color", APPEARANCE),

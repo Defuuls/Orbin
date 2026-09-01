@@ -129,6 +129,7 @@ class BackupService
                 setPreloadOption(settings.preloadOption)
                 setPreloadThrottleMode(settings.preloadThrottleMode)
                 setFeedThreadLimit(settings.feedThreadLimit)
+                setFeedSort(settings.feedSort)
                 setImageCacheLimitMb(settings.imageCacheLimitMb)
                 setUserAgent(settings.userAgent)
                 setConnectTimeoutSeconds(settings.connectTimeoutSeconds)
