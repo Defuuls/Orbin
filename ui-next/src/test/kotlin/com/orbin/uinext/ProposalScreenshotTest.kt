@@ -165,12 +165,10 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun command() =
-        capture("next_command") { commandContent() }
+    fun command() = capture("next_command") { commandContent() }
 
     @Test
-    fun commandMaxText() =
-        capture("next_command_max_text", fontScale = MAX_FONT_SCALE) { commandContent() }
+    fun commandMaxText() = capture("next_command_max_text", fontScale = MAX_FONT_SCALE) { commandContent() }
 
     @Test
     fun settings() =
