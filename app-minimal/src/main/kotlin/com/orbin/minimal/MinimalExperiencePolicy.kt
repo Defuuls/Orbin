@@ -21,14 +21,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * The settings contract for Orbin Minimal.
- *
- * Shared feed/thread/gallery code still reads [SettingsRepository], but this APK deliberately has
- * no settings surface. Pinning the supported behavior here prevents future changes to the full
- * client's defaults from silently changing Minimal. The profile is versioned so a release only
- * writes DataStore when this contract itself changes.
- */
+/** Versioned application of the settings contract used by shared Minimal screens. */
 @Singleton
 class MinimalExperiencePolicy
     @Inject
@@ -45,41 +38,11 @@ class MinimalExperiencePolicy
             if (_ready.value) return
             applicationScope.launch {
                 if (preferences.getInt(KEY_PROFILE_VERSION, 0) < PROFILE_VERSION) {
-                    applyProfile()
+                    applyMinimalExperienceProfile(settingsRepository)
                     preferences.edit { putInt(KEY_PROFILE_VERSION, PROFILE_VERSION) }
                 }
                 _ready.value = true
             }
-        }
-
-        private suspend fun applyProfile() {
-            settingsRepository.setThemeMode(AppThemeMode.SYSTEM)
-            settingsRepository.setDynamicColor(true)
-            settingsRepository.setFontScale(1f)
-
-            settingsRepository.setHideNsfwBoards(false)
-            settingsRepository.setHideTextOnlyThreads(false)
-            settingsRepository.setHarshContentFilter(false)
-            settingsRepository.setMediaFilter(MediaFilter.ALL)
-            settingsRepository.setFeedRefreshInterval(FeedRefreshInterval.FIVE_MINUTES)
-            settingsRepository.setFeedThreadLimit(FeedThreadLimit.TWELVE)
-            settingsRepository.setFeedSort(FeedSort.BOARD)
-
-            settingsRepository.setThreadPresentation(ThreadPresentation.PAGE)
-            settingsRepository.setAutoplayVideos(false)
-            settingsRepository.setAutoplayVideosInFeed(false)
-            settingsRepository.setMuteByDefault(true)
-            settingsRepository.setFullscreenVideoPlayback(false)
-            settingsRepository.setAutoRotateVideoFullscreen(false)
-            settingsRepository.setMediaScrollThreadView(true)
-
-            settingsRepository.setPreloadImages(true)
-            settingsRepository.setPreloadOption(PreloadOption.IMAGES)
-            settingsRepository.setPreloadThrottleMode(PreloadThrottleMode.MODERATE)
-
-            settingsRepository.setThreadWatchNotificationsEnabled(false)
-            settingsRepository.setSaveRecentSearches(false)
-            settingsRepository.setInternalUpdaterEnabled(false)
         }
 
         private companion object {
@@ -88,3 +51,39 @@ class MinimalExperiencePolicy
             const val PROFILE_VERSION = 1
         }
     }
+
+/**
+ * Pins every shared-screen behavior Minimal intentionally supports.
+ *
+ * This function is deliberately independent of Android storage so the contract can be regression
+ * tested against a fake repository. Values are explicit rather than copied from AppSettings.Default.
+ */
+internal suspend fun applyMinimalExperienceProfile(settingsRepository: SettingsRepository) {
+    settingsRepository.setThemeMode(AppThemeMode.SYSTEM)
+    settingsRepository.setDynamicColor(true)
+    settingsRepository.setFontScale(1f)
+
+    settingsRepository.setHideNsfwBoards(false)
+    settingsRepository.setHideTextOnlyThreads(false)
+    settingsRepository.setHarshContentFilter(false)
+    settingsRepository.setMediaFilter(MediaFilter.ALL)
+    settingsRepository.setFeedRefreshInterval(FeedRefreshInterval.FIVE_MINUTES)
+    settingsRepository.setFeedThreadLimit(FeedThreadLimit.TWELVE)
+    settingsRepository.setFeedSort(FeedSort.BOARD)
+
+    settingsRepository.setThreadPresentation(ThreadPresentation.PAGE)
+    settingsRepository.setAutoplayVideos(false)
+    settingsRepository.setAutoplayVideosInFeed(false)
+    settingsRepository.setMuteByDefault(true)
+    settingsRepository.setFullscreenVideoPlayback(false)
+    settingsRepository.setAutoRotateVideoFullscreen(false)
+    settingsRepository.setMediaScrollThreadView(true)
+
+    settingsRepository.setPreloadImages(true)
+    settingsRepository.setPreloadOption(PreloadOption.IMAGES)
+    settingsRepository.setPreloadThrottleMode(PreloadThrottleMode.MODERATE)
+
+    settingsRepository.setThreadWatchNotificationsEnabled(false)
+    settingsRepository.setSaveRecentSearches(false)
+    settingsRepository.setInternalUpdaterEnabled(false)
+}
