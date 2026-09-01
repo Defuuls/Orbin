@@ -11,4 +11,9 @@ data class DownloadRecord(
     val fileName: String,
     val status: DownloadStatus,
     val createdAtMillis: Long,
-)
+    val downloadedBytes: Long = 0L,
+    val totalBytes: Long? = null,
+) {
+    val progressFraction: Float?
+        get() = totalBytes?.takeIf { it > 0L }?.let { total -> (downloadedBytes.toFloat() / total).coerceIn(0f, 1f) }
+}
