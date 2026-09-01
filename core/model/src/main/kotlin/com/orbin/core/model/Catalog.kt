@@ -55,35 +55,35 @@ fun CatalogThread.sortTitle(): String = originalPost.subject ?: "No.${key.thread
 fun CatalogSort.comparator(): Comparator<CatalogThread> =
     when (this) {
         CatalogSort.CREATION_DATE ->
-            compareByDescending { it.originalPost.createdAtMillis }
+            compareByDescending<CatalogThread> { it.originalPost.createdAtMillis }
         CatalogSort.REPLY_COUNT ->
-            compareByDescending { it.stats.replyCount }
+            compareByDescending<CatalogThread> { it.stats.replyCount }
         CatalogSort.IMAGE_COUNT ->
-            compareByDescending { it.stats.imageCount }
+            compareByDescending<CatalogThread> { it.stats.imageCount }
         CatalogSort.SUBJECT ->
-            compareBy(String.CASE_INSENSITIVE_ORDER, CatalogThread::sortTitle)
+            compareBy<CatalogThread, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle() }
                 .thenBy { it.key.thread.value }
         CatalogSort.BUMP_ORDER, CatalogSort.LAST_REPLY ->
-            compareByDescending(CatalogThread::activityMillis)
+            compareByDescending<CatalogThread> { it.activityMillis() }
     }
 
 fun FeedSort.comparator(): Comparator<CatalogThread> =
     when (this) {
         FeedSort.BOARD ->
-            compareBy(String.CASE_INSENSITIVE_ORDER) { it.key.board.value }
-                .thenByDescending(CatalogThread::activityMillis)
+            compareBy<CatalogThread, String>(String.CASE_INSENSITIVE_ORDER) { it.key.board.value }
+                .thenByDescending { it.activityMillis() }
         FeedSort.ACTIVITY ->
-            compareByDescending(CatalogThread::activityMillis)
+            compareByDescending<CatalogThread> { it.activityMillis() }
         FeedSort.REPLIES ->
             compareByDescending<CatalogThread> { it.stats.replyCount }
-                .thenByDescending(CatalogThread::activityMillis)
+                .thenByDescending { it.activityMillis() }
         FeedSort.IMAGES ->
             compareByDescending<CatalogThread> { it.stats.imageCount }
-                .thenByDescending(CatalogThread::activityMillis)
+                .thenByDescending { it.activityMillis() }
         FeedSort.CREATED ->
-            compareByDescending { it.originalPost.createdAtMillis }
+            compareByDescending<CatalogThread> { it.originalPost.createdAtMillis }
         FeedSort.TITLE ->
-            compareBy(String.CASE_INSENSITIVE_ORDER, CatalogThread::sortTitle)
+            compareBy<CatalogThread, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle() }
                 .thenBy(String.CASE_INSENSITIVE_ORDER) { it.key.board.value }
     }
 
