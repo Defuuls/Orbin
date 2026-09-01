@@ -9,14 +9,7 @@ import coil3.SingletonImageLoader
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
-/**
- * Application entry point for the pared-back reader.
- *
- * Deliberately thinner than the full client's: no crash diagnostics recorder, and no watched-thread
- * scheduler, because this build has neither a diagnostics screen to read them in nor thread
- * watching to schedule. What remains is what the shared layers require — Hilt, Coil's image loader,
- * and a Hilt-aware WorkManager configuration, which the data layer's workers are built against.
- */
+/** Application entry point for the pared-back reader. */
 @HiltAndroidApp
 class MinimalApplication :
     Application(),
@@ -27,6 +20,14 @@ class MinimalApplication :
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var experiencePolicy: MinimalExperiencePolicy
+
+    override fun onCreate() {
+        super.onCreate()
+        experiencePolicy.start()
+    }
 
     override val workManagerConfiguration: Configuration
         get() =

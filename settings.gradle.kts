@@ -27,30 +27,26 @@ rootProject.name = "Orbin"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// Applications. Two shipped APKs: the full client, and a pared-back subscription reader.
 include(":app")
 include(":app-minimal")
 include(":benchmark")
+include(":benchmark-minimal")
 
-// Core layers
 include(":core:common")
 include(":core:model")
 include(":core:designsystem")
 include(":core:ui")
 include(":core:testing")
 
-// Architecture layers
 include(":domain")
 include(":data")
 include(":network")
 include(":media")
 
-// Provider abstraction + implementations
 include(":provider:api")
 include(":provider:vichan")
 include(":provider:lynxchan")
 
-// Feature modules.
 include(":feature:home")
 include(":feature:board")
 include(":feature:thread")
@@ -61,5 +57,4 @@ include(":feature:gallery")
 include(":feature:downloads")
 include(":feature:onboarding")
 
-// A proposed replacement interface, rendered for review and wired to nothing yet.
 include(":ui-next")

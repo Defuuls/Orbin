@@ -3,44 +3,46 @@ package com.orbin.minimal
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
-import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** A board and whether the reader has subscribed to it. */
 data class SubscribableBoard(
     val board: Board,
     val isSubscribed: Boolean,
 )
 
-/**
- * The board picker's state.
- *
- * This build has no settings screen, so subscribing has to live somewhere: this is it, and it is
- * the only thing here besides the feed and the reader. It writes to the same
- * [BoardPreferencesRepository] the full client uses — but into this app's own sandboxed database,
- * since the two APKs carry different applicationIds.
- */
+data class MinimalBoardsUiState(
+    val boards: ImmutableList<SubscribableBoard> = persistentListOf(),
+    val isRefreshing: Boolean = true,
+    val refreshError: String? = null,
+    val subscriptionError: String? = null,
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MinimalBoardsViewModel
@@ -55,75 +57,125 @@ class MinimalBoardsViewModel
             observeActiveProvider()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, providerRegistry.default())
 
-        val boards: StateFlow<ImmutableList<SubscribableBoard>> =
-            activeProvider
-                .flatMapLatest { provider ->
-                    combine(
-                        boardRepository.observeBoards(provider.metadata.id),
-                        boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                    ) { boards, subscribed ->
-                        boards
-                            .sortedBy { it.id.value }
-                            .map { SubscribableBoard(it, it.id in subscribed) }
-                            .toImmutableList()
-                    }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+        private val sortedBoards =
+            activeProvider.flatMapLatest { provider ->
+                boardRepository
+                    .observeBoards(provider.metadata.id)
+                    .map { boards -> boards.sortedBy { it.id.value } }
+            }
 
-        private val _isLoading = MutableStateFlow(false)
+        private val subscribedBoards =
+            activeProvider.flatMapLatest { provider ->
+                boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id)
+            }
 
-        /**
-         * Whether a fetch is in flight.
-         *
-         * Without this the screen cannot tell "still loading" from "this provider has no boards":
-         * both are an empty list, and it showed a spinner for both, so a failed or empty fetch left
-         * a spinner turning forever with no way out.
-         */
-        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+        private val content =
+            combine(sortedBoards, subscribedBoards) { boards, subscribed ->
+                boards
+                    .map { board -> SubscribableBoard(board, board.id in subscribed) }
+                    .toImmutableList()
+            }
 
-        private val _errorMessage = MutableStateFlow<String?>(null)
-        val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+        private val refreshingState = MutableStateFlow(true)
+        private val refreshErrorState = MutableStateFlow<String?>(null)
+        private val subscriptionErrorState = MutableStateFlow<String?>(null)
+
+        val uiState: StateFlow<MinimalBoardsUiState> =
+            combine(
+                content,
+                refreshingState,
+                refreshErrorState,
+                subscriptionErrorState,
+            ) { boards, refreshing, refreshError, subscriptionError ->
+                MinimalBoardsUiState(
+                    boards = boards,
+                    isRefreshing = refreshing,
+                    refreshError = refreshError,
+                    subscriptionError = subscriptionError,
+                )
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                MinimalBoardsUiState(),
+            )
+
+        /** Null until the active provider's subscription flow has emitted at least once. */
+        val hasSubscriptions: StateFlow<Boolean?> =
+            subscribedBoards
+                .map<Set<BoardId>, Boolean?> { it.isNotEmpty() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+        private var refreshJob: Job? = null
 
         init {
-            // Nothing else asked for the board list. Opening the picker on a fresh install left it
-            // waiting on a fetch that was never going to be made.
-            refresh()
+            activeProvider
+                .onEach { provider -> refresh(provider.metadata.id) }
+                .launchIn(viewModelScope)
         }
 
+        @Suppress("TooGenericExceptionCaught")
         fun setSubscribed(
             board: BoardId,
             subscribed: Boolean,
         ) {
+            val provider = activeProvider.value.metadata.id
             viewModelScope.launch {
-                boardPreferencesRepository.setSubscribedBoard(
-                    activeProvider.value.metadata.id,
-                    board,
-                    subscribed,
-                )
+                subscriptionErrorState.value = null
+                try {
+                    boardPreferencesRepository.setSubscribedBoard(provider, board, subscribed)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Throwable) {
+                    // Repository implementations do not expose a common write exception. This is
+                    // the UI boundary, so unknown failures become visible state instead of a lost
+                    // coroutine while cancellation still propagates normally.
+                    Log.w(TAG, "Could not update board subscription", error)
+                    subscriptionErrorState.value = error.message.orEmpty().ifBlank { SUBSCRIPTION_ERROR }
+                }
             }
         }
 
         fun refresh() {
-            viewModelScope.launch {
-                _isLoading.value = true
-                _errorMessage.value = null
-                try {
-                    boardRepository.refreshBoards(activeProvider.value.metadata.id)
-                } catch (e: ProviderException) {
-                    // A provider that cannot be reached is the common case worth reporting; the
-                    // screen offers a retry rather than sitting on an empty list.
-                    Log.w(TAG, "Could not refresh the board list", e)
-                    // Empty rather than null when the exception says nothing: a failure with no
-                    // message is still a failure, and null here would have the screen report an
-                    // empty board list instead — the one thing it is not.
-                    _errorMessage.value = e.message.orEmpty()
-                } finally {
-                    _isLoading.value = false
+            refresh(activeProvider.value.metadata.id)
+        }
+
+        @Suppress("TooGenericExceptionCaught")
+        private fun refresh(provider: ProviderId) {
+            refreshJob?.cancel()
+            refreshJob =
+                viewModelScope.launch {
+                    refreshingState.value = true
+                    refreshErrorState.value = null
+                    try {
+                        when (val result = boardRepository.refreshBoards(provider)) {
+                            is OrbinResult.Success -> Unit
+                            is OrbinResult.Failure -> {
+                                if (activeProvider.value.metadata.id == provider) {
+                                    refreshErrorState.value = result.error.message
+                                }
+                            }
+                        }
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Throwable) {
+                        // refreshBoards normally reports OrbinResult, but a boundary-level catch
+                        // prevents implementation bugs from leaving the screen stuck refreshing.
+                        Log.w(TAG, "Could not refresh the board list", error)
+                        if (activeProvider.value.metadata.id == provider) {
+                            refreshErrorState.value = error.message.orEmpty().ifBlank { REFRESH_ERROR }
+                        }
+                    } finally {
+                        if (activeProvider.value.metadata.id == provider) {
+                            refreshingState.value = false
+                        }
+                    }
                 }
-            }
         }
 
         private companion object {
             const val TAG = "MinimalBoardsViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
+            const val REFRESH_ERROR = "Could not load the board list"
+            const val SUBSCRIPTION_ERROR = "Could not update that subscription"
         }
     }

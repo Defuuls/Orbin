@@ -1,48 +1,69 @@
 package com.orbin.minimal
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.orbin.feature.gallery.GalleryScreen
-import com.orbin.feature.home.NextFeedScreen
 import com.orbin.feature.thread.NextThreadScreen
+import com.orbin.uinext.MessageScreen
 import kotlinx.serialization.Serializable
 
-/**
- * Four destinations, no bottom bar, no tabs, no drawer: feed, boards, thread, image.
- *
- * The full client's graph carries fifteen-odd destinations behind a bottom navigation bar. This
- * one is a stack you go down and come back up, which is the entire interaction model of the app.
- */
 @Composable
-fun MinimalNavHost() {
+fun MinimalNavHost(boardsViewModel: MinimalBoardsViewModel = hiltViewModel()) {
     val navController = rememberNavController()
+    val hasSubscriptions by boardsViewModel.hasSubscriptions.collectAsStateWithLifecycle()
 
-    NavHost(navController = navController, startDestination = MinimalRoute.Feed) {
+    NavHost(navController = navController, startDestination = MinimalRoute.Bootstrap) {
+        composable<MinimalRoute.Bootstrap> {
+            LaunchedEffect(hasSubscriptions) {
+                val resolved = hasSubscriptions ?: return@LaunchedEffect
+                navController.navigate(if (resolved) MinimalRoute.Feed else MinimalRoute.Boards) {
+                    popUpTo<MinimalRoute.Bootstrap> { inclusive = true }
+                }
+            }
+            MessageScreen(
+                title = stringResource(R.string.minimal_app_name),
+                subtitle =
+                    if (hasSubscriptions == false) {
+                        stringResource(R.string.minimal_choose_boards)
+                    } else {
+                        stringResource(R.string.minimal_preparing)
+                    },
+            )
+        }
+
         composable<MinimalRoute.Feed> {
-            // The full client's feed, unchanged. The rail's one affordance is Boards rather than
-            // Search, because the board list is the only other place this app has.
-            NextFeedScreen(
+            MinimalFeedScreen(
                 onOpenThread = { provider, board, thread, title ->
                     navController.navigate(MinimalRoute.Thread(provider, board, thread, title))
                 },
-                onOpenCommands = { navController.navigate(MinimalRoute.Boards) },
-                railAction = "Boards",
+                onOpenBoards = { navController.navigate(MinimalRoute.Boards) },
             )
         }
 
         composable<MinimalRoute.Boards> {
-            MinimalBoardsScreen(onBack = navController::navigateUp)
+            MinimalBoardsScreen(
+                onBack = {
+                    if (!navController.navigateUp()) {
+                        navController.navigate(MinimalRoute.Feed) {
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                viewModel = boardsViewModel,
+            )
         }
 
         composable<MinimalRoute.Thread> { backStackEntry ->
             val route = backStackEntry.toRoute<MinimalRoute.Thread>()
             NextThreadScreen(
-                // The thread renders media inline; this is the tap that opens it full screen.
-                // Without it the images in a thread would be a dead tap, which is a worse kind of
-                // minimal than simply leaving a feature out.
                 onOpenMedia = { index ->
                     navController.navigate(
                         MinimalRoute.Media(route.provider, route.board, route.thread, index),
@@ -57,11 +78,10 @@ fun MinimalNavHost() {
     }
 }
 
-/**
- * Its own route type rather than a share of the full client's: those live in `:app`, and the point
- * of a second application module is that neither app's navigation constrains the other's.
- */
 sealed interface MinimalRoute {
+    @Serializable
+    data object Bootstrap : MinimalRoute
+
     @Serializable
     data object Feed : MinimalRoute
 
@@ -76,10 +96,6 @@ sealed interface MinimalRoute {
         val title: String,
     ) : MinimalRoute
 
-    /**
-     * Argument names match what `GalleryViewModel` and `ThreadViewModel` read out of their
-     * `SavedStateHandle`, which is how these screens are reused unchanged.
-     */
     @Serializable
     data class Media(
         val provider: String,
