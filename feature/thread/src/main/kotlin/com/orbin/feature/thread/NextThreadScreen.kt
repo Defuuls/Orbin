@@ -47,9 +47,9 @@ import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.Post as NextPost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import com.orbin.uinext.Post as NextPost
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,13 +177,18 @@ private fun LoadedThread(
     }
 
     LaunchedEffect(initialScrollPosition, rows, initialScrollRestored) {
-        val saved = initialScrollPosition ?: return@LaunchedEffect
         if (initialScrollRestored) return@LaunchedEffect
+        val saved = initialScrollPosition
+        if (saved == null) {
+            delay(INITIAL_SCROLL_LOAD_GRACE_MS)
+            initialScrollRestored = true
+            return@LaunchedEffect
+        }
         val target = rows.indexOfFirst { it.post.id == saved.postId }
         if (target >= 0) {
             listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
-            initialScrollRestored = true
         }
+        initialScrollRestored = true
     }
 
     LaunchedEffect(listState, rows, layout, initialScrollRestored) {
@@ -367,3 +372,4 @@ private const val FILL_COLUMNS = 1
 private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
 private const val MAX_THREAD_MEDIA_ASPECT = 2f
 private const val SCROLL_SAVE_SETTLE_MS = 180L
+private const val INITIAL_SCROLL_LOAD_GRACE_MS = 750L
