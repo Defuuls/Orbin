@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [119-Aiko] - 2026-09-02
+
+### Performance
+- Bounded complete-thread caching to stabilize memory during long browsing sessions.
+- Removed whole-feed minute-tick rebuilds and limited feed autoplay to one visible video player.
+- Scoped visited-history queries, reduced encrypted scroll-position writes, and consolidated thread presentation indexes.
+- Added low-RAM image-cache tuning, foreground-aware media preloading, and expanded startup/feed Macrobenchmark coverage with CI performance gates.
+
+### Fixed
+- Preserved exact thread scroll position around media viewing while reducing persistence overhead.
+
+
 ## [118-Hotaru] - 2026-09-01
 
 ### Added
@@ -1995,7 +2007,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v119-Aiko...HEAD
+[119-Aiko]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...v119-Aiko
 [118-Hotaru]: https://github.com/Defuuls/Orbin/compare/v117-Nao...v118-Hotaru
 [117-Nao]: https://github.com/Defuuls/Orbin/compare/v116-Miku...v117-Nao
 [116-Miku]: https://github.com/Defuuls/Orbin/compare/v115-Misaki...v116-Miku
