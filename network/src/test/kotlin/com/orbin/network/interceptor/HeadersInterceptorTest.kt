@@ -47,6 +47,7 @@ class HeadersInterceptorTest {
             val request = server.takeRequest()
             assertThat(request.getHeader("User-Agent")).isEqualTo("OrbinTest")
             assertThat(request.getHeader("Accept")).contains("image/*")
+            assertThat(request.getHeader("Referer")).isEqualTo(server.url("/").toString())
             assertThat(request.getHeader("Cache-Control")).isNull()
             assertThat(request.getHeader("Pragma")).isNull()
         }
