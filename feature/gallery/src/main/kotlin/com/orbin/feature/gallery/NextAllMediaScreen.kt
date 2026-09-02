@@ -106,6 +106,7 @@ fun NextAllMediaContent(
                 deepScanning = uiState.isDeepScanning,
                 deepScanned = uiState.threadsScanned,
                 deepTotal = uiState.threadsTotal,
+                showSizeControl = true,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onSearch = onOpenCommands,
