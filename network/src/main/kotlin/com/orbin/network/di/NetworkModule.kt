@@ -143,7 +143,9 @@ object NetworkModule {
                         .removeHeader("Cache-Control")
                         .removeHeader("Pragma")
                         .header("Accept", "video/webm,video/mp4,video/*,*/*;q=0.9")
-                        .header("Referer", "https://boards.4chan.org/")
+                        // Preserve the same-origin Referer installed by HeadersInterceptor. Some
+                        // imageboard media proxies reject hotlink-looking requests with a foreign
+                        // referrer, and the previous hard-coded 4chan value broke those hosts.
                         .build()
                 chain.proceed(req)
             }.addInterceptor(VideoRetryAfterInterceptor())
