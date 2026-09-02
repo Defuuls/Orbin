@@ -40,32 +40,15 @@ import com.orbin.feature.thread.NextThreadScreen
 
 private const val TRANSITION_MS = 300
 
-// Internal rather than private: every screen that can open the full-screen gallery reads this same
-// key from its own back stack entry, since Route.Gallery always writes the page it's on back to
-// whichever entry precedes it — the two-pane catalog (when the thread is a pane, not a
-// destination) and the standalone gallery browser both read it themselves.
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
 
-/**
- * The single navigation graph for the app. Predictive back is enabled at the manifest level so the
- * system back gesture animates these destinations.
- *
- * Two transition styles are in play. Most destinations *push*: the outgoing screen slides away with
- * the incoming one, the usual Android forward navigation. Settings — and threads, when the user
- * picks that — instead slide in *over* the screen behind, which stays where it is and is revealed
- * again on the way back. NavHost gives the entering destination a higher z-index on push and the
- * departing one a higher z-index on pop, so the overlay is drawn on top in both directions without
- * any extra layering.
- */
 @Composable
 fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: Route = Route.NextFeed,
-    /** Hide the rail as the reader scrolls down, on every screen that has one. */
     chromeHidesOnScroll: Boolean = false,
-    /** Show the catalog and the selected thread side by side instead of one replacing the other. */
     twoPaneBoardDetail: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
     subscribedFeedRefreshRequest: Int = 0,
@@ -91,7 +74,6 @@ fun OrbinNavHost(
             }
         },
         exitTransition = {
-            // Nothing: an overlay slides on top of this screen, so it must stay put underneath.
             if (targetState.destination.slidesOver(threadPresentation)) {
                 ExitTransition.None
             } else {
@@ -146,7 +128,6 @@ fun OrbinNavHost(
         }
 
         composable<Route.Search> { SearchScreen(onOpenThread = openThread) }
-
         composable<Route.History> { HistoryScreen(onOpenThread = openThread) }
 
         composable<Route.GalleryBrowser> { backStackEntry ->
@@ -183,16 +164,15 @@ fun OrbinNavHost(
         }
 
         composable<Route.Board> { backStackEntry ->
-            // Hoisted above the two-pane/one-pane branch so it survives the switch. A 10" tablet is
-            // around 1280dp in landscape and 800dp in portrait, so an ordinary rotation crosses the
-            // threshold — without this the open thread would just vanish when the panes collapse.
+            val mediaScrollIndex by
+                backStackEntry.savedStateHandle
+                    .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
+                    .collectAsStateWithLifecycle()
             var paneThread by
                 rememberSaveable(stateSaver = threadRouteSaver) { mutableStateOf<Route.Thread?>(null) }
 
             LaunchedEffect(twoPaneBoardDetail) {
                 if (!twoPaneBoardDetail) {
-                    // Collapsed: promote whatever the detail pane held to a destination of its own,
-                    // so the reader keeps the thread and Back returns them to the catalog.
                     paneThread?.let { thread ->
                         paneThread = null
                         navController.navigate(thread)
@@ -206,6 +186,11 @@ fun OrbinNavHost(
                     onThreadSelected = { paneThread = it },
                     onOpenGallery = { provider, board, thread, index ->
                         navController.navigate(Route.Gallery(provider, board, thread, index))
+                    },
+                    mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                    onMediaScrollConsumed = {
+                        backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                            NO_THREAD_MEDIA_SCROLL_INDEX
                     },
                     onOpenCommands = onOpenCommands,
                     onBack = navController::navigateUp,
@@ -222,9 +207,18 @@ fun OrbinNavHost(
 
         composable<Route.Thread> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.Thread>()
+            val mediaScrollIndex by
+                backStackEntry.savedStateHandle
+                    .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
+                    .collectAsStateWithLifecycle()
             NextThreadScreen(
                 onOpenMedia = { index ->
                     navController.navigate(Route.Gallery(route.provider, route.board, route.thread, index))
+                },
+                mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                onMediaScrollConsumed = {
+                    backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                        NO_THREAD_MEDIA_SCROLL_INDEX
                 },
                 onOpenCommands = onOpenCommands,
             )
@@ -241,9 +235,7 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Downloads> {
-            DownloadsScreen(onBack = navController::navigateUp)
-        }
+        composable<Route.Downloads> { DownloadsScreen(onBack = navController::navigateUp) }
 
         composable<Route.Settings> { backStackEntry ->
             NextSettingsScreen(
@@ -254,15 +246,12 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Subscriptions> {
-            SubscriptionsScreen(onBack = navController::navigateUp)
-        }
+        composable<Route.Subscriptions> { SubscriptionsScreen(onBack = navController::navigateUp) }
 
         composable<Route.Onboarding> {
             OnboardingScreen(
                 onFinish = {
                     navController.navigate(Route.NextFeed) {
-                        // Clear onboarding from the back stack so Back from Feed exits the app.
                         popUpTo(navController.graph.id) {
                             inclusive = true
                             saveState = false
@@ -274,27 +263,10 @@ fun OrbinNavHost(
     }
 }
 
-/**
- * Whether this destination lays itself over the screen behind rather than pushing it aside.
- *
- * Settings always does. Threads do only when the user has asked for it — the default stays the
- * ordinary push, which is what Android users expect of a forward navigation.
- */
 private fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
     hasRoute(Route.Settings::class) ||
         (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))
 
-/**
- * Saves the thread open in the detail pane across configuration changes.
- *
- * [Route.Thread] is `@Serializable` for navigation, not `Parcelable`, so it cannot go into a
- * Bundle as-is; its four fields all can.
- *
- * "No thread selected" is encoded as the empty list, which `listSaver` turns into a *null saved
- * value* — nothing is written, and `rememberSaveable` re-runs its initialiser on the way back,
- * which yields null. So [restore] is only ever handed a populated list; it does not need, and must
- * not pretend to have, an empty case.
- */
 internal val threadRouteSaver =
     listSaver<Route.Thread?, Any>(
         save = { thread ->
@@ -309,5 +281,3 @@ internal val threadRouteSaver =
             )
         },
     )
-
-/** Which destination a settings section's editor lives at. */
