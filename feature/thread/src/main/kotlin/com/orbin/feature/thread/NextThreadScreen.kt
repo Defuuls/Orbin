@@ -321,7 +321,9 @@ private fun LoadedThread(
                     )
                 },
             )
-            if (showScrollArrow && layout == ThreadLayout.POSTS && rows.size > 1 && onOpenCommands != null) {
+            val arrowEnabled = showScrollArrow && onOpenCommands != null
+            val canStepPosts = layout == ThreadLayout.POSTS && rows.size > 1
+            if (arrowEnabled && canStepPosts) {
                 InlineAction(
                     label = "↓",
                     modifier =
