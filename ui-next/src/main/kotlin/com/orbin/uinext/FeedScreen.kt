@@ -55,6 +55,7 @@ fun FeedScreen(
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
+    showSizeControl: Boolean = false,
 ) {
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -140,6 +141,7 @@ fun FeedScreen(
                     omittedWithoutPreview = omittedWithoutPreview,
                     sizeValue = feedSize,
                     onSizeChange = { feedSize = it },
+                    showSizeControl = showSizeControl,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
