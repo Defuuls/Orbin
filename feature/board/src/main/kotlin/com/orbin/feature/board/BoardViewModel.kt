@@ -77,17 +77,12 @@ class BoardViewModel
             savedStateHandle[CATALOG_SORT_KEY] = values[(values.indexOf(current) + 1) % values.size]
         }
 
-        /**
-         * The catalog as the grid shows it. Network pages are cached first; local settings then
-         * transform those cached pages in one pass, so display changes never refetch the board.
-         */
         val catalog: Flow<PagingData<CatalogThread>> =
             catalogSort
                 .flatMapLatest { current -> catalogRepository.catalogStream(provider, board, current) }
                 .cachedIn(viewModelScope)
                 .presentedBy(presentationSettings)
 
-        /** One board-scoped bookmark query produces both watched ids and unread counts. */
         private val bookmarkState: StateFlow<BoardBookmarkState> =
             bookmarkRepository
                 .observeBookmarks(provider, board)
@@ -108,15 +103,11 @@ class BoardViewModel
                 .map { it.unreadByThread }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyMap())
 
-        /** Thread ids on this board already present in reading history, for "already read" title styling. */
+        /** Uses a board-scoped Room query rather than materializing the user's entire history. */
         val visitedThreadIds: StateFlow<Set<Long>> =
             historyRepository
-                .observeVisitedKeys()
-                .map { keys ->
-                    keys
-                        .filter { it.provider == provider && it.board == board }
-                        .mapTo(mutableSetOf()) { it.thread.value }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+                .observeVisitedThreadIds(provider, board)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val thumbnailSize: StateFlow<ThumbnailSize> =
             settingsRepository.settings
