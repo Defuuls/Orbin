@@ -66,7 +66,10 @@ fun NextSettingsScreen(
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val uiPrefs = remember(context) { context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE) }
+    val uiPrefs =
+        remember(context) {
+            context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE)
+        }
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
     var threadScrollArrowEnabled by
@@ -154,7 +157,9 @@ fun NextSettingsScreen(
                                         label = "Thread scroll arrow",
                                         value = if (threadScrollArrowEnabled) "On" else "Off",
                                         kind = SettingKind.TOGGLE,
-                                        hint = "Adds a Reddit-style down arrow to the bottom thread bar. Each tap moves to the next post.",
+                                        hint =
+                                            "Adds a Reddit-style down arrow to the bottom thread bar. " +
+                                                "Each tap moves to the next post.",
                                     )
                             )
                     "Storage & backup" ->
