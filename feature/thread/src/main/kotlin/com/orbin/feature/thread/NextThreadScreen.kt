@@ -67,6 +67,7 @@ fun NextThreadScreen(
     val mediaScroll by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
+    val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(exportMessage) {
@@ -84,14 +85,12 @@ fun NextThreadScreen(
                     subtitle = stringResource(R.string.next_thread_loading),
                     modifier = modifier,
                 )
-
             is ThreadUiState.Blocked ->
                 MessageScreen(
                     title = stringResource(R.string.next_thread_blocked_title),
                     subtitle = stringResource(R.string.next_thread_blocked),
                     modifier = modifier,
                 )
-
             is ThreadUiState.Error ->
                 MessageScreen(
                     title = stringResource(R.string.next_thread_unavailable),
@@ -100,7 +99,6 @@ fun NextThreadScreen(
                     onAction = viewModel::refresh,
                     modifier = modifier,
                 )
-
             is ThreadUiState.Success ->
                 LoadedThread(
                     state = state,
@@ -108,6 +106,7 @@ fun NextThreadScreen(
                     isBookmarked = isBookmarked,
                     firstUnreadPostId = firstUnreadPostId,
                     initialScrollPosition = initialScrollPosition,
+                    initialScrollLoaded = initialScrollLoaded,
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
@@ -128,6 +127,7 @@ private fun LoadedThread(
     isBookmarked: Boolean,
     firstUnreadPostId: PostId?,
     initialScrollPosition: ThreadScrollPosition?,
+    initialScrollLoaded: Boolean,
     snackbarHostState: SnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
@@ -144,49 +144,33 @@ private fun LoadedThread(
             thread.key,
             saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
         ) { mutableStateListOf<String>() }
-    val rows = remember(thread) { thread.toRows() }
-    val byId = remember(rows) { rows.associateBy { it.row.id } }
-    val mediaIndex =
-        remember(thread) {
-            thread.allPosts
-                .flatMap { it.attachments }
-                .withIndex()
-                .associate { (index, media) -> media.id to index }
-        }
-    val attachments = remember(thread) { thread.allPosts.flatMap { it.attachments } }
-    val fileCells =
-        remember(attachments, thread) {
-            attachments.map { MediaCell(id = it.id, board = "/${thread.key.board.value}/") }
-        }
-    val attachmentsById = remember(attachments) { attachments.associateBy { it.id } }
+    val presentation = remember(thread) { thread.toPresentationIndex() }
+    val rows = presentation.rows
 
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
     var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
 
-    fun saveVisiblePost() {
+    fun saveVisiblePost(flush: Boolean = false) {
         if (layout != ThreadLayout.POSTS || rows.isEmpty()) return
         val visibleItem = listState.firstVisibleItemIndex
         val postIndex = (visibleItem - 1).coerceIn(0, rows.lastIndex)
         val offset = if (visibleItem == 0) 0 else listState.firstVisibleItemScrollOffset
         viewModel.saveScrollPosition(rows[postIndex].post.id, offset)
+        if (flush) viewModel.flushScrollPosition()
     }
 
     fun openMedia(index: Int) {
-        saveVisiblePost()
+        saveVisiblePost(flush = true)
         onOpenMedia(index)
     }
 
-    LaunchedEffect(initialScrollPosition, rows, initialScrollRestored) {
-        if (initialScrollRestored) return@LaunchedEffect
-        val saved = initialScrollPosition
-        if (saved == null) {
-            delay(INITIAL_SCROLL_LOAD_GRACE_MS)
-            initialScrollRestored = true
-            return@LaunchedEffect
-        }
-        val target = rows.indexOfFirst { it.post.id == saved.postId }
-        if (target >= 0) {
-            listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
+    LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored) {
+        if (!initialScrollLoaded || initialScrollRestored) return@LaunchedEffect
+        initialScrollPosition?.let { saved ->
+            val target = rows.indexOfFirst { it.post.id == saved.postId }
+            if (target >= 0) {
+                listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
+            }
         }
         initialScrollRestored = true
     }
@@ -195,13 +179,13 @@ private fun LoadedThread(
         if (layout != ThreadLayout.POSTS || rows.isEmpty() || !initialScrollRestored) return@LaunchedEffect
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
             .collectLatest {
-                delay(SCROLL_SAVE_SETTLE_MS)
+                delay(SCROLL_TRACK_SETTLE_MS)
                 saveVisiblePost()
             }
     }
 
     DisposableEffect(thread.key, layout, rows) {
-        onDispose { saveVisiblePost() }
+        onDispose { saveVisiblePost(flush = true) }
     }
 
     PullToRefreshBox(
@@ -212,23 +196,23 @@ private fun LoadedThread(
         ThreadScreen(
             subject = thread.subject ?: viewModel.title,
             board = "/${thread.key.board.value}/",
-            posts = rows.map { it.row },
+            posts = presentation.rowModels,
             subtitle = thread.subtitleText(state.fromSavedCopy),
             watching = isBookmarked,
             layout = layout,
             onLayoutChange = {
-                if (layout == ThreadLayout.POSTS) saveVisiblePost()
+                if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
                 layout = it
             },
-            files = fileCells,
+            files = presentation.fileCells,
             fileColumns = thumbnailSize.threadGridColumns(),
-            onOpenFile = { cell -> mediaIndex[cell.id]?.let(::openMedia) },
+            onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
             fileTile = { cell, tileModifier ->
-                attachmentsById[cell.id]?.let { attachment ->
+                presentation.attachmentsById[cell.id]?.let { attachment ->
                     MediaThumbnail(
                         attachment = attachment,
                         modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
-                        onClick = { mediaIndex[cell.id]?.let(::openMedia) },
+                        onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                     )
                 }
             },
@@ -246,7 +230,7 @@ private fun LoadedThread(
             showRail = onOpenCommands != null,
             onSearch = onOpenCommands ?: {},
             body = { row ->
-                byId[row.id]?.let { entry ->
+                presentation.rowsById[row.id]?.let { entry ->
                     PostCommentText(
                         comment = entry.post.comment,
                         onQuoteClick = { target -> scrollTarget = target.value.toString() },
@@ -254,12 +238,16 @@ private fun LoadedThread(
                 }
             },
             media = { row, tileModifier ->
-                val postAttachments = byId[row.id]?.post?.attachments.orEmpty()
+                val postAttachments =
+                    presentation.rowsById[row.id]
+                        ?.post
+                        ?.attachments
+                        .orEmpty()
                 PostMedia(
                     attachments = postAttachments,
                     scrollable = mediaScroll,
                     modifier = tileModifier,
-                    onOpen = { id -> mediaIndex[id]?.let(::openMedia) },
+                    onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
                 )
             },
         )
@@ -320,15 +308,35 @@ private fun PostMedia(
 }
 
 private fun MediaAttachment.threadAspectRatio(): Float =
-    aspectRatio.coerceIn(
-        MIN_THREAD_MEDIA_ASPECT,
-        MAX_THREAD_MEDIA_ASPECT,
-    )
+    aspectRatio.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT)
 
 internal data class ThreadRow(
     val post: com.orbin.core.model.Post,
     val row: NextPost,
 )
+
+private data class ThreadPresentationIndex(
+    val rows: List<ThreadRow>,
+    val rowModels: List<NextPost>,
+    val rowsById: Map<String, ThreadRow>,
+    val attachmentsById: Map<String, MediaAttachment>,
+    val mediaIndex: Map<String, Int>,
+    val fileCells: List<MediaCell>,
+)
+
+private fun Thread.toPresentationIndex(): ThreadPresentationIndex {
+    val rows = toRows()
+    val attachments = allPosts.flatMap { it.attachments }
+    val boardLabel = "/${key.board.value}/"
+    return ThreadPresentationIndex(
+        rows = rows,
+        rowModels = rows.map { it.row },
+        rowsById = rows.associateBy { it.row.id },
+        attachmentsById = attachments.associateBy { it.id },
+        mediaIndex = attachments.withIndex().associate { (index, media) -> media.id to index },
+        fileCells = attachments.map { MediaCell(id = it.id, board = boardLabel) },
+    )
+}
 
 internal fun Thread.toRows(): List<ThreadRow> {
     val posts = allPosts
@@ -371,5 +379,4 @@ private const val LARGE_COLUMNS = 2
 private const val FILL_COLUMNS = 1
 private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
 private const val MAX_THREAD_MEDIA_ASPECT = 2f
-private const val SCROLL_SAVE_SETTLE_MS = 180L
-private const val INITIAL_SCROLL_LOAD_GRACE_MS = 750L
+private const val SCROLL_TRACK_SETTLE_MS = 180L

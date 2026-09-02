@@ -22,9 +22,16 @@ interface HistoryDao {
         thread: Long,
     ): HistoryEntity?
 
-    /** Every visited thread key, for "already read" styling in catalogs and feeds. */
+    /** Every visited thread key, for global feed read-state styling. */
     @Query("SELECT provider, board, thread FROM history")
     fun observeKeys(): Flow<List<HistoryKeyRow>>
+
+    /** Only thread ids for the board currently being rendered. */
+    @Query("SELECT thread FROM history WHERE provider = :provider AND board = :board")
+    fun observeThreadIds(
+        provider: String,
+        board: String,
+    ): Flow<List<Long>>
 
     @Upsert
     suspend fun upsert(entry: HistoryEntity)

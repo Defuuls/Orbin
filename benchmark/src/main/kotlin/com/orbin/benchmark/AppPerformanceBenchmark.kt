@@ -15,28 +15,22 @@ private const val BENCHMARK_PACKAGE_NAME = "com.orbin.app"
 private const val BENCHMARK_WAIT_TIMEOUT_MS = 10_000L
 
 /**
- * Repeatable performance checks for the two paths most affected by the efficiency audit: process
- * startup and scrolling the subscribed feed. Macrobenchmark records frame timing through Perfetto,
- * so regressions can be compared on a physical/unlocked benchmark device instead of inferred from
- * code inspection alone.
+ * Macrobenchmarks covering cold/warm/hot launch and the primary scrolling surface. These are kept
+ * data-tolerant: if the account has no subscribed rows the scroll benchmark exits cleanly, while
+ * startup timing remains fully measurable on a clean install.
  */
 class AppPerformanceBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun coldStartup() {
-        benchmarkRule.measureRepeated(
-            packageName = BENCHMARK_PACKAGE_NAME,
-            metrics = listOf(StartupTimingMetric()),
-            compilationMode = CompilationMode.Partial(),
-            startupMode = StartupMode.COLD,
-            iterations = STARTUP_ITERATIONS,
-            setupBlock = { pressHome() },
-        ) {
-            startActivityAndWait()
-        }
-    }
+    fun coldStartup() = measureStartup(StartupMode.COLD)
+
+    @Test
+    fun warmStartup() = measureStartup(StartupMode.WARM)
+
+    @Test
+    fun hotStartup() = measureStartup(StartupMode.HOT)
 
     @Test
     fun subscribedFeedScrollFrames() {
@@ -60,6 +54,19 @@ class AppPerformanceBenchmark {
                 feed.fling(Direction.UP)
                 device.waitForIdle()
             }
+        }
+    }
+
+    private fun measureStartup(mode: StartupMode) {
+        benchmarkRule.measureRepeated(
+            packageName = BENCHMARK_PACKAGE_NAME,
+            metrics = listOf(StartupTimingMetric()),
+            compilationMode = CompilationMode.Partial(),
+            startupMode = mode,
+            iterations = STARTUP_ITERATIONS,
+            setupBlock = { pressHome() },
+        ) {
+            startActivityAndWait()
         }
     }
 

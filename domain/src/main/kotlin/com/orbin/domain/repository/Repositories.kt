@@ -156,8 +156,23 @@ interface BookmarkRepository {
 interface HistoryRepository {
     fun observeHistory(): Flow<List<HistoryEntry>>
 
-    /** Every visited thread key, for "already read" styling in catalogs and feeds. */
+    /** Every visited thread key, for read-state styling across multiple boards. */
     fun observeVisitedKeys(): Flow<Set<ThreadKey>>
+
+    /**
+     * Visited thread ids for one board. Room-backed implementations override this with a scoped
+     * query; the default keeps test doubles source-compatible.
+     */
+    fun observeVisitedThreadIds(
+        provider: ProviderId,
+        board: BoardId,
+    ): Flow<Set<Long>> =
+        observeVisitedKeys().map { keys ->
+            keys
+                .asSequence()
+                .filter { it.provider == provider && it.board == board }
+                .mapTo(mutableSetOf()) { it.thread.value }
+        }
 
     suspend fun getEntry(key: ThreadKey): HistoryEntry?
 
