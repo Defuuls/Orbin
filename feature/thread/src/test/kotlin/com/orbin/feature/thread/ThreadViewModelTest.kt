@@ -30,6 +30,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -149,15 +150,13 @@ class ThreadViewModelTest {
             val history = FakeHistoryRepository()
 
             val first = createViewModel(historyRepository = history)
-            // Subscribing is what starts the load, and the load is what records the history row
-            // that the scroll position is later written onto.
             first.uiState.test { awaitItem() }
             first.saveScrollPosition(PostId(42), offsetPx = 17)
+            advanceTimeBy(650L)
             runCurrent()
 
             val reopened = createViewModel(historyRepository = history)
             reopened.initialScrollPosition.test {
-                // The flow starts at null and fills in once history has been read.
                 val restored = awaitItem() ?: awaitItem()
                 assertThat(restored).isNotNull()
                 assertThat(restored!!.postId).isEqualTo(PostId(42))
@@ -165,11 +164,6 @@ class ThreadViewModelTest {
             }
         }
 
-    /**
-     * The v92 regression: the restore target was a one-time snapshot taken when the thread opened,
-     * so a rebuilt list (rotation, or a reload dipping through the loading state) restored to where
-     * the reader *started* and the debounced save then wrote that stale position over the real one.
-     */
     @Test
     fun `saving a scroll position moves the restore target with it`() =
         runTest {
@@ -218,7 +212,6 @@ class ThreadViewModelTest {
             stats = ThreadStats(),
         )
 
-    /** An OP with one image and one video, and a reply carrying a second video. */
     private fun threadWithMixedMedia() =
         Thread(
             key = key,
