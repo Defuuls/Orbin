@@ -180,6 +180,7 @@ fun NextFeedScreen(
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
                             layout = layout,
+                            showSizeControl = true,
                             onLayoutChange = { viewModel.setFeedLayoutName(it.name) },
                             sortLabel = settings.feedSort.label,
                             onSort = viewModel::cycleFeedSort,

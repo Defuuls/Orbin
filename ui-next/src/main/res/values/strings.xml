@@ -64,7 +64,10 @@
     <string name="next_board_subscribed">Subscribed</string>
     <string name="next_board_not_subscribed">Not subscribed</string>
 
-    <!-- The media wall's sweep -->
+    <!-- The media wall's sweep and size control -->
+    <string name="next_media_size_control">Image size</string>
+    <string name="next_media_size_small">Small</string>
+    <string name="next_media_size_large">Large</string>
     <string name="next_sweep_reading">Reading %1$d of %2$d threads</string>
     <string name="next_sweep_progress">%1$d of %2$d</string>
     <string name="next_sweep_unreachable">%d unreachable</string>

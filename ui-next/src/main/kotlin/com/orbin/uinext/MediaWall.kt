@@ -16,8 +16,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +49,7 @@ fun MediaWallScreen(
     deepScanned: Int = 0,
     deepTotal: Int = 0,
     showRail: Boolean = true,
+    showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
     onSearch: () -> Unit = {},
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
@@ -51,6 +57,10 @@ fun MediaWallScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
     val gridState = rememberLazyGridState()
+    var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
+    val imageCellMinSize = imageCellSize.dp
+    val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 124.dp
+    val imageSizeDescription = stringResource(R.string.next_media_size_control)
     val railVisible =
         if (hideRailOnScroll) {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
@@ -71,7 +81,7 @@ fun MediaWallScreen(
         railVisible = railVisible,
     ) { bottomPad ->
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(IMAGE_MIN_CELL),
+            columns = GridCells.Adaptive(imageCellMinSize),
             state = gridState,
             modifier = Modifier.fillMaxSize().contentInsets(),
             contentPadding = gridPadding(bottomPad),
@@ -82,6 +92,27 @@ fun MediaWallScreen(
                         text = stringResource(R.string.next_all_media_title),
                         subtitle = stringResource(R.string.next_all_media_subtitle),
                     )
+                    if (showSizeControl) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            MetaLine(stringResource(R.string.next_media_size_small))
+                            Slider(
+                                value = imageCellSize,
+                                onValueChange = { imageCellSize = it },
+                                valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                steps = MEDIA_CELL_STEPS,
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 12.dp)
+                                        .semantics { contentDescription = imageSizeDescription },
+                            )
+                            MetaLine(stringResource(R.string.next_media_size_large))
+                        }
+                        Gap(8)
+                    }
                     if (scanning || deepScanning || failed > 0) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
@@ -124,7 +155,7 @@ fun MediaWallScreen(
                             }.semantics { contentDescription = description },
                     contentAlignment = Alignment.BottomStart,
                 ) {
-                    val shape = Modifier.fillMaxWidth().height(124.dp)
+                    val shape = Modifier.fillMaxWidth().height(imageHeight)
                     if (tile != null) {
                         tile(cell, shape)
                     } else {
@@ -164,3 +195,8 @@ internal fun SweepBar(
         )
     }
 }
+
+private const val MEDIA_CELL_MIN_DP = 96f
+private const val MEDIA_CELL_MAX_DP = 240f
+private const val MEDIA_CELL_STEPS = 5
+private const val MEDIA_TILE_HEIGHT_RATIO = 0.74f

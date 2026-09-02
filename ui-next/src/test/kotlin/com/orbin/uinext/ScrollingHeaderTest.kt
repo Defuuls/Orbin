@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import org.junit.Rule
 import org.junit.Test
@@ -80,7 +81,7 @@ class ScrollingHeaderTest {
         }
 
         composeRule.onNodeWithText("All media").assertIsDisplayed()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("/z/"))
+        composeRule.onNode(hasScrollAction()).performScrollToIndex(ROW_COUNT)
 
         composeRule.onNodeWithText("All media").assertDoesNotExist()
     }

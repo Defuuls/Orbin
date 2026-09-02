@@ -42,6 +42,7 @@ fun NextAllMediaScreen(
     NextAllMediaContent(
         uiState = uiState,
         isRefreshing = isRefreshing,
+        showSizeControl = true,
         onRefresh = viewModel::refresh,
         onOpenMedia = onOpenMedia,
         onOpenCommands = onOpenCommands,
@@ -63,6 +64,7 @@ fun NextAllMediaContent(
     isRefreshing: Boolean,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    showSizeControl: Boolean = false,
     onRefresh: () -> Unit,
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
     onOpenCommands: () -> Unit,
@@ -106,6 +108,7 @@ fun NextAllMediaContent(
                 deepScanning = uiState.isDeepScanning,
                 deepScanned = uiState.threadsScanned,
                 deepTotal = uiState.threadsTotal,
+                showSizeControl = showSizeControl,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onSearch = onOpenCommands,

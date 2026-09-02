@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -41,7 +43,11 @@ internal fun FeedHeader(
     sortLabel: String? = null,
     onSort: () -> Unit = {},
     omittedWithoutPreview: Int = 0,
+    sizeValue: Float = GRID_MIN_CELL.value,
+    onSizeChange: (Float) -> Unit = {},
+    showSizeControl: Boolean = true,
 ) {
+    val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
         FlowRow(
@@ -66,6 +72,27 @@ internal fun FeedHeader(
             )
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
+            }
+        }
+        if (showSizeControl) {
+            Gap(8)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MetaLine(stringResource(R.string.next_media_size_small))
+                Slider(
+                    value = sizeValue,
+                    onValueChange = onSizeChange,
+                    valueRange = FEED_SIZE_MIN_DP..FEED_SIZE_MAX_DP,
+                    steps = FEED_SIZE_STEPS,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                            .semantics { contentDescription = sizeDescription },
+                )
+                MetaLine(stringResource(R.string.next_media_size_large))
             }
         }
         if (layout == FeedLayout.IMAGES && omittedWithoutPreview > 0) {
@@ -106,11 +133,13 @@ internal fun FeedRowView(
     onClick: (FeedRow) -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     activityText: @Composable (FeedRow) -> String = { it.activity },
+    sizeScale: Float = 1f,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier, showBoard = showBoard, onClick = onClick)
         return
     }
+    val clampedScale = sizeScale.coerceIn(0.7f, 1.45f)
     Row(
         modifier =
             modifier
@@ -119,7 +148,7 @@ internal fun FeedRowView(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) }
-                .padding(horizontal = GUTTER, vertical = 15.dp),
+                .padding(horizontal = GUTTER, vertical = (15f * clampedScale).dp),
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -153,8 +182,12 @@ internal fun FeedRowView(
             MetaLine(rowCounts(row))
         }
         if (row.hasPreview) {
-            WidthSpacer(14)
-            val tile = Modifier.size(width = LIST_TILE_WIDTH, height = LIST_TILE_HEIGHT)
+            WidthSpacer((14f * clampedScale).toInt())
+            val tile =
+                Modifier.size(
+                    width = LIST_TILE_WIDTH * clampedScale,
+                    height = LIST_TILE_HEIGHT * clampedScale,
+                )
             if (thumbnail != null) {
                 thumbnail(row, tile)
             } else {
@@ -239,6 +272,7 @@ internal fun FeedImageCell(
     seed: Int,
     onClick: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+    tileHeight: Dp = 124.dp,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = Modifier.padding(2.5.dp), onClick = onClick)
@@ -257,7 +291,7 @@ internal fun FeedImageCell(
                 .semantics { contentDescription = description },
         contentAlignment = Alignment.BottomStart,
     ) {
-        val tile = Modifier.fillMaxWidth().height(124.dp)
+        val tile = Modifier.fillMaxWidth().height(tileHeight)
         if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
         Pill(
             text = row.board,
