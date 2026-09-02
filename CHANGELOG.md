@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [120-Sora] - 2026-09-02
+
+### Fixed
+- Restored BBW-Chan image, animated-media, and video loading by sending same-origin media referrers instead of missing or hard-coded 4chan referrers.
+- Synchronized thread scroll with the gallery's active media page so returning from full-screen media lands on the post that owns the viewed attachment.
+
+### Reliability
+- Added regression coverage for media request headers and gallery-to-thread media index mapping.
+
+
 ## [119-Aiko] - 2026-09-02
 
 ### Performance
@@ -2007,7 +2017,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v119-Aiko...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v120-Sora...HEAD
+[120-Sora]: https://github.com/Defuuls/Orbin/compare/v119-Aiko...v120-Sora
 [119-Aiko]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...v119-Aiko
 [118-Hotaru]: https://github.com/Defuuls/Orbin/compare/v117-Nao...v118-Hotaru
 [117-Nao]: https://github.com/Defuuls/Orbin/compare/v116-Miku...v117-Nao
