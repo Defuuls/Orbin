@@ -326,7 +326,7 @@ private fun LoadedThread(
                             .align(Alignment.BottomEnd)
                             .windowInsetsPadding(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-                            ).padding(end = 94.dp, bottom = 14.dp)
+                            ).padding(end = 98.dp, bottom = 14.dp)
                             .semantics { contentDescription = "Jump to next post" },
                     accent = true,
                     onClick = ::jumpToNextPost,
