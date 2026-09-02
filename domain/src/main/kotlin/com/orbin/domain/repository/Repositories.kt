@@ -168,7 +168,8 @@ interface HistoryRepository {
         board: BoardId,
     ): Flow<Set<Long>> =
         observeVisitedKeys().map { keys ->
-            keys.asSequence()
+            keys
+                .asSequence()
                 .filter { it.provider == provider && it.board == board }
                 .mapTo(mutableSetOf()) { it.thread.value }
         }
