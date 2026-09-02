@@ -45,6 +45,7 @@ internal fun FeedHeader(
     omittedWithoutPreview: Int = 0,
     sizeValue: Float = GRID_MIN_CELL.value,
     onSizeChange: (Float) -> Unit = {},
+    showSizeControl: Boolean = true,
 ) {
     val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
@@ -73,24 +74,26 @@ internal fun FeedHeader(
                 InlineAction("$sortLabel ▾", onClick = onSort)
             }
         }
-        Gap(8)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MetaLine(stringResource(R.string.next_media_size_small))
-            Slider(
-                value = sizeValue,
-                onValueChange = onSizeChange,
-                valueRange = FEED_SIZE_MIN_DP..FEED_SIZE_MAX_DP,
-                steps = FEED_SIZE_STEPS,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp)
-                        .semantics { contentDescription = sizeDescription },
-            )
-            MetaLine(stringResource(R.string.next_media_size_large))
+        if (showSizeControl) {
+            Gap(8)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MetaLine(stringResource(R.string.next_media_size_small))
+                Slider(
+                    value = sizeValue,
+                    onValueChange = onSizeChange,
+                    valueRange = FEED_SIZE_MIN_DP..FEED_SIZE_MAX_DP,
+                    steps = FEED_SIZE_STEPS,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                            .semantics { contentDescription = sizeDescription },
+                )
+                MetaLine(stringResource(R.string.next_media_size_large))
+            }
         }
         if (layout == FeedLayout.IMAGES && omittedWithoutPreview > 0) {
             Gap(8)
