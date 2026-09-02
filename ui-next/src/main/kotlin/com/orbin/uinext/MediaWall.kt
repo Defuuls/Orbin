@@ -59,6 +59,7 @@ fun MediaWallScreen(
     var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
     val imageCellMinSize = imageCellSize.dp
     val imageHeight = (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp
+    val imageSizeDescription = stringResource(R.string.next_media_size_control)
     val railVisible =
         if (hideRailOnScroll) {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
@@ -104,10 +105,7 @@ fun MediaWallScreen(
                                 Modifier
                                     .weight(1f)
                                     .padding(horizontal = 12.dp)
-                                    .semantics {
-                                        contentDescription =
-                                            stringResource(R.string.next_media_size_control)
-                                    },
+                                    .semantics { contentDescription = imageSizeDescription },
                         )
                         MetaLine(stringResource(R.string.next_media_size_large))
                     }
