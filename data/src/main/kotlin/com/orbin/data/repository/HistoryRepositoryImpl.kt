@@ -40,8 +40,7 @@ class HistoryRepositoryImpl
         override fun observeVisitedThreadIds(
             provider: ProviderId,
             board: BoardId,
-        ): Flow<Set<Long>> =
-            dao.observeThreadIds(provider.value, board.value).map { it.toSet() }
+        ): Flow<Set<Long>> = dao.observeThreadIds(provider.value, board.value).map { it.toSet() }
 
         override suspend fun getEntry(key: ThreadKey): HistoryEntry? =
             dao.getEntry(key.provider.value, key.board.value, key.thread.value)?.toDomain()
