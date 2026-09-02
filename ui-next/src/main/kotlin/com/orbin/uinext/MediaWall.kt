@@ -59,7 +59,7 @@ fun MediaWallScreen(
     val gridState = rememberLazyGridState()
     var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
     val imageCellMinSize = imageCellSize.dp
-    val imageHeight = (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp
+    val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 124.dp
     val imageSizeDescription = stringResource(R.string.next_media_size_control)
     val railVisible =
         if (hideRailOnScroll) {
