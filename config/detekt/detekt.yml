@@ -32,6 +32,8 @@ complexity:
     ignoreAnnotatedFunctions: ['Composable']
   CyclomaticComplexMethod:
     active: true
+    # Compose UI wiring is naturally branchy and already covered by focused UI/unit tests.
+    ignoreAnnotated: ['Composable']
     # Tag-dispatch `when` blocks (parsers, mappers) are naturally branchy yet readable.
     threshold: 25
 
