@@ -16,13 +16,17 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun FeedScreen(
@@ -42,6 +46,8 @@ fun FeedScreen(
     onSearch: () -> Unit = {},
     onSettings: (() -> Unit)? = null,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
+    activityText: @Composable (FeedRow) -> String = { it.activity },
+    onActivePreviewChanged: (String?) -> Unit = {},
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
@@ -68,6 +74,43 @@ fun FeedScreen(
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
     val withPreview = remember(rows) { rows.filter { it.hasPreview } }
     val omittedWithoutPreview = rows.size - withPreview.size
+    val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
+
+    LaunchedEffect(layout, rows, withPreview, listState, gridState) {
+        snapshotFlow {
+            when (layout) {
+                FeedLayout.LIST ->
+                    listState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
+                        rows
+                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                            ?.takeIf { it.hasPreview && !it.muted }
+                            ?.id
+                    }
+
+                FeedLayout.GRID ->
+                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
+                        rows
+                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                            ?.takeIf { it.hasPreview && !it.muted }
+                            ?.id
+                    }
+
+                FeedLayout.IMAGES ->
+                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
+                        withPreview
+                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                            ?.takeIf { !it.muted }
+                            ?.id
+                    }
+            }
+        }.distinctUntilChanged()
+            .collect { activePreviewCallback.value(it) }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { activePreviewCallback.value(null) }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_feed_title).takeIf { showRail },
@@ -105,6 +148,7 @@ fun FeedScreen(
                                 modifier = Modifier.animateItem(),
                                 onClick = onOpenRow,
                                 thumbnail = thumbnail,
+                                activityText = activityText,
                             )
                             if (index < rows.lastIndex) Hairline(inset = true)
                         }
@@ -125,6 +169,7 @@ fun FeedScreen(
                                 onClick = onOpenRow,
                                 thumbnail = thumbnail,
                                 modifier = Modifier.animateItem(),
+                                activityText = activityText,
                             )
                         }
                     }
@@ -158,3 +203,5 @@ fun FeedScreen(
         }
     }
 }
+
+private const val FEED_CONTENT_INDEX_OFFSET = 1
