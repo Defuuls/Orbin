@@ -8,7 +8,6 @@ import coil3.gif.AnimatedImageDecoder
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
-import com.orbin.core.model.AppSettings
 import com.orbin.media.ImagePreloader
 import com.orbin.network.di.BaseOkHttp
 import dagger.Module
