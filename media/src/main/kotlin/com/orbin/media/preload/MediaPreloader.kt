@@ -53,8 +53,6 @@ class MediaPreloader
                     repeat(plan.workerCount) {
                         launch {
                             for (target in queue) {
-                                // Preloading is opportunistic. Once the process is backgrounded,
-                                // stop warming cache rather than competing with foreground apps.
                                 if (!isAppForeground()) continue
                                 plan.throttler.acquire()
                                 try {
@@ -162,7 +160,13 @@ class MediaPreloader
                     val shouldPreloadVideo = option.includesVideos() && attachment.type == MediaType.VIDEO
 
                     if (shouldPreloadThumbnail && attachment.thumbnailUrl.isNotBlank()) {
-                        add(PreloadTarget(attachment.thumbnailUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
+                        add(
+                            PreloadTarget(
+                                attachment.thumbnailUrl,
+                                attachment.originalFileName,
+                                PreloadTargetType.IMAGE,
+                            ),
+                        )
                     }
                     if (shouldPreloadImage) {
                         add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
