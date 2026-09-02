@@ -61,7 +61,8 @@ fun FeedScreen(
     val gridState = rememberLazyGridState()
     var feedSize by rememberSaveable { mutableFloatStateOf(GRID_MIN_CELL.value) }
     val sizeScale = feedSize / GRID_MIN_CELL.value
-    val imageHeight = (feedSize * FEED_IMAGE_TILE_HEIGHT_RATIO).dp
+    val imageGridMinSize = if (showSizeControl) feedSize.dp else IMAGE_MIN_CELL
+    val imageHeight = if (showSizeControl) (feedSize * FEED_IMAGE_TILE_HEIGHT_RATIO).dp else 124.dp
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) {
@@ -189,7 +190,7 @@ fun FeedScreen(
 
                 FeedLayout.IMAGES ->
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(feedSize.dp),
+                        columns = GridCells.Adaptive(imageGridMinSize),
                         state = gridState,
                         modifier = insets,
                         contentPadding = gridPadding(bottomPad),
