@@ -238,7 +238,11 @@ private fun LoadedThread(
                 }
             },
             media = { row, tileModifier ->
-                val postAttachments = presentation.rowsById[row.id]?.post?.attachments.orEmpty()
+                val postAttachments =
+                    presentation.rowsById[row.id]
+                        ?.post
+                        ?.attachments
+                        .orEmpty()
                 PostMedia(
                     attachments = postAttachments,
                     scrollable = mediaScroll,
