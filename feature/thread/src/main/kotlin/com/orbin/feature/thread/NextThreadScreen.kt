@@ -47,9 +47,9 @@ import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.Post as NextPost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import com.orbin.uinext.Post as NextPost
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
