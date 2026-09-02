@@ -33,6 +33,9 @@ import kotlinx.coroutines.withContext
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
 private const val BYTES_PER_MB = 1024L * 1024L
+private const val UI_PREFS_FILE = "orbin_ui_preferences"
+private const val THREAD_SCROLL_ARROW_KEY = "thread_scroll_arrow"
+private const val THREAD_SCROLL_ARROW_ID = "threadScrollArrow"
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -63,8 +66,11 @@ fun NextSettingsScreen(
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val uiPrefs = remember(context) { context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE) }
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    var threadScrollArrowEnabled by
+        rememberSaveable { mutableStateOf(uiPrefs.getBoolean(THREAD_SCROLL_ARROW_KEY, false)) }
 
     val folderPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -136,22 +142,34 @@ fun NextSettingsScreen(
             buildSettings(settings, viewModel, updateCheck.rowValue(context), dnsFallbackActive)
         }
     val groups =
-        remember(model, imageCacheUsageBytes) {
+        remember(model, imageCacheUsageBytes, threadScrollArrowEnabled) {
             model.groups.map { (name, items) ->
-                if (name == "Storage & backup") {
-                    name to
-                        (
-                            items +
-                                SettingItem(
-                                    id = "clearImageCache",
-                                    label = "Image cache usage",
-                                    value = imageCacheUsageBytes.cacheSizeLabel(),
-                                    kind = SettingKind.ACTION,
-                                    hint = "Deletes cached image files. They will be downloaded again when needed.",
-                                )
-                        )
-                } else {
-                    name to items
+                when (name) {
+                    "Appearance" ->
+                        name to
+                            (
+                                items +
+                                    SettingItem(
+                                        id = THREAD_SCROLL_ARROW_ID,
+                                        label = "Thread scroll arrow",
+                                        value = if (threadScrollArrowEnabled) "On" else "Off",
+                                        kind = SettingKind.TOGGLE,
+                                        hint = "Adds a Reddit-style down arrow to the bottom thread bar. Each tap moves to the next post.",
+                                    )
+                            )
+                    "Storage & backup" ->
+                        name to
+                            (
+                                items +
+                                    SettingItem(
+                                        id = "clearImageCache",
+                                        label = "Image cache usage",
+                                        value = imageCacheUsageBytes.cacheSizeLabel(),
+                                        kind = SettingKind.ACTION,
+                                        hint = "Deletes cached image files. They will be downloaded again when needed.",
+                                    )
+                            )
+                    else -> name to items
                 }
             }
         }
@@ -165,7 +183,14 @@ fun NextSettingsScreen(
             onSearch = onOpenCommands,
             onActivate = { item ->
                 when (item.kind) {
-                    SettingKind.TOGGLE -> model.toggle(item.id)
+                    SettingKind.TOGGLE ->
+                        if (item.id == THREAD_SCROLL_ARROW_ID) {
+                            val enabled = !threadScrollArrowEnabled
+                            uiPrefs.edit().putBoolean(THREAD_SCROLL_ARROW_KEY, enabled).apply()
+                            threadScrollArrowEnabled = enabled
+                        } else {
+                            model.toggle(item.id)
+                        }
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
