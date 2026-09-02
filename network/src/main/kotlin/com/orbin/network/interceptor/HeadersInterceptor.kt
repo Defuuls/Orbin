@@ -21,6 +21,7 @@ class HeadersInterceptor(
         if (originalRequest.isStaticMediaRequest()) {
             requestBuilder
                 .header("Accept", "image/avif,image/webp,image/*,video/*,audio/*,*/*;q=0.8")
+                .header("Referer", originalRequest.url.originReferer())
                 .removeHeader("Cache-Control")
                 .removeHeader("Pragma")
         } else {
@@ -40,6 +41,14 @@ class HeadersInterceptor(
         val path = url.encodedPath.lowercase()
         return MEDIA_EXTENSIONS.any { path.endsWith(it) }
     }
+
+    private fun okhttp3.HttpUrl.originReferer(): String =
+        newBuilder()
+            .encodedPath("/")
+            .query(null)
+            .fragment(null)
+            .build()
+            .toString()
 
     private companion object {
         val MEDIA_EXTENSIONS =
