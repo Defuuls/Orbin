@@ -39,16 +39,24 @@ pull requests"**. Without it that step fails and the run warns saying so; the pr
 uploaded as an artifact, because the upload deliberately happens first — every run before that
 ordering recorded a profile successfully and then threw it away.
 
-### `new-version.yml` — manual (`workflow_dispatch`)
-Prepares a release PR from inputs (version number, codename, `versionCode`, base branch, draft
-flag). It bumps `orbin.versionCode` / `orbin.versionName` in `gradle.properties`, closes the
-`[Unreleased]` changelog section as the new version, and moves the current-release pointers in
-`README.md` and `docs/wiki/Home.md`.
+### `cut-release.yml` — on push to `main` touching `release/next.toml` (or manual)
+The release cutter, driven by a manifest rather than by dispatch inputs. `release/next.toml`
+describes one release — number, codename, `versionCode`, changelog sections — and merging it
+to `main` is the whole procedure; see [`release/README.md`](../../release/README.md).
 
-The number and the codename are separate inputs that the workflow joins (`97` + `Penne` →
-`97-Penne`), so the branch, tag, changelog heading and APK name all derive from one place.
-It finishes by running `scripts/validate_repo.py`, so a release PR cannot be opened with the
-four version references out of step.
+The workflow picks its phase from the repository state rather than from an input. If
+`gradle.properties` does not yet name the manifest's version it **prepares**: applies the
+edits via `scripts/prepare_release.py`, runs `scripts/validate_repo.py`, and opens the
+`release/prep-v<tag>` pull request. Once that PR merges the same push re-triggers it and it
+**publishes**: re-verifies the merged metadata and dispatches `release.yml`. If the tag
+already exists it is a no-op.
+
+The edits live in `scripts/prepare_release.py` rather than in the workflow, so they can be
+run and reviewed locally, and so there is one implementation of them rather than one per
+release. This replaced `new-version.yml` and the per-release `cut-<number>-<codename>.yml`
+workflows: each cutter carried its own copy of the same edits, and every past cutter stayed
+live on `main`, re-running on each subsequent release and failing its own "tag must not
+exist" assertion. `validate_repo.py` fails if a `cut-<number>-*.yml` reappears.
 
 ### `release.yml` — on every `v*` tag (or manual dispatch with a tag name)
 A single job that produces a complete, verifiable release:
