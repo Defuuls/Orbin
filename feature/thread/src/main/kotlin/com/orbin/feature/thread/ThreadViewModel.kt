@@ -28,6 +28,8 @@ import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -66,25 +68,29 @@ class ThreadViewModel
         private var loadedThread: Thread? = null
 
         private val _initialScrollPosition = MutableStateFlow<ThreadScrollPosition?>(null)
-
         val initialScrollPosition: StateFlow<ThreadScrollPosition?> = _initialScrollPosition.asStateFlow()
+
+        private val _initialScrollLoaded = MutableStateFlow(false)
+        val initialScrollLoaded: StateFlow<Boolean> = _initialScrollLoaded.asStateFlow()
+
+        private var scrollPersistJob: Job? = null
+        private var lastPersistedScrollPosition: ThreadScrollPosition? = null
 
         init {
             viewModelScope.launch {
                 val existing = historyRepository.getEntry(key)
                 _initialScrollPosition.value =
                     existing?.lastReadPostId?.let { ThreadScrollPosition(it, existing.lastReadOffsetPx) }
+                lastPersistedScrollPosition = _initialScrollPosition.value
+                _initialScrollLoaded.value = true
             }
         }
 
         private val _exportMessage = MutableStateFlow<String?>(null)
-
-        /** Shared one-shot feedback channel for exports, saves and download queue actions. */
         val exportMessage: StateFlow<String?> = _exportMessage.asStateFlow()
 
         private val reloads = MutableStateFlow(0)
         private val _isRefreshing = MutableStateFlow(false)
-
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
         private val mediaFilter: StateFlow<MediaFilter> =
@@ -138,7 +144,6 @@ class ThreadViewModel
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
 
-        /** The full bookmark supplies both watched state and the last seen reply count. */
         val bookmark: StateFlow<Bookmark?> =
             bookmarkRepository
                 .observeBookmark(key)
@@ -149,10 +154,6 @@ class ThreadViewModel
                 .map { it != null }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
-        /**
-         * First reply after the bookmark's last seen reply count. Null means there is no unread
-         * reply (or the thread is not watched), so the UI does not offer a dead jump target.
-         */
         val firstUnreadPostId: StateFlow<PostId?> =
             combine(bookmark, uiState) { savedBookmark, state ->
                 val success = state as? ThreadUiState.Success
@@ -259,14 +260,32 @@ class ThreadViewModel
             _exportMessage.value = null
         }
 
+        /** Tracks exact UI position immediately but coalesces encrypted database writes. */
         fun saveScrollPosition(
             postId: PostId,
             offsetPx: Int,
         ) {
-            _initialScrollPosition.value = ThreadScrollPosition(postId, offsetPx)
-            viewModelScope.launch {
-                historyRepository.updateScrollPosition(key, postId, offsetPx)
-            }
+            val position = ThreadScrollPosition(postId, offsetPx)
+            _initialScrollPosition.value = position
+            scrollPersistJob?.cancel()
+            scrollPersistJob =
+                viewModelScope.launch {
+                    delay(SCROLL_PERSIST_DEBOUNCE_MS)
+                    persistScrollPosition(position)
+                }
+        }
+
+        /** Forces the freshest in-memory position to disk before navigation/layout transitions. */
+        fun flushScrollPosition() {
+            val position = _initialScrollPosition.value ?: return
+            scrollPersistJob?.cancel()
+            scrollPersistJob = viewModelScope.launch { persistScrollPosition(position) }
+        }
+
+        private suspend fun persistScrollPosition(position: ThreadScrollPosition) {
+            if (position == lastPersistedScrollPosition) return
+            historyRepository.updateScrollPosition(key, position.postId, position.offsetPx)
+            lastPersistedScrollPosition = position
         }
 
         private fun onThreadLoaded(thread: Thread) {
@@ -316,6 +335,7 @@ class ThreadViewModel
         private companion object {
             val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
             const val STOP_TIMEOUT_MS = 5_000L
+            const val SCROLL_PERSIST_DEBOUNCE_MS = 650L
         }
     }
 
