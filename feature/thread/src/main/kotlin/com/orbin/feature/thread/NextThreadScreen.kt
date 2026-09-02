@@ -67,6 +67,7 @@ fun NextThreadScreen(
     val mediaScroll by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
+    val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(exportMessage) {
@@ -105,6 +106,7 @@ fun NextThreadScreen(
                     isBookmarked = isBookmarked,
                     firstUnreadPostId = firstUnreadPostId,
                     initialScrollPosition = initialScrollPosition,
+                    initialScrollLoaded = initialScrollLoaded,
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
@@ -125,6 +127,7 @@ private fun LoadedThread(
     isBookmarked: Boolean,
     firstUnreadPostId: PostId?,
     initialScrollPosition: ThreadScrollPosition?,
+    initialScrollLoaded: Boolean,
     snackbarHostState: SnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
@@ -147,30 +150,27 @@ private fun LoadedThread(
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
     var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
 
-    fun saveVisiblePost() {
+    fun saveVisiblePost(flush: Boolean = false) {
         if (layout != ThreadLayout.POSTS || rows.isEmpty()) return
         val visibleItem = listState.firstVisibleItemIndex
         val postIndex = (visibleItem - 1).coerceIn(0, rows.lastIndex)
         val offset = if (visibleItem == 0) 0 else listState.firstVisibleItemScrollOffset
         viewModel.saveScrollPosition(rows[postIndex].post.id, offset)
+        if (flush) viewModel.flushScrollPosition()
     }
 
     fun openMedia(index: Int) {
-        saveVisiblePost()
+        saveVisiblePost(flush = true)
         onOpenMedia(index)
     }
 
-    LaunchedEffect(initialScrollPosition, rows, initialScrollRestored) {
-        if (initialScrollRestored) return@LaunchedEffect
-        val saved = initialScrollPosition
-        if (saved == null) {
-            delay(INITIAL_SCROLL_LOAD_GRACE_MS)
-            initialScrollRestored = true
-            return@LaunchedEffect
-        }
-        val target = rows.indexOfFirst { it.post.id == saved.postId }
-        if (target >= 0) {
-            listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
+    LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored) {
+        if (!initialScrollLoaded || initialScrollRestored) return@LaunchedEffect
+        initialScrollPosition?.let { saved ->
+            val target = rows.indexOfFirst { it.post.id == saved.postId }
+            if (target >= 0) {
+                listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
+            }
         }
         initialScrollRestored = true
     }
@@ -179,15 +179,13 @@ private fun LoadedThread(
         if (layout != ThreadLayout.POSTS || rows.isEmpty() || !initialScrollRestored) return@LaunchedEffect
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
             .collectLatest {
-                // SQLCipher writes are intentionally less eager than UI tracking. Exiting the
-                // thread, changing layout, or opening media still forces a save immediately.
-                delay(SCROLL_SAVE_SETTLE_MS)
+                delay(SCROLL_TRACK_SETTLE_MS)
                 saveVisiblePost()
             }
     }
 
     DisposableEffect(thread.key, layout, rows) {
-        onDispose { saveVisiblePost() }
+        onDispose { saveVisiblePost(flush = true) }
     }
 
     PullToRefreshBox(
@@ -203,7 +201,7 @@ private fun LoadedThread(
             watching = isBookmarked,
             layout = layout,
             onLayoutChange = {
-                if (layout == ThreadLayout.POSTS) saveVisiblePost()
+                if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
                 layout = it
             },
             files = presentation.fileCells,
@@ -377,5 +375,4 @@ private const val LARGE_COLUMNS = 2
 private const val FILL_COLUMNS = 1
 private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
 private const val MAX_THREAD_MEDIA_ASPECT = 2f
-private const val SCROLL_SAVE_SETTLE_MS = 650L
-private const val INITIAL_SCROLL_LOAD_GRACE_MS = 750L
+private const val SCROLL_TRACK_SETTLE_MS = 180L
