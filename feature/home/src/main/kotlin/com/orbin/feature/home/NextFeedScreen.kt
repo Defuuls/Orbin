@@ -104,13 +104,14 @@ fun NextFeedScreen(
                 val mutedTokens = remember(settings.mutedTags) { settings.mutedTagTokens() }
                 var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
                 var presentationReady by remember { mutableStateOf(false) }
-                LaunchedEffect(state.boards, visited, filter, settings.feedSort, mutedTokens, nowMillis) {
+                var activePreviewId by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(state.boards, visited, filter, settings.feedSort, mutedTokens) {
                     entries =
                         withContext(Dispatchers.Default) {
                             feedEntries(
                                 feeds = state.boards,
                                 visited = visited,
-                                nowMillis = nowMillis,
+                                nowMillis = System.currentTimeMillis(),
                                 filter = filter,
                                 sort = settings.feedSort,
                                 mutedTokens = mutedTokens,
@@ -190,6 +191,12 @@ fun NextFeedScreen(
                             railAction = railAction,
                             onSearch = onOpenCommands,
                             onSettings = onOpenSettings,
+                            onActivePreviewChanged = { activePreviewId = it },
+                            activityText = { row ->
+                                byId[row.id]
+                                    ?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
+                                    ?: row.activity
+                            },
                             onOpenRow = { row ->
                                 byId[row.id]?.let { entry ->
                                     onOpenThread(
@@ -204,7 +211,7 @@ fun NextFeedScreen(
                                 byId[row.id]?.attachment?.let { attachment ->
                                     FeedPreview(
                                         attachment = attachment,
-                                        autoplay = settings.autoplayVideosInFeed,
+                                        autoplay = settings.autoplayVideosInFeed && row.id == activePreviewId,
                                         fitWholeImage = layout == FeedLayout.LIST,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
@@ -240,6 +247,7 @@ internal data class FeedEntry(
     val key: ThreadKey,
     val title: String,
     val attachment: MediaAttachment?,
+    val activityMillis: Long,
     val row: FeedRow,
 )
 
@@ -283,16 +291,18 @@ private fun CatalogThread.toEntry(
     muted: Boolean,
 ): FeedEntry {
     val title = originalPost.subject ?: "No.${key.thread.value}"
+    val activityMillis = activityMillis()
     return FeedEntry(
         key = key,
         title = title,
         attachment = originalPost.attachments.firstOrNull(),
+        activityMillis = activityMillis,
         row =
             FeedRow(
                 id = "${key.board.value}/${key.thread.value}",
                 subject = title,
                 board = "/${key.board.value}/",
-                activity = formatRelativeTime(activityMillis(), nowMillis).orEmpty(),
+                activity = formatRelativeTime(activityMillis, nowMillis).orEmpty(),
                 replies = stats.replyCount,
                 media = stats.imageCount,
                 hasPreview = originalPost.attachments.isNotEmpty(),

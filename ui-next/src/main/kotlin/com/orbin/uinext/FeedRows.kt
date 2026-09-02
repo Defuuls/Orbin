@@ -105,6 +105,7 @@ internal fun FeedRowView(
     showBoard: Boolean = true,
     onClick: (FeedRow) -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
+    activityText: @Composable (FeedRow) -> String = { it.activity },
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier, showBoard = showBoard, onClick = onClick)
@@ -135,7 +136,7 @@ internal fun FeedRowView(
                     )
                     WidthSpacer(8)
                 }
-                MetaLine(row.activity, color = next.faint)
+                MetaLine(activityText(row), color = next.faint)
             }
             Gap(7)
             Text(
@@ -170,6 +171,7 @@ internal fun FeedGridCell(
     onClick: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
+    activityText: @Composable (FeedRow) -> String = { it.activity },
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
@@ -212,7 +214,7 @@ internal fun FeedGridCell(
                 color = if (row.read) next.muted else boardHue(row.board),
             )
             WidthSpacer(6)
-            MetaLine(row.activity, color = next.faint)
+            MetaLine(activityText(row), color = next.faint)
         }
         Gap(4)
         Text(
