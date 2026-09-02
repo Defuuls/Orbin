@@ -49,6 +49,7 @@ fun MediaWallScreen(
     deepScanned: Int = 0,
     deepTotal: Int = 0,
     showRail: Boolean = true,
+    showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
     onSearch: () -> Unit = {},
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
@@ -91,25 +92,27 @@ fun MediaWallScreen(
                         text = stringResource(R.string.next_all_media_title),
                         subtitle = stringResource(R.string.next_all_media_subtitle),
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        MetaLine(stringResource(R.string.next_media_size_small))
-                        Slider(
-                            value = imageCellSize,
-                            onValueChange = { imageCellSize = it },
-                            valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
-                            steps = MEDIA_CELL_STEPS,
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 12.dp)
-                                    .semantics { contentDescription = imageSizeDescription },
-                        )
-                        MetaLine(stringResource(R.string.next_media_size_large))
+                    if (showSizeControl) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            MetaLine(stringResource(R.string.next_media_size_small))
+                            Slider(
+                                value = imageCellSize,
+                                onValueChange = { imageCellSize = it },
+                                valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                steps = MEDIA_CELL_STEPS,
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 12.dp)
+                                        .semantics { contentDescription = imageSizeDescription },
+                            )
+                            MetaLine(stringResource(R.string.next_media_size_large))
+                        }
+                        Gap(8)
                     }
-                    Gap(8)
                     if (scanning || deepScanning || failed > 0) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
