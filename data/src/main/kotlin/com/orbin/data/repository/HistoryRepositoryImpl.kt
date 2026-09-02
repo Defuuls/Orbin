@@ -25,13 +25,6 @@ class HistoryRepositoryImpl
     constructor(
         private val dao: HistoryDao,
     ) : HistoryRepository {
-        /**
-         * Recent threads, minus anything the permanent filter catches by title.
-         *
-         * The thread viewer already declines to record such a thread, so this is about rows that
-         * predate the filter or arrived in a restored backup: filtering on read means they stop
-         * being shown immediately, without a migration that rewrites the reader's history.
-         */
         override fun observeHistory(): Flow<List<HistoryEntry>> =
             dao.observeRecent(HISTORY_LIMIT).map { list ->
                 list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
@@ -44,12 +37,16 @@ class HistoryRepositoryImpl
                 }
             }
 
+        override fun observeVisitedThreadIds(
+            provider: ProviderId,
+            board: BoardId,
+        ): Flow<Set<Long>> =
+            dao.observeThreadIds(provider.value, board.value).map { it.toSet() }
+
         override suspend fun getEntry(key: ThreadKey): HistoryEntry? =
             dao.getEntry(key.provider.value, key.board.value, key.thread.value)?.toDomain()
 
         override suspend fun record(entry: HistoryEntry) {
-            // Wrapped in @Transaction to prevent lost-update races between record() and
-            // updateScrollPosition() when both run concurrently (e.g. pull-to-refresh while scrolling).
             dao.recordEntry(entry.toEntity())
         }
 
