@@ -1,11 +1,19 @@
 package com.orbin.feature.thread
 
+import android.content.SharedPreferences
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -23,14 +31,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,6 +55,7 @@ import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.MediaThumbnail
+import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
@@ -49,6 +63,7 @@ import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import com.orbin.uinext.Post as NextPost
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +86,22 @@ fun NextThreadScreen(
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val uiPrefs = remember(context) { context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE) }
+    var threadScrollArrowEnabled by remember {
+        mutableStateOf(uiPrefs.getBoolean(THREAD_SCROLL_ARROW_KEY, false))
+    }
+
+    DisposableEffect(uiPrefs) {
+        val listener =
+            SharedPreferences.OnSharedPreferenceChangeListener { preferences, key ->
+                if (key == THREAD_SCROLL_ARROW_KEY) {
+                    threadScrollArrowEnabled = preferences.getBoolean(THREAD_SCROLL_ARROW_KEY, false)
+                }
+            }
+        uiPrefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { uiPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     LaunchedEffect(exportMessage) {
         exportMessage?.let {
@@ -112,6 +143,7 @@ fun NextThreadScreen(
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
+                    showScrollArrow = threadScrollArrowEnabled,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
                     viewModel = viewModel,
@@ -135,6 +167,7 @@ private fun LoadedThread(
     snackbarHostState: SnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
+    showScrollArrow: Boolean,
     mediaScrollIndex: Int?,
     onMediaScrollConsumed: () -> Unit,
     viewModel: ThreadViewModel,
@@ -144,6 +177,7 @@ private fun LoadedThread(
 ) {
     val thread = state.thread
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
     val collapsed =
         rememberSaveable(
@@ -168,6 +202,18 @@ private fun LoadedThread(
     fun openMedia(index: Int) {
         saveVisiblePost(flush = true)
         onOpenMedia(index)
+    }
+
+    fun jumpToNextPost() {
+        if (rows.isEmpty()) return
+        val current = listState.firstVisibleItemIndex
+        val target =
+            when {
+                current <= 0 -> 1
+                current >= rows.size -> 1
+                else -> (current + 1).coerceAtMost(rows.size)
+            }
+        scope.launch { listState.animateScrollToItem(target) }
     }
 
     LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored) {
@@ -213,64 +259,80 @@ private fun LoadedThread(
         onRefresh = viewModel::refresh,
         modifier = modifier.fillMaxSize(),
     ) {
-        ThreadScreen(
-            subject = thread.subject ?: viewModel.title,
-            board = "/${thread.key.board.value}/",
-            posts = presentation.rowModels,
-            subtitle = thread.subtitleText(state.fromSavedCopy),
-            watching = isBookmarked,
-            layout = layout,
-            onLayoutChange = {
-                if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
-                layout = it
-            },
-            files = presentation.fileCells,
-            fileColumns = thumbnailSize.threadGridColumns(),
-            onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
-            fileTile = { cell, tileModifier ->
-                presentation.attachmentsById[cell.id]?.let { attachment ->
-                    MediaThumbnail(
-                        attachment = attachment,
-                        modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
-                        onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
+        Box(modifier = Modifier.fillMaxSize()) {
+            ThreadScreen(
+                subject = thread.subject ?: viewModel.title,
+                board = "/${thread.key.board.value}/",
+                posts = presentation.rowModels,
+                subtitle = thread.subtitleText(state.fromSavedCopy),
+                watching = isBookmarked,
+                layout = layout,
+                onLayoutChange = {
+                    if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
+                    layout = it
+                },
+                files = presentation.fileCells,
+                fileColumns = thumbnailSize.threadGridColumns(),
+                onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
+                fileTile = { cell, tileModifier ->
+                    presentation.attachmentsById[cell.id]?.let { attachment ->
+                        MediaThumbnail(
+                            attachment = attachment,
+                            modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
+                            onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
+                        )
+                    }
+                },
+                collapsed = collapsed.toSet(),
+                onToggleCollapse = { post ->
+                    if (!collapsed.remove(post.id)) collapsed.add(post.id)
+                },
+                listState = listState,
+                scrollToPostId = scrollTarget,
+                firstUnreadPostId = firstUnreadPostId?.value?.toString(),
+                onScrollConsumed = { scrollTarget = null },
+                onWatch = viewModel::toggleBookmark,
+                onDownloadAll = viewModel::downloadAllMedia,
+                onShare = viewModel::exportLinks,
+                showRail = onOpenCommands != null,
+                onSearch = onOpenCommands ?: {},
+                body = { row ->
+                    presentation.rowsById[row.id]?.let { entry ->
+                        PostCommentText(
+                            comment = entry.post.comment,
+                            onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                        )
+                    }
+                },
+                media = { row, tileModifier ->
+                    val postAttachments =
+                        presentation.rowsById[row.id]
+                            ?.post
+                            ?.attachments
+                            .orEmpty()
+                    PostMedia(
+                        attachments = postAttachments,
+                        scrollable = mediaScroll,
+                        modifier = tileModifier,
+                        onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
                     )
-                }
-            },
-            collapsed = collapsed.toSet(),
-            onToggleCollapse = { post ->
-                if (!collapsed.remove(post.id)) collapsed.add(post.id)
-            },
-            listState = listState,
-            scrollToPostId = scrollTarget,
-            firstUnreadPostId = firstUnreadPostId?.value?.toString(),
-            onScrollConsumed = { scrollTarget = null },
-            onWatch = viewModel::toggleBookmark,
-            onDownloadAll = viewModel::downloadAllMedia,
-            onShare = viewModel::exportLinks,
-            showRail = onOpenCommands != null,
-            onSearch = onOpenCommands ?: {},
-            body = { row ->
-                presentation.rowsById[row.id]?.let { entry ->
-                    PostCommentText(
-                        comment = entry.post.comment,
-                        onQuoteClick = { target -> scrollTarget = target.value.toString() },
-                    )
-                }
-            },
-            media = { row, tileModifier ->
-                val postAttachments =
-                    presentation.rowsById[row.id]
-                        ?.post
-                        ?.attachments
-                        .orEmpty()
-                PostMedia(
-                    attachments = postAttachments,
-                    scrollable = mediaScroll,
-                    modifier = tileModifier,
-                    onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
+                },
+            )
+            if (showScrollArrow && layout == ThreadLayout.POSTS && rows.size > 1 && onOpenCommands != null) {
+                InlineAction(
+                    label = "↓",
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                            ).padding(end = 94.dp, bottom = 14.dp)
+                            .semantics { contentDescription = "Jump to next post" },
+                    accent = true,
+                    onClick = ::jumpToNextPost,
                 )
-            },
-        )
+            }
+        }
     }
     SnackbarHost(hostState = snackbarHostState)
 }
@@ -403,6 +465,8 @@ private fun ThumbnailSize.threadGridColumns(): Int =
         ThumbnailSize.FILL -> FILL_COLUMNS
     }
 
+private const val UI_PREFS_FILE = "orbin_ui_preferences"
+private const val THREAD_SCROLL_ARROW_KEY = "thread_scroll_arrow"
 private const val COMPACT_COLUMNS = 4
 private const val MEDIUM_COLUMNS = 3
 private const val LARGE_COLUMNS = 2
