@@ -18,8 +18,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +58,10 @@ fun FeedScreen(
 ) {
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
+    var feedSize by rememberSaveable { mutableFloatStateOf(GRID_MIN_CELL.value) }
+    val sizeScale = feedSize / GRID_MIN_CELL.value
+    val imageHeight = (feedSize * FEED_IMAGE_TILE_HEIGHT_RATIO).dp
+
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) {
             if (layout == FeedLayout.LIST) {
@@ -130,6 +138,8 @@ fun FeedScreen(
                     filter = filter,
                     onClearFilter = onClearFilter,
                     omittedWithoutPreview = omittedWithoutPreview,
+                    sizeValue = feedSize,
+                    onSizeChange = { feedSize = it },
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
@@ -149,6 +159,7 @@ fun FeedScreen(
                                 onClick = onOpenRow,
                                 thumbnail = thumbnail,
                                 activityText = activityText,
+                                sizeScale = sizeScale,
                             )
                             if (index < rows.lastIndex) Hairline(inset = true)
                         }
@@ -156,7 +167,7 @@ fun FeedScreen(
 
                 FeedLayout.GRID ->
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(GRID_MIN_CELL),
+                        columns = GridCells.Adaptive(feedSize.dp),
                         state = gridState,
                         modifier = insets,
                         contentPadding = gridPadding(bottomPad),
@@ -176,14 +187,20 @@ fun FeedScreen(
 
                 FeedLayout.IMAGES ->
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(IMAGE_MIN_CELL),
+                        columns = GridCells.Adaptive(feedSize.dp),
                         state = gridState,
                         modifier = insets,
                         contentPadding = gridPadding(bottomPad),
                     ) {
                         fullWidthItem { header() }
                         itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
-                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                            FeedImageCell(
+                                row,
+                                seed = index,
+                                onClick = onOpenRow,
+                                thumbnail = thumbnail,
+                                tileHeight = imageHeight,
+                            )
                         }
                     }
             }
@@ -204,4 +221,8 @@ fun FeedScreen(
     }
 }
 
+internal const val FEED_SIZE_MIN_DP = 96f
+internal const val FEED_SIZE_MAX_DP = 240f
+internal const val FEED_SIZE_STEPS = 5
+private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
 private const val FEED_CONTENT_INDEX_OFFSET = 1
