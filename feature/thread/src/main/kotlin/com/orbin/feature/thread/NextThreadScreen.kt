@@ -87,7 +87,10 @@ fun NextThreadScreen(
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val uiPrefs = remember(context) { context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE) }
+    val uiPrefs =
+        remember(context) {
+            context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE)
+        }
     var threadScrollArrowEnabled by remember {
         mutableStateOf(uiPrefs.getBoolean(THREAD_SCROLL_ARROW_KEY, false))
     }
