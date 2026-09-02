@@ -17,6 +17,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +47,8 @@ import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import com.orbin.uinext.Post as NextPost
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,7 +107,7 @@ fun NextThreadScreen(
                     isRefreshing = isRefreshing,
                     isBookmarked = isBookmarked,
                     firstUnreadPostId = firstUnreadPostId,
-                    initialScrollPostId = initialScrollPosition?.postId,
+                    initialScrollPosition = initialScrollPosition,
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
@@ -123,7 +127,7 @@ private fun LoadedThread(
     isRefreshing: Boolean,
     isBookmarked: Boolean,
     firstUnreadPostId: PostId?,
-    initialScrollPostId: PostId?,
+    initialScrollPosition: ThreadScrollPosition?,
     snackbarHostState: SnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
@@ -156,7 +160,44 @@ private fun LoadedThread(
         }
     val attachmentsById = remember(attachments) { attachments.associateBy { it.id } }
 
-    var scrollTarget by remember(thread.key) { mutableStateOf(initialScrollPostId?.value?.toString()) }
+    var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
+    var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
+
+    fun saveVisiblePost() {
+        if (layout != ThreadLayout.POSTS || rows.isEmpty()) return
+        val visibleItem = listState.firstVisibleItemIndex
+        val postIndex = (visibleItem - 1).coerceIn(0, rows.lastIndex)
+        val offset = if (visibleItem == 0) 0 else listState.firstVisibleItemScrollOffset
+        viewModel.saveScrollPosition(rows[postIndex].post.id, offset)
+    }
+
+    fun openMedia(index: Int) {
+        saveVisiblePost()
+        onOpenMedia(index)
+    }
+
+    LaunchedEffect(initialScrollPosition, rows, initialScrollRestored) {
+        val saved = initialScrollPosition ?: return@LaunchedEffect
+        if (initialScrollRestored) return@LaunchedEffect
+        val target = rows.indexOfFirst { it.post.id == saved.postId }
+        if (target >= 0) {
+            listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
+            initialScrollRestored = true
+        }
+    }
+
+    LaunchedEffect(listState, rows, layout, initialScrollRestored) {
+        if (layout != ThreadLayout.POSTS || rows.isEmpty() || !initialScrollRestored) return@LaunchedEffect
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collectLatest {
+                delay(SCROLL_SAVE_SETTLE_MS)
+                saveVisiblePost()
+            }
+    }
+
+    DisposableEffect(thread.key, layout, rows) {
+        onDispose { saveVisiblePost() }
+    }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -170,16 +211,19 @@ private fun LoadedThread(
             subtitle = thread.subtitleText(state.fromSavedCopy),
             watching = isBookmarked,
             layout = layout,
-            onLayoutChange = { layout = it },
+            onLayoutChange = {
+                if (layout == ThreadLayout.POSTS) saveVisiblePost()
+                layout = it
+            },
             files = fileCells,
             fileColumns = thumbnailSize.threadGridColumns(),
-            onOpenFile = { cell -> mediaIndex[cell.id]?.let(onOpenMedia) },
+            onOpenFile = { cell -> mediaIndex[cell.id]?.let(::openMedia) },
             fileTile = { cell, tileModifier ->
                 attachmentsById[cell.id]?.let { attachment ->
                     MediaThumbnail(
                         attachment = attachment,
                         modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
-                        onClick = { mediaIndex[cell.id]?.let(onOpenMedia) },
+                        onClick = { mediaIndex[cell.id]?.let(::openMedia) },
                     )
                 }
             },
@@ -210,7 +254,7 @@ private fun LoadedThread(
                     attachments = postAttachments,
                     scrollable = mediaScroll,
                     modifier = tileModifier,
-                    onOpen = { id -> mediaIndex[id]?.let(onOpenMedia) },
+                    onOpen = { id -> mediaIndex[id]?.let(::openMedia) },
                 )
             },
         )
@@ -322,3 +366,4 @@ private const val LARGE_COLUMNS = 2
 private const val FILL_COLUMNS = 1
 private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
 private const val MAX_THREAD_MEDIA_ASPECT = 2f
+private const val SCROLL_SAVE_SETTLE_MS = 180L
