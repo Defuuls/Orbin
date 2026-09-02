@@ -160,16 +160,38 @@ def check_relative_links() -> None:
 
 
 def check_release_tooling() -> None:
-    workflow = read(".github/workflows/new-version.yml")
-    code = "\n".join(line for line in workflow.splitlines() if not line.lstrip().startswith("#"))
-    if "app/build.gradle.kts" in code:
-        fail("release-tooling", "new-version.yml still acts on app/build.gradle.kts; the version lives in gradle.properties")
-    for expected in ("orbin.versionCode", "orbin.versionName", "gradle.properties"):
-        if expected not in code:
-            fail("release-tooling", f"new-version.yml never references {expected}")
+    """The cutter is one workflow over one script; keep both honest about what they touch.
+
+    The edits a release makes live in scripts/prepare_release.py, so that is where the four
+    version references are checked for. The workflow is checked only for the wiring that
+    makes it the single entry point: the manifest it reads and the script it delegates to.
+    """
+    for required in ("scripts/prepare_release.py", ".github/workflows/cut-release.yml"):
+        if not (ROOT / required).exists():
+            fail("release-tooling", f"{required} is missing; the release cutter is incomplete")
+            return
+
+    script = read("scripts/prepare_release.py")
+    if "app/build.gradle.kts" in script:
+        fail("release-tooling", "prepare_release.py still acts on app/build.gradle.kts; the version lives in gradle.properties")
+    for expected in ("orbin.versionCode", "orbin.versionName", "gradle.properties", "CHANGELOG.md"):
+        if expected not in script:
+            fail("release-tooling", f"prepare_release.py never references {expected}")
     for doc in ("README.md", "docs/wiki/Home.md"):
-        if doc not in code:
-            fail("release-tooling", f"new-version.yml does not update {doc}")
+        if doc not in script:
+            fail("release-tooling", f"prepare_release.py does not update {doc}")
+
+    workflow = read(".github/workflows/cut-release.yml")
+    code = "\n".join(line for line in workflow.splitlines() if not line.lstrip().startswith("#"))
+    for expected in ("release/next.toml", "scripts/prepare_release.py", "scripts/validate_repo.py", "release.yml"):
+        if expected not in code:
+            fail("release-tooling", f"cut-release.yml never references {expected}")
+
+    # Per-release cutters are what this replaced. One reappearing means the duplication is
+    # back, along with the stale-workflow failures that came with it.
+    stale = sorted(p.name for p in (ROOT / ".github/workflows").glob("cut-[0-9]*.yml"))
+    if stale:
+        fail("release-tooling", f"per-release cutter workflow(s) present, use release/next.toml instead: {stale}")
 
 
 def main() -> int:

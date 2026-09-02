@@ -1,0 +1,160 @@
+name: Cut Release
+
+# The release cutter for the full Orbin client, driven by `release/next.toml`.
+#
+# It replaces the per-release `cut-<number>-<codename>.yml` workflows and the
+# `new-version.yml` dispatch form. Those carried a copy of the same edits each time a
+# release was cut, so a fix to the changelog rewriting had to be made once per file, and
+# every past cutter stayed live on `main` — re-running on each subsequent release and
+# failing on its own "tag must not exist" assertion. Describing the release as data and
+# keeping the behaviour in one place fixes both.
+#
+# Two phases, decided from the repository rather than from an input:
+#
+#   prepare  gradle.properties does not yet name the manifest's version. Apply the release
+#            edits and open the release PR.
+#   publish  gradle.properties names it (the release PR merged) and the tag does not exist
+#            yet. Re-verify the merged metadata, then dispatch the signed release build.
+#
+# A third state — the tag already exists — is a no-op, not a failure. That is what a stale
+# cutter used to get wrong, and it is why this workflow can stay on `main` indefinitely.
+#
+# To cut a release: write `release/next.toml` and merge it. Everything else follows.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'release/next.toml'
+      - 'gradle.properties'
+      - 'scripts/prepare_release.py'
+      - '.github/workflows/cut-release.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Apply the manifest and report the diff without pushing anything'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  # Never cancel a cut in flight: a half-applied prepare leaves an orphaned branch, and a
+  # cancelled publish leaves a merged release that was never built.
+  group: cut-release
+  cancel-in-progress: false
+
+jobs:
+  cut:
+    name: Cut the release described by release/next.toml
+    runs-on: ubuntu-latest
+    env:
+      DRY_RUN: ${{ inputs.dry_run || false }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --tags --force
+
+      - name: Look for a release manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          if [ -f release/next.toml ]; then
+            echo 'found=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'found=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::no release/next.toml — nothing to cut'
+          fi
+
+      - name: Read the manifest
+        id: plan
+        if: steps.manifest.outputs.found == 'true'
+        run: python3 scripts/prepare_release.py plan
+
+      - name: Decide the phase
+        id: phase
+        if: steps.manifest.outputs.found == 'true'
+        env:
+          TAG: ${{ steps.plan.outputs.tag }}
+          PREPARED: ${{ steps.plan.outputs.prepared }}
+        run: |
+          set -euo pipefail
+          if [ -n "$(git tag --list "$TAG")" ]; then
+            MODE=done
+            echo "::notice::${TAG} is already tagged — nothing to do"
+          elif [ "$PREPARED" = 'true' ]; then
+            MODE=publish
+          else
+            MODE=prepare
+          fi
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "### Cut Release: \`${TAG}\` — ${MODE}" >> "$GITHUB_STEP_SUMMARY"
+
+      # A codename identifies exactly one release across both product lines and is never
+      # reused, so this looks at every tag rather than only this line's.
+      - name: Check the codename is unused
+        if: steps.phase.outputs.mode == 'prepare'
+        env:
+          CODENAME: ${{ steps.plan.outputs.codename }}
+        run: |
+          set -euo pipefail
+          SLUG="${CODENAME// /-}"
+          if git tag --list | grep -Eiq "(^|-)${SLUG}\$"; then
+            echo "::error::codename ${CODENAME} is already used by an existing release tag"; exit 1
+          fi
+
+      - name: Apply the release edits
+        if: steps.phase.outputs.mode == 'prepare'
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_release.py prepare
+          python3 scripts/validate_repo.py
+          git --no-pager diff --stat
+
+      - name: Open the release pull request
+        if: steps.phase.outputs.mode == 'prepare' && env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.plan.outputs.branch }}
+          VERSION_NAME: ${{ steps.plan.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B "$BRANCH"
+          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md
+          git commit -m "chore: Prepare v${VERSION_NAME} release"
+          git push --force-with-lease --set-upstream origin "$BRANCH"
+          python3 scripts/prepare_release.py summary > /tmp/pr-body.md
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "chore: Prepare v${VERSION_NAME} release" --body-file /tmp/pr-body.md
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: Prepare v${VERSION_NAME} release" --body-file /tmp/pr-body.md
+          fi
+
+      - name: Verify the merged release metadata
+        if: steps.phase.outputs.mode == 'publish'
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_release.py verify
+          python3 scripts/validate_repo.py
+
+      - name: Dispatch the signed release build
+        if: steps.phase.outputs.mode == 'publish' && env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag="$TAG" -f base_ref=main
+          echo "dispatched release.yml for ${TAG}"

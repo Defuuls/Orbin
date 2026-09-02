@@ -117,7 +117,7 @@ profile is not harmful, only progressively less useful.
 | `instrumentation.yml` | every push to `main` and every PR | Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Both ends of the supported range are covered, because a pass on 35 says nothing about the devices `minSdk` 31 admits. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
 | `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, uploads it as the `baseline-profile` artifact, then opens a draft PR with it. The PR step needs *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*; without it the step fails and the run warns, but the artifact still carries the profile. |
 | `release-minimal.yml` | `minimal-v*` tag push, or manual | Builds, signs and publishes **Orbin Minimal** alone. Separate app, separate version line (`orbin.minimalVersionCode` / `orbin.minimalVersionName`), separate cadence — not carried by `release.yml`. |
-| `new-version.yml` | manual (`workflow_dispatch`) | Prepares a release PR from inputs: version number (`100`), codename (`Sakura`), `versionCode`, base branch, draft flag. Bumps `gradle.properties`, closes the `[Unreleased]` changelog section, and moves the current-release pointers in `README.md` and `docs/wiki/Home.md`. |
+| `cut-release.yml` | push to `main` touching `release/next.toml` (or manual) | The release cutter. Reads `release/next.toml` (number, codename, `versionCode`, changelog sections) and, depending on repository state, either prepares the release PR or — once it has merged — dispatches the signed build. The edits themselves live in `scripts/prepare_release.py`. Replaces `new-version.yml` and the per-release `cut-<number>-<codename>.yml` workflows. |
 | `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
 | `wiki-sync.yml` | push to `main` touching `docs/wiki/**` (or manual) | Mirrors `docs/wiki/` onto the repository's GitHub wiki via `rsync --delete`, so `docs/wiki` is the single source of truth — edit it in a PR like any other file, never the wiki directly. |
 | `pages.yml` | push to `main` touching `site/**` (or manual) | Deploys the static landing page in `site/` to GitHub Pages (https://defuuls.github.io/Orbin/). |
@@ -131,10 +131,13 @@ Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
    Orbin Minimal has its own pair in the same file (`orbin.minimalVersionCode` /
    `orbin.minimalVersionName`) and its own `minimal-v*` tags — releasing one does not release
    the other.
-1. Run the **New Version** workflow (or make the same edits by hand: `gradle.properties`,
-   the `[Unreleased]` changelog section, and the current-release lines in `README.md` and
-   `docs/wiki/Home.md`) and merge the release PR. Either way `scripts/validate_repo.py`
-   checks the four stay in step — CI runs it on every PR.
+1. Write `release/next.toml` and merge it. **Cut Release** opens the release PR with the
+   same edits (`gradle.properties`, the `[Unreleased]` changelog section, and the
+   current-release lines in `README.md` and `docs/wiki/Home.md`); merge that too and it
+   dispatches the signed build, so step 2 below is only needed when tagging by hand. Run
+   `python3 scripts/prepare_release.py prepare` to make the edits locally instead. Either way
+   `scripts/validate_repo.py` checks the four stay in step — CI runs it on every PR. See
+   [`release/README.md`](https://github.com/Defuuls/Orbin/blob/main/release/README.md).
 2. Tag and push. Tags are `v<number>-<Codename>` for the full client and
    `minimal-v<number>-<Codename>` for Orbin Minimal, and the tag must be **annotated** — the
    release job reads its message as the GitHub Release title:
