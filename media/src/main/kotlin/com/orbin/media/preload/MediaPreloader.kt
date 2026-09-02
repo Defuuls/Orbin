@@ -1,5 +1,6 @@
 package com.orbin.media.preload
 
+import android.app.ActivityManager
 import android.content.Context
 import android.util.Log
 import coil3.ImageLoader
@@ -24,11 +25,7 @@ import okhttp3.Request
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
-/**
- * Preloads media (images, videos, thumbnails) into cache before user views them.
- * Supports granular control over preload types and rate limiting via throttling to avoid
- * CDN rate limits. Works with Coil for images and direct HEAD requests for videos.
- */
+/** Preloads media while Orbin is foregrounded, with bounded concurrency and rate limiting. */
 class MediaPreloader
     @Inject
     constructor(
@@ -43,7 +40,7 @@ class MediaPreloader
             throttleMode: PreloadThrottleMode = PreloadThrottleMode.MODERATE,
             onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         ): Int {
-            if (option == PreloadOption.NONE) return 0
+            if (option == PreloadOption.NONE || !isAppForeground()) return 0
 
             val plan = createPreloadPlan(throttleMode)
             val targets = attachments.preloadTargets(option).take(plan.maxTargets)
@@ -56,6 +53,9 @@ class MediaPreloader
                     repeat(plan.workerCount) {
                         launch {
                             for (target in queue) {
+                                // Preloading is opportunistic. Once the process is backgrounded,
+                                // stop warming cache rather than competing with foreground apps.
+                                if (!isAppForeground()) continue
                                 plan.throttler.acquire()
                                 try {
                                     when (target.type) {
@@ -65,7 +65,8 @@ class MediaPreloader
                                 } finally {
                                     plan.throttler.release()
                                 }
-                                onProgress(completed.incrementAndGet(), targets.size, target.label)
+                                val current = completed.incrementAndGet()
+                                onProgress(current, targets.size, target.label)
                             }
                         }
                     }
@@ -73,7 +74,13 @@ class MediaPreloader
                     queue.close()
                 }
             }
-            return targets.size
+            return completed.get()
+        }
+
+        private fun isAppForeground(): Boolean {
+            val state = ActivityManager.RunningAppProcessInfo()
+            ActivityManager.getMyMemoryState(state)
+            return state.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
         }
 
         private fun createPreloadPlan(mode: PreloadThrottleMode): PreloadPlan =
@@ -155,31 +162,13 @@ class MediaPreloader
                     val shouldPreloadVideo = option.includesVideos() && attachment.type == MediaType.VIDEO
 
                     if (shouldPreloadThumbnail && attachment.thumbnailUrl.isNotBlank()) {
-                        add(
-                            PreloadTarget(
-                                attachment.thumbnailUrl,
-                                attachment.originalFileName,
-                                PreloadTargetType.IMAGE,
-                            ),
-                        )
+                        add(PreloadTarget(attachment.thumbnailUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
                     }
                     if (shouldPreloadImage) {
-                        add(
-                            PreloadTarget(
-                                attachment.sourceUrl,
-                                attachment.originalFileName,
-                                PreloadTargetType.IMAGE,
-                            ),
-                        )
+                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
                     }
                     if (shouldPreloadVideo) {
-                        add(
-                            PreloadTarget(
-                                attachment.sourceUrl,
-                                attachment.originalFileName,
-                                PreloadTargetType.VIDEO,
-                            ),
-                        )
+                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.VIDEO))
                     }
                 }
             }.distinctBy { it.url }
