@@ -24,26 +24,14 @@ import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
 import kotlinx.serialization.Serializable
 
-/**
- * The catalog and the selected thread side by side, for viewports wide enough to carry both.
- *
- * On a phone, opening a thread replaces the catalog and Back brings it back. That is the right
- * trade when the screen only fits one, and the wrong one when it fits two: a tablet reader loses
- * the catalog they are working through every time they open a reply.
- *
- * The detail pane is its own [NavHost] rather than a plain composable. [NextThreadScreen]'s
- * ViewModel reads `provider`/`board`/`thread` out of its `SavedStateHandle`, which only a
- * navigation entry populates — rendering it inline would hand it the *catalog's* arguments and
- * load thread 0. A nested graph also gives the pane a back stack of its own, so Back closes the
- * thread and leaves the catalog standing.
- */
 @Composable
 fun BoardDetailTwoPane(
     selectedThread: Route.Thread?,
     onThreadSelected: (Route.Thread?) -> Unit,
     onOpenGallery: (provider: String, board: String, thread: Long, index: Int) -> Unit,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     onOpenCommands: () -> Unit,
-    /** Leaves the catalog. Called only once the detail pane has no thread left to close. */
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -51,11 +39,6 @@ fun BoardDetailTwoPane(
     val detailEntry by detailNavController.currentBackStackEntryAsState()
     val threadOpen = detailEntry?.destination?.hasRoute(Route.Thread::class) == true
 
-    // The single place the detail pane is navigated: a pick from the catalog, a switch to another
-    // thread, or a restore after the panes were torn down (returning from the gallery, or a
-    // rotation that stayed wide). launchSingleTop makes the restore case a no-op when the pane
-    // already has the right thread, and popUpTo keeps the pane's stack one deep so Back is always
-    // a single step back to the catalog rather than a walk through everything read so far.
     LaunchedEffect(selectedThread) {
         selectedThread?.let { thread ->
             detailNavController.navigate(thread) {
@@ -65,10 +48,6 @@ fun BoardDetailTwoPane(
         }
     }
 
-    // Back closes the open thread first and only then leaves the catalog, matching what the panes
-    // show: the thread is the most recent thing the reader opened. Handled in one place for both
-    // steps rather than only while a thread is open, so the pane's Back never falls through to a
-    // host that would take the reader somewhere else.
     BackHandler {
         if (threadOpen) {
             onThreadSelected(null)
@@ -88,9 +67,6 @@ fun BoardDetailTwoPane(
         ) {
             NextBoardScreen(
                 onOpenThread = { provider, board, thread, title ->
-                    // Recorded as well as navigated: the record is what survives the panes
-                    // collapsing on rotation, and it drives the navigate through the LaunchedEffect
-                    // above rather than duplicating it here.
                     onThreadSelected(Route.Thread(provider, board, thread, title))
                 },
                 onOpenCommands = onOpenCommands,
@@ -115,6 +91,8 @@ fun BoardDetailTwoPane(
                         onOpenMedia = { index ->
                             onOpenGallery(route.provider, route.board, route.thread, index)
                         },
+                        mediaScrollIndex = mediaScrollIndex,
+                        onMediaScrollConsumed = onMediaScrollConsumed,
                         onOpenCommands = onOpenCommands,
                     )
                 }
@@ -123,12 +101,9 @@ fun BoardDetailTwoPane(
     }
 }
 
-/** Placeholder destination shown in the detail pane before a thread is picked. */
 @Serializable
 private data object DetailPaneEmpty
 
-// A catalog wider than this stops being easier to scan and just spreads the same rows further
-// apart, so surplus width goes to the thread instead.
 private val LIST_PANE_MAX_WIDTH = 420.dp
 private const val LIST_PANE_WEIGHT = 1f
 private const val DETAIL_PANE_WEIGHT = 1.4f

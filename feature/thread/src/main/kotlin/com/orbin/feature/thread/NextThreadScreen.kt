@@ -57,6 +57,8 @@ fun NextThreadScreen(
     onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
     onOpenCommands: (() -> Unit)? = null,
+    mediaScrollIndex: Int? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +112,8 @@ fun NextThreadScreen(
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
+                    mediaScrollIndex = mediaScrollIndex,
+                    onMediaScrollConsumed = onMediaScrollConsumed,
                     viewModel = viewModel,
                     onOpenMedia = onOpenMedia,
                     onOpenCommands = onOpenCommands,
@@ -131,6 +135,8 @@ private fun LoadedThread(
     snackbarHostState: SnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
+    mediaScrollIndex: Int?,
+    onMediaScrollConsumed: () -> Unit,
     viewModel: ThreadViewModel,
     onOpenMedia: (Int) -> Unit,
     onOpenCommands: (() -> Unit)?,
@@ -173,6 +179,20 @@ private fun LoadedThread(
             }
         }
         initialScrollRestored = true
+    }
+
+    LaunchedEffect(mediaScrollIndex, rows, layout, initialScrollRestored) {
+        val index = mediaScrollIndex ?: return@LaunchedEffect
+        if (!initialScrollRestored || layout != ThreadLayout.POSTS || rows.isEmpty()) return@LaunchedEffect
+
+        val targetPostId = thread.postIdForMediaIndex(index)
+        val target = targetPostId?.let { postId -> rows.indexOfFirst { it.post.id == postId } } ?: -1
+        if (target >= 0) {
+            listState.scrollToItem(target + 1)
+            viewModel.saveScrollPosition(rows[target].post.id, 0)
+            viewModel.flushScrollPosition()
+        }
+        onMediaScrollConsumed()
     }
 
     LaunchedEffect(listState, rows, layout, initialScrollRestored) {
@@ -336,6 +356,16 @@ private fun Thread.toPresentationIndex(): ThreadPresentationIndex {
         mediaIndex = attachments.withIndex().associate { (index, media) -> media.id to index },
         fileCells = attachments.map { MediaCell(id = it.id, board = boardLabel) },
     )
+}
+
+internal fun Thread.postIdForMediaIndex(mediaIndex: Int): PostId? {
+    if (mediaIndex < 0) return null
+    var remaining = mediaIndex
+    for (post in allPosts) {
+        if (remaining < post.attachments.size) return post.id
+        remaining -= post.attachments.size
+    }
+    return null
 }
 
 internal fun Thread.toRows(): List<ThreadRow> {
