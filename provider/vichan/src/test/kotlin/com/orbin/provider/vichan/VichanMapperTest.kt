@@ -3,6 +3,7 @@ package com.orbin.provider.vichan
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaType
+import com.orbin.provider.api.ProviderContract
 import com.orbin.provider.vichan.api.VichanPost
 import com.orbin.provider.vichan.api.VichanThreadResponse
 import org.junit.Test
@@ -25,6 +26,7 @@ class VichanMapperTest {
                 h = 600,
             )
         val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op)))
+        ProviderContract.requireValidThread(thread)
         val media = thread.originalPost.attachments.single()
 
         assertThat(media.sourceUrl).isEqualTo("https://i.4cdn.org/g/1690000000000.jpg")
@@ -36,11 +38,9 @@ class VichanMapperTest {
     @Test
     fun `webm is classified as video`() {
         val op = VichanPost(no = 1, time = 100, tim = "999", filename = "clip", ext = ".webm")
-        val media =
-            mapper
-                .mapThread(board, VichanThreadResponse(listOf(op)))
-                .originalPost.attachments
-                .single()
+        val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op)))
+        ProviderContract.requireValidThread(thread)
+        val media = thread.originalPost.attachments.single()
         assertThat(media.type).isEqualTo(MediaType.VIDEO)
     }
 
@@ -51,6 +51,7 @@ class VichanMapperTest {
         val r2 = VichanPost(no = 1002, resto = 1000, time = 3, com = "second")
 
         val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op, r1, r2)))
+        ProviderContract.requireValidThread(thread)
 
         assertThat(thread.originalPost.isOriginalPost).isTrue()
         assertThat(thread.replies.map { it.id.value }).containsExactly(1001L, 1002L).inOrder()
@@ -70,6 +71,7 @@ class VichanMapperTest {
                 name = "Bob &amp; Alice",
             )
         val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op)))
+        ProviderContract.requireValidThread(thread)
 
         assertThat(thread.originalPost.subject).isEqualTo("Cat's \"toy\"")
         assertThat(thread.originalPost.poster.name).isEqualTo("Bob & Alice")
@@ -90,6 +92,7 @@ class VichanMapperTest {
                         ),
                 ),
             )
+        ProviderContract.requireValidBoards(boards)
         val g = boards.single()
         assertThat(g.title).isEqualTo("Tech & Gadgets")
         assertThat(g.description).isEqualTo("Discuss \"technology\"")
@@ -109,6 +112,7 @@ class VichanMapperTest {
                         ),
                 ),
             )
+        ProviderContract.requireValidBoards(boards)
         assertThat(boards.first { it.id.value == "g" }.isNsfw).isFalse()
         assertThat(boards.first { it.id.value == "b" }.isNsfw).isTrue()
     }

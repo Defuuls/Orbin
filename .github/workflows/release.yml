@@ -32,21 +32,13 @@ jobs:
     name: Build, sign & publish release
     runs-on: ubuntu-latest
     env:
-      # For tag-push events GITHUB_REF_NAME is the tag; for dispatch it is the branch.
-      # RELEASE_TAG normalises this so all steps can use a single variable.
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # full history so release notes can diff against the previous tag
+          fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
 
-      # The release title is derived from the tag rather than typed into the dispatch form, so the
-      # two lines read the same way on a releases page that mixes them: v101-Hana becomes
-      # "Orbin 101 - Hana" and minimal-v5-Aoi becomes "Orbin Minimal 5 - Aoi". It used to be
-      # whatever the tag message said, which is how the full client's releases came to be titled
-      # with a bare codename ("Hana") while Orbin Minimal's spelled out the app and its number.
-      # The same string annotates the tag, so the tag message and the release title cannot drift.
       - name: Derive the release name
         run: |
           set -euo pipefail
@@ -56,7 +48,6 @@ jobs:
           if [ "$CODENAME" = "$NUMBER" ]; then
             RELEASE_NAME="Orbin ${NUMBER}"
           else
-            # Tags hyphenate a multi-word codename (v48-Sirius-B); the title spaces it back out.
             RELEASE_NAME="Orbin ${NUMBER} - ${CODENAME//-/ }"
           fi
           echo "RELEASE_NAME=${RELEASE_NAME}" >> "$GITHUB_ENV"
@@ -81,6 +72,12 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - name: Release preflight
+        run: |
+          python3 scripts/validate_architecture.py
+          python3 scripts/validate_repo.py
+          ./gradlew :provider:api:test -Porbin.warningsAsErrors=true
 
       - name: Decode signing keystore
         env:
@@ -121,14 +118,7 @@ jobs:
         id: notes
         run: |
           set -euo pipefail
-          # Make sure the tag object itself is present: the step below walks from it, and a
-          # shallow or lightweight ref is not enough to resolve "${RELEASE_TAG}^".
           git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
-          # Restrict to this app's own tags. Both APKs are tagged on the same
-          # branch, so an unfiltered describe returns whichever tag is nearest —
-          # v97-Penne's notes read "Changes since minimal-v1" because the minimal
-          # app happened to release in between. minimal-v* does not match 'v*',
-          # which is what separates the two lines here.
           PREV_TAG=$(git describe --tags --abbrev=0 --match 'v*' "${RELEASE_TAG}^" 2>/dev/null || true)
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {
