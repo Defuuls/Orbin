@@ -30,8 +30,12 @@ object ProviderContract {
                 val key = thread.key.toString()
                 if (!keys.add(key)) add("duplicate catalog thread $key")
                 if (!thread.originalPost.isOriginalPost) add("catalog[$index] opening post is not marked OP")
-                if (thread.originalPost.threadId != thread.key.thread) add("catalog[$index] opening post/thread key mismatch")
-                if (thread.originalPost.board != thread.key.board) add("catalog[$index] opening post/board key mismatch")
+                if (thread.originalPost.threadId != thread.key.thread) {
+                    add("catalog[$index] opening post/thread key mismatch")
+                }
+                if (thread.originalPost.board != thread.key.board) {
+                    add("catalog[$index] opening post/board key mismatch")
+                }
                 validateAttachments("catalog[$index]", thread.originalPost.attachments, this)
             }
         }
@@ -62,8 +66,12 @@ object ProviderContract {
         errors: MutableList<String>,
     ) {
         attachments.forEachIndexed { index, media ->
-            if (!media.sourceUrl.isAbsoluteHttpUrl()) errors.add("$owner attachment[$index] sourceUrl is not absolute HTTP(S)")
-            if (!media.thumbnailUrl.isAbsoluteHttpUrl()) errors.add("$owner attachment[$index] thumbnailUrl is not absolute HTTP(S)")
+            if (!media.sourceUrl.isAbsoluteHttpUrl()) {
+                errors.add("$owner attachment[$index] sourceUrl is not absolute HTTP(S)")
+            }
+            if (!media.thumbnailUrl.isAbsoluteHttpUrl()) {
+                errors.add("$owner attachment[$index] thumbnailUrl is not absolute HTTP(S)")
+            }
             if (media.id.isBlank()) errors.add("$owner attachment[$index] has a blank id")
         }
     }
@@ -74,9 +82,14 @@ object ProviderContract {
             uri.isAbsolute && uri.host != null && uri.scheme.lowercase() in setOf("http", "https")
         }.getOrDefault(false)
 
-    private fun requireValid(kind: String, errors: List<String>) {
+    private fun requireValid(
+        kind: String,
+        errors: List<String>,
+    ) {
         if (errors.isNotEmpty()) {
-            throw ProviderException.Parse("Provider $kind contract violated: ${errors.joinToString("; ")}")
+            throw ProviderException.Parse(
+                "Provider $kind contract violated: ${errors.joinToString("; ")}",
+            )
         }
     }
 }
