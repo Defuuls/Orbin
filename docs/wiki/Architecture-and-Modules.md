@@ -1,101 +1,161 @@
 # Architecture and Modules
 
-Orbin follows **Clean Architecture** with a strict, compiler-enforced separation of concerns.
-Dependencies always point *inward*: outer layers (UI, framework) depend on inner layers
-(domain, model), never the reverse. The canonical reference is
-[`docs/architecture/README.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/README.md);
-this page is the summary.
+Orbin uses modular Clean Architecture with **executable dependency rules**. The goal is not merely
+to have many modules; it is to make each feature understandable as a small local system while the
+application remains capable of growing.
 
-## Layers
+The canonical implementation-level documentation lives under
+[`docs/architecture/`](https://github.com/Defuuls/Orbin/tree/main/docs/architecture). This page is
+the wiki orientation.
 
-| Layer | Modules | Responsibility | Android? |
-| --- | --- | --- | --- |
-| Presentation | `app`, `feature:*`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes |
-| Domain | `domain` | Use cases, repository **contracts** | no* |
-| Data | `data`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | yes (except `provider:api`) |
-| Model | `core:model` | Pure domain entities shared by all layers | no |
-| Cross-cutting | `core:common`, `core:testing` | Result types, dispatchers, test fixtures | yes |
+## Dependency direction
 
-\* `domain` is an Android library only so it can expose Paging types; it contains no Android
-framework usage. `provider:api` and `core:model` are pure-JVM modules — the build fails if an
-Android dependency leaks into them, which keeps the boundary honest.
-
-## Module structure
-
-```
-Orbin/
-├── app/                      # Application, MainActivity, navigation host, DI aggregation
-├── benchmark/                # Baseline profile generation (startup + feed path)
-├── build-logic/              # Gradle convention plugins (the build's backbone)
-├── core/
-│   ├── common/               # Result types, dispatchers, NetworkMonitor
-│   ├── model/                # Pure domain entities (no Android deps)
-│   ├── designsystem/         # Theme, color, typography, reusable components
-│   ├── ui/                   # Shared Compose UI building blocks
-│   └── testing/              # Test fixtures and rules
-├── domain/                   # Repository contracts + use cases (pure logic)
-├── data/                     # Room, DataStore, Paging, repository implementations
-├── network/                  # OkHttp/Retrofit, DoH, connectivity
-├── media/                    # Coil 3 + Media3 integration, download manager
-├── provider/
-│   ├── api/                  # The ImageBoardProvider SPI (pure Kotlin)
-│   ├── vichan/               # 4chan provider (vichan/4chan-compatible JSON)
-│   └── lynxchan/             # BBW Chan provider (LynxChan JSON)
-└── feature/                  # home, board, thread, search, history, settings, gallery
-                              # (includes bookmarks), downloads, onboarding
+```text
+ui-next
+   ↑
+feature modules
+   ↓
+ domain
+   ↓
+contracts / models
+   ↑
+data + infrastructure
+   ↑
+provider implementations
 ```
 
-There is no separate `feature:bookmarks` module — bookmarks live inside `feature:gallery` as a
-tab, sharing its screen and ViewModel rather than a standalone feature.
+UI never owns transport details. Providers never reach into features. Engine quirks are normalized
+before they cross the provider boundary.
 
-## Key design decisions
+## Major layers
 
-### The provider seam
-All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). The app
-holds a `Set<ImageBoardProvider>` (Hilt multibinding) and a `ProviderRegistry` resolves the
-active one. Adding LynxChan/TinyIB/etc. means adding a `provider:*` module — **nothing else
-changes**.
-
-### Repository pattern with `OrbinResult`
-Repositories return `OrbinResult<T>` (or `Flow<OrbinResult<T>>`) carrying a typed `DataError`,
-so the UI branches on failure category (offline / not-found / rate-limited) without catching
-exceptions. Providers throw `ProviderException`; the data layer maps those to `DataError` once.
-
-### Offline-first data flow
-Reads come from Room first (instant display), then a network refresh updates the cache, which
-re-emits through the same `Flow`. Catalogs use Paging 3; threads stream so background refreshes
-surface new replies live.
-
-### Parsed comments, not HTML
-Engine post HTML is parsed **once** in the data/provider layer into an immutable `PostComment`
-tree. The UI renders that tree to an `AnnotatedString` — fast, testable, and free of HTML in
-the presentation layer. Backlinks are computed by inverting forward quote links
-(`BuildReplyGraphUseCase`).
-
-### Encrypted persistence
-The Room database is encrypted with SQLCipher and settings live in an encrypted DataStore, both
-protected by a hardware-backed Android Keystore key (TEE/StrongBox). Cloud backup and device
-transfer of local data are disabled.
-
-### Performance posture
-- Immutable, stable UI state (`data class` + `kotlinx.collections.immutable`) to minimize
-  recompositions; Compose compiler strong-skipping is on, with metrics emitted to `build/`.
-- Lazy lists with stable keys; Paging for catalogs; background parsing on
-  `Dispatchers.Default`.
-- Coil 3 memory + disk caching; Media3 for hardware-accelerated playback and video caching
-  (since v30 repeated viewing does not churn CDN requests).
-
-## Testing strategy
-
-| Kind | Tooling | Where |
+| Layer | Modules | Responsibility |
 | --- | --- | --- |
-| Unit | JUnit, Truth, MockK, Turbine | `src/test` in every module |
-| Repository/DB | Room in-memory, MockWebServer | `data`, `network` |
-| UI | Compose UI test, Hilt test runner | `feature:*/src/androidTest` |
-| Screenshot | Roborazzi | `core:designsystem`, `feature:*` |
+| App shell | `app` | Process lifecycle, navigation host, DI aggregation |
+| Interface | `ui-next`, `core:designsystem`, `core:ui` | Plain-data Compose screens and reusable UI |
+| Features | `feature:*` | ViewModels, feature state, mapping, navigation adapters |
+| Domain | `domain`, `core:model` | Use cases, repository contracts, domain entities |
+| Data | `data` | Room, encrypted preferences, repositories, paging |
+| Infrastructure | `network`, `media` | HTTP/connectivity, image/video/download infrastructure |
+| Providers | `provider:api`, `provider:vichan`, `provider:lynxchan` | Engine SPI, contracts and implementations |
+| Engineering | `build-logic`, scripts, CI workflows | Build conventions and quality enforcement |
 
-Individual design decisions and their rationale are recorded chronologically in
-[CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
-ADR files — this page and
-[`docs/architecture/README.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/README.md)
-are the current-state summary.
+## `ui-next`: the interface seam
+
+`ui-next` is intentionally isolated from app-specific types. Screens accept already-formatted rows,
+primitive/presentation state, callbacks, and composable slots. Feature modules adapt ViewModel/domain
+state into those inputs.
+
+That gives Orbin an important property: the full repository can be large while an individual screen
+remains understandable without loading the database, provider, and navigation implementation into
+your head at once.
+
+It also makes screenshot testing straightforward because screens can render from deterministic sample
+data.
+
+## Provider architecture
+
+`ImageBoardProvider` is the engine seam. The app resolves installed providers through a registry;
+features do not contain Vichan or LynxChan conditionals.
+
+Current implementations:
+
+- `provider:vichan` for the Vichan/4chan-compatible reference integration
+- `provider:lynxchan` for LynxChan, including BBW Chan
+
+### Shared provider contract
+
+Provider results are validated against common invariants at the registry boundary. Provider fixture
+and contract tests exercise behavior such as boards, catalogs, threads, media, URLs, timestamps,
+missing fields, and normalized failures.
+
+This matters because imageboard engines frequently return data that is technically valid but differs
+from the cleanest example payload. BBW Chan compatibility therefore includes tolerance for inactive
+boards, absolute and relative media paths, absent media paths, and catalog timestamp fallbacks.
+
+See [`docs/provider-api/contract.md`](https://github.com/Defuuls/Orbin/blob/main/docs/provider-api/contract.md)
+and [`adding-a-provider.md`](https://github.com/Defuuls/Orbin/blob/main/docs/provider-api/adding-a-provider.md).
+
+## Provider diagnostics
+
+Provider calls are instrumented at the registry layer for debugging and support. Diagnostics are
+intentionally privacy-limited to operational information such as:
+
+- provider,
+- operation,
+- duration,
+- success/failure outcome.
+
+They do **not** record board names, thread IDs, search queries, or request URLs. This gives developers
+a way to answer "which layer failed?" without turning diagnostics into browsing-history telemetry.
+
+## Data flow
+
+A typical path is:
+
+```text
+Compose screen
+  ↓ event
+feature ViewModel
+  ↓
+domain use case
+  ↓
+repository contract
+  ↓
+data repository
+  ↓
+provider registry / network / database
+  ↓
+normalized domain result
+  ↑
+UI state
+```
+
+Repositories expose typed `OrbinResult`/`DataError` behavior so presentation code does not catch
+arbitrary transport exceptions.
+
+## Parsed comments
+
+Post markup is parsed into structured `PostComment`/`PostNode` data before presentation. Native UI
+then renders greentext, quote links, spoilers, formatting, board links, and external links without
+shipping raw provider HTML into the screen layer.
+
+## Encrypted persistence
+
+Room storage is encrypted with SQLCipher. Preferences are encrypted and protected by Android
+Keystore material. Android cloud backup/device transfer of private Orbin state is disabled; explicit
+exports are user-controlled.
+
+## Architecture enforcement
+
+Architecture is a CI gate, not a diagram people are expected to remember.
+
+`scripts/validate_architecture.py` checks dependency/source boundaries and cycles before deeper Gradle
+analysis. Repository validation and release preflight add further consistency checks.
+
+Useful references:
+
+- [`docs/architecture/README.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/README.md)
+- [`docs/architecture/module-map.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/module-map.md)
+- [`docs/architecture/quality-gates.md`](https://github.com/Defuuls/Orbin/blob/main/docs/architecture/quality-gates.md)
+
+## Testing pyramid
+
+| Layer | Examples |
+| --- | --- |
+| Pure/contract | model invariants, provider contracts, parsers |
+| Unit | use cases, ViewModels, repositories |
+| Integration | Room, MockWebServer, provider fixtures |
+| UI semantics | Compose behavior and accessibility |
+| Screenshot | Roborazzi normal/dark/AMOLED/text-scale baselines |
+| Instrumentation | real Android startup and feature journeys |
+| Security | CodeQL and dependency/repository checks |
+| Performance | build-health and performance workflows |
+
+## Build-health philosophy
+
+Gradle uses configuration cache, build cache, parallel execution, convention plugins, and incremental
+Kotlin compilation. CI publishes build-health information so dependency fan-out and source growth
+remain visible.
+
+The objective is simple: **a large app should still feel small when you are working on one feature.**
