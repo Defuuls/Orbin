@@ -31,7 +31,7 @@ import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.HomeScreen
-import com.orbin.feature.home.NextFeedScreen
+import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
@@ -105,7 +105,7 @@ fun OrbinNavHost(
         }
 
         composable<Route.NextFeed> {
-            NextFeedScreen(
+            NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
                 onOpenCommands = onOpenCommands,
                 onOpenSettings = { navController.navigate(Route.Settings()) },
