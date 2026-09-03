@@ -4,13 +4,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
@@ -33,7 +34,7 @@ class InterfaceSemanticsTest {
         }
         composeRule.onNodeWithText("Grid").assertIsSelected()
         composeRule.onNodeWithText("Images").assertIsNotSelected()
-        composeRule.onNodeWithText("List").assertDoesNotExist()
+        composeRule.onAllNodesWithText("List").assertCountEquals(0)
     }
 
     @Test
@@ -50,7 +51,7 @@ class InterfaceSemanticsTest {
             NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
         }
         composeRule.onNodeWithText("Grid").assertIsSelected()
-        composeRule.onNodeWithText("List").assertDoesNotExist()
+        composeRule.onAllNodesWithText("List").assertCountEquals(0)
     }
 
     @Test
