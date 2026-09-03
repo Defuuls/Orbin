@@ -35,6 +35,9 @@ jobs:
       - name: Architecture contract
         run: python3 scripts/validate_architecture.py
 
+      - name: Build health summary
+        run: python3 scripts/build_health.py >> "$GITHUB_STEP_SUMMARY"
+
       - name: ktlint
         run: ./gradlew ktlintCheck --continue
 
