@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
@@ -18,15 +19,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * What the interface tells a screen reader.
- *
- * These are the four things that were true of the shipped build and are not obvious from looking
- * at it: the layout switcher never said which layout was current, the image wall never said what
- * any thread was, rows were not buttons, and the subscribe control announced a switch without a
- * position. Each is invisible on screen and each fails an accessibility review, which is exactly
- * the combination that needs a test rather than an eye.
- */
+/** What the interface tells a screen reader. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class InterfaceSemanticsTest {
@@ -34,21 +27,30 @@ class InterfaceSemanticsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the layout switcher says which layout is current`() {
+    fun `the layout switcher exposes grid and images without list`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
         }
         composeRule.onNodeWithText("Grid").assertIsSelected()
-        composeRule.onNodeWithText("List").assertIsNotSelected()
         composeRule.onNodeWithText("Images").assertIsNotSelected()
+        composeRule.onNodeWithText("List").assertDoesNotExist()
     }
 
     @Test
-    fun `a layout option is a single choice rather than a plain button`() {
+    fun `the grid layout option is a single choice rather than a plain button`() {
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+        }
+        composeRule.onNodeWithText("Grid").assert(hasRole(Role.RadioButton))
+    }
+
+    @Test
+    fun `a legacy list layout request renders the readable grid`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
         }
-        composeRule.onNodeWithText("List").assert(hasRole(Role.RadioButton))
+        composeRule.onNodeWithText("Grid").assertIsSelected()
+        composeRule.onNodeWithText("List").assertDoesNotExist()
     }
 
     @Test
@@ -56,16 +58,15 @@ class InterfaceSemanticsTest {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.IMAGES) }
         }
-        // The cell draws only a picture and a board badge, so the subject has to be stated.
         composeRule
             .onNodeWithContentDescription("${ROWS[0].subject}, ${ROWS[0].board}")
             .assertHasClickAction()
     }
 
     @Test
-    fun `a feed row is a button, not a tap target with labels loose inside it`() {
+    fun `a grid feed cell is a button`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
+            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
         }
         composeRule
             .onNodeWithText(ROWS[0].subject)
@@ -74,12 +75,10 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a feed row reads as one node carrying everything in it`() {
+    fun `a grid feed cell reads as one node carrying its metadata`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
+            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
         }
-        // Merged, so the board, the timestamp, the subject and the counts arrive together rather
-        // than as four stops for someone stepping through the list.
         composeRule
             .onNodeWithText(ROWS[0].subject)
             .assert(hasTextContaining(ROWS[0].board))
