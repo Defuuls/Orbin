@@ -37,7 +37,8 @@ internal class FeedSiteSwitcherViewModel
                         id = provider.metadata.id.value,
                         label = provider.metadata.displayName,
                     )
-                }.toImmutableList()
+                }
+                .toImmutableList()
 
         private val defaultProviderId = registry.default().metadata.id.value
 
