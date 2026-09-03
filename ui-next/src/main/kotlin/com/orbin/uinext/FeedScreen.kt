@@ -8,13 +8,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +36,7 @@ fun FeedScreen(
     subtitle: String? = null,
     railDetail: String? = null,
     showRail: Boolean = true,
-    layout: FeedLayout = FeedLayout.LIST,
+    layout: FeedLayout = FeedLayout.GRID,
     onLayoutChange: (FeedLayout) -> Unit = {},
     sortLabel: String? = null,
     onSort: () -> Unit = {},
@@ -57,27 +54,18 @@ fun FeedScreen(
     scrollToTopRequest: Int = 0,
     showSizeControl: Boolean = false,
 ) {
-    val listState = rememberLazyListState()
+    val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
     val gridState = rememberLazyGridState()
     var feedSize by rememberSaveable { mutableFloatStateOf(GRID_MIN_CELL.value) }
-    val sizeScale = feedSize / GRID_MIN_CELL.value
     val imageGridMinSize = if (showSizeControl) feedSize.dp else IMAGE_MIN_CELL
     val imageHeight = if (showSizeControl) (feedSize * FEED_IMAGE_TILE_HEIGHT_RATIO).dp else 124.dp
 
     LaunchedEffect(scrollToTopRequest) {
-        if (scrollToTopRequest > 0) {
-            if (layout == FeedLayout.LIST) {
-                listState.animateScrollToItem(0)
-            } else {
-                gridState.animateScrollToItem(0)
-            }
-        }
+        if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
     }
     val railVisible =
         if (!hideRailOnScroll) {
             true
-        } else if (layout == FeedLayout.LIST) {
-            scrollingUp({ listState.firstVisibleItemIndex }, { listState.firstVisibleItemScrollOffset })
         } else {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
@@ -86,30 +74,22 @@ fun FeedScreen(
     val omittedWithoutPreview = rows.size - withPreview.size
     val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
 
-    LaunchedEffect(layout, rows, withPreview, listState, gridState) {
+    LaunchedEffect(effectiveLayout, rows, withPreview, gridState) {
         snapshotFlow {
-            when (layout) {
-                FeedLayout.LIST ->
-                    listState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
-                        rows
-                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                            ?.takeIf { it.hasPreview && !it.muted }
-                            ?.id
-                    }
-
-                FeedLayout.GRID ->
-                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
-                        rows
-                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                            ?.takeIf { it.hasPreview && !it.muted }
-                            ?.id
-                    }
-
+            when (effectiveLayout) {
                 FeedLayout.IMAGES ->
                     gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
                         withPreview
                             .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
                             ?.takeIf { !it.muted }
+                            ?.id
+                    }
+
+                else ->
+                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
+                        rows
+                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                            ?.takeIf { it.hasPreview && !it.muted }
                             ?.id
                     }
             }
@@ -133,7 +113,7 @@ fun FeedScreen(
             val header: @Composable () -> Unit = {
                 FeedHeader(
                     subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
-                    layout = layout,
+                    layout = effectiveLayout,
                     onLayoutChange = onLayoutChange,
                     sortLabel = sortLabel,
                     onSort = onSort,
@@ -146,66 +126,43 @@ fun FeedScreen(
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
-            when (layout) {
-                FeedLayout.LIST ->
-                    LazyColumn(
-                        state = listState,
-                        modifier = insets,
-                        contentPadding = bottomPad,
-                    ) {
-                        item(key = FEED_HEADER_KEY) { header() }
-                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                            FeedRowView(
-                                row,
-                                seed = index,
-                                modifier = Modifier.animateItem(),
-                                onClick = onOpenRow,
-                                thumbnail = thumbnail,
-                                activityText = activityText,
-                                sizeScale = sizeScale,
-                            )
-                            if (index < rows.lastIndex) Hairline(inset = true)
-                        }
+            if (effectiveLayout == FeedLayout.IMAGES) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(imageGridMinSize),
+                    state = gridState,
+                    modifier = insets,
+                    contentPadding = gridPadding(bottomPad),
+                ) {
+                    fullWidthItem { header() }
+                    itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
+                        FeedImageCell(
+                            row,
+                            seed = index,
+                            onClick = onOpenRow,
+                            thumbnail = thumbnail,
+                            tileHeight = imageHeight,
+                        )
                     }
-
-                FeedLayout.GRID ->
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(feedSize.dp),
-                        state = gridState,
-                        modifier = insets,
-                        contentPadding = gridPadding(bottomPad),
-                    ) {
-                        fullWidthItem { header() }
-                        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
-                            FeedGridCell(
-                                row,
-                                seed = index,
-                                onClick = onOpenRow,
-                                thumbnail = thumbnail,
-                                modifier = Modifier.animateItem(),
-                                activityText = activityText,
-                            )
-                        }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(feedSize.dp),
+                    state = gridState,
+                    modifier = insets,
+                    contentPadding = gridPadding(bottomPad),
+                ) {
+                    fullWidthItem { header() }
+                    itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                        FeedGridCell(
+                            row,
+                            seed = index,
+                            onClick = onOpenRow,
+                            thumbnail = thumbnail,
+                            modifier = Modifier.animateItem(),
+                            activityText = activityText,
+                        )
                     }
-
-                FeedLayout.IMAGES ->
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(imageGridMinSize),
-                        state = gridState,
-                        modifier = insets,
-                        contentPadding = gridPadding(bottomPad),
-                    ) {
-                        fullWidthItem { header() }
-                        itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
-                            FeedImageCell(
-                                row,
-                                seed = index,
-                                onClick = onOpenRow,
-                                thumbnail = thumbnail,
-                                tileHeight = imageHeight,
-                            )
-                        }
-                    }
+                }
             }
         }
 
@@ -224,7 +181,7 @@ fun FeedScreen(
     }
 }
 
-internal const val FEED_SIZE_MIN_DP = 96f
+internal const val FEED_SIZE_MIN_DP = 150f
 internal const val FEED_SIZE_MAX_DP = 240f
 internal const val FEED_SIZE_STEPS = 5
 private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f

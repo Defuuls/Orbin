@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -34,7 +32,7 @@ fun BoardScreen(
     itemCount: Int,
     rowAt: (Int) -> FeedRow?,
     modifier: Modifier = Modifier,
-    layout: FeedLayout = FeedLayout.LIST,
+    layout: FeedLayout = FeedLayout.GRID,
     onLayoutChange: (FeedLayout) -> Unit = {},
     sortLabel: String? = null,
     onSort: () -> Unit = {},
@@ -45,13 +43,11 @@ fun BoardScreen(
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
-    val listState = rememberLazyListState()
+    val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
     val gridState = rememberLazyGridState()
     val railVisible =
         if (!hideRailOnScroll) {
             true
-        } else if (layout == FeedLayout.LIST) {
-            scrollingUp({ listState.firstVisibleItemIndex }, { listState.firstVisibleItemScrollOffset })
         } else {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
@@ -95,20 +91,14 @@ fun BoardScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     InlineAction(
-                        label = stringResource(R.string.next_layout_list),
-                        selected = layout == FeedLayout.LIST,
-                        onClick = { onLayoutChange(FeedLayout.LIST) },
-                    )
-                    WidthSpacer(4)
-                    InlineAction(
                         label = stringResource(R.string.next_layout_grid),
-                        selected = layout == FeedLayout.GRID,
+                        selected = effectiveLayout == FeedLayout.GRID,
                         onClick = { onLayoutChange(FeedLayout.GRID) },
                     )
                     WidthSpacer(4)
                     InlineAction(
                         label = stringResource(R.string.next_layout_images),
-                        selected = layout == FeedLayout.IMAGES,
+                        selected = effectiveLayout == FeedLayout.IMAGES,
                         onClick = { onLayoutChange(FeedLayout.IMAGES) },
                     )
                     Box(modifier = Modifier.weight(1f))
@@ -121,56 +111,34 @@ fun BoardScreen(
             }
         }
         val insets = Modifier.fillMaxSize().contentInsets()
-        when (layout) {
-            FeedLayout.LIST ->
-                LazyColumn(state = listState, modifier = insets, contentPadding = bottomPad) {
-                    item(key = FEED_HEADER_KEY) { header() }
-                    items(itemCount) { index ->
-                        val row = rowAt(index)
-                        if (row != null) {
-                            FeedRowView(
-                                row,
-                                seed = index,
-                                showBoard = false,
-                                onClick = onOpenRow,
-                                thumbnail = thumbnail,
-                            )
-                        } else {
-                            PendingRow()
-                        }
-                        if (index < itemCount - 1) Hairline(inset = true)
+        if (effectiveLayout == FeedLayout.IMAGES) {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(IMAGE_MIN_CELL),
+                state = gridState,
+                modifier = insets,
+                contentPadding = gridPadding(bottomPad),
+            ) {
+                fullWidthItem { header() }
+                items(itemCount) { index ->
+                    rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
+                        FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     }
                 }
-
-            FeedLayout.GRID ->
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(GRID_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
-                ) {
-                    fullWidthItem { header() }
-                    items(itemCount) { index ->
-                        rowAt(index)?.let { row ->
-                            FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                        }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(GRID_MIN_CELL),
+                state = gridState,
+                modifier = insets,
+                contentPadding = gridPadding(bottomPad),
+            ) {
+                fullWidthItem { header() }
+                items(itemCount) { index ->
+                    rowAt(index)?.let { row ->
+                        FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     }
                 }
-
-            FeedLayout.IMAGES ->
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(IMAGE_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
-                ) {
-                    fullWidthItem { header() }
-                    items(itemCount) { index ->
-                        rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
-                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                        }
-                    }
-                }
+            }
         }
     }
 }
