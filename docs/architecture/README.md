@@ -4,6 +4,9 @@ Orbin follows **Clean Architecture** with a strict, compiler-enforced separation
 Dependencies always point *inward*: outer layers (UI, framework) depend on inner layers
 (domain, model), never the reverse.
 
+For a fast orientation before reading implementation code, see the [module map](module-map.md).
+The architecture's executable enforcement lives in [engineering quality gates](quality-gates.md).
+
 ## Layers
 
 | Layer | Modules | Responsibility | Android? |
@@ -91,7 +94,9 @@ All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:ap
 holds a `Set<ImageBoardProvider>` (Hilt multibinding) and a `ProviderRegistry` resolves the active
 one. `provider:vichan` (4chan) and `provider:lynxchan` (BBW Chan) are the two engines shipped
 today; adding TinyIB/etc. means adding another `provider:*` module — **nothing else changes**.
-See [`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).
+Every provider result is checked against the shared [provider contract](../provider-api/contract.md)
+at the registry boundary. See
+[`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).
 
 ### Repository pattern with `OrbinResult`
 Repositories return `OrbinResult<T>` (or `Flow<OrbinResult<T>>`) carrying a typed `DataError`,
@@ -114,15 +119,22 @@ HTML in the presentation layer. Backlinks are computed by inverting forward quot
   recompositions; Compose compiler strong-skipping is on, with metrics emitted to `build/`.
 - Lazy lists with stable keys; Paging for catalogs; background parsing on `Dispatchers.Default`.
 - Coil 3 memory + disk caching; Media3 for hardware-accelerated playback.
+- Configuration cache, build cache, parallel Gradle execution and incremental Kotlin compilation
+  are enabled repository-wide; CI publishes a module fan-out/source-size summary to keep build
+  graph growth visible.
 
 ## Testing strategy
 
 | Kind | Tooling | Where |
 | --- | --- | --- |
+| Pure / contract | JUnit, Truth | `core:model`, `provider:api`, provider fixture tests |
 | Unit | JUnit, Truth, MockK, Turbine | `src/test` in every module |
 | Repository/DB | Room in-memory, MockWebServer | `data`, `network` |
 | UI | Compose UI test, Hilt test runner | `feature:*/src/androidTest` |
 | Screenshot | Roborazzi | `ui-next`, `core:designsystem`, `feature:*` |
+
+CI also runs `scripts/validate_architecture.py` before Gradle analysis. This turns dependency and
+source-boundary rules into merge gates instead of review conventions.
 
 Individual design decisions and their rationale are recorded chronologically in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
