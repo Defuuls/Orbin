@@ -78,6 +78,11 @@ class ThreadViewModel
 
         init {
             viewModelScope.launch {
+                // Match Orbin Minimal's navigation semantics: the provider attached to the thread
+                // becomes the browsing context, so backing out of a BBW Chan thread does not fall
+                // through to the registry default (4chan) on provider-driven screens.
+                settingsRepository.setActiveProviderId(provider)
+
                 val existing = historyRepository.getEntry(key)
                 _initialScrollPosition.value =
                     existing?.lastReadPostId?.let { ThreadScrollPosition(it, existing.lastReadOffsetPx) }
