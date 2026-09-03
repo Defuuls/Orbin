@@ -56,13 +56,8 @@ internal fun FeedHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             InlineAction(
-                label = stringResource(R.string.next_layout_list),
-                selected = layout == FeedLayout.LIST,
-                onClick = { onLayoutChange(FeedLayout.LIST) },
-            )
-            InlineAction(
                 label = stringResource(R.string.next_layout_grid),
-                selected = layout == FeedLayout.GRID,
+                selected = layout != FeedLayout.IMAGES,
                 onClick = { onLayoutChange(FeedLayout.GRID) },
             )
             InlineAction(
@@ -220,7 +215,7 @@ internal fun FeedGridCell(
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().aspectRatio(GRID_TILE_ASPECT)
+        val tile = Modifier.fillMaxWidth().aspectRatio(4f / 3f)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -236,33 +231,33 @@ internal fun FeedGridCell(
                 MetaLine(stringResource(R.string.next_row_no_image), color = next.faint)
             }
         }
-        Gap(12)
+        Gap(10)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BoardDot(row.board, size = 6.dp)
+            BoardDot(row.board, size = 7.dp)
             WidthSpacer(6)
             Text(
                 text = row.board,
-                fontSize = 11.5.sp,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (row.read) next.muted else boardHue(row.board),
             )
-            WidthSpacer(6)
-            MetaLine(activityText(row), color = next.faint)
         }
-        Gap(4)
+        Gap(3)
+        MetaLine(activityText(row), color = next.faint)
+        Gap(6)
         Text(
             text = row.subject,
-            fontSize = 14.sp,
-            lineHeight = 18.sp,
-            letterSpacing = (-0.1).sp,
-            fontWeight = if (row.read) FontWeight.Normal else FontWeight.Medium,
+            fontSize = 15.5.sp,
+            lineHeight = 20.sp,
+            letterSpacing = (-0.15).sp,
+            fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
             color = if (row.read) next.muted else next.ink,
-            maxLines = 3,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
         )
-        Gap(4)
+        Gap(6)
         MetaLine(rowCounts(row))
-        Gap(10)
+        Gap(12)
     }
 }
 
