@@ -1,0 +1,30 @@
+# Orbin 121 — Yuki
+#
+# Merging this file to main triggers the Cut Release workflow, which opens the
+# release PR. See release/README.md.
+
+number       = 121
+codename     = "Yuki"
+version_code = 139
+
+summary = [
+  "bump Orbin to 121-Yuki / versionCode 139",
+  "ship the media wall image size control and the feed size slider",
+  "ship the optional thread scroll arrow, off by default",
+  "record the move to the manifest-driven release cutter",
+]
+
+[changelog]
+Added = [
+  "Added an image size control to the media wall, switching tiles between Small and Large.",
+  "Added a feed size slider that scales list rows across the feed layouts.",
+  "Added an optional Reddit-style thread scroll arrow that jumps to the next post, toggled from Settings and off by default.",
+]
+
+Changed = [
+  "Replaced the per-release cutter workflows and the New Version dispatch form with a single manifest-driven Cut Release workflow, so a release is described once in release/next.toml.",
+]
+
+Reliability = [
+  "Made the media wall scrolling test deterministic and kept the screenshot fixtures stable across the new size controls.",
+]
