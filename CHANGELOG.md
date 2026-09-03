@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [121-Yuki] - 2026-09-03
+
+### Added
+- Added an image size control to the media wall, switching tiles between Small and Large.
+- Added a feed size slider that scales list rows across the feed layouts.
+- Added an optional Reddit-style thread scroll arrow that jumps to the next post, toggled from Settings and off by default.
+
+### Changed
+- Replaced the per-release cutter workflows and the New Version dispatch form with a single manifest-driven Cut Release workflow, so a release is described once in release/next.toml.
+
+### Reliability
+- Made the media wall scrolling test deterministic and kept the screenshot fixtures stable across the new size controls.
+
+
 ## [120-Sora] - 2026-09-02
 
 ### Fixed
@@ -2017,7 +2031,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v120-Sora...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v121-Yuki...HEAD
+[121-Yuki]: https://github.com/Defuuls/Orbin/compare/v120-Sora...v121-Yuki
 [120-Sora]: https://github.com/Defuuls/Orbin/compare/v119-Aiko...v120-Sora
 [119-Aiko]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...v119-Aiko
 [118-Hotaru]: https://github.com/Defuuls/Orbin/compare/v117-Nao...v118-Hotaru
