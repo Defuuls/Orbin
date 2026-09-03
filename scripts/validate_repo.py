@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE_URL = "https://github.com/Defuuls/Orbin"
+HERO_SVG = "docs/assets/orbin-hero-screenshot.svg"
 
 failures: list[str] = []
 notes: list[str] = []
@@ -54,7 +55,8 @@ def tag_for(version: str, tags: set[str]) -> str | None:
 
 def check_version_consistency(version_name: str) -> None:
     number = version_name.split("-", 1)[0]
-    codename = version_name.split("-", 1)[1] if "-" in version_name else ""
+    codename_slug = version_name.split("-", 1)[1] if "-" in version_name else ""
+    codename = codename_slug.replace("-", " ")
 
     readme = read("README.md")
     if f"releases/tag/v{version_name}" not in readme:
@@ -65,6 +67,17 @@ def check_version_consistency(version_name: str) -> None:
     home = read("docs/wiki/Home.md")
     if codename and f"**v{number} — {codename}**" not in home:
         fail("version", f"docs/wiki/Home.md current-release row is not 'v{number} — {codename}'")
+
+    if not (ROOT / HERO_SVG).exists():
+        fail("version", f"{HERO_SVG} is missing")
+    else:
+        svg = read(HERO_SVG)
+        if f'data-release-version="{version_name}"' not in svg:
+            fail("version", f"{HERO_SVG} data-release-version does not match {version_name}")
+        if codename and f">{number} · {codename}</text>" not in svg:
+            fail("version", f"{HERO_SVG} visible release label is not '{number} · {codename}'")
+        if codename and f"illustration of Orbin {number} {codename} showing" not in svg:
+            fail("version", f"{HERO_SVG} accessibility description does not name {number} {codename}")
 
     changelog = read("CHANGELOG.md")
     if not re.search(rf"^## \[{re.escape(version_name)}\] - \d{{4}}-\d{{2}}-\d{{2}}$", changelog, re.M):
@@ -160,13 +173,8 @@ def check_relative_links() -> None:
 
 
 def check_release_tooling() -> None:
-    """The cutter is one workflow over one script; keep both honest about what they touch.
-
-    The edits a release makes live in scripts/prepare_release.py, so that is where the four
-    version references are checked for. The workflow is checked only for the wiring that
-    makes it the single entry point: the manifest it reads and the script it delegates to.
-    """
-    for required in ("scripts/prepare_release.py", ".github/workflows/cut-release.yml"):
+    """Keep the manifest-driven cutter honest about every synchronized release artifact."""
+    for required in ("scripts/prepare_release.py", ".github/workflows/cut-release.yml", HERO_SVG):
         if not (ROOT / required).exists():
             fail("release-tooling", f"{required} is missing; the release cutter is incomplete")
             return
@@ -177,7 +185,7 @@ def check_release_tooling() -> None:
     for expected in ("orbin.versionCode", "orbin.versionName", "gradle.properties", "CHANGELOG.md"):
         if expected not in script:
             fail("release-tooling", f"prepare_release.py never references {expected}")
-    for doc in ("README.md", "docs/wiki/Home.md"):
+    for doc in ("README.md", "docs/wiki/Home.md", HERO_SVG):
         if doc not in script:
             fail("release-tooling", f"prepare_release.py does not update {doc}")
 
@@ -187,8 +195,6 @@ def check_release_tooling() -> None:
         if expected not in code:
             fail("release-tooling", f"cut-release.yml never references {expected}")
 
-    # Per-release cutters are what this replaced. One reappearing means the duplication is
-    # back, along with the stale-workflow failures that came with it.
     stale = sorted(p.name for p in (ROOT / ".github/workflows").glob("cut-[0-9]*.yml"))
     if stale:
         fail("release-tooling", f"per-release cutter workflow(s) present, use release/next.toml instead: {stale}")

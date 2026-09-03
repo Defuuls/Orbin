@@ -1,109 +1,147 @@
 # Troubleshooting
 
-Common questions and fixes, split into in-app behavior and build problems. If your issue isn't
-here, check the [CHANGELOG](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) — many
-"bugs" are intentional changes from a recent release — or open an issue.
+This page covers current Orbin behavior and common development failures. If something changed after
+a release, also check the repository CHANGELOG and the latest GitHub release notes.
 
 ## In-app behavior
 
-### "Where did the Bookmarks tab go?"
-Moved, not removed. Since **v33**, bookmarks live in a **Bookmarks tab inside the Gallery
-view**. The watch toggle, unread badges, and remove actions all carried over.
+### Where did List view go?
 
-### "Where did the Search tab go?"
-From **v34**, the dedicated Search tab is replaced by a search bar built into the subscribed
-feed — type at the top of the Feed tab to filter your subscribed threads.
+List is no longer a selectable feed/catalog layout. Orbin now uses the adaptive **Grid** as the
+primary thread presentation, tuned so cards stay readable on compact phones. **Images** remains as
+the media-first alternative.
 
-### "The gallery board picker doesn't show all boards"
-Intentional since **v33**: the picker offers only boards you **subscribe to**, matching the
-feed. It also honours **Hide NSFW boards** — if a board is missing, check
-Settings → Content → Subscriptions and the NSFW setting.
+If an older install had List saved, Orbin treats that legacy value as Grid automatically.
 
-### "Feed search finds nothing"
-Feed search filters your **subscribed** threads only — it is not a provider-wide search. If
-nothing matches you'll see "No subscribed threads match your search"; clear the query with the
-✕ button.
+### Why are there fewer columns than before?
 
-### "Full-screen feed still shows bars / white strips / board headers"
-This mode was refined across three releases: v31 fixed the status/navigation bars not hiding
-and the white inset strips at the top and bottom; v32 removed the pinned board headers so
-nothing stays fixed. If you see any of these, update — you're on v30 or v31.
+Intentional. Very narrow cards made thread subjects and metadata difficult to read on small screens.
+The current grid maintains a larger minimum cell width and gives subjects more vertical room. The
+trade is slightly lower density for substantially better readability.
 
-### "Videos re-download every time I watch them"
-Fixed in **v30**: video is now cached through Media3 and static media no longer sends no-cache
-headers. Update if you're on an older version.
+### Where did Bookmarks go?
 
-### "My history/bookmarks/subscriptions disappeared after an update"
-The **v24.0** update encrypted all local data at rest, which changed the on-disk format and
-performed a **one-time reset** of history, bookmarks, downloads, and settings (including
-favorites and subscriptions). This was a one-off migration; later updates keep your data.
+Bookmarks live inside Gallery rather than as a separate bottom-navigation destination. Watch state,
+unread information, and removal actions remain available there.
 
-### "The biometric unlock prompt hangs"
-Fixed in **v23.8**: stale prompts are cancelled on background/destruction, stale callbacks are
-ignored, and stuck unlock attempts time out. Also, the notification-permission dialog no longer
-races the biometric prompt. If Android's authentication is unavailable entirely, the app fails
-closed and offers a recovery path.
+### Search only finds some threads
 
-### "Boards/threads won't load on 4chan"
-Fixed in **v23.1**: the API sometimes sends numeric media IDs (`tim`), which older versions
-rejected. Update to v23.1 or later.
+Feed search operates on the content represented by the feed rather than being an unrestricted web
+search. Provider/board search capabilities can also differ by engine. Check subscriptions, content
+filters, hidden tags, and media filters if expected results are missing.
 
-### "How do I update the app?"
-Signed APKs are published on the
-[Releases page](https://github.com/Defuuls/Orbin/releases) with SHA-256 checksums.
+### A board or catalog is empty
 
-Settings → Network & privacy has a **Check for updates** row (shown while the **Internal
-updater** toggle is on) that asks GitHub whether a newer release exists and, if so, links
-straight to it. Installing is still a deliberate manual step: Orbin fetches release metadata
-only and never downloads or installs an APK, so you always land on the release page where the
-checksum is published.
+Orbin distinguishes a real empty result from provider/network failures where possible. Check the
+offline indicator and retry. For BBW Chan/LynxChan, current builds include tolerant parsing for
+inactive boards, media URL forms, missing media paths, and catalog timestamp variations.
 
-The **Internal updater** toggle dates from v34, but until now it had nothing attached to it —
-there was no update-checking code in the app at all. The toggle now genuinely gates the row
-above.
+### Where do saved thread links go?
 
-### "Why can't I turn off DNS over HTTPS?"
-Because a protection you can switch off protects you only until something persuades you to
-switch it off. Encrypted DNS is now a property of the app rather than a preference: the
-setting is which resolver answers your lookups, and `DohConfig` has no "disabled" case for
-any code path to fall into.
+Use **Save links** in the thread actions. Orbin deduplicates the thread's external links and writes
+them as a plain-text file in the configured **Saved media folder**, defaulting to
+`Downloads/Orbin`.
 
-Networks do sometimes block the well-known DoH resolvers. When that happens Orbin resolves
-through the system resolver instead of failing to load anything, and the DNS section of
-Settings tells you it has done so — your lookups are not private on that network. Switching
-resolvers sometimes clears it; otherwise the network itself is the cause. The notice clears
-on its own once an encrypted lookup succeeds again, with no restart.
+The file is plaintext. If the URLs are sensitive, store or delete it accordingly.
 
-### "Where do downloads and exported thread links go?"
-To your **Saved media folder** (Settings → Storage), which defaults to `Downloads/Orbin`.
-Since v25.2.1, exported thread links follow the same folder setting.
+### Where do downloads go?
+
+Downloads use the saved-media location and organization configured in Settings. Folder structure can
+be flat or organized by board/thread depending on the selected option.
+
+### Why is All media incomplete?
+
+The normal All media sweep discovers what catalogs expose, which is primarily opening-post media.
+Enable **Deep scan** if you also need attachments from replies. Deep scan walks threads and is much
+slower by design.
+
+### Why does DNS say it fell back to the system resolver?
+
+Some networks block the configured encrypted DNS endpoint. Orbin falls back so browsing does not
+fail completely and reports that privacy degradation. Switching resolver or network may clear it;
+the notice clears after encrypted resolution succeeds again.
+
+### How do I update Orbin?
+
+Signed APKs and SHA-256 checksums are published on the repository Releases page. The in-app update
+check retrieves release metadata and sends you to the release page; Orbin does not silently install
+an APK.
+
+## Privacy questions
+
+### Is local browsing data encrypted?
+
+The main local database is encrypted with SQLCipher and preferences use encrypted storage protected
+by Android Keystore material.
+
+### Are backups and saved-link files encrypted?
+
+No. Explicit backup JSON and exported link text files are plaintext because they are designed for
+portability. Keep them in a trusted location.
+
+### What does provider diagnostics record?
+
+Operational diagnostics are intentionally limited to provider, operation, duration, and outcome.
+They do not record board names, thread IDs, search queries, or requested URLs.
 
 ## Building from source
 
-### `SDK location not found`
-Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`. You need
-platform **API 37** installed (`compileSdk`; `targetSdk` is 36, `minSdk` is 35).
+### SDK location not found
 
-### Configuration-cache errors after editing build logic
-Run once with `--no-configuration-cache`, or delete `.gradle/configuration-cache`.
+Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`. Install Android
+platform API 37. The app targets Android 12+ (`minSdk` 31).
 
-### KSP/Hilt stale generation
-`./gradlew clean`, then rebuild.
+### What Java version is required?
+
+Use JDK 17. Exact Gradle, AGP, Kotlin, KSP, Room, and Hilt versions are pinned in the repository and
+summarized in the [[Developer Guide|Developer-Guide]].
+
+### Configuration-cache failure after changing build logic
+
+Try the failing task once with `--no-configuration-cache`. If necessary, clear the local Gradle
+configuration-cache directory and rerun.
+
+### KSP/Hilt generated-code errors
+
+Run a clean build. If the problem persists, verify the pinned toolchain rather than independently
+upgrading one processor/plugin.
+
+### CI says architecture validation failed
+
+Do not bypass the check. Run `scripts/validate_architecture.py` and inspect the reported dependency,
+cycle, or source-boundary violation. The allowed direction is documented in
+[[Architecture and Modules|Architecture-and-Modules]] and `docs/architecture/quality-gates.md`.
+
+### Screenshot verification failed after an intentional UI change
+
+Inspect the Roborazzi diff artifact first. If the visual change is intended, record/update the
+approved baselines and rerun verification. Do not weaken the screenshot assertion simply to make CI
+green.
+
+### A provider contract test failed
+
+Treat this as a normalization bug or a deliberately changed provider invariant. Provider engines are
+allowed to be messy; the rest of Orbin should not have to know that. Fix the provider mapper or, if
+the contract truly needs to change, update the shared contract and all affected provider fixtures.
 
 ### Build fails on warnings
-CI sets `orbin.warningsAsErrors=true`. Either fix the warning or unset the property locally.
 
-### `assembleRelease` without signing secrets
-Works by design: when the `ORBIN_KEYSTORE_*` environment variables are absent, the release
-build falls back to the **debug** signing config. Real releases are signed in CI from
-repository secrets — see the [[Developer Guide|Developer-Guide]].
+CI can treat warnings as errors. Fix the warning rather than relying on a local configuration that
+allows it.
 
-### Toolchain mismatches after the AGP 9 upgrade (July 2026)
-The build now requires **JDK 17**, **Gradle 9.6.1**, **AGP 9.3.1**, and **Kotlin 2.4.10** — see
-`gradle/libs.versions.toml` and `gradle/wrapper/gradle-wrapper.properties` for the exact pinned
-versions, which move forward independently of this page. Older Android Studio versions or a
-stale Gradle daemon can produce confusing sync errors — update Studio, then `./gradlew --stop`
-and re-sync. Component-specific pitfalls (KSP, Room, Hilt, Roborazzi version floors) from the
-original upgrade are documented in
-[`docs/agp-9-upgrade.md`](https://github.com/Defuuls/Orbin/blob/main/docs/agp-9-upgrade.md); see
-the [[Developer Guide|Developer-Guide]] for the current version table.
+### Release build/signing questions
+
+Local release-shaped tasks can use debug signing for development paths, while publication requires
+repository release secrets. The automated cutter and signed release workflow are documented in the
+[[Developer Guide|Developer-Guide]].
+
+## Still stuck?
+
+Check, in order:
+
+1. the latest release notes and `CHANGELOG.md`,
+2. this wiki,
+3. `docs/architecture/` or `docs/provider-api/` for engineering issues,
+4. existing GitHub issues,
+5. then open a new issue with the provider, Android version, Orbin version, reproduction steps, and
+   non-sensitive logs/diagnostics.

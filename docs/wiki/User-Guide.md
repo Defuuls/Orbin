@@ -1,152 +1,150 @@
 # User Guide
 
-This guide covers day-to-day use of Orbin as of **v78 (Alioth)**.
+This guide describes the current Orbin interface and day-to-day behavior. For historical changes,
+use [[Release History|Release-History]] or the repository CHANGELOG rather than relying on old UI
+instructions.
 
 ## Getting started
 
-On first launch, a setup wizard walks you through subscribing to boards and choosing appearance,
-media, and privacy preferences. Everything you pick there can be changed later in Settings, and
-you can re-run the wizard any time via **Settings → Content → Run setup again**.
+On first launch, Orbin walks through provider/board selection and key appearance, media, and privacy
+preferences. Those choices can be changed later in Settings.
 
-The bottom navigation bar has two tabs:
+Orbin is a **read-only browser**. It can browse, watch, save, download, search, filter, and export,
+but it does not post, reply, or create threads.
 
-- **Feed** — the subscribed feed, a continuous stream of threads from your followed boards.
-- **Gallery** — the media gallery, which since v33 also contains your **Bookmarks** tab.
+## Feed
 
-> **Since v34:** earlier versions also had a dedicated **Search** tab in the bottom bar. It was
-> removed in favor of the search bar built directly into the subscribed feed.
+The Feed combines threads from subscribed boards and orders them by activity. Read state, filtering,
+provider errors, and refresh behavior are handled consistently with board catalogs.
 
-## The subscribed feed
+### Grid-first layout
 
-The Feed tab loads threads from every board you subscribe to, with bounded request concurrency
-so large subscription lists stay responsive. Boards are managed under
-**Settings → Content → Subscriptions**.
+The normal feed is now an **adaptive grid**. The previous List option is no longer exposed.
 
-Feed behaviors worth knowing:
+On compact phones, cards are prevented from shrinking into tiny columns. The grid prioritizes:
 
-- **Tap-to-top (v30):** tapping the top feed, board, or thread bar scrolls back to the top,
-  iOS-style.
-- **Full-screen feed (v30–v32):** an optional mode (Settings → Appearance → Full-screen feed)
-  that hides the board headers, feed bars, and system bars while you scroll, so threads fill the
-  entire screen as one uninterrupted list. See [[Settings Guide|Settings-Guide]] for details.
-- **Feed search (v34):** a search field at the top of the feed filters your subscribed threads
-  as you type. A clear button resets the query, and an inline message tells you when no
-  subscribed threads match.
-- **Thread limits:** **Settings → Media → Threads per board** caps how many threads each board
-  contributes to the feed (6, 12, 18, or all).
-- **Hidden and muted tags:** threads with hidden tags are removed from the feed; muted tags stay
-  visible but de-emphasized (Settings → Content).
-- **Collapse all / Expand all (v50):** toolbar buttons collapse or expand every subscribed board
-  at once; tapping a board name collapses it individually.
-- **Watched threads (v51):** watched threads can notify you when new replies arrive, with
-  configurable quiet hours under **Settings → Notifications**.
-- **Pull to refresh (v65):** pull down on the feed, a board catalog, or a thread to force a
-  reload past the normal cache window, with haptic feedback at the release threshold.
-- **List / Grid / image-only layouts (v73):** the top-bar layout icon cycles the feed between
-  the usual text-and-thumbnail list, a denser card grid, and a pure image-only grid with an
-  adjustable thumbnail size (Medium/Large/Fill) — the board catalog got the same three layouts
-  and icon in v72.
-- **Autoplay videos in feed (v74):** an opt-in setting (Settings → Media & Playback) plays each
-  thread's first video inline and muted as its row scrolls into view, and stops as it scrolls
-  away — no need to open the thread to see what's playing. Off by default.
+1. the thread subject,
+2. board identity,
+3. recent activity,
+4. reply/media counts and preview imagery.
 
-### Tablet layout
+Subjects use a stronger text hierarchy and can occupy several lines before truncating. Preview
+images use a consistent card proportion so text does not get squeezed unpredictably.
 
-On larger screens (introduced in v30) the feed switches to a tablet layout with a floating dock,
-combined subscribed-feed controls, auto-hiding chrome, and old-Reddit-style thumbnail-and-text
-rows for faster scanning.
+The **Images** layout remains available when you want a media-first wall instead of thread cards.
+Legacy saved List state is interpreted as Grid, so upgrades do not strand an old preference.
 
-**Two-pane catalog and thread (v65):** on screens ≥840dp wide, opening a thread from a board
-catalog no longer replaces the catalog — the two sit side by side, so you keep your place in the
-list while reading. The open thread has its own back stack in the detail pane, and rotating the
-device across the 840dp threshold promotes it to a full screen (or demotes a full-screen thread
-back into the pane) without losing which thread was open.
+### Feed behavior
+
+- Pull down to refresh immediately.
+- Already-read threads are visually de-emphasized without becoming illegible.
+- Hidden tags remove matching content; muted content remains visible but quieter.
+- The thread-per-board limit controls how much each subscription contributes.
+- Optional inline video autoplay starts muted and stops as the active preview leaves view.
+- Search filters subscribed content and saved searches can be reused.
+- Network/offline state is surfaced explicitly.
 
 ## Boards and catalogs
 
-The board gallery presents boards as large, tappable tiles. Favorites stay on the home list, and
-subscriptions are managed under Settings. Board catalogs support sorting and use paging, so long
-catalogs load smoothly. Pull down on the catalog to force a refresh (v65).
+Board catalogs use the same grid-first presentation and readability rules as the subscribed feed.
+Sorting and paging remain available. The Images layout is useful when browsing a board primarily by
+its OP media.
 
-**List / Grid / image-only layouts (v72):** the catalog's top-bar icon cycles between a
-text-and-thumbnail list, a denser card grid, and a pure image-only grid with an adjustable
-thumbnail size (Medium/Large/Fill) — the same three layouts and icon pattern as the thread
-viewer's grid toggle and the subscribed feed.
+On screens at least 840dp wide, opening a thread from a catalog can keep the catalog visible in a
+two-pane layout. Moving across the width threshold preserves the open thread rather than resetting
+your place.
 
-## The thread viewer
+## Thread reader
 
-- **Structured replies:** quote links, quote previews, and backlinks are rendered as a proper
-  reply tree — no raw HTML. Greentext is styled natively.
-- **Inline media:** images and video play inline; replies are collapsible; thread stats are
-  shown.
-- **Tap-to-reveal spoilers (v65):** spoilered text is blacked out until you tap it, then reveals
-  in place. If a spoiler hides a quote link, that link is inert while hidden — the tap reveals
-  the spoiler first, rather than accidentally jumping to the quoted post before you could see
-  there was a link there at all.
-- **Media carousel (v54):** posts with several attachments scroll horizontally with a swipe, and
-  a badge shows your position (e.g. "2/5"). The board feed gained the same treatment in v55, and
-  each view can be toggled independently under **Settings → Media**.
-- **Video indicators (v54):** video and audio attachments are marked with a play icon rather
-  than a "VID" text label.
-- **Thumbnail grid:** a thumbnail-only grid view shows every attachment in the thread at a
-  glance, reflows to fit the screen width instead of a fixed column count (v65), and has an
-  adjustable thumbnail size (Medium/Large/Fill) via its own top-bar icon.
-- **Less toolbar clutter (v69):** download-all-media and export-links live in a "More" (⋮)
-  overflow menu instead of separate icons, and collapsed posts show a real expand/collapse icon
-  rather than a "[+]" suffix.
-- **Reading history:** threads you read are tracked (locally, encrypted). Reopening a thread —
-  even after fully closing the app — resumes exactly where you left off, down to the pixel
-  (v77). Already-read thread titles also dim in the board catalog and subscribed feed, so a
-  returning glance can tell new threads apart from ones you've already opened (v77).
-- **Pull to refresh (v65):** pull down to fetch new replies immediately, bypassing the normal
-  cache window.
+Orbin parses post markup into native UI rather than showing raw HTML.
 
-## Gallery and bookmarks
+Supported reading behavior includes:
 
-Opening media from a thread launches a pinch-zoom swipe gallery with background preloading.
+- greentext and common inline formatting,
+- quote links, quote previews, backlinks, and cross-board references,
+- tap-to-reveal spoilers,
+- inline images/video and multi-attachment carousels,
+- collapsible posts and thread statistics,
+- pull-to-refresh for new replies,
+- persistent reading history and scroll-position restore,
+- watched-thread notifications with quiet hours.
 
-Since **v33**:
+### Files view
 
-- The gallery's **board picker only offers boards you subscribe to** (and it honours the
-  "Hide NSFW boards" setting), matching the feed instead of listing every board on the provider.
-- **Bookmarks live in a tab inside the Gallery view.** The former bottom-navigation Bookmarks tab
-  is gone, but everything it offered is intact: the watch toggle, unread badges, and remove
-  actions.
+Files shows the thread's attachments as a media grid. It is useful for quickly scanning or opening
+media without walking the reply tree.
 
-Watched threads are checked in the background (WorkManager) and can notify you of new replies.
+### Save links
 
-Swiping through media — whether opened from a thread or from the Gallery's own **Browse** tab —
-keeps the grid you opened it from in sync: closing the viewer scrolls back to whichever image or
-video you were actually looking at, not wherever the grid happened to be when you opened it.
+Use **Save links** from the thread actions to export the thread's external links. Orbin:
 
-## Media playback and downloads
+- gathers the links found in thread posts,
+- removes duplicates,
+- writes one URL per line to a plain-text file,
+- saves the file in the configured **Saved media folder**.
 
-- Hardware-accelerated image and video rendering, progressive loading, autoplay and mute
-  toggles, and background preloading (all configurable in Settings → Media).
-- Since v30, video is cached through Media3 and static media no longer sends no-cache request
-  headers, so repeated viewing does not re-download from the CDN.
-- Downloads go through a native download manager (notifications, resume, retry) with an in-app
-  history screen. Media saves to **Downloads/Orbin** by default, or to a custom folder chosen
-  under **Settings → Storage → Saved media folder**. Downloads are HTTPS-only and file names are
-  sanitized.
+The default location is `Downloads/Orbin`. The export is plaintext and may contain sensitive URLs,
+so treat it like any other unencrypted note or text file.
 
-## Search
+### Downloads
 
-- **Feed search (v34):** filter your subscribed feed directly from the Feed tab.
-- **Saved searches (v51):** search queries can be saved and reused.
-- **Board search:** search threads with content-type filters for posts, images, videos, audio,
-  and URLs, scoped to your subscribed boards. Recent-search history is **opt-in**
-  (Settings → Network & privacy → Save recent searches).
+Thread media can be downloaded through Orbin's native download path. The saved-media hierarchy can
+be configured as flat, by board, by thread, or by board then thread.
+
+## Gallery and media
+
+Opening an attachment launches the media viewer with image zoom, video playback, swipe navigation,
+and background preloading. Returning from the viewer keeps the originating grid synchronized with
+the media you were actually viewing.
+
+### All media
+
+**All media** sweeps board catalogs and fills a single continuous wall of discovered images and
+videos. Failed boards are reported so a partial scan is not mistaken for a complete result.
+
+### Deep scan
+
+Catalogs mostly expose opening-post media. **Deep scan** optionally walks threads to discover reply
+attachments too. It is intentionally slower and more network-intensive, so use it when completeness
+matters more than speed.
+
+## Search and filtering
+
+Orbin supports feed filtering, board/content search, saved searches, media-type filtering, hidden
+and muted tags, and poster-oriented filtering where supported by the current settings.
+
+Recent-search history is local and controlled by its privacy setting.
+
+## Providers
+
+Orbin currently ships Vichan/4chan-compatible and LynxChan providers. BBW Chan uses the LynxChan
+implementation.
+
+Provider-specific JSON and URL quirks are normalized before data reaches the rest of the app. For
+example, LynxChan handling tolerates absolute/relative media paths, missing paths, inactive boards,
+and catalog timestamp variations.
+
+If a provider fails, Orbin attempts to surface a meaningful failure category rather than presenting
+an empty catalog as valid data.
+
+## Accessibility and small screens
+
+The interface is tested at normal, large, and maximum text scales. Grid cards are deliberately wider
+than older versions allowed, which trades a little density for significantly better subject and
+metadata readability on small phones.
+
+Orbin also provides screen-reader semantics for major state and controls, large touch targets, and
+contrast-aware themes.
 
 ## Privacy at a glance
 
-- All local data (history, bookmarks, downloads, recent searches, settings) is **encrypted at
-  rest**; the key never leaves the device's TEE/StrongBox.
-- Optional **biometric app-lock** keeps the app gated and its content out of the recents screen.
-  When it's on, a lock icon appears centered in the subscribed feed's top bar as a failsafe —
-  tap it to lock the app immediately, rather than backgrounding it to trigger a re-lock.
-- Networking is **HTTPS-only**, with optional DNS-over-HTTPS.
-- Cloud backup and device-transfer of local data are disabled.
+- Local database content is encrypted with SQLCipher.
+- Preferences use encrypted storage protected by Android Keystore material.
+- Optional biometric app lock protects access and recents previews.
+- Application networking is HTTPS-only.
+- DNS uses encrypted resolvers where possible and reports fallback when a network blocks them.
+- Android cloud backup/device transfer of private Orbin state is disabled.
+- Explicit backup exports and saved-link text files are **not encrypted**.
 
-See the [[Settings Guide|Settings-Guide]] for every option, and [[Troubleshooting]] if something
-doesn't behave as expected.
+See [[Settings Guide|Settings-Guide]] for configuration details and [[Troubleshooting]] for common
+questions.

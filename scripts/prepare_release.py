@@ -9,23 +9,11 @@ copy of the same edits.
 Commands
 --------
 plan     Validate the manifest and emit ``KEY=value`` lines for ``$GITHUB_OUTPUT``.
-prepare  Apply the release edits to gradle.properties, CHANGELOG.md, README.md and
-         docs/wiki/Home.md. Idempotent: re-running on an already-prepared tree is a
-         no-op rather than a second changelog section.
+prepare  Apply the release edits to gradle.properties, CHANGELOG.md, README.md,
+         docs/wiki/Home.md and the README hero SVG. Idempotent: re-running on an
+         already-prepared tree is a no-op rather than a second changelog section.
 verify   Assert the working tree already carries exactly what the manifest describes.
          Used after the release PR merges, before the signed build is dispatched.
-
-Manifest format::
-
-    number       = 121
-    codename     = "Yuki"
-    version_code = 139
-    summary      = ["what the release PR body should say", ...]
-
-    [changelog]
-    Fixed = ["one sentence per entry", ...]
-
-Every field is required except ``summary``, which is derived when omitted.
 """
 
 from __future__ import annotations
@@ -41,10 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "release" / "next.toml"
 BASE_URL = "https://github.com/Defuuls/Orbin"
-
-# A codename becomes a git ref, a changelog heading and an APK name, so it is held to
-# what all three accept: a letter, then letters, digits, spaces, hyphens or apostrophes
-# (v39-Barnards-Star and Van Maanen's Star are both in the release history).
+HERO_SVG = "docs/assets/orbin-hero-screenshot.svg"
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
 
 
@@ -82,7 +67,6 @@ def _require(data: dict, key: str, kind: type):
     if key not in data:
         raise ManifestError(f"{MANIFEST.name} is missing required key '{key}'")
     value = data[key]
-    # bool is a subclass of int; a `true` where a number belongs is a mistake, not a 1.
     if not isinstance(value, kind) or isinstance(value, bool) != (kind is bool):
         raise ManifestError(f"{MANIFEST.name}: '{key}' must be {kind.__name__}, got {value!r}")
     return value
@@ -99,7 +83,6 @@ def load_manifest() -> tuple[Release, dict[str, list[str]]]:
     number = _require(data, "number", int)
     codename = " ".join(_require(data, "codename", str).split())
     version_code = _require(data, "version_code", int)
-
     if number <= 0:
         raise ManifestError(f"'number' must be positive, got {number}")
     if not CODENAME.match(codename):
@@ -125,13 +108,13 @@ def load_manifest() -> tuple[Release, dict[str, list[str]]]:
         release.summary = [
             f"bump Orbin to {release.version_name} / versionCode {release.version_code}",
             f"close the [Unreleased] changelog section as {release.version_name}",
-            "update the current-release pointers in README.md and docs/wiki/Home.md",
+            "update README.md, docs/wiki/Home.md, and the README hero SVG for the new release",
         ]
     return release, sections
 
 
 def current_version() -> tuple[int, str]:
-    text = (ROOT / "gradle.properties").read_text(encoding="utf-8")
+    text = _read("gradle.properties")
     code = re.search(r"^orbin\.versionCode=(\d+)$", text, re.M)
     name = re.search(r"^orbin\.versionName=(.+)$", text, re.M)
     if not code or not name:
@@ -152,6 +135,52 @@ def _write(rel: str, text: str) -> None:
 
 def _read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8")
+
+
+def _replace_once(rel: str, pattern: str, replacement: str, text: str, flags: int = 0) -> str:
+    updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+    if count != 1:
+        raise ManifestError(f"{rel} does not contain the expected release marker")
+    return updated
+
+
+def _update_release_docs(release: Release, today: str) -> None:
+    readme = _replace_once(
+        "README.md",
+        r"\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)",
+        f"**Current release:** [{release.number} — {release.codename}]({BASE_URL}/releases/tag/{release.tag})",
+        _read("README.md"),
+    )
+    _write("README.md", readme)
+
+    home = _replace_once(
+        "docs/wiki/Home.md",
+        r"\| Current release \| \*\*[^*]+\*\*(?: \([0-9-]+\))? \|",
+        f"| Current release | **v{release.number} — {release.codename}** ({today}) |",
+        _read("docs/wiki/Home.md"),
+    )
+    _write("docs/wiki/Home.md", home)
+
+    svg = _read(HERO_SVG)
+    svg = _replace_once(
+        HERO_SVG,
+        r'data-release-version="[^"]+"',
+        f'data-release-version="{release.version_name}"',
+        svg,
+    )
+    svg = _replace_once(
+        HERO_SVG,
+        r'(<desc id="desc">Screenshot-style illustration of Orbin )[^<]+?( showing )',
+        rf"\g<1>{release.number} {release.codename}\g<2>",
+        svg,
+    )
+    svg = _replace_once(
+        HERO_SVG,
+        r'(<text id="release-label"[^>]*>)[^<]*(</text>)',
+        rf"\g<1>{release.number} · {release.codename}\g<2>",
+        svg,
+    )
+    _write(HERO_SVG, svg)
 
 
 def apply(release: Release, sections: dict[str, list[str]]) -> None:
@@ -185,19 +214,7 @@ def apply(release: Release, sections: dict[str, list[str]]) -> None:
         )
         _write("CHANGELOG.md", changelog)
 
-    _write("README.md", re.sub(
-        r"\*\*Current release:\*\* \[[^\]]+\]\([^)]+\)",
-        f"**Current release:** [{release.number} — {release.codename}]({BASE_URL}/releases/tag/{release.tag})",
-        _read("README.md"),
-        count=1,
-    ))
-
-    _write("docs/wiki/Home.md", re.sub(
-        r"\| Current release \| \*\*[^*]+\*\* \([0-9-]+\) \|",
-        f"| Current release | **v{release.number} — {release.codename}** ({today}) |",
-        _read("docs/wiki/Home.md"),
-        count=1,
-    ))
+    _update_release_docs(release, today)
 
 
 def command_plan(release: Release, _sections: dict[str, list[str]]) -> int:
@@ -245,6 +262,23 @@ def command_verify(release: Release, _sections: dict[str, list[str]]) -> int:
         problems.append(f"gradle.properties says versionCode={version_code}, manifest says {release.version_code}")
     if not re.search(rf"^## \[{re.escape(release.version_name)}\] - ", _read("CHANGELOG.md"), flags=re.M):
         problems.append(f"CHANGELOG.md has no dated '## [{release.version_name}]' heading")
+
+    readme = _read("README.md")
+    if f"releases/tag/{release.tag}" not in readme or f"[{release.number} — {release.codename}]" not in readme:
+        problems.append("README.md current-release metadata is stale")
+
+    home = _read("docs/wiki/Home.md")
+    if f"**v{release.number} — {release.codename}**" not in home:
+        problems.append("docs/wiki/Home.md current-release metadata is stale")
+
+    svg = _read(HERO_SVG)
+    if f'data-release-version="{release.version_name}"' not in svg:
+        problems.append(f"{HERO_SVG} data-release-version is stale")
+    if f">{release.number} · {release.codename}</text>" not in svg:
+        problems.append(f"{HERO_SVG} visible release label is stale")
+    if f"illustration of Orbin {release.number} {release.codename} showing" not in svg:
+        problems.append(f"{HERO_SVG} accessibility description is stale")
+
     if problems:
         raise ManifestError("; ".join(problems))
     print(f"verified {release.tag} is fully prepared")
