@@ -1,23 +1,20 @@
-# Orbin 123 — Emiri
+# Orbin 124 — Airi
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 123
-codename     = "Emiri"
-version_code = 141
+number       = 124
+codename     = "Airi"
+version_code = 142
 
 summary = [
-  "bump Orbin to 123-Emiri / versionCode 141",
-  "ship the new distinctive orbital O launcher mark",
-  "preserve themed icon and splash-screen compatibility",
+  "bump Orbin to 124-Airi / versionCode 142",
+  "add a polished brand showcase for the redesigned orbital O",
+  "document logo anatomy, palette, usage guidance, and small-size behavior",
 ]
 
 [changelog]
 Changed = [
-  "Introduced a distinctive broken-orbit O launcher mark for Orbin while preserving the existing adaptive icon, monochrome icon, and splash-screen pipeline.",
-]
-
-Reliability = [
-  "Kept the launcher artwork white-on-dark so Android themed icons remain compatible and the mark stays legible at small launcher sizes.",
+  "Added a polished brand showcase for the redesigned orbital O, including logo anatomy, core palette, usage guidance, and small-size behavior.",
+  "Featured the brand board in the README and added a dedicated brand guide for the new identity.",
 ]
