@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+        Orbin orbital-O mark.
+        The broken outer orbit creates a recognizable O silhouette while the
+        inner counter and satellite node keep the mark legible at small sizes.
+        White-only geometry also makes this drawable safe for Android's
+        monochrome/themed icon pipeline and for the splash screen.
+    -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M54,20 C35.22,20 20,35.22 20,54 C20,72.78 35.22,88 54,88 C69.13,88 81.95,78.12 86.36,64.47 L73.77,60.89 C70.93,69.02 63.19,74.85 54.08,74.85 C42.65,74.85 33.38,65.58 33.38,54.15 C33.38,42.72 42.65,33.45 54.08,33.45 C63.20,33.45 70.95,39.30 73.78,47.46 L86.37,43.89 C81.99,30.18 69.15,20.25 54,20.25 Z M54,43.2 C60.02,43.2 64.9,48.08 64.9,54.1 C64.9,60.12 60.02,65 54,65 C47.98,65 43.1,60.12 43.1,54.1 C43.1,48.08 47.98,43.2 54,43.2 Z" />
+
+    <!-- Fast diagonal orbit cut, giving the mark motion and a distinct profile. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M67.5,22.4 L91.2,15.8 L84.6,39.5 L79.2,31.9 L67.5,22.4 Z" />
+
+    <!-- Satellite node: a compact detail that survives launcher-scale rendering. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M87,47 A6,6 0,1 0,87,59 A6,6 0,1 0,87,47 Z" />
+</vector>
