@@ -36,8 +36,8 @@ fun NextFeedWithSiteSwitcherScreen(
     filter: String = "",
     onClearFilter: () -> Unit = {},
     railAction: String = "Search",
-    switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel(),
 ) {
+    val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
