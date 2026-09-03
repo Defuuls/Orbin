@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [124-Airi] - 2026-09-03
+
+### Changed
+- Added a polished brand showcase for the redesigned orbital O, including logo anatomy, core palette, usage guidance, and small-size behavior.
+- Featured the brand board in the README and added a dedicated brand guide for the new identity.
+
+
 ## [123-Emiri] - 2026-09-03
 
 ### Changed
@@ -2057,7 +2064,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v123-Emiri...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v124-Airi...HEAD
+[124-Airi]: https://github.com/Defuuls/Orbin/compare/v123-Emiri...v124-Airi
 [123-Emiri]: https://github.com/Defuuls/Orbin/compare/v122-Haruka...v123-Emiri
 [122-Haruka]: https://github.com/Defuuls/Orbin/compare/v121-Yuki...v122-Haruka
 [121-Yuki]: https://github.com/Defuuls/Orbin/compare/v120-Sora...v121-Yuki

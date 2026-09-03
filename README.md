@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [123 — Emiri](https://github.com/Defuuls/Orbin/releases/tag/v123-Emiri)
+**Current release:** [124 — Airi](https://github.com/Defuuls/Orbin/releases/tag/v124-Airi)
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
