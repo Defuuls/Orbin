@@ -30,6 +30,8 @@ object ProviderContract {
                 val key = thread.key.toString()
                 if (!keys.add(key)) add("duplicate catalog thread $key")
                 if (!thread.originalPost.isOriginalPost) add("catalog[$index] opening post is not marked OP")
+                if (thread.originalPost.threadId != thread.key.thread) add("catalog[$index] opening post/thread key mismatch")
+                if (thread.originalPost.board != thread.key.board) add("catalog[$index] opening post/board key mismatch")
                 validateAttachments("catalog[$index]", thread.originalPost.attachments, this)
             }
         }
@@ -37,10 +39,12 @@ object ProviderContract {
     fun validateThread(thread: Thread): List<String> =
         buildList {
             if (!thread.originalPost.isOriginalPost) add("thread opening post is not marked OP")
-            if (thread.originalPost.threadId != thread.key.thread) add("thread OP id/key mismatch")
+            if (thread.originalPost.threadId != thread.key.thread) add("thread OP/thread key mismatch")
+            if (thread.originalPost.board != thread.key.board) add("thread OP/board key mismatch")
             val postIds = mutableSetOf<Long>()
             thread.allPosts.forEachIndexed { index, post ->
                 if (post.threadId != thread.key.thread) add("post[$index] belongs to a different thread")
+                if (post.board != thread.key.board) add("post[$index] belongs to a different board")
                 if (!postIds.add(post.id.value)) add("duplicate post id ${post.id.value}")
                 validateAttachments("post[$index]", post.attachments, this)
             }
@@ -71,6 +75,8 @@ object ProviderContract {
         }.getOrDefault(false)
 
     private fun requireValid(kind: String, errors: List<String>) {
-        require(errors.isEmpty()) { "Provider $kind contract violated: ${errors.joinToString("; ")}" }
+        if (errors.isNotEmpty()) {
+            throw ProviderException.Parse("Provider $kind contract violated: ${errors.joinToString("; ")}")
+        }
     }
 }
