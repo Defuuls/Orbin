@@ -1,25 +1,25 @@
 # Developer Guide
 
-How to build Orbin, what the toolchain looks like after the July 2026 AGP 9 upgrade, and how CI
-and releases work. The version numbers below are a snapshot; `gradle/libs.versions.toml` and
-`gradle.properties` are authoritative and this page is not updated per release. See also
-[[Architecture and Modules|Architecture-and-Modules]] and the in-repo docs under
-[`docs/`](https://github.com/Defuuls/Orbin/tree/main/docs).
+This guide covers the current Orbin development loop, architecture guardrails, CI, and release
+process. Exact dependency versions in `gradle/libs.versions.toml`, the Gradle wrapper, and
+`gradle.properties` are authoritative.
+
+See also [[Architecture and Modules|Architecture-and-Modules]] and the repository `docs/` tree.
 
 ## Prerequisites
 
-- **JDK 17** (the build targets JVM 17) — verify with `java -version`.
-- **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 31).
-- **Android Studio Ladybug (2024.2)** or newer recommended; the command line works too.
-- Set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=/path/to/Android/sdk`.
+- **JDK 17**
+- Android SDK platform **API 37** (`compileSdk` 37, `targetSdk` 36, `minSdk` 31)
+- Android Studio Ladybug or newer recommended
+- `ANDROID_HOME` or a valid `local.properties`
 
 ## First build
 
 ```bash
 git clone https://github.com/Defuuls/Orbin.git
 cd Orbin
-./gradlew help          # downloads the Gradle distribution and warms caches
-./gradlew assembleDebug # builds the debug APK
+./gradlew help
+./gradlew assembleDebug
 ```
 
 ## Everyday commands
@@ -27,172 +27,159 @@ cd Orbin
 | Task | Command |
 | --- | --- |
 | Debug APK | `./gradlew assembleDebug` |
-| Install on device | `./gradlew :app:installDebug` |
-| All unit tests | `./gradlew test` |
-| One module's tests | `./gradlew :domain:test` |
-| Instrumented tests | `./gradlew connectedDebugAndroidTest` |
-| Screenshot tests | `./gradlew verifyRoborazziDebug` |
-| Record screenshots | `./gradlew recordRoborazziDebug` |
-| Baseline profile (needs a device) | `./gradlew :app:generateReleaseBaselineProfile` |
-| Lint/format | `./gradlew ktlintCheck` / `./gradlew ktlintFormat` |
+| Install | `./gradlew :app:installDebug` |
+| Unit tests | `./gradlew test` |
+| Module tests | `./gradlew :domain:test` |
+| Formatting | `./gradlew ktlintCheck` / `./gradlew ktlintFormat` |
 | Static analysis | `./gradlew detekt` |
-| Compose compiler metrics | add `-Porbin.enableComposeCompilerReports=true` |
+| Android instrumentation | `./gradlew connectedDebugAndroidTest` |
+| Screenshot verification | `./gradlew verifyRoborazziDebug` |
+| Record intended screenshot changes | `./gradlew recordRoborazziDebug` |
+| Architecture validation | `python3 scripts/validate_architecture.py` |
+| Repository consistency | `python3 scripts/validate_repo.py` |
+| Baseline profile | `./gradlew :app:generateReleaseBaselineProfile` |
 
-Build knobs: `orbin.warningsAsErrors=true` treats Kotlin warnings as errors (CI uses this).
+CI may treat Kotlin warnings as errors. Fix warnings rather than depending on a permissive local
+configuration.
 
-## Toolchain and SDK notes (AGP 9 upgrade, July 2026)
+## Architecture rules
 
-The build was upgraded from AGP 8.13.2 / Gradle 8.14.3 / Kotlin 2.0.21 in July 2026, and has moved
-on from the versions that upgrade originally landed. Current pinned versions
-(`gradle/libs.versions.toml` and `gradle/wrapper/gradle-wrapper.properties` are authoritative):
+Orbin's module boundaries are enforced automatically. Before introducing a new dependency, read:
 
-| Component | Version | Notes |
-| --- | --- | --- |
-| AGP | **9.3.1** | 9.2.0 had an R8 `RecordTag` regression that motivated the original upgrade to a patch release; the project has since moved past 9.2 entirely. |
-| Gradle | **9.6.1** | Ahead of AGP 9's stated minimum, which is fine — AGP does not pin an upper bound. |
-| Kotlin (KGP) | **2.4.10** | Held at 2.4.0 for a time because CodeQL's Kotlin extractor lagged; CodeQL now analyses 2.4.10 successfully (v59). |
-| KSP | **2.3.10** | Standalone-versioned since 2.3.0; 2.3.1+ is required for AGP 9's built-in Kotlin. |
-| Room | **2.8.4** | 2.7.0 was the first release with proper KSP2/Kotlin 2.x support. |
-| Hilt | **2.60.1** | 2.59 is the first plugin supporting (and requiring) AGP 9; must move in the same commit as AGP. |
+- `docs/architecture/README.md`
+- `docs/architecture/module-map.md`
+- `docs/architecture/quality-gates.md`
 
-AGP 9 also required source changes in `build-logic` (untyped `CommonExtension`, the public
-`api.dsl.LibraryExtension` interface, and `compileOptions` moving off `CommonExtension`). The
-original upgrade's full version matrix and rationale live in
-[`docs/agp-9-upgrade.md`](https://github.com/Defuuls/Orbin/blob/main/docs/agp-9-upgrade.md) — read
-it for the *why*, and the version catalog for the current *what*.
+The important rule is one-way ownership: features may depend inward on domain/contracts, while
+providers/infrastructure do not reach back into features. `ui-next` stays app-agnostic and receives
+plain presentation state/callbacks.
 
-The build uses a Gradle **version catalog** (`gradle/libs.versions.toml`) and **convention
-plugins** in `build-logic/` (application/library/feature/compose/hilt/room/jvm-library), so
-module build files stay intentionally small.
+`scripts/validate_architecture.py` runs in CI so forbidden edges and cycles fail before merge.
 
-## Release signing (local)
+## Provider development
 
-Keep release signing files **outside** the repository tree and point local release builds at
-them with environment variables:
+New engines implement the provider SPI rather than adding engine conditionals to app/feature code.
+Start with:
 
-```bash
-export ORBIN_KEYSTORE_FILE=/absolute/path/orbin-release.jks
-export ORBIN_KEYSTORE_PASSWORD=...
-export ORBIN_KEY_ALIAS=...
-export ORBIN_KEY_PASSWORD=...
-```
+- `docs/provider-api/adding-a-provider.md`
+- `docs/provider-api/contract.md`
 
-A git-ignored `keystore.properties` is still supported for emergency local use. When signing
-material is absent the release signing config borrows the debug key, so release-shaped local
-builds — including baseline profile generation — work without secrets. `assembleRelease` and
-`bundleRelease` still fail fast if release signing is missing, since those produce artifacts
-meant to leave the machine.
+Provider contract/fixture tests should cover both normal responses and real-world tolerance: missing
+fields, URL forms, timestamps, media, empty results, and typed failures.
 
-That fallback borrows the debug keystore's *path*, and AGP only creates `debug.keystore` when it
-first signs a debug build. On a machine that has never built one — a fresh CI runner, say — a
-release-shaped build fails with "Keystore file ... not found". Run `./gradlew :app:assembleDebug`
-once first; the Baseline profile workflow does exactly that.
+The registry validates normalized provider results. Provider diagnostics record only operational
+metadata (provider, operation, duration, outcome), never board names, thread IDs, queries, or URLs.
+
+## UI development
+
+`ui-next` contains the primary screen composables. Prefer plain presentation models and callbacks,
+with feature modules performing domain/ViewModel adaptation.
+
+For intentional visual changes:
+
+1. run the relevant unit/semantics tests,
+2. run Roborazzi verification,
+3. inspect diff artifacts,
+4. record new baselines only after confirming the visual change is intended,
+5. rerun verification.
+
+Do not disable or loosen screenshot assertions to land a design change.
+
+The feed/catalog UI is grid-first. List is retained only as legacy state compatibility and is not a
+visible layout option.
+
+## Toolchain
+
+The project is on the AGP 9 generation of the Android toolchain. At the time of this documentation:
+
+| Component | Version |
+| --- | --- |
+| AGP | 9.3.1 |
+| Gradle | 9.6.1 |
+| Kotlin | 2.4.10 |
+| KSP | 2.3.10 |
+| Room | 2.8.4 |
+| Hilt | 2.60.1 |
+
+Always verify the version catalog/wrapper before diagnosing a mismatch. Historical AGP 9 migration
+notes live in `docs/agp-9-upgrade.md`.
+
+Gradle configuration cache, build cache, parallel execution, and incremental Kotlin compilation are
+enabled. Convention plugins in `build-logic/` keep module build files small.
+
+## CI and quality gates
+
+A PR is expected to pass the applicable matrix before merge:
+
+| Gate | Purpose |
+| --- | --- |
+| Architecture validation | Prevent forbidden dependency directions/cycles |
+| Repository validation | Keep generated/release/docs metadata consistent |
+| ktlint | Kotlin formatting |
+| detekt | Kotlin static analysis |
+| Android Lint | Android correctness/static analysis |
+| JVM tests | Unit, parser, contract, state and repository behavior |
+| Screenshots | Roborazzi visual regression checks |
+| Instrumentation | Real Android behavior across supported API levels |
+| CodeQL | Java/Kotlin security analysis |
+| Performance/build health | Catch regressions and make build graph growth visible |
+
+Major workflows include `ci.yml`, `codeql.yml`, `screenshots.yml`, `instrumentation.yml`,
+`baseline-profile.yml`, `cut-release.yml`, `release.yml`, `wiki-sync.yml`, and `pages.yml`.
+
+### Build health
+
+The repository publishes/uses build-health information so module fan-out and source growth remain
+observable. The objective is not to minimize module count at all costs; it is to prevent the build
+graph from becoming an invisible tax on everyday development.
 
 ## Baseline profiles
 
-`:benchmark` is a `com.android.test` module that records the classes on Orbin's startup and
-subscribed-feed path, so ART compiles them ahead of time rather than interpreting them on first
-launch.
+`:benchmark` records startup/feed paths for ahead-of-time optimization. Generate with:
 
 ```bash
 ./gradlew :app:generateReleaseBaselineProfile
 ```
 
-This needs a **rooted** device — a `google_apis` emulator or an unlocked handset. That rules out
-running it on every push, but not CI: the **Baseline profile** workflow (`workflow_dispatch`) boots
-such an emulator, records the profile, and opens a draft PR with the result. Run it locally with the
-command above if you have a device to hand.
+This requires a suitable rooted device/emulator. The manual Baseline Profile workflow can generate
+and propose updated profile data through CI.
 
-The profile lands in `app/src/release/generated/baselineProfiles/` and is **committed**, because
-nothing regenerates it automatically. Re-record it when startup or the feed changes shape; a stale
-profile is not harmful, only progressively less useful.
+## Release signing
 
-## CI workflows
+Keep local signing material outside the repository and use the supported `ORBIN_KEYSTORE_*`
+environment variables when needed. Publication uses repository secrets.
 
-| Workflow | Trigger | What it does |
-| --- | --- | --- |
-| `ci.yml` | every push to `main` and every PR | `ktlintCheck` + `detekt`, unit tests, then a debug APK build (uploaded as an artifact). Superseded runs are cancelled. |
-| `codeql.yml` | scheduled/push | Manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of GitHub's autobuild. |
-| `screenshots.yml` | PRs touching UI | Verifies Roborazzi screenshots against the goldens in `src/test/screenshots`, uploading the comparison images when they differ. Re-record with `./gradlew recordRoborazziDebug` when a UI change is intended. |
-| `instrumentation.yml` | every push to `main` and every PR | Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the modules that have `androidTest` sources, discovered per run. Both ends of the supported range are covered, because a pass on 35 says nothing about the devices `minSdk` 31 admits. Separate from `ci.yml` because an emulator boot plus a test run is minutes of wall clock. |
-| `baseline-profile.yml` | manual (`workflow_dispatch`) | Boots a rooted API 35 emulator, records a baseline profile, uploads it as the `baseline-profile` artifact, then opens a draft PR with it. The PR step needs *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*; without it the step fails and the run warns, but the artifact still carries the profile. |
-| `release-minimal.yml` | `minimal-v*` tag push, or manual | Builds, signs and publishes **Orbin Minimal** alone. Separate app, separate version line (`orbin.minimalVersionCode` / `orbin.minimalVersionName`), separate cadence — not carried by `release.yml`. |
-| `cut-release.yml` | push to `main` touching `release/next.toml` (or manual) | The release cutter. Reads `release/next.toml` (number, codename, `versionCode`, changelog sections) and, depending on repository state, either prepares the release PR or — once it has merged — dispatches the signed build. The edits themselves live in `scripts/prepare_release.py`. Replaces `new-version.yml` and the per-release `cut-<number>-<codename>.yml` workflows. |
-| `release.yml` | push of a `v*` tag (or manual dispatch with a tag name) | Builds a **signed** release APK, stages the R8 `mapping.txt`, computes SHA-256 checksums, generates release notes from the commit log since the previous tag, and publishes the GitHub Release. |
-| `wiki-sync.yml` | push to `main` touching `docs/wiki/**` (or manual) | Mirrors `docs/wiki/` onto the repository's GitHub wiki via `rsync --delete`, so `docs/wiki` is the single source of truth — edit it in a PR like any other file, never the wiki directly. |
-| `pages.yml` | push to `main` touching `site/**` (or manual) | Deploys the static landing page in `site/` to GitHub Pages (https://defuuls.github.io/Orbin/). |
+Never commit keystores, passwords, or generated secret material.
 
-Required repository secrets for releases: `RELEASE_KEYSTORE_BASE64`,
-`RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
+## Cutting a full Orbin release
 
-## Cutting a release
+The preferred release path is manifest-driven:
 
-1. Bump `orbin.versionCode` / `orbin.versionName` in `gradle.properties` for the full client.
-   Orbin Minimal has its own pair in the same file (`orbin.minimalVersionCode` /
-   `orbin.minimalVersionName`) and its own `minimal-v*` tags — releasing one does not release
-   the other.
-1. Write `release/next.toml` and merge it. **Cut Release** opens the release PR with the
-   same edits (`gradle.properties`, the `[Unreleased]` changelog section, and the
-   current-release lines in `README.md` and `docs/wiki/Home.md`); merge that too and it
-   dispatches the signed build, so step 2 below is only needed when tagging by hand. Run
-   `python3 scripts/prepare_release.py prepare` to make the edits locally instead. Either way
-   `scripts/validate_repo.py` checks the four stay in step — CI runs it on every PR. See
-   [`release/README.md`](https://github.com/Defuuls/Orbin/blob/main/release/README.md).
-2. Tag and push. Tags are `v<number>-<Codename>` for the full client and
-   `minimal-v<number>-<Codename>` for Orbin Minimal, and the tag must be **annotated** — the
-   release job reads its message as the GitHub Release title:
+1. Update/merge `release/next.toml` with the next number, codename, version code, and release notes.
+2. **Cut Release** prepares the release PR using `scripts/prepare_release.py` and synchronized
+   metadata changes.
+3. Let the release PR pass required checks and merge it.
+4. The release automation creates/uses the `v<number>-<Codename>` tag and dispatches the signed
+   build.
+5. `release.yml` builds the signed APK, stages mapping information, computes SHA-256 checksums,
+   generates notes, and publishes the GitHub Release.
+6. Verify the tag, release page, APK, mapping file, and checksums before declaring success.
 
-   ```bash
-   git tag -a v101-Hana -m "Orbin 101 - Hana"
-   git push origin v101-Hana
-   ```
+`release/README.md` is the implementation-level reference.
 
-3. The tag push triggers `release.yml`; the GitHub Release appears with the signed APK,
-   mapping file, and checksums once the job completes.
+Orbin Minimal has a separate version line and `minimal-v*` release tags. Releasing one app does not
+implicitly release the other.
 
-If pushing a tag is not possible, run **Release** via `workflow_dispatch` instead, supplying only
-`tag`. The job creates and pushes the annotated tag itself, producing an identical result.
+## Wiki updates
 
-**The release title is derived from the tag, not typed.** `v101-Hana` is published as
-"Orbin 101 - Hana", and `minimal-v5-Aoi` as "Orbin Minimal 5 - Aoi", so both lines read the same
-way on a releases page that mixes them. The same string is used as the annotated tag's message,
-which is why the tag command above spells it out — nothing reads that message any more, but a tag
-whose message disagrees with its release is a confusing artifact to leave behind. A tag with no
-codename (`minimal-v3`) is titled "Orbin Minimal 3"; a codename hyphenated in the tag
-(`v48-Sirius-B`) is spaced back out in the title.
+`docs/wiki/` is the source of truth for the public GitHub Wiki. Edit those Markdown files in a normal
+PR. After merge, `wiki-sync.yml` mirrors the directory to the wiki.
 
-**Codenames:** every milestone gets a codename, drawn from the theme the project is currently on.
-**From v100 and minimal-v4 onward that theme is popular Japanese female names** — Sakura, Yui,
-Hana, Aoi, Mei, Rin, Hina, Emi, Yuna, Akari, Miu, Riko, Ichika, Himari, Mio, Nao, Koharu, Tsumugi,
-Sara, Yuzuki. Pick one that is distinctive, short enough for a changelog heading, and not already
-used by an existing tag — check `git tag --list` rather than this list.
-
-**Both apps draw from that one pool, and a name is never reused**, so a codename identifies
-exactly one release across the two lines. This is also the point at which Orbin Minimal starts
-having codenames at all: `minimal-v1` through `minimal-v3` were bare numbers.
-
-The pasta era it replaces ran from v91 to **v99 — Rotini**: Bucatini, Rigatoni, Orecchiette,
-Fusilli, Farfalle, Linguine, Penne, Ziti, Rotini.
-
-The star era it replaces ran from v30 to **v90 — Vega**: v30–v33 used the smallest known stars
-(Janus, Fomalhaut C, EQ Pegasi A, CM Draconis A), v34 broke the pattern with "Dippin", v37–v48
-used nearby stars such as Wolf 359, Ross 128, Proxima Centauri and Sirius B, and v49–v90 used
-prominent naked-eye stars — Altair, Fomalhaut, Rigel, Sirius, Canopus, Polaris, Vega, Arcturus,
-Capella, Betelgeuse, Procyon, Achernar, Hadar, Acrux, Aldebaran, Antares, Spica, Pollux, Deneb,
-Regulus, Bellatrix, Elnath, Alnair, Peacock, Avior, Alkaid, Mirfak, Dubhe, Alioth, Mizar, Merak,
-Phecda, Talitha, Tania, Alula, Adara, Castor, Albireo.
-
-Pick names that are distinctive, short enough for changelog entries, and **not already used** —
-`git tag --list 'v*'` is the authoritative list of what is taken, not this page or the
-[[Release History|Release-History]]: a v66 release once shipped briefly as "Rigel" before this
-check would have caught that v51 got there first. A couple of earlier reuses (Epsilon Eridani
-for v44 and v46, Proxima Centauri for v35 and v47, Wolf 359 for v37 and v52) predate this
-guidance and were left as historical record rather than relitigated.
+Do not make durable documentation changes only through the GitHub Wiki UI, because the next sync can
+overwrite them.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](https://github.com/Defuuls/Orbin/blob/main/CONTRIBUTING.md) and
-[`docs/development-setup.md`](https://github.com/Defuuls/Orbin/blob/main/docs/development-setup.md).
-To add a new image board engine, see
-[`docs/provider-api/adding-a-provider.md`](https://github.com/Defuuls/Orbin/blob/main/docs/provider-api/adding-a-provider.md)
-— it should not require touching app code.
+Read `CONTRIBUTING.md` and `docs/development-setup.md`. For architecture/provider work, include the
+relevant contract/architecture tests in the same PR so the rule becomes executable rather than a
+comment future contributors can accidentally violate.
