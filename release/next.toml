@@ -1,33 +1,23 @@
-# Orbin 122 — Haruka
+# Orbin 123 — Emiri
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 122
-codename     = "Haruka"
-version_code = 140
+number       = 123
+codename     = "Emiri"
+version_code = 141
 
 summary = [
-  "bump Orbin to 122-Haruka / versionCode 140",
-  "ship the grid-only compact-screen readability redesign",
-  "harden BBW Chan/LynxChan compatibility and provider normalization",
-  "refresh the README/wiki and automate release metadata in the README hero SVG",
+  "bump Orbin to 123-Emiri / versionCode 141",
+  "ship the new distinctive orbital O launcher mark",
+  "preserve themed icon and splash-screen compatibility",
 ]
 
 [changelog]
 Changed = [
-  "Removed List as a selectable feed and board-catalog layout, keeping Grid as the primary thread presentation and Images as the media-first alternate.",
-  "Improved compact-phone grid readability with wider minimum cards, stronger thread-title hierarchy, more title lines, clearer metadata spacing, and consistent preview proportions.",
-  "Reworked the README and GitHub Wiki around the current interface, architecture, provider model, privacy behavior, troubleshooting guidance, and release process.",
-]
-
-Fixed = [
-  "Hardened LynxChan/BBW Chan parsing for inactive boards, absolute and relative media URLs, missing media paths, and catalog creation-time fallbacks.",
-  "Normalized legacy saved List layout state to Grid so upgrades do not leave users on a removed presentation mode.",
+  "Introduced a distinctive broken-orbit O launcher mark for Orbin while preserving the existing adaptive icon, monochrome icon, and splash-screen pipeline.",
 ]
 
 Reliability = [
-  "Extended UI semantics and screenshot coverage for the grid-only layout and compact-screen readability changes.",
-  "Made release preparation update README release metadata, Wiki Home, and the README hero SVG version/codename together, with repository validation failing if those values drift from gradle.properties.",
-  "Added stable machine-readable release markers to the README hero SVG so future releases can update its visible badge and accessible description automatically.",
+  "Kept the launcher artwork white-on-dark so Android themed icons remain compatible and the mark stays legible at small launcher sizes.",
 ]
