@@ -9,7 +9,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [121 — Yuki](https://github.com/Defuuls/Orbin/releases/tag/v121-Yuki)
+**Current release:** [122 — Haruka](https://github.com/Defuuls/Orbin/releases/tag/v122-Haruka)
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

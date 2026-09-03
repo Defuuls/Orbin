@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [122-Haruka] - 2026-09-03
+
+### Changed
+- Removed List as a selectable feed and board-catalog layout, keeping Grid as the primary thread presentation and Images as the media-first alternate.
+- Improved compact-phone grid readability with wider minimum cards, stronger thread-title hierarchy, more title lines, clearer metadata spacing, and consistent preview proportions.
+- Reworked the README and GitHub Wiki around the current interface, architecture, provider model, privacy behavior, troubleshooting guidance, and release process.
+
+### Fixed
+- Hardened LynxChan/BBW Chan parsing for inactive boards, absolute and relative media URLs, missing media paths, and catalog creation-time fallbacks.
+- Normalized legacy saved List layout state to Grid so upgrades do not leave users on a removed presentation mode.
+
+### Reliability
+- Extended UI semantics and screenshot coverage for the grid-only layout and compact-screen readability changes.
+- Made release preparation update README release metadata, Wiki Home, and the README hero SVG version/codename together, with repository validation failing if those values drift from gradle.properties.
+- Added stable machine-readable release markers to the README hero SVG so future releases can update its visible badge and accessible description automatically.
+
+
 ## [121-Yuki] - 2026-09-03
 
 ### Added
@@ -2031,7 +2048,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v121-Yuki...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v122-Haruka...HEAD
+[122-Haruka]: https://github.com/Defuuls/Orbin/compare/v121-Yuki...v122-Haruka
 [121-Yuki]: https://github.com/Defuuls/Orbin/compare/v120-Sora...v121-Yuki
 [120-Sora]: https://github.com/Defuuls/Orbin/compare/v119-Aiko...v120-Sora
 [119-Aiko]: https://github.com/Defuuls/Orbin/compare/v118-Hotaru...v119-Aiko
