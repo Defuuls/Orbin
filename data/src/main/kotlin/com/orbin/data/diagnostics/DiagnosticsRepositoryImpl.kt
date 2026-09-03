@@ -85,11 +85,16 @@ class DiagnosticsRepositoryImpl
                         buildString {
                             appendLine("provider diagnostics (no board/thread/url data):")
                             providerEvents.forEach { event ->
-                                appendLine("${event.provider} ${event.operation} ${event.durationMillis}ms ${event.outcome}")
+                                appendLine(
+                                    "${event.provider} ${event.operation} " +
+                                        "${event.durationMillis}ms ${event.outcome}",
+                                )
                             }
                         }.trimEnd()
                 }
-                sections.takeIf { it.isNotEmpty() }?.joinToString("\n\n${"=".repeat(SEPARATOR_WIDTH)}\n\n")
+                sections
+                    .takeIf { it.isNotEmpty() }
+                    ?.joinToString("\n\n${"=".repeat(SEPARATOR_WIDTH)}\n\n")
             }
 
         override suspend fun clearReports() {
@@ -108,7 +113,10 @@ class DiagnosticsRepositoryImpl
             }
         }
 
-        private fun format(thread: Thread, throwable: Throwable): String {
+        private fun format(
+            thread: Thread,
+            throwable: Throwable,
+        ): String {
             val stackTrace =
                 StringWriter().also { writer ->
                     PrintWriter(writer).use(throwable::printStackTrace)
