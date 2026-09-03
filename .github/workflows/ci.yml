@@ -32,6 +32,9 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Architecture contract
+        run: python3 scripts/validate_architecture.py
+
       - name: ktlint
         run: ./gradlew ktlintCheck --continue
 
