@@ -43,6 +43,8 @@ data class LynxChanCatalogThread(
     val autoSage: Boolean = false,
     /** ISO-8601 timestamp of the last bump. */
     val lastBump: String? = null,
+    /** Some LynxChan deployments also expose the OP creation timestamp in catalog responses. */
+    val creation: String? = null,
     val thumb: String? = null,
     val mime: String? = null,
 )
@@ -50,7 +52,7 @@ data class LynxChanCatalogThread(
 @Serializable
 data class LynxChanFile(
     val originalName: String? = null,
-    val path: String,
+    val path: String? = null,
     val thumb: String? = null,
     val mime: String = "",
     val size: Long = 0,

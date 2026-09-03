@@ -13,6 +13,7 @@ import com.orbin.provider.lynxchan.api.LynxChanFile
 import com.orbin.provider.lynxchan.api.LynxChanPost
 import com.orbin.provider.lynxchan.api.LynxChanThreadResponse
 import org.junit.Test
+import java.time.Instant
 
 class LynxChanMapperTest {
     private val mapper = LynxChanMapper(LynxChanSite.BbwChan)
@@ -38,6 +39,25 @@ class LynxChanMapperTest {
         assertThat(g.id.value).isEqualTo("bbw")
         assertThat(g.title).isEqualTo("BBW Real")
         assertThat(g.description).isEqualTo("Thick")
+    }
+
+    @Test
+    fun `inactive boards are omitted like Orbin Minimal`() {
+        val boards =
+            mapper.mapBoards(
+                LynxChanBoardsResponse(
+                    data =
+                        LynxChanBoardsData(
+                            boards =
+                                listOf(
+                                    LynxChanBoard(boardUri = "bbw", boardName = "Active"),
+                                    LynxChanBoard(boardUri = "old", boardName = "Inactive", inactive = true),
+                                ),
+                        ),
+                ),
+            )
+
+        assertThat(boards.map { it.id.value }).containsExactly("bbw")
     }
 
     @Test
@@ -70,11 +90,86 @@ class LynxChanMapperTest {
     }
 
     @Test
+    fun `catalog creation time is preferred with last bump fallback`() {
+        val withCreation =
+            mapper
+                .mapCatalog(
+                    board,
+                    listOf(
+                        LynxChanCatalogThread(
+                            threadId = 1,
+                            creation = "2026-01-01T00:00:00Z",
+                            lastBump = "2026-02-01T00:00:00Z",
+                        ),
+                    ),
+                ).single()
+        assertThat(
+            withCreation.originalPost.createdAtMillis,
+        ).isEqualTo(Instant.parse("2026-01-01T00:00:00Z").toEpochMilli())
+
+        val fallback =
+            mapper
+                .mapCatalog(
+                    board,
+                    listOf(
+                        LynxChanCatalogThread(
+                            threadId = 2,
+                            lastBump = "2026-02-01T00:00:00Z",
+                        ),
+                    ),
+                ).single()
+        assertThat(
+            fallback.originalPost.createdAtMillis,
+        ).isEqualTo(Instant.parse("2026-02-01T00:00:00Z").toEpochMilli())
+    }
+
+    @Test
     fun `catalog thread with no thumb has no attachments`() {
         val dto = LynxChanCatalogThread(threadId = 1, subject = null)
         val threads = mapper.mapCatalog(board, listOf(dto))
         ProviderContract.requireValidCatalog(threads)
         assertThat(threads.single().originalPost.attachments).isEmpty()
+    }
+
+    @Test
+    fun `absolute media urls are preserved`() {
+        val response =
+            LynxChanThreadResponse(
+                threadId = 9,
+                files =
+                    listOf(
+                        LynxChanFile(
+                            path = "https://cdn.example.org/media/full.jpg",
+                            thumb = "https://cdn.example.org/media/thumb.jpg",
+                            mime = "image/jpeg",
+                        ),
+                    ),
+            )
+
+        val attachment =
+            mapper
+                .mapThread(board, response)
+                .originalPost.attachments
+                .single()
+        assertThat(attachment.sourceUrl).isEqualTo("https://cdn.example.org/media/full.jpg")
+        assertThat(attachment.thumbnailUrl).isEqualTo("https://cdn.example.org/media/thumb.jpg")
+        assertThat(attachment.originalFileName).isEqualTo("full.jpg")
+    }
+
+    @Test
+    fun `missing or unsafe media paths are ignored`() {
+        val response =
+            LynxChanThreadResponse(
+                threadId = 10,
+                files =
+                    listOf(
+                        LynxChanFile(path = null, mime = "image/jpeg"),
+                        LynxChanFile(path = "javascript:alert(1)", mime = "image/jpeg"),
+                        LynxChanFile(path = "/../secret", mime = "image/jpeg"),
+                    ),
+            )
+
+        assertThat(mapper.mapThread(board, response).originalPost.attachments).isEmpty()
     }
 
     @Test

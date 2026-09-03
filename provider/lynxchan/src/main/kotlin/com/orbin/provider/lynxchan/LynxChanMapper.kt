@@ -20,6 +20,7 @@ import com.orbin.provider.lynxchan.api.LynxChanPost
 import com.orbin.provider.lynxchan.api.LynxChanThreadResponse
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import java.net.URI
 import java.time.Instant
 
 /**
@@ -29,7 +30,10 @@ import java.time.Instant
 class LynxChanMapper(
     private val site: LynxChanSite,
 ) {
-    fun mapBoards(response: LynxChanBoardsResponse): List<Board> = response.data.boards.map(::mapBoard)
+    fun mapBoards(response: LynxChanBoardsResponse): List<Board> =
+        response.data.boards
+            .filterNot { it.inactive }
+            .map(::mapBoard)
 
     private fun mapBoard(dto: LynxChanBoard): Board =
         Board(
@@ -74,7 +78,7 @@ class LynxChanMapper(
             isOriginalPost = true,
             subject = dto.subject?.takeIf { it.isNotBlank() },
             comment = comment,
-            createdAtMillis = dto.lastBump.parseIsoOrZero(),
+            createdAtMillis = dto.creation.parseIsoOrNull() ?: dto.lastBump.parseIsoOrZero(),
             attachments = listOfNotNull(catalogThumbAttachment(dto)).toImmutableList(),
             repliesTo = comment.quotedPosts.toImmutableList(),
             backlinks = persistentListOf(),
@@ -82,14 +86,14 @@ class LynxChanMapper(
     }
 
     private fun catalogThumbAttachment(dto: LynxChanCatalogThread): MediaAttachment? {
-        val thumb = dto.thumb.toSafeSitePath() ?: return null
+        val thumb = dto.thumb.toSafeMediaLocation() ?: return null
         val mime = dto.mime.orEmpty()
-        val url = site.resolveSitePath(thumb)
+        val url = site.resolveMediaLocation(thumb)
         return MediaAttachment(
             id = thumb,
             // Catalog previews don't expose the original filename or a full-resolution source; the
             // thumbnail is the only URL available until the thread itself is opened.
-            originalFileName = thumb.substringAfterLast('/'),
+            originalFileName = mediaFileName(thumb),
             extension = mime.toExtension(),
             type = mime.toMediaType(),
             sourceUrl = url,
@@ -175,28 +179,30 @@ class LynxChanMapper(
 
     private fun mapFile(file: LynxChanFile): MediaAttachment? {
         val type = file.mime.toMediaType()
-        val sourcePath = file.path.toSafeSitePath() ?: return null
-        val thumbnailPath = (file.thumb ?: file.path).toSafeSitePath() ?: sourcePath
+        val source = file.path.toSafeMediaLocation() ?: return null
+        val thumbnail = (file.thumb ?: file.path).toSafeMediaLocation() ?: source
         return MediaAttachment(
-            id = sourcePath,
-            originalFileName = file.originalName ?: sourcePath.substringAfterLast('/'),
+            id = source,
+            originalFileName = file.originalName ?: mediaFileName(source),
             extension =
-                sourcePath
+                mediaFileName(source)
                     .substringAfterLast(
                         '.',
                         missingDelimiterValue = "",
                     ).ifBlank { file.mime.toExtension() },
             type = type,
-            sourceUrl = site.resolveSitePath(sourcePath),
-            thumbnailUrl = site.resolveSitePath(thumbnailPath),
+            sourceUrl = site.resolveMediaLocation(source),
+            thumbnailUrl = site.resolveMediaLocation(thumbnail),
             width = file.width,
             height = file.height,
             sizeBytes = file.size,
         )
     }
 
-    private fun String?.parseIsoOrZero(): Long =
-        this?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+    private fun String?.parseIsoOrNull(): Long? =
+        this?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
+
+    private fun String?.parseIsoOrZero(): Long = parseIsoOrNull() ?: 0L
 
     private fun String.toMediaType(): MediaType =
         when {
@@ -220,17 +226,40 @@ class LynxChanMapper(
             else -> substringAfter('/', missingDelimiterValue = "bin")
         }
 
-    private fun String?.toSafeSitePath(): String? {
-        val path = this?.trim().orEmpty()
-        val isSafe =
-            path.isNotEmpty() &&
-                path.startsWith('/') &&
-                !path.startsWith("//") &&
-                path.none { it.isISOControl() || it.isWhitespace() } &&
-                !path.contains("\\") &&
-                path.split('/').none { it == ".." }
-        return path.takeIf { isSafe }
+    /**
+     * A media location may not carry control characters, whitespace, or a backslash: each of
+     * those either breaks URL resolution or is an escaping/traversal attempt.
+     */
+    private fun String.hasUnsafeCharacters(): Boolean = any { it.isISOControl() || it.isWhitespace() } || contains("\\")
+
+    /**
+     * LynxChan normally returns root-relative media paths, while some deployments/proxies return
+     * already absolute media URLs. Accept both forms, mirroring Orbin Minimal, while rejecting
+     * whitespace, traversal, protocol-relative URLs, and non-http(s) schemes.
+     */
+    private fun String?.toSafeMediaLocation(): String? {
+        val value = this?.trim().orEmpty()
+        if (value.isEmpty() || value.hasUnsafeCharacters()) return null
+
+        if (value.startsWith('/')) {
+            val isSafePath = !value.startsWith("//") && value.split('/').none { it == ".." }
+            return value.takeIf { isSafePath }
+        }
+
+        val uri = runCatching { URI(value) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase()
+        return value.takeIf { scheme in setOf("http", "https") && !uri.host.isNullOrBlank() }
     }
 
-    private fun LynxChanSite.resolveSitePath(path: String): String = siteUrl.trimEnd('/') + path
+    private fun LynxChanSite.resolveMediaLocation(location: String): String =
+        if (location.startsWith("http://") || location.startsWith("https://")) {
+            location
+        } else {
+            siteUrl.trimEnd('/') + location
+        }
+
+    private fun mediaFileName(location: String): String =
+        runCatching { URI(location).path }.getOrNull().orEmpty().substringAfterLast('/').ifBlank {
+            location.substringAfterLast('/')
+        }
 }
