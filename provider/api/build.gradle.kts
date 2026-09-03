@@ -9,4 +9,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.immutable)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
