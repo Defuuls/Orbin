@@ -69,7 +69,10 @@ class InstrumentedImageBoardProvider(
     override suspend fun getThread(
         board: BoardId,
         thread: ThreadId,
-    ): Thread = measured("thread") { delegate.getThread(board, thread).also(ProviderContract::requireValidThread) }
+    ): Thread =
+        measured("thread") {
+            delegate.getThread(board, thread).also(ProviderContract::requireValidThread)
+        }
 
     override suspend fun search(query: SearchQuery): List<SearchResult> =
         measured("search") { delegate.search(query) }
