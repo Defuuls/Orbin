@@ -10,7 +10,7 @@ reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [120 — Sora](https://github.com/Defuuls/Orbin/releases/tag/v120-Sora)
+**Current release:** [121 — Yuki](https://github.com/Defuuls/Orbin/releases/tag/v121-Yuki)
 
 **Available providers:** 4chan (Vichan, read-only example instance), BBW Chan (LynxChan)
 
