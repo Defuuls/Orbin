@@ -1,5 +1,7 @@
 # Orbin
 
+![Orbin brand showcase](docs/assets/orbin-brand-showcase.svg)
+
 Orbin is a modern, privacy-focused, open-source **Android imageboard browser** built with Kotlin,
 Jetpack Compose, and Material 3. It targets **Android 12+ (API 31+)** and uses a modular Clean
 Architecture with engine-specific behavior isolated behind a provider contract.
@@ -12,6 +14,8 @@ does not post, reply, or create threads.
 **Current release:** [123 — Emiri](https://github.com/Defuuls/Orbin/releases/tag/v123-Emiri)
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
+
+**Brand:** [identity and logo usage](docs/brand.md)
 
 > Orbin is under active development with signed releases, automated quality gates, encrypted
 > local persistence, provider contract validation, and a UI designed to remain readable from
@@ -118,41 +122,17 @@ See [`docs/architecture/README.md`](docs/architecture/README.md),
 ```text
 Orbin/
 ├── app/                      # Application shell, navigation, DI aggregation
-├── benchmark/                # Baseline profile generation
-├── build-logic/              # Gradle convention plugins
-├── core/
-│   ├── common/               # Shared results, dispatchers, network state
-│   ├── model/                # Pure domain entities
-│   ├── designsystem/         # Theme, typography, reusable design primitives
-│   ├── ui/                   # Shared Compose helpers
-│   └── testing/              # Shared test infrastructure
-├── domain/                   # Repository contracts and use cases
-├── data/                     # Room, encrypted preferences, repositories, paging
-├── network/                  # OkHttp/Retrofit, connectivity, DNS
-├── media/                    # Coil, Media3, downloads
-├── ui-next/                  # App-independent screen composables
-├── provider/
-│   ├── api/                  # ImageBoardProvider SPI and provider contracts
-│   ├── vichan/               # Vichan/4chan-compatible implementation
-│   └── lynxchan/             # LynxChan / BBW Chan implementation
-└── feature/                  # home, board, thread, search, history, settings,
-                              # gallery/bookmarks, downloads, onboarding
+├── domain/                   # Core models, policies, repository contracts
+├── data/                     # Persistence/repository implementation
+├── network/                  # HTTP clients and transport helpers
+├── media/                    # Image/video/download infrastructure
+├── ui-next/                  # App-agnostic Compose screen kit
+├── feature-*/                # Feature ViewModels and presentation mapping
+├── provider-api/             # Provider contracts and shared models
+├── provider-vichan/          # 4chan/Vichan implementation
+├── provider-lynxchan/        # BBW Chan/LynxChan implementation
+└── provider-registry/        # Provider registration and contract checks
 ```
-
-## Provider reliability
-
-Provider behavior is treated as a contract rather than a collection of happy-path parsers.
-Implementations normalize engine data into Orbin models and are tested for malformed/missing
-fields, URL handling, timestamps, media, catalogs, threads, and typed failure behavior.
-
-BBW Chan compatibility includes LynxChan-specific tolerance such as inactive-board handling,
-absolute/relative media URL normalization, missing media paths, and catalog timestamp fallbacks.
-
-Provider calls also feed a privacy-safe diagnostics layer. Diagnostics record the provider,
-operation, duration, and outcome, not board names, thread IDs, search queries, or requested URLs.
-
-To add an engine, start with [`docs/provider-api/adding-a-provider.md`](docs/provider-api/adding-a-provider.md)
-and [`docs/provider-api/contract.md`](docs/provider-api/contract.md).
 
 ## Quality gates
 
@@ -162,70 +142,27 @@ Every meaningful change is expected to survive the same layered checks used for 
 - ktlint and detekt
 - Android Lint
 - JVM/unit and provider-contract tests
-- Roborazzi screenshot verification for UI changes
-- instrumentation tests across supported Android API levels
+- instrumentation tests
+- screenshot/Roborazzi verification where UI behavior changes
 - CodeQL security analysis
-- performance/build-health checks
-- release preflight before signed publication
 
-Build-health tooling keeps module fan-out and source growth visible instead of letting Gradle
-complexity become invisible debt.
+See [`docs/architecture/quality-gates.md`](docs/architecture/quality-gates.md) and
+[`docs/wiki/Developer-Guide.md`](docs/wiki/Developer-Guide.md) for local commands and expectations.
 
-## Tech stack
+## Building
 
-| Concern | Choice |
-| --- | --- |
-| Language | Kotlin 2.4.10 (K2), Coroutines, Flow/StateFlow, Serialization |
-| UI | Jetpack Compose, Material 3, Navigation Compose, Paging 3 |
-| DI | Hilt |
-| Persistence | Room + SQLCipher, encrypted DataStore |
-| Networking | OkHttp, Retrofit, kotlinx.serialization |
-| Media | Coil 3, Media3/ExoPlayer |
-| Background | WorkManager |
-| Quality | detekt, ktlint, Android Lint, JUnit, Turbine, MockK, Truth, Robolectric, Roborazzi, CodeQL |
-
-Exact dependency versions are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
-
-## Build
-
-**Requirements**
-
-- JDK 17+
-- Android SDK platform API 37 (`compileSdk` 37, `targetSdk` 36, `minSdk` 31)
-- Android Studio Ladybug or newer, or the command line
+Orbin uses the Gradle wrapper. A JDK 17 installation is recommended.
 
 ```bash
 ./gradlew assembleDebug
-./gradlew test
-./gradlew ktlintCheck detekt
-./gradlew :app:installDebug
 ```
 
-For the complete local quality path, release process, signing setup, screenshot workflow, and CI
-matrix, see the [Developer Guide](https://github.com/Defuuls/Orbin/wiki/Developer-Guide).
+For the full local check suite:
 
-## Documentation
-
-| Resource | Purpose |
-| --- | --- |
-| [Wiki](https://github.com/Defuuls/Orbin/wiki) | Current user and developer documentation |
-| [User Guide](https://github.com/Defuuls/Orbin/wiki/User-Guide) | Feed, boards, threads, media, links, downloads |
-| [Settings Guide](https://github.com/Defuuls/Orbin/wiki/Settings-Guide) | Settings behavior and defaults |
-| [Developer Guide](https://github.com/Defuuls/Orbin/wiki/Developer-Guide) | Toolchain, CI, testing, release workflow |
-| [Architecture and Modules](https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules) | Dependency model and module responsibilities |
-| [Troubleshooting](https://github.com/Defuuls/Orbin/wiki/Troubleshooting) | User and build troubleshooting |
-| [CHANGELOG.md](CHANGELOG.md) | Complete chronological release record |
-| [SECURITY.md](SECURITY.md) | Vulnerability reporting and supported versions |
-
-`docs/wiki/` is the source of truth for the GitHub Wiki. The `wiki-sync.yml` workflow mirrors it
-after changes land on `main`.
-
-## Contributing
-
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md),
-[`docs/development-setup.md`](docs/development-setup.md), and the architecture quality-gate docs
-before changing module boundaries or adding a provider.
+```bash
+bash scripts/check.sh
+```
 
 ## License
 
-Orbin is released under the [GNU Affero General Public License v3.0](LICENSE).
+See [LICENSE](LICENSE).
