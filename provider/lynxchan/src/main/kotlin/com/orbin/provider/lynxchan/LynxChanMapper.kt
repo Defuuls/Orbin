@@ -227,13 +227,19 @@ class LynxChanMapper(
         }
 
     /**
+     * A media location may not carry control characters, whitespace, or a backslash: each of
+     * those either breaks URL resolution or is an escaping/traversal attempt.
+     */
+    private fun String.hasUnsafeCharacters(): Boolean = any { it.isISOControl() || it.isWhitespace() } || contains("\\")
+
+    /**
      * LynxChan normally returns root-relative media paths, while some deployments/proxies return
      * already absolute media URLs. Accept both forms, mirroring Orbin Minimal, while rejecting
      * whitespace, traversal, protocol-relative URLs, and non-http(s) schemes.
      */
     private fun String?.toSafeMediaLocation(): String? {
         val value = this?.trim().orEmpty()
-        if (value.isEmpty() || value.any { it.isISOControl() || it.isWhitespace() } || value.contains("\\")) return null
+        if (value.isEmpty() || value.hasUnsafeCharacters()) return null
 
         if (value.startsWith('/')) {
             val isSafePath = !value.startsWith("//") && value.split('/').none { it == ".." }
