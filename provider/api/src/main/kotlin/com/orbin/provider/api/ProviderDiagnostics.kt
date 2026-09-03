@@ -28,6 +28,10 @@ interface ProviderDiagnostics {
 class InMemoryProviderDiagnostics(
     private val capacity: Int = 100,
 ) : ProviderDiagnostics {
+    init {
+        require(capacity > 0) { "capacity must be positive" }
+    }
+
     private val events = ArrayDeque<ProviderDiagnosticEvent>(capacity)
 
     @Synchronized
@@ -71,7 +75,7 @@ class InstrumentedImageBoardProvider(
         return try {
             block().also { record(operation, started, "success") }
         } catch (throwable: Throwable) {
-            record(operation, started, throwable::class.simpleName ?: "failure")
+            record(operation, started, throwable.javaClass.simpleName.ifBlank { "failure" })
             throw throwable
         }
     }
