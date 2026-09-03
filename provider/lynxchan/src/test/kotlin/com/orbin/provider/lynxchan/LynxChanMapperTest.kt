@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadId
+import com.orbin.provider.api.ProviderContract
 import com.orbin.provider.lynxchan.api.LynxChanBoard
 import com.orbin.provider.lynxchan.api.LynxChanBoardsData
 import com.orbin.provider.lynxchan.api.LynxChanBoardsResponse
@@ -32,6 +33,7 @@ class LynxChanMapperTest {
                         ),
                 ),
             )
+        ProviderContract.requireValidBoards(boards)
         val g = boards.single()
         assertThat(g.id.value).isEqualTo("bbw")
         assertThat(g.title).isEqualTo("BBW Real")
@@ -54,6 +56,7 @@ class LynxChanMapperTest {
                 mime = "image/jpeg",
             )
         val threads = mapper.mapCatalog(board, listOf(dto))
+        ProviderContract.requireValidCatalog(threads)
         val thread = threads.single()
 
         assertThat(thread.key.thread).isEqualTo(ThreadId(7))
@@ -69,8 +72,9 @@ class LynxChanMapperTest {
     @Test
     fun `catalog thread with no thumb has no attachments`() {
         val dto = LynxChanCatalogThread(threadId = 1, subject = null)
-        val thread = mapper.mapCatalog(board, listOf(dto)).single()
-        assertThat(thread.originalPost.attachments).isEmpty()
+        val threads = mapper.mapCatalog(board, listOf(dto))
+        ProviderContract.requireValidCatalog(threads)
+        assertThat(threads.single().originalPost.attachments).isEmpty()
     }
 
     @Test
@@ -112,6 +116,7 @@ class LynxChanMapperTest {
             )
 
         val thread = mapper.mapThread(board, response)
+        ProviderContract.requireValidThread(thread)
 
         assertThat(thread.originalPost.id.value).isEqualTo(7L)
         assertThat(thread.originalPost.poster.name).isEqualTo("BananaMan ##AMp2yG")
