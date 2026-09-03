@@ -27,14 +27,8 @@ import com.orbin.uinext.NextTheme
 /**
  * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
  *
- * A catalog is a feed scoped to one board, so it reuses the feed's row and its three layouts
- * rather than being a second layout with its own conventions.
- *
- * Rows are handed over by index rather than as a list, because the catalog is paged: reading an
- * index is what asks Paging for the page containing it. Collecting the pages into a list first
- * would show whatever had already loaded and then never load another.
- *
- * Sort is a chip that cycles the catalog: Bump, Created, Replies, Images, Latest.
+ * A catalog is a feed scoped to one board, so it reuses the feed's grid and image layouts.
+ * Rows are handed over by index because the catalog is paged.
  */
 @Composable
 fun NextBoardScreen(
@@ -49,11 +43,9 @@ fun NextBoardScreen(
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
-    var layout by rememberSaveable { mutableStateOf(FeedLayout.LIST) }
+    var layout by rememberSaveable { mutableStateOf(FeedLayout.GRID) }
 
     val board = "/${viewModel.boardId}/"
-    // Keyed on the snapshot so it is rebuilt when a page lands, and only then. Looking a thread up
-    // by scanning the snapshot per tile would be linear work on every one of them.
     val byThreadId =
         remember(threads.itemSnapshotList) {
             threads.itemSnapshotList.items.associateBy { it.key.thread.value }
@@ -77,7 +69,7 @@ fun NextBoardScreen(
             itemCount = threads.itemCount,
             rowAt = rowFor,
             layout = layout,
-            onLayoutChange = { layout = it },
+            onLayoutChange = { layout = if (it == FeedLayout.IMAGES) it else FeedLayout.GRID },
             sortLabel = catalogSort.label,
             onSort = viewModel::cycleCatalogSort,
             onSearch = onOpenCommands,
@@ -98,10 +90,7 @@ fun NextBoardScreen(
                     byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                         MediaThumbnail(
                             attachment = attachment,
-                            // Same reason as the feed's: a list row's square tile crops a
-                            // non-square attachment down to whatever happens to be in the middle.
-                            contentScale =
-                                if (layout == FeedLayout.LIST) ContentScale.Fit else ContentScale.Crop,
+                            contentScale = ContentScale.Crop,
                             modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                         )
                     }
