@@ -20,13 +20,15 @@ data class ProviderDiagnosticEvent(
 
 interface ProviderDiagnostics {
     fun record(event: ProviderDiagnosticEvent)
+
     fun snapshot(): List<ProviderDiagnosticEvent>
+
     fun clear()
 }
 
 /** Small bounded in-memory ring buffer suitable for debug/recovery reports without telemetry. */
 class InMemoryProviderDiagnostics(
-    private val capacity: Int = 100,
+    private val capacity: Int = DEFAULT_DIAGNOSTIC_CAPACITY,
 ) : ProviderDiagnostics {
     init {
         require(capacity > 0) { "capacity must be positive" }
@@ -64,30 +66,46 @@ class InstrumentedImageBoardProvider(
     override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> =
         measured("catalog") { delegate.getCatalog(request).also(ProviderContract::requireValidCatalog) }
 
-    override suspend fun getThread(board: BoardId, thread: ThreadId): Thread =
-        measured("thread") { delegate.getThread(board, thread).also(ProviderContract::requireValidThread) }
+    override suspend fun getThread(
+        board: BoardId,
+        thread: ThreadId,
+    ): Thread = measured("thread") { delegate.getThread(board, thread).also(ProviderContract::requireValidThread) }
 
     override suspend fun search(query: SearchQuery): List<SearchResult> =
         measured("search") { delegate.search(query) }
 
-    private suspend fun <T> measured(operation: String, block: suspend () -> T): T {
+    private suspend fun <T> measured(
+        operation: String,
+        block: suspend () -> T,
+    ): T {
         val started = System.nanoTime()
-        return try {
-            block().also { record(operation, started, "success") }
-        } catch (throwable: Throwable) {
-            record(operation, started, throwable.javaClass.simpleName.ifBlank { "failure" })
-            throw throwable
-        }
+        val result = runCatching { block() }
+        val outcome =
+            result.fold(
+                onSuccess = { SUCCESS_OUTCOME },
+                onFailure = { it.javaClass.simpleName.ifBlank { FAILURE_OUTCOME } },
+            )
+        record(operation, started, outcome)
+        return result.getOrThrow()
     }
 
-    private fun record(operation: String, startedNanos: Long, outcome: String) {
+    private fun record(
+        operation: String,
+        startedNanos: Long,
+        outcome: String,
+    ) {
         diagnostics.record(
             ProviderDiagnosticEvent(
                 provider = metadata.id.value,
                 operation = operation,
-                durationMillis = (System.nanoTime() - startedNanos) / 1_000_000,
+                durationMillis = (System.nanoTime() - startedNanos) / NANOS_PER_MILLISECOND,
                 outcome = outcome,
             ),
         )
     }
 }
+
+private const val DEFAULT_DIAGNOSTIC_CAPACITY = 100
+private const val NANOS_PER_MILLISECOND = 1_000_000
+private const val SUCCESS_OUTCOME = "success"
+private const val FAILURE_OUTCOME = "failure"
