@@ -1,110 +1,41 @@
-<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="121-Yuki">
+<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="122-Haruka">
   <title id="title">Orbin grid-first feed on a compact Android phone</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 121 Yuki showing the adaptive two-column thread grid on a compact phone, with readable thread titles, board labels, activity, media previews, an Images alternate view, Save links export, and privacy-focused provider diagnostics.</desc>
-
+  <desc id="desc">Screenshot-style illustration of Orbin 122 Haruka showing the adaptive two-column thread grid on a compact phone, readable thread titles, provider-aware browsing, Save links export, and privacy-focused diagnostics.</desc>
   <rect width="1200" height="760" fill="#F4F6FA"/>
-
-  <!-- Left product panel -->
-  <rect x="92" y="114" width="250" height="518" rx="30" fill="#FFFFFF"/>
-  <text x="124" y="166" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900" fill="#202431">Orbin</text>
-  <text x="124" y="196" font-family="Inter, Arial, sans-serif" font-size="14" fill="#5A6272">Android imageboard browser</text>
-
-  <rect x="124" y="226" width="142" height="34" rx="17" fill="#DCE6FF"/>
-  <text id="release-label" x="145" y="248" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">121 · Yuki</text>
-
-  <text x="124" y="304" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#202431">GRID-FIRST</text>
-  <text x="124" y="329" font-family="Inter, Arial, sans-serif" font-size="13" fill="#596171">Readable on compact phones</text>
-  <rect x="124" y="350" width="186" height="8" rx="4" fill="#E5E9F2"/>
-  <rect x="124" y="368" width="154" height="8" rx="4" fill="#E5E9F2"/>
-
-  <text x="124" y="418" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#202431">READ-ONLY</text>
-  <text x="124" y="443" font-family="Inter, Arial, sans-serif" font-size="13" fill="#596171">Browse · watch · save · export</text>
-  <rect x="124" y="464" width="166" height="8" rx="4" fill="#E5E9F2"/>
-  <rect x="124" y="482" width="118" height="8" rx="4" fill="#E5E9F2"/>
-
-  <rect x="124" y="534" width="186" height="58" rx="18" fill="#F0F4FF"/>
-  <text x="142" y="558" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="800" fill="#274B9F">Vichan + LynxChan</text>
-  <text x="142" y="578" font-family="Inter, Arial, sans-serif" font-size="11.5" fill="#596171">provider-contract validated</text>
-
-  <!-- Compact phone -->
-  <rect x="392" y="32" width="392" height="696" rx="42" fill="#17181D"/>
-  <rect x="405" y="46" width="366" height="668" rx="32" fill="#FAFBFF"/>
-
-  <!-- Status / top rail -->
-  <rect x="405" y="46" width="366" height="82" rx="32" fill="#EEF2FF"/>
-  <text x="430" y="82" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#677087">FEED</text>
-  <text x="430" y="108" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="800" fill="#1E2433">8 threads · 3 boards</text>
-  <circle cx="735" cy="86" r="15" fill="#DCE6FF"/>
-  <path d="M730 86h10M735 81v10" stroke="#274B9F" stroke-width="2.2" stroke-linecap="round"/>
-
-  <!-- Layout selector -->
-  <rect x="425" y="142" width="326" height="42" rx="16" fill="#FFFFFF" stroke="#E2E6EF"/>
-  <rect x="434" y="149" width="132" height="28" rx="12" fill="#DCE6FF"/>
-  <text x="477" y="168" font-family="Inter, Arial, sans-serif" font-size="12.5" font-weight="800" fill="#274B9F">Grid</text>
-  <text x="641" y="168" font-family="Inter, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#687083">Images</text>
-
-  <!-- Two-column readable card grid -->
-  <rect x="425" y="198" width="156" height="218" rx="18" fill="#FFFFFF" stroke="#E4E7EE"/>
-  <rect x="435" y="208" width="136" height="92" rx="12" fill="#C9D7F5"/>
-  <rect x="447" y="220" width="36" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
-  <text x="456" y="234" font-family="Inter, Arial, sans-serif" font-size="10.5" font-weight="800" fill="#274B9F">/g/</text>
-  <text x="437" y="325" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">Home server on</text>
-  <text x="437" y="344" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">ARM that actually</text>
-  <text x="437" y="363" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">works?</text>
-  <text x="437" y="390" font-family="Inter, Arial, sans-serif" font-size="11.5" fill="#697183">4m ago</text>
-  <text x="523" y="390" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#697183">218 ↩</text>
-
-  <rect x="595" y="198" width="156" height="218" rx="18" fill="#FFFFFF" stroke="#E4E7EE"/>
-  <rect x="605" y="208" width="136" height="92" rx="12" fill="#D7E7D8"/>
-  <rect x="617" y="220" width="40" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
-  <text x="626" y="234" font-family="Inter, Arial, sans-serif" font-size="10.5" font-weight="800" fill="#287348">/ck/</text>
-  <text x="607" y="325" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">What did you cook</text>
-  <text x="607" y="344" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">this week?</text>
-  <text x="607" y="390" font-family="Inter, Arial, sans-serif" font-size="11.5" fill="#697183">31m ago</text>
-  <text x="693" y="390" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#697183">47 ↩</text>
-
-  <rect x="425" y="430" width="156" height="220" rx="18" fill="#FFFFFF" stroke="#E4E7EE"/>
-  <rect x="435" y="440" width="136" height="92" rx="12" fill="#F0DCCB"/>
-  <circle cx="549" cy="510" r="14" fill="#17181D" fill-opacity="0.62"/>
-  <path d="M545 503l10 7-10 7z" fill="#FFFFFF"/>
-  <rect x="447" y="452" width="34" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
-  <text x="456" y="466" font-family="Inter, Arial, sans-serif" font-size="10.5" font-weight="800" fill="#8A5C2D">/p/</text>
-  <text x="437" y="557" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">Film photography</text>
-  <text x="437" y="576" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">general — grain</text>
-  <text x="437" y="595" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#202431">edition</text>
-  <text x="437" y="624" font-family="Inter, Arial, sans-serif" font-size="11.5" fill="#697183">1h ago</text>
-  <text x="519" y="624" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#697183">156 ↩</text>
-
-  <rect x="595" y="430" width="156" height="220" rx="18" fill="#F8F9FC" stroke="#E4E7EE"/>
-  <rect x="605" y="440" width="136" height="92" rx="12" fill="#E2DAEF"/>
-  <rect x="617" y="452" width="36" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
-  <text x="626" y="466" font-family="Inter, Arial, sans-serif" font-size="10.5" font-weight="800" fill="#72559A">/lit/</text>
-  <text x="607" y="557" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#666D7B">Reading list for</text>
-  <text x="607" y="576" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#666D7B">winter</text>
-  <text x="607" y="624" font-family="Inter, Arial, sans-serif" font-size="11.5" fill="#8B92A1">3h ago · read</text>
-
-  <rect x="528" y="687" width="120" height="5" rx="2.5" fill="#B6BBC6"/>
-
-  <!-- Right feature cards -->
-  <rect x="824" y="112" width="286" height="158" rx="26" fill="#FFFFFF"/>
-  <rect x="850" y="138" width="42" height="42" rx="12" fill="#DCE6FF"/>
-  <path d="M860 153h22M860 160h16M860 167h19" stroke="#274B9F" stroke-width="2.4" stroke-linecap="round"/>
-  <text x="850" y="207" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="900" fill="#202431">Save links</text>
-  <text x="850" y="230" font-family="Inter, Arial, sans-serif" font-size="12.5" fill="#596171">Deduplicated thread URLs → .txt</text>
-  <text x="850" y="249" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#274B9F">Downloads/Orbin by default</text>
-
-  <rect x="824" y="292" width="286" height="158" rx="26" fill="#FFFFFF"/>
-  <rect x="850" y="318" width="42" height="42" rx="12" fill="#E8F6EF"/>
-  <path d="M860 339l7 7 15-17" stroke="#226642" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="850" y="387" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="900" fill="#202431">Provider contracts</text>
-  <text x="850" y="410" font-family="Inter, Arial, sans-serif" font-size="12.5" fill="#596171">Vichan + LynxChan normalized</text>
-  <text x="850" y="429" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#226642">BBW Chan tolerant parsing</text>
-
-  <rect x="824" y="472" width="286" height="158" rx="26" fill="#FFFFFF"/>
-  <rect x="850" y="498" width="42" height="42" rx="12" fill="#F0F4FF"/>
-  <path d="M863 516a8 8 0 0 1 16 0v6" stroke="#274B9F" stroke-width="2.6" fill="none"/>
-  <rect x="859" y="522" width="24" height="18" rx="4" fill="#274B9F"/>
-  <text x="850" y="567" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="900" fill="#202431">Private by design</text>
-  <text x="850" y="590" font-family="Inter, Arial, sans-serif" font-size="12.5" fill="#596171">Encrypted local data + safe diagnostics</text>
-  <text x="850" y="609" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#274B9F">No URLs or thread IDs logged</text>
+  <rect x="80" y="88" width="1040" height="584" rx="40" fill="#FFFFFF"/>
+  <text x="120" y="150" font-family="Arial,sans-serif" font-size="36" font-weight="700" fill="#202431">Orbin</text>
+  <text x="120" y="184" font-family="Arial,sans-serif" font-size="16" fill="#5A6272">Privacy-focused Android imageboard browser</text>
+  <rect x="120" y="214" width="168" height="40" rx="20" fill="#DCE6FF"/>
+  <text id="release-label" x="142" y="240" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">122 · Haruka</text>
+  <rect x="380" y="110" width="360" height="520" rx="42" fill="#202431"/>
+  <rect x="396" y="126" width="328" height="488" rx="30" fill="#F8F9FC"/>
+  <text x="420" y="172" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#202431">Feed</text>
+  <text x="646" y="170" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#3D5FAD">GRID</text>
+  <text x="690" y="170" font-family="Arial,sans-serif" font-size="12" fill="#778092">IMAGES</text>
+  <rect x="420" y="196" width="132" height="172" rx="18" fill="#FFFFFF"/>
+  <rect x="564" y="196" width="132" height="172" rx="18" fill="#FFFFFF"/>
+  <rect x="420" y="380" width="132" height="172" rx="18" fill="#FFFFFF"/>
+  <rect x="564" y="380" width="132" height="172" rx="18" fill="#F0F2F6"/>
+  <rect x="432" y="208" width="108" height="64" rx="10" fill="#DDE5F4"/>
+  <rect x="576" y="208" width="108" height="64" rx="10" fill="#E6E1EF"/>
+  <rect x="432" y="392" width="108" height="64" rx="10" fill="#E4EBD8"/>
+  <rect x="576" y="392" width="108" height="64" rx="10" fill="#E1E4EA"/>
+  <text x="432" y="296" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Readable compact</text>
+  <text x="432" y="314" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">grid cards</text>
+  <text x="576" y="296" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Provider quirks</text>
+  <text x="576" y="314" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">normalized</text>
+  <text x="432" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Subjects get</text>
+  <text x="432" y="498" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">room to breathe</text>
+  <text x="576" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">Read state stays</text>
+  <text x="576" y="498" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">visible but quiet</text>
+  <text x="810" y="168" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#202431">Current release highlights</text>
+  <text x="810" y="220" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first browsing</text>
+  <text x="810" y="246" font-family="Arial,sans-serif" font-size="14" fill="#596171">Compact-phone readability with adaptive cards</text>
+  <text x="810" y="304" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">LynxChan / BBW Chan</text>
+  <text x="810" y="330" font-family="Arial,sans-serif" font-size="14" fill="#596171">Tolerant media URL and catalog normalization</text>
+  <text x="810" y="388" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Save links</text>
+  <text x="810" y="414" font-family="Arial,sans-serif" font-size="14" fill="#596171">Deduplicated thread links exported as text</text>
+  <text x="810" y="472" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Guardrails</text>
+  <text x="810" y="498" font-family="Arial,sans-serif" font-size="14" fill="#596171">Architecture, screenshots, CodeQL, instrumentation</text>
+  <text x="810" y="524" font-family="Arial,sans-serif" font-size="14" fill="#596171">and release preflight verification</text>
 </svg>
