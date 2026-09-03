@@ -19,22 +19,25 @@ class ProviderDiagnosticsTest {
         diagnostics.record(ProviderDiagnosticEvent("a", "catalog", 2, "success"))
         diagnostics.record(ProviderDiagnosticEvent("a", "thread", 3, "success"))
 
-        assertThat(diagnostics.snapshot().map { it.operation }).containsExactly("catalog", "thread").inOrder()
+        assertThat(diagnostics.snapshot().map { it.operation })
+            .containsExactly("catalog", "thread")
+            .inOrder()
     }
 
     @Test
-    fun `instrumented provider records successful operation`() = runTest {
-        val diagnostics = InMemoryProviderDiagnostics()
-        val provider = InstrumentedImageBoardProvider(FakeProvider(), diagnostics)
+    fun `instrumented provider records successful operation`() =
+        runTest {
+            val diagnostics = InMemoryProviderDiagnostics()
+            val provider = InstrumentedImageBoardProvider(FakeProvider(), diagnostics)
 
-        provider.getBoards()
+            provider.getBoards()
 
-        val event = diagnostics.snapshot().single()
-        assertThat(event.provider).isEqualTo("test")
-        assertThat(event.operation).isEqualTo("boards")
-        assertThat(event.outcome).isEqualTo("success")
-        assertThat(event.durationMillis).isAtLeast(0L)
-    }
+            val event = diagnostics.snapshot().single()
+            assertThat(event.provider).isEqualTo("test")
+            assertThat(event.operation).isEqualTo("boards")
+            assertThat(event.outcome).isEqualTo("success")
+            assertThat(event.durationMillis).isAtLeast(0L)
+        }
 
     private class FakeProvider : ImageBoardProvider {
         override val metadata = ProviderMetadata(ProviderId("test"), "Test", "https://example.test")
@@ -44,6 +47,9 @@ class ProviderDiagnosticsTest {
 
         override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> = emptyList()
 
-        override suspend fun getThread(board: BoardId, thread: ThreadId): Thread = error("not needed")
+        override suspend fun getThread(
+            board: BoardId,
+            thread: ThreadId,
+        ): Thread = error("not needed")
     }
 }
