@@ -89,29 +89,35 @@ class LynxChanMapperTest {
     @Test
     fun `catalog creation time is preferred with last bump fallback`() {
         val withCreation =
-            mapper.mapCatalog(
-                board,
-                listOf(
-                    LynxChanCatalogThread(
-                        threadId = 1,
-                        creation = "2026-01-01T00:00:00Z",
-                        lastBump = "2026-02-01T00:00:00Z",
+            mapper
+                .mapCatalog(
+                    board,
+                    listOf(
+                        LynxChanCatalogThread(
+                            threadId = 1,
+                            creation = "2026-01-01T00:00:00Z",
+                            lastBump = "2026-02-01T00:00:00Z",
+                        ),
                     ),
-                ),
-            ).single()
-        assertThat(withCreation.originalPost.createdAtMillis).isEqualTo(Instant.parse("2026-01-01T00:00:00Z").toEpochMilli())
+                ).single()
+        assertThat(
+            withCreation.originalPost.createdAtMillis,
+        ).isEqualTo(Instant.parse("2026-01-01T00:00:00Z").toEpochMilli())
 
         val fallback =
-            mapper.mapCatalog(
-                board,
-                listOf(
-                    LynxChanCatalogThread(
-                        threadId = 2,
-                        lastBump = "2026-02-01T00:00:00Z",
+            mapper
+                .mapCatalog(
+                    board,
+                    listOf(
+                        LynxChanCatalogThread(
+                            threadId = 2,
+                            lastBump = "2026-02-01T00:00:00Z",
+                        ),
                     ),
-                ),
-            ).single()
-        assertThat(fallback.originalPost.createdAtMillis).isEqualTo(Instant.parse("2026-02-01T00:00:00Z").toEpochMilli())
+                ).single()
+        assertThat(
+            fallback.originalPost.createdAtMillis,
+        ).isEqualTo(Instant.parse("2026-02-01T00:00:00Z").toEpochMilli())
     }
 
     @Test
@@ -136,7 +142,11 @@ class LynxChanMapperTest {
                     ),
             )
 
-        val attachment = mapper.mapThread(board, response).originalPost.attachments.single()
+        val attachment =
+            mapper
+                .mapThread(board, response)
+                .originalPost.attachments
+                .single()
         assertThat(attachment.sourceUrl).isEqualTo("https://cdn.example.org/media/full.jpg")
         assertThat(attachment.thumbnailUrl).isEqualTo("https://cdn.example.org/media/thumb.jpg")
         assertThat(attachment.originalFileName).isEqualTo("full.jpg")
