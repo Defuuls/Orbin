@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fail fast when Orbin's module dependency rules drift.
 
-This complements Gradle and detekt by checking project-to-project dependencies at the repository
-boundary. Keep the rules boring and explicit: architecture should be visible in one file and cheap
-enough to run on every PR.
+This complements Gradle and detekt by checking project-to-project dependencies and source imports at
+the repository boundary. Keep the rules boring and explicit: architecture should be visible in one
+file and cheap enough to run on every PR.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PROJECT_DEP = re.compile(r'project\(\s*"(:[^"]+)"\s*\)')
+IMPORT = re.compile(r"^import\s+([\w.]+)", re.MULTILINE)
 
 
 def module_path(module: str) -> pathlib.Path:
@@ -31,6 +32,43 @@ def included_modules() -> list[str]:
     return re.findall(r'include\("(:[^"]+)"\)', settings)
 
 
+def source_imports(module: str) -> list[tuple[pathlib.Path, str]]:
+    root = module_path(module) / "src/main/kotlin"
+    found: list[tuple[pathlib.Path, str]] = []
+    if not root.exists():
+        return found
+    for file in root.rglob("*.kt"):
+        text = file.read_text(encoding="utf-8")
+        found.extend((file, match.group(1)) for match in IMPORT.finditer(text))
+    return found
+
+
+def dependency_cycles(graph: dict[str, set[str]]) -> list[list[str]]:
+    cycles: list[list[str]] = []
+    visiting: list[str] = []
+    visited: set[str] = set()
+
+    def visit(node: str) -> None:
+        if node in visiting:
+            start = visiting.index(node)
+            cycle = visiting[start:] + [node]
+            if cycle not in cycles:
+                cycles.append(cycle)
+            return
+        if node in visited:
+            return
+        visiting.append(node)
+        for child in sorted(graph.get(node, set())):
+            if child in graph:
+                visit(child)
+        visiting.pop()
+        visited.add(node)
+
+    for module in sorted(graph):
+        visit(module)
+    return cycles
+
+
 def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
@@ -40,6 +78,9 @@ def main() -> int:
     modules = included_modules()
     deps = {module: project_dependencies(module) for module in modules}
 
+    for cycle in dependency_cycles(deps):
+        fail(errors, "project dependency cycle: " + " -> ".join(cycle))
+
     # Feature modules are leaves in the product graph. They may share domain/core/UI primitives,
     # but must not call sideways into another feature.
     feature_modules = {m for m in modules if m.startswith(":feature:")}
@@ -47,6 +88,11 @@ def main() -> int:
         sideways = deps[module] & feature_modules
         if sideways:
             fail(errors, f"{module} depends on feature module(s): {', '.join(sorted(sideways))}")
+
+        own_package = "com.orbin.feature." + module.split(":")[-1]
+        for file, imported in source_imports(module):
+            if imported.startswith("com.orbin.feature.") and not imported.startswith(own_package + "."):
+                fail(errors, f"{file.relative_to(ROOT)} imports another feature: {imported}")
 
     # The pure model module is the innermost ring and may not acquire project dependencies.
     if deps.get(":core:model"):
@@ -60,17 +106,32 @@ def main() -> int:
 
     # Provider implementations may use the SPI/core/network plumbing, but never app/features/data
     # or each other. This keeps an engine replaceable and independently testable.
+    provider_forbidden_packages = (
+        "com.orbin.app.",
+        "com.orbin.data.",
+        "com.orbin.feature.",
+        "com.orbin.media.",
+        "com.orbin.uinext.",
+    )
     for module in sorted(m for m in modules if m.startswith(":provider:") and m != ":provider:api"):
         for dep in sorted(deps[module]):
             if dep.startswith(":feature:") or dep in {":app", ":data", ":media", ":ui-next"}:
                 fail(errors, f"{module} has forbidden dependency {dep}")
             if dep.startswith(":provider:") and dep != ":provider:api":
                 fail(errors, f"{module} must not depend on provider implementation {dep}")
+        for file, imported in source_imports(module):
+            if imported.startswith(provider_forbidden_packages):
+                fail(errors, f"{file.relative_to(ROOT)} imports forbidden outer layer: {imported}")
 
-    # ui-next is presentation-only. It must not know about repositories, providers or features.
+    # ui-next is presentation-only. The feature convention puts several Orbin modules on its
+    # classpath, so enforce the source-level seam as well as explicit Gradle dependencies.
     for dep in sorted(deps.get(":ui-next", set())):
         if dep.startswith(":feature:") or dep.startswith(":provider:") or dep in {":data", ":domain", ":network"}:
             fail(errors, f":ui-next has forbidden dependency {dep}")
+    allowed_ui_packages = ("com.orbin.uinext.", "com.orbin.core.designsystem.")
+    for file, imported in source_imports(":ui-next"):
+        if imported.startswith("com.orbin.") and not imported.startswith(allowed_ui_packages):
+            fail(errors, f"{file.relative_to(ROOT)} crosses ui-next presentation seam: {imported}")
 
     # Prevent Android/infrastructure imports from slipping into the pure core model source tree.
     model_root = module_path(":core:model") / "src/main/kotlin"
