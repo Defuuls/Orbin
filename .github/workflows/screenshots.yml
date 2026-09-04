@@ -13,9 +13,11 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      # Keep this list aligned with modules that own Roborazzi coverage, plus
+      # shared UI dependencies whose changes can alter those captured screens.
       - 'core/designsystem/**'
       - 'core/ui/**'
-      - 'feature/**'
+      - 'feature/gallery/**'
       - 'media/**'
       - 'ui-next/**'
 
