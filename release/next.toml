@@ -1,20 +1,26 @@
-# Orbin 124 — Airi
+# Orbin 125 — Mio
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 124
-codename     = "Airi"
-version_code = 142
+number       = 125
+codename     = "Mio"
+version_code = 143
 
 summary = [
-  "bump Orbin to 124-Airi / versionCode 142",
-  "add a polished brand showcase for the redesigned orbital O",
-  "document logo anatomy, palette, usage guidance, and small-size behavior",
+  "bump Orbin to 125-Mio / versionCode 143",
+  "add a top-level provider switcher for 4chan and BBW Chan",
+  "preserve BBW Chan browsing context when backing out of a thread",
 ]
 
 [changelog]
 Changed = [
-  "Added a polished brand showcase for the redesigned orbital O, including logo anatomy, core palette, usage guidance, and small-size behavior.",
-  "Featured the brand board in the README and added a dedicated brand guide for the new identity.",
+  "Added a compact provider switcher to the Feed so users can move between 4chan and BBW Chan without opening Settings.",
+  "Provider selection is driven by the registered provider list and persists through the existing active-provider setting.",
+]
+Fixed = [
+  "Preserved the active BBW Chan browsing context when returning from a BBW Chan thread instead of reverting to 4chan.",
+]
+Reliability = [
+  "Added regression coverage for cross-provider thread navigation and narrowed screenshot CI to modules that actually own Roborazzi goldens.",
 ]
