@@ -96,5 +96,5 @@ private class SingleThreadRepository(
         board: BoardId,
         thread: ThreadId,
         forceRefresh: Boolean,
-    ): OrbinResult<Thread> = OrbinResult.Success(thread)
+    ): OrbinResult<Thread> = OrbinResult.Success(this.thread)
 }
