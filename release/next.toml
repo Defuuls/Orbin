@@ -1,14 +1,14 @@
-# Orbin 125 — Mio
+# Orbin 125 — Nami
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
 number       = 125
-codename     = "Mio"
+codename     = "Nami"
 version_code = 143
 
 summary = [
-  "bump Orbin to 125-Mio / versionCode 143",
+  "bump Orbin to 125-Nami / versionCode 143",
   "add a top-level provider switcher for 4chan and BBW Chan",
   "preserve BBW Chan browsing context when backing out of a thread",
 ]
