@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [125-Nami] - 2026-09-05
+
+### Changed
+- Added a compact provider switcher to the Feed so users can move between 4chan and BBW Chan without opening Settings.
+- Provider selection is driven by the registered provider list and persists through the existing active-provider setting.
+
+### Fixed
+- Preserved the active BBW Chan browsing context when returning from a BBW Chan thread instead of reverting to 4chan.
+
+### Reliability
+- Added regression coverage for cross-provider thread navigation and narrowed screenshot CI to modules that actually own Roborazzi goldens.
+
+
 ## [124-Airi] - 2026-09-03
 
 ### Changed
@@ -2064,7 +2077,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v124-Airi...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v125-Nami...HEAD
+[125-Nami]: https://github.com/Defuuls/Orbin/compare/v124-Airi...v125-Nami
 [124-Airi]: https://github.com/Defuuls/Orbin/compare/v123-Emiri...v124-Airi
 [123-Emiri]: https://github.com/Defuuls/Orbin/compare/v122-Haruka...v123-Emiri
 [122-Haruka]: https://github.com/Defuuls/Orbin/compare/v121-Yuki...v122-Haruka
