@@ -135,6 +135,7 @@ fun FeedScreen(
                     state = gridState,
                     modifier = insets,
                     contentPadding = gridPadding(bottomPad),
+                    beyondViewportItemCount = 2,
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(
@@ -157,6 +158,7 @@ fun FeedScreen(
                     state = gridState,
                     modifier = insets,
                     contentPadding = gridPadding(bottomPad),
+                    beyondViewportItemCount = 2,
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(

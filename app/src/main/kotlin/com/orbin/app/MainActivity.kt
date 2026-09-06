@@ -11,9 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -457,10 +455,9 @@ private fun AppContent(
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
 ) {
-    // Two themes, because the app draws from two layers. OrbinTheme covers the Material surfaces
-    // — the gallery, the onboarding wizard, dialogs and snackbars. NextTheme covers the interface
-    // itself, whose screens each wrap themselves in one and inherit this outer choice rather than
-    // overwriting it; stating it here is how a theme setting reaches them at all.
+    // One composition entry for both theme layers: OrbinTheme owns Material surfaces (gallery,
+    // onboarding, dialogs); NextTheme installs the ui-next palette that every Next* screen
+    // inherits. Nested no-arg NextTheme calls short-circuit once this outer choice is set.
     com.orbin.core.designsystem.theme.OrbinTheme(
         themeMode = settings.themeMode.toDesignSystem(),
         colorSchemeVariant = settings.colorTheme.toDesignSystem(),
@@ -473,22 +470,19 @@ private fun AppContent(
             amoled = settings.amoled,
             fontScale = settings.fontScale,
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            // Single Surface — previously a Box+Surface both painted the same background.
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
-                ) {
-                    if (ready) {
-                        OrbinAppProviders {
-                            OrbinApp(
-                                startWithOnboarding = !settings.onboardingCompleted,
-                                fullScreenFeedChrome = settings.fullScreenFeedChrome,
-                                threadPresentation = settings.threadPresentation,
-                                isOnline = isOnline,
-                            )
-                        }
+                if (ready) {
+                    OrbinAppProviders {
+                        OrbinApp(
+                            startWithOnboarding = !settings.onboardingCompleted,
+                            fullScreenFeedChrome = settings.fullScreenFeedChrome,
+                            threadPresentation = settings.threadPresentation,
+                            isOnline = isOnline,
+                        )
                     }
                 }
 

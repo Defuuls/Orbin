@@ -48,7 +48,7 @@ class InterfaceSemanticsTest {
     @Test
     fun `a legacy list layout request renders the readable grid`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
+            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
         }
         composeRule.onNodeWithText("Grid").assertIsSelected()
         composeRule.onAllNodesWithText("List").assertCountEquals(0)

@@ -293,6 +293,12 @@ class AllMediaViewModel
                 it.copy(isDeepScanning = true, threadsTotal = targets.size, threadsScanned = 0)
             }
             targets.forEachIndexed { index, target ->
+                if (collected.size >= MAX_WALL_ITEMS) {
+                    _uiState.update {
+                        it.copy(isDeepScanning = false, threadsScanned = index)
+                    }
+                    return
+                }
                 fetchThreadMedia(context, target)?.let(::append)
                 _uiState.update { it.copy(threadsScanned = index + 1) }
                 delay(DEEP_SCAN_REQUEST_INTERVAL_MS)
@@ -319,7 +325,14 @@ class AllMediaViewModel
          * scan from re-adding the opening-post media the catalog sweep already found.
          */
         private fun append(items: List<AllMediaItem>) {
-            val fresh = items.filter { seenUrls.add(it.attachment.sourceUrl) }
+            if (collected.size >= MAX_WALL_ITEMS) return
+            val room = MAX_WALL_ITEMS - collected.size
+            val fresh =
+                items
+                    .asSequence()
+                    .filter { seenUrls.add(it.attachment.sourceUrl) }
+                    .take(room)
+                    .toList()
             if (fresh.isEmpty()) return
             collected = collected + fresh
             _uiState.update { it.copy(items = collected.visibleUnder(mediaFilter.value)) }
@@ -342,6 +355,13 @@ class AllMediaViewModel
              * it is thousands of requests, and a reader who gets rate-limited loses the wall.
              */
             const val DEEP_SCAN_REQUEST_INTERVAL_MS = 1_000L
+
+            /**
+             * Hard cap on wall growth so an unbounded deep scan cannot retain every attachment on
+             * a large provider in Compose state / lazy-grid keys. Catalog sweep still prefers
+             * board order; once the cap is hit further appends are no-ops.
+             */
+            const val MAX_WALL_ITEMS = 4_000
         }
     }
 
