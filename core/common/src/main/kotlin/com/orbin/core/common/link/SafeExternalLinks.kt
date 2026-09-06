@@ -33,15 +33,20 @@ object SafeExternalLinks {
      */
     fun sanitizeHttps(url: String): String? {
         val trimmed = url.trim()
-        if (trimmed.isEmpty()) return null
-        val lowered = trimmed.lowercase()
-        if (UNSAFE_LINK_SCHEMES.any { lowered.startsWith(it) }) return null
-        if (!lowered.startsWith("https://")) return null
+        if (!hasSafeHttpsPrefix(trimmed)) return null
         val uri = runCatching { URI(trimmed) }.getOrNull() ?: return null
-        if (!uri.scheme.equals("https", ignoreCase = true)) return null
-        if (uri.host.isNullOrBlank()) return null
-        return trimmed
+        return trimmed.takeIf { isHttpsWithHost(uri) }
     }
+
+    private fun hasSafeHttpsPrefix(url: String): Boolean {
+        if (url.isEmpty()) return false
+        val lowered = url.lowercase()
+        if (!lowered.startsWith("https://")) return false
+        return UNSAFE_LINK_SCHEMES.none { lowered.startsWith(it) }
+    }
+
+    private fun isHttpsWithHost(uri: URI): Boolean =
+        uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
 
     /** Opens [url] when [sanitizeHttps] accepts it. Returns false when nothing was launched. */
     fun open(

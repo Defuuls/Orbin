@@ -134,7 +134,8 @@ fun NextTheme(
     // Screens in this module wrap themselves in NextTheme with no args. When an outer shell
     // (MainActivity) already installed the palette + density, re-entering MaterialTheme for every
     // screen is pure nesting cost — skip and inherit.
-    if (inherited != null && darkTheme == null && amoled == null && fontScale == null) {
+    val noOverrides = darkTheme == null && amoled == null && fontScale == null
+    if (inherited != null && noOverrides) {
         content()
         return
     }

@@ -57,10 +57,10 @@ fun OrbinAsyncImage(
     var loaded by remember(request) { mutableStateOf(false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        val placeholderKey = placeholderUrl
-        if (placeholderKey != null && placeholderKey != url && request != null && !loaded) {
+        val distinctPlaceholder = placeholderUrl?.takeUnless { it == url }
+        if (distinctPlaceholder != null && request != null && !loaded) {
             AsyncImage(
-                model = placeholderKey,
+                model = distinctPlaceholder,
                 // Described by the image drawn over it; announcing both would duplicate it.
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
