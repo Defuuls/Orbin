@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.orbin.app.LocalOrbinSnackbarHostState
+import com.orbin.app.MaterialOrbinTheme
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -96,12 +97,14 @@ fun OrbinNavHost(
         },
     ) {
         composable<Route.Home> {
-            HomeScreen(
-                onOpenBoard = { provider, board, title ->
-                    navController.navigate(Route.Board(provider, board, title))
-                },
-                onOpenSettings = { navController.navigate(Route.Settings()) },
-            )
+            MaterialOrbinTheme {
+                HomeScreen(
+                    onOpenBoard = { provider, board, title ->
+                        navController.navigate(Route.Board(provider, board, title))
+                    },
+                    onOpenSettings = { navController.navigate(Route.Settings()) },
+                )
+            }
         }
 
         composable<Route.NextFeed> {
@@ -119,16 +122,22 @@ fun OrbinNavHost(
         }
 
         composable<Route.BoardGallery> {
-            BoardGalleryScreen(
-                onBack = navController::navigateUp,
-                onOpenBoard = { provider, board, title ->
-                    navController.navigate(Route.Board(provider, board, title))
-                },
-            )
+            MaterialOrbinTheme {
+                BoardGalleryScreen(
+                    onBack = navController::navigateUp,
+                    onOpenBoard = { provider, board, title ->
+                        navController.navigate(Route.Board(provider, board, title))
+                    },
+                )
+            }
         }
 
-        composable<Route.Search> { SearchScreen(onOpenThread = openThread) }
-        composable<Route.History> { HistoryScreen(onOpenThread = openThread) }
+        composable<Route.Search> {
+            MaterialOrbinTheme { SearchScreen(onOpenThread = openThread) }
+        }
+        composable<Route.History> {
+            MaterialOrbinTheme { HistoryScreen(onOpenThread = openThread) }
+        }
 
         composable<Route.GalleryBrowser> { backStackEntry ->
             val mediaScrollIndex by
@@ -136,18 +145,20 @@ fun OrbinNavHost(
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
                     .collectAsStateWithLifecycle()
 
-            GalleryBrowserScreen(
-                onOpenMedia = { provider, board, thread, index ->
-                    navController.navigate(Route.Gallery(provider, board, thread, index))
-                },
-                onOpenThread = openThread,
-                onOpenAllMedia = { navController.navigate(Route.AllMedia) },
-                mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
-                onMediaScrollConsumed = {
-                    backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
-                        NO_THREAD_MEDIA_SCROLL_INDEX
-                },
-            )
+            MaterialOrbinTheme {
+                GalleryBrowserScreen(
+                    onOpenMedia = { provider, board, thread, index ->
+                        navController.navigate(Route.Gallery(provider, board, thread, index))
+                    },
+                    onOpenThread = openThread,
+                    onOpenAllMedia = { navController.navigate(Route.AllMedia) },
+                    mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                    onMediaScrollConsumed = {
+                        backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                            NO_THREAD_MEDIA_SCROLL_INDEX
+                    },
+                )
+            }
         }
 
         composable<Route.AllMedia> {
@@ -225,17 +236,21 @@ fun OrbinNavHost(
         }
 
         composable<Route.Gallery> {
-            GalleryScreen(
-                onClose = navController::navigateUp,
-                onMediaPageChanged = { page ->
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
-                },
-            )
+            MaterialOrbinTheme {
+                GalleryScreen(
+                    onClose = navController::navigateUp,
+                    onMediaPageChanged = { page ->
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
+                    },
+                )
+            }
         }
 
-        composable<Route.Downloads> { DownloadsScreen(onBack = navController::navigateUp) }
+        composable<Route.Downloads> {
+            MaterialOrbinTheme { DownloadsScreen(onBack = navController::navigateUp) }
+        }
 
         composable<Route.Settings> { backStackEntry ->
             NextSettingsScreen(
@@ -246,19 +261,23 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Subscriptions> { SubscriptionsScreen(onBack = navController::navigateUp) }
+        composable<Route.Subscriptions> {
+            MaterialOrbinTheme { SubscriptionsScreen(onBack = navController::navigateUp) }
+        }
 
         composable<Route.Onboarding> {
-            OnboardingScreen(
-                onFinish = {
-                    navController.navigate(Route.NextFeed) {
-                        popUpTo(navController.graph.id) {
-                            inclusive = true
-                            saveState = false
+            MaterialOrbinTheme {
+                OnboardingScreen(
+                    onFinish = {
+                        navController.navigate(Route.NextFeed) {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                                saveState = false
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
     }
 }

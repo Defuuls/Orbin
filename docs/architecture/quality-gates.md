@@ -39,7 +39,7 @@ engine that produced it:
 - catalog/thread posts are structurally consistent;
 - post ids are unique within a thread;
 - attachments have nonblank ids;
-- media and thumbnail URLs are fully-resolved absolute HTTP(S) URLs.
+- media and thumbnail URLs are fully-resolved absolute HTTPS URLs.
 
 `ProviderRegistryImpl` wraps every registered provider in `InstrumentedImageBoardProvider`, so
 contract violations fail at the provider seam instead of surfacing later as mysterious UI/media

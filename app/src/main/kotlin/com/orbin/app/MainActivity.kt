@@ -46,6 +46,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.next
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -455,25 +456,24 @@ private fun AppContent(
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
 ) {
-    // One composition entry for both theme layers: OrbinTheme owns Material surfaces (gallery,
-    // onboarding, dialogs); NextTheme installs the ui-next palette that every Next* screen
-    // inherits. Nested no-arg NextTheme calls short-circuit once this outer choice is set.
-    com.orbin.core.designsystem.theme.OrbinTheme(
+    // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
+    // do not pay a second MaterialTheme. Material-only destinations (gallery, onboarding, legacy
+    // lists) re-enter OrbinTheme via MaterialOrbinTheme so dynamic color / chan skins still apply
+    // there without wrapping the whole tree in both themes.
+    ProvideOrbinThemeSettings(
         themeMode = settings.themeMode.toDesignSystem(),
         colorSchemeVariant = settings.colorTheme.toDesignSystem(),
         dynamicColor = settings.dynamicColor,
         amoled = settings.amoled,
-        fontScale = settings.fontScale,
     ) {
         NextTheme(
             darkTheme = settings.themeMode.isDark(),
             amoled = settings.amoled,
             fontScale = settings.fontScale,
         ) {
-            // Single Surface — previously a Box+Surface both painted the same background.
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background,
+                color = next.background,
             ) {
                 if (ready) {
                     OrbinAppProviders {
@@ -489,7 +489,7 @@ private fun AppContent(
                 if (ready && shouldLock && !unlocked) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
+                        color = next.background,
                     ) {
                         LockedScreen(
                             message = unlockMessage,

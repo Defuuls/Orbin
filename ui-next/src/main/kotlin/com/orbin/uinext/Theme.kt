@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import com.orbin.core.designsystem.theme.OrbinShapes
+import com.orbin.core.designsystem.theme.orbinTypography
 
 /**
  * The palette the proposal is drawn from.
@@ -182,7 +184,14 @@ fun NextTheme(
         // theme would do.
         LocalDensity provides Density(density.density, density.fontScale * scale / inheritedScale),
     ) {
-        MaterialTheme(colorScheme = scheme, content = content)
+        // Typography/shapes come from the design system at scale 1: LocalDensity already carries
+        // the app font preference, so scaling orbinTypography here would compound it.
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = orbinTypography(1f),
+            shapes = OrbinShapes,
+            content = content,
+        )
     }
 }
 

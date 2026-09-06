@@ -43,7 +43,32 @@ class ProviderContractTest {
                     ),
             )
         val errors = ProviderContract.validateThread(Thread(key, op))
-        assertThat(errors).contains("post[0] attachment[0] sourceUrl is not absolute HTTP(S)")
+        assertThat(errors).contains("post[0] attachment[0] sourceUrl is not absolute HTTPS")
+    }
+
+    @Test
+    fun `thread rejects plaintext http media urls`() {
+        val key = ThreadKey(ProviderId("test"), BoardId("a"), ThreadId(10))
+        val op =
+            Post(
+                id = PostId(10),
+                board = key.board,
+                threadId = key.thread,
+                isOriginalPost = true,
+                attachments =
+                    persistentListOf(
+                        MediaAttachment(
+                            id = "x",
+                            originalFileName = "x.jpg",
+                            extension = "jpg",
+                            type = MediaType.IMAGE,
+                            sourceUrl = "http://example.test/x.jpg",
+                            thumbnailUrl = "https://example.test/thumb.jpg",
+                        ),
+                    ),
+            )
+        val errors = ProviderContract.validateThread(Thread(key, op))
+        assertThat(errors).contains("post[0] attachment[0] sourceUrl is not absolute HTTPS")
     }
 
     @Test
