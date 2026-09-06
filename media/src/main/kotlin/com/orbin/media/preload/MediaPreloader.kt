@@ -97,15 +97,17 @@ class MediaPreloader
                     )
                 PreloadThrottleMode.AGGRESSIVE ->
                     PreloadPlan(
-                        throttler = RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120),
-                        workerCount = 3,
-                        maxTargets = 160,
+                        // Pixel XL multi-column feeds amplify concurrency; keep aggressive below
+                        // the old 3/160 defaults so decode + network stay bounded.
+                        throttler = RequestThrottler(maxConcurrent = 2, delayBetweenRequests = 150, maxPerMinute = 90),
+                        workerCount = 2,
+                        maxTargets = 96,
                     )
                 PreloadThrottleMode.UNLIMITED ->
                     PreloadPlan(
-                        throttler = RequestThrottler(maxConcurrent = 4, delayBetweenRequests = 75, maxPerMinute = 180),
-                        workerCount = 4,
-                        maxTargets = 240,
+                        throttler = RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120),
+                        workerCount = 3,
+                        maxTargets = 128,
                     )
             }
 

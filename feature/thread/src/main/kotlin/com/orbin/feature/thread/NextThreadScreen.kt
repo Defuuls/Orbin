@@ -284,6 +284,8 @@ private fun LoadedThread(
                         MediaThumbnail(
                             attachment = attachment,
                             modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
+                            // Files wall tiles are large; pull source with thumb placeholder.
+                            fullResolution = true,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                         )
                     }
@@ -361,6 +363,8 @@ private fun PostMedia(
         MediaThumbnail(
             attachment = only,
             modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
+            // Thread cells are display-sized: progressive thumb → full source.
+            fullResolution = true,
             onClick = { onOpen(only.id) },
         )
         return
@@ -369,11 +373,12 @@ private fun PostMedia(
         val pagerState = rememberPagerState(pageCount = { attachments.size })
         val stableAspectRatio = attachments.first().threadAspectRatio()
         Column {
-            HorizontalPager(state = pagerState) { page ->
+            HorizontalPager(state = pagerState, beyondViewportPageCount = 0) { page ->
                 val attachment = attachments[page]
                 MediaThumbnail(
                     attachment = attachment,
                     modifier = modifier.aspectRatio(stableAspectRatio).clip(shape),
+                    fullResolution = true,
                     onClick = { onOpen(attachment.id) },
                 )
             }
@@ -391,6 +396,7 @@ private fun PostMedia(
             MediaThumbnail(
                 attachment = attachment,
                 modifier = modifier.aspectRatio(attachment.threadAspectRatio()).clip(shape),
+                fullResolution = true,
                 onClick = { onOpen(attachment.id) },
             )
             if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))

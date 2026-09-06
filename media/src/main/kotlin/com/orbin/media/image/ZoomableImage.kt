@@ -13,13 +13,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.size.Size
 
 private const val MIN_SCALE = 1f
 private const val MAX_SCALE = 5f
 
+/** Cap decode edge so huge sourceUrl bitmaps cannot allocate full-resolution in the gallery pager. */
+private const val GALLERY_MAX_DECODE_DP = 1600
+
 /**
  * A pinch-to-zoom, pan-able image for the gallery. Scale is clamped to [MIN_SCALE]..[MAX_SCALE];
  * panning is only meaningful while zoomed in. Pure Compose gestures — no extra dependencies.
+ *
+ * Decodes are capped to roughly the display's longer edge (and never above [GALLERY_MAX_DECODE_DP])
+ * so off-screen pager neighbours do not pin multi-megapixel bitmaps in memory. Pass
+ * [placeholderUrl] (usually the thumbnail) for a progressive first paint. When [active] is false
+ * only the cheap placeholder is kept composition-ready.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -27,24 +41,47 @@ fun ZoomableImage(
     url: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
+    placeholderUrl: String? = null,
+    active: Boolean = true,
 ) {
     var scale by remember { mutableFloatStateOf(MIN_SCALE) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
-    // The four-argument overload; the three-argument one is deprecated. The leading centroid is
-    // the point a gesture is anchored on, which would let zoom track the pinch rather than the
-    // image's centre — a nicer gesture, but a different one, so it is deliberately unused here and
-    // the behaviour is unchanged by this migration.
     val transformableState =
         rememberTransformableState { _, zoomChange, panChange, _ ->
             scale = (scale * zoomChange).coerceIn(MIN_SCALE, MAX_SCALE)
             offset = if (scale > MIN_SCALE) offset + panChange else Offset.Zero
         }
 
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val maxEdgePx =
+        remember(configuration, density) {
+            val longerDp = maxOf(configuration.screenWidthDp, configuration.screenHeightDp)
+            val longerPx = with(density) { longerDp.dp.roundToPx() }
+            val capPx = with(density) { GALLERY_MAX_DECODE_DP.dp.roundToPx() }
+            longerPx.coerceAtMost(capPx).coerceAtLeast(1)
+        }
+    val context = LocalPlatformContext.current
+    val fullModel =
+        remember(url, maxEdgePx, active) {
+            if (!active || url.isNullOrBlank()) {
+                null
+            } else {
+                ImageRequest
+                    .Builder(context)
+                    .data(url)
+                    .size(Size(maxEdgePx, maxEdgePx))
+                    .build()
+            }
+        }
+
     OrbinAsyncImage(
-        url = url,
+        url = if (active) url else placeholderUrl,
+        model = fullModel,
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
+        placeholderUrl = placeholderUrl,
         modifier =
             modifier
                 .graphicsLayer {
@@ -54,8 +91,6 @@ fun ZoomableImage(
                     translationY = offset.y
                 }.transformable(
                     state = transformableState,
-                    // Only claim pan gestures while zoomed in; otherwise let single-finger
-                    // swipes reach the enclosing pager so the gallery can be scrolled.
                     canPan = { scale > MIN_SCALE },
                 ),
     )
