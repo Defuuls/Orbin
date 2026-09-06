@@ -144,6 +144,7 @@ private fun String.sha256(): String =
         .joinToString(separator = "") { byte -> "%02x".format(byte) }
 
 private const val CLIPBOARD_DIRECTORY = "clipboard_images"
+
 /** ~8MB hard cap; previously 50MB, which was far above any reasonable clipboard paste target. */
 private const val MAX_IMAGE_BYTES = 8L * 1024L * 1024L
 private const val CLIPBOARD_MAX_AGE_MS = 24L * 60L * 60L * 1000L

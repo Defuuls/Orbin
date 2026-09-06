@@ -19,9 +19,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.orbin.core.common.link.SafeExternalLinks
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.UpdateStatus
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem

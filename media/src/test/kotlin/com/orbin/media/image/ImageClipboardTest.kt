@@ -65,7 +65,12 @@ class ImageClipboardTest {
 
         purgeClipboardCache(dir, nowMillis = now)
 
-        val remaining = dir.listFiles()?.map { it.name }?.toSet().orEmpty()
+        val remaining =
+            dir
+                .listFiles()
+                ?.map { it.name }
+                ?.toSet()
+                .orEmpty()
         assertThat(remaining).doesNotContain("old.webp")
         assertThat(remaining).hasSize(8)
         assertThat(remaining).containsAtLeastElementsIn(keep.take(8).map { it.name })

@@ -48,12 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.InlineAction

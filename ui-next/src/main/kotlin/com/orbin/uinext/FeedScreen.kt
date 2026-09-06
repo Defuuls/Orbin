@@ -196,5 +196,6 @@ internal const val FEED_SIZE_MAX_DP = 240f
 internal const val FEED_SIZE_STEPS = 5
 private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
 private const val FEED_CONTENT_INDEX_OFFSET = 1
+
 /** Matches media.video.MAX_FEED_AUTOPLAY_PLAYERS — keep feed ExoPlayer count at 0 or 1. */
 private const val MAX_FEED_AUTOPLAY_IDS = 1

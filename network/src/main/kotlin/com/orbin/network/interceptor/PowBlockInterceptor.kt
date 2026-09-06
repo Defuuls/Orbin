@@ -25,9 +25,7 @@ import java.io.IOException
  * dedicated solver with a timeout, and submits the clearance request. Timeouts and cancels fail
  * closed so a pathological challenge cannot stall API and Coil traffic forever.
  */
-class PowBlockInterceptor(
-    private val solver: PowBlockSolver = sharedSolver,
-) : Interceptor {
+class PowBlockInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
         var response = chain.proceed(original)
@@ -60,7 +58,7 @@ class PowBlockInterceptor(
     ): Boolean {
         val body = response.peekBody(MAX_INTERSTITIAL_BYTES).string()
         val challenge = PowBlock.parse(body) ?: return false
-        val nonce = solver.solve(challenge) ?: return false
+        val nonce = sharedSolver.solve(challenge) ?: return false
         val submitUrl =
             response.request.url
                 .newBuilder()

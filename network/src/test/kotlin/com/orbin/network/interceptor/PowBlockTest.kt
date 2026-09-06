@@ -37,13 +37,13 @@ class PowBlockTest {
         assertThat(leadingZeroBits(hash)).isAtLeast(difficulty)
     }
 
-
     @Test
     fun `solve returns null when the worker thread is interrupted`() {
         val challenge = PowBlock.Challenge(token = TOKEN, difficulty = 40, algorithm = "SHA-256")
-        val worker = Thread {
-            assertThat(PowBlock.solve(challenge, maxIterations = Long.MAX_VALUE)).isNull()
-        }
+        val worker =
+            Thread {
+                assertThat(PowBlock.solve(challenge, maxIterations = Long.MAX_VALUE)).isNull()
+            }
         worker.start()
         // Give the miner a moment to enter the loop, then cancel it.
         Thread.sleep(20)
