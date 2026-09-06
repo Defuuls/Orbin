@@ -85,8 +85,6 @@ fun MediaWallScreen(
             state = gridState,
             modifier = Modifier.fillMaxSize().contentInsets(),
             contentPadding = gridPadding(bottomPad),
-            // Keep composition near the viewport; unbounded windowing caused jank on XL grids.
-            beyondViewportItemCount = 2,
         ) {
             fullWidthItem {
                 Column {

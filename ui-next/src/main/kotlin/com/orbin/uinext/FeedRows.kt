@@ -265,7 +265,6 @@ private fun CollapsedFeedRow(
     }
 }
 
-
 @Composable
 internal fun rowCounts(row: FeedRow): String {
     val replies = pluralStringResource(R.plurals.next_row_replies, row.replies, row.replies)

@@ -25,8 +25,8 @@ import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.media.ImagePreloader
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.media.ImagePreloader
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel

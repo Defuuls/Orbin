@@ -205,10 +205,6 @@ class MediaPreloader
 /** Host-only form for logs so release builds do not retain full media paths. */
 private fun String.redactForLog(): String =
     runCatching {
-        val host =
-            android.net.Uri
-                .parse(this)
-                .host ?: return "[media]"
+        val host = android.net.Uri.parse(this).host ?: return "[media]"
         "$host/…"
-    }
-        .getOrDefault("[media]")
+    }.getOrDefault("[media]")

@@ -55,8 +55,7 @@ class HeadersInterceptor(
     }
 
     /** Idempotent GETs that are not static media — catalogs, threads, board metadata. */
-    private fun okhttp3.Request.isCacheableApiGet(): Boolean =
-        method == "GET" && !isStaticMediaRequest()
+    private fun okhttp3.Request.isCacheableApiGet(): Boolean = method == "GET" && !isStaticMediaRequest()
 
     private fun okhttp3.HttpUrl.originReferer(): String =
         newBuilder()
