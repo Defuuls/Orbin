@@ -70,6 +70,7 @@ class ImageClipboard
 
                         val extension = extensionFor(response.header("Content-Type"), imageUrl)
                         val directory = File(context.cacheDir, CLIPBOARD_DIRECTORY).apply { mkdirs() }
+                        purgeClipboardCache(directory)
                         val file = File(directory, "${imageUrl.sha256()}.$extension")
 
                         body.byteStream().use { input ->
@@ -97,6 +98,26 @@ class ImageClipboard
             }
     }
 
+/**
+ * Drops stale clipboard cache files and caps how many remain so a busy session cannot fill the
+ * cache directory with multi-megabyte copies.
+ */
+internal fun purgeClipboardCache(
+    directory: File,
+    nowMillis: Long = System.currentTimeMillis(),
+) {
+    val files = directory.listFiles()?.filter { it.isFile } ?: return
+    val cutoff = nowMillis - CLIPBOARD_MAX_AGE_MS
+    files.filter { it.lastModified() < cutoff }.forEach { it.delete() }
+    val remaining =
+        directory
+            .listFiles()
+            ?.filter { it.isFile }
+            ?.sortedByDescending { it.lastModified() }
+            .orEmpty()
+    remaining.drop(CLIPBOARD_MAX_FILES).forEach { it.delete() }
+}
+
 internal fun extensionFor(
     contentType: String?,
     imageUrl: String,
@@ -123,5 +144,9 @@ private fun String.sha256(): String =
         .joinToString(separator = "") { byte -> "%02x".format(byte) }
 
 private const val CLIPBOARD_DIRECTORY = "clipboard_images"
-private const val MAX_IMAGE_BYTES = 50L * 1024L * 1024L
+
+/** ~8MB hard cap; previously 50MB, which was far above any reasonable clipboard paste target. */
+private const val MAX_IMAGE_BYTES = 8L * 1024L * 1024L
+private const val CLIPBOARD_MAX_AGE_MS = 24L * 60L * 60L * 1000L
+private const val CLIPBOARD_MAX_FILES = 8
 private val FILE_EXTENSION = Regex("[a-z0-9]{2,5}")

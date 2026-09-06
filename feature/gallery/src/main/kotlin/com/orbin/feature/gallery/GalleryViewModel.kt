@@ -14,6 +14,7 @@ import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import com.orbin.media.ImagePreloader
 import com.orbin.media.image.ImageClipboard
 import com.orbin.media.image.ImageCopyResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,7 @@ class GalleryViewModel
         private val downloadRepository: DownloadRepository,
         settingsRepository: SettingsRepository,
         private val imageClipboard: ImageClipboard,
+        private val imagePreloader: ImagePreloader,
     ) : ViewModel() {
         /**
          * Copies the image on screen. Routed through the ViewModel so the fetch uses the app's
@@ -120,6 +122,33 @@ class GalleryViewModel
                     is OrbinResult.Failure -> persistentListOf()
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+
+        /**
+         * Prefetch the settled page and its immediate neighbours so swipes feel instant without
+         * keeping an unstructured coroutine scope alive after the gallery closes.
+         */
+        fun prefetchAround(
+            settledPage: Int,
+            items: List<MediaAttachment>,
+        ) {
+            if (items.isEmpty()) return
+            val urls =
+                buildList {
+                    for (delta in -1..1) {
+                        val index = settledPage + delta
+                        if (index in items.indices) {
+                            val item = items[index]
+                            // Neighbours: cheap thumb; settled page: full source for first paint.
+                            if (delta == 0) {
+                                add(item.sourceUrl)
+                            } else {
+                                add(item.thumbnailUrl.ifBlank { item.sourceUrl })
+                            }
+                        }
+                    }
+                }
+            imagePreloader.prefetchBatch(urls, viewModelScope)
+        }
 
         fun download(attachment: MediaAttachment) {
             viewModelScope.launch {

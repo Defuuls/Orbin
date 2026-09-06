@@ -30,6 +30,7 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
+import io.mockk.mockk
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -127,6 +128,7 @@ class SubscribedFeedViewModelTest {
                     historyRepository = FakeHistoryRepository(),
                     appLockController = AppLockController(),
                     savedStateHandle = SavedStateHandle(),
+                    imagePreloader = mockk(relaxed = true),
                 )
 
             viewModel.uiState.test {
@@ -169,6 +171,7 @@ class SubscribedFeedViewModelTest {
         historyRepository = FakeHistoryRepository(),
         appLockController = AppLockController(),
         savedStateHandle = savedStateHandle,
+        imagePreloader = mockk(relaxed = true),
     )
 
     /** A provider that answers every catalog request with [threads]. */

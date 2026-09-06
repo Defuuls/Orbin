@@ -16,6 +16,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:common"))
     implementation(project(":domain"))
     implementation(project(":network"))
 

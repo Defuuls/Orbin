@@ -35,6 +35,13 @@ class FeedAutoplayTest {
         }
     }
 
+    @Test
+    fun `feed autoplay picks at most one visible row`() {
+        assertThat(MAX_FEED_AUTOPLAY_PLAYERS).isEqualTo(1)
+        assertThat(pickFeedAutoplayRowId(emptyList())).isNull()
+        assertThat(pickFeedAutoplayRowId(listOf("a", "b", "c"))).isEqualTo("a")
+    }
+
     private fun attachment(
         type: MediaType,
         isSpoiler: Boolean = false,

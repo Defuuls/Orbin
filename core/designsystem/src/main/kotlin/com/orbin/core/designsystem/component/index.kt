@@ -42,9 +42,9 @@
  * - ModernConfirmDialog: Confirmation dialog for irreversible actions
  *
  * **Animations & Loading**
- * - SkeletonLoader: Animated placeholder
- * - PulsingDotLoader: Three-dot pulse animation
- * - ScalingProgressIndicator: Scaling circular progress
+ * - SkeletonLoader: Static placeholder
+ * - PulsingDotLoader: Static three-dot marker
+ * - ScalingProgressIndicator: Circular progress
  * - LoadingSkeletonList: Multiple skeleton loaders
  * - FloatingActionButtonLoader: FAB-sized progress
  */

@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -371,14 +372,16 @@ private fun SettingRow(
                 }
             }
             WidthSpacer(12)
-            Text(
-                text = item.value,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (item.isOn()) next.accent else next.muted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            SelectionContainer {
+                Text(
+                    text = item.value,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (item.isOn()) next.accent else next.muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         if (!expanded) return@Column
         if (item.kind == SettingKind.TEXT && item.hint != null) {
@@ -425,14 +428,18 @@ private fun SettingTextEditor(
             if (draft.isEmpty()) {
                 Text(text = item.value, fontSize = 15.sp, color = next.faint, maxLines = 1)
             }
-            BasicTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                singleLine = true,
-                textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
-                cursorBrush = SolidColor(next.accent),
-                modifier = Modifier.fillMaxWidth().focusRequester(focus),
-            )
+            // BasicTextField already supports selection; wrap so long-press copy works alongside
+            // the value Text SelectionContainer above after the root app wrapper was removed.
+            SelectionContainer {
+                BasicTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    singleLine = true,
+                    textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
+                    cursorBrush = SolidColor(next.accent),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                )
+            }
             Hairline(modifier = Modifier.padding(top = 26.dp))
         }
         WidthSpacer(8)

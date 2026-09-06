@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -116,79 +114,6 @@ internal fun FeedHeader(
         }
         Gap(12)
         Hairline()
-    }
-}
-
-@Composable
-internal fun FeedRowView(
-    row: FeedRow,
-    seed: Int,
-    modifier: Modifier = Modifier,
-    showBoard: Boolean = true,
-    onClick: (FeedRow) -> Unit = {},
-    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
-    activityText: @Composable (FeedRow) -> String = { it.activity },
-    sizeScale: Float = 1f,
-) {
-    if (row.muted) {
-        CollapsedFeedRow(row = row, modifier = modifier, showBoard = showBoard, onClick = onClick)
-        return
-    }
-    val clampedScale = sizeScale.coerceIn(0.7f, 1.45f)
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(R.string.next_open_thread),
-                ) { onClick(row) }
-                .padding(horizontal = GUTTER, vertical = (15f * clampedScale).dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showBoard) {
-                    BoardDot(row.board, size = if (row.read) 5.dp else 6.dp)
-                    WidthSpacer(7)
-                    Text(
-                        text = row.board,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.2.sp,
-                        color = if (row.read) next.muted else boardHue(row.board),
-                    )
-                    WidthSpacer(8)
-                }
-                MetaLine(activityText(row), color = next.faint)
-            }
-            Gap(7)
-            Text(
-                text = row.subject,
-                fontSize = 16.5.sp,
-                lineHeight = 22.sp,
-                letterSpacing = (-0.2).sp,
-                fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
-                color = if (row.read) next.muted else next.ink,
-                maxLines = subjectLines(),
-                overflow = TextOverflow.Ellipsis,
-            )
-            Gap(6)
-            MetaLine(rowCounts(row))
-        }
-        if (row.hasPreview) {
-            WidthSpacer((14f * clampedScale).toInt())
-            val tile =
-                Modifier.size(
-                    width = LIST_TILE_WIDTH * clampedScale,
-                    height = LIST_TILE_HEIGHT * clampedScale,
-                )
-            if (thumbnail != null) {
-                thumbnail(row, tile)
-            } else {
-                MediaTile(modifier = tile, seed = seed, radius = 14.dp)
-            }
-        }
     }
 }
 
@@ -337,16 +262,6 @@ private fun CollapsedFeedRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-internal fun subjectLines(): Int {
-    val scale = LocalDensity.current.fontScale
-    return when {
-        scale >= 1.75f -> 4
-        scale >= 1.3f -> 3
-        else -> 2
     }
 }
 

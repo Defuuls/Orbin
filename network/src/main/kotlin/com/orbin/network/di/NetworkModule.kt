@@ -69,10 +69,9 @@ object NetworkModule {
     ): OkHttpClient {
         val config = configProvider.current()
 
-        if (config.disableOcspChecking) {
-            System.setProperty("com.sun.security.enableCRLDP", "false")
-            System.setProperty("ocsp.enable", "false")
-        }
+        // Certificate revocation is left to Android/Conscrypt. The old `ocsp.enable` /
+        // `com.sun.security.enableCRLDP` System properties are HotSpot-only and never affected
+        // this client; setting them here was misleading, so they are not touched.
 
         // Bootstrap client used only to resolve the DoH endpoint itself.
         val bootstrap =
@@ -82,7 +81,8 @@ object NetworkModule {
                 .build()
 
         // HTTP disk cache for API responses (catalog, threads, board metadata).
-        // Sized at 50MB by default; respects Cache-Control headers so fresh data is always used.
+        // Sized at 50MB; HeadersInterceptor allows short max-age on idempotent GETs so this
+        // cache is actually used instead of being voided by a blanket no-store.
         val cacheDir = File(context.cacheDir, "http-cache")
         val httpCache = Cache(cacheDir, HTTP_CACHE_SIZE_MB * KB_PER_MB * BYTES_PER_KB)
 

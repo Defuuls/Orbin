@@ -48,16 +48,19 @@ fun OrbinAsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     placeholderUrl: String? = null,
+    model: Any? = null,
 ) {
+    val request = model ?: url
     // remember(url) already resets these when the URL changes; no effect needed.
-    var loadFailed by remember(url) { mutableStateOf(false) }
-    var failureMessage by remember(url) { mutableStateOf<String?>(null) }
-    var loaded by remember(url) { mutableStateOf(false) }
+    var loadFailed by remember(request) { mutableStateOf(false) }
+    var failureMessage by remember(request) { mutableStateOf<String?>(null) }
+    var loaded by remember(request) { mutableStateOf(false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (placeholderUrl != null && placeholderUrl != url && !loaded) {
+        val distinctPlaceholder = placeholderUrl?.takeUnless { it == url }
+        if (distinctPlaceholder != null && request != null && !loaded) {
             AsyncImage(
-                model = placeholderUrl,
+                model = distinctPlaceholder,
                 // Described by the image drawn over it; announcing both would duplicate it.
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
@@ -65,23 +68,25 @@ fun OrbinAsyncImage(
             )
         }
 
-        AsyncImage(
-            model = url,
-            contentDescription = contentDescription,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = contentScale,
-            onSuccess = {
-                loadFailed = false
-                failureMessage = null
-                loaded = true
-            },
-            onError = { state ->
-                val throwable = state.result.throwable
-                Log.w(TAG, "Image failed to load", throwable)
-                loadFailed = true
-                failureMessage = throwable.mediaLoadMessage()
-            },
-        )
+        if (request != null) {
+            AsyncImage(
+                model = request,
+                contentDescription = contentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = contentScale,
+                onSuccess = {
+                    loadFailed = false
+                    failureMessage = null
+                    loaded = true
+                },
+                onError = { state ->
+                    val throwable = state.result.throwable
+                    Log.w(TAG, "Image failed to load", throwable)
+                    loadFailed = true
+                    failureMessage = throwable.mediaLoadMessage()
+                },
+            )
+        }
 
         if (loadFailed) {
             Box(

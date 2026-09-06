@@ -17,11 +17,9 @@
 
 # Coil 3 and OkHttp ship their own consumer rules; nothing extra required here.
 
-# Strip debug and verbose logging from release builds. Orbin logs a media URL at debug level
-# while preloading; on a client that encrypts everything it stores, writing what a reader is
-# looking at into the system log is at odds with the rest of the app. Warnings and errors are
-# kept: they carry no browsing content beyond a failing board, and they are what makes a crash
-# report legible.
+# Strip debug and verbose logging from release builds. Media failure paths used to Log.w the
+# full URL; those call sites now redact to host-only (see MediaPreloader). Warnings and errors
+# stay for crash legibility, without browsing paths in the message.
 -assumenosideeffects class android.util.Log {
     public static int v(...);
     public static int d(...);

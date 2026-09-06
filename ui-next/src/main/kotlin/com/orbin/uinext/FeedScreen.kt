@@ -74,25 +74,28 @@ fun FeedScreen(
     val omittedWithoutPreview = rows.size - withPreview.size
     val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
 
+    // Emit at most one on-screen preview id so callers can hard-cap feed ExoPlayers to 0–1.
     LaunchedEffect(effectiveLayout, rows, withPreview, gridState) {
         snapshotFlow {
-            when (effectiveLayout) {
-                FeedLayout.IMAGES ->
-                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
-                        withPreview
-                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                            ?.takeIf { !it.muted }
-                            ?.id
-                    }
+            val candidates =
+                when (effectiveLayout) {
+                    FeedLayout.IMAGES ->
+                        gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
+                            withPreview
+                                .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                                ?.takeIf { !it.muted }
+                                ?.id
+                        }
 
-                else ->
-                    gridState.layoutInfo.visibleItemsInfo.firstNotNullOfOrNull { item ->
-                        rows
-                            .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                            ?.takeIf { it.hasPreview && !it.muted }
-                            ?.id
-                    }
-            }
+                    else ->
+                        gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
+                            rows
+                                .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
+                                ?.takeIf { it.hasPreview && !it.muted }
+                                ?.id
+                        }
+                }
+            candidates.take(MAX_FEED_AUTOPLAY_IDS).firstOrNull()
         }.distinctUntilChanged()
             .collect { activePreviewCallback.value(it) }
     }
@@ -134,7 +137,11 @@ fun FeedScreen(
                     contentPadding = gridPadding(bottomPad),
                 ) {
                     fullWidthItem { header() }
-                    itemsIndexed(withPreview, key = { _, row -> row.id }) { index, row ->
+                    itemsIndexed(
+                        withPreview,
+                        key = { _, row -> row.id },
+                        contentType = { _, _ -> "feed-image-cell" },
+                    ) { index, row ->
                         FeedImageCell(
                             row,
                             seed = index,
@@ -152,13 +159,16 @@ fun FeedScreen(
                     contentPadding = gridPadding(bottomPad),
                 ) {
                     fullWidthItem { header() }
-                    itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+                    itemsIndexed(
+                        rows,
+                        key = { _, row -> row.id },
+                        contentType = { _, row -> if (row.hasPreview) "feed-grid-preview" else "feed-grid" },
+                    ) { index, row ->
                         FeedGridCell(
                             row,
                             seed = index,
                             onClick = onOpenRow,
                             thumbnail = thumbnail,
-                            modifier = Modifier.animateItem(),
                             activityText = activityText,
                         )
                     }
@@ -186,3 +196,6 @@ internal const val FEED_SIZE_MAX_DP = 240f
 internal const val FEED_SIZE_STEPS = 5
 private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
 private const val FEED_CONTENT_INDEX_OFFSET = 1
+
+/** Matches media.video.MAX_FEED_AUTOPLAY_PLAYERS — keep feed ExoPlayer count at 0 or 1. */
+private const val MAX_FEED_AUTOPLAY_IDS = 1

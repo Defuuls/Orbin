@@ -89,7 +89,7 @@ interface SettingsRepository {
 
     suspend fun setReadTimeoutSeconds(seconds: Long)
 
-    /** True disables OCSP revocation checking, which is the default for reliability. */
+    /** Backup-compat only; not applied to the OkHttp stack (see NetworkModule). */
     suspend fun setDisableOcspChecking(disable: Boolean)
 
     suspend fun setOnboardingCompleted(completed: Boolean)

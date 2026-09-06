@@ -31,6 +31,7 @@ import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
 import com.orbin.media.video.canAutoplayInFeed
+import com.orbin.media.video.pickFeedAutoplayRowId
 import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
@@ -67,7 +68,12 @@ fun NextFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val layoutName by viewModel.feedLayoutName.collectAsStateWithLifecycle()
-    val layout = FeedLayout.entries.firstOrNull { it.name == layoutName } ?: FeedLayout.LIST
+    // Legacy "LIST" (removed) maps to GRID so older saved state keeps working.
+    val layout =
+        when (layoutName) {
+            FeedLayout.IMAGES.name -> FeedLayout.IMAGES
+            else -> FeedLayout.GRID
+        }
     val nowMillis by
         produceState(initialValue = System.currentTimeMillis()) {
             while (true) {
@@ -105,6 +111,17 @@ fun NextFeedScreen(
                 var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
                 var presentationReady by remember { mutableStateOf(false) }
                 var activePreviewId by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(entries, activePreviewId) {
+                    if (entries.isEmpty()) return@LaunchedEffect
+                    val focus = entries.indexOfFirst { it.row.id == activePreviewId }.let { if (it < 0) 0 else it }
+                    val urls =
+                        entries
+                            .subList(
+                                (focus - 2).coerceAtLeast(0),
+                                (focus + 6).coerceAtMost(entries.size),
+                            ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
+                    viewModel.prefetchFeedThumbs(urls)
+                }
                 LaunchedEffect(state.boards, visited, filter, settings.feedSort, mutedTokens) {
                     entries =
                         withContext(Dispatchers.Default) {
@@ -212,8 +229,11 @@ fun NextFeedScreen(
                                 byId[row.id]?.attachment?.let { attachment ->
                                     FeedPreview(
                                         attachment = attachment,
-                                        autoplay = settings.autoplayVideosInFeed && row.id == activePreviewId,
-                                        fitWholeImage = layout == FeedLayout.LIST,
+                                        autoplay =
+                                            settings.autoplayVideosInFeed &&
+                                                row.id ==
+                                                pickFeedAutoplayRowId(listOfNotNull(activePreviewId)),
+                                        fitWholeImage = false,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
                                 }

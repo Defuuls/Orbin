@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 enum class FeedLayout {
-    LIST,
     GRID,
     IMAGES,
 }

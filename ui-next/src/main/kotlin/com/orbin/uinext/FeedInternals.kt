@@ -36,8 +36,6 @@ internal fun scrollingUp(
     return up
 }
 
-internal val LIST_TILE_WIDTH = 88.dp
-internal val LIST_TILE_HEIGHT = 68.dp
 internal const val GRID_TILE_ASPECT = 1.1f
 internal val GRID_MIN_CELL = 170.dp
 internal val IMAGE_MIN_CELL = 112.dp

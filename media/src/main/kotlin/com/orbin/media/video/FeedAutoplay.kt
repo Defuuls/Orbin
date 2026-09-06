@@ -4,6 +4,12 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 
 /**
+ * Hard cap on simultaneous feed ExoPlayers. Feed rows may show many video thumbnails, but only
+ * this many may compose a live player — ambient autoplay is intentionally 0 or 1.
+ */
+const val MAX_FEED_AUTOPLAY_PLAYERS = 1
+
+/**
  * Whether [attachment] may start playing by itself in a feed row, given that autoplay is
  * [autoplayEnabled] for this surface (in the full client a setting, in Orbin Minimal always true)
  * and the row is on screen.
@@ -20,3 +26,10 @@ fun canAutoplayInFeed(
     attachment: MediaAttachment,
     autoplayEnabled: Boolean,
 ): Boolean = autoplayEnabled && attachment.type == MediaType.VIDEO && !attachment.isSpoiler
+
+/**
+ * Picks at most [MAX_FEED_AUTOPLAY_PLAYERS] row id from [visibleCandidateIds] (already ordered
+ * by on-screen priority). Empty input yields null — zero autoplaying players.
+ */
+fun pickFeedAutoplayRowId(visibleCandidateIds: List<String>): String? =
+    visibleCandidateIds.take(MAX_FEED_AUTOPLAY_PLAYERS).firstOrNull()

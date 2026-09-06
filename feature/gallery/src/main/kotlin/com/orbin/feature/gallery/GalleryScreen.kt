@@ -87,6 +87,10 @@ fun GalleryScreen(
     var videoFullscreen by remember { mutableStateOf(false) }
     LaunchedEffect(pagerState.settledPage) { videoFullscreen = false }
 
+    LaunchedEffect(pagerState.settledPage, media) {
+        viewModel.prefetchAround(pagerState.settledPage, media)
+    }
+
     Scaffold(
         containerColor = Color.Black,
         topBar = {
@@ -142,8 +146,10 @@ fun GalleryScreen(
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
+                beyondViewportPageCount = 0,
             ) { page ->
                 val item = media[page]
+                val isNear = kotlin.math.abs(page - pagerState.settledPage) <= 1
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.Black),
                     contentAlignment = Alignment.Center,
@@ -167,6 +173,9 @@ fun GalleryScreen(
                             url = item.sourceUrl,
                             contentDescription = item.originalFileName,
                             modifier = Modifier.fillMaxSize(),
+                            placeholderUrl = item.thumbnailUrl,
+                            // Drop full decodes more than one page away from the settled item.
+                            active = isNear,
                         )
                     }
                 }

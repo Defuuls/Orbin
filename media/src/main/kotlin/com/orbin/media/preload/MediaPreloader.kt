@@ -97,15 +97,17 @@ class MediaPreloader
                     )
                 PreloadThrottleMode.AGGRESSIVE ->
                     PreloadPlan(
-                        throttler = RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120),
-                        workerCount = 3,
-                        maxTargets = 160,
+                        // Pixel XL multi-column feeds amplify concurrency; keep aggressive below
+                        // the old 3/160 defaults so decode + network stay bounded.
+                        throttler = RequestThrottler(maxConcurrent = 2, delayBetweenRequests = 150, maxPerMinute = 90),
+                        workerCount = 2,
+                        maxTargets = 96,
                     )
                 PreloadThrottleMode.UNLIMITED ->
                     PreloadPlan(
-                        throttler = RequestThrottler(maxConcurrent = 4, delayBetweenRequests = 75, maxPerMinute = 180),
-                        workerCount = 4,
-                        maxTargets = 240,
+                        throttler = RequestThrottler(maxConcurrent = 3, delayBetweenRequests = 100, maxPerMinute = 120),
+                        workerCount = 3,
+                        maxTargets = 128,
                     )
             }
 
@@ -120,10 +122,10 @@ class MediaPreloader
             runCatching { imageLoader.execute(request) }
                 .onSuccess { result ->
                     if (result is ErrorResult) {
-                        Log.w(TAG, "Failed to preload image: $url", result.throwable)
+                        Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", result.throwable)
                     }
                 }.onFailure { error ->
-                    Log.w(TAG, "Failed to preload image: $url", error)
+                    Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", error)
                 }
         }
 
@@ -144,9 +146,9 @@ class MediaPreloader
                         throttler.recordResponse(response.code, response.header(RETRY_AFTER_HEADER))
                     }
             }.onSuccess { _ ->
-                Log.d(TAG, "Preloaded video metadata: $url")
+                Log.d(TAG, "Preloaded video metadata: ${url.redactForLog()}")
             }.onFailure { error ->
-                Log.w(TAG, "Failed to preload video: $url", error)
+                Log.w(TAG, "Failed to preload video: ${url.redactForLog()}", error)
             }
         }
 
@@ -199,3 +201,13 @@ class MediaPreloader
             const val RETRY_AFTER_HEADER = "Retry-After"
         }
     }
+
+/** Host-only form for logs so release builds do not retain full media paths. */
+private fun String.redactForLog(): String =
+    runCatching {
+        val host =
+            android.net.Uri
+                .parse(this)
+                .host ?: return "[media]"
+        "$host/…"
+    }.getOrDefault("[media]")

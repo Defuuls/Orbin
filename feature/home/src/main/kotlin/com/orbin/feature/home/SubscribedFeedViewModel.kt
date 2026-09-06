@@ -26,6 +26,7 @@ import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.media.ImagePreloader
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -87,6 +88,7 @@ class SubscribedFeedViewModel
         historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
         private val savedStateHandle: SavedStateHandle,
+        private val imagePreloader: ImagePreloader,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -100,6 +102,11 @@ class SubscribedFeedViewModel
         /** Reading layout is session UI state, but SavedStateHandle lets it survive process recreation. */
         val feedLayoutName: StateFlow<String> =
             savedStateHandle.getStateFlow(FEED_LAYOUT_KEY, DEFAULT_FEED_LAYOUT)
+
+        /** Prefetch near-viewport feed thumbnails under [viewModelScope]. */
+        fun prefetchFeedThumbs(urls: List<String>) {
+            imagePreloader.prefetchBatch(urls, viewModelScope, maxDimensionPx = FEED_PREFETCH_MAX_PX)
+        }
 
         fun setFeedLayoutName(name: String) {
             savedStateHandle[FEED_LAYOUT_KEY] = name
@@ -350,7 +357,8 @@ class SubscribedFeedViewModel
             const val STOP_TIMEOUT_MS = 5_000L
             const val MAX_CONCURRENT_BOARD_LOADS = 4
             const val FEED_LAYOUT_KEY = "feedLayout"
-            const val DEFAULT_FEED_LAYOUT = "LIST"
+            const val DEFAULT_FEED_LAYOUT = "GRID"
+            const val FEED_PREFETCH_MAX_PX = 480
         }
     }
 

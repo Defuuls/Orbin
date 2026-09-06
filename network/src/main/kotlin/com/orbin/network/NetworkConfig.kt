@@ -8,13 +8,10 @@ package com.orbin.network
 data class NetworkConfig(
     val userAgent: String = DEFAULT_USER_AGENT,
     val dnsOverHttps: DohConfig = DohConfig.Cloudflare,
-    /** Optional HTTP/HTTPS proxy "host:port"; null means use system defaults. */
-    val proxy: ProxyConfig? = null,
     /** When true, the app refuses cleartext HTTP entirely. */
     val httpsOnly: Boolean = true,
     val connectTimeoutSeconds: Long = 15,
     val readTimeoutSeconds: Long = 30,
-    val disableOcspChecking: Boolean = true,
     val enableHttpLogging: Boolean = false,
 ) {
     companion object {
@@ -58,14 +55,6 @@ data class DohConfig(
             )
     }
 }
-
-data class ProxyConfig(
-    val host: String,
-    val port: Int,
-    val type: ProxyType = ProxyType.HTTP,
-)
-
-enum class ProxyType { HTTP, SOCKS }
 
 /** Supplies the current [NetworkConfig]. Implemented in :data over DataStore settings. */
 fun interface NetworkConfigProvider {

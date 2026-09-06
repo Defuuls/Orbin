@@ -180,7 +180,12 @@ data class AppSettings(
     val httpsOnly: Boolean = true,
     val connectTimeoutSeconds: Long = 15,
     val readTimeoutSeconds: Long = 30,
-    val disableOcspChecking: Boolean = true,
+    /**
+     * Retained for backup compatibility only. Never applied to networking: Android/Conscrypt
+     * ignores the HotSpot OCSP system properties earlier builds set, and Orbin no longer claims
+     * to toggle revocation checking. Default false = do not disable (secure/honest).
+     */
+    val disableOcspChecking: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
     val internalUpdaterEnabled: Boolean = true,

@@ -121,6 +121,7 @@ class GalleryViewModelTest {
             downloadRepository = FakeDownloadRepository(),
             settingsRepository = settingsRepository,
             imageClipboard = mockk(relaxed = true),
+            imagePreloader = mockk(relaxed = true),
         )
 
     private fun createViewModel(
@@ -143,6 +144,7 @@ class GalleryViewModelTest {
         // Never exercised here — these tests are about which media the gallery pages through,
         // not about copying one to the clipboard.
         imageClipboard = mockk(relaxed = true),
+        imagePreloader = mockk(relaxed = true),
     )
 
     private fun thread() =

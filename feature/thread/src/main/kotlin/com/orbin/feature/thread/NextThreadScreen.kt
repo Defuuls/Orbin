@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
@@ -178,6 +179,7 @@ private fun LoadedThread(
     onOpenCommands: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val thread = state.thread
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -282,6 +284,8 @@ private fun LoadedThread(
                         MediaThumbnail(
                             attachment = attachment,
                             modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
+                            // Files wall tiles are large; pull source with thumb placeholder.
+                            fullResolution = true,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                         )
                     }
@@ -303,7 +307,9 @@ private fun LoadedThread(
                     presentation.rowsById[row.id]?.let { entry ->
                         PostCommentText(
                             comment = entry.post.comment,
+                            selectable = true,
                             onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                            onLinkClick = { link -> SafeExternalLinks.open(context, link) },
                         )
                     }
                 },
@@ -357,6 +363,8 @@ private fun PostMedia(
         MediaThumbnail(
             attachment = only,
             modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
+            // Thread cells are display-sized: progressive thumb → full source.
+            fullResolution = true,
             onClick = { onOpen(only.id) },
         )
         return
@@ -365,11 +373,12 @@ private fun PostMedia(
         val pagerState = rememberPagerState(pageCount = { attachments.size })
         val stableAspectRatio = attachments.first().threadAspectRatio()
         Column {
-            HorizontalPager(state = pagerState) { page ->
+            HorizontalPager(state = pagerState, beyondViewportPageCount = 0) { page ->
                 val attachment = attachments[page]
                 MediaThumbnail(
                     attachment = attachment,
                     modifier = modifier.aspectRatio(stableAspectRatio).clip(shape),
+                    fullResolution = true,
                     onClick = { onOpen(attachment.id) },
                 )
             }
@@ -387,6 +396,7 @@ private fun PostMedia(
             MediaThumbnail(
                 attachment = attachment,
                 modifier = modifier.aspectRatio(attachment.threadAspectRatio()).clip(shape),
+                fullResolution = true,
                 onClick = { onOpen(attachment.id) },
             )
             if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))

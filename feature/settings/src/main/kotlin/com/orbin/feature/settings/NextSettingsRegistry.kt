@@ -324,12 +324,14 @@ private class Rows {
                     "the system resolver and says so here rather than failing to load."
             },
         ),
-        // Stored inverted — the setting is "disable OCSP", the row is the guarantee it provides.
-        toggle(
+        // Android/Conscrypt owns TLS validation; there is no effective in-app OCSP switch.
+        info(
             "ocsp",
-            "Certificate revocation checks",
-            !settings.disableOcspChecking,
-            vm::setCertificateRevocationChecks,
+            "Certificate checks",
+            "Platform default",
+            "Orbin uses Android's certificate validation and does not disable revocation checking. " +
+                "There is no separate OCSP toggle — earlier builds claimed one via HotSpot-only " +
+                "system properties that never applied on Android.",
         ),
         text(
             "userAgent",
