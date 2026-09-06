@@ -371,7 +371,7 @@ class SettingsRepositoryImpl
                 httpsOnly = true,
                 connectTimeoutSeconds = this[Keys.connectTimeoutSeconds]?.toLongOrNull() ?: 15,
                 readTimeoutSeconds = this[Keys.readTimeoutSeconds]?.toLongOrNull() ?: 30,
-                disableOcspChecking = this[Keys.disableOcspChecking] ?: true,
+                disableOcspChecking = this[Keys.disableOcspChecking] ?: false,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
@@ -392,7 +392,6 @@ class SettingsRepositoryImpl
                 httpsOnly = httpsOnly,
                 connectTimeoutSeconds = connectTimeoutSeconds,
                 readTimeoutSeconds = readTimeoutSeconds,
-                disableOcspChecking = disableOcspChecking,
             )
 
         private fun DohProvider.toDohConfig(): DohConfig =

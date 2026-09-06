@@ -69,10 +69,9 @@ object NetworkModule {
     ): OkHttpClient {
         val config = configProvider.current()
 
-        if (config.disableOcspChecking) {
-            System.setProperty("com.sun.security.enableCRLDP", "false")
-            System.setProperty("ocsp.enable", "false")
-        }
+        // Certificate revocation is left to Android/Conscrypt. The old `ocsp.enable` /
+        // `com.sun.security.enableCRLDP` System properties are HotSpot-only and never affected
+        // this client; setting them here was misleading, so they are not touched.
 
         // Bootstrap client used only to resolve the DoH endpoint itself.
         val bootstrap =

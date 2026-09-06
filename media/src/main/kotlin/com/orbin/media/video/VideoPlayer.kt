@@ -48,7 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
+import com.orbin.core.common.link.SafeExternalLinks
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -95,7 +95,6 @@ fun VideoPlayer(
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
-    val uriHandler = LocalUriHandler.current
     val activity = remember(context) { context.findActivity() }
     var videoIsLandscape by remember(url) { mutableStateOf(false) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
@@ -303,7 +302,7 @@ fun VideoPlayer(
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                     )
-                    Button(onClick = { uriHandler.openUri(url) }) {
+                    Button(onClick = { SafeExternalLinks.open(context, url) }) {
                         Text(stringResource(R.string.media_open_in_browser))
                     }
                 }

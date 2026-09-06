@@ -167,8 +167,6 @@ class SettingsViewModel
 
         fun setReadTimeout(seconds: Long) = update { repository.setReadTimeoutSeconds(seconds) }
 
-        fun setCertificateRevocationChecks(enabled: Boolean) = update { repository.setDisableOcspChecking(!enabled) }
-
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
 
         fun setDownloadOrganization(organization: DownloadOrganization) =

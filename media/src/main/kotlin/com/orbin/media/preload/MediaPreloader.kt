@@ -120,10 +120,10 @@ class MediaPreloader
             runCatching { imageLoader.execute(request) }
                 .onSuccess { result ->
                     if (result is ErrorResult) {
-                        Log.w(TAG, "Failed to preload image: $url", result.throwable)
+                        Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", result.throwable)
                     }
                 }.onFailure { error ->
-                    Log.w(TAG, "Failed to preload image: $url", error)
+                    Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", error)
                 }
         }
 
@@ -144,9 +144,9 @@ class MediaPreloader
                         throttler.recordResponse(response.code, response.header(RETRY_AFTER_HEADER))
                     }
             }.onSuccess { _ ->
-                Log.d(TAG, "Preloaded video metadata: $url")
+                Log.d(TAG, "Preloaded video metadata: ${url.redactForLog()}")
             }.onFailure { error ->
-                Log.w(TAG, "Failed to preload video: $url", error)
+                Log.w(TAG, "Failed to preload video: ${url.redactForLog()}", error)
             }
         }
 
@@ -199,3 +199,10 @@ class MediaPreloader
             const val RETRY_AFTER_HEADER = "Retry-After"
         }
     }
+
+/** Host-only form for logs so release builds do not retain full media paths. */
+private fun String.redactForLog(): String =
+    runCatching {
+        val host = android.net.Uri.parse(this).host ?: return "[media]"
+        "$host/…"
+    }.getOrDefault("[media]")

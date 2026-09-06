@@ -1,9 +1,15 @@
 package com.orbin.media.image
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.io.File
 
 class ImageClipboardTest {
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
     @Test
     fun `content type decides the extension`() {
         assertThat(extensionFor("image/jpeg", "https://example.test/a")).isEqualTo("jpg")
@@ -37,5 +43,31 @@ class ImageClipboardTest {
         assertThat(extensionFor(null, "https://example.test/file.thisisnotanextension"))
             .isEqualTo("img")
         assertThat(extensionFor(null, "https://example.test/archive.tar.gz")).isEqualTo("gz")
+    }
+
+    @Test
+    fun `purge drops files older than a day and caps remaining count`() {
+        val dir = tempFolder.newFolder("clipboard_images")
+        val now = 1_700_000_000_000L
+        val day = 24L * 60L * 60L * 1000L
+
+        fun touch(
+            name: String,
+            ageMs: Long,
+        ): File =
+            File(dir, name).also {
+                it.writeText("x")
+                it.setLastModified(now - ageMs)
+            }
+
+        touch("old.webp", day + 1)
+        val keep = (0 until 10).map { touch("keep$it.webp", it * 1_000L) }
+
+        purgeClipboardCache(dir, nowMillis = now)
+
+        val remaining = dir.listFiles()?.map { it.name }?.toSet().orEmpty()
+        assertThat(remaining).doesNotContain("old.webp")
+        assertThat(remaining).hasSize(8)
+        assertThat(remaining).containsAtLeastElementsIn(keep.take(8).map { it.name })
     }
 }

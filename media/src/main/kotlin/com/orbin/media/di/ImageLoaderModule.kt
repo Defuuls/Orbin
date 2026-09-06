@@ -27,6 +27,9 @@ private const val BYTES_PER_MB = 1024L * 1024L
  * Builds the singleton Coil [ImageLoader], reusing the app's shared [OkHttpClient] and configuring
  * bounded memory/disk caches. Low-RAM devices reserve less heap for decoded images because video
  * buffers, Compose state and SQLCipher native allocations share the same constrained process.
+ *
+ * Crossfade is off: feed/catalog grids recycle aggressively, and the fade animation costs jank
+ * for little benefit on small tiles.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -58,7 +61,7 @@ object ImageLoaderModule {
                     .directory(context.cacheDir.resolve("image_cache").toOkioPath())
                     .maxSizeBytes(cacheSettings.limitMb * BYTES_PER_MB)
                     .build()
-            }.crossfade(true)
+            }.crossfade(false)
             .build()
     }
 

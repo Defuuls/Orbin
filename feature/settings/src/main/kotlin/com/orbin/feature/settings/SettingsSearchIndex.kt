@@ -65,7 +65,7 @@ val settingsSearchIndex =
         SettingsSearchEntry("recentSearches", "Save recent searches", PRIVACY),
         SettingsSearchEntry("doh", "DNS over HTTPS", PRIVACY),
         SettingsSearchEntry("dnsPrivacy", "DNS privacy", PRIVACY),
-        SettingsSearchEntry("ocsp", "Certificate revocation checks", PRIVACY),
+        SettingsSearchEntry("ocsp", "Certificate checks", PRIVACY),
         SettingsSearchEntry("userAgent", "Custom user agent", PRIVACY),
         SettingsSearchEntry("connectTimeout", "Connect timeout", PRIVACY),
         SettingsSearchEntry("readTimeout", "Read timeout", PRIVACY),

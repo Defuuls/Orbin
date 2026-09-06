@@ -71,6 +71,8 @@ internal object PowBlock {
         val prefix = challenge.token
         var nonce = 0L
         while (nonce < maxIterations) {
+            // Honour cancel from PowBlockSolver timeouts so a stuck mine cannot outlive its wait.
+            if (Thread.currentThread().isInterrupted) return null
             digest.reset()
             val hash = digest.digest((prefix + nonce).toByteArray(Charsets.UTF_8))
             if (leadingZeroBits(hash) >= challenge.difficulty) return nonce

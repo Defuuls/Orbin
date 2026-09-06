@@ -13,15 +13,21 @@ import java.io.IOException
  *
  * The gate has two layers, applied in order on a cold session:
  *  1. A POWBlock interstitial (HTML with an embedded challenge) is returned for the requested URL.
- *     We mine the nonce ([PowBlock]) and re-request the URL with `?powblock=&pbchal=`, which sets
- *     the `POW_TOKEN` / `POW_ID` clearance cookies.
+ *     We mine the nonce ([PowBlock] via [PowBlockSolver]) and re-request the URL with
+ *     `?powblock=&pbchal=`, which sets the `POW_TOKEN` / `POW_ID` clearance cookies.
  *  2. Requests then 302-redirect to a `/.static/pages/disclaimer.html` terms page. Fetching
  *     `/.static/pages/confirmed.html` with the disclaimer as referer sets the site's ToS cookie.
  *
  * Cleared cookies live in the client's [InMemoryCookieJar], so once a session is unlocked the
  * layers are skipped. On sites without POWBlock none of the detection matches and this is a no-op.
+ *
+ * Mining never runs on OkHttp's shared dispatcher: the interceptor only parses, waits on the
+ * dedicated solver with a timeout, and submits the clearance request. Timeouts and cancels fail
+ * closed so a pathological challenge cannot stall API and Coil traffic forever.
  */
-class PowBlockInterceptor : Interceptor {
+class PowBlockInterceptor(
+    private val solver: PowBlockSolver = sharedSolver,
+) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
         var response = chain.proceed(original)
@@ -54,7 +60,7 @@ class PowBlockInterceptor : Interceptor {
     ): Boolean {
         val body = response.peekBody(MAX_INTERSTITIAL_BYTES).string()
         val challenge = PowBlock.parse(body) ?: return false
-        val nonce = PowBlock.solve(challenge) ?: return false
+        val nonce = solver.solve(challenge) ?: return false
         val submitUrl =
             response.request.url
                 .newBuilder()
@@ -124,5 +130,8 @@ class PowBlockInterceptor : Interceptor {
         const val MAX_INTERSTITIAL_BYTES = 64L * 1024L
         const val DISCLAIMER_PATH = "/.static/pages/disclaimer.html"
         const val CONFIRM_PATH = "/.static/pages/confirmed.html"
+
+        // Shared across clients so Coil and API share one limited mining pool.
+        private val sharedSolver = PowBlockSolver()
     }
 }

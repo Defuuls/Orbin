@@ -19,7 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
+import com.orbin.core.common.link.SafeExternalLinks
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.UpdateStatus
@@ -65,7 +65,6 @@ fun NextSettingsScreen(
     val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val uiPrefs =
         remember(context) {
             context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE)
@@ -136,7 +135,7 @@ fun NextSettingsScreen(
                 withDismissAction = true,
             )
         if (result == SnackbarResult.ActionPerformed && available != null) {
-            uriHandler.openUri(available.url)
+            SafeExternalLinks.open(context, available.url)
         }
     }
 

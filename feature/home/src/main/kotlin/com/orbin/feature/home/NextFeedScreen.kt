@@ -31,6 +31,7 @@ import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
 import com.orbin.media.video.canAutoplayInFeed
+import com.orbin.media.video.pickFeedAutoplayRowId
 import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
@@ -212,7 +213,10 @@ fun NextFeedScreen(
                                 byId[row.id]?.attachment?.let { attachment ->
                                     FeedPreview(
                                         attachment = attachment,
-                                        autoplay = settings.autoplayVideosInFeed && row.id == activePreviewId,
+                                        autoplay =
+                                            settings.autoplayVideosInFeed &&
+                                                row.id ==
+                                                pickFeedAutoplayRowId(listOfNotNull(activePreviewId)),
                                         fitWholeImage = layout == FeedLayout.LIST,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )

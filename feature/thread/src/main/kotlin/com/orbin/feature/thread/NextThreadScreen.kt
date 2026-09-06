@@ -53,6 +53,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.InlineAction
@@ -178,6 +179,7 @@ private fun LoadedThread(
     onOpenCommands: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val thread = state.thread
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -303,7 +305,9 @@ private fun LoadedThread(
                     presentation.rowsById[row.id]?.let { entry ->
                         PostCommentText(
                             comment = entry.post.comment,
+                            selectable = true,
                             onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                            onLinkClick = { link -> SafeExternalLinks.open(context, link) },
                         )
                     }
                 },
