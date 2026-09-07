@@ -71,6 +71,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaType
@@ -94,6 +95,8 @@ fun BoardScreen(
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
+    val catalogItemKey = threads.itemKey { it.key.thread.value }
+    val catalogContentType = threads.itemContentType { "catalog-thread" }
     val watchedThreadIds by viewModel.watchedThreadIds.collectAsStateWithLifecycle()
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     var layoutMode by rememberSaveable { mutableStateOf(BoardLayoutMode.List) }
@@ -212,7 +215,8 @@ fun BoardScreen(
                         CatalogList(
                             contentPadding = padding,
                             itemCount = threads.itemCount,
-                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            itemKey = catalogItemKey,
+                            itemContentType = catalogContentType,
                             threadAt = { threads[it] },
                             watchedThreadIds = watchedThreadIds,
                             visitedThreadIds = visitedThreadIds,
@@ -225,7 +229,8 @@ fun BoardScreen(
                         CatalogGrid(
                             contentPadding = padding,
                             itemCount = threads.itemCount,
-                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            itemKey = catalogItemKey,
+                            itemContentType = catalogContentType,
                             threadAt = { threads[it] },
                             watchedThreadIds = watchedThreadIds,
                             visitedThreadIds = visitedThreadIds,
@@ -238,7 +243,8 @@ fun BoardScreen(
                         CatalogThumbnailGrid(
                             contentPadding = padding,
                             itemCount = threads.itemCount,
-                            itemKey = { index -> threads[index]?.key?.thread?.value ?: index },
+                            itemKey = catalogItemKey,
+                            itemContentType = catalogContentType,
                             threadAt = { threads[it] },
                             watchedThreadIds = watchedThreadIds,
                             onToggleSubscription = viewModel::toggleThreadSubscription,
@@ -257,6 +263,7 @@ private fun CatalogList(
     contentPadding: PaddingValues,
     itemCount: Int,
     itemKey: (Int) -> Any,
+    itemContentType: (Int) -> Any?,
     threadAt: (Int) -> CatalogThread?,
     watchedThreadIds: Set<Long>,
     visitedThreadIds: Set<Long>,
@@ -282,7 +289,7 @@ private fun CatalogList(
         contentPadding = memoizedPadding,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(count = itemCount, key = itemKey) { index ->
+        items(count = itemCount, key = itemKey, contentType = itemContentType) { index ->
             val thread = threadAt(index) ?: return@items
             KurobaListThreadCell(
                 thread = thread,
@@ -300,6 +307,7 @@ private fun CatalogGrid(
     contentPadding: PaddingValues,
     itemCount: Int,
     itemKey: (Int) -> Any,
+    itemContentType: (Int) -> Any?,
     threadAt: (Int) -> CatalogThread?,
     watchedThreadIds: Set<Long>,
     visitedThreadIds: Set<Long>,
@@ -327,7 +335,7 @@ private fun CatalogGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(count = itemCount, key = itemKey) { index ->
+        items(count = itemCount, key = itemKey, contentType = itemContentType) { index ->
             val thread = threadAt(index) ?: return@items
             KurobaGridThreadCell(
                 thread = thread,
@@ -346,6 +354,7 @@ private fun CatalogThumbnailGrid(
     contentPadding: PaddingValues,
     itemCount: Int,
     itemKey: (Int) -> Any,
+    itemContentType: (Int) -> Any?,
     threadAt: (Int) -> CatalogThread?,
     watchedThreadIds: Set<Long>,
     onToggleSubscription: (CatalogThread) -> Unit,
@@ -374,7 +383,7 @@ private fun CatalogThumbnailGrid(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        items(count = itemCount, key = itemKey) { index ->
+        items(count = itemCount, key = itemKey, contentType = itemContentType) { index ->
             val thread = threadAt(index) ?: return@items
             ThumbnailOnlyCell(
                 thread = thread,

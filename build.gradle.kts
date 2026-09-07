@@ -73,6 +73,8 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.roborazzi) apply false
+    // Root-only: unused/misdeclared dependency advice via `./gradlew buildHealth`.
+    alias(libs.plugins.dependency.analysis)
 }
 
 // The very same rule the plugin classpath was patched with, reused rather than restated.

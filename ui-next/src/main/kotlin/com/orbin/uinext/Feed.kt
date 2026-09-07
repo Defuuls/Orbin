@@ -5,6 +5,10 @@ enum class FeedLayout {
     IMAGES,
 }
 
+/**
+ * A feed/catalog row. Production callers must pass a thread-stable [id]
+ * (`"board/thread"`); the `"$board:$subject"` default is only for previews/tests.
+ */
 data class FeedRow(
     val subject: String,
     val board: String,

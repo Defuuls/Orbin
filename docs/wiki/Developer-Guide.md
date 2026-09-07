@@ -133,6 +133,19 @@ The repository publishes/uses build-health information so module fan-out and sou
 observable. The objective is not to minimize module count at all costs; it is to prevent the build
 graph from becoming an invisible tax on everyday development.
 
+Unused and misdeclared dependencies are reported by
+[dependency-analysis](https://github.com/autonomousapps/dependency-analysis-gradle-plugin) via:
+
+```bash
+./gradlew buildHealth
+```
+
+CI runs the same task on the static-analysis job as advice-only (`continue-on-error`) and uploads
+the report artifact. Tighten that to a hard gate once the first clean baseline exists.
+
+This is separate from `scripts/build_health.py`, which prints module fan-out / source-growth
+numbers into the CI step summary — different tool, overlapping name.
+
 ## Baseline profiles
 
 `:benchmark` records startup/feed paths for ahead-of-time optimization. Generate with:
@@ -141,8 +154,9 @@ graph from becoming an invisible tax on everyday development.
 ./gradlew :app:generateReleaseBaselineProfile
 ```
 
-This requires a suitable rooted device/emulator. The manual Baseline Profile workflow can generate
-and propose updated profile data through CI.
+This requires a suitable rooted device/emulator. The Baseline Profile workflow
+(`baseline-profile.yml`) can generate and propose updated profile data through CI — manually via
+`workflow_dispatch`, and on a monthly schedule so the profile does not go stale.
 
 ## Release signing
 

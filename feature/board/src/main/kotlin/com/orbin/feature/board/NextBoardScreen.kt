@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
@@ -40,19 +41,28 @@ fun NextBoardScreen(
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
+    val catalogItemKey =
+        threads.itemKey { thread -> "${thread.key.board.value}/${thread.key.thread.value}" }
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
     var layout by rememberSaveable { mutableStateOf(FeedLayout.GRID) }
 
     val board = "/${viewModel.boardId}/"
+    val snapshot = threads.itemSnapshotList
     val byThreadId =
-        remember(threads.itemSnapshotList) {
-            threads.itemSnapshotList.items.associateBy { it.key.thread.value }
+        remember(snapshot) {
+            snapshot.items.associateBy { it.key.thread.value }
         }
-    val rowFor: (Int) -> FeedRow? = { index ->
-        threads[index]?.toRow(board, visitedThreadIds, watchedUnread)
-    }
+    // Memoize FeedRows the way the feed/media walls do — BoardCatalog hits rowAt for
+    // key, contentType, and content (up to 3× per cell) on every composition otherwise.
+    val rows =
+        remember(snapshot, visitedThreadIds, watchedUnread, board, threads.itemCount) {
+            List(threads.itemCount) { index ->
+                snapshot[index]?.toRow(board, visitedThreadIds, watchedUnread)
+            }
+        }
+    val rowFor: (Int) -> FeedRow? = { index -> rows.getOrNull(index) }
 
     NextTheme {
         if (threads.itemCount == 0) {
@@ -68,6 +78,7 @@ fun NextBoardScreen(
             description = viewModel.title,
             itemCount = threads.itemCount,
             rowAt = rowFor,
+            rowKey = catalogItemKey,
             layout = layout,
             onLayoutChange = { layout = if (it == FeedLayout.IMAGES) it else FeedLayout.GRID },
             sortLabel = catalogSort.label,

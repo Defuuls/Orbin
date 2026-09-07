@@ -32,6 +32,7 @@ fun BoardScreen(
     description: String,
     itemCount: Int,
     rowAt: (Int) -> FeedRow?,
+    rowKey: (Int) -> Any = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
     modifier: Modifier = Modifier,
     layout: FeedLayout = FeedLayout.GRID,
     onLayoutChange: (FeedLayout) -> Unit = {},
@@ -122,7 +123,7 @@ fun BoardScreen(
                 fullWidthItem { header() }
                 items(
                     count = itemCount,
-                    key = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
+                    key = rowKey,
                     contentType = { "catalog-image-cell" },
                 ) { index ->
                     rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
@@ -140,7 +141,7 @@ fun BoardScreen(
                 fullWidthItem { header() }
                 items(
                     count = itemCount,
-                    key = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
+                    key = rowKey,
                     contentType = { index ->
                         if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
                     },
