@@ -165,6 +165,7 @@ class LynxChanMapperTest {
                     listOf(
                         LynxChanFile(path = null, mime = "image/jpeg"),
                         LynxChanFile(path = "javascript:alert(1)", mime = "image/jpeg"),
+                        LynxChanFile(path = "http://cdn.example.org/insecure.jpg", mime = "image/jpeg"),
                         LynxChanFile(path = "/../secret", mime = "image/jpeg"),
                     ),
             )

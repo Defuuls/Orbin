@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Root composition installs `NextTheme` once; Material-only destinations wrap `OrbinTheme` locally
+  so Next screens no longer pay a double `MaterialTheme` at the shell.
+- Provider contract media URLs are HTTPS-only (`http` rejected at the SPI boundary).
+
+### Reliability
+- Documented why public `LazyColumn`/`LazyVerticalGrid` APIs in Compose BOM 2026.08.00 lack
+  `beyondBoundsItemCount`, keeping soft-cap + `contentType` + prefetch.
+- Noted residual verification that still needs a physical Pixel 10 Pro XL.
+
 ## [125-Nami] - 2026-09-05
 
 ### Changed

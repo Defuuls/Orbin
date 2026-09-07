@@ -66,20 +66,20 @@ object ProviderContract {
         errors: MutableList<String>,
     ) {
         attachments.forEachIndexed { index, media ->
-            if (!media.sourceUrl.isAbsoluteHttpUrl()) {
-                errors.add("$owner attachment[$index] sourceUrl is not absolute HTTP(S)")
+            if (!media.sourceUrl.isAbsoluteHttpsUrl()) {
+                errors.add("$owner attachment[$index] sourceUrl is not absolute HTTPS")
             }
-            if (!media.thumbnailUrl.isAbsoluteHttpUrl()) {
-                errors.add("$owner attachment[$index] thumbnailUrl is not absolute HTTP(S)")
+            if (!media.thumbnailUrl.isAbsoluteHttpsUrl()) {
+                errors.add("$owner attachment[$index] thumbnailUrl is not absolute HTTPS")
             }
             if (media.id.isBlank()) errors.add("$owner attachment[$index] has a blank id")
         }
     }
 
-    private fun String.isAbsoluteHttpUrl(): Boolean =
+    private fun String.isAbsoluteHttpsUrl(): Boolean =
         runCatching {
             val uri = URI(this)
-            uri.isAbsolute && uri.host != null && uri.scheme.lowercase() in setOf("http", "https")
+            uri.isAbsolute && uri.host != null && uri.scheme.equals("https", ignoreCase = true)
         }.getOrDefault(false)
 
     private fun requireValid(

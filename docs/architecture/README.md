@@ -136,6 +136,35 @@ HTML in the presentation layer. Backlinks are computed by inverting forward quot
 CI also runs `scripts/validate_architecture.py` before Gradle analysis. This turns dependency and
 source-boundary rules into merge gates instead of review conventions.
 
+
+
+### Theme layering (Next vs Material)
+
+`MainActivity` installs `NextTheme` once at the root so every Next screen inherits palette and
+density without paying a second `MaterialTheme`. Nested no-arg `NextTheme` calls short-circuit.
+Material-only destinations (gallery, onboarding, legacy lists, downloads, search/history) wrap
+`MaterialOrbinTheme` so dynamic color and ported imageboard skins still apply there.
+
+### Lazy beyond-bounds prefetch
+
+Compose BOM `2026.08.00` (Foundation 1.12.0) exposes `beyondBoundsItemCount` only on internal
+`LazyList` measure paths — not on the public `LazyColumn` / `LazyVerticalGrid` APIs. CI rejected
+`beyondViewportItemCount` on grids for the same reason. Feed/media lists therefore keep the landed
+soft-cap (`MAX_WALL_ITEMS`), `contentType` keys, and scoped Coil prefetch instead of a non-existent
+public beyond-bounds parameter.
+
+### Residual device verification
+
+The following still need a physical **Pixel 10 Pro XL** (or equivalent large high-refresh device)
+before treating the punch-list as fully closed:
+
+- Feed fling jank / single-autoplay behavior at 120 Hz with a multi-column grid
+- Gallery pager decode caps and thumb→full progressive tiles under real thermal/memory pressure
+- Theme nesting (Next vs Material destinations) with dynamic color and AMOLED enabled
+- End-to-end HTTPS-only media loads across Vichan and LynxChan boards
+
+Emulator/Roborazzi coverage does not substitute for that device pass.
+
 Individual design decisions and their rationale are recorded chronologically in
 [CHANGELOG.md](https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md) rather than as separate
 ADR files — this document is the current-state summary.

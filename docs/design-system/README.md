@@ -90,8 +90,10 @@ screen inside a theme silently overwrote it.
 
 Inheritance is also how a reader's settings reach this module. The shell states them once at the
 top — `MainActivity` for the full client, `MinimalActivity` for Orbin Minimal — and the screens
-below say nothing. A screen here has no view model and cannot read a setting, for the same reason
-it takes rows rather than threads. Three settings arrive that way:
+below say nothing. Nested no-arg `NextTheme` calls short-circuit so screens do not re-enter
+`MaterialTheme`. Material-only destinations re-wrap `OrbinTheme` via `MaterialOrbinTheme` instead
+of nesting both themes around the whole tree. A screen here has no view model and cannot read a
+setting, for the same reason it takes rows rather than threads. Three settings arrive that way:
 
 | Setting | Effect here |
 | --- | --- |

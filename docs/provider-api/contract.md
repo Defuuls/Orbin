@@ -18,7 +18,7 @@ that cross this boundary may not be.
 - each opening post is marked as an OP;
 - opening-post board/thread ids match the catalog key;
 - attachment ids are nonblank;
-- source and thumbnail URLs are absolute HTTP(S) URLs.
+- source and thumbnail URLs are absolute HTTPS URLs.
 
 ### Threads
 
@@ -26,7 +26,7 @@ that cross this boundary may not be.
 - every post belongs to the requested board/thread;
 - post ids are unique inside the thread;
 - attachment ids are nonblank;
-- source and thumbnail URLs are absolute HTTP(S) URLs.
+- source and thumbnail URLs are absolute HTTPS URLs.
 
 Contract failures become `ProviderException.Parse`, so the data layer handles them through the same
 typed error path as malformed transport JSON rather than allowing an unrelated media/UI crash.
