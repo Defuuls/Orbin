@@ -39,6 +39,12 @@ internal fun scrollingUp(
 internal const val GRID_TILE_ASPECT = 1.1f
 internal val GRID_MIN_CELL = 170.dp
 internal val IMAGE_MIN_CELL = 112.dp
+
+/** Adaptive min cell width for feed/media size slider — mild (dense) → wild (near full-bleed). */
+internal const val MEDIA_SIZE_MIN_DP = 96f
+internal const val MEDIA_SIZE_MAX_DP = 400f
+internal const val MEDIA_SIZE_STEPS = 11
+
 internal val GRID_TILE_RADIUS = 16.dp
 internal val GRID_CELL_PADDING = 8.dp
 
