@@ -25,9 +25,9 @@ A manual CodeQL setup that runs a clean Android debug build for Java/Kotlin anal
 GitHub's autobuild, which does not understand this project's Gradle convention plugins.
 
 ### `screenshots.yml` — on PRs touching UI modules
-Records Roborazzi screenshots (`recordRoborazziDebug`) and uploads them as artifacts so goldens
-can be reviewed before committing. Verification (`verifyRoborazziDebug`) runs as part of the
-regular unit test suite once goldens are checked in.
+Verifies Roborazzi goldens (`verifyRoborazziDebug`) for UI modules. Re-record locally with
+`./gradlew recordRoborazziDebug` when intentional UI changes move the goldens; failed runs upload
+a diffs artifact.
 
 ### `baseline-profile.yml` — manual (`workflow_dispatch`)
 Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, uploads it as
@@ -38,6 +38,10 @@ The PR step needs **Settings → Actions → General → "Allow GitHub Actions t
 pull requests"**. Without it that step fails and the run warns saying so; the profile is still
 uploaded as an artifact, because the upload deliberately happens first — every run before that
 ordering recorded a profile successfully and then threw it away.
+
+### `performance.yml` — on PRs touching performance-sensitive paths
+Compile/performance gates (including the benchmark compile gate) for changes that can affect
+startup or scrolling cost. Kept separate from `ci.yml` so the main suite stays focused.
 
 ### `cut-release.yml` — on push to `main` touching `release/next.toml` (or manual)
 The release cutter, driven by a manifest rather than by dispatch inputs. `release/next.toml`
@@ -53,7 +57,7 @@ already exists it is a no-op.
 
 The edits live in `scripts/prepare_release.py` rather than in the workflow, so they can be
 run and reviewed locally, and so there is one implementation of them rather than one per
-release. This replaced `new-version.yml` and the per-release `cut-<number>-<codename>.yml`
+release. This replaced the retired `new-version.yml` workflow and the per-release `cut-<number>-<codename>.yml`
 workflows: each cutter carried its own copy of the same edits, and every past cutter stayed
 live on `main`, re-running on each subsequent release and failing its own "tag must not
 exist" assertion. `validate_repo.py` fails if a `cut-<number>-*.yml` reappears.
@@ -93,27 +97,32 @@ works without secrets.
 
 ## Release codenames
 
-**From v91 onward, release codenames are types of pasta** — Bucatini, Rigatoni, Orecchiette,
-Fusilli, Farfalle, Linguine, Cavatappi, Pappardelle, Conchiglie, Casarecce, Trofie, Paccheri,
-Mafaldine, Strozzapreti. This replaces the star scheme, which ran from v30 and ended with
-**v90 — Vega**; before that came bear families, mythical cities, rare fish and desserts. Codename
-eras change; the tag format `v<number>-<Codename>` does not. See the wiki's
-[[Release History|Release-History]] for the full lineage.
+Codename eras change; the tag format `v<number>-<Codename>` does not:
+
+| Range | Theme |
+| --- | --- |
+| v100+ | Popular Japanese female names (current) |
+| v91–v99 | Pasta |
+| v30–v90 | Stars / astronomical names |
+| Earlier | Multiple early themes |
+
+Orbin Minimal draws from the same naming pool on its own `minimal-v*` line. Names must not be
+reused across either product. See [`docs/wiki/Release-History.md`](../wiki/Release-History.md).
 
 Pick a name that is distinctive, short enough for a changelog heading, and — check
 `git tag --list 'v*'`, not memory or an existing doc — **not already taken**.
 
 ## Cutting a release
 
-```bash
-# bump orbin.versionName/orbin.versionCode in gradle.properties, update CHANGELOG.md, commit
-git tag -a v67-<Codename> -m "Orbin 67 - <Codename>"
-git push origin v67-<Codename>
-```
+Do **not** hand-edit `gradle.properties` / CHANGELOG and push a tag as the primary path. The
+manifest-driven cutter is the source of truth:
 
-The tag push triggers `release.yml`; the GitHub Release appears once the job completes. If
-pushing a tag directly isn't possible, run `release.yml` via `workflow_dispatch` instead,
-supplying `tag` — it creates and pushes the annotated tag itself. The release title is derived
-from the tag ("Orbin 67 - <Codename>", and "Orbin Minimal 5 - Aoi" on the other line), so the two
-lines are titled the same way. See the wiki's [[Developer Guide|Developer-Guide]] for the full
-walkthrough.
+1. Open a PR that updates [`release/next.toml`](../../release/next.toml) (number, unused codename,
+   `version_code`, changelog sections). See [`release/README.md`](../../release/README.md).
+2. Merge it. `cut-release.yml` opens `release/prep-v<tag>`.
+3. Merge the prep PR (after `validate_repo.py` / CI). The cutter then dispatches `release.yml`.
+4. Confirm the GitHub Release has the signed APK, mapping file, and `.sha256` checksums.
+
+Manual `release.yml` / tag dispatch remains available as a fallback, but normal releases should
+go through `release/next.toml`. Developer walkthrough:
+[`docs/wiki/Developer-Guide.md`](../wiki/Developer-Guide.md).

@@ -19,10 +19,10 @@ AGP 9.2.1 / Gradle 9.4.1 / Kotlin 2.2.21, executed July 2026.
 
 ## Code changes required by AGP 9
 
-- `build-logic/.../KotlinAndroid.kt`, `AndroidCompose.kt`: `CommonExtension<*, *, *, *, *, *>`
+- `build-logic/convention/src/main/kotlin/com/orbin/buildlogic/KotlinAndroid.kt`, `AndroidCompose.kt`: `CommonExtension<*, *, *, *, *, *>`
   → `CommonExtension` (AGP 9 removed the type parameters); nested blocks switched to
   `.apply` per the official migration guide.
-- `AndroidLibraryConventionPlugin.kt`, `AndroidComposeConventionPlugin.kt`:
+- `build-logic/convention/src/main/kotlin/AndroidLibraryConventionPlugin.kt`, `AndroidComposeConventionPlugin.kt`:
   `com.android.build.gradle.LibraryExtension` (old implementation class, removed in AGP 9)
   → `com.android.build.api.dsl.LibraryExtension` (public interface).
 - `compileOptions` is no longer a `CommonExtension` member — block methods moved to the
@@ -48,7 +48,7 @@ AGP 9.2.1 / Gradle 9.4.1 / Kotlin 2.2.21, executed July 2026.
 
 ## Verification
 
-CI is the verifier for this repo (`ci.yml`: ktlint, detekt, unit tests, debug APK;
+CI is the verifier for this repo (`.github/workflows/ci.yml`: ktlint, detekt, unit tests, debug APK;
 CodeQL). JDK 17 in CI meets AGP 9's minimum. Before the next release tag:
 
 - [ ] Full CI green on this branch
