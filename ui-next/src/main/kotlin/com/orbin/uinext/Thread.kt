@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,7 @@ fun ThreadScreen(
 ) {
     val state = listState ?: rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
     LaunchedEffect(scrollToPostId, posts) {
         val target = posts.indexOfFirst { it.id == scrollToPostId }
         if (scrollToPostId != null && target >= 0) {
@@ -177,7 +179,11 @@ fun ThreadScreen(
                         if (index < posts.lastIndex) Hairline(inset = true)
                     }
                 } else {
-                    items(files.chunked(fileColumns)) { rowOfFiles ->
+                    items(
+                        fileRows,
+                        key = { row -> row.joinToString(separator = "|") { it.id } },
+                        contentType = { "thread-files-row" },
+                    ) { rowOfFiles ->
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp)) {
                             rowOfFiles.forEach { cell ->
                                 Box(
