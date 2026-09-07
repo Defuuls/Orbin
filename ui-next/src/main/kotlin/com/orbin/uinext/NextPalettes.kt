@@ -34,7 +34,7 @@ fun ColorSchemeVariant.toNextPalette(
 
 internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
-    val panel = if (amoled && dark) Color(0xFF0A0A0A) else surface
+    val panel = if (amoled && dark) AmoledRaised else surface
     val body = onSurface
     val accent = ensureAccentWithOnColor(primary, bg, listOf(primaryVariant, subject, body))
     val accentOn = onColorFor(accent)
@@ -69,11 +69,11 @@ private fun ensureAccentWithOnColor(
                 max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
         }?.let { return it }
 
-    val towardBgOpposite = if (background.luminance() > 0.5f) Color.Black else Color.White
+    val towardBgOpposite = if (background.luminance() > LUMINANCE_MIDPOINT) Color.Black else Color.White
     var best = preferred
     var bestScore = 0f
-    for (step in 1..9) {
-        val candidate = preferred.blend(towardBgOpposite, step / 10f)
+    for (step in 1..CONTRAST_BLEND_STEPS) {
+        val candidate = preferred.blend(towardBgOpposite, step / CONTRAST_BLEND_DIVISOR)
         val onBg = contrastRatio(candidate, background)
         val onChip = max(contrastRatio(Color.White, candidate), contrastRatio(Color.Black, candidate))
         val score = min(onBg, onChip)
@@ -101,11 +101,11 @@ private fun ensureContrast(
 ): Color {
     if (contrastRatio(preferred, background) >= AA_NORMAL_TEXT) return preferred
     fallbacks.firstOrNull { contrastRatio(it, background) >= AA_NORMAL_TEXT }?.let { return it }
-    val toward = if (background.luminance() > 0.5f) Color.Black else Color.White
+    val toward = if (background.luminance() > LUMINANCE_MIDPOINT) Color.Black else Color.White
     var best = preferred
     var bestRatio = contrastRatio(preferred, background)
-    for (step in 1..9) {
-        val candidate = preferred.blend(toward, step / 10f)
+    for (step in 1..CONTRAST_BLEND_STEPS) {
+        val candidate = preferred.blend(toward, step / CONTRAST_BLEND_DIVISOR)
         val ratio = contrastRatio(candidate, background)
         if (ratio >= AA_NORMAL_TEXT) return candidate
         if (ratio > bestRatio) {
@@ -142,7 +142,12 @@ private fun contrastRatio(
     val l2 = background.luminance()
     val lighter = max(l1, l2)
     val darker = min(l1, l2)
-    return (lighter + 0.05f) / (darker + 0.05f)
+    return (lighter + LUMINANCE_OFFSET) / (darker + LUMINANCE_OFFSET)
 }
 
 private const val AA_NORMAL_TEXT = 4.5f
+private const val LUMINANCE_MIDPOINT = 0.5f
+private const val LUMINANCE_OFFSET = 0.05f
+private const val CONTRAST_BLEND_STEPS = 9
+private const val CONTRAST_BLEND_DIVISOR = 10f
+private val AmoledRaised = Color(0xFF0A0A0A)
