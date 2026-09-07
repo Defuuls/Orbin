@@ -1,22 +1,18 @@
-# Orbin 127 — Noa
+# Orbin 128 — Rei
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 127
-codename     = "Noa"
-version_code = 145
+number       = 128
+codename     = "Rei"
+version_code = 146
 
 summary = [
-  "bump Orbin to 127-Noa / versionCode 145",
-  "feed image size mild→wild, Images video tap-to-play, quieter feed launchpad",
+  "bump Orbin to 128-Rei / versionCode 146",
+  "more Color themes on the Next shell (Yotsuba, Warosu, Miku, and friends)",
 ]
 
 [changelog]
-Fixed = [
-  "Widened the feed and All Media image-size slider from a narrow 150–240dp band to 96–400dp (Mild → Wild) so tiles actually grow toward full-bleed on wide devices.",
-  "Fixed Images-layout video playback: MediaThumbnail no longer swallows taps with an empty clickable, videos tap-to-play muted inline, and PlayerView no longer steals Compose control taps.",
-]
-Changed = [
-  "Removed the History chip from the feed header launchpad; History remains available from All Media and Command.",
+Added = [
+  "Expanded Color theme with Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, and Lain — each maps onto the Next shell so Feed and friends recolor with the setting, not only Material destinations.",
 ]
