@@ -143,6 +143,9 @@ Unused and misdeclared dependencies are reported by
 CI runs the same task on the static-analysis job as advice-only (`continue-on-error`) and uploads
 the report artifact. Tighten that to a hard gate once the first clean baseline exists.
 
+This is separate from `scripts/build_health.py`, which prints module fan-out / source-growth
+numbers into the CI step summary — different tool, overlapping name.
+
 ## Baseline profiles
 
 `:benchmark` records startup/feed paths for ahead-of-time optimization. Generate with:

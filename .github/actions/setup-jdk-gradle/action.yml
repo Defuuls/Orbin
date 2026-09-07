@@ -1,6 +1,12 @@
 name: Set up JDK and Gradle
 description: Temurin JDK 17 plus gradle/actions/setup-gradle (shared cache across jobs).
 
+inputs:
+  cache-disabled:
+    description: Disable the Gradle action cache (use for CodeQL clean builds).
+    required: false
+    default: 'false'
+
 runs:
   using: composite
   steps:
@@ -12,3 +18,5 @@ runs:
 
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-disabled: ${{ inputs.cache-disabled }}

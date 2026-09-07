@@ -28,6 +28,12 @@ an emulator boot plus a test run is minutes of wall clock.
 A manual CodeQL setup that runs a clean Android debug build for Java/Kotlin analysis instead of
 GitHub's autobuild, which does not understand this project's Gradle convention plugins.
 
+Kotlin stays on **2.4.10** while CodeQL's extractor supports through 2.4.10 only (CodeQL 2.26.2+).
+Do not bump past that until the CodeQL changelog lists 2.4.20+; Dependabot ignores
+`org.jetbrains.kotlin.*` `>=2.4.20` for the same reason. Re-check before closing Dependabot
+alert #63 (build-cache metadata) — that fix needs the compiler bump.
+
+
 ### `screenshots.yml` — on PRs touching UI modules
 Verifies Roborazzi goldens (`verifyRoborazziDebug`) for UI modules. Re-record locally with
 `./gradlew recordRoborazziDebug` when intentional UI changes move the goldens; failed runs upload

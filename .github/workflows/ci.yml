@@ -20,8 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          # Tags only — validate_repo.py needs `git tag`, not full history.
           fetch-tags: true
-          fetch-depth: 0
 
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
