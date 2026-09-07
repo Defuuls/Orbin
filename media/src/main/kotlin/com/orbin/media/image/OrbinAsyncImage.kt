@@ -121,7 +121,7 @@ fun OrbinAsyncImage(
 
 /**
  * A post thumbnail: shows the attachment's thumbnail, a play badge for video/audio, and a
- * blur-style overlay for spoilers. Tapping invokes [onClick] (open full media / gallery).
+ * blur-style overlay for spoilers. When [onClick] is non-null, tapping invokes it (open full media / gallery / start playback). Omit it so a parent clickable can own the gesture.
  *
  * Sized entirely by [modifier] (defaults to the classic 120dp square) so callers can render it
  * as a fixed size or have it fill its container, e.g. a full-width grid cell.
@@ -132,7 +132,7 @@ fun MediaThumbnail(
     modifier: Modifier = Modifier,
     fullResolution: Boolean = false,
     contentScale: ContentScale = ContentScale.Crop,
-    onClick: () -> Unit = {},
+    onClick: (() -> Unit)? = null,
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
     // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
@@ -152,7 +152,7 @@ fun MediaThumbnail(
         modifier =
             finalModifier
                 .clip(RoundedCornerShape(8.dp))
-                .clickable(onClick = onClick),
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         OrbinAsyncImage(

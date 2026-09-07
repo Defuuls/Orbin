@@ -257,6 +257,9 @@ fun VideoPlayer(
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = false
+                    // Let the Compose pointerInput above receive taps (controls toggle).
+                    isClickable = false
+                    isFocusable = false
                 }
             },
             update = { playerView ->

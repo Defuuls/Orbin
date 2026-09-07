@@ -272,7 +272,13 @@ private fun FeedPreview(
     modifier: Modifier = Modifier,
     fitWholeImage: Boolean = false,
 ) {
-    if (canAutoplayInFeed(attachment, autoplay)) {
+    // Tap-to-play covers Images/Grid when ambient autoplay is off or this row is not the
+    // single active preview. Without it, MediaThumbnail used to install an empty clickable that
+    // swallowed the parent cell's open-thread click — especially broken in Images layout where
+    // the whole tile is the thumbnail.
+    var playRequested by remember(attachment.sourceUrl) { mutableStateOf(false) }
+    val playInline = playRequested || canAutoplayInFeed(attachment, autoplay)
+    if (playInline) {
         Box(modifier = modifier) {
             VideoPlayer(
                 url = attachment.sourceUrl,
@@ -280,7 +286,7 @@ private fun FeedPreview(
                 autoPlay = true,
                 muted = true,
             )
-            // Autoplay starts muted with controls hidden — keep a persistent affordance.
+            // Autoplay / inline play starts muted with controls hidden — keep a persistent affordance.
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.VolumeOff,
                 contentDescription = stringResource(com.orbin.uinext.R.string.next_autoplay_muted),
@@ -300,6 +306,12 @@ private fun FeedPreview(
             attachment = attachment,
             modifier = modifier,
             contentScale = if (fitWholeImage) ContentScale.Fit else ContentScale.Crop,
+            onClick =
+                if (attachment.isPlayable && !attachment.isSpoiler) {
+                    { playRequested = true }
+                } else {
+                    null
+                },
         )
     }
 }
