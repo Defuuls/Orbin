@@ -36,13 +36,8 @@ internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
     val panel = if (amoled && dark) Color(0xFF0A0A0A) else surface
     val body = onSurface
-    val accent = ensureContrast(primary, bg, listOf(primaryVariant, subject, body))
-    val accentOn =
-        if (accent.luminance() > ON_ACCENT_LUMINANCE_THRESHOLD) {
-            Color.Black
-        } else {
-            Color.White
-        }
+    val accent = ensureAccentWithOnColor(primary, bg, listOf(primaryVariant, subject, body))
+    val accentOn = onColorFor(accent)
     // Prefer readable tiers over aggressive fade — imageboard seeds often ship mid-grey body text.
     val muted = ensureContrast(body.copy(alpha = if (dark) 0.92f else 0.88f), bg, listOf(body))
     val faint = ensureContrast(body.copy(alpha = if (dark) 0.82f else 0.78f), bg, listOf(muted, body))
@@ -59,6 +54,42 @@ internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
         dark = dark,
         amoled = amoled && dark,
     )
+}
+
+
+/** Accent that clears AA on [background], with an on-accent color that also clears AA. */
+private fun ensureAccentWithOnColor(
+    preferred: Color,
+    background: Color,
+    fallbacks: List<Color>,
+): Color {
+    val candidates = listOf(preferred) + fallbacks
+    candidates.firstOrNull { color ->
+        contrastRatio(color, background) >= AA_NORMAL_TEXT &&
+            max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
+    }?.let { return it }
+
+    val towardBgOpposite = if (background.luminance() > 0.5f) Color.Black else Color.White
+    var best = preferred
+    var bestScore = 0f
+    for (step in 1..9) {
+        val candidate = preferred.blend(towardBgOpposite, step / 10f)
+        val onBg = contrastRatio(candidate, background)
+        val onChip = max(contrastRatio(Color.White, candidate), contrastRatio(Color.Black, candidate))
+        val score = min(onBg, onChip)
+        if (onBg >= AA_NORMAL_TEXT && onChip >= AA_NORMAL_TEXT) return candidate
+        if (score > bestScore) {
+            best = candidate
+            bestScore = score
+        }
+    }
+    return best
+}
+
+private fun onColorFor(accent: Color): Color {
+    val white = contrastRatio(Color.White, accent)
+    val black = contrastRatio(Color.Black, accent)
+    return if (white >= black) Color.White else Color.Black
 }
 
 /** Picks [preferred] when it clears AA on [background]; otherwise the first fallback that does,
@@ -114,5 +145,4 @@ private fun contrastRatio(
     return (lighter + 0.05f) / (darker + 0.05f)
 }
 
-private const val ON_ACCENT_LUMINANCE_THRESHOLD = 0.5f
 private const val AA_NORMAL_TEXT = 4.5f
