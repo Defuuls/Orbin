@@ -44,6 +44,8 @@ data class NextPalette(
     val hairline: Color,
     val accent: Color,
     val accentSoft: Color,
+    /** Text/icons drawn on a solid [accent] fill. */
+    val onAccent: Color,
     val dark: Boolean,
     /** True only for the AMOLED ground, so a nested theme inherits that choice with the palette. */
     val amoled: Boolean = false,
@@ -58,7 +60,8 @@ internal val LightPalette =
         faint = Color(0xFF16141A).copy(alpha = 0.60f),
         hairline = Color(0xFF16141A).copy(alpha = 0.09f),
         accent = Color(0xFFA8431B),
-        accentSoft = Color(0xFFA8431B).copy(alpha = 0.10f),
+        accentSoft = Color(0xFFA8431B).copy(alpha = 0.20f),
+        onAccent = Color(0xFFFAF8F5),
         dark = false,
     )
 
@@ -71,7 +74,8 @@ internal val DarkPalette =
         faint = Color(0xFFF1EFF2).copy(alpha = 0.54f),
         hairline = Color(0xFFF1EFF2).copy(alpha = 0.12f),
         accent = Color(0xFFF08A5A),
-        accentSoft = Color(0xFFF08A5A).copy(alpha = 0.14f),
+        accentSoft = Color(0xFFF08A5A).copy(alpha = 0.28f),
+        onAccent = Color(0xFF0D0D11),
         dark = true,
     )
 

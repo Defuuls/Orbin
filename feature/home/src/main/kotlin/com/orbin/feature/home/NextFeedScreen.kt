@@ -1,8 +1,15 @@
 package com.orbin.feature.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,8 +18,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -57,7 +66,12 @@ fun NextFeedScreen(
     refreshRequest: Int = 0,
     filter: String = "",
     onClearFilter: () -> Unit = {},
-    railAction: String = "Search",
+    railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearchDestination: (() -> Unit)? = null,
+    onOpenMedia: (() -> Unit)? = null,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(refreshRequest) {
@@ -209,6 +223,11 @@ fun NextFeedScreen(
                             railAction = railAction,
                             onSearch = onOpenCommands,
                             onSettings = onOpenSettings,
+                            onOpenBoards = onOpenBoards,
+                            onOpenHistory = onOpenHistory,
+                            onOpenDownloads = onOpenDownloads,
+                            onOpenSearchDestination = onOpenSearchDestination,
+                            onOpenMedia = onOpenMedia,
                             onActivePreviewChanged = { activePreviewId = it },
                             activityText = { row ->
                                 byId[row.id]
@@ -254,7 +273,28 @@ private fun FeedPreview(
     fitWholeImage: Boolean = false,
 ) {
     if (canAutoplayInFeed(attachment, autoplay)) {
-        VideoPlayer(url = attachment.sourceUrl, modifier = modifier, autoPlay = true, muted = true)
+        Box(modifier = modifier) {
+            VideoPlayer(
+                url = attachment.sourceUrl,
+                modifier = Modifier.fillMaxSize(),
+                autoPlay = true,
+                muted = true,
+            )
+            // Autoplay starts muted with controls hidden — keep a persistent affordance.
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.VolumeOff,
+                contentDescription = stringResource(com.orbin.uinext.R.string.next_autoplay_muted),
+                tint = Color.White,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.55f),
+                            CircleShape,
+                        ).padding(6.dp),
+            )
+        }
     } else {
         MediaThumbnail(
             attachment = attachment,

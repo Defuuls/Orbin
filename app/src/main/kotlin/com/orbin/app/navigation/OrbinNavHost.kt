@@ -6,6 +6,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,6 +17,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -31,13 +35,12 @@ import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
-import com.orbin.feature.home.HomeScreen
 import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
-import com.orbin.feature.settings.SubscriptionsScreen
 import com.orbin.feature.thread.NextThreadScreen
+import com.orbin.uinext.NextChromeHost
 
 private const val TRANSITION_MS = 300
 
@@ -97,13 +100,12 @@ fun OrbinNavHost(
         },
     ) {
         composable<Route.Home> {
-            MaterialOrbinTheme {
-                HomeScreen(
-                    onOpenBoard = { provider, board, title ->
-                        navController.navigate(Route.Board(provider, board, title))
-                    },
-                    onOpenSettings = { navController.navigate(Route.Settings()) },
-                )
+            // Orphan legacy destination: fold into the subscribed feed.
+            LaunchedEffect(Unit) {
+                navController.navigate(Route.NextFeed) {
+                    popUpTo(Route.Home) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
         }
 
@@ -118,25 +120,49 @@ fun OrbinNavHost(
                 refreshRequest = subscribedFeedRefreshRequest,
                 filter = feedFilter,
                 onClearFilter = onClearFeedFilter,
+                onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenHistory = { navController.navigate(Route.History) },
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenSearchDestination = { navController.navigate(Route.Search) },
+                onOpenMedia = { navController.navigate(Route.AllMedia) },
             )
         }
 
         composable<Route.BoardGallery> {
-            MaterialOrbinTheme {
-                BoardGalleryScreen(
-                    onBack = navController::navigateUp,
-                    onOpenBoard = { provider, board, title ->
-                        navController.navigate(Route.Board(provider, board, title))
-                    },
-                )
+            NextChromeHost(
+                where = "Boards",
+                onOpenCommands = onOpenCommands,
+            ) { padding ->
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    BoardGalleryScreen(
+                        onBack = navController::navigateUp,
+                        onOpenBoard = { provider, board, title ->
+                            navController.navigate(Route.Board(provider, board, title))
+                        },
+                    )
+                }
             }
         }
 
         composable<Route.Search> {
-            MaterialOrbinTheme { SearchScreen(onOpenThread = openThread) }
+            NextChromeHost(
+                where = "Search",
+                onOpenCommands = onOpenCommands,
+            ) { padding ->
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    SearchScreen(onOpenThread = openThread)
+                }
+            }
         }
         composable<Route.History> {
-            MaterialOrbinTheme { HistoryScreen(onOpenThread = openThread) }
+            NextChromeHost(
+                where = "History",
+                onOpenCommands = onOpenCommands,
+            ) { padding ->
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    HistoryScreen(onOpenThread = openThread)
+                }
+            }
         }
 
         composable<Route.GalleryBrowser> { backStackEntry ->
@@ -145,19 +171,24 @@ fun OrbinNavHost(
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
                     .collectAsStateWithLifecycle()
 
-            MaterialOrbinTheme {
-                GalleryBrowserScreen(
-                    onOpenMedia = { provider, board, thread, index ->
-                        navController.navigate(Route.Gallery(provider, board, thread, index))
-                    },
-                    onOpenThread = openThread,
-                    onOpenAllMedia = { navController.navigate(Route.AllMedia) },
-                    mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
-                    onMediaScrollConsumed = {
-                        backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
-                            NO_THREAD_MEDIA_SCROLL_INDEX
-                    },
-                )
+            NextChromeHost(
+                where = stringResource(com.orbin.feature.gallery.R.string.gallery_advanced_title),
+                onOpenCommands = onOpenCommands,
+            ) { padding ->
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    GalleryBrowserScreen(
+                        onOpenMedia = { provider, board, thread, index ->
+                            navController.navigate(Route.Gallery(provider, board, thread, index))
+                        },
+                        onOpenThread = openThread,
+                        onOpenAllMedia = { navController.navigate(Route.AllMedia) },
+                        mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
+                        onMediaScrollConsumed = {
+                            backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
+                                NO_THREAD_MEDIA_SCROLL_INDEX
+                        },
+                    )
+                }
             }
         }
 
@@ -171,6 +202,11 @@ fun OrbinNavHost(
                     )
                 },
                 onOpenCommands = onOpenCommands,
+                onOpenFeed = { navController.navigate(Route.NextFeed) },
+                onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenHistory = { navController.navigate(Route.History) },
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenSearchDestination = { navController.navigate(Route.Search) },
             )
         }
 
@@ -249,7 +285,14 @@ fun OrbinNavHost(
         }
 
         composable<Route.Downloads> {
-            MaterialOrbinTheme { DownloadsScreen(onBack = navController::navigateUp) }
+            NextChromeHost(
+                where = "Downloads",
+                onOpenCommands = onOpenCommands,
+            ) { padding ->
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    DownloadsScreen(onBack = navController::navigateUp)
+                }
+            }
         }
 
         composable<Route.Settings> { backStackEntry ->
@@ -262,7 +305,12 @@ fun OrbinNavHost(
         }
 
         composable<Route.Subscriptions> {
-            MaterialOrbinTheme { SubscriptionsScreen(onBack = navController::navigateUp) }
+            LaunchedEffect(Unit) {
+                navController.navigate(Route.BoardGallery) {
+                    popUpTo(Route.Subscriptions) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
         }
 
         composable<Route.Onboarding> {

@@ -232,7 +232,7 @@ fun ThreadScreen(
             }
             if (showRail) {
                 ContextRail(
-                    where = subject.take(26),
+                    where = subject,
                     detail = board,
                     onSearch = onSearch,
                     modifier = Modifier.align(Alignment.BottomCenter),

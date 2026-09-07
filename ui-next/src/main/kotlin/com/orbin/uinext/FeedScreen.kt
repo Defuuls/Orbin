@@ -53,6 +53,11 @@ fun FeedScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
     showSizeControl: Boolean = false,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearchDestination: (() -> Unit)? = null,
+    onOpenMedia: (() -> Unit)? = null,
 ) {
     val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
     val gridState = rememberLazyGridState()
@@ -126,6 +131,11 @@ fun FeedScreen(
                     sizeValue = feedSize,
                     onSizeChange = { feedSize = it },
                     showSizeControl = showSizeControl,
+                    onOpenBoards = onOpenBoards,
+                    onOpenHistory = onOpenHistory,
+                    onOpenDownloads = onOpenDownloads,
+                    onOpenSearch = onOpenSearchDestination,
+                    onOpenMedia = onOpenMedia,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()

@@ -30,6 +30,14 @@ class PaletteContrastTest {
     fun `every text colour clears AA on the AMOLED ground`() = assertPalette(AmoledPalette, "amoled")
 
     @Test
+    fun `filled accent chips clear AA with onAccent on solid accent`() {
+        // Soft terracotta-on-soft failed WCAG; filled InlineAction / Go chip use solid accent + onAccent.
+        listOf(LightPalette to "light", DarkPalette to "dark", AmoledPalette to "amoled").forEach { (palette, name) ->
+            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
+        }
+    }
+
+    @Test
     fun `every board hue clears AA on the ground it is drawn on`() {
         BoardHues.forEachIndexed { index, hue ->
             assertRatio("board hue $index (light)", hue.light, LightPalette.background)
@@ -107,6 +115,7 @@ class PaletteContrastTest {
         return (maxOf(a, b) + 0.05) / (minOf(a, b) + 0.05)
     }
 
+    // Visible to accent-on-soft assertions in this class.
     private fun composite(
         foreground: Color,
         background: Color,

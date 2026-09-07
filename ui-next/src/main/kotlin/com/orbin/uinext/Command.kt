@@ -139,6 +139,13 @@ fun CommandSheet(
                     )
                 }
                 WidthSpacer(12)
+                if (query.isNotEmpty()) {
+                    InlineAction(
+                        label = stringResource(R.string.next_command_clear),
+                        onClick = { onQueryChange("") },
+                    )
+                    WidthSpacer(8)
+                }
                 MetaLine(
                     pluralStringResource(R.plurals.next_command_results, results.size, results.size),
                     color = next.faint,
@@ -181,7 +188,7 @@ private fun CommandRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable { onClick(command) }
+                .clickable(role = Role.Button) { onClick(command) }
                 .padding(horizontal = GUTTER, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -362,11 +369,12 @@ private fun SettingRow(
                     letterSpacing = (-0.1).sp,
                     color = next.ink,
                 )
-                if (item.kind in STATED_KINDS && item.hint != null) {
+                if (item.hint != null && item.kind != SettingKind.TEXT) {
                     Text(
                         text = item.hint,
                         fontSize = 12.5.sp,
                         color = next.muted,
+                        // Large text must wrap mid-sentence rather than clip.
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
@@ -452,8 +460,6 @@ private fun SettingTextEditor(
 }
 
 private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
-
-private val STATED_KINDS = setOf(SettingKind.ACTION, SettingKind.INFO)
 
 private const val SMALL_RESULT_COUNT = 1
 private const val MEDIUM_RESULT_COUNT = 3

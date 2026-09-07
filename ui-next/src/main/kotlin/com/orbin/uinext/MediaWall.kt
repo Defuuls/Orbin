@@ -2,8 +2,10 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,6 +54,11 @@ fun MediaWallScreen(
     showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
     onSearch: () -> Unit = {},
+    onOpenFeed: (() -> Unit)? = null,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearchDestination: (() -> Unit)? = null,
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -92,6 +99,26 @@ fun MediaWallScreen(
                         text = stringResource(R.string.next_all_media_title),
                         subtitle = stringResource(R.string.next_all_media_subtitle),
                     )
+                    val destinations =
+                        listOfNotNull(
+                            onOpenFeed?.let { stringResource(R.string.next_feed_title) to it },
+                            onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
+                            onOpenHistory?.let { stringResource(R.string.next_launchpad_history) to it },
+                            onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
+                            onOpenSearchDestination?.let { stringResource(R.string.next_launchpad_search) to it },
+                        )
+                    if (destinations.isNotEmpty()) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            destinations.forEach { (label, open) ->
+                                InlineAction(label = label, onClick = open)
+                            }
+                        }
+                        Gap(8)
+                    }
                     if (showSizeControl) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),

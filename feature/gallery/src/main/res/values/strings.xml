@@ -3,7 +3,7 @@
     <string name="gallery_title">Gallery</string>
     <string name="gallery_tab_browse">Browse</string>
     <string name="gallery_tab_bookmarks">Bookmarks</string>
-    <string name="gallery_subtitle_browse">Browse media by board and thread</string>
+    <string name="gallery_subtitle_browse">Advanced — prefer All media for a flat wall</string>
     <string name="gallery_subtitle_bookmarks">Your bookmarked threads</string>
     <string name="gallery_no_media">No media in this thread</string>
     <string name="gallery_preloading">Preloading</string>
@@ -50,4 +50,8 @@
     <string name="next_media_sweeping">Sweeping %1$d boards for files…</string>
     <string name="next_media_empty">No files found on the boards you follow.</string>
     <string name="next_media_rescan">Sweep again</string>
+    <string name="gallery_close">Close</string>
+    <string name="gallery_download">Download</string>
+    <string name="gallery_copy_image">Copy image</string>
+    <string name="gallery_advanced_title">Browse by board</string>
 </resources>

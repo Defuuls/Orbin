@@ -68,10 +68,19 @@ fun OrbinAsyncImage(
             )
         }
 
+        val loadingLabel = stringResource(R.string.media_image_loading)
+        val unavailableLabel = stringResource(R.string.media_image_unavailable)
         if (request != null) {
             AsyncImage(
                 model = request,
-                contentDescription = contentDescription,
+                // While loading, keep TalkBack from going silent on an empty cell.
+                contentDescription =
+                    when {
+                        loadFailed -> failureMessage ?: unavailableLabel
+                        !loaded && contentDescription.isNullOrBlank() -> loadingLabel
+                        !loaded -> "$loadingLabel. $contentDescription"
+                        else -> contentDescription
+                    },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,
                 onSuccess = {
@@ -95,11 +104,11 @@ fun OrbinAsyncImage(
             ) {
                 Icon(
                     imageVector = Icons.Filled.BrokenImage,
-                    contentDescription = failureMessage ?: "Image unavailable",
+                    contentDescription = failureMessage ?: unavailableLabel,
                     tint = Color.White,
                 )
                 Text(
-                    text = failureMessage ?: "Image unavailable",
+                    text = failureMessage ?: unavailableLabel,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp),
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,

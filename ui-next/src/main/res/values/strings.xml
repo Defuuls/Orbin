@@ -16,8 +16,19 @@
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
     <string name="next_settings_title">Settings</string>
 
-    <!-- The one affordance on the rail, and the rail's own detail lines -->
-    <string name="next_action_search">Search</string>
+    <!-- The one affordance on the rail, and the rail's own detail lines.
+         Opens the command surface (not the thread Search destination). -->
+    <string name="next_action_search">Go</string>
+    <string name="next_action_go_cd">Open commands</string>
+    <string name="next_command_clear">Clear</string>
+    <string name="next_command_clear_cd">Clear query</string>
+    <string name="next_launchpad_boards">Boards</string>
+    <string name="next_launchpad_history">History</string>
+    <string name="next_launchpad_downloads">Downloads</string>
+    <string name="next_launchpad_search">Search</string>
+    <string name="next_launchpad_media">Media</string>
+    <string name="next_autoplay_muted">Muted autoplay</string>
+    <string name="next_two_pane_pick_thread">Pick a thread from the catalog</string>
     <string name="next_rail_catalog">catalog</string>
     <string name="next_rail_swept">%1$d/%2$d swept</string>
     <string name="next_rail_subscribed">%d subscribed</string>
