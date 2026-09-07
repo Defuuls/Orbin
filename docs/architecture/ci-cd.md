@@ -7,8 +7,12 @@ publishing its wiki and landing page. All workflows live in
 ## Workflows
 
 ### `ci.yml` — on every push to `main` and every PR
-Three jobs, the last gated on the first two:
-1. **static-analysis** — `ktlintCheck` + `detekt`, uploads reports.
+Three jobs, the last gated on the first two. JDK 17 + Gradle setup is shared via the composite
+action [`.github/actions/setup-jdk-gradle`](../../.github/actions/setup-jdk-gradle/action.yml)
+(jobs still set up independently — Actions isolation — but the steps stay DRY and the Gradle
+action's cache is shared across jobs on the same runner image).
+1. **static-analysis** — architecture/repo checks, `ktlintCheck` + `detekt` + Android Lint, plus
+   an advice-only `./gradlew buildHealth` (dependency-analysis; `continue-on-error`).
 2. **unit-tests** — `./gradlew test -Porbin.warningsAsErrors=true`, uploads HTML test reports.
 3. **build-debug** — assembles the debug APK and compiles (but does not run) instrumentation
    test sources, then uploads the APK as an artifact.
@@ -29,10 +33,11 @@ Verifies Roborazzi goldens (`verifyRoborazziDebug`) for UI modules. Re-record lo
 `./gradlew recordRoborazziDebug` when intentional UI changes move the goldens; failed runs upload
 a diffs artifact.
 
-### `baseline-profile.yml` — manual (`workflow_dispatch`)
+### `baseline-profile.yml` — manual (`workflow_dispatch`) and monthly
 Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, uploads it as
 the `baseline-profile` artifact, and then opens a draft PR with the result. Baseline profile
-generation needs real (or rooted-emulator) hardware, so it cannot run on every push.
+generation needs real (or rooted-emulator) hardware, so it cannot run on every push. A light
+monthly schedule keeps the committed profile from rotting between intentional re-records.
 
 The PR step needs **Settings → Actions → General → "Allow GitHub Actions to create and approve
 pull requests"**. Without it that step fails and the run warns saying so; the profile is still

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
@@ -40,6 +41,8 @@ fun NextBoardScreen(
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
+    val catalogItemKey =
+        threads.itemKey { thread -> "${thread.key.board.value}/${thread.key.thread.value}" }
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
@@ -68,6 +71,7 @@ fun NextBoardScreen(
             description = viewModel.title,
             itemCount = threads.itemCount,
             rowAt = rowFor,
+            rowKey = catalogItemKey,
             layout = layout,
             onLayoutChange = { layout = if (it == FeedLayout.IMAGES) it else FeedLayout.GRID },
             sortLabel = catalogSort.label,

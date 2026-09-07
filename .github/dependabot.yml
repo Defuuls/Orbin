@@ -17,6 +17,11 @@ updates:
         patterns:
           - "androidx.media3:*"
     open-pull-requests-limit: 10
+    # CodeQL's Kotlin extractor supports through 2.4.10 (CodeQL 2.26.2). Bumping past that
+    # hard-fails java-kotlin analysis. Remove this ignore once CodeQL documents 2.4.20+.
+    ignore:
+      - dependency-name: "org.jetbrains.kotlin.*"
+        versions: [">=2.4.20"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

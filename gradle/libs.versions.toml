@@ -1,13 +1,13 @@
 [versions]
 # Android / Build
 agp = "9.4.0"
-# Held below 2.4.20 until CodeQL's Kotlin extractor supports it: 2.4.20 (and its prereleases)
-# make the java-kotlin CodeQL analysis hard-fail with KotlinVersionTooRecentError, which silently
-# disables security scanning for every PR. This guard was here before, was deleted as stale when
-# 2.4.10 passed CodeQL, and the very next bump proved the category of warning load-bearing.
+# Held at 2.4.10 until CodeQL's Kotlin extractor supports 2.4.20+.
+# CodeQL 2.26.2 / 2.26.3 document support through 2.4.10 only
+# (https://github.blog/changelog/2026-08-04-codeql-2-26-2-adds-swift-6-3-3-and-kotlin-2-4-10-support/).
+# 2.4.20+ hard-fails java-kotlin analysis with KotlinVersionTooRecentError and silently disables
+# security scanning for every PR. Dependabot is told to ignore >=2.4.20 for the same reason.
 # Dependabot alert #63 (build-cache metadata deserialization) is knowingly left open by this pin:
-# it is a build-machine concern, not an APK one, and the fix is 2.4.20 stable once CodeQL
-# supports it — not a beta compiler at the cost of the scanner.
+# it is a build-machine concern, not an APK one — fix is 2.4.20 once CodeQL supports it.
 kotlin = "2.4.10"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
@@ -77,6 +77,7 @@ roborazzi = "1.73.0"
 
 # Quality
 detekt = "1.23.8"
+dependencyAnalysis = "3.19.1"
 ktlintGradle = "14.2.0"
 
 [libraries]
@@ -213,6 +214,7 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 android-test = { id = "com.android.test" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
+dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyAnalysis" }
 
 # Convention plugins (defined in build-logic)
 orbin-android-application = { id = "orbin.android.application" }
