@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [127-Noa] - 2026-09-07
+
+### Fixed
+- Widened the feed and All Media image-size slider from a narrow 150–240dp band to 96–400dp (Mild → Wild) so tiles actually grow toward full-bleed on wide devices.
+- Fixed Images-layout video playback: MediaThumbnail no longer swallows taps with an empty clickable, videos tap-to-play muted inline, and PlayerView no longer steals Compose control taps.
+
+### Changed
+- Removed the History chip from the feed header launchpad; History remains available from All Media and Command.
+
+
 ## [126-Hinata] - 2026-09-07
 
 ### Added
@@ -2113,7 +2123,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v127-Noa...HEAD
+[127-Noa]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...v127-Noa
 [126-Hinata]: https://github.com/Defuuls/Orbin/compare/v125-Nami...v126-Hinata
 [125-Nami]: https://github.com/Defuuls/Orbin/compare/v124-Airi...v125-Nami
 [124-Airi]: https://github.com/Defuuls/Orbin/compare/v123-Emiri...v124-Airi
