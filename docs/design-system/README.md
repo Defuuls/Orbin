@@ -15,7 +15,7 @@ screens over the same layers, not a second, smaller interface.
 
 ## Color
 
-`Color.kt` defines Orbin's static fallback schemes around the brand color `#4F6BED`. Dynamic color
+`core/designsystem/.../theme/Color.kt` defines Orbin's static fallback schemes around the brand color `#4F6BED`. Dynamic color
 is still preferred on Android 12+ when enabled by the user. The fallback scheme includes primary,
 secondary, tertiary, error, surface, inverse, outline, and surface-container roles so components can
 use semantic Material 3 colors consistently.
@@ -76,7 +76,7 @@ components — `MediaThumbnail`, `PostCommentText`, `VideoPlayer` — passed in 
 Nothing behavioural is reimplemented here, so spoilers, greentext and quote links keep working
 because they are the same code, not because they were copied.
 
-**One vocabulary, in `Surface.kt`.** `ContextRail` is the only permanent chrome. `Hairline` is the
+**One vocabulary, in `ui-next/.../Surface.kt`.** `ContextRail` is the only permanent chrome. `Hairline` is the
 only separator: no cards, no elevation, no filled containers. `InlineAction` is how an action is
 drawn — as a word, but with a button role and a 48dp touch target, because setting an action as
 text is a look and not a licence. `ScreenTitle` sets a title in the content so it scrolls away,

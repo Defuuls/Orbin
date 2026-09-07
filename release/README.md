@@ -7,13 +7,13 @@ is the whole procedure — the **Cut Release** workflow
 ## The manifest
 
 ```toml
-number       = 121          # release number; the tag becomes v121-Yuki
-codename     = "Yuki"       # a popular Japanese female name, never one already tagged
-version_code = 139          # Android versionCode; must exceed the current value
+number       = 129          # release number; the tag becomes v129-<Codename>
+codename     = "Asuka"      # a popular Japanese female name, never one already tagged
+version_code = 147          # Android versionCode; must exceed the current value
 
 # Optional. The release PR's summary bullets; derived from the version when omitted.
 summary = [
-  "bump Orbin to 121-Yuki / versionCode 139",
+  "bump Orbin to 129-Asuka / versionCode 147",
   "restore gallery paging on low-memory devices",
 ]
 

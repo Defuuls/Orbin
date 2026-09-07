@@ -125,7 +125,7 @@ A PR is expected to pass the applicable matrix before merge:
 | Performance/build health | Catch regressions and make build graph growth visible |
 
 Major workflows include `ci.yml`, `codeql.yml`, `screenshots.yml`, `instrumentation.yml`,
-`baseline-profile.yml`, `cut-release.yml`, `release.yml`, `wiki-sync.yml`, and `pages.yml`.
+`baseline-profile.yml`, `performance.yml`, `cut-release.yml`, `release.yml`, `wiki-sync.yml`, and `pages.yml`.
 
 ### Build health
 
@@ -173,7 +173,7 @@ implicitly release the other.
 ## Wiki updates
 
 `docs/wiki/` is the source of truth for the public GitHub Wiki. Edit those Markdown files in a normal
-PR. After merge, `wiki-sync.yml` mirrors the directory to the wiki.
+PR. After merge, `.github/workflows/wiki-sync.yml` mirrors the directory to the wiki.
 
 Do not make durable documentation changes only through the GitHub Wiki UI, because the next sync can
 overwrite them.

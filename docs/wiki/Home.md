@@ -65,6 +65,6 @@ links, and media but does not post, reply, or create threads.
 ## Documentation model
 
 The Markdown files under `docs/wiki/` in the main repository are the source of truth. Changes are
-reviewed like code, then `wiki-sync.yml` mirrors them to the GitHub Wiki after they reach `main`.
+reviewed like code, then `.github/workflows/wiki-sync.yml` mirrors them to the GitHub Wiki after they reach `main`.
 This keeps the public wiki reproducible and prevents the repository docs and wiki from quietly
 drifting apart.
