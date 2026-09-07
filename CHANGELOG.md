@@ -6,6 +6,32 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [126-Hinata] - 2026-09-07
+
+### Added
+- Promoted All Media to the primary gallery top-level destination; demoted the board→thread gallery browser to a secondary path.
+- Added Feed and Media launchpads for Boards, Search, History, and Downloads so secondary destinations are not Command-only.
+- Added a muted autoplay badge on feed video tiles when inline autoplay is enabled.
+- Added a clear-query control on the Command sheet.
+
+### Changed
+- Renamed the ContextRail primary action from Search to Go so it matches Command instead of catalog Search.
+- Wrapped Search, History, Downloads, Boards, and the gallery browser in NextChromeHost so leaving Feed no longer flips into a separate Material shell.
+- Redirected Home and Subscriptions destinations into the consolidated Boards surface.
+- Strengthened filled accent actions (solid accent with onAccent) for clearer contrast.
+- Improved large-text layouts: multi-line settings hints, non-brittle feed meta, and ellipsis-based rail titles instead of hard truncation.
+- Styled the offline banner and two-pane empty pane in Next vocabulary; restyled the site switcher to match ui-next.
+
+### Fixed
+- Hardened media URL acceptance to HTTPS-only in ProviderContract and LynxChan absolute URL handling.
+- Moved PoW mining off OkHttp interceptor threads; redacted media URLs from release warning logs; honest platform-default certificate checks copy.
+- Removed root SelectionContainer, capped feed autoplay, and tuned Coil/feed scroll paths for high-refresh Pixel-class devices.
+
+### Reliability
+- Documented Compose Lazy beyond-bounds API limits and kept soft-cap + contentType + prefetch windowing.
+- Expanded Roborazzi coverage for the UI chrome changes.
+
+
 ### Changed
 - Root composition installs `NextTheme` once; Material-only destinations wrap `OrbinTheme` locally
   so Next screens no longer pay a double `MaterialTheme` at the shell.
@@ -2087,7 +2113,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v125-Nami...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...HEAD
+[126-Hinata]: https://github.com/Defuuls/Orbin/compare/v125-Nami...v126-Hinata
 [125-Nami]: https://github.com/Defuuls/Orbin/compare/v124-Airi...v125-Nami
 [124-Airi]: https://github.com/Defuuls/Orbin/compare/v123-Emiri...v124-Airi
 [123-Emiri]: https://github.com/Defuuls/Orbin/compare/v122-Haruka...v123-Emiri
