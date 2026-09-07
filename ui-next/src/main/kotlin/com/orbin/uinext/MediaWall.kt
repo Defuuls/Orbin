@@ -127,7 +127,7 @@ fun MediaWallScreen(
                             MetaLine(stringResource(R.string.next_media_size_small))
                             Slider(
                                 value = imageCellSize,
-                                onValueChange = { imageCellSize = it },
+                                onValueChange = { imageCellSize = it.coerceIn(MEDIA_CELL_MIN_DP, MEDIA_CELL_MAX_DP) },
                                 valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
                                 steps = MEDIA_CELL_STEPS,
                                 modifier =
@@ -223,7 +223,7 @@ internal fun SweepBar(
     }
 }
 
-private const val MEDIA_CELL_MIN_DP = 96f
-private const val MEDIA_CELL_MAX_DP = 240f
-private const val MEDIA_CELL_STEPS = 5
+private const val MEDIA_CELL_MIN_DP = MEDIA_SIZE_MIN_DP
+private const val MEDIA_CELL_MAX_DP = MEDIA_SIZE_MAX_DP
+private const val MEDIA_CELL_STEPS = MEDIA_SIZE_STEPS
 private const val MEDIA_TILE_HEIGHT_RATIO = 0.74f

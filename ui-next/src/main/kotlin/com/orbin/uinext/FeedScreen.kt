@@ -129,7 +129,7 @@ fun FeedScreen(
                     onClearFilter = onClearFilter,
                     omittedWithoutPreview = omittedWithoutPreview,
                     sizeValue = feedSize,
-                    onSizeChange = { feedSize = it },
+                    onSizeChange = { feedSize = it.coerceIn(FEED_SIZE_MIN_DP, FEED_SIZE_MAX_DP) },
                     showSizeControl = showSizeControl,
                     onOpenBoards = onOpenBoards,
                     onOpenHistory = onOpenHistory,
@@ -201,9 +201,9 @@ fun FeedScreen(
     }
 }
 
-internal const val FEED_SIZE_MIN_DP = 150f
-internal const val FEED_SIZE_MAX_DP = 240f
-internal const val FEED_SIZE_STEPS = 5
+internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
+internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP
+internal const val FEED_SIZE_STEPS = MEDIA_SIZE_STEPS
 private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
 private const val FEED_CONTENT_INDEX_OFFSET = 1
 
