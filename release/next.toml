@@ -1,26 +1,39 @@
-# Orbin 125 — Nami
+# Orbin 126 — Hinata
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 125
-codename     = "Nami"
-version_code = 143
+number       = 126
+codename     = "Hinata"
+version_code = 144
 
 summary = [
-  "bump Orbin to 125-Nami / versionCode 143",
-  "add a top-level provider switcher for 4chan and BBW Chan",
-  "preserve BBW Chan browsing context when backing out of a thread",
+  "bump Orbin to 126-Hinata / versionCode 144",
+  "ship UI audit shell/IA fixes (Go rail, All Media primary, Next chrome)",
+  "include prior security, performance, and Pixel snappiness hardening",
 ]
 
 [changelog]
+Added = [
+  "Promoted All Media to the primary gallery top-level destination; demoted the board→thread gallery browser to a secondary path.",
+  "Added Feed and Media launchpads for Boards, Search, History, and Downloads so secondary destinations are not Command-only.",
+  "Added a muted autoplay badge on feed video tiles when inline autoplay is enabled.",
+  "Added a clear-query control on the Command sheet.",
+]
 Changed = [
-  "Added a compact provider switcher to the Feed so users can move between 4chan and BBW Chan without opening Settings.",
-  "Provider selection is driven by the registered provider list and persists through the existing active-provider setting.",
+  "Renamed the ContextRail primary action from Search to Go so it matches Command instead of catalog Search.",
+  "Wrapped Search, History, Downloads, Boards, and the gallery browser in NextChromeHost so leaving Feed no longer flips into a separate Material shell.",
+  "Redirected Home and Subscriptions destinations into the consolidated Boards surface.",
+  "Strengthened filled accent actions (solid accent with onAccent) for clearer contrast.",
+  "Improved large-text layouts: multi-line settings hints, non-brittle feed meta, and ellipsis-based rail titles instead of hard truncation.",
+  "Styled the offline banner and two-pane empty pane in Next vocabulary; restyled the site switcher to match ui-next.",
 ]
 Fixed = [
-  "Preserved the active BBW Chan browsing context when returning from a BBW Chan thread instead of reverting to 4chan.",
+  "Hardened media URL acceptance to HTTPS-only in ProviderContract and LynxChan absolute URL handling.",
+  "Moved PoW mining off OkHttp interceptor threads; redacted media URLs from release warning logs; honest platform-default certificate checks copy.",
+  "Removed root SelectionContainer, capped feed autoplay, and tuned Coil/feed scroll paths for high-refresh Pixel-class devices.",
 ]
 Reliability = [
-  "Added regression coverage for cross-provider thread navigation and narrowed screenshot CI to modules that actually own Roborazzi goldens.",
+  "Documented Compose Lazy beyond-bounds API limits and kept soft-cap + contentType + prefetch windowing.",
+  "Expanded Roborazzi coverage for the UI chrome changes.",
 ]
