@@ -133,6 +133,7 @@ fun NextTheme(
     darkTheme: Boolean? = null,
     amoled: Boolean? = null,
     fontScale: Float? = null,
+    palette: NextPalette? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
@@ -140,20 +141,25 @@ fun NextTheme(
     // Screens in this module wrap themselves in NextTheme with no args. When an outer shell
     // (MainActivity) already installed the palette + density, re-entering MaterialTheme for every
     // screen is pure nesting cost — skip and inherit.
-    val noOverrides = darkTheme == null && amoled == null && fontScale == null
+    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null
     if (inherited != null && noOverrides) {
         content()
         return
     }
-    val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
-    val black = amoled ?: (inherited?.amoled ?: false)
+    val resolvedPalette =
+        palette
+            ?: run {
+                val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
+                val black = amoled ?: (inherited?.amoled ?: false)
+                when {
+                    dark && black -> AmoledPalette
+                    dark -> DarkPalette
+                    else -> LightPalette
+                }
+            }
+    val dark = resolvedPalette.dark
     val scale = fontScale ?: inheritedScale
-    val palette =
-        when {
-            dark && black -> AmoledPalette
-            dark -> DarkPalette
-            else -> LightPalette
-        }
+    val palette = resolvedPalette
     val scheme =
         if (dark) {
             darkColorScheme(

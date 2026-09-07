@@ -47,6 +47,7 @@ import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
+import com.orbin.uinext.toNextPalette
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -460,16 +461,23 @@ private fun AppContent(
     // do not pay a second MaterialTheme. Material-only destinations (gallery, onboarding, legacy
     // lists) re-enter OrbinTheme via MaterialOrbinTheme so dynamic color / chan skins still apply
     // there without wrapping the whole tree in both themes.
+    val colorVariant = settings.colorTheme.toDesignSystem()
+    val nextPalette =
+        colorVariant.toNextPalette(
+            darkPreference = settings.themeMode.isDark(),
+            amoled = settings.amoled,
+        )
     ProvideOrbinThemeSettings(
         themeMode = settings.themeMode.toDesignSystem(),
-        colorSchemeVariant = settings.colorTheme.toDesignSystem(),
+        colorSchemeVariant = colorVariant,
         dynamicColor = settings.dynamicColor,
         amoled = settings.amoled,
     ) {
         NextTheme(
-            darkTheme = settings.themeMode.isDark(),
-            amoled = settings.amoled,
+            darkTheme = nextPalette.dark,
+            amoled = nextPalette.amoled,
             fontScale = settings.fontScale,
+            palette = nextPalette,
         ) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
