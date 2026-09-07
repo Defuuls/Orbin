@@ -1,41 +1,57 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="128-Rei">
   <title id="title">Orbin grid-first feed on a compact Android phone</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 128 Rei showing the adaptive two-column thread grid on a compact phone, readable thread titles, provider-aware browsing, Save links export, and privacy-focused diagnostics.</desc>
+  <desc id="desc">Screenshot-style illustration of Orbin 128 Rei showing the adaptive two-column thread grid on a compact phone, Color themes, Mild to Wild sizing, and privacy defaults.</desc>
   <rect width="1200" height="760" fill="#F4F6FA"/>
-  <rect x="80" y="88" width="1040" height="584" rx="40" fill="#FFFFFF"/>
-  <text x="120" y="150" font-family="Arial,sans-serif" font-size="36" font-weight="700" fill="#202431">Orbin</text>
-  <text x="120" y="184" font-family="Arial,sans-serif" font-size="16" fill="#5A6272">Privacy-focused Android imageboard browser</text>
-  <rect x="120" y="214" width="168" height="40" rx="20" fill="#DCE6FF"/>
-  <text id="release-label" x="142" y="240" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">128 · Rei</text>
-  <rect x="380" y="110" width="360" height="520" rx="42" fill="#202431"/>
-  <rect x="396" y="126" width="328" height="488" rx="30" fill="#F8F9FC"/>
-  <text x="420" y="172" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#202431">Feed</text>
-  <text x="646" y="170" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#3D5FAD">GRID</text>
-  <text x="690" y="170" font-family="Arial,sans-serif" font-size="12" fill="#778092">IMAGES</text>
-  <rect x="420" y="196" width="132" height="172" rx="18" fill="#FFFFFF"/>
-  <rect x="564" y="196" width="132" height="172" rx="18" fill="#FFFFFF"/>
-  <rect x="420" y="380" width="132" height="172" rx="18" fill="#FFFFFF"/>
-  <rect x="564" y="380" width="132" height="172" rx="18" fill="#F0F2F6"/>
-  <rect x="432" y="208" width="108" height="64" rx="10" fill="#DDE5F4"/>
-  <rect x="576" y="208" width="108" height="64" rx="10" fill="#E6E1EF"/>
-  <rect x="432" y="392" width="108" height="64" rx="10" fill="#E4EBD8"/>
-  <rect x="576" y="392" width="108" height="64" rx="10" fill="#E1E4EA"/>
-  <text x="432" y="296" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Readable compact</text>
-  <text x="432" y="314" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">grid cards</text>
-  <text x="576" y="296" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Provider quirks</text>
-  <text x="576" y="314" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">normalized</text>
-  <text x="432" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Subjects get</text>
-  <text x="432" y="498" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">room to breathe</text>
-  <text x="576" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">Read state stays</text>
-  <text x="576" y="498" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">visible but quiet</text>
-  <text x="810" y="168" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#202431">Current release highlights</text>
-  <text x="810" y="220" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
-  <text x="810" y="246" font-family="Arial,sans-serif" font-size="14" fill="#596171">Yotsuba, Warosu, Miku, Lain and more on Next</text>
-  <text x="810" y="304" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Mild → Wild sizing</text>
-  <text x="810" y="330" font-family="Arial,sans-serif" font-size="14" fill="#596171">Feed and All Media tiles from 96–400dp</text>
-  <text x="810" y="388" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first shell</text>
-  <text x="810" y="414" font-family="Arial,sans-serif" font-size="14" fill="#596171">Adaptive cards, All Media, Command polish</text>
-  <text x="810" y="472" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
-  <text x="810" y="498" font-family="Arial,sans-serif" font-size="14" fill="#596171">Encrypted storage, HTTPS-only networking,</text>
-  <text x="810" y="524" font-family="Arial,sans-serif" font-size="14" fill="#596171">and release preflight verification</text>
+  <rect x="64" y="72" width="1072" height="616" rx="40" fill="#FFFFFF"/>
+
+  <!-- Left column (x 96–340) -->
+  <text x="96" y="140" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#202431">Orbin</text>
+  <text x="96" y="172" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">Privacy-focused Android</text>
+  <text x="96" y="194" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">imageboard browser</text>
+  <rect x="96" y="218" width="132" height="36" rx="18" fill="#DCE6FF"/>
+  <text id="release-label" x="162" y="241" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">128 · Rei</text>
+
+  <!-- Phone: centered, screen inset with room for GRID / IMAGES -->
+  <rect x="360" y="100" width="340" height="520" rx="40" fill="#202431"/>
+  <rect x="376" y="116" width="308" height="488" rx="28" fill="#F8F9FC"/>
+  <text x="400" y="160" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#202431">Feed</text>
+  <text x="560" y="158" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#3D5FAD">GRID</text>
+  <text x="604" y="158" font-family="Arial,sans-serif" font-size="11" fill="#778092">IMAGES</text>
+
+  <!-- 2x2 cards inside screen (content box 400–668 x 180–580) -->
+  <rect x="400" y="180" width="124" height="168" rx="16" fill="#FFFFFF"/>
+  <rect x="536" y="180" width="124" height="168" rx="16" fill="#FFFFFF"/>
+  <rect x="400" y="364" width="124" height="168" rx="16" fill="#FFFFFF"/>
+  <rect x="536" y="364" width="124" height="168" rx="16" fill="#F0F2F6"/>
+  <rect x="412" y="192" width="100" height="56" rx="10" fill="#DDE5F4"/>
+  <rect x="548" y="192" width="100" height="56" rx="10" fill="#E6E1EF"/>
+  <rect x="412" y="376" width="100" height="56" rx="10" fill="#E4EBD8"/>
+  <rect x="548" y="376" width="100" height="56" rx="10" fill="#E1E4EA"/>
+  <text x="412" y="274" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Readable</text>
+  <text x="412" y="292" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">compact grid</text>
+  <text x="548" y="274" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Provider quirks</text>
+  <text x="548" y="292" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">normalized</text>
+  <text x="412" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Subjects get</text>
+  <text x="412" y="476" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">room to breathe</text>
+  <text x="548" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">Read state stays</text>
+  <text x="548" y="476" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">quiet</text>
+
+  <!-- Right column highlights (x 740–1100) -->
+  <text x="740" y="150" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#202431">Current release highlights</text>
+
+  <text x="740" y="206" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
+  <text x="740" y="230" font-family="Arial,sans-serif" font-size="13" fill="#596171">Yotsuba, Warosu, Miku, Lain</text>
+  <text x="740" y="250" font-family="Arial,sans-serif" font-size="13" fill="#596171">and more on the Next shell</text>
+
+  <text x="740" y="300" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Mild → Wild sizing</text>
+  <text x="740" y="324" font-family="Arial,sans-serif" font-size="13" fill="#596171">Feed and All Media tiles</text>
+  <text x="740" y="344" font-family="Arial,sans-serif" font-size="13" fill="#596171">from 96–400dp</text>
+
+  <text x="740" y="394" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first shell</text>
+  <text x="740" y="418" font-family="Arial,sans-serif" font-size="13" fill="#596171">Adaptive cards, All Media,</text>
+  <text x="740" y="438" font-family="Arial,sans-serif" font-size="13" fill="#596171">and Command polish</text>
+
+  <text x="740" y="488" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
+  <text x="740" y="512" font-family="Arial,sans-serif" font-size="13" fill="#596171">Encrypted storage and</text>
+  <text x="740" y="532" font-family="Arial,sans-serif" font-size="13" fill="#596171">HTTPS-only networking</text>
 </svg>
