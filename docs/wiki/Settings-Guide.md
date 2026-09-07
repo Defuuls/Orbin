@@ -1,6 +1,6 @@
 # Settings Guide
 
-This page describes the current settings model for **v121 (Yuki)**. Settings take effect immediately
+This page describes the current settings model for **v128 (Rei)**. Settings take effect immediately
 unless a control explicitly says otherwise. Local preference storage is encrypted.
 
 The exact wording and grouping can evolve with the interface, so this guide focuses on what each
@@ -50,14 +50,14 @@ required after upgrading.
 
 | Setting | What it does |
 | --- | --- |
-| Color theme | Chooses an Orbin/imageboard-inspired palette. |
+| Color theme | Chooses an Orbin/imageboard-inspired palette (Default, Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, Lain, Tomorrow, Tomorrow Dark). Skins recolor the Next shell including Feed. |
 | Theme mode | Light, dark, or system behavior. |
 | Dynamic color | Uses supported Material You colors from the device. |
 | AMOLED black | Uses pure black surfaces in dark mode where supported. |
 | Open threads as | Controls the navigation presentation used to open a thread. |
 | Full-screen feed | Reduces/hides surrounding chrome to maximize feed space. |
 | Font size | Changes Orbin's global text scale. |
-| Thumbnail/grid size controls | Adjust media/card density on surfaces that expose size control. |
+| Thumbnail/grid size controls | Adjust media/card density on surfaces that expose size control. Feed and All Media use a Mild→Wild range (about 96–400dp). |
 
 The current grid design deliberately refuses extremely narrow thread cards. This means changing size
 may alter column count sooner than older releases did, especially on small phones.
