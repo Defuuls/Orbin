@@ -121,7 +121,6 @@ fun OrbinNavHost(
                 filter = feedFilter,
                 onClearFilter = onClearFeedFilter,
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenHistory = { navController.navigate(Route.History) },
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
                 onOpenSearchDestination = { navController.navigate(Route.Search) },
                 onOpenMedia = { navController.navigate(Route.AllMedia) },
