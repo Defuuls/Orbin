@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.ui.graphics.Color
+import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
@@ -132,6 +133,25 @@ class PaletteContrastTest {
             return if (c <= 0.03928) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
         }
         return 0.2126 * channel(color.red) + 0.7152 * channel(color.green) + 0.0722 * channel(color.blue)
+    }
+
+    @Test
+    fun `exposed color themes clear AA on their Next grounds`() {
+        val variants =
+            listOf(
+                ColorSchemeVariant.YOTSUBA,
+                ColorSchemeVariant.YOTSUBA_P,
+                ColorSchemeVariant.WAROSU,
+                ColorSchemeVariant.MIKU,
+                ColorSchemeVariant.PENUMBRA,
+                ColorSchemeVariant.ROYAL,
+                ColorSchemeVariant.LAIN,
+            )
+        variants.forEach { variant ->
+            val palette = variant.toNextPalette(darkPreference = false, amoled = false)
+            assertPalette(palette, variant.name)
+            assertRatio("${variant.name} onAccent on accent", palette.onAccent, palette.accent)
+        }
     }
 
     private companion object {
