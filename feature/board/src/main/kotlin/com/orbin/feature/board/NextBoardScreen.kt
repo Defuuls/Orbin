@@ -49,13 +49,20 @@ fun NextBoardScreen(
     var layout by rememberSaveable { mutableStateOf(FeedLayout.GRID) }
 
     val board = "/${viewModel.boardId}/"
+    val snapshot = threads.itemSnapshotList
     val byThreadId =
-        remember(threads.itemSnapshotList) {
-            threads.itemSnapshotList.items.associateBy { it.key.thread.value }
+        remember(snapshot) {
+            snapshot.items.associateBy { it.key.thread.value }
         }
-    val rowFor: (Int) -> FeedRow? = { index ->
-        threads[index]?.toRow(board, visitedThreadIds, watchedUnread)
-    }
+    // Memoize FeedRows the way the feed/media walls do — BoardCatalog hits rowAt for
+    // key, contentType, and content (up to 3× per cell) on every composition otherwise.
+    val rows =
+        remember(snapshot, visitedThreadIds, watchedUnread, board, threads.itemCount) {
+            List(threads.itemCount) { index ->
+                snapshot[index]?.toRow(board, visitedThreadIds, watchedUnread)
+            }
+        }
+    val rowFor: (Int) -> FeedRow? = { index -> rows.getOrNull(index) }
 
     NextTheme {
         if (threads.itemCount == 0) {
