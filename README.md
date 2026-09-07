@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [127 — Noa](https://github.com/Defuuls/Orbin/releases/tag/v127-Noa)
+**Current release:** [128 — Rei](https://github.com/Defuuls/Orbin/releases/tag/v128-Rei)
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
