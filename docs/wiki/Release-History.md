@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships signed, tag-driven releases. The **current full-client release is v121 — Yuki**.
+Orbin ships signed, tag-driven releases. The **current full-client release is v128 — Rei**.
 
 For the complete chronological record, use:
 
@@ -17,12 +17,14 @@ From **v100 — Sakura**, full Orbin releases use popular Japanese female names.
 from the same naming pool on its own `minimal-v*` release line, and names should not be reused across
 the two applications.
 
-The current release, **v121 — Yuki**, represents the modern architecture/UI generation: modular
+The current release, **v128 — Rei**, continues that modern architecture/UI generation: modular
 Clean Architecture, the app-agnostic `ui-next` seam, encrypted local persistence, provider contracts,
-privacy-safe provider diagnostics, comprehensive CI gates, and adaptive Compose UI.
+privacy-safe provider diagnostics, comprehensive CI gates, and adaptive Compose UI. Recent ships
+expanded Color theme onto the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends),
+widened Mild→Wild media sizing, and polished Feed / All Media / Command chrome.
 
-Changes merged after v121, including the grid-only compact-screen readability work, are documented
-under the CHANGELOG's unreleased/current-development section until the next release is cut.
+Changes merged after v128 are documented under the CHANGELOG's Unreleased section until the next
+release is cut.
 
 ## Release eras
 

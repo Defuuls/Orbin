@@ -29,13 +29,13 @@
   <text x="576" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">Read state stays</text>
   <text x="576" y="498" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">visible but quiet</text>
   <text x="810" y="168" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#202431">Current release highlights</text>
-  <text x="810" y="220" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first browsing</text>
-  <text x="810" y="246" font-family="Arial,sans-serif" font-size="14" fill="#596171">Compact-phone readability with adaptive cards</text>
-  <text x="810" y="304" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">LynxChan / BBW Chan</text>
-  <text x="810" y="330" font-family="Arial,sans-serif" font-size="14" fill="#596171">Tolerant media URL and catalog normalization</text>
-  <text x="810" y="388" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Save links</text>
-  <text x="810" y="414" font-family="Arial,sans-serif" font-size="14" fill="#596171">Deduplicated thread links exported as text</text>
-  <text x="810" y="472" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Guardrails</text>
-  <text x="810" y="498" font-family="Arial,sans-serif" font-size="14" fill="#596171">Architecture, screenshots, CodeQL, instrumentation</text>
+  <text x="810" y="220" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
+  <text x="810" y="246" font-family="Arial,sans-serif" font-size="14" fill="#596171">Yotsuba, Warosu, Miku, Lain and more on Next</text>
+  <text x="810" y="304" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Mild → Wild sizing</text>
+  <text x="810" y="330" font-family="Arial,sans-serif" font-size="14" fill="#596171">Feed and All Media tiles from 96–400dp</text>
+  <text x="810" y="388" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first shell</text>
+  <text x="810" y="414" font-family="Arial,sans-serif" font-size="14" fill="#596171">Adaptive cards, All Media, Command polish</text>
+  <text x="810" y="472" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
+  <text x="810" y="498" font-family="Arial,sans-serif" font-size="14" fill="#596171">Encrypted storage, HTTPS-only networking,</text>
   <text x="810" y="524" font-family="Arial,sans-serif" font-size="14" fill="#596171">and release preflight verification</text>
 </svg>

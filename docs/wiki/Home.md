@@ -23,6 +23,7 @@ links, and media but does not post, reply, or create threads.
 
 ## Highlights
 
+- **Color themes on the Next shell.** Default, Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, Lain, Tomorrow, and Tomorrow Dark recolor Feed and friends — not only Material destinations.
 - **Grid-first browsing.** Feed and board catalogs now use an adaptive readable grid as the main
   presentation. The old List option has been removed from the UI. Cards keep useful width on
   compact phones and emphasize thread subjects over secondary metadata. An Images view remains

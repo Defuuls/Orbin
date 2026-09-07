@@ -13,6 +13,8 @@ does not post, reply, or create threads.
 
 **Current release:** [128 — Rei](https://github.com/Defuuls/Orbin/releases/tag/v128-Rei)
 
+**What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
+
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
 **Brand:** [identity and logo usage](docs/brand.md)
@@ -21,7 +23,7 @@ does not post, reply, or create threads.
 > local persistence, provider contract validation, and a UI designed to remain readable from
 > compact phones through tablets and foldables.
 
-![Orbin thread viewer](docs/assets/orbin-hero-screenshot.svg)
+![Orbin feed on a compact phone](docs/assets/orbin-hero-screenshot.svg)
 
 ![Orbin settings](docs/assets/orbin-settings-screenshot.svg)
 
@@ -68,8 +70,8 @@ does not post, reply, or create threads.
 
 ### Personalization and accessibility
 
-- Material 3, dynamic color, light/dark/AMOLED modes, global font scaling, and more than twenty
-  imageboard-inspired palettes.
+- Material 3, dynamic color, light/dark/AMOLED modes, global font scaling, and Color themes
+  (Yotsuba, Warosu, Miku, Lain, and more) that recolor the Next shell including Feed.
 - Adaptive layouts for compact phones, tablets, foldables, landscape, and edge-to-edge windows.
 - Read/unread hierarchy, screen-reader semantics, touch-target and contrast checks, and screenshot
   coverage for normal, dark, AMOLED, large-text, and maximum-text configurations.

@@ -1,6 +1,6 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Orbin settings screenshot</title>
-  <desc id="desc">A screenshot-style view of the Orbin Android settings screen showing the always-on built-in content filter alongside content, appearance, media, network, privacy, and storage preferences.</desc>
+  <desc id="desc">Screenshot-style Orbin 128 Rei settings: always-on content filter, Color theme / appearance controls, media, network privacy, and Downloads/Orbin storage.</desc>
   <rect width="1200" height="760" fill="#F6F7FB"/>
   <rect x="412" y="42" width="376" height="676" rx="36" fill="#15161B"/>
   <rect x="424" y="56" width="352" height="648" rx="28" fill="#FAFBFF"/>
@@ -63,10 +63,10 @@
   <rect x="166" y="152" width="198" height="354" rx="28" fill="#FFFFFF"/>
   <text x="196" y="198" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#202431">Orbin</text>
   <text x="196" y="228" font-family="Inter, Arial, sans-serif" font-size="15" fill="#596171">Modern image board client</text>
-  <rect x="196" y="266" width="138" height="34" rx="17" fill="#DCE6FF"/>
-  <text x="216" y="288" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 91</text>
+  <rect x="196" y="266" width="148" height="34" rx="17" fill="#DCE6FF"/>
+  <text x="216" y="288" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 128</text>
   <rect x="196" y="328" width="138" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="196" y="352" width="106" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="196" y="376" width="148" height="12" rx="6" fill="#E5E9F2"/>
-  <text x="196" y="448" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Bucatini release</text>
+  <text x="196" y="448" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Rei release</text>
 </svg>
