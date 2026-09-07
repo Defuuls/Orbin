@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -119,7 +120,11 @@ fun BoardScreen(
                 contentPadding = gridPadding(bottomPad),
             ) {
                 fullWidthItem { header() }
-                items(itemCount) { index ->
+                items(
+                    count = itemCount,
+                    key = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
+                    contentType = { "catalog-image-cell" },
+                ) { index ->
                     rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
                         FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     }
@@ -133,7 +138,13 @@ fun BoardScreen(
                 contentPadding = gridPadding(bottomPad),
             ) {
                 fullWidthItem { header() }
-                items(itemCount) { index ->
+                items(
+                    count = itemCount,
+                    key = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
+                    contentType = { index ->
+                        if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
+                    },
+                ) { index ->
                     rowAt(index)?.let { row ->
                         FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     }
