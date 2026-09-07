@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -60,6 +61,7 @@ import com.orbin.app.navigation.TopLevelDestination
 import com.orbin.core.designsystem.component.ModernNavigationBar
 import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import com.orbin.core.model.ThreadPresentation
+import com.orbin.uinext.next
 
 /**
  * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level
@@ -82,6 +84,7 @@ fun OrbinApp(
 
         val topLevel = TopLevelDestination.entries
         val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
+        val isAllMedia = currentDestination?.hasRoute(Route.AllMedia::class) == true
         // The three screens built out of the same scrolling list and the same floating rail. The
         // setting used to reach only the feed, so a reader who had turned it on watched the rail
         // slide away there and stay pinned on a catalog drawn from the identical row — which reads
@@ -89,12 +92,14 @@ fun OrbinApp(
         val scrollAwayScreen =
             isNextFeed ||
                 currentDestination?.hasRoute(Route.Board::class) == true ||
-                currentDestination?.hasRoute(Route.AllMedia::class) == true
-        // The redesigned feed carries its own rail, and the rail is what replaces this bar. Showing
-        // both would stack two pieces of navigation chrome on a screen whose whole argument is that
-        // it needs none.
+                isAllMedia
+        // Feed and All Media carry their own ContextRail. Showing the Material bottom bar as well
+        // would stack two pieces of navigation chrome on screens whose argument is that they need
+        // none — switch between them via the feed launchpad / command surface instead.
         val showBottomBar =
-            !isNextFeed && topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
+            !isNextFeed &&
+                !isAllMedia &&
+                topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
         val chromeHidesOnScroll =
             scrollAwayScreen && (fullScreenFeedChrome || tabletFeedChrome)
         var chromeVisible by rememberSaveable { mutableStateOf(true) }
@@ -255,10 +260,11 @@ private fun NavHostController.follow(
 
 private fun CommandDestination.route(): Route =
     when (this) {
+        CommandDestination.FEED -> Route.NextFeed
         CommandDestination.GALLERY -> Route.GalleryBrowser
         CommandDestination.ALL_MEDIA -> Route.AllMedia
         CommandDestination.BOARDS -> Route.BoardGallery
-        CommandDestination.SUBSCRIPTIONS -> Route.Subscriptions
+        CommandDestination.SUBSCRIPTIONS -> Route.BoardGallery
         CommandDestination.HISTORY -> Route.History
         CommandDestination.DOWNLOADS -> Route.Downloads
         CommandDestination.SEARCH -> Route.Search
@@ -269,12 +275,12 @@ private fun CommandDestination.route(): Route =
 private fun OfflineBanner(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.errorContainer,
+        color = next.accentSoft,
     ) {
         Text(
-            text = "You're offline",
+            text = stringResource(R.string.offline_banner),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.onErrorContainer,
+            color = next.accent,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
         )

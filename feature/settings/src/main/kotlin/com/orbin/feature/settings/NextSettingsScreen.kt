@@ -157,8 +157,8 @@ fun NextSettingsScreen(
                                         value = if (threadScrollArrowEnabled) "On" else "Off",
                                         kind = SettingKind.TOGGLE,
                                         hint =
-                                            "Adds a Reddit-style down arrow to the bottom thread bar. " +
-                                                "Each tap moves to the next post.",
+                                            "Shows Top / Unread / Bottom jump actions on the Next thread " +
+                                                "reader bar so you can move between posts without scrubbing.",
                                     )
                             )
                     "Storage & backup" ->

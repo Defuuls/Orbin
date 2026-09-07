@@ -65,6 +65,7 @@ sealed interface CommandTarget {
 
 /** A place the command surface can navigate to that is not a board, thread or setting. */
 enum class CommandDestination {
+    FEED,
     GALLERY,
     ALL_MEDIA,
     BOARDS,
@@ -94,10 +95,23 @@ enum class CommandAction {
  */
 internal fun staticTargets(): List<CommandTarget> =
     listOf(
-        CommandTarget.Go("Gallery", "Browse saved and downloaded media", CommandDestination.GALLERY),
-        CommandTarget.Go("All media", "Every file from every board you follow", CommandDestination.ALL_MEDIA),
+        CommandTarget.Go("Feed", "Subscribed boards, merged by activity", CommandDestination.FEED),
+        CommandTarget.Go(
+            "Browse by board",
+            "Gallery — board then thread media browser",
+            CommandDestination.GALLERY,
+        ),
+        CommandTarget.Go(
+            "All media",
+            "Primary gallery — every file from boards you follow",
+            CommandDestination.ALL_MEDIA,
+        ),
         CommandTarget.Go("All boards", "Browse and subscribe", CommandDestination.BOARDS),
-        CommandTarget.Go("Subscriptions", "Boards in your feed", CommandDestination.SUBSCRIPTIONS),
+        CommandTarget.Go(
+            "Subscriptions",
+            "Boards in your feed — opens Boards",
+            CommandDestination.SUBSCRIPTIONS,
+        ),
         CommandTarget.Go("History", "Threads you have read", CommandDestination.HISTORY),
         CommandTarget.Go("Downloads", "Files saved to this device", CommandDestination.DOWNLOADS),
         CommandTarget.Go("Search", "Search threads across your boards", CommandDestination.SEARCH),

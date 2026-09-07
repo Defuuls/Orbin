@@ -12,5 +12,7 @@ enum class TopLevelDestination(
     val icon: ImageVector,
 ) {
     FEED(Route.NextFeed, "Feed", Icons.Filled.DynamicFeed),
-    GALLERY(Route.GalleryBrowser, "Gallery", Icons.Filled.PhotoLibrary),
+
+    /** All Media is the primary gallery; board→thread GalleryBrowser is secondary via Command. */
+    MEDIA(Route.AllMedia, "Media", Icons.Filled.PhotoLibrary),
 }

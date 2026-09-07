@@ -62,9 +62,9 @@ import androidx.compose.ui.unit.sp
  * container with `AnchoredDraggable`, alongside the system back rather than instead of it, since a
  * gesture with no keyboard or switch-access equivalent cannot be the only way out of a screen.
  *
- * [action] names that one affordance. It is Search in the full client, because search is how you
- * get anywhere else there. Orbin Minimal has nowhere else to get to but its board list, so it says
- * Boards — one bar with one affordance either way, rather than a bar the smaller app cannot use.
+ * [action] names that one affordance. In the full client it opens the command surface and is
+ * labelled Go (not Search — Search is a separate destination). Orbin Minimal has nowhere else to
+ * get to but its board list, so it says Boards — one bar with one affordance either way.
  */
 @Composable
 fun ContextRail(
@@ -119,7 +119,7 @@ fun ContextRail(
                 color = next.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier.weight(1f),
             )
             if (detail != null) {
                 Text(
@@ -127,9 +127,10 @@ fun ContextRail(
                     fontSize = 13.sp,
                     color = next.muted,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(0.45f, fill = false),
                 )
             }
-            Box(modifier = Modifier.weight(1f))
             Box(
                 modifier =
                     Modifier
@@ -142,11 +143,11 @@ fun ContextRail(
                     text = action,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = next.accent,
+                    color = next.onAccent,
                     modifier =
                         Modifier
                             .clip(RoundedCornerShape(16.dp))
-                            .background(next.accentSoft)
+                            .background(next.accent)
                             .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
@@ -219,13 +220,14 @@ fun MetaLine(
     text: String,
     modifier: Modifier = Modifier,
     color: Color? = null,
+    maxLines: Int = 1,
 ) {
     Text(
         text = text,
         fontSize = 12.5.sp,
         fontWeight = FontWeight.Medium,
         color = color ?: next.muted,
-        maxLines = 1,
+        maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
@@ -280,11 +282,11 @@ fun InlineAction(
                 text = label,
                 fontSize = 13.5.sp,
                 fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
-                color = if (filled) next.accent else next.muted,
+                color = if (filled) next.onAccent else next.muted,
                 modifier =
                     Modifier
                         .clip(shape)
-                        .background(if (filled) next.accentSoft else Color.Transparent)
+                        .background(if (filled) next.accent else Color.Transparent)
                         .padding(horizontal = if (filled) 13.dp else 4.dp, vertical = 7.dp),
             )
         }

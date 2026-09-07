@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -111,7 +112,10 @@ fun GalleryScreen(
                                 onClose()
                             },
                         ) {
-                            Icon(Icons.Filled.Close, contentDescription = "Close")
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.gallery_close),
+                            )
                         }
                     },
                     actions = {
@@ -131,11 +135,17 @@ fun GalleryScreen(
                                     }
                                 },
                             ) {
-                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copy image")
+                                Icon(
+                                    Icons.Filled.ContentCopy,
+                                    contentDescription = stringResource(R.string.gallery_copy_image),
+                                )
                             }
                         }
                         IconButton(onClick = { viewModel.download(currentItem) }) {
-                            Icon(Icons.Filled.Download, contentDescription = "Download")
+                            Icon(
+                                Icons.Filled.Download,
+                                contentDescription = stringResource(R.string.gallery_download),
+                            )
                         }
                     },
                 )

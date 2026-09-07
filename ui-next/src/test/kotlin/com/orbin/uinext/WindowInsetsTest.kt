@@ -46,8 +46,8 @@ class WindowInsetsTest {
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
         // The rail's affordance is above the gesture handle rather than behind it.
-        val search = composeRule.onNodeWithText("Search").getUnclippedBoundsInRoot()
-        assertThat(search.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+        val go = composeRule.onNodeWithText("Go").getUnclippedBoundsInRoot()
+        assertThat(go.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 
     @Test

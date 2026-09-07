@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -19,9 +19,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.orbin.core.ui.state.EmptyView
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
+import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextTheme
+import com.orbin.uinext.next
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -73,7 +75,7 @@ fun BoardDetailTwoPane(
             )
         }
 
-        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        VerticalDivider(color = next.hairline)
 
         Box(modifier = Modifier.weight(DETAIL_PANE_WEIGHT).fillMaxHeight()) {
             NavHost(
@@ -82,7 +84,13 @@ fun BoardDetailTwoPane(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 composable<DetailPaneEmpty> {
-                    EmptyView("Pick a thread from the catalog", Modifier.fillMaxSize())
+                    NextTheme {
+                        MessageScreen(
+                            title = "Thread",
+                            subtitle = stringResource(com.orbin.uinext.R.string.next_two_pane_pick_thread),
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
 
                 composable<Route.Thread> { entry ->

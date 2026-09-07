@@ -53,7 +53,7 @@ class CommandFilterTest {
 
     @Test
     fun `matching is case insensitive and ignores surrounding space`() {
-        assertThat(filterCommands(catalogue(), "  GALLERY ").map { it.label }).contains("Gallery")
+        assertThat(filterCommands(catalogue(), "  GALLERY ").map { it.label }).contains("Browse by board")
     }
 
     @Test

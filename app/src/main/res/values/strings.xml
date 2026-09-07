@@ -33,4 +33,6 @@
     <string name="lock_error_canceled">Unlock was canceled. Try again.</string>
     <string name="lock_error_not_recognized">Authentication was not recognized. Try again.</string>
     <string name="lock_error_timeout">Unlock timed out. Try again.</string>
+
+    <string name="offline_banner">You\'re offline</string>
 </resources>

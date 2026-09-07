@@ -34,6 +34,11 @@ fun NextAllMediaScreen(
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    onOpenFeed: (() -> Unit)? = null,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearchDestination: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -49,6 +54,11 @@ fun NextAllMediaScreen(
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
+        onOpenFeed = onOpenFeed,
+        onOpenBoards = onOpenBoards,
+        onOpenHistory = onOpenHistory,
+        onOpenDownloads = onOpenDownloads,
+        onOpenSearchDestination = onOpenSearchDestination,
     )
 }
 
@@ -69,6 +79,11 @@ fun NextAllMediaContent(
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
     onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenFeed: (() -> Unit)? = null,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearchDestination: (() -> Unit)? = null,
 ) {
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
     val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
@@ -80,6 +95,8 @@ fun NextAllMediaContent(
             MessageScreen(
                 title = stringResource(R.string.next_media_title),
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
+                where = stringResource(R.string.next_media_title),
+                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme
@@ -90,6 +107,8 @@ fun NextAllMediaContent(
                 subtitle = stringResource(R.string.next_media_empty),
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
+                where = stringResource(R.string.next_media_title),
+                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme
@@ -112,6 +131,11 @@ fun NextAllMediaContent(
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onSearch = onOpenCommands,
+                onOpenFeed = onOpenFeed,
+                onOpenBoards = onOpenBoards,
+                onOpenHistory = onOpenHistory,
+                onOpenDownloads = onOpenDownloads,
+                onOpenSearchDestination = onOpenSearchDestination,
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->
                         onOpenMedia(

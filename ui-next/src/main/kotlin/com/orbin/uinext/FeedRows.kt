@@ -44,10 +44,35 @@ internal fun FeedHeader(
     sizeValue: Float = GRID_MIN_CELL.value,
     onSizeChange: (Float) -> Unit = {},
     showSizeControl: Boolean = true,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenMedia: (() -> Unit)? = null,
 ) {
     val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
+        val destinations =
+            listOfNotNull(
+                onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
+                onOpenMedia?.let { stringResource(R.string.next_launchpad_media) to it },
+                onOpenHistory?.let { stringResource(R.string.next_launchpad_history) to it },
+                onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
+                onOpenSearch?.let { stringResource(R.string.next_launchpad_search) to it },
+            )
+        if (destinations.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                destinations.forEach { (label, open) ->
+                    InlineAction(label = label, onClick = open)
+                }
+            }
+            Gap(8)
+        }
         FlowRow(
             modifier = Modifier.fillMaxWidth().selectableGroup().padding(horizontal = GUTTER - 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -181,7 +206,7 @@ internal fun FeedGridCell(
             overflow = TextOverflow.Ellipsis,
         )
         Gap(6)
-        MetaLine(rowCounts(row))
+        MetaLine(rowCounts(row), maxLines = 2)
         Gap(12)
     }
 }

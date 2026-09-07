@@ -3,4 +3,8 @@
     <string name="media_spoiler">Spoiler</string>
     <string name="media_play">Play</string>
     <string name="media_open_in_browser">Open in browser</string>
+    <string name="media_image_loading">Loading image</string>
+    <string name="media_image_unavailable">Image unavailable</string>
+    <string name="media_mute">Mute</string>
+    <string name="media_unmute">Unmute</string>
 </resources>
