@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [128-Rei] - 2026-09-07
+
+### Added
+- Expanded Color theme with Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, and Lain — each maps onto the Next shell so Feed and friends recolor with the setting, not only Material destinations.
+
+
 ## [127-Noa] - 2026-09-07
 
 ### Fixed
@@ -2123,7 +2129,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v127-Noa...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v128-Rei...HEAD
+[128-Rei]: https://github.com/Defuuls/Orbin/compare/v127-Noa...v128-Rei
 [127-Noa]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...v127-Noa
 [126-Hinata]: https://github.com/Defuuls/Orbin/compare/v125-Nami...v126-Hinata
 [125-Nami]: https://github.com/Defuuls/Orbin/compare/v124-Airi...v125-Nami
