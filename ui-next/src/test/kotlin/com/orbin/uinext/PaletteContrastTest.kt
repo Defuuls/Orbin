@@ -1,9 +1,9 @@
 package com.orbin.uinext
 
 import androidx.compose.ui.graphics.Color
-import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import org.junit.Test
 import kotlin.math.pow
 

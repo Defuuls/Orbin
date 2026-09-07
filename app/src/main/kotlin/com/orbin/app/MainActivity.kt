@@ -46,8 +46,8 @@ import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.toNextPalette
 import com.orbin.uinext.next
+import com.orbin.uinext.toNextPalette
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

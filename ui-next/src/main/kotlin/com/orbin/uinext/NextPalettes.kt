@@ -56,7 +56,6 @@ internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     )
 }
 
-
 /** Accent that clears AA on [background], with an on-accent color that also clears AA. */
 private fun ensureAccentWithOnColor(
     preferred: Color,
@@ -64,10 +63,11 @@ private fun ensureAccentWithOnColor(
     fallbacks: List<Color>,
 ): Color {
     val candidates = listOf(preferred) + fallbacks
-    candidates.firstOrNull { color ->
-        contrastRatio(color, background) >= AA_NORMAL_TEXT &&
-            max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
-    }?.let { return it }
+    candidates
+        .firstOrNull { color ->
+            contrastRatio(color, background) >= AA_NORMAL_TEXT &&
+                max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
+        }?.let { return it }
 
     val towardBgOpposite = if (background.luminance() > 0.5f) Color.Black else Color.White
     var best = preferred
