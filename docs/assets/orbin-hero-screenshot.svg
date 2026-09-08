@@ -1,6 +1,6 @@
-<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="128-Rei">
+<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="129-Measles">
   <title id="title">Orbin grid-first feed on a compact Android phone</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 128 Rei showing the adaptive two-column thread grid on a compact phone, Color themes, Mild to Wild sizing, and privacy defaults.</desc>
+  <desc id="desc">Screenshot-style illustration of Orbin 129 Measles showing the adaptive two-column thread grid on a compact phone, Color themes, Mild to Wild sizing, and privacy defaults.</desc>
   <rect width="1200" height="760" fill="#F4F6FA"/>
   <rect x="64" y="72" width="1072" height="616" rx="40" fill="#FFFFFF"/>
 
@@ -9,7 +9,7 @@
   <text x="96" y="172" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">Privacy-focused Android</text>
   <text x="96" y="194" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">imageboard browser</text>
   <rect x="96" y="218" width="132" height="36" rx="18" fill="#DCE6FF"/>
-  <text id="release-label" x="162" y="241" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">128 · Rei</text>
+  <text id="release-label" x="162" y="241" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">129 · Measles</text>
 
   <!-- Phone: centered, screen inset with room for GRID / IMAGES -->
   <rect x="360" y="100" width="340" height="520" rx="40" fill="#202431"/>

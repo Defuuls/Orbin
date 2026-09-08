@@ -132,7 +132,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -B "$BRANCH"
-          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md
+          git add gradle.properties CHANGELOG.md README.md docs/wiki/Home.md docs/assets/orbin-hero-screenshot.svg
           git commit -m "chore: Prepare v${VERSION_NAME} release"
           git push --force-with-lease --set-upstream origin "$BRANCH"
           python3 scripts/prepare_release.py summary > /tmp/pr-body.md
