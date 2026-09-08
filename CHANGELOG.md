@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [129-Measles] - 2026-09-08
+
+### Changed
+- Gave the board catalog LazyVerticalGrid stable keys and contentTypes (was index-only) and remembered thread Files layout rows keyed by media ids, cutting unnecessary recomposition and recycling churn.
+- Wired catalog paging itemKey/itemContentType end-to-end on classic and Next board screens, and memoized Next FeedRow leading content so feed scroll recycles more cleanly.
+
+### Reliability
+- Shared CI JDK/Gradle setup via a composite action across workflows, pinned Kotlin Dependabot away from CodeQL-unsupported versions, and added advice-only dependency-analysis buildHealth on static analysis.
+
+
 ## [128-Rei] - 2026-09-07
 
 ### Added
@@ -2129,7 +2139,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v128-Rei...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v129-Measles...HEAD
+[129-Measles]: https://github.com/Defuuls/Orbin/compare/v128-Rei...v129-Measles
 [128-Rei]: https://github.com/Defuuls/Orbin/compare/v127-Noa...v128-Rei
 [127-Noa]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...v127-Noa
 [126-Hinata]: https://github.com/Defuuls/Orbin/compare/v125-Nami...v126-Hinata
