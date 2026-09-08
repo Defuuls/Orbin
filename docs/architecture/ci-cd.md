@@ -112,16 +112,17 @@ Codename eras change; the tag format `v<number>-<Codename>` does not:
 
 | Range | Theme |
 | --- | --- |
-| v100+ | Popular Japanese female names (current) |
+| v129+ | Highly contagious diseases (current; see [`release/codenames.txt`](../../release/codenames.txt)) |
+| v100–v128 | Popular Japanese female names |
 | v91–v99 | Pasta |
 | v30–v90 | Stars / astronomical names |
 | Earlier | Multiple early themes |
 
-Orbin Minimal draws from the same naming pool on its own `minimal-v*` line. Names must not be
-reused across either product. See [`docs/wiki/Release-History.md`](../wiki/Release-History.md).
+Orbin Minimal uses its **own** codename file (terminal clinical conditions from its v17). Names must
+not be reused across either product. See [`docs/wiki/Release-History.md`](../wiki/Release-History.md).
 
-Pick a name that is distinctive, short enough for a changelog heading, and — check
-`git tag --list 'v*'`, not memory or an existing doc — **not already taken**.
+From v129, pick an unused Display name from `release/codenames.txt` — check
+`git tag --list 'v*'` as well, not memory or an existing doc.
 
 ## Cutting a release
 

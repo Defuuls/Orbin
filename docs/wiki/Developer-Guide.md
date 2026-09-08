@@ -169,7 +169,7 @@ Never commit keystores, passwords, or generated secret material.
 
 The preferred release path is manifest-driven:
 
-1. Update/merge `release/next.toml` with the next number, codename, version code, and release notes.
+1. Update/merge `release/next.toml` with the next number, a `codename` from `release/codenames.txt` (highly contagious diseases from v129), version code, and release notes.
 2. **Cut Release** prepares the release PR using `scripts/prepare_release.py` and synchronized
    metadata changes.
 3. Let the release PR pass required checks and merge it.

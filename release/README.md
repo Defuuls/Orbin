@@ -8,7 +8,7 @@ is the whole procedure — the **Cut Release** workflow
 
 ```toml
 number       = 129          # release number; the tag becomes v129-<Codename>
-codename     = "Asuka"      # a popular Japanese female name, never one already tagged
+codename     = "Measles"    # from release/codenames.txt (highly contagious diseases), never one already tagged
 version_code = 147          # Android versionCode; must exceed the current value
 
 # Optional. The release PR's summary bullets; derived from the version when omitted.
@@ -75,6 +75,8 @@ pushing a branch, opening a PR, or dispatching a build.
 
 ## Notes
 
+- **From v129, codenames are highly contagious diseases** listed in
+  [`release/codenames.txt`](codenames.txt). `prepare_release.py` refuses any other name.
 - **Codenames are never reused across either product line.** The cutter refuses a codename matching
   any existing tag; check `git tag --list` before writing one down.
 - **A multi-word codename is hyphenated in the tag and versionName but displayed with spaces**, so

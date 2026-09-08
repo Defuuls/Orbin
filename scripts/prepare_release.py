@@ -30,6 +30,9 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "release" / "next.toml"
 BASE_URL = "https://github.com/Defuuls/Orbin"
 HERO_SVG = "docs/assets/orbin-hero-screenshot.svg"
+CODENAMES_FILE = ROOT / "release" / "codenames.txt"
+# Contagious-disease era starts here (Japanese-name era ended at v128 — Rei).
+DISEASE_ERA_FROM = 129
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
 
 
@@ -72,6 +75,35 @@ def _require(data: dict, key: str, kind: type):
     return value
 
 
+
+def load_disease_codenames() -> list[str]:
+    """Ordered Display names from release/codenames.txt (comments/blank skipped)."""
+    if not CODENAMES_FILE.exists():
+        raise ManifestError(f"missing codename pool at {CODENAMES_FILE.relative_to(ROOT)}")
+    names: list[str] = []
+    for line in CODENAMES_FILE.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        names.append(" ".join(stripped.split()))
+    if not names:
+        raise ManifestError(f"{CODENAMES_FILE.name} has no codename entries")
+    return names
+
+
+def require_disease_codename(number: int, codename: str) -> None:
+    """From DISEASE_ERA_FROM, codenames must come from the hardcoded disease pool."""
+    if number < DISEASE_ERA_FROM:
+        return
+    pool = load_disease_codenames()
+    if codename not in pool:
+        preview = ", ".join(pool[:8])
+        raise ManifestError(
+            f"codename {codename!r} is not in release/codenames.txt. "
+            f"From v{DISEASE_ERA_FROM} onward picks must be highly contagious diseases "
+            f"(e.g. {preview}, …)."
+        )
+
 def load_manifest() -> tuple[Release, dict[str, list[str]]]:
     if not MANIFEST.exists():
         raise ManifestError(f"no manifest at {MANIFEST.relative_to(ROOT)}")
@@ -87,6 +119,7 @@ def load_manifest() -> tuple[Release, dict[str, list[str]]]:
         raise ManifestError(f"'number' must be positive, got {number}")
     if not CODENAME.match(codename):
         raise ManifestError(f"'codename' must be a readable name, got {codename!r}")
+    require_disease_codename(number, codename)
 
     changelog = _require(data, "changelog", dict)
     sections: dict[str, list[str]] = {}

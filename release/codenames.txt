@@ -1,0 +1,72 @@
+# Orbin full-client release codenames — highly contagious diseases.
+#
+# From version 129 onward, release/next.toml's `codename` MUST be one of these
+# Display names (exact spelling). Tag slug = spaces → hyphens (e.g. "Hand Foot
+# Mouth" → vN-Hand-Foot-Mouth). APPEND ONLY; never reorder or remove a name
+# that has already shipped as a tag.
+#
+# Format: one Display name per non-comment line (Title Case; A-Za-z, spaces,
+# apostrophes, and hyphens allowed — same rules as prepare_release.CODENAME).
+
+Measles
+Pertussis
+Varicella
+Influenza
+Norovirus
+Rotavirus
+Rhinovirus
+Rubella
+Mumps
+Tuberculosis
+Covid
+Smallpox
+Ebola
+Marburg
+Nipah
+Mers
+Sars
+Mpox
+Cholera
+Typhoid
+Dysentery
+Diphtheria
+Scarlet Fever
+Meningitis
+Polio
+Hepatitis A
+Shigella
+Campylobacter
+Cdiff
+Scabies
+Impetigo
+Hand Foot Mouth
+Adenovirus
+Rsv
+Parainfluenza
+Enterovirus
+Lassa
+Plague
+Chickenpox
+Whooping Cough
+Mycoplasma
+Legionella
+Conjunctivitis
+Fifth Disease
+Roseola
+Mononucleosis
+Cytomegalovirus
+Herpes
+Syphilis
+Gonorrhea
+Chlamydia
+Hiv
+Hepatitis B
+Hepatitis C
+Leprosy
+Yaws
+Trachoma
+Q Fever
+Brucellosis
+Tularemia
+Melioidosis
+Glanders

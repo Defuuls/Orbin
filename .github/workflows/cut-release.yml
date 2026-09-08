@@ -27,6 +27,7 @@ on:
       - main
     paths:
       - 'release/next.toml'
+      - 'release/codenames.txt'
       - 'gradle.properties'
       - 'scripts/prepare_release.py'
       - '.github/workflows/cut-release.yml'
