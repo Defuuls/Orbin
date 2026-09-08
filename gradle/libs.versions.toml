@@ -52,7 +52,7 @@ okhttp = "5.5.0"
 retrofit = "3.0.0"
 
 # Media
-coil = "3.6.1"
+coil = "3.6.2"
 media3 = "1.11.0"
 
 # Work
