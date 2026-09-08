@@ -11,26 +11,31 @@ This wiki page is an **era guide and narrative**, not a second changelog. Keepin
 entries synchronized in two places creates documentation drift, so the repository CHANGELOG is the
 single detailed history.
 
-## Current era: Japanese names
+## Current era: contagious diseases
 
-From **v100 — Sakura**, full Orbin releases use popular Japanese female names. Orbin Minimal draws
-from the same naming pool on its own `minimal-v*` release line, and names should not be reused across
-the two applications.
+From **v129**, full Orbin releases are named after **highly contagious diseases**, hardcoded in
+[`release/codenames.txt`](https://github.com/Defuuls/Orbin/blob/main/release/codenames.txt). The
+Japanese-name era ran **v100 — Sakura** through **v128 — Rei**.
 
-The current release, **v128 — Rei**, continues that modern architecture/UI generation: modular
-Clean Architecture, the app-agnostic `ui-next` seam, encrypted local persistence, provider contracts,
-privacy-safe provider diagnostics, comprehensive CI gates, and adaptive Compose UI. Recent ships
-expanded Color theme onto the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends),
-widened Mild→Wild media sizing, and polished Feed / All Media / Command chrome.
+Orbin Minimal uses a separate pool (terminal clinical conditions from its own v17). Names must not be
+reused across the two applications.
+
+The current release, **v128 — Rei**, closes the Japanese-name era on the modern architecture/UI
+generation: modular Clean Architecture, the app-agnostic `ui-next` seam, encrypted local persistence,
+provider contracts, privacy-safe provider diagnostics, comprehensive CI gates, and adaptive Compose
+UI. Recent ships expanded Color theme onto the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal,
+Lain, and friends), widened Mild→Wild media sizing, and polished Feed / All Media / Command chrome.
 
 Changes merged after v128 are documented under the CHANGELOG's Unreleased section until the next
-release is cut.
+release is cut (expected first disease-era tag: **v129 — Measles**, unless another unused pool name
+is chosen).
 
 ## Release eras
 
 | Range | Theme | Notes |
 | --- | --- | --- |
-| v100+ | Popular Japanese female names | Current naming era |
+| v129+ | Highly contagious diseases | Current naming era; pool in `release/codenames.txt` |
+| v100–v128 | Popular Japanese female names | Closed at v128 — Rei |
 | v91–v99 | Pasta | Short transitional era after the star releases |
 | v30–v90 | Stars and related astronomical names | Long-running middle era, with a few historical naming irregularities |
 | Earlier | Multiple early themes | See CHANGELOG for the authoritative record |
