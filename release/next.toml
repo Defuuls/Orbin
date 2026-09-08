@@ -1,18 +1,26 @@
-# Orbin 128 — Rei
+# Orbin 129 — Measles
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
+#
+# First release of the contagious-disease naming era (Japanese names ended at
+# v128 — Rei).
 
-number       = 128
-codename     = "Rei"
-version_code = 146
+number       = 129
+codename     = "Measles"
+version_code = 147
 
 summary = [
-  "bump Orbin to 128-Rei / versionCode 146",
-  "more Color themes on the Next shell (Yotsuba, Warosu, Miku, and friends)",
+  "bump Orbin to 129-Measles / versionCode 147",
+  "Compose recycling wins on board catalog, thread Files, and Next feed paging",
 ]
 
 [changelog]
-Added = [
-  "Expanded Color theme with Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, and Lain — each maps onto the Next shell so Feed and friends recolor with the setting, not only Material destinations.",
+Changed = [
+  "Gave the board catalog LazyVerticalGrid stable keys and contentTypes (was index-only) and remembered thread Files layout rows keyed by media ids, cutting unnecessary recomposition and recycling churn.",
+  "Wired catalog paging itemKey/itemContentType end-to-end on classic and Next board screens, and memoized Next FeedRow leading content so feed scroll recycles more cleanly.",
+]
+
+Reliability = [
+  "Shared CI JDK/Gradle setup via a composite action across workflows, pinned Kotlin Dependabot away from CodeQL-unsupported versions, and added advice-only dependency-analysis buildHealth on static analysis.",
 ]
