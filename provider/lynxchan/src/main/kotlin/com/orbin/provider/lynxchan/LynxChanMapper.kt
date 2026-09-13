@@ -247,10 +247,12 @@ class LynxChanMapper(
             return value.takeIf { isSafePath }
         }
 
-        val uri = runCatching { URI(value) }.getOrNull() ?: return null
-        val host = uri.host ?: return null
+        val uri = runCatching { URI(value) }.getOrNull()
+        val host = uri?.host
         val isAllowedAbsoluteUrl =
-            uri.scheme.equals("https", ignoreCase = true) && site.isAllowedMediaHost(host)
+            uri?.scheme.equals("https", ignoreCase = true) &&
+                host != null &&
+                site.isAllowedMediaHost(host)
         return value.takeIf { isAllowedAbsoluteUrl }
     }
 
