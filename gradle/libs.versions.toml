@@ -1,14 +1,10 @@
 [versions]
 # Android / Build
 agp = "9.4.0"
-# Held at 2.4.10 until CodeQL's Kotlin extractor supports 2.4.20+.
-# CodeQL 2.26.2 / 2.26.3 document support through 2.4.10 only
-# (https://github.blog/changelog/2026-08-04-codeql-2-26-2-adds-swift-6-3-3-and-kotlin-2-4-10-support/).
-# 2.4.20+ hard-fails java-kotlin analysis with KotlinVersionTooRecentError and silently disables
-# security scanning for every PR. Dependabot is told to ignore >=2.4.20 for the same reason.
-# Dependabot alert #63 (build-cache metadata deserialization) is knowingly left open by this pin:
-# it is a build-machine concern, not an APK one — fix is 2.4.20 once CodeQL supports it.
-kotlin = "2.4.10"
+# Kotlin 2.4.20 fixes CVE-2026-53914 (unsafe build-cache metadata deserialization).
+# The current CodeQL Java/Kotlin extractor supports Kotlin through 2.4.20, so keep this at or above
+# the fixed release and let Dependabot surface future updates normally.
+kotlin = "2.4.20"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
 ksp = "2.3.11"

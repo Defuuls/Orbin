@@ -33,6 +33,23 @@ jobs:
           languages: java-kotlin
           build-mode: manual
 
+      # CodeQL bundle 2.27.0 still rejects Kotlin 2.4.20 even though the public support matrix
+      # already lists it. Keep the repository on the CVE-fixed compiler and downgrade only this
+      # disposable, cache-disabled analysis workspace until the shipped extractor catches up.
+      - name: Use CodeQL-compatible Kotlin compiler
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("gradle/libs.versions.toml")
+          text = path.read_text()
+          fixed = 'kotlin = "2.4.20"'
+          compatible = 'kotlin = "2.4.10"'
+          if fixed not in text:
+              raise SystemExit("Expected Kotlin 2.4.20 version catalog entry was not found")
+          path.write_text(text.replace(fixed, compatible, 1))
+          PY
+
       - name: Build Android project
         run: ./gradlew clean assembleDebug --no-daemon --no-build-cache -Dorg.gradle.caching=false
 

@@ -94,10 +94,37 @@ class BackupServiceTest {
             service(destinationSettings).importFromJson(exported).getOrThrow()
             val restored = destinationSettings.settings.first()
 
-            // downloadFolderUri and httpsOnly are deliberately not restored; normalise them so the
-            // comparison covers every other field without listing them one by one.
-            assertThat(restored.copy(downloadFolderUri = "", httpsOnly = true))
-                .isEqualTo(populatedSettings.copy(downloadFolderUri = "", httpsOnly = true))
+            // downloadFolderUri, httpsOnly and biometricLockEnabled are deliberately not restored;
+            // normalise them so the comparison covers every other field without listing them.
+            assertThat(
+                restored.copy(
+                    downloadFolderUri = "",
+                    httpsOnly = true,
+                    biometricLockEnabled = false,
+                ),
+            ).isEqualTo(
+                populatedSettings.copy(
+                    downloadFolderUri = "",
+                    httpsOnly = true,
+                    biometricLockEnabled = false,
+                ),
+            )
+        }
+
+    @Test
+    fun biometricLockPolicyIsNeverRestoredFromBackup() =
+        runTest {
+            val unlockedBackup =
+                service(FakeSettingsRepository(populatedSettings.copy(biometricLockEnabled = false)))
+                    .exportToJson("test")
+            val lockedDestination = FakeSettingsRepository(populatedSettings.copy(biometricLockEnabled = true))
+            service(lockedDestination).importFromJson(unlockedBackup).getOrThrow()
+            assertThat(lockedDestination.settings.first().biometricLockEnabled).isTrue()
+
+            val lockedBackup = service(FakeSettingsRepository(populatedSettings)).exportToJson("test")
+            val unlockedDestination = FakeSettingsRepository(populatedSettings.copy(biometricLockEnabled = false))
+            service(unlockedDestination).importFromJson(lockedBackup).getOrThrow()
+            assertThat(unlockedDestination.settings.first().biometricLockEnabled).isFalse()
         }
 
     @Test

@@ -234,9 +234,9 @@ class LynxChanMapper(
 
     /**
      * LynxChan normally returns root-relative media paths, while some deployments/proxies return
-     * already absolute media URLs. Accept both forms, mirroring Orbin Minimal, while rejecting
-     * whitespace, traversal, protocol-relative URLs, and non-HTTPS absolute schemes. Relative
-     * paths are resolved against the site's HTTPS base.
+     * absolute media URLs. Accept absolute URLs only for the provider's own host or a CDN host
+     * explicitly allowlisted in [LynxChanSite], and reject traversal, protocol-relative URLs and
+     * non-HTTPS schemes.
      */
     private fun String?.toSafeMediaLocation(): String? {
         val value = this?.trim().orEmpty()
@@ -247,9 +247,13 @@ class LynxChanMapper(
             return value.takeIf { isSafePath }
         }
 
-        val uri = runCatching { URI(value) }.getOrNull() ?: return null
-        val scheme = uri.scheme?.lowercase()
-        return value.takeIf { scheme == "https" && !uri.host.isNullOrBlank() }
+        val uri = runCatching { URI(value) }.getOrNull()
+        val host = uri?.host
+        val isAllowedAbsoluteUrl =
+            uri?.scheme.equals("https", ignoreCase = true) &&
+                host != null &&
+                site.isAllowedMediaHost(host)
+        return value.takeIf { isAllowedAbsoluteUrl }
     }
 
     private fun LynxChanSite.resolveMediaLocation(location: String): String =
