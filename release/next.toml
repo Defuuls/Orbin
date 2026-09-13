@@ -1,26 +1,29 @@
-# Orbin 129 — Measles
+# Orbin 130 — Pertussis
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
-#
-# First release of the contagious-disease naming era (Japanese names ended at
-# v128 — Rei).
 
-number       = 129
-codename     = "Measles"
-version_code = 147
+number       = 130
+codename     = "Pertussis"
+version_code = 148
 
 summary = [
-  "bump Orbin to 129-Measles / versionCode 147",
-  "Compose recycling wins on board catalog, thread Files, and Next feed paging",
+  "bump Orbin to 130-Pertussis / versionCode 148",
+  "ship the post-audit security hardening for build tooling, media URLs, backups, Keystore fallback, and Gradle distribution integrity",
 ]
 
 [changelog]
-Changed = [
-  "Gave the board catalog LazyVerticalGrid stable keys and contentTypes (was index-only) and remembered thread Files layout rows keyed by media ids, cutting unnecessary recomposition and recycling churn.",
-  "Wired catalog paging itemKey/itemContentType end-to-end on classic and Next board screens, and memoized Next FeedRow leading content so feed scroll recycles more cleanly.",
+Security = [
+  "Upgraded Kotlin to 2.4.20 to remediate CVE-2026-53914 and removed the stale Dependabot hold that blocked the patched toolchain.",
+  "Restricted LynxChan absolute media URLs to the provider host or explicitly allowlisted CDN hosts, removing an avoidable cross-origin media-fetch primitive.",
+  "Kept biometric app-lock policy local to the current installation so plaintext backup imports cannot enable or disable the lock setting.",
+  "Pinned the Gradle 9.7.1 binary distribution SHA-256 so wrapper downloads are integrity-verified.",
+]
+
+Fixed = [
+  "Made Android Keystore StrongBox fallback retry correctly with the normal Keystore path when StrongBox key generation is unavailable.",
 ]
 
 Reliability = [
-  "Shared CI JDK/Gradle setup via a composite action across workflows, pinned Kotlin Dependabot away from CodeQL-unsupported versions, and added advice-only dependency-analysis buildHealth on static analysis.",
+  "Added regression coverage for LynxChan media-host policy and backup app-lock restore behavior, and bridged CodeQL analysis to the security-fixed Kotlin toolchain with an isolated cache-disabled compatibility build.",
 ]
