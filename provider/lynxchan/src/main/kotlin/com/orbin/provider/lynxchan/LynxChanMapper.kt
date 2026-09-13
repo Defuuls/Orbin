@@ -41,10 +41,6 @@ class LynxChanMapper(
             title = dto.boardName,
             description = dto.boardDescription,
             isNsfw = site.nsfwByDefault,
-            pageCount = dto.pages,
-            bumpLimit = dto.bumpLimit,
-            imageLimit = dto.imageLimit,
-            maxCommentChars = dto.maxCommentChars,
         )
 
     fun mapCatalog(
