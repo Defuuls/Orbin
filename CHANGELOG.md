@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [130-Pertussis] - 2026-09-13
+
+### Security
+- Upgraded Kotlin to 2.4.20 to remediate CVE-2026-53914 and removed the stale Dependabot hold that blocked the patched toolchain.
+- Restricted LynxChan absolute media URLs to the provider host or explicitly allowlisted CDN hosts, removing an avoidable cross-origin media-fetch primitive.
+- Kept biometric app-lock policy local to the current installation so plaintext backup imports cannot enable or disable the lock setting.
+- Pinned the Gradle 9.7.1 binary distribution SHA-256 so wrapper downloads are integrity-verified.
+
+### Fixed
+- Made Android Keystore StrongBox fallback retry correctly with the normal Keystore path when StrongBox key generation is unavailable.
+
+### Reliability
+- Added regression coverage for LynxChan media-host policy and backup app-lock restore behavior, and bridged CodeQL analysis to the security-fixed Kotlin toolchain with an isolated cache-disabled compatibility build.
+
+
 ## [129-Measles] - 2026-09-08
 
 ### Changed
@@ -2139,7 +2154,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v129-Measles...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...HEAD
+[130-Pertussis]: https://github.com/Defuuls/Orbin/compare/v129-Measles...v130-Pertussis
 [129-Measles]: https://github.com/Defuuls/Orbin/compare/v128-Rei...v129-Measles
 [128-Rei]: https://github.com/Defuuls/Orbin/compare/v127-Noa...v128-Rei
 [127-Noa]: https://github.com/Defuuls/Orbin/compare/v126-Hinata...v127-Noa

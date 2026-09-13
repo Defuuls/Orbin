@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [129 — Measles](https://github.com/Defuuls/Orbin/releases/tag/v129-Measles)
+**Current release:** [130 — Pertussis](https://github.com/Defuuls/Orbin/releases/tag/v130-Pertussis)
 
 **What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
 
