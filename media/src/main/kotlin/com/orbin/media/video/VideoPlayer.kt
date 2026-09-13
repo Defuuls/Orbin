@@ -32,6 +32,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -77,7 +78,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
  * A Media3/ExoPlayer-backed video player. The player is created per [url], loops by default, and
- * is released when the composable leaves composition so there are no leaked players. Autoplay and
+ * exposes a Loop/Once control so the behavior can be changed while it is playing. The player is
+ * released when the composable leaves composition so there are no leaked players. Autoplay and
  * the initial mute state are driven from settings by the caller; tapping the video reveals compact
  * controls without permanently covering playing media.
  */
@@ -99,6 +101,7 @@ fun VideoPlayer(
     var videoIsLandscape by remember(url) { mutableStateOf(false) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
+    var loopEnabled by rememberSaveable(url) { mutableStateOf(true) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
@@ -121,7 +124,7 @@ fun VideoPlayer(
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {
-                    repeatMode = Player.REPEAT_MODE_ONE
+                    repeatMode = repeatModeFor(loopEnabled)
                     volume = if (muted) 0f else 1f
                     playWhenReady = active && autoPlay
                 }
@@ -168,6 +171,10 @@ fun VideoPlayer(
 
     LaunchedEffect(isMuted) {
         exoPlayer.volume = if (isMuted) 0f else 1f
+    }
+
+    LaunchedEffect(loopEnabled) {
+        exoPlayer.repeatMode = repeatModeFor(loopEnabled)
     }
 
     val fullscreen =
@@ -314,6 +321,7 @@ fun VideoPlayer(
             VideoControls(
                 isPlaying = isPlaying,
                 isMuted = isMuted,
+                isLooping = loopEnabled,
                 isFullscreen = fullscreen.value,
                 progress = progress,
                 positionMs = positionMs,
@@ -323,6 +331,7 @@ fun VideoPlayer(
                     if (!isPlaying) controlsVisible = false
                 },
                 onMuteToggle = { isMuted = !isMuted },
+                onLoopToggle = { loopEnabled = !loopEnabled },
                 onFullscreenToggle = { fullscreen.value = !fullscreen.value },
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
@@ -397,12 +406,14 @@ private fun rememberVideoFullscreenState(
 private fun VideoControls(
     isPlaying: Boolean,
     isMuted: Boolean,
+    isLooping: Boolean,
     isFullscreen: Boolean,
     progress: Float,
     positionMs: Long,
     durationMs: Long,
     onPlayPause: () -> Unit,
     onMuteToggle: () -> Unit,
+    onLoopToggle: () -> Unit,
     onFullscreenToggle: () -> Unit,
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -462,6 +473,12 @@ private fun VideoControls(
                                 },
                             contentDescription = if (isMuted) "Unmute" else "Mute",
                             tint = Color.White,
+                        )
+                    }
+                    TextButton(onClick = onLoopToggle) {
+                        Text(
+                            text = if (isLooping) "Loop" else "Once",
+                            color = if (isLooping) MaterialTheme.colorScheme.primary else Color.White,
                         )
                     }
                     IconButton(
@@ -526,6 +543,9 @@ private fun Activity.applyVideoFullscreen(
         requestedOrientation = originalOrientation
     }
 }
+
+internal fun repeatModeFor(loopEnabled: Boolean): Int =
+    if (loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
 
 private fun Long.progressIn(durationMs: Long): Float =
     if (durationMs > 0L) {
