@@ -3,6 +3,7 @@ package com.orbin.provider.lynxchan
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.provider.api.ProviderContract
 import com.orbin.provider.lynxchan.api.LynxChanBoard
@@ -132,7 +133,16 @@ class LynxChanMapperTest {
     }
 
     @Test
-    fun `absolute media urls are preserved`() {
+    fun `allowlisted absolute media urls are preserved`() {
+        val allowlistedMapper =
+            LynxChanMapper(
+                LynxChanSite(
+                    providerId = ProviderId("test"),
+                    displayName = "Test",
+                    siteUrl = "https://boards.example.org",
+                    allowedMediaHosts = setOf("cdn.example.org"),
+                ),
+            )
         val response =
             LynxChanThreadResponse(
                 threadId = 9,
@@ -147,7 +157,7 @@ class LynxChanMapperTest {
             )
 
         val attachment =
-            mapper
+            allowlistedMapper
                 .mapThread(board, response)
                 .originalPost.attachments
                 .single()
@@ -157,10 +167,27 @@ class LynxChanMapperTest {
     }
 
     @Test
-    fun `missing or unsafe media paths are ignored`() {
+    fun `untrusted cross origin media urls are ignored`() {
         val response =
             LynxChanThreadResponse(
                 threadId = 10,
+                files =
+                    listOf(
+                        LynxChanFile(
+                            path = "https://cdn.example.org/media/full.jpg",
+                            mime = "image/jpeg",
+                        ),
+                    ),
+            )
+
+        assertThat(mapper.mapThread(board, response).originalPost.attachments).isEmpty()
+    }
+
+    @Test
+    fun `missing or unsafe media paths are ignored`() {
+        val response =
+            LynxChanThreadResponse(
+                threadId = 11,
                 files =
                     listOf(
                         LynxChanFile(path = null, mime = "image/jpeg"),
