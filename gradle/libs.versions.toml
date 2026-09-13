@@ -207,7 +207,7 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
-roborazzi = { id = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 android-test = { id = "com.android.test" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyAnalysis" }
