@@ -136,7 +136,6 @@ class BackupService
                 setReadTimeoutSeconds(settings.readTimeoutSeconds)
                 setDisableOcspChecking(settings.disableOcspChecking)
                 setDohProvider(settings.dohProvider)
-                setBiometricLockEnabled(settings.biometricLockEnabled)
                 setSaveRecentSearches(settings.saveRecentSearches)
                 setInternalUpdaterEnabled(settings.internalUpdaterEnabled)
                 setThreadWatchNotificationsEnabled(settings.threadWatchNotificationsEnabled)
@@ -151,10 +150,11 @@ class BackupService
                 }
                 // Skip onboarding for a restored install — the user has already been through it.
                 setOnboardingCompleted(settings.onboardingCompleted)
-                // httpsOnly has no setter by design — it is always enforced, so there is nothing
-                // to restore and a backup can never weaken it.
-                // downloadFolderUri is deliberately not restored: a SAF permission grant belongs to
-                // the install that requested it, so the path would be unreadable after a reinstall.
+                // Security-sensitive settings are deliberately local to this install. httpsOnly has
+                // no setter and is always enforced; biometricLockEnabled is never restored so an
+                // imported backup cannot weaken (or unexpectedly enable) the current app-lock policy.
+                // downloadFolderUri is also not restored: a SAF permission grant belongs to the
+                // install that requested it, so the path would be unreadable after a reinstall.
                 // The user re-picks the folder, which re-grants access.
             }
 
