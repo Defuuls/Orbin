@@ -2,6 +2,7 @@ package com.orbin.data.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.security.keystore.StrongBoxUnavailableException
 import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -48,30 +49,33 @@ internal object LocalDataCipher {
         val store = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
 
+        return try {
+            generateKey(strongBoxBacked = true)
+        } catch (
+            @Suppress("SwallowedException")
+            e: StrongBoxUnavailableException,
+        ) {
+            generateKey(strongBoxBacked = false)
+        } catch (
+            @Suppress("SwallowedException")
+            e: InvalidAlgorithmParameterException,
+        ) {
+            // Some vendor Keystore implementations report an unsupported StrongBox request as an
+            // invalid parameter rather than StrongBoxUnavailableException. Retry without the flag.
+            generateKey(strongBoxBacked = false)
+        }
+    }
+
+    private fun generateKey(strongBoxBacked: Boolean): SecretKey {
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
-        // Try StrongBox first (the strongest hardware), then fall back to TEE.
-        val spec =
-            try {
-                KeyGenParameterSpec
-                    .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setKeySize(KEY_SIZE_BITS)
-                    .setIsStrongBoxBacked(true)
-                    .build()
-            } catch (
-                @Suppress("SwallowedException")
-                e: InvalidAlgorithmParameterException,
-            ) {
-                // StrongBox not available; fall back to TEE
-                KeyGenParameterSpec
-                    .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setKeySize(KEY_SIZE_BITS)
-                    .build()
-            }
-        generator.init(spec)
+        val builder =
+            KeyGenParameterSpec
+                .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(KEY_SIZE_BITS)
+        if (strongBoxBacked) builder.setIsStrongBoxBacked(true)
+        generator.init(builder.build())
         return generator.generateKey()
     }
 }
