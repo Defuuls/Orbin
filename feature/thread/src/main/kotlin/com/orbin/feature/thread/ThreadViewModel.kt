@@ -197,12 +197,14 @@ class ThreadViewModel
         }
 
         fun downloadAllMedia() {
-            val thread = loadedThread ?: return
+            // Read from the state backing the screen instead of loadedThread. The latter is only
+            // populated by a successful network result, so a thread restored from its saved copy
+            // rendered normally but made this action silently return without downloading anything.
+            val thread = (uiState.value as? ThreadUiState.Success)?.thread ?: return
             val threadTitle = title.ifBlank { thread.subject }
             val attachments =
                 thread.allPosts
                     .flatMap { it.attachments }
-                    .filteredBy(mediaFilter.value)
             viewModelScope.launch {
                 attachments.forEach { attachment ->
                     downloadRepository.enqueue(
