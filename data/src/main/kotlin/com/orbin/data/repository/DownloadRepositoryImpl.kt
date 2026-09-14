@@ -299,7 +299,8 @@ class DownloadRepositoryImpl
         override suspend fun retry(id: Long): Long =
             withContext(ioDispatcher) {
                 val entity = dao.getById(id) ?: return@withContext SKIPPED_ID
-                val customFolderUri = settingsRepository.settings.first().downloadFolderUri
+                val settings = settingsRepository.settings.first()
+                val customFolderUri = settings.downloadFolderUri
                 val uri = Uri.parse(entity.url)
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
@@ -320,7 +321,7 @@ class DownloadRepositoryImpl
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
                         .apply {
-                            downloadRequestHeaders(entity.url, settingsRepository.settings.first().userAgent)
+                            downloadRequestHeaders(entity.url, settings.userAgent)
                                 .forEach { (name, value) -> addRequestHeader(name, value) }
                         }
 
