@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [130 — Pertussis](https://github.com/Defuuls/Orbin/releases/tag/v130-Pertussis)
+**Current release:** [131 — Varicella](https://github.com/Defuuls/Orbin/releases/tag/v131-Varicella)
 
 **What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
 
