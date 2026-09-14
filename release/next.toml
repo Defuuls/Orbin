@@ -1,29 +1,31 @@
-# Orbin 130 — Pertussis
+# Orbin 131 — Varicella
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 130
-codename     = "Pertussis"
-version_code = 148
+number       = 131
+codename     = "Varicella"
+version_code = 149
 
 summary = [
-  "bump Orbin to 130-Pertussis / versionCode 148",
-  "ship the post-audit security hardening for build tooling, media URLs, backups, Keystore fallback, and Gradle distribution integrity",
+  "bump Orbin to 131-Varicella / versionCode 149",
+  "add controllable media looping, restore bulk downloads for saved threads, and refresh Android build, UI, database, encryption, and screenshot-test dependencies",
 ]
 
 [changelog]
-Security = [
-  "Upgraded Kotlin to 2.4.20 to remediate CVE-2026-53914 and removed the stale Dependabot hold that blocked the patched toolchain.",
-  "Restricted LynxChan absolute media URLs to the provider host or explicitly allowlisted CDN hosts, removing an avoidable cross-origin media-fetch primitive.",
-  "Kept biometric app-lock policy local to the current installation so plaintext backup imports cannot enable or disable the lock setting.",
-  "Pinned the Gradle 9.7.1 binary distribution SHA-256 so wrapper downloads are integrity-verified.",
+Added = [
+  "Added a media loop playback control so readers can choose whether video repeats.",
 ]
 
 Fixed = [
-  "Made Android Keystore StrongBox fallback retry correctly with the normal Keystore path when StrongBox key generation is unavailable.",
+  "Restored Download all in thread view when a thread is rendered from its saved copy after a network failure.",
+]
+
+Changed = [
+  "Updated the AndroidX stack, including Compose BOM 2026.09.00, Navigation 2.10.1, Room 2.8.5, and stable Benchmark/Baseline Profile 1.5.0.",
+  "Updated KSP to 2.3.12, SQLCipher for Android to 4.19.0, and Roborazzi to 1.74.0.",
 ]
 
 Reliability = [
-  "Added regression coverage for LynxChan media-host policy and backup app-lock restore behavior, and bridged CodeQL analysis to the security-fixed Kotlin toolchain with an isolated cache-disabled compatibility build.",
+  "Added regression coverage for bulk media downloads from offline saved-thread state and validated dependency updates through CI, instrumentation tests, and CodeQL.",
 ]
