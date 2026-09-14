@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [131-Varicella] - 2026-09-14
+
+### Added
+- Added a media loop playback control so readers can choose whether video repeats.
+
+### Fixed
+- Restored Download all in thread view when a thread is rendered from its saved copy after a network failure.
+
+### Changed
+- Updated the AndroidX stack, including Compose BOM 2026.09.00, Navigation 2.10.1, Room 2.8.5, and stable Benchmark/Baseline Profile 1.5.0.
+- Updated KSP to 2.3.12, SQLCipher for Android to 4.19.0, and Roborazzi to 1.74.0.
+
+### Reliability
+- Added regression coverage for bulk media downloads from offline saved-thread state and validated dependency updates through CI, instrumentation tests, and CodeQL.
+
+
 ## [130-Pertussis] - 2026-09-13
 
 ### Security
@@ -2154,7 +2170,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...HEAD
+[131-Varicella]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...v131-Varicella
 [130-Pertussis]: https://github.com/Defuuls/Orbin/compare/v129-Measles...v130-Pertussis
 [129-Measles]: https://github.com/Defuuls/Orbin/compare/v128-Rei...v129-Measles
 [128-Rei]: https://github.com/Defuuls/Orbin/compare/v127-Noa...v128-Rei
