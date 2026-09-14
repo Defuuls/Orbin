@@ -20,6 +20,7 @@ import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.network.NetworkConfig
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,6 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -121,6 +123,11 @@ class DownloadRepositoryImpl
                             "Orbin/$relativeDir$safeName",
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
+                        .apply {
+                            downloadRequestHeaders(url, settings.userAgent).forEach { (name, value) ->
+                                addRequestHeader(name, value)
+                            }
+                        }
 
                 val id = downloadManager.enqueue(request)
                 dao.upsert(
@@ -292,7 +299,8 @@ class DownloadRepositoryImpl
         override suspend fun retry(id: Long): Long =
             withContext(ioDispatcher) {
                 val entity = dao.getById(id) ?: return@withContext SKIPPED_ID
-                val customFolderUri = settingsRepository.settings.first().downloadFolderUri
+                val settings = settingsRepository.settings.first()
+                val customFolderUri = settings.downloadFolderUri
                 val uri = Uri.parse(entity.url)
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
@@ -312,6 +320,10 @@ class DownloadRepositoryImpl
                             "Orbin/${entity.relativeDir}${entity.fileName}",
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
+                        .apply {
+                            downloadRequestHeaders(entity.url, settings.userAgent)
+                                .forEach { (name, value) -> addRequestHeader(name, value) }
+                        }
 
                 val newId = downloadManager.enqueue(request)
                 if (newId != id) {
@@ -430,6 +442,31 @@ private data class TransferSnapshot(
     val downloadedBytes: Long,
     val totalBytes: Long?,
 )
+
+/**
+ * Headers required by imageboard CDNs for direct media requests.
+ *
+ * DownloadManager does not use Orbin's OkHttp interceptors, so without these it sends a different
+ * request from the one that successfully displays the same file in-app. Keep the policy aligned
+ * with HeadersInterceptor: configured User-Agent, media Accept, and same-origin Referer.
+ */
+internal fun downloadRequestHeaders(
+    url: String,
+    configuredUserAgent: String,
+): Map<String, String> =
+    buildMap {
+        put("User-Agent", configuredUserAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT })
+        put("Accept", DOWNLOAD_ACCEPT)
+        downloadOriginReferer(url)?.let { put("Referer", it) }
+    }
+
+private fun downloadOriginReferer(url: String): String? {
+    val uri = runCatching { URI(url) }.getOrNull() ?: return null
+    if (!uri.scheme.equals("https", ignoreCase = true) || uri.host.isNullOrBlank()) return null
+    return runCatching { URI("https", null, uri.host, uri.port, "/", null, null).toString() }.getOrNull()
+}
+
+private const val DOWNLOAD_ACCEPT = "image/avif,image/webp,image/*,video/*,audio/*,*/*;q=0.8"
 
 private const val MAX_PATH_SEGMENT_LENGTH = 80
 
