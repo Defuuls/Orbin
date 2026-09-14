@@ -3,6 +3,7 @@ package com.orbin.feature.thread
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
@@ -130,6 +131,33 @@ class ThreadViewModelTest {
         }
 
     @Test
+    fun `downloading all media works when thread is shown from saved copy`() =
+        runTest {
+            val savedThread = threadWithMixedMedia()
+            val downloads = FakeDownloadRepository()
+            val viewModel =
+                createViewModel(
+                    threadRepository = FailingThreadRepository(),
+                    savedThreadRepository = FakeSavedThreadRepository(mutableMapOf(key to savedThread)),
+                    downloadRepository = downloads,
+                )
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is ThreadUiState.Success) state = awaitItem()
+                assertThat(state.fromSavedCopy).isTrue()
+                viewModel.downloadAllMedia()
+                runCurrent()
+                assertThat(downloads.enqueuedUrls)
+                    .containsExactly(
+                        "https://example.org/jpg",
+                        "https://example.org/webm",
+                        "https://example.org/mp4",
+                    )
+            }
+        }
+
+    @Test
     fun `exporting links from a thread with none reports that instead of writing a file`() =
         runTest {
             val viewModel = createViewModel()
@@ -182,21 +210,23 @@ class ThreadViewModelTest {
 
     private fun createViewModel(
         thread: Thread = defaultThread(),
+        threadRepository: ThreadRepository = FakeThreadRepository(thread),
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         downloadRepository: FakeDownloadRepository = FakeDownloadRepository(),
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
+        savedThreadRepository: FakeSavedThreadRepository = FakeSavedThreadRepository(),
     ) = ThreadViewModel(
         savedStateHandle =
             SavedStateHandle(
                 mapOf("provider" to PROVIDER, "board" to BOARD, "thread" to THREAD, "title" to "Title"),
             ),
-        observeThread = ObserveThreadUseCase(FakeThreadRepository(thread)),
+        observeThread = ObserveThreadUseCase(threadRepository),
         bookmarkRepository = bookmarkRepository,
         downloadRepository = downloadRepository,
         historyRepository = historyRepository,
         settingsRepository = settingsRepository,
-        savedThreadRepository = FakeSavedThreadRepository(),
+        savedThreadRepository = savedThreadRepository,
     )
 
     private fun defaultThread() =
@@ -267,4 +297,18 @@ private class FakeThreadRepository(
         thread: ThreadId,
         forceRefresh: Boolean,
     ): OrbinResult<Thread> = OrbinResult.Success(this.thread)
+}
+
+private class FailingThreadRepository : ThreadRepository {
+    override fun observeThread(
+        key: ThreadKey,
+        forceRefresh: Boolean,
+    ): Flow<OrbinResult<Thread>> = flowOf(OrbinResult.Failure(DataError.Offline()))
+
+    override suspend fun refreshThread(
+        provider: ProviderId,
+        board: BoardId,
+        thread: ThreadId,
+        forceRefresh: Boolean,
+    ): OrbinResult<Thread> = OrbinResult.Failure(DataError.Offline())
 }
