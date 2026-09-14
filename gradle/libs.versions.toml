@@ -69,7 +69,7 @@ robolectric = "4.16.1"
 benchmark = "1.5.0"
 uiautomator = "2.4.0"
 profileinstaller = "1.4.1"
-roborazzi = "1.73.0"
+roborazzi = "1.74.0"
 
 # Quality
 detekt = "1.23.8"
