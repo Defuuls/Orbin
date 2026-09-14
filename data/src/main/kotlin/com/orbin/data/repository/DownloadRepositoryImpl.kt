@@ -319,6 +319,10 @@ class DownloadRepositoryImpl
                             "Orbin/${entity.relativeDir}${entity.fileName}",
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
+                        .apply {
+                            downloadRequestHeaders(entity.url, settingsRepository.settings.first().userAgent)
+                                .forEach { (name, value) -> addRequestHeader(name, value) }
+                        }
 
                 val newId = downloadManager.enqueue(request)
                 if (newId != id) {
