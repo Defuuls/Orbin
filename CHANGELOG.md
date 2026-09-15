@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [132-Influenza] - 2026-09-15
+
+### Fixed
+- Sent the required User-Agent, Accept, and same-origin Referer headers through DownloadManager for new and retried media downloads.
+
+### Changed
+- Moved Settings from the floating bottom action into the feed header destination row beside Search.
+
+### Reliability
+- Validated the download-header fix and feed navigation update through CI, instrumentation tests, screenshot tests, performance checks, and CodeQL.
+
+
 ## [131-Varicella] - 2026-09-14
 
 ### Added
@@ -2170,7 +2182,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...HEAD
+[132-Influenza]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...v132-Influenza
 [131-Varicella]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...v131-Varicella
 [130-Pertussis]: https://github.com/Defuuls/Orbin/compare/v129-Measles...v130-Pertussis
 [129-Measles]: https://github.com/Defuuls/Orbin/compare/v128-Rei...v129-Measles
