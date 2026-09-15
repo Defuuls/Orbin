@@ -48,6 +48,7 @@ internal fun FeedHeader(
     onOpenHistory: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     onOpenSearch: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
     val sizeDescription = stringResource(R.string.next_media_size_control)
@@ -60,6 +61,7 @@ internal fun FeedHeader(
                 onOpenHistory?.let { stringResource(R.string.next_launchpad_history) to it },
                 onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
                 onOpenSearch?.let { stringResource(R.string.next_launchpad_search) to it },
+                onOpenSettings?.let { stringResource(R.string.next_settings_title) to it },
             )
         if (destinations.isNotEmpty()) {
             FlowRow(
