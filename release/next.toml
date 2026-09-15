@@ -1,31 +1,26 @@
-# Orbin 131 — Varicella
+# Orbin 132 — Influenza
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 131
-codename     = "Varicella"
-version_code = 149
+number       = 132
+codename     = "Influenza"
+version_code = 150
 
 summary = [
-  "bump Orbin to 131-Varicella / versionCode 149",
-  "add controllable media looping, restore bulk downloads for saved threads, and refresh Android build, UI, database, encryption, and screenshot-test dependencies",
+  "bump Orbin to 132-Influenza / versionCode 150",
+  "send required media headers through DownloadManager and move Settings beside Search in the feed header",
 ]
 
 [changelog]
-Added = [
-  "Added a media loop playback control so readers can choose whether video repeats.",
-]
-
 Fixed = [
-  "Restored Download all in thread view when a thread is rendered from its saved copy after a network failure.",
+  "Sent the required User-Agent, Accept, and same-origin Referer headers through DownloadManager for new and retried media downloads.",
 ]
 
 Changed = [
-  "Updated the AndroidX stack, including Compose BOM 2026.09.00, Navigation 2.10.1, Room 2.8.5, and stable Benchmark/Baseline Profile 1.5.0.",
-  "Updated KSP to 2.3.12, SQLCipher for Android to 4.19.0, and Roborazzi to 1.74.0.",
+  "Moved Settings from the floating bottom action into the feed header destination row beside Search.",
 ]
 
 Reliability = [
-  "Added regression coverage for bulk media downloads from offline saved-thread state and validated dependency updates through CI, instrumentation tests, and CodeQL.",
+  "Validated the download-header fix and feed navigation update through CI, instrumentation tests, screenshot tests, performance checks, and CodeQL.",
 ]
