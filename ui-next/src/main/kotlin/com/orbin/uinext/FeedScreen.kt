@@ -1,13 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -22,7 +16,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -135,6 +128,7 @@ fun FeedScreen(
                     onOpenHistory = onOpenHistory,
                     onOpenDownloads = onOpenDownloads,
                     onOpenSearch = onOpenSearchDestination,
+                    onOpenSettings = onSettings,
                     onOpenMedia = onOpenMedia,
                 )
             }
@@ -184,19 +178,6 @@ fun FeedScreen(
                     }
                 }
             }
-        }
-
-        if (showRail && railVisible && onSettings != null) {
-            InlineAction(
-                label = stringResource(R.string.next_settings_title),
-                onClick = onSettings,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-                        ).padding(end = 92.dp, bottom = 14.dp),
-            )
         }
     }
 }
