@@ -99,16 +99,6 @@ fun OrbinNavHost(
             }
         },
     ) {
-        composable<Route.Home> {
-            // Orphan legacy destination: fold into the subscribed feed.
-            LaunchedEffect(Unit) {
-                navController.navigate(Route.NextFeed) {
-                    popUpTo(Route.Home) { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
-        }
-
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
@@ -203,7 +193,6 @@ fun OrbinNavHost(
                 onOpenCommands = onOpenCommands,
                 onOpenFeed = { navController.navigate(Route.NextFeed) },
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenHistory = { navController.navigate(Route.History) },
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
                 onOpenSearchDestination = { navController.navigate(Route.Search) },
             )
@@ -301,15 +290,6 @@ fun OrbinNavHost(
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 focusId = backStackEntry.toRoute<Route.Settings>().focus,
             )
-        }
-
-        composable<Route.Subscriptions> {
-            LaunchedEffect(Unit) {
-                navController.navigate(Route.BoardGallery) {
-                    popUpTo(Route.Subscriptions) { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
         }
 
         composable<Route.Onboarding> {

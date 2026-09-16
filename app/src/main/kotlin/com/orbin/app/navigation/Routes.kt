@@ -8,9 +8,6 @@ import kotlinx.serialization.Serializable
  * their arguments via `SavedStateHandle.toRoute<…>()`.
  */
 sealed interface Route {
-    @Serializable
-    data object Home : Route
-
     /** The subscribed feed: every board you follow, merged and ordered by activity. */
     @Serializable
     data object NextFeed : Route
@@ -73,9 +70,6 @@ sealed interface Route {
     data class Settings(
         val focus: String? = null,
     ) : Route
-
-    @Serializable
-    data object Subscriptions : Route
 
     @Serializable
     data object Onboarding : Route

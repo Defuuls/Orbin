@@ -48,8 +48,8 @@ import com.orbin.core.ui.state.LoadingView
 
 /**
  * Full-screen board gallery: large, media-style tiles for every board the provider exposes.
- * Tapping a tile opens that board; the top bar offers a random pick. Replaces the old board-setup
- * panel now that subscriptions are managed from Settings.
+ * Tapping a tile opens that board; the top bar offers a random pick. Board subscriptions are
+ * managed from onboarding / Run setup again in Settings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
