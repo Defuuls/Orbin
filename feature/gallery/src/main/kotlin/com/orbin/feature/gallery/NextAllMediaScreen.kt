@@ -36,7 +36,6 @@ fun NextAllMediaScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenHistory: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     onOpenSearchDestination: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
@@ -56,7 +55,6 @@ fun NextAllMediaScreen(
         onChromeVisibleChange = onChromeVisibleChange,
         onOpenFeed = onOpenFeed,
         onOpenBoards = onOpenBoards,
-        onOpenHistory = onOpenHistory,
         onOpenDownloads = onOpenDownloads,
         onOpenSearchDestination = onOpenSearchDestination,
     )
@@ -81,7 +79,6 @@ fun NextAllMediaContent(
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenHistory: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     onOpenSearchDestination: (() -> Unit)? = null,
 ) {
@@ -133,7 +130,6 @@ fun NextAllMediaContent(
                 onSearch = onOpenCommands,
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
-                onOpenHistory = onOpenHistory,
                 onOpenDownloads = onOpenDownloads,
                 onOpenSearchDestination = onOpenSearchDestination,
                 onOpen = { cell ->

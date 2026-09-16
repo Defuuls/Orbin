@@ -56,7 +56,6 @@ fun MediaWallScreen(
     onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenHistory: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     onOpenSearchDestination: (() -> Unit)? = null,
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
@@ -103,7 +102,6 @@ fun MediaWallScreen(
                         listOfNotNull(
                             onOpenFeed?.let { stringResource(R.string.next_feed_title) to it },
                             onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
-                            onOpenHistory?.let { stringResource(R.string.next_launchpad_history) to it },
                             onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
                             onOpenSearchDestination?.let { stringResource(R.string.next_launchpad_search) to it },
                         )

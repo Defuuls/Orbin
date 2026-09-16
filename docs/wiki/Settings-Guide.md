@@ -1,6 +1,6 @@
 # Settings Guide
 
-This page describes the current settings model for **v128 (Rei)**. Settings take effect immediately
+This page describes the current settings model for **v133 (Norovirus)**. Settings take effect immediately
 unless a control explicitly says otherwise. Local preference storage is encrypted.
 
 The exact wording and grouping can evolve with the interface, so this guide focuses on what each
@@ -16,19 +16,22 @@ providers.
 
 | Setting | What it does |
 | --- | --- |
-| Personalized home feed | Enables the subscribed/personalized feed experience. |
-| Subscriptions | Chooses the boards that contribute to your feed and related subscribed-board surfaces. |
-| All boards | Opens the complete board browser for the active provider. |
-| All media | Opens the cross-board media wall. |
-| Deep scan for reply media | Extends All media by walking threads for reply attachments. Slower and more network-intensive. |
 | Built-in content filter | Describes Orbin's non-optional built-in safety filtering. |
+| Filter everyday shock words | Optional extra filter on top of the built-in safety filter. |
+| Personalized home feed | Enables the subscribed/personalized feed experience. |
 | Hidden tags | Removes matching content from applicable browsing surfaces. |
 | Muted tags | Keeps matching content visible but de-emphasized. |
 | Hide NSFW boards | Removes NSFW boards from applicable lists/pickers. |
 | Hide text-only threads | Removes threads without displayable media. |
+| Deep scan for reply media | Extends All media by walking threads for reply attachments. Slower and more network-intensive. |
+| Show only | Filters applicable surfaces to all media, images, or videos. |
 | Refresh feed on return | Controls how stale cached feed data may be before an automatic refresh. |
 | Threads per board | Limits each subscribed board's contribution to the combined feed. |
-| Run setup again | Reopens onboarding/setup choices. |
+| Sort feed by | Orders the subscribed feed (activity, replies, images, A–Z by board, and related options). |
+
+Board subscriptions are chosen during onboarding and can be changed later with **Run setup again**
+(Advanced). Browse every board via the Feed/Media **Boards** launchpad or Command → All boards;
+All media is the Media tab / launchpad, not a settings row.
 
 ### Feed/catalog layout
 
@@ -98,6 +101,12 @@ transfer.
 
 **Important:** portable backup files and saved-link `.txt` exports are plaintext. The live app
 database/preferences are encrypted, but portable exports are intentionally readable outside Orbin.
+
+## Advanced
+
+| Setting | What it does |
+| --- | --- |
+| Run setup again | Reopens onboarding so you can change provider and board subscriptions. |
 
 ## Accessibility behavior
 

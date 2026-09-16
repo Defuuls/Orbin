@@ -8,23 +8,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -38,7 +32,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -57,15 +50,12 @@ import com.orbin.app.command.CommandHost
 import com.orbin.app.command.CommandTarget
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
-import com.orbin.app.navigation.TopLevelDestination
-import com.orbin.core.designsystem.component.ModernNavigationBar
-import com.orbin.core.designsystem.component.ModernNavigationBarItem
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.next
 
 /**
- * Root composable: a [Scaffold] whose bottom navigation bar is shown only on the top-level
- * destinations. Detail screens (board, thread, settings) take over the full screen.
+ * Root composable. Feed, All Media, and board catalogs own their own ContextRail; secondary
+ * destinations open through the launchpad / command surface rather than a Material bottom bar.
  */
 @Composable
 fun OrbinApp(
@@ -82,7 +72,6 @@ fun OrbinApp(
         val currentDestination = backStackEntry?.destination
         val snackbarHostState = LocalOrbinSnackbarHostState.current
 
-        val topLevel = TopLevelDestination.entries
         val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
         val isAllMedia = currentDestination?.hasRoute(Route.AllMedia::class) == true
         // The three screens built out of the same scrolling list and the same floating rail. The
@@ -93,13 +82,6 @@ fun OrbinApp(
             isNextFeed ||
                 currentDestination?.hasRoute(Route.Board::class) == true ||
                 isAllMedia
-        // Feed and All Media carry their own ContextRail. Showing the Material bottom bar as well
-        // would stack two pieces of navigation chrome on screens whose argument is that they need
-        // none — switch between them via the feed launchpad / command surface instead.
-        val showBottomBar =
-            !isNextFeed &&
-                !isAllMedia &&
-                topLevel.any { dest -> currentDestination?.hasRoute(dest.route::class) == true }
         val chromeHidesOnScroll =
             scrollAwayScreen && (fullScreenFeedChrome || tabletFeedChrome)
         var chromeVisible by rememberSaveable { mutableStateOf(true) }
@@ -107,13 +89,6 @@ fun OrbinApp(
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
         var commandsOpen by rememberSaveable { mutableStateOf(false) }
         var feedFilter by rememberSaveable { mutableStateOf("") }
-        val bottomBarVisible = showBottomBar && (!chromeHidesOnScroll || chromeVisible)
-        // All three navigation surfaces ask the same question; the null-safe call also drops a
-        // redundant guard the compiler could already prove true in the tablet-dock branch.
-        val destinationMatches: (TopLevelDestination) -> Boolean = { destination ->
-            currentDestination?.hasRoute(destination.route::class) == true
-        }
-        val useTabletDock = showBottomBar && tabletFeedChrome
 
         LaunchedEffect(chromeHidesOnScroll) {
             if (!chromeHidesOnScroll) {
@@ -172,27 +147,6 @@ fun OrbinApp(
                 // Each destination owns its insets via its own top bar / scaffold; applying the
                 // default insets here as well double-pads content with status/navigation-bar strips.
                 contentWindowInsets = WindowInsets(0),
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = bottomBarVisible,
-                        enter = slideInVertically { it } + fadeIn(),
-                        exit = slideOutVertically { it } + fadeOut(),
-                    ) {
-                        if (useTabletDock) {
-                            TabletNavigationDock(
-                                topLevel = topLevel,
-                                currentDestinationMatches = destinationMatches,
-                                onNavigate = navController::navigateToTopLevel,
-                            )
-                        } else {
-                            PhoneNavigationBar(
-                                topLevel = topLevel,
-                                currentDestinationMatches = destinationMatches,
-                                onNavigate = navController::navigateToTopLevel,
-                            )
-                        }
-                    }
-                },
             ) { padding ->
                 OrbinNavHost(
                     navController = navController,
@@ -264,7 +218,6 @@ private fun CommandDestination.route(): Route =
         CommandDestination.GALLERY -> Route.GalleryBrowser
         CommandDestination.ALL_MEDIA -> Route.AllMedia
         CommandDestination.BOARDS -> Route.BoardGallery
-        CommandDestination.SUBSCRIPTIONS -> Route.BoardGallery
         CommandDestination.HISTORY -> Route.History
         CommandDestination.DOWNLOADS -> Route.Downloads
         CommandDestination.SEARCH -> Route.Search
@@ -287,87 +240,12 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun PhoneNavigationBar(
-    topLevel: List<TopLevelDestination>,
-    currentDestinationMatches: (TopLevelDestination) -> Boolean,
-    onNavigate: (TopLevelDestination) -> Unit,
-) {
-    ModernNavigationBar {
-        TopLevelNavigationItems(
-            topLevel = topLevel,
-            currentDestinationMatches = currentDestinationMatches,
-            onNavigate = onNavigate,
-        )
-    }
-}
-
-@Composable
-private fun TabletNavigationDock(
-    topLevel: List<TopLevelDestination>,
-    currentDestinationMatches: (TopLevelDestination) -> Boolean,
-    onNavigate: (TopLevelDestination) -> Unit,
-) {
-    FloatingDockSurface {
-        ModernNavigationBar(modifier = Modifier.fillMaxWidth()) {
-            TopLevelNavigationItems(
-                topLevel = topLevel,
-                currentDestinationMatches = currentDestinationMatches,
-                onNavigate = onNavigate,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FloatingDockSurface(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        Surface(
-            modifier = Modifier.widthIn(max = 920.dp),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun RowScope.TopLevelNavigationItems(
-    topLevel: List<TopLevelDestination>,
-    currentDestinationMatches: (TopLevelDestination) -> Boolean,
-    onNavigate: (TopLevelDestination) -> Unit,
-) {
-    topLevel.forEach { dest ->
-        ModernNavigationBarItem(
-            icon = dest.icon,
-            label = dest.label,
-            selected = currentDestinationMatches(dest),
-            onClick = { onNavigate(dest) },
-        )
-    }
-}
-
 private tailrec fun Context.findActivity(): Activity? =
     when (this) {
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
-
-private fun NavHostController.navigateToTopLevel(destination: TopLevelDestination) {
-    navigate(destination.route) {
-        // Single instance per tab, preserving each tab's own back stack and scroll state.
-        popUpTo(graph.startDestinationId) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
-    }
-}
 
 private val TABLET_MIN_WIDTH = 600.dp
 private val TABLET_MIN_HEIGHT = 480.dp
