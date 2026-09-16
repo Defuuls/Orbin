@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -66,12 +68,17 @@ class NextSettingsListTest {
         composeTestRule.waitForIdle()
         assertThat(repository.current.userAgent).isEmpty()
 
+        // Keep Done visible for humans, but commit through the IME action: on short API 31
+        // AVDs the soft keyboard covers the Done control and a synthetic click hits the IME
+        // window instead of the row action.
         composeTestRule
             .onNode(hasScrollAction())
             .performScrollToNode(hasTextExactly("Done"))
-        composeTestRule.onNode(hasTextExactly("Done")).performClick()
-        composeTestRule.waitForIdle()
-
+        composeTestRule.onNode(hasTextExactly("Done")).assertIsDisplayed()
+        composeTestRule.onNode(hasSetTextAction()).performImeAction()
+        composeTestRule.waitUntil(timeoutMillis = 3_000) {
+            repository.current.userAgent == "Orbin/1.0"
+        }
         assertThat(repository.current.userAgent).isEqualTo("Orbin/1.0")
     }
 
