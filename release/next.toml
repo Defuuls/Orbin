@@ -1,22 +1,26 @@
-# Orbin 133 — Norovirus
+# Orbin 134 — Rotavirus
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 133
-codename     = "Norovirus"
-version_code = 151
+number       = 134
+codename     = "Rotavirus"
+version_code = 152
 
 summary = [
-  "bump Orbin to 133-Norovirus / versionCode 151",
-  "sort feed boards alphabetically in Grid and Images, independent of thread titles",
+  "bump Orbin to 134-Rotavirus / versionCode 152",
+  "finish the UI cull: drop parked History, Gallery browser, and BoardPicker; simplify Feed and Media launchpads",
 ]
 
 [changelog]
-Fixed = [
-  "Sorted the feed's A-Z option by board code instead of thread subject, so /b/ precedes /gif/ in Grid and Images.",
+Removed = [
+  "Removed the History screen and destination (visited-state data and Settings clear remain).",
+  "Removed the Command-only Gallery browser (\"Browse by board\") and its bookmarks tab.",
+  "Removed the unused Board picker screen and its screenshot coverage.",
+  "Removed dead Material Home, Subscriptions, and classic Board screens, plus the never-shown Material bottom bar and duplicate Command Subscriptions entry.",
 ]
 
-Reliability = [
-  "Added regression coverage for board ordering when thread subjects would sort in the opposite order.",
+Changed = [
+  "Trimmed History from the All Media launchpad, and Search and Downloads chips from the Feed and Media launchpads; Search and Downloads stay reachable via Command.",
+  "Focused launchpads on core loops: Feed shows Boards / Media / Settings; Media shows Feed / Boards.",
 ]
