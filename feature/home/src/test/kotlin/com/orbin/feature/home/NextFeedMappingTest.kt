@@ -54,6 +54,25 @@ class NextFeedMappingTest {
     }
 
     @Test
+    fun `A-Z sorts board codes instead of thread subjects`() {
+        val feeds =
+            listOf(
+                boardFeed("gif", thread(1, board = "gif", subject = "A first title", bumped = 9_000L)),
+                boardFeed(
+                    "b",
+                    thread(2, board = "b", subject = "Z last title", bumped = 1_000L),
+                    thread(3, board = "b", subject = "M middle title", bumped = 5_000L),
+                ),
+            )
+
+        for (sort in listOf(FeedSort.BOARD, FeedSort.TITLE)) {
+            val entries = feedEntries(feeds, emptySet(), nowMillis = 10_000L, sort = sort)
+            assertThat(entries.map { it.key.board.value }).containsExactly("b", "b", "gif").inOrder()
+            assertThat(entries.map { it.key.thread.value }).containsExactly(3L, 2L, 1L).inOrder()
+        }
+    }
+
+    @Test
     fun `activity sort flattens boards by most recent bump`() {
         val entries =
             feedEntries(
