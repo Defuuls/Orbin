@@ -157,7 +157,12 @@ private fun BoardTileCard(
                 ).clickable(role = Role.Button, onClick = onClick),
     ) {
         Text(
-            text = board.path.trim('/').take(1).uppercase().ifEmpty { "?" },
+            text =
+                board.path
+                    .trim('/')
+                    .take(1)
+                    .uppercase()
+                    .ifEmpty { "?" },
             color = Color.White.copy(alpha = 0.92f),
             fontSize = 52.sp,
             fontWeight = FontWeight.Bold,

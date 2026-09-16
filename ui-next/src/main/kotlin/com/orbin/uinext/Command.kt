@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -454,7 +453,7 @@ private fun SettingTextEditor(
         }
         WidthSpacer(8)
         InlineAction(
-            label = stringResource(R.string.next_command_save),
+            label = stringResource(R.string.next_settings_done),
             accent = true,
             onClick = { onCommitText(item, draft) },
         )

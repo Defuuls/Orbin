@@ -68,8 +68,8 @@ class NextSettingsListTest {
 
         composeTestRule
             .onNode(hasScrollAction())
-            .performScrollToNode(hasTextExactly("Save"))
-        composeTestRule.onNode(hasTextExactly("Save")).performClick()
+            .performScrollToNode(hasTextExactly("Done"))
+        composeTestRule.onNode(hasTextExactly("Done")).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(repository.current.userAgent).isEqualTo("Orbin/1.0")

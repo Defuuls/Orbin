@@ -58,14 +58,14 @@ object NextRadius {
  */
 @Immutable
 object NextMaterials {
-    const val barFillLight = 0.82f
-    const val barFillDark = 0.72f
-    const val scrim = 0.36f
-    const val highlight = 0.08f
-    const val selectedFillLight = 0.12f
-    const val selectedFillDark = 0.22f
-    const val pressLight = 0.06f
-    const val pressDark = 0.14f
+    const val BAR_FILL_LIGHT = 0.82f
+    const val BAR_FILL_DARK = 0.72f
+    const val SCRIM = 0.36f
+    const val HIGHLIGHT = 0.08f
+    const val SELECTED_FILL_LIGHT = 0.12f
+    const val SELECTED_FILL_DARK = 0.22f
+    const val PRESS_LIGHT = 0.06f
+    const val PRESS_DARK = 0.14f
 }
 
 /**

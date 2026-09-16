@@ -104,7 +104,9 @@ fun NextAllMediaContent(
                 title = stringResource(R.string.next_media_title),
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
                 where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
-                destination = com.orbin.uinext.NextDestination.MEDIA.takeIf { hasTabs },
+                destination =
+                    com.orbin.uinext.NextDestination.MEDIA
+                        .takeIf { hasTabs },
                 onDestination = onDestination,
                 onSearch = onOpenCommands,
                 modifier = modifier,
@@ -118,7 +120,9 @@ fun NextAllMediaContent(
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
                 where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
-                destination = com.orbin.uinext.NextDestination.MEDIA.takeIf { hasTabs },
+                destination =
+                    com.orbin.uinext.NextDestination.MEDIA
+                        .takeIf { hasTabs },
                 onDestination = onDestination,
                 onSearch = onOpenCommands,
                 modifier = modifier,

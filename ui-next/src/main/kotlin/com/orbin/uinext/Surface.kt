@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextMaterials
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
@@ -82,7 +81,7 @@ fun DestinationPill(
     onCommand: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.barFillDark else NextMaterials.barFillLight)
+    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.BAR_FILL_DARK else NextMaterials.BAR_FILL_LIGHT)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Box(
             modifier =
@@ -175,7 +174,7 @@ private fun RowScope.DestinationTab(
     val selectedFill =
         next.accent.copy(
             alpha =
-                (if (next.dark) NextMaterials.selectedFillDark else NextMaterials.selectedFillLight) * fill,
+                (if (next.dark) NextMaterials.SELECTED_FILL_DARK else NextMaterials.SELECTED_FILL_LIGHT) * fill,
         )
     Box(
         modifier =
@@ -214,7 +213,7 @@ fun ContextRail(
     onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.barFillDark else NextMaterials.barFillLight)
+    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.BAR_FILL_DARK else NextMaterials.BAR_FILL_LIGHT)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Box(
             modifier =
@@ -553,15 +552,17 @@ fun NextScaffold(
                     exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
-                    if (showDestination) {
+                    val selectedDestination = destination
+                    val selectDestination = onDestination
+                    if (selectedDestination != null && selectDestination != null) {
                         DestinationPill(
-                            selected = destination!!,
-                            onSelect = onDestination!!,
+                            selected = selectedDestination,
+                            onSelect = selectDestination,
                             action = action,
                             onCommand = onSearch,
                         )
-                    } else {
-                        ContextRail(where = where!!, detail = detail, action = action, onSearch = onSearch)
+                    } else if (where != null) {
+                        ContextRail(where = where, detail = detail, action = action, onSearch = onSearch)
                     }
                 }
             }

@@ -101,6 +101,7 @@
     <string name="next_command_placeholder">Board, thread, setting, action</string>
     <string name="next_command_empty">Nothing matches that</string>
     <string name="next_command_save">Save</string>
+    <string name="next_settings_done">Done</string>
     <plurals name="next_command_results">
         <item quantity="one">%d result</item>
         <item quantity="other">%d results</item>
