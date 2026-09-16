@@ -11,7 +11,6 @@
 
     <!-- Screens -->
     <string name="next_feed_title">Feed</string>
-    <string name="next_boards_title">Boards</string>
     <string name="next_all_media_title">All media</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
     <string name="next_settings_title">Settings</string>
@@ -23,14 +22,11 @@
     <string name="next_command_clear">Clear</string>
     <string name="next_command_clear_cd">Clear query</string>
     <string name="next_launchpad_boards">Boards</string>
-    <string name="next_launchpad_downloads">Downloads</string>
-    <string name="next_launchpad_search">Search</string>
     <string name="next_launchpad_media">Media</string>
     <string name="next_autoplay_muted">Muted autoplay</string>
     <string name="next_two_pane_pick_thread">Pick a thread from the catalog</string>
     <string name="next_rail_catalog">catalog</string>
     <string name="next_rail_swept">%1$d/%2$d swept</string>
-    <string name="next_rail_subscribed">%d subscribed</string>
 
     <!-- The layout switcher -->
     <string name="next_layout_list">List</string>
@@ -69,10 +65,6 @@
     <string name="next_filter_clear">Clear</string>
 
     <!-- The board picker -->
-    <string name="next_boards_refresh">Refresh</string>
-    <string name="next_boards_summary">%1$d of %2$d in your feed</string>
-    <string name="next_board_subscribed">Subscribed</string>
-    <string name="next_board_not_subscribed">Not subscribed</string>
 
     <!-- The media wall's sweep and size control -->
     <string name="next_media_size_control">Image size</string>

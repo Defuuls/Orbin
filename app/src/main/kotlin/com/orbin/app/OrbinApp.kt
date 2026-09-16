@@ -215,10 +215,8 @@ private fun NavHostController.follow(
 private fun CommandDestination.route(): Route =
     when (this) {
         CommandDestination.FEED -> Route.NextFeed
-        CommandDestination.GALLERY -> Route.GalleryBrowser
         CommandDestination.ALL_MEDIA -> Route.AllMedia
         CommandDestination.BOARDS -> Route.BoardGallery
-        CommandDestination.HISTORY -> Route.History
         CommandDestination.DOWNLOADS -> Route.Downloads
         CommandDestination.SEARCH -> Route.Search
         CommandDestination.SETTINGS -> Route.Settings()

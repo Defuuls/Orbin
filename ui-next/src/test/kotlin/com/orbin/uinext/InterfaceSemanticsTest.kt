@@ -7,8 +7,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -84,23 +82,6 @@ class InterfaceSemanticsTest {
             .onNodeWithText(ROWS[0].subject)
             .assert(hasTextContaining(ROWS[0].board))
             .assert(hasTextContaining("218 replies"))
-    }
-
-    @Test
-    fun `a board row announces whether it is subscribed`() {
-        composeRule.setContent {
-            NextTheme {
-                BoardPickerScreen(
-                    boards =
-                        listOf(
-                            BoardChoice(id = "g", title = "Technology", subscribed = true),
-                            BoardChoice(id = "ck", title = "Food", subscribed = false),
-                        ),
-                )
-            }
-        }
-        composeRule.onNodeWithText("/g/").assertIsOn()
-        composeRule.onNodeWithText("/ck/").assertIsOff()
     }
 
     private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)

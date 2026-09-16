@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Finished the UI cull of parked surfaces: removed the History destination/screen, the Command-only
+  Gallery browser ("Browse by board") including its bookmarks tab, and the unwired ui-next
+  `BoardPickerScreen` (plus its screenshot/semantics coverage).
+- Trimmed Search and Downloads chips from the Feed and Media launchpads; both destinations remain
+  reachable via Command.
+
 ## [133-Norovirus] - 2026-09-16
 
 ### Fixed

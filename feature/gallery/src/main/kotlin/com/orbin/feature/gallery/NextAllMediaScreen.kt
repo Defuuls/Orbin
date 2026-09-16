@@ -36,8 +36,6 @@ fun NextAllMediaScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -55,8 +53,6 @@ fun NextAllMediaScreen(
         onChromeVisibleChange = onChromeVisibleChange,
         onOpenFeed = onOpenFeed,
         onOpenBoards = onOpenBoards,
-        onOpenDownloads = onOpenDownloads,
-        onOpenSearchDestination = onOpenSearchDestination,
     )
 }
 
@@ -79,8 +75,6 @@ fun NextAllMediaContent(
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
 ) {
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
     val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
@@ -130,8 +124,6 @@ fun NextAllMediaContent(
                 onSearch = onOpenCommands,
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
-                onOpenDownloads = onOpenDownloads,
-                onOpenSearchDestination = onOpenSearchDestination,
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->
                         onOpenMedia(

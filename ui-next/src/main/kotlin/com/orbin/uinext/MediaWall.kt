@@ -56,8 +56,6 @@ fun MediaWallScreen(
     onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -102,8 +100,6 @@ fun MediaWallScreen(
                         listOfNotNull(
                             onOpenFeed?.let { stringResource(R.string.next_feed_title) to it },
                             onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
-                            onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
-                            onOpenSearchDestination?.let { stringResource(R.string.next_launchpad_search) to it },
                         )
                     if (destinations.isNotEmpty()) {
                         FlowRow(

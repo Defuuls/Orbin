@@ -47,8 +47,6 @@ fun FeedScreen(
     scrollToTopRequest: Int = 0,
     showSizeControl: Boolean = false,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
     val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
@@ -124,8 +122,6 @@ fun FeedScreen(
                     onSizeChange = { feedSize = it.coerceIn(FEED_SIZE_MIN_DP, FEED_SIZE_MAX_DP) },
                     showSizeControl = showSizeControl,
                     onOpenBoards = onOpenBoards,
-                    onOpenDownloads = onOpenDownloads,
-                    onOpenSearch = onOpenSearchDestination,
                     onOpenSettings = onSettings,
                     onOpenMedia = onOpenMedia,
                 )

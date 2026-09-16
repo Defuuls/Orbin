@@ -31,7 +31,8 @@ providers.
 
 Board subscriptions are chosen during onboarding and can be changed later with **Run setup again**
 (Advanced). Browse every board via the Feed/Media **Boards** launchpad or Command → All boards;
-All media is the Media tab / launchpad, not a settings row.
+All media is the Media launchpad / Command destination. Search and Downloads are reachable from
+Command (not launchpad chips).
 
 ### Feed/catalog layout
 

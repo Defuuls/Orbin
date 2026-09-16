@@ -61,7 +61,6 @@ dependencies {
     implementation(project(":feature:board"))
     implementation(project(":feature:thread"))
     implementation(project(":feature:settings"))
-    implementation(project(":feature:history"))
     implementation(project(":feature:search"))
     implementation(project(":feature:gallery"))
     implementation(project(":feature:downloads"))
