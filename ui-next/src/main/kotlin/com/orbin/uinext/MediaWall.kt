@@ -19,8 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -85,109 +87,130 @@ fun MediaWallScreen(
         } else {
             null
         }
-    NextScaffold(
-        where = stringResource(R.string.next_all_media_title).takeIf { showRail && !hasTabs },
-        modifier = modifier,
-        detail =
-            if (!hasTabs && total > 0) {
-                stringResource(R.string.next_rail_swept, scanned, total)
-            } else {
-                null
-            },
-        onSearch = onSearch,
-        railVisible = railVisible,
-        destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
-        onDestination = onDestination.takeIf { showRail },
-    ) { bottomPad ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(imageCellMinSize),
-            state = gridState,
-            modifier = Modifier.fillMaxSize().contentInsets(),
-            contentPadding = gridPadding(bottomPad),
-        ) {
-            fullWidthItem {
-                Column {
-                    ScreenTitle(
-                        text = stringResource(R.string.next_all_media_title),
-                        subtitle = stringResource(R.string.next_all_media_subtitle),
-                    )
-                    if (showSizeControl) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            MetaLine(stringResource(R.string.next_media_size_small))
-                            Slider(
-                                value = imageCellSize,
-                                onValueChange = { imageCellSize = it.coerceIn(MEDIA_CELL_MIN_DP, MEDIA_CELL_MAX_DP) },
-                                valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
-                                steps = MEDIA_CELL_STEPS,
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 12.dp)
-                                        .semantics { contentDescription = imageSizeDescription },
-                            )
-                            MetaLine(stringResource(R.string.next_media_size_large))
-                        }
-                        Gap(8)
-                    }
-                    if (scanning || deepScanning || failed > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (deepScanning) {
-                                SweepBar(scanned = deepScanned, total = deepTotal)
-                                WidthSpacer(12)
-                                MetaLine(stringResource(R.string.next_sweep_reading, deepScanned, deepTotal))
-                            } else if (scanning) {
-                                SweepBar(scanned = scanned, total = total)
-                                WidthSpacer(12)
-                                MetaLine(stringResource(R.string.next_sweep_progress, scanned, total))
-                            }
-                            Box(modifier = Modifier.weight(1f))
-                            if (failed > 0) {
-                                MetaLine(
-                                    stringResource(R.string.next_sweep_unreachable, failed),
-                                    color = next.accent,
+
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = stringResource(R.string.next_all_media_title).takeIf { showRail && !hasTabs },
+            modifier = Modifier.fillMaxSize(),
+            detail =
+                if (!hasTabs && total > 0) {
+                    stringResource(R.string.next_rail_swept, scanned, total)
+                } else {
+                    null
+                },
+            onSearch = onSearch,
+            railVisible = railVisible,
+            destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
+            onDestination = onDestination.takeIf { showRail },
+        ) { bottomPad ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(imageCellMinSize),
+                state = gridState,
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding = gridPadding(bottomPad),
+            ) {
+                fullWidthItem {
+                    Column {
+                        ScreenTitle(
+                            text = stringResource(R.string.next_all_media_title),
+                            subtitle = stringResource(R.string.next_all_media_subtitle),
+                        )
+                        if (showSizeControl) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                MetaLine(stringResource(R.string.next_media_size_small))
+                                Slider(
+                                    value = imageCellSize,
+                                    onValueChange = {
+                                        imageCellSize =
+                                            it.coerceIn(
+                                                MEDIA_CELL_MIN_DP,
+                                                MEDIA_CELL_MAX_DP,
+                                            )
+                                    },
+                                    valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                    steps = MEDIA_CELL_STEPS,
+                                    modifier =
+                                        Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 12.dp)
+                                            .semantics { contentDescription = imageSizeDescription },
                                 )
+                                MetaLine(stringResource(R.string.next_media_size_large))
                             }
+                            Gap(8)
                         }
-                        Gap(16)
+                        if (scanning || deepScanning || failed > 0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (deepScanning) {
+                                    SweepBar(scanned = deepScanned, total = deepTotal)
+                                    WidthSpacer(12)
+                                    MetaLine(stringResource(R.string.next_sweep_reading, deepScanned, deepTotal))
+                                } else if (scanning) {
+                                    SweepBar(scanned = scanned, total = total)
+                                    WidthSpacer(12)
+                                    MetaLine(stringResource(R.string.next_sweep_progress, scanned, total))
+                                }
+                                Box(modifier = Modifier.weight(1f))
+                                if (failed > 0) {
+                                    MetaLine(
+                                        stringResource(R.string.next_sweep_unreachable, failed),
+                                        color = next.accent,
+                                    )
+                                }
+                            }
+                            Gap(16)
+                        }
                     }
                 }
-            }
-            itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
-                val description =
-                    stringResource(R.string.next_media_cell_description, cell.board)
-                Box(
-                    modifier =
-                        Modifier
-                            .padding(2.5.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = stringResource(R.string.next_open_file),
-                            ) {
-                                onOpen(cell)
-                            }.semantics { contentDescription = description },
-                    contentAlignment = Alignment.BottomStart,
-                ) {
-                    val shape = Modifier.fillMaxWidth().height(imageHeight)
-                    if (tile != null) {
-                        tile(cell, shape)
-                    } else {
-                        MediaTile(modifier = shape, seed = index, radius = 16.dp)
+                itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
+                    val description =
+                        stringResource(R.string.next_media_cell_description, cell.board)
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(2.5.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable(
+                                    role = Role.Button,
+                                    onClickLabel = stringResource(R.string.next_open_file),
+                                ) {
+                                    onOpen(cell)
+                                }.semantics { contentDescription = description },
+                        contentAlignment = Alignment.BottomStart,
+                    ) {
+                        val shape = Modifier.fillMaxWidth().height(imageHeight)
+                        if (tile != null) {
+                            tile(cell, shape)
+                        } else {
+                            MediaTile(modifier = shape, seed = index, radius = 16.dp)
+                        }
+                        Pill(
+                            text = cell.board,
+                            tint = boardHue(cell.board),
+                            modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
+                        )
                     }
-                    Pill(
-                        text = cell.board,
-                        tint = boardHue(cell.board),
-                        modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
-                    )
                 }
             }
         }
+        val mediaTitle = stringResource(R.string.next_all_media_title)
+        val showCompactTitle by remember {
+            derivedStateOf {
+                gridState.firstVisibleItemIndex > 0 ||
+                    gridState.firstVisibleItemScrollOffset > 64
+            }
+        }
+        CompactTitleBar(
+            title = mediaTitle,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

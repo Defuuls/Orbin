@@ -18,6 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,54 +88,68 @@ fun BoardsScreen(
             null
         }
 
-    NextScaffold(
-        where = stringResource(R.string.next_launchpad_boards).takeIf { showRail && !hasTabs },
-        modifier = modifier,
-        onSearch = onSearch,
-        railVisible = railVisible,
-        destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
-        onDestination = onDestination.takeIf { showRail },
-    ) { bottomPad ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(158.dp),
-            state = gridState,
-            modifier = Modifier.fillMaxSize().contentInsets(),
-            contentPadding =
-                PaddingValues(
-                    start = NextSpace.gutterTight,
-                    end = NextSpace.gutterTight,
-                    bottom = bottomPad.calculateBottomPadding(),
-                ),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            fullWidthItem {
-                Column {
-                    ScreenTitle(
-                        text = stringResource(R.string.next_launchpad_boards),
-                        subtitle =
-                            subtitle
-                                ?: pluralStringResource(
-                                    R.plurals.next_boards_count,
-                                    boards.size,
-                                    boards.size,
-                                ),
-                    )
-                    if (onRandom != null) {
-                        Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
-                            InlineAction(
-                                label = stringResource(R.string.next_boards_random),
-                                onClick = onRandom,
-                            )
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = stringResource(R.string.next_launchpad_boards).takeIf { showRail && !hasTabs },
+            modifier = Modifier.fillMaxSize(),
+            onSearch = onSearch,
+            railVisible = railVisible,
+            destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
+            onDestination = onDestination.takeIf { showRail },
+        ) { bottomPad ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(158.dp),
+                state = gridState,
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding =
+                    PaddingValues(
+                        start = NextSpace.gutterTight,
+                        end = NextSpace.gutterTight,
+                        bottom = bottomPad.calculateBottomPadding(),
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                fullWidthItem {
+                    Column {
+                        ScreenTitle(
+                            text = stringResource(R.string.next_launchpad_boards),
+                            subtitle =
+                                subtitle
+                                    ?: pluralStringResource(
+                                        R.plurals.next_boards_count,
+                                        boards.size,
+                                        boards.size,
+                                    ),
+                        )
+                        if (onRandom != null) {
+                            Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
+                                InlineAction(
+                                    label = stringResource(R.string.next_boards_random),
+                                    onClick = onRandom,
+                                )
+                            }
+                            Gap(12)
                         }
-                        Gap(12)
                     }
                 }
-            }
-            items(boards, key = { it.id }) { board ->
-                BoardTileCard(board = board, onClick = { onOpenBoard(board) })
+                items(boards, key = { it.id }) { board ->
+                    BoardTileCard(board = board, onClick = { onOpenBoard(board) })
+                }
             }
         }
+        val boardsTitle = stringResource(R.string.next_launchpad_boards)
+        val showCompactTitle by remember {
+            derivedStateOf {
+                gridState.firstVisibleItemIndex > 0 ||
+                    gridState.firstVisibleItemScrollOffset > 64
+            }
+        }
+        CompactTitleBar(
+            title = boardsTitle,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

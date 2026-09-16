@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -276,47 +277,61 @@ fun SettingsScreen(
             null
         }
 
-    NextScaffold(
-        where = stringResource(R.string.next_settings_title).takeIf { showRail && !hasTabs },
-        modifier = modifier,
-        onSearch = onSearch,
-        destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
-        onDestination = onDestination.takeIf { showRail },
-    ) { bottomPad ->
-        LazyColumn(
-            state = state,
-            modifier = Modifier.fillMaxSize().contentInsets(),
-            contentPadding =
-                PaddingValues(
-                    bottom = bottomPad.calculateBottomPadding(),
-                    top = 4.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            item {
-                ScreenTitle(
-                    text = stringResource(R.string.next_settings_title),
-                    subtitle = subtitle,
-                )
-            }
-            groups.forEach { (heading, rows) ->
-                item(key = "group:$heading") {
-                    GroupedSection(header = heading) {
-                        rows.forEachIndexed { index, item ->
-                            SettingRow(
-                                item = item,
-                                expanded = item.id == expandedId,
-                                onActivate = onActivate,
-                                onSelectOption = onSelectOption,
-                                onCommitText = onCommitText,
-                            )
-                            if (index < rows.lastIndex) GroupedDivider()
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = stringResource(R.string.next_settings_title).takeIf { showRail && !hasTabs },
+            modifier = Modifier.fillMaxSize(),
+            onSearch = onSearch,
+            destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
+            onDestination = onDestination.takeIf { showRail },
+        ) { bottomPad ->
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding =
+                    PaddingValues(
+                        bottom = bottomPad.calculateBottomPadding(),
+                        top = 4.dp,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                item {
+                    ScreenTitle(
+                        text = stringResource(R.string.next_settings_title),
+                        subtitle = subtitle,
+                    )
+                }
+                groups.forEach { (heading, rows) ->
+                    item(key = "group:$heading") {
+                        GroupedSection(header = heading) {
+                            rows.forEachIndexed { index, item ->
+                                SettingRow(
+                                    item = item,
+                                    expanded = item.id == expandedId,
+                                    onActivate = onActivate,
+                                    onSelectOption = onSelectOption,
+                                    onCommitText = onCommitText,
+                                )
+                                if (index < rows.lastIndex) GroupedDivider()
+                            }
                         }
                     }
                 }
+                item { Gap(8) }
             }
-            item { Gap(8) }
         }
+        val settingsTitle = stringResource(R.string.next_settings_title)
+        val showCompactTitle by remember {
+            derivedStateOf {
+                state.firstVisibleItemIndex > 0 ||
+                    state.firstVisibleItemScrollOffset > 64
+            }
+        }
+        CompactTitleBar(
+            title = settingsTitle,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

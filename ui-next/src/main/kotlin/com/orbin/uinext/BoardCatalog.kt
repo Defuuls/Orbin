@@ -18,6 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,104 +57,117 @@ fun BoardScreen(
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-    NextScaffold(
-        where = board.takeIf { showRail },
-        modifier = modifier,
-        detail = stringResource(R.string.next_rail_catalog),
-        onSearch = onSearch,
-        railVisible = railVisible,
-    ) { bottomPad ->
-        val header: @Composable () -> Unit = {
-            Column {
-                Row(
-                    modifier = Modifier.padding(start = GUTTER, top = 26.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    BoardDot(board, size = 10.dp)
-                    WidthSpacer(10)
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = board.takeIf { showRail },
+            modifier = Modifier.fillMaxSize(),
+            detail = stringResource(R.string.next_rail_catalog),
+            onSearch = onSearch,
+            railVisible = railVisible,
+        ) { bottomPad ->
+            val header: @Composable () -> Unit = {
+                Column {
+                    Row(
+                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        BoardDot(board, size = 10.dp)
+                        WidthSpacer(10)
+                        Text(
+                            text = board,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.9).sp,
+                            color = next.ink,
+                        )
+                    }
                     Text(
-                        text = board,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.9).sp,
-                        color = next.ink,
+                        text = description,
+                        fontSize = 14.sp,
+                        color = next.muted,
+                        modifier = Modifier.padding(start = GUTTER, top = 6.dp),
                     )
+                    Gap(16)
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .selectableGroup()
+                                .padding(horizontal = GUTTER - 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        InlineAction(
+                            label = stringResource(R.string.next_layout_grid),
+                            selected = effectiveLayout == FeedLayout.GRID,
+                            onClick = { onLayoutChange(FeedLayout.GRID) },
+                        )
+                        WidthSpacer(4)
+                        InlineAction(
+                            label = stringResource(R.string.next_layout_images),
+                            selected = effectiveLayout == FeedLayout.IMAGES,
+                            onClick = { onLayoutChange(FeedLayout.IMAGES) },
+                        )
+                        Box(modifier = Modifier.weight(1f))
+                        if (sortLabel != null) {
+                            InlineAction("$sortLabel ▾", onClick = onSort)
+                        }
+                    }
+                    Gap(12)
+                    Hairline()
                 }
-                Text(
-                    text = description,
-                    fontSize = 14.sp,
-                    color = next.muted,
-                    modifier = Modifier.padding(start = GUTTER, top = 6.dp),
-                )
-                Gap(16)
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .selectableGroup()
-                            .padding(horizontal = GUTTER - 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            }
+            val insets = Modifier.fillMaxSize().contentInsets()
+            if (effectiveLayout == FeedLayout.IMAGES) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(IMAGE_MIN_CELL),
+                    state = gridState,
+                    modifier = insets,
+                    contentPadding = gridPadding(bottomPad),
                 ) {
-                    InlineAction(
-                        label = stringResource(R.string.next_layout_grid),
-                        selected = effectiveLayout == FeedLayout.GRID,
-                        onClick = { onLayoutChange(FeedLayout.GRID) },
-                    )
-                    WidthSpacer(4)
-                    InlineAction(
-                        label = stringResource(R.string.next_layout_images),
-                        selected = effectiveLayout == FeedLayout.IMAGES,
-                        onClick = { onLayoutChange(FeedLayout.IMAGES) },
-                    )
-                    Box(modifier = Modifier.weight(1f))
-                    if (sortLabel != null) {
-                        InlineAction("$sortLabel ▾", onClick = onSort)
+                    fullWidthItem { header() }
+                    items(
+                        count = itemCount,
+                        key = rowKey,
+                        contentType = { "catalog-image-cell" },
+                    ) { index ->
+                        rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
+                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                        }
                     }
                 }
-                Gap(12)
-                Hairline()
-            }
-        }
-        val insets = Modifier.fillMaxSize().contentInsets()
-        if (effectiveLayout == FeedLayout.IMAGES) {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(IMAGE_MIN_CELL),
-                state = gridState,
-                modifier = insets,
-                contentPadding = gridPadding(bottomPad),
-            ) {
-                fullWidthItem { header() }
-                items(
-                    count = itemCount,
-                    key = rowKey,
-                    contentType = { "catalog-image-cell" },
-                ) { index ->
-                    rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
-                        FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                    }
-                }
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(GRID_MIN_CELL),
-                state = gridState,
-                modifier = insets,
-                contentPadding = gridPadding(bottomPad),
-            ) {
-                fullWidthItem { header() }
-                items(
-                    count = itemCount,
-                    key = rowKey,
-                    contentType = { index ->
-                        if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
-                    },
-                ) { index ->
-                    rowAt(index)?.let { row ->
-                        FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(GRID_MIN_CELL),
+                    state = gridState,
+                    modifier = insets,
+                    contentPadding = gridPadding(bottomPad),
+                ) {
+                    fullWidthItem { header() }
+                    items(
+                        count = itemCount,
+                        key = rowKey,
+                        contentType = { index ->
+                            if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
+                        },
+                    ) { index ->
+                        rowAt(index)?.let { row ->
+                            FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                        }
                     }
                 }
             }
         }
+        val showCompactTitle by remember {
+            derivedStateOf {
+                gridState.firstVisibleItemIndex > 0 ||
+                    gridState.firstVisibleItemScrollOffset > 64
+            }
+        }
+        CompactTitleBar(
+            title = board,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 
