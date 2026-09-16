@@ -13,6 +13,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":ui-next"))
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)
