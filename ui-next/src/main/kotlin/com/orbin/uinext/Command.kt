@@ -90,9 +90,11 @@ fun CommandSheet(
                     .fillMaxHeight(sheetFraction)
                     .align(Alignment.BottomCenter)
                     .imePadding()
-                    .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                    .background(next.raised)
-                    .windowInsetsPadding(sheetInsets),
+                    .nextFrosted(
+                        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+                        lightAlpha = 0.94f,
+                        darkAlpha = 0.88f,
+                    ).windowInsetsPadding(sheetInsets),
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),

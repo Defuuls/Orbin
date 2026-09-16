@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +34,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -81,7 +87,6 @@ fun DestinationPill(
     onCommand: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.BAR_FILL_DARK else NextMaterials.BAR_FILL_LIGHT)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Box(
             modifier =
@@ -110,29 +115,31 @@ fun DestinationPill(
                     Modifier
                         .weight(1f)
                         .heightIn(min = RAIL_HEIGHT)
-                        .clip(RoundedCornerShape(NextRadius.pill))
-                        .background(barFill)
-                        .border(0.5.dp, next.hairline, RoundedCornerShape(NextRadius.pill))
+                        .nextFrosted(RoundedCornerShape(NextRadius.pill))
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 DestinationTab(
                     label = stringResource(R.string.next_feed_title),
+                    icon = Icons.Outlined.Home,
                     selected = selected == NextDestination.FEED,
                     onClick = { onSelect(NextDestination.FEED) },
                 )
                 DestinationTab(
                     label = stringResource(R.string.next_launchpad_boards),
+                    icon = Icons.Outlined.GridView,
                     selected = selected == NextDestination.BOARDS,
                     onClick = { onSelect(NextDestination.BOARDS) },
                 )
                 DestinationTab(
                     label = stringResource(R.string.next_launchpad_media),
+                    icon = Icons.Outlined.PhotoLibrary,
                     selected = selected == NextDestination.MEDIA,
                     onClick = { onSelect(NextDestination.MEDIA) },
                 )
                 DestinationTab(
                     label = stringResource(R.string.next_settings_title),
+                    icon = Icons.Outlined.Settings,
                     selected = selected == NextDestination.SETTINGS,
                     onClick = { onSelect(NextDestination.SETTINGS) },
                 )
@@ -163,6 +170,7 @@ fun DestinationPill(
 @Composable
 private fun RowScope.DestinationTab(
     label: String,
+    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -176,6 +184,7 @@ private fun RowScope.DestinationTab(
             alpha =
                 (if (next.dark) NextMaterials.SELECTED_FILL_DARK else NextMaterials.SELECTED_FILL_LIGHT) * fill,
         )
+    val tint = if (selected) next.accent else next.muted
     Box(
         modifier =
             Modifier
@@ -187,15 +196,25 @@ private fun RowScope.DestinationTab(
                 .semantics { this.selected = selected },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = label,
-            style = NextType.tab,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (selected) next.accent else next.muted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = NextSpace.pillPadX, vertical = NextSpace.pillPadY),
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = label,
+                style = NextType.caption2,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -213,7 +232,6 @@ fun ContextRail(
     onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.BAR_FILL_DARK else NextMaterials.BAR_FILL_LIGHT)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Box(
             modifier =
@@ -235,9 +253,7 @@ fun ContextRail(
                     .windowInsetsPadding(railInsets)
                     .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom)
                     .heightIn(min = RAIL_HEIGHT)
-                    .clip(RoundedCornerShape(NextRadius.pill))
-                    .background(barFill)
-                    .border(0.5.dp, next.hairline, RoundedCornerShape(NextRadius.pill))
+                    .nextFrosted(RoundedCornerShape(NextRadius.pill))
                     .padding(start = 18.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

@@ -137,9 +137,6 @@ fun FeedScreen(
                     sizeValue = feedSize,
                     onSizeChange = { feedSize = it.coerceIn(FEED_SIZE_MIN_DP, FEED_SIZE_MAX_DP) },
                     showSizeControl = showSizeControl,
-                    onOpenBoards = onOpenBoards,
-                    onOpenSettings = onSettings,
-                    onOpenMedia = onOpenMedia,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()

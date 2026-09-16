@@ -45,9 +45,6 @@ internal fun FeedHeader(
     sizeValue: Float = GRID_MIN_CELL.value,
     onSizeChange: (Float) -> Unit = {},
     showSizeControl: Boolean = true,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenSettings: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
 ) {
     val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {

@@ -53,19 +53,25 @@ object NextRadius {
 /**
  * Translucent materials for chrome and sheets.
  *
- * Real backdrop blur needs RenderEffect / API 31+ and is applied where the host allows; these alphas
- * keep bars readable over scrolling content on every API we ship.
+ * Chrome uses [BLUR_RADIUS] with RenderEffect on API 31+ (our minSdk) via [nextFrosted]; denser
+ * alphas remain the fallback when blur is skipped. True content-sampling backdrop blur still needs a
+ * haze host around scrolling lists.
  */
 @Immutable
 object NextMaterials {
     const val BAR_FILL_LIGHT = 0.82f
     const val BAR_FILL_DARK = 0.72f
+
+    /** More translucent when a chrome blur is applied on API 31+. */
+    const val BAR_FILL_LIGHT_BLUR = 0.62f
+    const val BAR_FILL_DARK_BLUR = 0.52f
     const val SCRIM = 0.36f
     const val HIGHLIGHT = 0.08f
     const val SELECTED_FILL_LIGHT = 0.12f
     const val SELECTED_FILL_DARK = 0.22f
     const val PRESS_LIGHT = 0.06f
     const val PRESS_DARK = 0.14f
+    val BLUR_RADIUS = 18.dp
 }
 
 /**
