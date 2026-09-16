@@ -144,8 +144,6 @@ class AllMediaScreenshotTest {
         }
     }
 
-
-
     private fun capture(
         name: String,
         darkTheme: Boolean = false,
