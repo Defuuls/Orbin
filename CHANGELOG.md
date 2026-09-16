@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [133-Norovirus] - 2026-09-16
+
+### Fixed
+- Sorted the feed's A-Z option by board code instead of thread subject, so /b/ precedes /gif/ in Grid and Images.
+
+### Reliability
+- Added regression coverage for board ordering when thread subjects would sort in the opposite order.
+
+
 ## [132-Influenza] - 2026-09-15
 
 ### Fixed
@@ -2182,7 +2191,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...HEAD
+[133-Norovirus]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...v133-Norovirus
 [132-Influenza]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...v132-Influenza
 [131-Varicella]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...v131-Varicella
 [130-Pertussis]: https://github.com/Defuuls/Orbin/compare/v129-Measles...v130-Pertussis

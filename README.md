@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [132 — Influenza](https://github.com/Defuuls/Orbin/releases/tag/v132-Influenza)
+**Current release:** [133 — Norovirus](https://github.com/Defuuls/Orbin/releases/tag/v133-Norovirus)
 
 **What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
 
