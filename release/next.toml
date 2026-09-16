@@ -1,26 +1,22 @@
-# Orbin 132 — Influenza
+# Orbin 133 — Norovirus
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 132
-codename     = "Influenza"
-version_code = 150
+number       = 133
+codename     = "Norovirus"
+version_code = 151
 
 summary = [
-  "bump Orbin to 132-Influenza / versionCode 150",
-  "send required media headers through DownloadManager and move Settings beside Search in the feed header",
+  "bump Orbin to 133-Norovirus / versionCode 151",
+  "sort feed boards alphabetically in Grid and Images, independent of thread titles",
 ]
 
 [changelog]
 Fixed = [
-  "Sent the required User-Agent, Accept, and same-origin Referer headers through DownloadManager for new and retried media downloads.",
-]
-
-Changed = [
-  "Moved Settings from the floating bottom action into the feed header destination row beside Search.",
+  "Sorted the feed's A-Z option by board code instead of thread subject, so /b/ precedes /gif/ in Grid and Images.",
 ]
 
 Reliability = [
-  "Validated the download-header fix and feed navigation update through CI, instrumentation tests, screenshot tests, performance checks, and CodeQL.",
+  "Added regression coverage for board ordering when thread subjects would sort in the opposite order.",
 ]
