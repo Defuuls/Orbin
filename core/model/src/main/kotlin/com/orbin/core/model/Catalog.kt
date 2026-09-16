@@ -44,6 +44,7 @@ enum class FeedSort(
     REPLIES("Replies"),
     IMAGES("Images"),
     CREATED("Created"),
+
     /** Board code A–Z (kept for saved sort preferences). */
     TITLE("A-Z"),
 }
