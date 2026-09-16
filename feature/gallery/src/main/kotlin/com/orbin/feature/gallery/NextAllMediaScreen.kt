@@ -36,6 +36,7 @@ fun NextAllMediaScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -53,6 +54,7 @@ fun NextAllMediaScreen(
         onChromeVisibleChange = onChromeVisibleChange,
         onOpenFeed = onOpenFeed,
         onOpenBoards = onOpenBoards,
+        onOpenSettings = onOpenSettings,
     )
 }
 
@@ -75,6 +77,7 @@ fun NextAllMediaContent(
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
 ) {
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
     val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
@@ -82,11 +85,29 @@ fun NextAllMediaContent(
     NextTheme {
         // Nothing swept yet and nothing to show: the sweep itself is the content, so the progress
         // line has no grid to sit above.
+        val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenSettings != null
+        val onDestination: ((com.orbin.uinext.NextDestination) -> Unit)? =
+            if (hasTabs) {
+                { dest ->
+                    when (dest) {
+                        com.orbin.uinext.NextDestination.FEED -> onOpenFeed?.invoke()
+                        com.orbin.uinext.NextDestination.BOARDS -> onOpenBoards?.invoke()
+                        com.orbin.uinext.NextDestination.MEDIA -> Unit
+                        com.orbin.uinext.NextDestination.SETTINGS -> onOpenSettings?.invoke()
+                    }
+                }
+            } else {
+                null
+            }
         if (uiState.isInitialLoad) {
             MessageScreen(
                 title = stringResource(R.string.next_media_title),
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
-                where = stringResource(R.string.next_media_title),
+                where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
+                destination =
+                    com.orbin.uinext.NextDestination.MEDIA
+                        .takeIf { hasTabs },
+                onDestination = onDestination,
                 onSearch = onOpenCommands,
                 modifier = modifier,
             )
@@ -98,7 +119,11 @@ fun NextAllMediaContent(
                 subtitle = stringResource(R.string.next_media_empty),
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
-                where = stringResource(R.string.next_media_title),
+                where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
+                destination =
+                    com.orbin.uinext.NextDestination.MEDIA
+                        .takeIf { hasTabs },
+                onDestination = onDestination,
                 onSearch = onOpenCommands,
                 modifier = modifier,
             )
@@ -124,6 +149,7 @@ fun NextAllMediaContent(
                 onSearch = onOpenCommands,
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
+                onOpenSettings = onOpenSettings,
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->
                         onOpenMedia(

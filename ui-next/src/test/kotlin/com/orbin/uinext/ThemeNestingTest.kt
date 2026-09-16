@@ -7,7 +7,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +54,7 @@ class ThemeNestingTest {
         assertTrue(paletteUnder { it() }.dark)
     }
 
-    /** AMOLED is a ground, not a palette: true black behind the same ink and the same accent. */
+    /** AMOLED marks the OLED ground explicitly; dark already uses true black + elevated surfaces. */
     @Test
     fun `amoled reaches a nested screen and blackens the ground`() {
         lateinit var amoled: NextPalette
@@ -67,10 +66,12 @@ class ThemeNestingTest {
         composeRule.waitForIdle()
 
         assertTrue(amoled.amoled)
+        assertFalse(plain.amoled)
         assertEquals(Color.Black, amoled.background)
-        assertNotEquals(plain.background, amoled.background)
+        assertEquals(Color.Black, plain.background)
         assertEquals(plain.ink, amoled.ink)
         assertEquals(plain.accent, amoled.accent)
+        assertEquals(plain.raised, amoled.raised)
     }
 
     /** AMOLED has nothing to do in a light theme, and must not quietly force a dark one. */

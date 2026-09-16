@@ -45,7 +45,7 @@ internal const val MEDIA_SIZE_MIN_DP = 96f
 internal const val MEDIA_SIZE_MAX_DP = 400f
 internal const val MEDIA_SIZE_STEPS = 11
 
-internal val GRID_TILE_RADIUS = 16.dp
+internal val GRID_TILE_RADIUS = 18.dp
 internal val GRID_CELL_PADDING = 8.dp
 
 internal fun LazyGridScope.fullWidthItem(content: @Composable () -> Unit) =
@@ -58,5 +58,5 @@ internal fun gridPadding(bottom: PaddingValues) =
         bottom = bottom.calculateBottomPadding(),
     )
 
-internal val GRID_SIDE_INSET = 14.dp
+internal val GRID_SIDE_INSET = 16.dp
 internal const val FEED_HEADER_KEY = "header"

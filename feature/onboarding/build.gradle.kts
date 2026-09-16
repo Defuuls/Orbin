@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.orbin.feature.onboarding"
 }
+
+dependencies {
+    implementation(project(":ui-next"))
+}

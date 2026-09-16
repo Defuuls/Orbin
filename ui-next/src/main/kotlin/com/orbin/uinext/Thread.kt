@@ -191,7 +191,7 @@ fun ThreadScreen(
                                         Modifier
                                             .weight(1f)
                                             .padding(2.5.dp)
-                                            .clip(RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(14.dp))
                                             .clickable { onOpenFile(cell) },
                                 ) {
                                     val shape = Modifier.fillMaxWidth().aspectRatio(1f)
@@ -323,7 +323,7 @@ private fun PostView(
                         Modifier
                             .fillMaxWidth()
                             .height(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .background(Color.Black.copy(alpha = SPOILER_SCRIM)),
                     contentAlignment = Alignment.CenterStart,
                 ) {
@@ -355,7 +355,7 @@ private fun PostView(
                     MediaTile(
                         modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
                         seed = seed + 1,
-                        radius = 14.dp,
+                        radius = 16.dp,
                     )
                 }
             }

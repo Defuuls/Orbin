@@ -32,7 +32,7 @@ class PaletteContrastTest {
 
     @Test
     fun `filled accent chips clear AA with onAccent on solid accent`() {
-        // Soft terracotta-on-soft failed WCAG; filled InlineAction / Go chip use solid accent + onAccent.
+        // Soft accent-on-soft failed WCAG; filled InlineAction / Go chip use solid accent + onAccent.
         listOf(LightPalette to "light", DarkPalette to "dark", AmoledPalette to "amoled").forEach { (palette, name) ->
             assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
         }

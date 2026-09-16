@@ -6,35 +6,33 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +55,15 @@ import com.orbin.core.model.SearchContentType
 import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
+import com.orbin.uinext.GroupedDivider
+import com.orbin.uinext.GroupedSection
+import com.orbin.uinext.InlineAction
+import com.orbin.uinext.MetaLine
+import com.orbin.uinext.NextTheme
+import com.orbin.uinext.ScreenTitle
+import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
 
 /** Search screen: board-scoped catalog search with recent-query chips and saved searches. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -77,21 +84,32 @@ fun SearchScreen(
     var includeNsfw by remember { mutableStateOf(true) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.search_title)) }) }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier.fillMaxWidth(),
+    NextTheme {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ),
+        ) {
+            ScreenTitle(text = stringResource(R.string.search_title))
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Tab(
+                InlineAction(
+                    label = stringResource(R.string.search_tab_search),
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text(stringResource(R.string.search_tab_search)) },
                 )
-                Tab(
+                InlineAction(
+                    label = stringResource(R.string.search_tab_saved, savedSearches.size),
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text(stringResource(R.string.search_tab_saved, savedSearches.size)) },
                 )
             }
 
@@ -136,7 +154,7 @@ fun SearchScreen(
                             )
                         },
                         onOpenThread = onOpenThread,
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = NextSpace.gutter),
                     )
                 1 ->
                     SavedSearchesTabContent(
@@ -151,7 +169,7 @@ fun SearchScreen(
                             viewModel.loadSavedSearch(search)
                         },
                         onDeleteSearch = { id -> viewModel.deleteSavedSearch(id) },
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = NextSpace.gutter),
                     )
             }
         }
@@ -288,11 +306,9 @@ private fun SearchTabContent(
                 modifier = Modifier.padding(top = 8.dp),
             ) {
                 recents.forEach { recent ->
-                    AssistChip(
-                        onClick = {
-                            onSearch(recent)
-                        },
-                        label = { Text(recent) },
+                    InlineAction(
+                        label = recent,
+                        onClick = { onSearch(recent) },
                     )
                 }
             }
@@ -307,46 +323,60 @@ private fun SearchTabContent(
                     EmptyView(stringResource(R.string.search_no_matches))
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        Button(
-                            onClick = onSaveSearch,
-                            modifier = Modifier.align(Alignment.End).padding(top = 8.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.End,
                         ) {
-                            Text(stringResource(R.string.search_save_this_search))
+                            InlineAction(
+                                label = stringResource(R.string.search_save_this_search),
+                                accent = true,
+                                onClick = onSaveSearch,
+                            )
                         }
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(s.results, key = { it.key.thread.value }) { result ->
-                                ListItem(
-                                    modifier =
-                                        Modifier.clickable {
-                                            onOpenThread(
-                                                result.key.provider.value,
-                                                result.key.board.value,
-                                                result.key.thread.value,
-                                                result.title,
-                                            )
-                                        },
-                                    headlineContent = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            item {
+                                GroupedSection {
+                                    s.results.forEachIndexed { index, result ->
+                                        Column(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        onOpenThread(
+                                                            result.key.provider.value,
+                                                            result.key.board.value,
+                                                            result.key.thread.value,
+                                                            result.title,
+                                                        )
+                                                    }.padding(
+                                                        horizontal = NextSpace.rowX,
+                                                        vertical = NextSpace.rowY,
+                                                    ),
                                         ) {
-                                            Text(
-                                                text = result.title,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f, fill = false),
-                                            )
-                                            Text(
-                                                text = "/${result.key.board.value}/",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1,
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            ) {
+                                                Text(
+                                                    text = result.title,
+                                                    style = NextType.body,
+                                                    color = next.ink,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false),
+                                                )
+                                                Text(
+                                                    text = "/${result.key.board.value}/",
+                                                    style = NextType.caption1,
+                                                    color = next.muted,
+                                                    maxLines = 1,
+                                                )
+                                            }
+                                            MetaLine(result.snippet, maxLines = 2)
                                         }
-                                    },
-                                    supportingContent = { Text(result.snippet, maxLines = 2) },
-                                )
-                                HorizontalDivider()
+                                        if (index < s.results.lastIndex) GroupedDivider()
+                                    }
+                                }
                             }
                         }
                     }
@@ -429,10 +459,10 @@ private fun SearchTypeFilters(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SearchContentType.entries.forEach { type ->
-            FilterChip(
+            InlineAction(
+                label = type.label,
                 selected = type in selected,
                 onClick = { onToggle(type) },
-                label = { Text(type.label) },
             )
         }
     }

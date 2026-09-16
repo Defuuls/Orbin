@@ -11,3 +11,7 @@ android {
         enable = true
     }
 }
+
+dependencies {
+    implementation(project(":ui-next"))
+}

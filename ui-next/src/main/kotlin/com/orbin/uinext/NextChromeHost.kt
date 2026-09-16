@@ -11,8 +11,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /**
- * Wraps a still-Material destination in NextTheme + ContextRail so leaving Feed does not flip into
- * a blue TopAppBar island. Inner lists may keep Material widgets temporarily; the chrome matches.
+ * Wraps a still-Material destination (Search, Downloads) in NextTheme + ContextRail so leaving
+ * primary tabs does not flip into a blue TopAppBar island. Inner lists may keep Material widgets
+ * temporarily; the chrome matches.
  */
 @Composable
 fun NextChromeHost(
