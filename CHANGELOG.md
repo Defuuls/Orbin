@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [134-Rotavirus] - 2026-09-16
+
+### Removed
+- Removed the History screen and destination (visited-state data and Settings clear remain).
+- Removed the Command-only Gallery browser ("Browse by board") and its bookmarks tab.
+- Removed the unused Board picker screen and its screenshot coverage.
+- Removed dead Material Home, Subscriptions, and classic Board screens, plus the never-shown Material bottom bar and duplicate Command Subscriptions entry.
+
+### Changed
+- Trimmed History from the All Media launchpad, and Search and Downloads chips from the Feed and Media launchpads; Search and Downloads stay reachable via Command.
+- Focused launchpads on core loops: Feed shows Boards / Media / Settings; Media shows Feed / Boards.
+
+
 ### Changed
 - Finished the UI cull of parked surfaces: removed the History destination/screen, the Command-only
   Gallery browser ("Browse by board") including its bookmarks tab, and the unwired ui-next
@@ -2198,7 +2211,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...HEAD
+[134-Rotavirus]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...v134-Rotavirus
 [133-Norovirus]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...v133-Norovirus
 [132-Influenza]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...v132-Influenza
 [131-Varicella]: https://github.com/Defuuls/Orbin/compare/v130-Pertussis...v131-Varicella
