@@ -115,6 +115,13 @@ fun FeedScreen(
         } else {
             null
         }
+    val feedTitle = stringResource(R.string.next_feed_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_feed_title).takeIf { showRail && !hasTabs },
@@ -147,7 +154,11 @@ fun FeedScreen(
                     columns = GridCells.Adaptive(imageGridMinSize),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(
@@ -169,7 +180,11 @@ fun FeedScreen(
                     columns = GridCells.Adaptive(feedSize.dp),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(
@@ -186,13 +201,6 @@ fun FeedScreen(
                         )
                     }
                 }
-            }
-        }
-        val feedTitle = stringResource(R.string.next_feed_title)
-        val showCompactTitle by remember {
-            derivedStateOf {
-                gridState.firstVisibleItemIndex > 0 ||
-                    gridState.firstVisibleItemScrollOffset > 64
             }
         }
         CompactTitleBar(

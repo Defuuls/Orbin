@@ -88,6 +88,14 @@ fun MediaWallScreen(
             null
         }
 
+    val mediaTitle = stringResource(R.string.next_all_media_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_all_media_title).takeIf { showRail && !hasTabs },
@@ -107,7 +115,7 @@ fun MediaWallScreen(
                 columns = GridCells.Adaptive(imageCellMinSize),
                 state = gridState,
                 modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding = gridPadding(bottomPad),
+                contentPadding = gridPadding(bottomPad, top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp),
             ) {
                 fullWidthItem {
                     Column {
@@ -197,13 +205,6 @@ fun MediaWallScreen(
                         )
                     }
                 }
-            }
-        }
-        val mediaTitle = stringResource(R.string.next_all_media_title)
-        val showCompactTitle by remember {
-            derivedStateOf {
-                gridState.firstVisibleItemIndex > 0 ||
-                    gridState.firstVisibleItemScrollOffset > 64
             }
         }
         CompactTitleBar(

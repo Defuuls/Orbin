@@ -299,7 +299,10 @@ fun ContextRail(
     }
 }
 
-/** Semantics tags so collapsing chrome does not break [ScrollingHeaderTest]. */
+/** Space to keep scrolling content clear of [CompactTitleBar]. */
+val COMPACT_TITLE_CLEARANCE = 52.dp
+
+/** Semantics tags distinguishing the large in-content title from the compact overlay. */
 object NextTitleTags {
     const val LARGE = "next_large_title"
     const val COMPACT = "next_compact_title"

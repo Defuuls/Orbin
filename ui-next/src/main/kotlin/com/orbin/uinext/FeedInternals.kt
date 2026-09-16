@@ -51,12 +51,15 @@ internal val GRID_CELL_PADDING = 8.dp
 internal fun LazyGridScope.fullWidthItem(content: @Composable () -> Unit) =
     item(key = FEED_HEADER_KEY, span = { GridItemSpan(maxLineSpan) }) { content() }
 
-internal fun gridPadding(bottom: PaddingValues) =
-    PaddingValues(
-        start = GRID_SIDE_INSET,
-        end = GRID_SIDE_INSET,
-        bottom = bottom.calculateBottomPadding(),
-    )
+internal fun gridPadding(
+    bottom: PaddingValues,
+    top: androidx.compose.ui.unit.Dp = 0.dp,
+) = PaddingValues(
+    start = GRID_SIDE_INSET,
+    end = GRID_SIDE_INSET,
+    top = top,
+    bottom = bottom.calculateBottomPadding(),
+)
 
 internal val GRID_SIDE_INSET = 16.dp
 internal const val FEED_HEADER_KEY = "header"

@@ -88,6 +88,14 @@ fun BoardsScreen(
             null
         }
 
+    val boardsTitle = stringResource(R.string.next_launchpad_boards)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_launchpad_boards).takeIf { showRail && !hasTabs },
@@ -136,13 +144,6 @@ fun BoardsScreen(
                 items(boards, key = { it.id }) { board ->
                     BoardTileCard(board = board, onClick = { onOpenBoard(board) })
                 }
-            }
-        }
-        val boardsTitle = stringResource(R.string.next_launchpad_boards)
-        val showCompactTitle by remember {
-            derivedStateOf {
-                gridState.firstVisibleItemIndex > 0 ||
-                    gridState.firstVisibleItemScrollOffset > 64
             }
         }
         CompactTitleBar(

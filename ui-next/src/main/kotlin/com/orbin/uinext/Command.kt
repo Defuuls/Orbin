@@ -277,9 +277,16 @@ fun SettingsScreen(
             null
         }
 
+    val settingsTitle = stringResource(R.string.next_settings_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            state.firstVisibleItemIndex > 0 ||
+                state.firstVisibleItemScrollOffset > 64
+        }
+    }
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_settings_title).takeIf { showRail && !hasTabs },
+            where = settingsTitle.takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
             onSearch = onSearch,
             destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
@@ -291,7 +298,7 @@ fun SettingsScreen(
                 contentPadding =
                     PaddingValues(
                         bottom = bottomPad.calculateBottomPadding(),
-                        top = 4.dp,
+                        top = 4.dp + (if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp),
                     ),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
@@ -318,13 +325,6 @@ fun SettingsScreen(
                     }
                 }
                 item { Gap(8) }
-            }
-        }
-        val settingsTitle = stringResource(R.string.next_settings_title)
-        val showCompactTitle by remember {
-            derivedStateOf {
-                state.firstVisibleItemIndex > 0 ||
-                    state.firstVisibleItemScrollOffset > 64
             }
         }
         CompactTitleBar(

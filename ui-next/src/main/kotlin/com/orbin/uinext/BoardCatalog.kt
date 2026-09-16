@@ -57,6 +57,13 @@ fun BoardScreen(
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = board.takeIf { showRail },
@@ -122,7 +129,11 @@ fun BoardScreen(
                     columns = GridCells.Adaptive(IMAGE_MIN_CELL),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     items(
@@ -140,7 +151,11 @@ fun BoardScreen(
                     columns = GridCells.Adaptive(GRID_MIN_CELL),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     items(
@@ -155,12 +170,6 @@ fun BoardScreen(
                         }
                     }
                 }
-            }
-        }
-        val showCompactTitle by remember {
-            derivedStateOf {
-                gridState.firstVisibleItemIndex > 0 ||
-                    gridState.firstVisibleItemScrollOffset > 64
             }
         }
         CompactTitleBar(
