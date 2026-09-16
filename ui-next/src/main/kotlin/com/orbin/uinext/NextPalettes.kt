@@ -10,7 +10,7 @@ import kotlin.math.min
 /**
  * Maps a persisted [ColorSchemeVariant] onto the Next shell palette.
  *
- * Default / Tomorrow stay on the curated warm Next grounds. Imageboard skins expand from their
+ * Default / Tomorrow stay on the curated Apple-inspired Next grounds. Imageboard skins expand from their
  * [ChanThemeSeeds] so Color theme in settings actually recolors Feed and the rest of ui-next,
  * not only Material-only destinations.
  */
@@ -41,9 +41,18 @@ internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     // Prefer readable tiers over aggressive fade — imageboard seeds often ship mid-grey body text.
     val muted = ensureContrast(body.copy(alpha = if (dark) 0.92f else 0.88f), bg, listOf(body))
     val faint = ensureContrast(body.copy(alpha = if (dark) 0.82f else 0.78f), bg, listOf(muted, body))
+    val elevatedPanel =
+        if (amoled && dark) {
+            AmoledElevated
+        } else if (dark) {
+            panel
+        } else {
+            panel
+        }
     return NextPalette(
         background = bg,
         raised = panel,
+        elevated = elevatedPanel,
         ink = body,
         muted = muted,
         faint = faint,
@@ -150,4 +159,5 @@ private const val LUMINANCE_MIDPOINT = 0.5f
 private const val LUMINANCE_OFFSET = 0.05f
 private const val CONTRAST_BLEND_STEPS = 9
 private const val CONTRAST_BLEND_DIVISOR = 10f
-private val AmoledRaised = Color(0xFF0A0A0A)
+private val AmoledRaised = Color(0xFF1C1C1E)
+private val AmoledElevated = Color(0xFF2C2C2E)

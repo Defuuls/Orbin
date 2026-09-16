@@ -54,8 +54,9 @@ import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.next
 
 /**
- * Root composable. Feed, All Media, and board catalogs own their own ContextRail; secondary
- * destinations open through the launchpad / command surface rather than a Material bottom bar.
+ * Root composable. Primary destinations (Feed, Boards, Media, Settings) own DestinationPill
+ * chrome; Thread / catalog / Search / Downloads use ContextRail. Search and Downloads open through
+ * Command only.
  */
 @Composable
 fun OrbinApp(

@@ -1,6 +1,9 @@
 package com.orbin.uinext
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -8,10 +11,14 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -30,6 +37,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,34 +46,164 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.NextMaterials
+import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
+
+/** Primary destinations for the floating pill chrome. Search / Downloads stay Command-only. */
+enum class NextDestination {
+    FEED,
+    BOARDS,
+    MEDIA,
+    SETTINGS,
+}
 
 /**
- * The one piece of permanent chrome in the new interface.
+ * The permanent chrome for primary destinations: a floating pill for Feed / Boards / Media /
+ * Settings, with Command as a trailing Go affordance.
  *
- * The current app carries a top bar and a bottom navigation bar on every screen, plus overflow menus
- * hanging off the top bar. That is two horizontal bands of the display spent on furniture before a
- * single post is drawn, and it is the same furniture whichever of the twenty-one destinations you
- * are on.
+ * Replaces the old single-context rail + header launchpad chips. Secondary screens (thread, board
+ * catalog, Search, Downloads) keep [ContextRail].
+ */
+@Composable
+fun DestinationPill(
+    selected: NextDestination,
+    onSelect: (NextDestination) -> Unit,
+    modifier: Modifier = Modifier,
+    action: String = stringResource(R.string.next_action_search),
+    onCommand: () -> Unit = {},
+) {
+    val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.barFillDark else NextMaterials.barFillLight)
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(RAIL_HEIGHT + 58.dp + bottomInset())
+                    .background(
+                        Brush.verticalGradient(
+                            0f to next.background.copy(alpha = 0f),
+                            0.4f to next.background.copy(alpha = 0.88f),
+                            1f to next.background,
+                        ),
+                    ),
+        )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(railInsets)
+                    .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = RAIL_HEIGHT)
+                        .clip(RoundedCornerShape(NextRadius.pill))
+                        .background(barFill)
+                        .border(0.5.dp, next.hairline, RoundedCornerShape(NextRadius.pill))
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                DestinationTab(
+                    label = stringResource(R.string.next_feed_title),
+                    selected = selected == NextDestination.FEED,
+                    onClick = { onSelect(NextDestination.FEED) },
+                )
+                DestinationTab(
+                    label = stringResource(R.string.next_launchpad_boards),
+                    selected = selected == NextDestination.BOARDS,
+                    onClick = { onSelect(NextDestination.BOARDS) },
+                )
+                DestinationTab(
+                    label = stringResource(R.string.next_launchpad_media),
+                    selected = selected == NextDestination.MEDIA,
+                    onClick = { onSelect(NextDestination.MEDIA) },
+                )
+                DestinationTab(
+                    label = stringResource(R.string.next_settings_title),
+                    selected = selected == NextDestination.SETTINGS,
+                    onClick = { onSelect(NextDestination.SETTINGS) },
+                )
+            }
+            Box(
+                modifier =
+                    Modifier
+                        .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
+                        .clip(RoundedCornerShape(NextRadius.pill))
+                        .clickable(role = Role.Button, onClick = onCommand),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = action,
+                    style = NextType.tab,
+                    color = next.onAccent,
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(NextRadius.pill))
+                            .background(next.accent)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.DestinationTab(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val fill by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "tabFill",
+    )
+    val selectedFill =
+        next.accent.copy(
+            alpha =
+                (if (next.dark) NextMaterials.selectedFillDark else NextMaterials.selectedFillLight) * fill,
+        )
+    Box(
+        modifier =
+            Modifier
+                .weight(1f)
+                .sizeIn(minHeight = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(NextRadius.pill))
+                .background(selectedFill)
+                .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+                .semantics { this.selected = selected },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = NextType.tab,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) next.accent else next.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = NextSpace.pillPadX, vertical = NextSpace.pillPadY),
+        )
+    }
+}
+
+/**
+ * Contextual chrome for secondary screens: where you are, plus Command.
  *
- * This replaces both: one floating bar, inset from the edges, over content that scrolls beneath it.
- * Where you are on the left; on the right the only affordance that is always available. There is no
- * tab bar because there are no longer tabs, and no back button because the platform already draws
- * one — the system back gesture and the navigation bar's button both dismiss a layer.
- *
- * This used to claim layers were "dismissed by dragging them down". Nothing in this module has ever
- * implemented a drag: the affordance the back button was removed in favour of did not exist, and
- * the comment sent every later reader looking for it. If a drag is wanted it belongs on the layer
- * container with `AnchoredDraggable`, alongside the system back rather than instead of it, since a
- * gesture with no keyboard or switch-access equivalent cannot be the only way out of a screen.
- *
- * [action] names that one affordance. In the full client it opens the command surface and is
- * labelled Go (not Search — Search is a separate destination). Orbin Minimal has nowhere else to
- * get to but its board list, so it says Boards — one bar with one affordance either way.
+ * Used by Thread, board catalogs, Search and Downloads — places that are not primary tabs.
  */
 @Composable
 fun ContextRail(
@@ -75,15 +214,12 @@ fun ContextRail(
     onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    val barFill = next.raised.copy(alpha = if (next.dark) NextMaterials.barFillDark else NextMaterials.barFillLight)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        // Content dissolves into the background under the bar instead of running into it. The scrim
-        // runs to the bottom edge, behind the navigation bar, so there is no seam where it stops.
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    // The 58 is generous on purpose: it is the fade above the bar, and it has to
-                    // still clear the bar once enlarged text has grown it past RAIL_HEIGHT.
                     .height(RAIL_HEIGHT + 58.dp + bottomInset())
                     .background(
                         Brush.verticalGradient(
@@ -97,25 +233,18 @@ fun ContextRail(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    // The bar floats above the navigation bar rather than under it; the scrim
-                    // behind it is what covers that strip.
                     .windowInsetsPadding(railInsets)
-                    .padding(horizontal = 14.dp, vertical = 12.dp)
-                    // A floor rather than a fixed height. At 52dp the bar held its 13.5sp label
-                    // comfortably and clipped it at twice that, which is a size Android offers and
-                    // this had never been rendered at.
+                    .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom)
                     .heightIn(min = RAIL_HEIGHT)
-                    .clip(RoundedCornerShape(RAIL_HEIGHT / 2))
-                    .background(next.raised)
-                    .border(1.dp, next.hairline, RoundedCornerShape(RAIL_HEIGHT / 2))
+                    .clip(RoundedCornerShape(NextRadius.pill))
+                    .background(barFill)
+                    .border(0.5.dp, next.hairline, RoundedCornerShape(NextRadius.pill))
                     .padding(start = 18.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = where,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.1).sp,
+                style = NextType.tab,
                 color = next.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -124,7 +253,7 @@ fun ContextRail(
             if (detail != null) {
                 Text(
                     text = "  $detail",
-                    fontSize = 13.sp,
+                    style = NextType.footnote,
                     color = next.muted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -135,18 +264,17 @@ fun ContextRail(
                 modifier =
                     Modifier
                         .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(NextRadius.control))
                         .clickable(role = Role.Button, onClick = onSearch),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = action,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = NextType.tab,
                     color = next.onAccent,
                     modifier =
                         Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(NextRadius.control))
                             .background(next.accent)
                             .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
@@ -156,35 +284,38 @@ fun ContextRail(
 }
 
 /**
- * A screen title, set in the content rather than in a bar above it.
+ * A screen title set in the content rather than in a bar above it.
  *
- * Titles scroll away with the content because a title is information, not furniture: it tells you
- * what you opened, and once you are reading you no longer need to be told. The current app keeps its
- * title pinned in a bar for the life of the screen.
- *
- * Set large, heavy and tightly tracked — negative letter spacing at display sizes is most of the
- * difference between a heading that looks drawn and one that looks defaulted.
+ * Large, heavy, tightly tracked — scrolls away with the content because a title is information,
+ * not furniture.
  */
 @Composable
 fun ScreenTitle(
     text: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    size: Int = 32,
+    size: Int = 34,
 ) {
-    Column(modifier = modifier.padding(start = GUTTER, end = GUTTER, top = 26.dp, bottom = 18.dp)) {
-        Text(
-            text = text,
-            fontSize = size.sp,
-            lineHeight = (size + 5).sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.9).sp,
-            color = next.ink,
-        )
+    val titleStyle =
+        when {
+            size >= 32 -> NextType.largeTitle
+            size >= 26 -> NextType.title1
+            else -> NextType.title2
+        }
+    Column(
+        modifier =
+            modifier.padding(
+                start = NextSpace.gutter,
+                end = NextSpace.gutter,
+                top = NextSpace.titleTop + 14.dp,
+                bottom = NextSpace.titleBottom,
+            ),
+    ) {
+        Text(text = text, style = titleStyle, color = next.ink)
         if (subtitle != null) {
             Text(
                 text = subtitle,
-                fontSize = 14.sp,
+                style = NextType.footnote,
                 color = next.muted,
                 modifier = Modifier.padding(top = 6.dp),
             )
@@ -192,13 +323,7 @@ fun ScreenTitle(
     }
 }
 
-/**
- * The only separator in the interface.
- *
- * No cards, no elevation, no filled containers. A list is a list because of the space around its
- * rows and a one-pixel line between them, which is enough — and it costs nothing in vertical space,
- * where cards cost padding twice per row plus the gap between them.
- */
+/** Soft separator — prefer inside [GroupedSection]; full-bleed only between major blocks. */
 @Composable
 fun Hairline(
     modifier: Modifier = Modifier,
@@ -208,13 +333,62 @@ fun Hairline(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(start = if (inset) GUTTER else 0.dp)
-                .height(1.dp)
+                .padding(start = if (inset) NextSpace.gutter else 0.dp)
+                .height(0.5.dp)
                 .background(next.hairline),
     )
 }
 
-/** A row's secondary line: counts and timestamps. One line, muted, never wrapping. */
+/** Inset grouped card — Settings-style sections on the grouped background. */
+@Composable
+fun GroupedSection(
+    modifier: Modifier = Modifier,
+    header: String? = null,
+    footer: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = NextSpace.gutterTight)) {
+        if (header != null) {
+            Text(
+                text = header.uppercase(),
+                style = NextType.sectionHeader,
+                color = next.muted,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp, top = 4.dp),
+            )
+        }
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(NextRadius.card))
+                    .background(next.raised),
+            content = content,
+        )
+        if (footer != null) {
+            Text(
+                text = footer,
+                style = NextType.caption1,
+                color = next.faint,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            )
+        }
+    }
+}
+
+/** Divider drawn inside a [GroupedSection], inset from the leading edge. */
+@Composable
+fun GroupedDivider(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(start = NextSpace.rowX)
+                .height(0.5.dp)
+                .background(next.hairline),
+    )
+}
+
+/** A row's secondary line: counts and timestamps. */
 @Composable
 fun MetaLine(
     text: String,
@@ -224,8 +398,7 @@ fun MetaLine(
 ) {
     Text(
         text = text,
-        fontSize = 12.5.sp,
-        fontWeight = FontWeight.Medium,
+        style = NextType.footnote,
         color = color ?: next.muted,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
@@ -250,21 +423,9 @@ fun BoardDot(
 }
 
 /**
- * An action, rendered as a word rather than as an icon in a bar.
+ * An action rendered as a word rather than an icon in a bar.
  *
- * Icons in a top bar are ambiguous and permanent; words are unambiguous and can sit inline with the
- * thing they act on, appearing only where they apply. The active one is filled so the set reads as a
- * choice rather than a row of links.
- *
- * [selected] is what turns a row of these into one control. Pass it and the action becomes an
- * option in a single-choice set: filled when it is the chosen one, and — the part that is not
- * visual — announced with its selected state. Without it the fill was the *only* record of which
- * layout was active, so List, Grid and Images reached a screen reader as three identical buttons
- * and the reader could not tell which one they were already in. Put the set inside a
- * [Modifier.selectableGroup] row so it is announced as one control rather than three.
- *
- * [accent] stays for the actions that are merely emphatic — a "Try again" on an empty screen — and
- * carries no state with it.
+ * Gentle highlight fill when selected/accented — no Material ripple theatre.
  */
 @Composable
 fun InlineAction(
@@ -274,13 +435,14 @@ fun InlineAction(
     selected: Boolean? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(15.dp)
+    val shape = RoundedCornerShape(NextRadius.control)
     val filled = selected ?: accent
+    val interaction = remember { MutableInteractionSource() }
     val text =
         @Composable {
             Text(
                 text = label,
-                fontSize = 13.5.sp,
+                style = NextType.footnote,
                 fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (filled) next.onAccent else next.muted,
                 modifier =
@@ -294,12 +456,14 @@ fun InlineAction(
         Box(modifier = modifier) { text() }
         return
     }
-    // The pill keeps its own small size; the box around it is what gets pressed. Set as words
-    // rather than as a Material button, an action still has to be a button to a screen reader and
-    // still has to be big enough to hit — neither of which a clickable Text gives you.
     val press =
         if (selected == null) {
-            Modifier.clickable(role = Role.Button, onClick = onClick)
+            Modifier.clickable(
+                role = Role.Button,
+                indication = null,
+                interactionSource = interaction,
+                onClick = onClick,
+            )
         } else {
             Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
         }
@@ -325,28 +489,25 @@ fun Pill(
     val hue = tint ?: next.accent
     Text(
         text = text,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.3.sp,
+        style = NextType.caption2,
         color = hue,
-        // Board ids have no length limit, and an unbounded pill runs off the tile it sits on.
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =
             modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(hue.copy(alpha = if (next.dark) 0.16f else 0.11f))
+                .clip(RoundedCornerShape(NextRadius.tight))
+                .background(hue.copy(alpha = if (next.dark) 0.18f else 0.12f))
                 .padding(horizontal = 7.dp, vertical = 3.dp),
     )
 }
 
-/** Where a thumbnail will load: rounded, and filled with stand-in artwork rather than flat grey. */
+/** Where a thumbnail will load: rounded, filled with stand-in artwork rather than flat grey. */
 @Composable
 fun MediaTile(
     modifier: Modifier = Modifier,
     seed: Int = 0,
     badge: String? = null,
-    radius: Dp = 12.dp,
+    radius: Dp = NextRadius.tile,
 ) {
     Box(
         modifier =
@@ -362,17 +523,10 @@ fun MediaTile(
 }
 
 /**
- * Every screen: the ground, the rail, and the room a scrolling list has to leave for it.
+ * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
- * All four screens wrote this out themselves — the same `Surface { Box { … ContextRail } }`, and
- * the same `(if (showRail) RAIL_HEIGHT + 28.dp else 16.dp) + bottomInset()` arithmetic copied four
- * times with the 28 unexplained in each. A fifth screen would have copied it again, and the first
- * screen to get it slightly wrong would have been the only one with the rail over its content.
- *
- * [where] doubles as the switch: a screen with nowhere to report draws no rail and gets the
- * smaller bottom padding. [railVisible] is what lets a screen put the rail away as the reader
- * scrolls down — hide-on-scroll existed on the feed alone, so the board catalog, documented as
- * "the same row as the feed", kept its rail pinned while the feed's slid away.
+ * Pass [destination] + [onDestination] for primary tab chrome; pass [where] for contextual rail.
+ * Prefer destination chrome on Feed / Boards / Media / Settings.
  */
 @Composable
 fun NextScaffold(
@@ -382,21 +536,33 @@ fun NextScaffold(
     action: String = stringResource(R.string.next_action_search),
     onSearch: () -> Unit = {},
     railVisible: Boolean = true,
+    destination: NextDestination? = null,
+    onDestination: ((NextDestination) -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val showRail = where != null
-    val bottom = (if (showRail) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
+    val showDestination = destination != null && onDestination != null
+    val showRail = where != null && !showDestination
+    val bottom = (if (showDestination || showRail) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
             content(PaddingValues(bottom = bottom))
-            if (showRail) {
+            if (showDestination || showRail) {
                 AnimatedVisibility(
                     visible = railVisible,
-                    enter = slideInVertically { it } + fadeIn(),
-                    exit = slideOutVertically { it } + fadeOut(),
+                    enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(),
+                    exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
-                    ContextRail(where = where, detail = detail, action = action, onSearch = onSearch)
+                    if (showDestination) {
+                        DestinationPill(
+                            selected = destination!!,
+                            onSelect = onDestination!!,
+                            action = action,
+                            onCommand = onSearch,
+                        )
+                    } else {
+                        ContextRail(where = where!!, detail = detail, action = action, onSearch = onSearch)
+                    }
                 }
             }
         }
@@ -404,43 +570,21 @@ fun NextScaffold(
 }
 
 /** Vertical rhythm and the height of the one bar. */
-val GUTTER = 20.dp
-val RAIL_HEIGHT = 52.dp
+val GUTTER = NextSpace.gutter
+val RAIL_HEIGHT = 56.dp
 
-/**
- * The gap between the last row of a list and the rail floating over it.
- *
- * Enough that a row is not read as being tucked under the bar, and it is the rail's own 12dp of
- * vertical padding plus a little more.
- */
 private val RAIL_CLEARANCE = 28.dp
-
-/** What a railless screen leaves instead: just enough that the last row is not against the edge. */
 private val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */
 val MIN_TOUCH_TARGET = 48.dp
 
-/**
- * The status bar and the side of a display cutout, kept off the content.
- *
- * A screen with a top bar and a bottom navigation bar gets this for free: the bars sit in the inset
- * strips and the content starts below them. This interface deleted both bars, and nothing took over
- * the job they were doing — so the first row of every screen was drawn underneath the clock and the
- * rail underneath the gesture handle. The background still runs to the edges; only the content is
- * pushed clear.
- */
 @Composable
 internal fun Modifier.contentInsets(): Modifier =
     windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
 
-/**
- * How much taller a scrolling list's bottom padding has to be so its last row clears the navigation
- * bar as well as the rail. The list itself still runs to the bottom edge — content scrolls under
- * both, which is the point of drawing edge to edge.
- */
 @Composable
 internal fun bottomInset(): Dp = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
 
@@ -460,9 +604,7 @@ internal fun WidthSpacer(width: Int) {
 }
 
 /**
- * What the interface shows when there is nothing to show: no spinner in the middle of an empty
- * screen, no red error card. The same title-and-subtitle the loaded screen uses, saying what is
- * happening, with one action when there is one worth offering.
+ * Empty / loading / error — same large title language, one calm action when there is one.
  */
 @Composable
 fun MessageScreen(
@@ -474,24 +616,23 @@ fun MessageScreen(
     where: String? = null,
     action: String = stringResource(R.string.next_action_search),
     onSearch: () -> Unit = {},
+    destination: NextDestination? = null,
+    onDestination: ((NextDestination) -> Unit)? = null,
 ) {
-    Surface {
-        Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().contentInsets()) {
-                ScreenTitle(text = title, subtitle = subtitle)
-                if (actionLabel != null) {
-                    Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
-                        InlineAction(label = actionLabel, accent = true, onClick = onAction)
-                    }
+    NextScaffold(
+        where = where.takeIf { destination == null },
+        modifier = modifier,
+        action = action,
+        onSearch = onSearch,
+        destination = destination,
+        onDestination = onDestination,
+    ) { _ ->
+        Column(modifier = Modifier.fillMaxSize().contentInsets()) {
+            ScreenTitle(text = title, subtitle = subtitle)
+            if (actionLabel != null) {
+                Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
+                    InlineAction(label = actionLabel, accent = true, onClick = onAction)
                 }
-            }
-            if (where != null) {
-                ContextRail(
-                    where = where,
-                    action = action,
-                    onSearch = onSearch,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
             }
         }
     }

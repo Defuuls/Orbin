@@ -1,9 +1,9 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -77,7 +77,7 @@ fun CommandSheet(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.42f))
+                    .background(Color.Black.copy(alpha = 0.36f))
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
@@ -91,8 +91,8 @@ fun CommandSheet(
                     .fillMaxHeight(sheetFraction)
                     .align(Alignment.BottomCenter)
                     .imePadding()
-                    .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-                    .background(next.background)
+                    .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+                    .background(next.raised)
                     .windowInsetsPadding(sheetInsets),
         ) {
             Box(
@@ -102,13 +102,13 @@ fun CommandSheet(
                 Box(
                     modifier =
                         Modifier
-                            .size(width = 38.dp, height = 4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(next.hairline),
+                            .size(width = 36.dp, height = 5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(next.muted.copy(alpha = 0.35f)),
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 18.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -238,7 +238,6 @@ enum class SettingKind {
     INFO,
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreen(
     groups: List<Pair<String, List<SettingItem>>>,
@@ -251,6 +250,9 @@ fun SettingsScreen(
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
     onSearch: () -> Unit = {},
+    onOpenFeed: (() -> Unit)? = null,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenMedia: (() -> Unit)? = null,
 ) {
     val entries = remember(groups) { groups.flatten() }
     val state = rememberLazyListState()
@@ -258,26 +260,48 @@ fun SettingsScreen(
         val index = entries.indexOfFirst { it is SettingsEntry.Row && it.item.id == focusId }
         if (index >= 0) state.animateScrollToItem(index + 1)
     }
-
-    Surface {
-        Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(
-                state = state,
-                modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding = PaddingValues(bottom = RAIL_HEIGHT + 28.dp + bottomInset()),
-            ) {
-                item {
-                    ScreenTitle(
-                        text = stringResource(R.string.next_settings_title),
-                        subtitle = subtitle,
-                    )
+    val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenMedia != null
+    val onDestination: ((NextDestination) -> Unit)? =
+        if (hasTabs) {
+            { dest ->
+                when (dest) {
+                    NextDestination.FEED -> onOpenFeed?.invoke()
+                    NextDestination.BOARDS -> onOpenBoards?.invoke()
+                    NextDestination.MEDIA -> onOpenMedia?.invoke()
+                    NextDestination.SETTINGS -> Unit
                 }
-                groups.forEach { (heading, rows) ->
-                    stickyHeader {
-                        SettingsHeading(heading)
-                    }
-                    items(rows, key = { item -> "row:${item.id}" }) { item ->
-                        Column {
+            }
+        } else {
+            null
+        }
+
+    NextScaffold(
+        where = stringResource(R.string.next_settings_title).takeIf { showRail && !hasTabs },
+        modifier = modifier,
+        onSearch = onSearch,
+        destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
+        onDestination = onDestination.takeIf { showRail },
+    ) { bottomPad ->
+        LazyColumn(
+            state = state,
+            modifier = Modifier.fillMaxSize().contentInsets(),
+            contentPadding =
+                PaddingValues(
+                    bottom = bottomPad.calculateBottomPadding(),
+                    top = 4.dp,
+                ),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            item {
+                ScreenTitle(
+                    text = stringResource(R.string.next_settings_title),
+                    subtitle = subtitle,
+                )
+            }
+            groups.forEach { (heading, rows) ->
+                item(key = "group:$heading") {
+                    GroupedSection(header = heading) {
+                        rows.forEachIndexed { index, item ->
                             SettingRow(
                                 item = item,
                                 expanded = item.id == expandedId,
@@ -285,36 +309,14 @@ fun SettingsScreen(
                                 onSelectOption = onSelectOption,
                                 onCommitText = onCommitText,
                             )
-                            if (item != rows.last()) Hairline(inset = true)
+                            if (index < rows.lastIndex) GroupedDivider()
                         }
                     }
                 }
             }
-            if (showRail) {
-                ContextRail(
-                    where = stringResource(R.string.next_settings_title),
-                    onSearch = onSearch,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
+            item { Gap(8) }
         }
     }
-}
-
-@Composable
-private fun SettingsHeading(text: String) {
-    Text(
-        text = text.uppercase(),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 1.2.sp,
-        color = next.accent,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(next.background)
-                .padding(start = GUTTER, top = 12.dp, bottom = 8.dp),
-    )
 }
 
 private sealed interface SettingsEntry {
@@ -359,7 +361,7 @@ private fun SettingRow(
                         } else {
                             Modifier.clickable(role = Role.Button) { onActivate(item) }
                         },
-                    ).padding(horizontal = GUTTER, vertical = 13.dp),
+                    ).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {

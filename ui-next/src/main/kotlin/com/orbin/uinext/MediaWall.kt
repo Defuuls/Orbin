@@ -2,10 +2,8 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +54,7 @@ fun MediaWallScreen(
     onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -72,17 +71,33 @@ fun MediaWallScreen(
             true
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
+    val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenSettings != null
+    val onDestination: ((NextDestination) -> Unit)? =
+        if (hasTabs) {
+            { dest ->
+                when (dest) {
+                    NextDestination.FEED -> onOpenFeed?.invoke()
+                    NextDestination.BOARDS -> onOpenBoards?.invoke()
+                    NextDestination.MEDIA -> Unit
+                    NextDestination.SETTINGS -> onOpenSettings?.invoke()
+                }
+            }
+        } else {
+            null
+        }
     NextScaffold(
-        where = stringResource(R.string.next_all_media_title).takeIf { showRail },
+        where = stringResource(R.string.next_all_media_title).takeIf { showRail && !hasTabs },
         modifier = modifier,
         detail =
-            if (total > 0) {
+            if (!hasTabs && total > 0) {
                 stringResource(R.string.next_rail_swept, scanned, total)
             } else {
                 null
             },
         onSearch = onSearch,
         railVisible = railVisible,
+        destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
+        onDestination = onDestination.takeIf { showRail },
     ) { bottomPad ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(imageCellMinSize),
@@ -96,23 +111,6 @@ fun MediaWallScreen(
                         text = stringResource(R.string.next_all_media_title),
                         subtitle = stringResource(R.string.next_all_media_subtitle),
                     )
-                    val destinations =
-                        listOfNotNull(
-                            onOpenFeed?.let { stringResource(R.string.next_feed_title) to it },
-                            onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
-                        )
-                    if (destinations.isNotEmpty()) {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            destinations.forEach { (label, open) ->
-                                InlineAction(label = label, onClick = open)
-                            }
-                        }
-                        Gap(8)
-                    }
                     if (showSizeControl) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
@@ -167,7 +165,7 @@ fun MediaWallScreen(
                     modifier =
                         Modifier
                             .padding(2.5.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = stringResource(R.string.next_open_file),
@@ -180,7 +178,7 @@ fun MediaWallScreen(
                     if (tile != null) {
                         tile(cell, shape)
                     } else {
-                        MediaTile(modifier = shape, seed = index, radius = 10.dp)
+                        MediaTile(modifier = shape, seed = index, radius = 16.dp)
                     }
                     Pill(
                         text = cell.board,

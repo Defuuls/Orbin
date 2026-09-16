@@ -99,14 +99,30 @@ fun FeedScreen(
         onDispose { activePreviewCallback.value(null) }
     }
 
+    val hasTabs = onOpenBoards != null || onOpenMedia != null || onSettings != null
+    val onDestination: ((NextDestination) -> Unit)? =
+        if (hasTabs) {
+            { dest ->
+                when (dest) {
+                    NextDestination.FEED -> Unit
+                    NextDestination.BOARDS -> onOpenBoards?.invoke()
+                    NextDestination.MEDIA -> onOpenMedia?.invoke()
+                    NextDestination.SETTINGS -> onSettings?.invoke()
+                }
+            }
+        } else {
+            null
+        }
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_feed_title).takeIf { showRail },
+            where = stringResource(R.string.next_feed_title).takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
-            detail = railDetail,
+            detail = railDetail.takeIf { !hasTabs },
             action = railAction,
             onSearch = onSearch,
             railVisible = railVisible,
+            destination = NextDestination.FEED.takeIf { showRail && hasTabs },
+            onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
             val header: @Composable () -> Unit = {
                 FeedHeader(

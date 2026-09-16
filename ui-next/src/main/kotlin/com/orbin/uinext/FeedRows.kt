@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.NextRadius
 
 @Composable
 internal fun FeedHeader(
@@ -51,24 +52,7 @@ internal fun FeedHeader(
     val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
-        val destinations =
-            listOfNotNull(
-                onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
-                onOpenMedia?.let { stringResource(R.string.next_launchpad_media) to it },
-                onOpenSettings?.let { stringResource(R.string.next_settings_title) to it },
-            )
-        if (destinations.isNotEmpty()) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                destinations.forEach { (label, open) ->
-                    InlineAction(label = label, onClick = open)
-                }
-            }
-            Gap(8)
-        }
+        // Primary destinations live in DestinationPill; header keeps layout / sort only.
         FlowRow(
             modifier = Modifier.fillMaxWidth().selectableGroup().padding(horizontal = GUTTER - 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -224,7 +208,7 @@ internal fun FeedImageCell(
         modifier =
             Modifier
                 .padding(2.5.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(NextRadius.tight))
                 .clickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
@@ -254,7 +238,7 @@ private fun CollapsedFeedRow(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(NextRadius.tight))
                 .clickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),

@@ -113,19 +113,22 @@ fun OrbinNavHost(
         }
 
         composable<Route.BoardGallery> {
-            NextChromeHost(
-                where = "Boards",
+            BoardGalleryScreen(
                 onOpenCommands = onOpenCommands,
-            ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    BoardGalleryScreen(
-                        onBack = navController::navigateUp,
-                        onOpenBoard = { provider, board, title ->
-                            navController.navigate(Route.Board(provider, board, title))
-                        },
-                    )
-                }
-            }
+                onOpenBoard = { provider, board, title ->
+                    navController.navigate(Route.Board(provider, board, title))
+                },
+                onOpenFeed = {
+                    navController.navigate(Route.NextFeed) {
+                        popUpTo(Route.NextFeed) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onOpenMedia = { navController.navigate(Route.AllMedia) },
+                onOpenSettings = { navController.navigate(Route.Settings()) },
+                hideRailOnScroll = chromeHidesOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
+            )
         }
 
         composable<Route.Search> {
@@ -149,8 +152,14 @@ fun OrbinNavHost(
                     )
                 },
                 onOpenCommands = onOpenCommands,
-                onOpenFeed = { navController.navigate(Route.NextFeed) },
+                onOpenFeed = {
+                    navController.navigate(Route.NextFeed) {
+                        popUpTo(Route.NextFeed) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenSettings = { navController.navigate(Route.Settings()) },
             )
         }
 
@@ -245,6 +254,14 @@ fun OrbinNavHost(
                 onRunSetup = { navController.navigate(Route.Onboarding) },
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 focusId = backStackEntry.toRoute<Route.Settings>().focus,
+                onOpenFeed = {
+                    navController.navigate(Route.NextFeed) {
+                        popUpTo(Route.NextFeed) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenMedia = { navController.navigate(Route.AllMedia) },
             )
         }
 

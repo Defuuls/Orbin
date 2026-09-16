@@ -56,6 +56,9 @@ fun NextSettingsScreen(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     focusId: String? = null,
+    onOpenFeed: (() -> Unit)? = null,
+    onOpenBoards: (() -> Unit)? = null,
+    onOpenMedia: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -185,6 +188,9 @@ fun NextSettingsScreen(
             expandedId = expanded,
             focusId = focusId,
             onSearch = onOpenCommands,
+            onOpenFeed = onOpenFeed,
+            onOpenBoards = onOpenBoards,
+            onOpenMedia = onOpenMedia,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE ->

@@ -16,23 +16,16 @@ import com.orbin.core.designsystem.theme.OrbinShapes
 import com.orbin.core.designsystem.theme.orbinTypography
 
 /**
- * The palette the proposal is drawn from.
+ * The palette the interface is drawn from.
  *
- * The old interface is greyscale Material with the default blue: a white card on a white background
- * separated by a shadow, and every accent the same blue that ships in the template. That reads as
- * unfinished rather than restrained.
- *
- * This is warm ink on warm paper — neither is pure — with a single terracotta accent that belongs to
- * an imageboard rather than to a settings app, and a set of board hues that give a mixed feed some
- * rhythm to scan by. Two greys are all that is left over: [muted] for secondary text, [hairline] for
- * the one separator.
+ * Apple-inspired calm: restrained neutrals, one system-blue accent, OLED-black dark mode with
+ * elevated surfaces — not purple Material, not warm terracotta paper. Board hues still give a
+ * mixed feed rhythm to scan by. [muted] and [faint] are the only greys left for secondary text;
+ * [hairline] is the soft separator.
  *
  * Every colour here that carries text clears WCAG AA's 4.5:1 against the ground it is drawn on.
- * That is not a free choice of alpha: [muted] and [faint] began at 0.54/0.34 and 0.56/0.34, which
- * measured 3.85:1 and 2.18:1 in light and 2.83:1 for dark's faint — so the timestamps, the reply
- * counts and every read thread were below the floor in all three themes. The alphas are now set
- * from the measurement rather than by eye, keeping a visible step between the three tiers.
- * `PaletteContrastTest` recomputes the ratios from these constants and fails if one drops.
+ * Alphas are set from measurement rather than by eye, keeping a visible step between the three
+ * tiers. `PaletteContrastTest` recomputes the ratios from these constants and fails if one drops.
  */
 @Immutable
 data class NextPalette(
@@ -49,48 +42,53 @@ data class NextPalette(
     val dark: Boolean,
     /** True only for the AMOLED ground, so a nested theme inherits that choice with the palette. */
     val amoled: Boolean = false,
+    /**
+     * Elevated surface above [raised] — grouped cards on dark OLED, secondary fills on light.
+     * Light keeps it equal to [raised] (white on grouped grey); dark steps up one level.
+     */
+    val elevated: Color = raised,
 )
 
 internal val LightPalette =
     NextPalette(
-        background = Color(0xFFFAF8F5),
+        // Grouped background — iOS Settings paper, not Material surface.
+        background = Color(0xFFF2F2F7),
         raised = Color(0xFFFFFFFF),
-        ink = Color(0xFF16141A),
-        muted = Color(0xFF16141A).copy(alpha = 0.72f),
-        faint = Color(0xFF16141A).copy(alpha = 0.60f),
-        hairline = Color(0xFF16141A).copy(alpha = 0.09f),
-        accent = Color(0xFFA8431B),
-        accentSoft = Color(0xFFA8431B).copy(alpha = 0.20f),
-        onAccent = Color(0xFFFAF8F5),
+        elevated = Color(0xFFFFFFFF),
+        ink = Color(0xFF1C1C1E),
+        muted = Color(0xFF1C1C1E).copy(alpha = 0.72f),
+        faint = Color(0xFF1C1C1E).copy(alpha = 0.62f),
+        hairline = Color(0xFF3C3C43).copy(alpha = 0.18f),
+        // System-blue adjacent; deepened vs #007AFF so text-on-paper and white-on-chip both clear AA.
+        accent = Color(0xFF0066CC),
+        accentSoft = Color(0xFF0066CC).copy(alpha = 0.14f),
+        onAccent = Color(0xFFFFFFFF),
         dark = false,
     )
 
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF0D0D11),
-        raised = Color(0xFF17171D),
-        ink = Color(0xFFF1EFF2),
-        muted = Color(0xFFF1EFF2).copy(alpha = 0.68f),
-        faint = Color(0xFFF1EFF2).copy(alpha = 0.54f),
-        hairline = Color(0xFFF1EFF2).copy(alpha = 0.12f),
-        accent = Color(0xFFF08A5A),
-        accentSoft = Color(0xFFF08A5A).copy(alpha = 0.28f),
-        onAccent = Color(0xFF0D0D11),
+        // OLED-black ground with elevated surfaces — iOS dark, not purple Material.
+        background = Color(0xFF000000),
+        raised = Color(0xFF1C1C1E),
+        elevated = Color(0xFF2C2C2E),
+        ink = Color(0xFFF5F5F7),
+        muted = Color(0xFFF5F5F7).copy(alpha = 0.72f),
+        faint = Color(0xFFF5F5F7).copy(alpha = 0.56f),
+        hairline = Color(0xFF545458).copy(alpha = 0.55f),
+        // OLED-readable blue: light enough on black, deep enough for white chip labels.
+        accent = Color(0xFF0A72EF),
+        accentSoft = Color(0xFF0A84FF).copy(alpha = 0.24f),
+        onAccent = Color(0xFFFFFFFF),
         dark = true,
+        amoled = false,
     )
 
 /**
- * The AMOLED ground: true black rather than the dark palette's near-black.
- *
- * Only the two surfaces change. The ink, the accent and the board hues are what the palette *is*,
- * and an OLED screen saving power on the background is not a reason to redraw them.
+ * AMOLED is the same OLED ground and elevated surfaces as dark — the flag stays explicit so
+ * settings / nesting can still ask for it. True black is already the dark argument.
  */
-internal val AmoledPalette =
-    DarkPalette.copy(
-        background = Color.Black,
-        raised = Color(0xFF0A0A0A),
-        amoled = true,
-    )
+internal val AmoledPalette = DarkPalette.copy(amoled = true)
 
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
@@ -123,10 +121,10 @@ val next: NextPalette
  * setting, for the same reason it takes rows rather than threads.
  *
  * What is deliberately not a parameter is dynamic color and the ported imageboard skins. This
- * module's palette is the argument it makes — warm ink on warm paper, one terracotta accent, a
- * colour per board — and recolouring it from the wallpaper would be the interface it replaced
- * wearing this one's layout. Those two settings still govern the Material surfaces around it: the
- * gallery, the onboarding wizard, dialogs and snackbars.
+ * module's palette is the argument it makes — calm neutrals, one blue accent, a colour per
+ * board — and recolouring it from the wallpaper would be the interface it replaced wearing this
+ * one's layout. Those two settings still govern the Material surfaces around it: the gallery, the
+ * onboarding wizard, dialogs and snackbars.
  */
 @Composable
 fun NextTheme(
@@ -217,7 +215,7 @@ internal data class BoardHue(
  *
  * Ten rather than five because five was not enough to colour a real install: the first version
  * matched five 4chan board names and returned the accent for everything else, so across two
- * providers and dozens of boards almost every row came out the same terracotta and the premise
+ * providers and dozens of boards almost every row came out the same accent and the premise
  * below quietly stopped holding. The first five are the colours those boards already shipped with.
  *
  * Every value clears 4.5:1 against both grounds, so a board label is legible whichever hue it

@@ -6,12 +6,12 @@ There are two layers, and which one applies depends on what you are building.
 wizard use `OrbinTheme` and read colors, typography and shapes from `MaterialTheme` rather than
 hardcoding visual tokens locally. Everything below this line describes that layer.
 
-`ui-next` is the interface itself — feed, thread reader, board catalog, board picker, settings and
-media wall. It defines its own palette and type rather than reading `MaterialTheme`, because the
-visual style is part of what it replaced: warm ink on warm paper with one terracotta accent, a
-colour per board, no elevation and no filled containers. See [the ui-next section](#ui-next) below
-before changing anything in that module. Orbin Minimal draws from this layer too: it is the same
-screens over the same layers, not a second, smaller interface.
+`ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings and media
+wall. It defines its own palette and type rather than reading `MaterialTheme`, because the visual
+style is part of what it replaced: Apple-inspired calm neutrals with one system-blue accent, OLED
+dark surfaces, DestinationPill chrome, and inset grouped Settings. See [the ui-next section](#ui-next)
+below before changing anything in that module. Orbin Minimal draws from this layer too: it is the
+same screens over the same layers, not a second, smaller interface.
 
 ## Color
 
@@ -76,11 +76,12 @@ components — `MediaThumbnail`, `PostCommentText`, `VideoPlayer` — passed in 
 Nothing behavioural is reimplemented here, so spoilers, greentext and quote links keep working
 because they are the same code, not because they were copied.
 
-**One vocabulary, in `ui-next/.../Surface.kt`.** `ContextRail` is the only permanent chrome. `Hairline` is the
-only separator: no cards, no elevation, no filled containers. `InlineAction` is how an action is
-drawn — as a word, but with a button role and a 48dp touch target, because setting an action as
-text is a look and not a licence. `ScreenTitle` sets a title in the content so it scrolls away,
-since a title tells you what you opened and stops being useful once you are reading.
+**One vocabulary, in `ui-next/.../Surface.kt` and `tokens/`.** `DestinationPill` is the permanent
+chrome for Feed / Boards / Media / Settings; `ContextRail` covers Thread, catalogs, Search and
+Downloads. `GroupedSection` draws Settings-style inset cards. Soft `Hairline` / `GroupedDivider`
+separators — not Material elevation theatre. `InlineAction` is how an action is drawn — as a word,
+with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
+away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
 
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
 wherever it is composed, tests included. That makes nesting the normal case, and every parameter

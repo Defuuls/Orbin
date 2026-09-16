@@ -29,30 +29,62 @@ class ProposalScreenshotTest {
 
     @Test
     fun feed() =
-        capture("next_feed") { FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards") }
+        capture("next_feed") {
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
+        }
 
     @Test
     fun feedDark() =
         capture("next_feed_dark", dark = true) {
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
         }
 
     @Test
     fun feedAmoled() =
         capture("next_feed_amoled", dark = true, amoled = true) {
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
         }
 
     @Test
     fun feedLargeText() =
         capture("next_feed_large_text", fontScale = XL_FONT_SCALE) {
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
         }
 
     @Test
     fun feedMaxText() =
         capture("next_feed_max_text", fontScale = MAX_FONT_SCALE) {
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, railDetail = "7 boards")
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
         }
 
     @Test
@@ -67,8 +99,10 @@ class ProposalScreenshotTest {
             FeedScreen(
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
-                railDetail = "7 boards",
                 layout = FeedLayout.GRID,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
             )
         }
 
@@ -78,8 +112,10 @@ class ProposalScreenshotTest {
             FeedScreen(
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
-                railDetail = "7 boards",
                 layout = FeedLayout.IMAGES,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
             )
         }
 
@@ -89,8 +125,10 @@ class ProposalScreenshotTest {
             FeedScreen(
                 rows = feedRows().filter { it.board == "/g/" },
                 subtitle = "5 threads across 7 boards",
-                railDetail = "7 boards",
                 filter = "thinkpad",
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
             )
         }
 
@@ -103,6 +141,25 @@ class ProposalScreenshotTest {
                 description = "Technology",
                 itemCount = rows.size,
                 rowAt = { index -> rows.getOrNull(index) },
+            )
+        }
+
+    @Test
+    fun boardsBrowse() =
+        capture("next_boards") {
+            BoardsScreen(
+                boards =
+                    listOf(
+                        BoardTile("g", "/g/", "Technology"),
+                        BoardTile("ck", "/ck/", "Food & Cooking"),
+                        BoardTile("p", "/p/", "Photography"),
+                        BoardTile("lit", "/lit/", "Literature"),
+                        BoardTile("a", "/a/", "Anime & Manga", nsfw = false),
+                        BoardTile("wg", "/wg/", "Wallpapers/General"),
+                    ),
+                onOpenFeed = {},
+                onOpenMedia = {},
+                onOpenSettings = {},
             )
         }
 
@@ -173,25 +230,49 @@ class ProposalScreenshotTest {
     @Test
     fun settings() =
         capture("next_settings") {
-            SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
+            SettingsScreen(
+                groups = settingsGroups(),
+                expandedId = "colorTheme",
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenMedia = {},
+            )
         }
 
     @Test
     fun settingsMaxText() =
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
-            SettingsScreen(groups = settingsGroups(), expandedId = "colorTheme")
+            SettingsScreen(
+                groups = settingsGroups(),
+                expandedId = "colorTheme",
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenMedia = {},
+            )
         }
 
     @Test
     fun settingsEditing() =
         capture("next_settings_editing") {
-            SettingsScreen(groups = settingsGroups(), expandedId = "hiddenTags")
+            SettingsScreen(
+                groups = settingsGroups(),
+                expandedId = "hiddenTags",
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenMedia = {},
+            )
         }
 
     @Test
     fun settingsEditingMaxText() =
         capture("next_settings_editing_max_text", fontScale = MAX_FONT_SCALE) {
-            SettingsScreen(groups = settingsGroups(), expandedId = "hiddenTags")
+            SettingsScreen(
+                groups = settingsGroups(),
+                expandedId = "hiddenTags",
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenMedia = {},
+            )
         }
 
     @Test
@@ -203,6 +284,9 @@ class ProposalScreenshotTest {
                 failed = 3,
                 scanning = true,
                 cells = mediaCells(),
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenSettings = {},
             )
         }
 
@@ -215,6 +299,9 @@ class ProposalScreenshotTest {
                 failed = 3,
                 scanning = true,
                 cells = mediaCells(),
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenSettings = {},
             )
         }
 
