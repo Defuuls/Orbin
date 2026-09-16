@@ -39,11 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaType
-import com.orbin.core.ui.state.EmptyView
 import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextEmpty
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
 import com.orbin.uinext.nextFrosted
@@ -72,7 +72,7 @@ fun GalleryScreen(
 
     NextTheme(darkTheme = true) {
         if (media.isEmpty()) {
-            EmptyView("No media", Modifier.fillMaxSize())
+            NextEmpty("No media", Modifier.fillMaxSize())
             return@NextTheme
         }
 

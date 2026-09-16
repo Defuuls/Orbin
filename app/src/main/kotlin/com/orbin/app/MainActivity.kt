@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -45,9 +42,11 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
+import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
 import com.orbin.uinext.toNextPalette
+import com.orbin.uinext.tokens.NextType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -458,8 +457,8 @@ private fun AppContent(
     onContinueWithoutLock: () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
-    // do not pay a second MaterialTheme. Material-only destinations (gallery, onboarding, legacy
-    // lists) re-enter OrbinTheme via MaterialOrbinTheme so dynamic color / chan skins still apply
+    // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; Material
+    // OrbinTheme remains only for shared Material widgets nested inside Next (sliders, snackbars)
     // there without wrapping the whole tree in both themes.
     val colorVariant = settings.colorTheme.toDesignSystem()
     val nextPalette =
@@ -526,24 +525,34 @@ private fun LockedScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.lock_title), style = NextType.title2, color = next.ink)
         Text(
             text = message ?: stringResource(R.string.lock_authenticate_hint),
             modifier = Modifier.padding(top = 8.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = next.muted,
+            style = NextType.body,
             textAlign = TextAlign.Center,
         )
-        Button(
-            onClick = onRetry,
-            enabled = !unlocking,
-            modifier = Modifier.padding(top = 16.dp),
-        ) {
-            Text(if (unlocking) stringResource(R.string.lock_unlocking) else stringResource(R.string.lock_unlock))
+        if (!unlocking) {
+            InlineAction(
+                label = stringResource(R.string.lock_unlock),
+                accent = true,
+                onClick = onRetry,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+        } else {
+            Text(
+                stringResource(R.string.lock_unlocking),
+                style = NextType.body,
+                color = next.muted,
+                modifier = Modifier.padding(top = 16.dp),
+            )
         }
         if (allowContinueWithoutLock) {
-            TextButton(onClick = onContinueWithoutLock) {
-                Text(stringResource(R.string.lock_continue_without))
-            }
+            InlineAction(
+                label = stringResource(R.string.lock_continue_without),
+                onClick = onContinueWithoutLock,
+            )
         }
     }
 }

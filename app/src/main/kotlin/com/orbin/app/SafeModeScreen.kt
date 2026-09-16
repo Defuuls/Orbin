@@ -6,13 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,13 +15,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextTheme
+import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextType
 
 /**
  * Shown instead of the app when consecutive launches have crashed during startup.
  *
- * The 82-Alioth crash left users with an app that died on every launch and no way to act on it
- * short of reinstalling, which would have thrown away their data anyway. This screen is the way
- * out: save the evidence first, then reset only if that is what it takes.
+ * Save the evidence first, then reset only if that is what it takes — drawn in the Next language.
  */
 @Composable
 fun SafeModeScreen(
@@ -38,53 +35,54 @@ fun SafeModeScreen(
 ) {
     var showResetConfirmation by remember { mutableStateOf(false) }
 
-    Surface(modifier = modifier.fillMaxSize()) {
+    NextTheme {
         Column(
             modifier =
-                Modifier
+                modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(stringResource(R.string.safe_mode_title), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.safe_mode_title), style = NextType.title2, color = next.ink)
             Text(
                 stringResource(R.string.safe_mode_explanation),
-                style = MaterialTheme.typography.bodyMedium,
+                style = NextType.body,
+                color = next.muted,
             )
             Text(
                 stringResource(R.string.safe_mode_save_first),
-                style = MaterialTheme.typography.bodyMedium,
+                style = NextType.body,
+                color = next.muted,
             )
 
-            Button(onClick = onExportDiagnostics) { Text(stringResource(R.string.safe_mode_save_crash_details)) }
-
-            OutlinedButton(
+            InlineAction(
+                label = stringResource(R.string.safe_mode_save_crash_details),
+                accent = true,
+                onClick = onExportDiagnostics,
+            )
+            InlineAction(
+                label = stringResource(R.string.safe_mode_reset),
                 onClick = { showResetConfirmation = true },
-            ) { Text(stringResource(R.string.safe_mode_reset)) }
-
-            TextButton(onClick = onContinueAnyway) { Text(stringResource(R.string.safe_mode_try_normally)) }
+            )
+            InlineAction(
+                label = stringResource(R.string.safe_mode_try_normally),
+                onClick = onContinueAnyway,
+            )
         }
-    }
 
-    if (showResetConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showResetConfirmation = false },
-            title = { Text(stringResource(R.string.safe_mode_reset_dialog_title)) },
-            text = {
-                Text(stringResource(R.string.safe_mode_reset_dialog_text))
-            },
-            confirmButton = {
-                TextButton(onClick = {
+        if (showResetConfirmation) {
+            NextConfirmDialog(
+                title = stringResource(R.string.safe_mode_reset_dialog_title),
+                message = stringResource(R.string.safe_mode_reset_dialog_text),
+                onConfirm = {
                     showResetConfirmation = false
                     onResetLocalData()
-                }) { Text(stringResource(R.string.safe_mode_reset_confirm)) }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showResetConfirmation = false },
-                ) { Text(stringResource(R.string.safe_mode_cancel)) }
-            },
-        )
+                },
+                onDismiss = { showResetConfirmation = false },
+                confirmLabel = stringResource(R.string.safe_mode_reset_confirm),
+                dismissLabel = stringResource(R.string.safe_mode_cancel),
+            )
+        }
     }
 }

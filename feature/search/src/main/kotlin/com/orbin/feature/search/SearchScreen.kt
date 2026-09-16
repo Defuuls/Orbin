@@ -26,11 +26,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,17 +45,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.Board
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
-import com.orbin.core.ui.state.EmptyView
-import com.orbin.core.ui.state.ErrorView
-import com.orbin.core.ui.state.LoadingView
 import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MetaLine
+import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextEmpty
+import com.orbin.uinext.NextError
+import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
@@ -315,12 +312,12 @@ private fun SearchTabContent(
         }
 
         when (val s = state) {
-            SearchUiState.Idle -> EmptyView(stringResource(R.string.search_idle_hint))
-            SearchUiState.Loading -> LoadingView()
-            is SearchUiState.Error -> ErrorView(s.message)
+            SearchUiState.Idle -> NextEmpty(stringResource(R.string.search_idle_hint))
+            SearchUiState.Loading -> NextLoading()
+            is SearchUiState.Error -> NextError(s.message)
             is SearchUiState.Results ->
                 if (s.results.isEmpty()) {
-                    EmptyView(stringResource(R.string.search_no_matches))
+                    NextEmpty(stringResource(R.string.search_no_matches))
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -396,48 +393,61 @@ private fun SavedSearchesTabContent(
 
     Column(modifier = modifier) {
         if (savedSearches.isEmpty()) {
-            EmptyView(stringResource(R.string.search_no_saved))
+            NextEmpty(stringResource(R.string.search_no_saved))
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(savedSearches, key = { it.id }) { search ->
-                    ListItem(
+                    Row(
                         modifier =
-                            Modifier.clickable { onLoadSearch(search) },
-                        headlineContent = { Text(search.text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        supportingContent = {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onLoadSearch(search) }
+                                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                search.text,
+                                style = NextType.body,
+                                color = next.ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 search.board?.let { board ->
                                     Text(
                                         stringResource(R.string.search_board_slug, board.value),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = NextType.caption1,
+                                        color = next.muted,
                                     )
                                 }
                                 if (search.filters.contentTypes.isNotEmpty()) {
                                     Text(
                                         search.filters.contentTypes.joinToString(", ") { it.label },
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = NextType.caption1,
+                                        color = next.muted,
                                     )
                                 }
                             }
-                        },
-                        trailingContent = {
-                            IconButton(onClick = { pendingDelete = search }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.search_delete))
-                            }
-                        },
-                    )
-                    HorizontalDivider()
+                        }
+                        IconButton(onClick = { pendingDelete = search }) {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.search_delete),
+                                tint = next.accent,
+                            )
+                        }
+                    }
+                    GroupedDivider()
                 }
             }
         }
     }
 
     pendingDelete?.let { search ->
-        ModernConfirmDialog(
+        NextConfirmDialog(
             title = stringResource(R.string.search_delete_saved_title),
-            text = stringResource(R.string.search_delete_saved_text, search.text),
+            message = stringResource(R.string.search_delete_saved_text, search.text),
             onConfirm = {
                 onDeleteSearch(search.id)
                 pendingDelete = null

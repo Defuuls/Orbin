@@ -6,22 +6,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextTheme
+import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextType
 
 /**
  * Shown instead of the app when the running build is older than one that has already run here.
  *
- * There is no "continue anyway" — that is the whole point of the screen, and unlike
- * [SafeModeScreen] there is nothing to recover, only a fact to state. It says which build is
- * running and which one is expected, because "this version can't run" is useless to someone who
- * has to go and find the right APK.
+ * There is no "continue anyway" — drawn in the Next language.
  */
 @Composable
 fun DowngradeBlockedScreen(
@@ -30,10 +28,10 @@ fun DowngradeBlockedScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier.fillMaxSize()) {
+    NextTheme {
         Column(
             modifier =
-                Modifier
+                modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp),
@@ -41,11 +39,13 @@ fun DowngradeBlockedScreen(
         ) {
             Text(
                 stringResource(R.string.downgrade_blocked_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = NextType.title2,
+                color = next.ink,
             )
             Text(
                 stringResource(R.string.downgrade_blocked_explanation),
-                style = MaterialTheme.typography.bodyMedium,
+                style = NextType.body,
+                color = next.muted,
             )
             Text(
                 stringResource(
@@ -53,14 +53,19 @@ fun DowngradeBlockedScreen(
                     currentVersionCode,
                     highestVersionCode,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = NextType.body,
+                color = next.muted,
             )
             Text(
                 stringResource(R.string.downgrade_blocked_next_step, highestVersionCode),
-                style = MaterialTheme.typography.bodyMedium,
+                style = NextType.body,
+                color = next.muted,
             )
-
-            Button(onClick = onClose) { Text(stringResource(R.string.downgrade_blocked_close)) }
+            InlineAction(
+                label = stringResource(R.string.downgrade_blocked_close),
+                accent = true,
+                onClick = onClose,
+            )
         }
     }
 }

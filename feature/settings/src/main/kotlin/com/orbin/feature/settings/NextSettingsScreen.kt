@@ -5,11 +5,8 @@ package com.orbin.feature.settings
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +20,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.UpdateStatus
+import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
@@ -235,23 +233,16 @@ fun NextSettingsScreen(
     }
 
     if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text("Clear local activity?") },
-            text = {
-                Text("This deletes browsing history, recent searches, and download history stored on this device.")
+        NextConfirmDialog(
+            title = "Clear local activity?",
+            message =
+                "This deletes browsing history, recent searches, and download history stored on this device.",
+            onConfirm = {
+                viewModel.clearLocalActivity()
+                confirmClear = false
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.clearLocalActivity()
-                        confirmClear = false
-                    },
-                ) {
-                    Text("Clear")
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
+            onDismiss = { confirmClear = false },
+            confirmLabel = "Clear",
         )
     }
 }

@@ -25,7 +25,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.orbin.app.LocalOrbinSnackbarHostState
-import com.orbin.app.MaterialOrbinTheme
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -225,16 +224,14 @@ fun OrbinNavHost(
         }
 
         composable<Route.Gallery> {
-            MaterialOrbinTheme {
-                GalleryScreen(
-                    onClose = navController::navigateUp,
-                    onMediaPageChanged = { page ->
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
-                    },
-                )
-            }
+            GalleryScreen(
+                onClose = navController::navigateUp,
+                onMediaPageChanged = { page ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
+                },
+            )
         }
 
         composable<Route.Downloads> {
@@ -266,18 +263,16 @@ fun OrbinNavHost(
         }
 
         composable<Route.Onboarding> {
-            MaterialOrbinTheme {
-                OnboardingScreen(
-                    onFinish = {
-                        navController.navigate(Route.NextFeed) {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
-                                saveState = false
-                            }
+            OnboardingScreen(
+                onFinish = {
+                    navController.navigate(Route.NextFeed) {
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                            saveState = false
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
         }
     }
 }

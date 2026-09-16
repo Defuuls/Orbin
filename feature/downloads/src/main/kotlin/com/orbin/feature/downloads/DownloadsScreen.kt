@@ -31,13 +31,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MetaLine
+import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
@@ -117,14 +117,15 @@ fun DownloadsScreen(
     }
 
     if (showClearDialog) {
-        ModernConfirmDialog(
+        NextConfirmDialog(
             title = stringResource(R.string.downloads_clear_dialog_title),
-            text = stringResource(R.string.downloads_clear_dialog_text),
+            message = stringResource(R.string.downloads_clear_dialog_text),
             onConfirm = {
                 viewModel.clear()
                 showClearDialog = false
             },
             onDismiss = { showClearDialog = false },
+            confirmLabel = stringResource(R.string.downloads_clear_action),
         )
     }
 }

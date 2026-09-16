@@ -68,7 +68,7 @@ internal val LocalOrbinThemeSettings =
     }
 
 /**
- * Restores [OrbinTheme] for Material-only surfaces (gallery, onboarding, legacy lists, dialogs)
+ * Restores [OrbinTheme] when a nested Material widget tree needs the full Material colorScheme
  * that live under the root NextTheme. Next destinations must not wrap this — they inherit the
  * Next palette and must not pay a second MaterialTheme.
  */
