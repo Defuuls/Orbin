@@ -40,8 +40,6 @@ fun NextFeedWithSiteSwitcherScreen(
     onClearFilter: () -> Unit = {},
     railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
@@ -62,8 +60,6 @@ fun NextFeedWithSiteSwitcherScreen(
             onClearFilter = onClearFilter,
             railAction = railAction,
             onOpenBoards = onOpenBoards,
-            onOpenDownloads = onOpenDownloads,
-            onOpenSearchDestination = onOpenSearchDestination,
             onOpenMedia = onOpenMedia,
         )
 

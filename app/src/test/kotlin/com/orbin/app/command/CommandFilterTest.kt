@@ -38,10 +38,10 @@ class CommandFilterTest {
     @Test
     fun `a prefix match outranks a mention buried in a description`() {
         // Past the filter-feed entry, which leads for every query by design.
-        val results = filterCommands(catalogue(), "his").drop(1)
+        val results = filterCommands(catalogue(), "down").drop(1)
 
-        // "History" starts with it; the /g/ board only mentions it in its description.
-        assertThat(results.first().label).isEqualTo("History")
+        // "Downloads" starts with it; the /g/ board only mentions download in its description.
+        assertThat(results.first().label).isEqualTo("Downloads")
     }
 
     @Test
@@ -53,7 +53,7 @@ class CommandFilterTest {
 
     @Test
     fun `matching is case insensitive and ignores surrounding space`() {
-        assertThat(filterCommands(catalogue(), "  GALLERY ").map { it.label }).contains("Browse by board")
+        assertThat(filterCommands(catalogue(), "  GALLERY ").map { it.label }).contains("All media")
     }
 
     @Test
@@ -95,7 +95,7 @@ class CommandFilterTest {
             listOf(
                 CommandTarget.OpenThread("Automotive detailing general", "/o/", "fourchan", "o", 1L),
                 CommandTarget.OpenBoard("/auto/", "Automobiles", "fourchan", "auto", "Automobiles"),
-                CommandTarget.OpenBoard("/g/", "Technology and its history", "fourchan", "g", "Technology"),
+                CommandTarget.OpenBoard("/g/", "Technology and downloading ISOs", "fourchan", "g", "Technology"),
                 CommandTarget.OpenSetting("Autoplay videos", "Media & playback", "autoplay"),
                 CommandTarget.OpenSetting("Hidden tags", "Content & feed", "hiddenTags"),
             )

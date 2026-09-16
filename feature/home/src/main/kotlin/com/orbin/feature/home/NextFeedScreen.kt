@@ -68,8 +68,6 @@ fun NextFeedScreen(
     onClearFilter: () -> Unit = {},
     railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearchDestination: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
@@ -223,8 +221,6 @@ fun NextFeedScreen(
                             onSearch = onOpenCommands,
                             onSettings = onOpenSettings,
                             onOpenBoards = onOpenBoards,
-                            onOpenDownloads = onOpenDownloads,
-                            onOpenSearchDestination = onOpenSearchDestination,
                             onOpenMedia = onOpenMedia,
                             onActivePreviewChanged = { activePreviewId = it },
                             activityText = { row ->

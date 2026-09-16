@@ -45,8 +45,6 @@ internal fun FeedHeader(
     onSizeChange: (Float) -> Unit = {},
     showSizeControl: Boolean = true,
     onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenSearch: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
@@ -57,8 +55,6 @@ internal fun FeedHeader(
             listOfNotNull(
                 onOpenBoards?.let { stringResource(R.string.next_launchpad_boards) to it },
                 onOpenMedia?.let { stringResource(R.string.next_launchpad_media) to it },
-                onOpenDownloads?.let { stringResource(R.string.next_launchpad_downloads) to it },
-                onOpenSearch?.let { stringResource(R.string.next_launchpad_search) to it },
                 onOpenSettings?.let { stringResource(R.string.next_settings_title) to it },
             )
         if (destinations.isNotEmpty()) {

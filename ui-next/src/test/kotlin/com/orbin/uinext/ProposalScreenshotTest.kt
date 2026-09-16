@@ -218,18 +218,6 @@ class ProposalScreenshotTest {
             )
         }
 
-    @Test
-    fun boardPicker() =
-        capture("next_boards") {
-            BoardPickerScreen(boards = boardChoices(), subtitle = "3 of 7 in your feed")
-        }
-
-    @Test
-    fun boardPickerMaxText() =
-        capture("next_boards_max_text", fontScale = MAX_FONT_SCALE) {
-            BoardPickerScreen(boards = boardChoices(), subtitle = "3 of 7 in your feed")
-        }
-
     @androidx.compose.runtime.Composable
     private fun commandContent() {
         FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
@@ -264,17 +252,6 @@ class ProposalScreenshotTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
     }
-
-    private fun boardChoices() =
-        listOf(
-            BoardChoice("g", "Technology", subscribed = true),
-            BoardChoice("a", "Anime & Manga", subscribed = true),
-            BoardChoice("ck", "Food & Cooking", subscribed = true),
-            BoardChoice("lit", "Literature"),
-            BoardChoice("p", "Photography"),
-            BoardChoice("sci", "Science & Math"),
-            BoardChoice("wsg", "Worksafe Gifs, with a title long enough that it has to truncate"),
-        )
 
     private companion object {
         const val XL_FONT_SCALE = 1.2f

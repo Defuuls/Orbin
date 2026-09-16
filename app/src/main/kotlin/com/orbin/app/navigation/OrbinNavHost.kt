@@ -17,7 +17,6 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -30,10 +29,8 @@ import com.orbin.app.MaterialOrbinTheme
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
-import com.orbin.feature.gallery.GalleryBrowserScreen
 import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.gallery.NextAllMediaScreen
-import com.orbin.feature.history.HistoryScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
 import com.orbin.feature.onboarding.OnboardingScreen
@@ -111,8 +108,6 @@ fun OrbinNavHost(
                 filter = feedFilter,
                 onClearFilter = onClearFeedFilter,
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
-                onOpenSearchDestination = { navController.navigate(Route.Search) },
                 onOpenMedia = { navController.navigate(Route.AllMedia) },
             )
         }
@@ -143,43 +138,6 @@ fun OrbinNavHost(
                 }
             }
         }
-        composable<Route.History> {
-            NextChromeHost(
-                where = "History",
-                onOpenCommands = onOpenCommands,
-            ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    HistoryScreen(onOpenThread = openThread)
-                }
-            }
-        }
-
-        composable<Route.GalleryBrowser> { backStackEntry ->
-            val mediaScrollIndex by
-                backStackEntry.savedStateHandle
-                    .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
-                    .collectAsStateWithLifecycle()
-
-            NextChromeHost(
-                where = stringResource(com.orbin.feature.gallery.R.string.gallery_advanced_title),
-                onOpenCommands = onOpenCommands,
-            ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    GalleryBrowserScreen(
-                        onOpenMedia = { provider, board, thread, index ->
-                            navController.navigate(Route.Gallery(provider, board, thread, index))
-                        },
-                        onOpenThread = openThread,
-                        onOpenAllMedia = { navController.navigate(Route.AllMedia) },
-                        mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
-                        onMediaScrollConsumed = {
-                            backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
-                                NO_THREAD_MEDIA_SCROLL_INDEX
-                        },
-                    )
-                }
-            }
-        }
 
         composable<Route.AllMedia> {
             NextAllMediaScreen(
@@ -193,8 +151,6 @@ fun OrbinNavHost(
                 onOpenCommands = onOpenCommands,
                 onOpenFeed = { navController.navigate(Route.NextFeed) },
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
-                onOpenSearchDestination = { navController.navigate(Route.Search) },
             )
         }
 
