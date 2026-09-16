@@ -44,6 +44,7 @@ enum class FeedSort(
     REPLIES("Replies"),
     IMAGES("Images"),
     CREATED("Created"),
+    /** Board code A–Z (kept for saved sort preferences). */
     TITLE("A-Z"),
 }
 
@@ -84,8 +85,8 @@ fun FeedSort.comparator(): Comparator<CatalogThread> =
         FeedSort.CREATED ->
             compareByDescending<CatalogThread> { it.originalPost.createdAtMillis }
         FeedSort.TITLE ->
-            compareBy<CatalogThread, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle() }
-                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.key.board.value }
+            compareBy<CatalogThread, String>(String.CASE_INSENSITIVE_ORDER) { it.key.board.value }
+                .thenByDescending { it.activityMillis() }
     }
 
 /** A request for a page of a board catalog. */
