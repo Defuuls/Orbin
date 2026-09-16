@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -298,6 +299,54 @@ fun ContextRail(
     }
 }
 
+/** Space to keep scrolling content clear of [CompactTitleBar]. */
+val COMPACT_TITLE_CLEARANCE = 52.dp
+
+/** Semantics tags distinguishing the large in-content title from the compact overlay. */
+object NextTitleTags {
+    const val LARGE = "next_large_title"
+    const val COMPACT = "next_compact_title"
+}
+
+/**
+ * Compact frosted title that appears once the large in-content [ScreenTitle] has scrolled away.
+ * Uses a distinct test tag so scroll-away assertions still target the large title only.
+ */
+@Composable
+fun CompactTitleBar(
+    title: String,
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 2 } + fadeIn(),
+        exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 2 } + fadeOut(),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ).padding(horizontal = 12.dp, vertical = 6.dp)
+                    .nextFrosted(RoundedCornerShape(NextRadius.control))
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                    .testTag(NextTitleTags.COMPACT),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = title,
+                style = NextType.headline,
+                color = next.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
 /**
  * A screen title set in the content rather than in a bar above it.
  *
@@ -326,7 +375,12 @@ fun ScreenTitle(
                 bottom = NextSpace.titleBottom,
             ),
     ) {
-        Text(text = text, style = titleStyle, color = next.ink)
+        Text(
+            text = text,
+            style = titleStyle,
+            color = next.ink,
+            modifier = Modifier.testTag(NextTitleTags.LARGE),
+        )
         if (subtitle != null) {
             Text(
                 text = subtitle,

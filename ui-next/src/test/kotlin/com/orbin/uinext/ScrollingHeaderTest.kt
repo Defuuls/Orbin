@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
@@ -32,10 +33,11 @@ class ScrollingHeaderTest {
     fun `the feed header scrolls away with the list`() {
         composeRule.setContent { NextTheme { FeedScreen(rows = rows(), showRail = false) } }
 
-        composeRule.onNodeWithText("Feed").assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
         scrollToLastRow()
 
-        composeRule.onNodeWithText("Feed").assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
     /** The grid is the harder case: a header there has to span every column rather than take a cell. */
@@ -45,10 +47,11 @@ class ScrollingHeaderTest {
             NextTheme { FeedScreen(rows = rows(), showRail = false, layout = FeedLayout.GRID) }
         }
 
-        composeRule.onNodeWithText("Feed").assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
         scrollToLastRow()
 
-        composeRule.onNodeWithText("Feed").assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
     @Test
@@ -80,10 +83,11 @@ class ScrollingHeaderTest {
             }
         }
 
-        composeRule.onNodeWithText("All media").assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
         composeRule.onNode(hasScrollAction()).performScrollToIndex(ROW_COUNT)
 
-        composeRule.onNodeWithText("All media").assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
     private fun scrollToLastRow() = composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))

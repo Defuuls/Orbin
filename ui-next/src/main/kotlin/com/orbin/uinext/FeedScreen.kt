@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -113,6 +115,13 @@ fun FeedScreen(
         } else {
             null
         }
+    val feedTitle = stringResource(R.string.next_feed_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_feed_title).takeIf { showRail && !hasTabs },
@@ -145,7 +154,11 @@ fun FeedScreen(
                     columns = GridCells.Adaptive(imageGridMinSize),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(
@@ -167,7 +180,11 @@ fun FeedScreen(
                     columns = GridCells.Adaptive(feedSize.dp),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding =
+                        gridPadding(
+                            bottomPad,
+                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        ),
                 ) {
                     fullWidthItem { header() }
                     itemsIndexed(
@@ -186,6 +203,11 @@ fun FeedScreen(
                 }
             }
         }
+        CompactTitleBar(
+            title = feedTitle,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

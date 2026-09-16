@@ -25,10 +25,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -276,47 +280,61 @@ fun SettingsScreen(
             null
         }
 
-    NextScaffold(
-        where = stringResource(R.string.next_settings_title).takeIf { showRail && !hasTabs },
-        modifier = modifier,
-        onSearch = onSearch,
-        destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
-        onDestination = onDestination.takeIf { showRail },
-    ) { bottomPad ->
-        LazyColumn(
-            state = state,
-            modifier = Modifier.fillMaxSize().contentInsets(),
-            contentPadding =
-                PaddingValues(
-                    bottom = bottomPad.calculateBottomPadding(),
-                    top = 4.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            item {
-                ScreenTitle(
-                    text = stringResource(R.string.next_settings_title),
-                    subtitle = subtitle,
-                )
-            }
-            groups.forEach { (heading, rows) ->
-                item(key = "group:$heading") {
-                    GroupedSection(header = heading) {
-                        rows.forEachIndexed { index, item ->
-                            SettingRow(
-                                item = item,
-                                expanded = item.id == expandedId,
-                                onActivate = onActivate,
-                                onSelectOption = onSelectOption,
-                                onCommitText = onCommitText,
-                            )
-                            if (index < rows.lastIndex) GroupedDivider()
+    val settingsTitle = stringResource(R.string.next_settings_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            state.firstVisibleItemIndex > 0 ||
+                state.firstVisibleItemScrollOffset > 64
+        }
+    }
+    Box(modifier = modifier.fillMaxSize()) {
+        NextScaffold(
+            where = settingsTitle.takeIf { showRail && !hasTabs },
+            modifier = Modifier.fillMaxSize(),
+            onSearch = onSearch,
+            destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
+            onDestination = onDestination.takeIf { showRail },
+        ) { bottomPad ->
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize().contentInsets().imePadding(),
+                contentPadding =
+                    PaddingValues(
+                        bottom = bottomPad.calculateBottomPadding(),
+                        top = 4.dp + (if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp),
+                    ),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                item {
+                    ScreenTitle(
+                        text = stringResource(R.string.next_settings_title),
+                        subtitle = subtitle,
+                    )
+                }
+                groups.forEach { (heading, rows) ->
+                    item(key = "group:$heading") {
+                        GroupedSection(header = heading) {
+                            rows.forEachIndexed { index, item ->
+                                SettingRow(
+                                    item = item,
+                                    expanded = item.id == expandedId,
+                                    onActivate = onActivate,
+                                    onSelectOption = onSelectOption,
+                                    onCommitText = onCommitText,
+                                )
+                                if (index < rows.lastIndex) GroupedDivider()
+                            }
                         }
                     }
                 }
+                item { Gap(8) }
             }
-            item { Gap(8) }
         }
+        CompactTitleBar(
+            title = settingsTitle,
+            visible = showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 
@@ -429,6 +447,7 @@ private fun SettingTextEditor(
 ) {
     var draft by remember(item.id, item.text) { mutableStateOf(item.text) }
     val focus = remember { FocusRequester() }
+    val commit = { onCommitText(item, draft) }
     LaunchedEffect(item.id) { focus.requestFocus() }
 
     Row(
@@ -439,25 +458,25 @@ private fun SettingTextEditor(
             if (draft.isEmpty()) {
                 Text(text = item.value, fontSize = 15.sp, color = next.faint, maxLines = 1)
             }
-            // BasicTextField already supports selection; wrap so long-press copy works alongside
-            // the value Text SelectionContainer above after the root app wrapper was removed.
-            SelectionContainer {
-                BasicTextField(
-                    value = draft,
-                    onValueChange = { draft = it },
-                    singleLine = true,
-                    textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
-                    cursorBrush = SolidColor(next.accent),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
-                )
-            }
+            // BasicTextField already supports selection; the value Text above keeps
+            // SelectionContainer for long-press copy of the committed value.
+            BasicTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
+                cursorBrush = SolidColor(next.accent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { commit() }),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
             Hairline(modifier = Modifier.padding(top = 26.dp))
         }
         WidthSpacer(8)
         InlineAction(
             label = stringResource(R.string.next_settings_done),
             accent = true,
-            onClick = { onCommitText(item, draft) },
+            onClick = commit,
         )
     }
 }
