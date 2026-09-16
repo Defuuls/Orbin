@@ -8,10 +8,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -26,21 +31,15 @@ import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -61,6 +60,12 @@ import com.orbin.core.ui.state.EmptyView
 import com.orbin.core.ui.state.ErrorView
 import com.orbin.core.ui.state.LoadingView
 import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextTheme
+import com.orbin.uinext.ScreenTitle
+import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
 import kotlinx.collections.immutable.ImmutableList
 
 private enum class SetupStep(
@@ -79,7 +84,6 @@ private enum class SetupStep(
  * Reusable setup wizard. It runs on first launch and can also be opened from Settings to revisit
  * board subscriptions, favorites, media preferences, and privacy controls.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(
     onFinish: () -> Unit,
@@ -96,33 +100,74 @@ fun OnboardingScreen(
     val step = steps[index]
     val isLast = index == steps.lastIndex
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(step.title)
-                            Text(
-                                text = "${index + 1}/${steps.size} ${step.label}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    },
-                )
-                LinearProgressIndicator(
-                    progress = { (index + 1).toFloat() / steps.size },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                StepTabs(
-                    steps = steps,
-                    selectedIndex = index,
-                    onSelect = { index = it },
-                )
+    NextTheme {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ),
+        ) {
+            ScreenTitle(
+                text = step.title,
+                subtitle = "${index + 1}/${steps.size} · ${step.label}",
+            )
+            LinearProgressIndicator(
+                progress = { (index + 1).toFloat() / steps.size },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = NextSpace.gutter),
+                color = next.accent,
+                trackColor = next.hairline,
+            )
+            StepTabs(
+                steps = steps,
+                selectedIndex = index,
+                onSelect = { index = it },
+            )
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when (step) {
+                    SetupStep.START ->
+                        StartStep(
+                            settings,
+                            selectedProvider,
+                            viewModel.providers,
+                            viewModel::setSelectedProvider,
+                        )
+                    SetupStep.BOARDS ->
+                        BoardsStep(
+                            state = boards,
+                            subscribedBoardIds = subscribed,
+                            favoriteBoardIds = favorites,
+                            onSubscriptionChange = viewModel::setSubscribed,
+                            onFavoriteChange = viewModel::setFavorite,
+                            onRetry = viewModel::loadBoards,
+                        )
+                    SetupStep.APPEARANCE ->
+                        AppearanceStep(
+                            settings,
+                            viewModel::setThemeMode,
+                            viewModel::setDynamicColor,
+                            viewModel::setAmoled,
+                        )
+                    SetupStep.MEDIA ->
+                        MediaStep(
+                            settings,
+                            viewModel::setAutoplay,
+                            viewModel::setMute,
+                            viewModel::setPreload,
+                        )
+                    SetupStep.PRIVACY ->
+                        PrivacyStep(
+                            settings,
+                            viewModel::setBiometricLock,
+                            viewModel::setSaveRecentSearches,
+                        )
+                    SetupStep.DONE -> DoneStep(subscribed.size, favorites.size)
+                }
             }
-        },
-        bottomBar = {
             SetupBottomBar(
                 showBack = index > 0,
                 isLast = isLast,
@@ -136,46 +181,6 @@ fun OnboardingScreen(
                     }
                 },
             )
-        },
-    ) { padding ->
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-            when (step) {
-                SetupStep.START ->
-                    StartStep(
-                        settings,
-                        selectedProvider,
-                        viewModel.providers,
-                        viewModel::setSelectedProvider,
-                    )
-                SetupStep.BOARDS ->
-                    BoardsStep(
-                        state = boards,
-                        subscribedBoardIds = subscribed,
-                        favoriteBoardIds = favorites,
-                        onSubscriptionChange = viewModel::setSubscribed,
-                        onFavoriteChange = viewModel::setFavorite,
-                        onRetry = viewModel::loadBoards,
-                    )
-                SetupStep.APPEARANCE ->
-                    AppearanceStep(settings, viewModel::setThemeMode, viewModel::setDynamicColor, viewModel::setAmoled)
-                SetupStep.MEDIA ->
-                    MediaStep(
-                        settings,
-                        viewModel::setAutoplay,
-                        viewModel::setMute,
-                        viewModel::setPreload,
-                    )
-                SetupStep.PRIVACY ->
-                    PrivacyStep(
-                        settings,
-                        viewModel::setBiometricLock,
-                        viewModel::setSaveRecentSearches,
-                    )
-                SetupStep.DONE -> DoneStep(subscribed.size, favorites.size)
-            }
         }
     }
 }
@@ -190,27 +195,14 @@ private fun StepTabs(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         steps.forEachIndexed { index, step ->
-            AssistChip(
+            InlineAction(
+                label = step.label,
+                selected = index == selectedIndex,
                 onClick = { onSelect(index) },
-                label = { Text(step.label, maxLines = 1) },
-                leadingIcon =
-                    if (index < selectedIndex) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -223,18 +215,24 @@ private fun SetupBottomBar(
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Surface(tonalElevation = 3.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (showBack) {
-                OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Back") }
-            }
-            Button(onClick = onNext, modifier = Modifier.weight(1f)) {
-                Text(if (isLast) "Finish setup" else "Continue")
-            }
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (showBack) {
+            InlineAction(label = "Back", onClick = onBack)
         }
+        Box(modifier = Modifier.weight(1f))
+        InlineAction(
+            label = if (isLast) "Finish setup" else "Continue",
+            accent = true,
+            onClick = onNext,
+        )
     }
 }
 
@@ -246,7 +244,12 @@ private fun StartStep(
     onProviderSelected: (ImageBoardProvider) -> Unit,
 ) {
     SetupPage {
-        Text("Orbin setup", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "Orbin setup",
+            style = NextType.title1,
+            fontWeight = FontWeight.Bold,
+            color = next.ink,
+        )
         Text(
             text = "Choose boards to follow, tune playback, and lock down the defaults before browsing.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -272,7 +275,7 @@ private fun ProviderSelector(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(6.dp))
+                    .background(next.raised, RoundedCornerShape(12.dp))
                     .padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -294,7 +297,7 @@ private fun SignalPanel(settings: AppSettings) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(6.dp))
+                .background(next.raised, RoundedCornerShape(12.dp))
                 .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -355,7 +358,7 @@ private fun BoardsStep(
                             onSubscriptionChange = onSubscriptionChange,
                             onFavoriteChange = onFavoriteChange,
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                        HorizontalDivider(color = next.hairline)
                     }
                 }
             }
@@ -589,7 +592,7 @@ private fun SurfacePanel(content: @Composable ColumnScope.() -> Unit) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(6.dp))
+                .background(next.raised, RoundedCornerShape(12.dp))
                 .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         content = content,
