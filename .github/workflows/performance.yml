@@ -34,7 +34,7 @@ jobs:
 
   macrobenchmark:
     name: Macrobenchmark metrics
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
