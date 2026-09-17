@@ -34,6 +34,7 @@ hiltNavigationCompose = "1.4.0"
 
 # Persistence
 room = "2.8.5"
+sqlite = "2.7.0"
 datastore = "1.2.1"
 securityCrypto = "1.1.0"
 sqlcipher = "4.19.0"
@@ -123,6 +124,7 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 
 # Baseline profiles
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
