@@ -4,10 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,10 +21,8 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,6 +52,8 @@ import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextMotion
+import com.orbin.uinext.tokens.NextType
 
 /**
  * Root composable. Primary destinations (Feed, Boards, Media, Settings) own DestinationPill
@@ -134,8 +136,12 @@ fun OrbinApp(
         Column(modifier = Modifier.fillMaxSize()) {
             AnimatedVisibility(
                 visible = !isOnline,
-                enter = fadeIn() + slideInVertically(),
-                exit = slideOutVertically() + fadeOut(),
+                enter =
+                    fadeIn(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
+                        slideInVertically(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
+                exit =
+                    slideOutVertically(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
+                        fadeOut(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
             ) {
                 OfflineBanner(modifier = Modifier.windowInsetsPadding(statusBarInset))
             }
@@ -225,18 +231,17 @@ private fun CommandDestination.route(): Route =
 
 @Composable
 private fun OfflineBanner(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = next.accentSoft,
-    ) {
-        Text(
-            text = stringResource(R.string.offline_banner),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            color = next.accent,
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.Center,
-        )
-    }
+    Text(
+        text = stringResource(R.string.offline_banner),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(next.accentSoft)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = next.accent,
+        style = NextType.footnote,
+        textAlign = TextAlign.Center,
+    )
 }
 
 private tailrec fun Context.findActivity(): Activity? =

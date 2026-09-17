@@ -193,7 +193,7 @@ private fun CommandRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(role = Role.Button) { onClick(command) }
+                .nextClickable(role = Role.Button, onClick = { onClick(command) })
                 .padding(horizontal = GUTTER, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -378,7 +378,7 @@ private fun SettingRow(
                         if (item.kind == SettingKind.INFO) {
                             Modifier
                         } else {
-                            Modifier.clickable(role = Role.Button) { onActivate(item) }
+                            Modifier.nextClickable(role = Role.Button, onClick = { onActivate(item) })
                         },
                     ).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,

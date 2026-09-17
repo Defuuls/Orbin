@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,7 +130,7 @@ fun NextToggleRow(
                 .heightIn(min = MIN_TOUCH_TARGET)
                 .clip(RoundedCornerShape(NextRadius.control))
                 .background(next.raised)
-                .clickable(role = Role.Switch) { onCheckedChange(!checked) }
+                .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
                 .padding(horizontal = NextSpace.rowX, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -182,7 +181,7 @@ fun NextSelect(
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .clip(shape)
                     .background(next.raised)
-                    .clickable(role = Role.Button) { expanded = !expanded }
+                    .nextClickable(role = Role.Button, onClick = { expanded = !expanded })
                     .padding(horizontal = NextSpace.rowX, vertical = 12.dp)
                     .semantics { contentDescription = label },
             verticalAlignment = Alignment.CenterVertically,
@@ -238,7 +237,7 @@ private fun NextSelectOptionRow(
             Modifier
                 .fillMaxWidth()
                 .sizeIn(minHeight = MIN_TOUCH_TARGET)
-                .clickable(role = Role.RadioButton, onClick = onClick)
+                .nextClickable(role = Role.RadioButton, onClick = onClick)
                 .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
         verticalAlignment = Alignment.CenterVertically,
     ) {

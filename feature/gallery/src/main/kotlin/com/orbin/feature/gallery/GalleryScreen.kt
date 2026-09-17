@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +43,7 @@ import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
+import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
 import com.orbin.uinext.nextFrosted
@@ -214,12 +214,7 @@ fun GalleryScreen(
                         color = next.ink,
                         style = NextType.footnote,
                     )
-                    LinearProgressIndicator(
-                        progress = { downloadState.progressValue },
-                        modifier = Modifier.fillMaxWidth(),
-                        color = next.accent,
-                        trackColor = next.hairline,
-                    )
+                    NextLinearProgress(progress = downloadState.progressValue)
                 }
             }
         }

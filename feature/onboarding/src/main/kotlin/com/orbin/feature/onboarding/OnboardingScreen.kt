@@ -1,7 +1,6 @@
 package com.orbin.feature.onboarding
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,10 +30,7 @@ import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,14 +49,19 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
 import com.orbin.uinext.NextError
+import com.orbin.uinext.NextIconAction
+import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.NextToggle
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
+import com.orbin.uinext.nextClickable
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import kotlinx.collections.immutable.ImmutableList
@@ -110,14 +111,9 @@ fun OnboardingScreen(
                 text = step.title,
                 subtitle = "${index + 1}/${steps.size} · ${step.label}",
             )
-            LinearProgressIndicator(
-                progress = { (index + 1).toFloat() / steps.size },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = NextSpace.gutter),
-                color = next.accent,
-                trackColor = next.hairline,
+            NextLinearProgress(
+                progress = (index + 1).toFloat() / steps.size,
+                modifier = Modifier.padding(horizontal = NextSpace.gutter),
             )
             StepTabs(
                 steps = steps,
@@ -360,7 +356,7 @@ private fun BoardsStep(
                             onSubscriptionChange = onSubscriptionChange,
                             onFavoriteChange = onFavoriteChange,
                         )
-                        HorizontalDivider(color = next.hairline)
+                        GroupedDivider()
                     }
                 }
             }
@@ -407,7 +403,7 @@ private fun BoardRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable { onSubscriptionChange(board.id.value, !isSubscribed) }
+                .nextClickable(onClick = { onSubscriptionChange(board.id.value, !isSubscribed) })
                 .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -436,13 +432,12 @@ private fun BoardRow(
                 style = NextType.footnote,
             )
         }
-        IconButton(onClick = { onFavoriteChange(board.id.value, !isFavorite) }) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
-                contentDescription = if (isFavorite) "Remove favorite" else "Favorite board",
-                tint = favoriteTint,
-            )
-        }
+        NextIconAction(
+            imageVector = if (isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
+            contentDescription = if (isFavorite) "Remove favorite" else "Favorite board",
+            tint = favoriteTint,
+            onClick = { onFavoriteChange(board.id.value, !isFavorite) },
+        )
         NextToggle(
             checked = isSubscribed,
             onCheckedChange = { onSubscriptionChange(board.id.value, it) },
@@ -457,7 +452,7 @@ private fun BoardMonogram(id: String) {
         modifier =
             Modifier
                 .size(42.dp)
-                .background(color, RoundedCornerShape(4.dp)),
+                .background(color, RoundedCornerShape(NextRadius.tight)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -488,7 +483,7 @@ private fun AppearanceStep(
                     )
                 }
             }
-            PreferenceSwitch("Dynamic color", "Follow Pixel system palette", settings.dynamicColor, onDynamicColor)
+            PreferenceSwitch("Dynamic color", "Follow system dynamic colors", settings.dynamicColor, onDynamicColor)
             PreferenceSwitch("AMOLED black", "Use true black surfaces in dark mode", settings.amoled, onAmoled)
         }
     }

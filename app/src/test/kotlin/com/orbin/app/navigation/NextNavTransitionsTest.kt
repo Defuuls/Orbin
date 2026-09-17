@@ -25,8 +25,14 @@ class NextNavTransitionsTest {
     @Test
     fun easingSettlesWithoutLinearSnap() {
         // CubicBezier(0.32, 0.72, 0, 1) — ease-out biased; value at mid-time is past halfway.
-        assertThat(NextNavEasing.transform(0.5f)).isGreaterThan(0.5f)
-        assertThat(NextNavEasing.transform(0f)).isEqualTo(0f)
-        assertThat(NextNavEasing.transform(1f)).isEqualTo(1f)
+        assertThat(NextMotion.Ease.transform(0.5f)).isGreaterThan(0.5f)
+        assertThat(NextMotion.Ease.transform(0f)).isEqualTo(0f)
+        assertThat(NextMotion.Ease.transform(1f)).isEqualTo(1f)
+        assertThat(NextNavEasing).isEqualTo(NextMotion.Ease)
+    }
+
+    @Test
+    fun chromeIsSnappierThanTabSwap() {
+        assertThat(NextMotion.CHROME_MS).isAtMost(NextMotion.TAB_MS)
     }
 }

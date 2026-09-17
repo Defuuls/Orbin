@@ -20,8 +20,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +46,7 @@ import com.orbin.uinext.MetaLine
 import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextEmpty
 import com.orbin.uinext.NextError
+import com.orbin.uinext.NextIconAction
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextSelect
 import com.orbin.uinext.NextTextField
@@ -410,13 +409,11 @@ private fun SavedSearchesTabContent(
                                 }
                             }
                         }
-                        IconButton(onClick = { pendingDelete = search }) {
-                            Icon(
-                                Icons.Outlined.Delete,
-                                contentDescription = stringResource(R.string.search_delete),
-                                tint = next.accent,
-                            )
-                        }
+                        NextIconAction(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = stringResource(R.string.search_delete),
+                            onClick = { pendingDelete = search },
+                        )
                     }
                     GroupedDivider()
                 }
