@@ -91,7 +91,7 @@ class ScrollingHeaderTest {
     }
 
     @Test
-    fun `the boards browse title scrolls away with the grid`() {
+    fun `the boards browse title scrolls away with the list`() {
         val boards =
             List(ROW_COUNT) { index ->
                 BoardTile(
@@ -134,6 +134,6 @@ class ScrollingHeaderTest {
     private companion object {
         const val ROW_COUNT = 30
         const val LAST_SUBJECT = "The last thread in the list"
-        const val LAST_BOARD_TITLE = "The last board in the grid"
+        const val LAST_BOARD_TITLE = "The last board in the list"
     }
 }

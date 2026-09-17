@@ -150,7 +150,7 @@ fun DestinationPill(
                     Modifier
                         .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
                         .clip(RoundedCornerShape(NextRadius.pill))
-                        .clickable(role = Role.Button, onClick = onCommand),
+                        .nextClickable(role = Role.Button, onClick = onCommand),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -281,7 +281,7 @@ fun ContextRail(
                     Modifier
                         .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
                         .clip(RoundedCornerShape(NextRadius.control))
-                        .clickable(role = Role.Button, onClick = onSearch),
+                        .nextClickable(role = Role.Button, onClick = onSearch),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -529,7 +529,7 @@ fun InlineAction(
         if (selected == null) {
             Modifier.clickable(
                 role = Role.Button,
-                indication = null,
+                indication = NextHighlightIndication,
                 interactionSource = interaction,
                 onClick = onClick,
             )

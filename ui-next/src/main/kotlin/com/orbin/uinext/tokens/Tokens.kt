@@ -189,3 +189,22 @@ object NextType {
             letterSpacing = (-0.05).sp,
         )
 }
+
+/**
+ * Motion for Next chrome and navigation — soft iOS pushes, not Material shared-axis theatre.
+ *
+ * Prefer these curves over linear tweens or Material motion tokens. Hierarchical pushes use
+ * [PUSH_MS] with a parallax exit; primary-tab swaps use the shorter [TAB_MS] fade.
+ */
+@Immutable
+object NextMotion {
+    const val PUSH_MS = 380
+    const val TAB_MS = 260
+    const val CHROME_MS = 220
+
+    /** Fraction of width the outgoing screen drifts on a hierarchical push/pop (iOS parallax). */
+    const val PUSH_PARALLAX = 0.3f
+
+    /** Subtle horizontal nudge when swapping primary tabs. */
+    const val TAB_NUDGE = 0.06f
+}

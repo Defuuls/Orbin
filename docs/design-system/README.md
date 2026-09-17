@@ -83,6 +83,9 @@ separators — not Material elevation theatre. `InlineAction` is how an action i
 with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
 away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
 
+**Motion is Next, not Material.** Hierarchical Feed/Board→Thread pushes use a soft horizontal slide + fade with parallax (`NextMotion`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` (installed by `NextTheme`) — never a Material ripple.
+
+
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
 wherever it is composed, tests included. That makes nesting the normal case, and every parameter
 resolves the same way: an explicit value wins, an enclosing theme's is inherited, and failing both

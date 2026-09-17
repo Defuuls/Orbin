@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -137,7 +136,7 @@ internal fun FeedGridCell(
             modifier
                 .padding(GRID_CELL_PADDING)
                 .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                .clickable(
+                .nextClickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) },
@@ -206,7 +205,7 @@ internal fun FeedImageCell(
             Modifier
                 .padding(2.5.dp)
                 .clip(RoundedCornerShape(NextRadius.tight))
-                .clickable(
+                .nextClickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) }
@@ -236,7 +235,7 @@ private fun CollapsedFeedRow(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(NextRadius.tight))
-                .clickable(
+                .nextClickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) }
