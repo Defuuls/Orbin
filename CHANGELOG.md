@@ -14,7 +14,7 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Changed
 - Aligned cards, typography, spacing, navigation motion, settings, threads, and controls with the new design (#502).
-- Added a saved iOS/Android platform theme choice with distinct visual controls (#502).
+- Added a persisted iOS/Android platform theme setting with distinct visual controls (#502).
 
 
 ## [136-Apple] - 2026-09-17
