@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -75,7 +74,7 @@ internal fun FeedHeader(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MetaLine(stringResource(R.string.next_media_size_small))
-                Slider(
+                NextSlider(
                     value = sizeValue,
                     onValueChange = onSizeChange,
                     valueRange = FEED_SIZE_MIN_DP..FEED_SIZE_MAX_DP,

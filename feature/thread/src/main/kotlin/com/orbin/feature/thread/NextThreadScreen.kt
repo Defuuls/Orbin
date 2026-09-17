@@ -18,11 +18,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +54,9 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextPullToRefresh
+import com.orbin.uinext.NextSnackbarHost
+import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
@@ -67,7 +66,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.orbin.uinext.Post as NextPost
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextThreadScreen(
     onOpenMedia: (Int) -> Unit,
@@ -86,7 +84,7 @@ fun NextThreadScreen(
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember { NextSnackbarHostState() }
     val context = LocalContext.current
     val uiPrefs =
         remember(context) {
@@ -159,7 +157,6 @@ fun NextThreadScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoadedThread(
     state: ThreadUiState.Success,
@@ -168,7 +165,7 @@ private fun LoadedThread(
     firstUnreadPostId: PostId?,
     initialScrollPosition: ThreadScrollPosition?,
     initialScrollLoaded: Boolean,
-    snackbarHostState: SnackbarHostState,
+    snackbarHostState: NextSnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
     showScrollArrow: Boolean,
@@ -259,7 +256,7 @@ private fun LoadedThread(
         onDispose { saveVisiblePost(flush = true) }
     }
 
-    PullToRefreshBox(
+    NextPullToRefresh(
         isRefreshing = isRefreshing,
         onRefresh = viewModel::refresh,
         modifier = modifier.fillMaxSize(),
@@ -336,16 +333,21 @@ private fun LoadedThread(
                         Modifier
                             .align(Alignment.BottomEnd)
                             .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                                WindowInsets.safeDrawing.only(
+                                    WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                                ),
                             ).padding(end = 98.dp, bottom = 14.dp)
                             .semantics { contentDescription = "Jump to next post" },
                     accent = true,
                     onClick = ::jumpToNextPost,
                 )
             }
+            NextSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
-    SnackbarHost(hostState = snackbarHostState)
 }
 
 @OptIn(ExperimentalFoundationApi::class)

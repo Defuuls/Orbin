@@ -112,6 +112,8 @@
     <string name="next_confirm_delete">Delete</string>
     <string name="next_status_retry">Retry</string>
     <string name="next_status_loading">Loading</string>
+    <string name="next_snackbar_dismiss">Dismiss</string>
+    <string name="next_pull_refresh">Pull to refresh</string>
     <string name="next_toggle_on">On</string>
     <string name="next_toggle_off">Off</string>
 </resources>

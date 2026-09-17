@@ -457,55 +457,48 @@ private fun AppContent(
     onContinueWithoutLock: () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
-    // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; Material
-    // OrbinTheme remains only for shared Material widgets nested inside Next (sliders, snackbars)
-    // there without wrapping the whole tree in both themes.
+    // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; nested
+    // Material sliders / snackbars / pull-to-refresh were replaced with Next controls, so the
+    // MaterialOrbinTheme adapter is gone.
     val colorVariant = settings.colorTheme.toDesignSystem()
     val nextPalette =
         colorVariant.toNextPalette(
             darkPreference = settings.themeMode.isDark(),
             amoled = settings.amoled,
         )
-    ProvideOrbinThemeSettings(
-        themeMode = settings.themeMode.toDesignSystem(),
-        colorSchemeVariant = colorVariant,
-        dynamicColor = settings.dynamicColor,
-        amoled = settings.amoled,
+    NextTheme(
+        darkTheme = nextPalette.dark,
+        amoled = nextPalette.amoled,
+        fontScale = settings.fontScale,
+        palette = nextPalette,
     ) {
-        NextTheme(
-            darkTheme = nextPalette.dark,
-            amoled = nextPalette.amoled,
-            fontScale = settings.fontScale,
-            palette = nextPalette,
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = next.background,
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = next.background,
-            ) {
-                if (ready) {
-                    OrbinAppProviders {
-                        OrbinApp(
-                            startWithOnboarding = !settings.onboardingCompleted,
-                            fullScreenFeedChrome = settings.fullScreenFeedChrome,
-                            threadPresentation = settings.threadPresentation,
-                            isOnline = isOnline,
-                        )
-                    }
+            if (ready) {
+                OrbinAppProviders {
+                    OrbinApp(
+                        startWithOnboarding = !settings.onboardingCompleted,
+                        fullScreenFeedChrome = settings.fullScreenFeedChrome,
+                        threadPresentation = settings.threadPresentation,
+                        isOnline = isOnline,
+                    )
                 }
+            }
 
-                if (ready && shouldLock && !unlocked) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = next.background,
-                    ) {
-                        LockedScreen(
-                            message = unlockMessage,
-                            unlocking = authenticationInProgress,
-                            allowContinueWithoutLock = allowContinueWithoutLock,
-                            onRetry = onRetryUnlock,
-                            onContinueWithoutLock = onContinueWithoutLock,
-                        )
-                    }
+            if (ready && shouldLock && !unlocked) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = next.background,
+                ) {
+                    LockedScreen(
+                        message = unlockMessage,
+                        unlocking = authenticationInProgress,
+                        allowContinueWithoutLock = allowContinueWithoutLock,
+                        onRetry = onRetryUnlock,
+                        onContinueWithoutLock = onContinueWithoutLock,
+                    )
                 }
             }
         }

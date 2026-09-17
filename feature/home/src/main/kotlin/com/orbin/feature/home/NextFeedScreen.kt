@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +44,7 @@ import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
+import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -53,7 +52,6 @@ import kotlinx.coroutines.withContext
 
 private const val RELATIVE_TIME_TICK_MS = 60_000L
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
@@ -217,7 +215,7 @@ fun NextFeedScreen(
                                 }
                             }
                         }
-                    PullToRefreshBox(
+                    NextPullToRefresh(
                         isRefreshing = isRefreshing,
                         onRefresh = viewModel::refresh,
                         modifier = modifier.fillMaxSize(),
