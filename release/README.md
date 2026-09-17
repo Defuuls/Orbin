@@ -7,13 +7,13 @@ is the whole procedure — the **Cut Release** workflow
 ## The manifest
 
 ```toml
-number       = 129          # release number; the tag becomes v129-<Codename>
-codename     = "Measles"    # from release/codenames.txt (highly contagious diseases), never one already tagged
-version_code = 147          # Android versionCode; must exceed the current value
+number       = 136          # release number; the tag becomes v136-<Codename>
+codename     = "Apple"      # from release/codenames.txt [fruit] (v136+); never one already tagged
+version_code = 154          # Android versionCode; must exceed the current value
 
 # Optional. The release PR's summary bullets; derived from the version when omitted.
 summary = [
-  "bump Orbin to 129-Asuka / versionCode 147",
+  "bump Orbin to 136-Apple / versionCode 154",
   "restore gallery paging on low-memory devices",
 ]
 
@@ -75,8 +75,9 @@ pushing a branch, opening a PR, or dispatching a build.
 
 ## Notes
 
-- **From v129, codenames are highly contagious diseases** listed in
-  [`release/codenames.txt`](codenames.txt). `prepare_release.py` refuses any other name.
+- **Codename eras:** diseases for **v129–v135** (closed; kept under `[disease]`), fruits from
+  **v136** (current; pick from `[fruit]` in [`release/codenames.txt`](codenames.txt)).
+  `prepare_release.py` enforces the pool for the manifest's release number.
 - **Codenames are never reused across either product line.** The cutter refuses a codename matching
   any existing tag; check `git tag --list` before writing one down.
 - **A multi-word codename is hyphenated in the tag and versionName but displayed with spaces**, so

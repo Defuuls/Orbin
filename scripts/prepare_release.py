@@ -31,9 +31,13 @@ MANIFEST = ROOT / "release" / "next.toml"
 BASE_URL = "https://github.com/Defuuls/Orbin"
 HERO_SVG = "docs/assets/orbin-hero-screenshot.svg"
 CODENAMES_FILE = ROOT / "release" / "codenames.txt"
-# Contagious-disease era starts here (Japanese-name era ended at v128 — Rei).
+# Codename eras (Japanese-name era ended at v128 — Rei):
+#   disease  v129–v135 (closed; shipped names kept in [disease])
+#   fruit    v136 onward (current; pick from [fruit])
 DISEASE_ERA_FROM = 129
+FRUIT_ERA_FROM = 136
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
+SECTION_HEADER = re.compile(r"^\[(disease|fruit)\]\s*$", re.IGNORECASE)
 
 
 class ManifestError(Exception):
@@ -76,32 +80,62 @@ def _require(data: dict, key: str, kind: type):
 
 
 
-def load_disease_codenames() -> list[str]:
-    """Ordered Display names from release/codenames.txt (comments/blank skipped)."""
+def load_codename_sections() -> dict[str, list[str]]:
+    """Display-name pools from release/codenames.txt, keyed by section (disease/fruit)."""
     if not CODENAMES_FILE.exists():
         raise ManifestError(f"missing codename pool at {CODENAMES_FILE.relative_to(ROOT)}")
-    names: list[str] = []
+    sections: dict[str, list[str]] = {"disease": [], "fruit": []}
+    current: str | None = None
     for line in CODENAMES_FILE.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
-        names.append(" ".join(stripped.split()))
-    if not names:
-        raise ManifestError(f"{CODENAMES_FILE.name} has no codename entries")
-    return names
+        header = SECTION_HEADER.match(stripped)
+        if header:
+            current = header.group(1).lower()
+            if current not in sections:
+                raise ManifestError(f"{CODENAMES_FILE.name}: unknown section [{current}]")
+            continue
+        if current is None:
+            raise ManifestError(
+                f"{CODENAMES_FILE.name}: name {stripped!r} appears before a [disease]/[fruit] section"
+            )
+        sections[current].append(" ".join(stripped.split()))
+    if not sections["disease"]:
+        raise ManifestError(f"{CODENAMES_FILE.name} [disease] section has no codename entries")
+    if not sections["fruit"]:
+        raise ManifestError(f"{CODENAMES_FILE.name} [fruit] section has no codename entries")
+    return sections
 
 
-def require_disease_codename(number: int, codename: str) -> None:
-    """From DISEASE_ERA_FROM, codenames must come from the hardcoded disease pool."""
+def load_disease_codenames() -> list[str]:
+    """Ordered disease-era Display names (v129–v135)."""
+    return load_codename_sections()["disease"]
+
+
+def load_fruit_codenames() -> list[str]:
+    """Ordered fruit-era Display names (v136+)."""
+    return load_codename_sections()["fruit"]
+
+
+def require_era_codename(number: int, codename: str) -> None:
+    """Enforce the active naming pool for the release number's era."""
     if number < DISEASE_ERA_FROM:
         return
-    pool = load_disease_codenames()
+    sections = load_codename_sections()
+    if number < FRUIT_ERA_FROM:
+        pool = sections["disease"]
+        label = "highly contagious diseases"
+        era_hint = f"v{DISEASE_ERA_FROM}–v{FRUIT_ERA_FROM - 1}"
+    else:
+        pool = sections["fruit"]
+        label = "fruits"
+        era_hint = f"v{FRUIT_ERA_FROM}+"
     if codename not in pool:
         preview = ", ".join(pool[:8])
         raise ManifestError(
-            f"codename {codename!r} is not in release/codenames.txt. "
-            f"From v{DISEASE_ERA_FROM} onward picks must be highly contagious diseases "
-            f"(e.g. {preview}, …)."
+            f"codename {codename!r} is not in the {label} pool in release/codenames.txt. "
+            f"For {era_hint} picks must be {label} (e.g. {preview}, …)."
         )
 
 def load_manifest() -> tuple[Release, dict[str, list[str]]]:
@@ -119,7 +153,7 @@ def load_manifest() -> tuple[Release, dict[str, list[str]]]:
         raise ManifestError(f"'number' must be positive, got {number}")
     if not CODENAME.match(codename):
         raise ManifestError(f"'codename' must be a readable name, got {codename!r}")
-    require_disease_codename(number, codename)
+    require_era_codename(number, codename)
 
     changelog = _require(data, "changelog", dict)
     sections: dict[str, list[str]] = {}
