@@ -311,6 +311,26 @@ fun SettingsScreen(
                         subtitle = subtitle,
                     )
                 }
+                if (onOpenBoards != null || onOpenMedia != null) {
+                    item(key = "library") {
+                        GroupedSection(header = "Library") {
+                            onOpenBoards?.let {
+                                InlineAction(
+                                    "Boards",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = it,
+                                )
+                            }
+                            onOpenMedia?.let {
+                                InlineAction(
+                                    "All media",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = it,
+                                )
+                            }
+                        }
+                    }
+                }
                 groups.forEach { (heading, rows) ->
                     item(key = "group:$heading") {
                         GroupedSection(header = heading) {
@@ -401,18 +421,30 @@ private fun SettingRow(
                 }
             }
             WidthSpacer(12)
-            SelectionContainer {
-                Text(
-                    text = item.value,
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (item.isOn()) next.accent else next.muted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            if (item.kind == SettingKind.TOGGLE) {
+                NextToggle(checked = item.isOn(), onCheckedChange = { onActivate(item) })
+            } else {
+                SelectionContainer {
+                    Text(
+                        text = item.value,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (item.isOn()) next.accent else next.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
-        if (!expanded) return@Column
+        if (item.id == "platformTheme") {
+            PlatformSegments(
+                item.options,
+                item.options.indexOf(item.value),
+                { onSelectOption(item, it) },
+                Modifier.padding(12.dp),
+            )
+        }
+        if (!expanded || item.id == "platformTheme") return@Column
         if (item.kind == SettingKind.TEXT && item.hint != null) {
             Text(
                 text = item.hint,

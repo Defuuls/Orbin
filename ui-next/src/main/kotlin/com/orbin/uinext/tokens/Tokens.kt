@@ -19,11 +19,11 @@ import androidx.compose.ui.unit.sp
  */
 @Immutable
 object NextSpace {
-    val gutter: Dp = 20.dp
+    val gutter: Dp = 16.dp
     val gutterTight: Dp = 16.dp
-    val section: Dp = 28.dp
+    val section: Dp = 22.dp
     val groupGap: Dp = 20.dp
-    val rowY: Dp = 14.dp
+    val rowY: Dp = 12.dp
     val rowX: Dp = 16.dp
     val titleTop: Dp = 12.dp
     val titleBottom: Dp = 20.dp
@@ -46,7 +46,7 @@ object NextRadius {
     val tight: Dp = 10.dp
     val control: Dp = 12.dp
     val tile: Dp = 16.dp
-    val card: Dp = 18.dp
+    val card: Dp = 14.dp
     val sheet: Dp = 22.dp
     val continuous: Dp = 26.dp
     val pill: Dp = 100.dp
@@ -73,7 +73,7 @@ object NextMaterials {
     const val SELECTED_FILL_DARK = 0.22f
     const val PRESS_LIGHT = 0.06f
     const val PRESS_DARK = 0.14f
-    val BLUR_RADIUS = 18.dp
+    val BLUR_RADIUS = 22.dp
 }
 
 /**
@@ -92,7 +92,7 @@ object NextType {
             fontWeight = FontWeight.Bold,
             fontSize = 34.sp,
             lineHeight = 41.sp,
-            letterSpacing = (-0.6).sp,
+            letterSpacing = (-1.1).sp,
         )
     val title1 =
         TextStyle(
@@ -100,7 +100,7 @@ object NextType {
             fontWeight = FontWeight.Bold,
             fontSize = 28.sp,
             lineHeight = 34.sp,
-            letterSpacing = (-0.45).sp,
+            letterSpacing = (-0.9).sp,
         )
     val title2 =
         TextStyle(
@@ -108,7 +108,7 @@ object NextType {
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
             lineHeight = 28.sp,
-            letterSpacing = (-0.3).sp,
+            letterSpacing = (-0.6).sp,
         )
     val title3 =
         TextStyle(
@@ -124,7 +124,7 @@ object NextType {
             fontWeight = FontWeight.SemiBold,
             fontSize = 17.sp,
             lineHeight = 22.sp,
-            letterSpacing = (-0.2).sp,
+            letterSpacing = (-0.43).sp,
         )
     val body =
         TextStyle(
@@ -132,7 +132,7 @@ object NextType {
             fontWeight = FontWeight.Normal,
             fontSize = 17.sp,
             lineHeight = 22.sp,
-            letterSpacing = (-0.2).sp,
+            letterSpacing = (-0.43).sp,
         )
     val callout =
         TextStyle(
@@ -200,12 +200,12 @@ object NextType {
  */
 @Immutable
 object NextMotion {
-    const val PUSH_MS = 380
-    const val TAB_MS = 260
+    const val PUSH_MS = 420
+    const val TAB_MS = 240
     const val CHROME_MS = 220
 
     /** Fraction of width the outgoing screen drifts on a hierarchical push/pop (iOS parallax). */
-    const val PUSH_PARALLAX = 0.3f
+    const val PUSH_PARALLAX = 0.24f
 
     /** Subtle horizontal nudge when swapping primary tabs. */
     const val TAB_NUDGE = 0.06f

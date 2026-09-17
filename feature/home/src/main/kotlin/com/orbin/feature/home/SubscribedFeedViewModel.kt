@@ -252,6 +252,10 @@ class SubscribedFeedViewModel
         }
 
         /** Cycles Board → Active → Replies → Images → Created → A-Z and persists the choice. */
+        fun setFeedSort(sort: FeedSort) {
+            viewModelScope.launch { settingsRepository.setFeedSort(sort) }
+        }
+
         fun cycleFeedSort() {
             viewModelScope.launch {
                 val values = FeedSort.entries
@@ -357,7 +361,7 @@ class SubscribedFeedViewModel
             const val STOP_TIMEOUT_MS = 5_000L
             const val MAX_CONCURRENT_BOARD_LOADS = 4
             const val FEED_LAYOUT_KEY = "feedLayout"
-            const val DEFAULT_FEED_LAYOUT = "GRID"
+            const val DEFAULT_FEED_LAYOUT = "LIST"
             const val FEED_PREFETCH_MAX_PX = 480
         }
     }

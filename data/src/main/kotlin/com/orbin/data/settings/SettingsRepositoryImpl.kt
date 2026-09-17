@@ -20,6 +20,7 @@ import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PlatformTheme
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -96,6 +97,10 @@ class SettingsRepositoryImpl
 
         override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
             edit { it[Keys.threadPresentation] = presentation.name }
+        }
+
+        override suspend fun setPlatformTheme(theme: PlatformTheme) {
+            edit { it[Keys.platformTheme] = theme.name }
         }
 
         override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -330,6 +335,7 @@ class SettingsRepositoryImpl
                 threadPresentation =
                     this[Keys.threadPresentation]?.toEnumOrDefault(ThreadPresentation.PAGE)
                         ?: ThreadPresentation.PAGE,
+                platformTheme = this[Keys.platformTheme]?.toEnumOrDefault(PlatformTheme.IOS) ?: PlatformTheme.IOS,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
@@ -416,6 +422,7 @@ class SettingsRepositoryImpl
             val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
             val feedRefreshInterval = stringPreferencesKey("feed_refresh_interval")
             val threadPresentation = stringPreferencesKey("thread_presentation")
+            val platformTheme = stringPreferencesKey("platform_theme")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val fullScreenFeedChrome = booleanPreferencesKey("full_screen_feed_chrome")

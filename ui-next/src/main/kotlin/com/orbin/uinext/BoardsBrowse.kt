@@ -20,7 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,7 @@ data class BoardTile(
     val path: String,
     val title: String,
     val nsfw: Boolean = false,
+    val followed: Boolean = false,
 )
 
 /**
@@ -52,6 +56,7 @@ fun BoardsScreen(
     subtitle: String? = null,
     showRail: Boolean = true,
     onOpenBoard: (BoardTile) -> Unit = {},
+    onFollowBoard: ((BoardTile, Boolean) -> Unit)? = null,
     onRandom: (() -> Unit)? = null,
     onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
@@ -60,6 +65,21 @@ fun BoardsScreen(
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var following by rememberSaveable { mutableStateOf(false) }
+    val visibleBoards =
+        remember(boards, query, following) {
+            boards.filter {
+                (!following || it.followed) &&
+                    (
+                        it.path.contains(
+                            query,
+                            true,
+                        ) ||
+                            it.title.contains(query, true)
+                    )
+            }
+        }
     val listState = rememberLazyListState()
     val railVisible =
         if (hideRailOnScroll) {
@@ -122,6 +142,22 @@ fun BoardsScreen(
                                         boards.size,
                                     ),
                         )
+                        Column(Modifier.padding(horizontal = GUTTER)) {
+                            SchematicSearch(query, { query = it }, "Search boards")
+                            Gap(12)
+                            PlatformSegments(
+                                listOf(
+                                    "Discover",
+                                    "Following (${boards.count { it.followed }})",
+                                ),
+                                if (following) 1 else 0,
+                                {
+                                    following =
+                                        it == 1
+                                },
+                            )
+                            Gap(12)
+                        }
                         if (onRandom != null) {
                             Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
                                 InlineAction(
@@ -135,9 +171,19 @@ fun BoardsScreen(
                 }
                 item(key = "boards-group") {
                     GroupedSection {
-                        boards.forEachIndexed { index, board ->
-                            BoardListRow(board = board, onClick = { onOpenBoard(board) })
-                            if (index < boards.lastIndex) GroupedDivider()
+                        if (visibleBoards.isEmpty()) {
+                            MetaLine("No boards match your selection", modifier = Modifier.padding(16.dp))
+                        }
+                        visibleBoards.forEachIndexed { index, board ->
+                            BoardListRow(
+                                board = board,
+                                onClick = { onOpenBoard(board) },
+                                onFollow =
+                                    onFollowBoard?.let { action ->
+                                        { checked -> action(board, checked) }
+                                    },
+                            )
+                            if (index < visibleBoards.lastIndex) GroupedDivider()
                         }
                     }
                 }
@@ -155,14 +201,9 @@ fun BoardsScreen(
 private fun BoardListRow(
     board: BoardTile,
     onClick: () -> Unit,
+    onFollow: ((Boolean) -> Unit)? = null,
 ) {
     val hue = boardHue(board.path)
-    val letter =
-        board.path
-            .trim('/')
-            .take(1)
-            .uppercase()
-            .ifEmpty { "?" }
     Row(
         modifier =
             Modifier
@@ -174,13 +215,13 @@ private fun BoardListRow(
         Box(
             modifier =
                 Modifier
-                    .size(36.dp)
+                    .size(46.dp)
                     .clip(RoundedCornerShape(NextRadius.control))
                     .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = letter,
+                text = board.path,
                 style = NextType.headline,
                 color = hue,
             )
@@ -189,7 +230,7 @@ private fun BoardListRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = board.path,
+                    text = board.title,
                     style = NextType.headline,
                     color = next.ink,
                     maxLines = 1,
@@ -211,7 +252,7 @@ private fun BoardListRow(
                 }
             }
             Text(
-                text = board.title,
+                text = if (board.followed) "Following" else "Tap to follow",
                 style = NextType.footnote,
                 color = next.muted,
                 maxLines = 1,
@@ -219,6 +260,7 @@ private fun BoardListRow(
             )
         }
         WidthSpacer(8)
+        if (onFollow != null) PlatformSwitch(board.followed, onFollow)
         Icon(
             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,

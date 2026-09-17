@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,10 +42,21 @@ internal fun FeedHeader(
     sizeValue: Float = GRID_MIN_CELL.value,
     onSizeChange: (Float) -> Unit = {},
     showSizeControl: Boolean = true,
+    headerContent: @Composable () -> Unit = {},
+    query: String = "",
+    onQueryChange: (String) -> Unit = {},
+    refreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
 ) {
     val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
+        Column(Modifier.padding(horizontal = 0.dp)) {
+            headerContent()
+            Gap(12)
+            SchematicSearch(query, onQueryChange, "Sift through your threads")
+            Gap(8)
+        }
         // Primary destinations live in DestinationPill; header keeps layout / sort only.
         FlowRow(
             modifier = Modifier.fillMaxWidth().selectableGroup().padding(horizontal = GUTTER - 4.dp),
@@ -54,8 +64,13 @@ internal fun FeedHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             InlineAction(
+                label = "List",
+                selected = layout == FeedLayout.LIST,
+                onClick = { onLayoutChange(FeedLayout.LIST) },
+            )
+            InlineAction(
                 label = stringResource(R.string.next_layout_grid),
-                selected = layout != FeedLayout.IMAGES,
+                selected = layout == FeedLayout.GRID,
                 onClick = { onLayoutChange(FeedLayout.GRID) },
             )
             InlineAction(
@@ -63,6 +78,11 @@ internal fun FeedHeader(
                 selected = layout == FeedLayout.IMAGES,
                 onClick = { onLayoutChange(FeedLayout.IMAGES) },
             )
+            if (refreshing) {
+                NextCircularProgress(modifier = Modifier.padding(12.dp))
+            } else {
+                InlineAction("Refresh", onClick = onRefresh)
+            }
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
             }
@@ -135,12 +155,13 @@ internal fun FeedGridCell(
             modifier
                 .padding(GRID_CELL_PADDING)
                 .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                .background(next.raised)
                 .nextClickable(
                     role = Role.Button,
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().aspectRatio(4f / 3f)
+        val tile = Modifier.fillMaxWidth().height(110.dp)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -177,11 +198,19 @@ internal fun FeedGridCell(
             letterSpacing = (-0.15).sp,
             fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
             color = if (row.read) next.muted else next.ink,
-            maxLines = 4,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
         Gap(6)
-        MetaLine(rowCounts(row), maxLines = 2)
+        if (row.excerpt.isNotBlank()) {
+            MetaLine(row.excerpt, maxLines = 2, modifier = Modifier.padding(horizontal = 8.dp))
+            Gap(6)
+        }
+        MetaLine(
+            "#${row.threadNumber} · ${rowCounts(row)}",
+            maxLines = 2,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
         Gap(12)
     }
 }
@@ -202,7 +231,7 @@ internal fun FeedImageCell(
     Box(
         modifier =
             Modifier
-                .padding(2.5.dp)
+                .padding(1.5.dp)
                 .clip(RoundedCornerShape(NextRadius.tight))
                 .nextClickable(
                     role = Role.Button,
@@ -214,7 +243,7 @@ internal fun FeedImageCell(
         val tile = Modifier.fillMaxWidth().height(tileHeight)
         if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
         Pill(
-            text = row.board,
+            text = "#${row.threadNumber.takeLast(4)}",
             tint = boardHue(row.board),
             modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
         )

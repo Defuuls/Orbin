@@ -13,6 +13,7 @@ import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PlatformTheme
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -60,6 +61,7 @@ class SettingsRepositoryImplTest {
         repository.setMediaFilter(MediaFilter.VIDEOS)
         repository.setFeedRefreshInterval(FeedRefreshInterval.FIFTEEN_MINUTES)
         repository.setThreadPresentation(ThreadPresentation.OVERLAY)
+        repository.setPlatformTheme(PlatformTheme.ANDROID)
         repository.setThemeMode(AppThemeMode.DARK)
         repository.setColorTheme(ColorTheme.TOMORROW_NIGHT)
         repository.setDynamicColor(false)
@@ -108,6 +110,7 @@ class SettingsRepositoryImplTest {
             deepMediaScan = true,
             mediaFilter = MediaFilter.VIDEOS,
             feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
+            platformTheme = PlatformTheme.ANDROID,
             themeMode = AppThemeMode.DARK,
             colorTheme = ColorTheme.TOMORROW_NIGHT,
             dynamicColor = false,

@@ -4,12 +4,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
@@ -26,13 +24,13 @@ class InterfaceSemanticsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the layout switcher exposes grid and images without list`() {
+    fun `the layout switcher exposes list grid and images`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
         }
         composeRule.onNodeWithText("Grid").assertIsSelected()
         composeRule.onNodeWithText("Images").assertIsNotSelected()
-        composeRule.onAllNodesWithText("List").assertCountEquals(0)
+        composeRule.onNodeWithText("List").assertIsNotSelected()
     }
 
     @Test
@@ -44,12 +42,12 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a legacy list layout request renders the readable grid`() {
+    fun `the list layout is a selectable reading density`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
         }
-        composeRule.onNodeWithText("Grid").assertIsSelected()
-        composeRule.onAllNodesWithText("List").assertCountEquals(0)
+        composeRule.onNodeWithText("List").assertIsSelected()
+        composeRule.onNodeWithText("Grid").assertIsNotSelected()
     }
 
     @Test

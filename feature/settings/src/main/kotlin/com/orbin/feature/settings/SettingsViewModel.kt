@@ -13,6 +13,7 @@ import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PlatformTheme
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -119,6 +120,8 @@ class SettingsViewModel
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
 
         fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
+
+        fun setPlatformTheme(theme: PlatformTheme) = update { repository.setPlatformTheme(theme) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 

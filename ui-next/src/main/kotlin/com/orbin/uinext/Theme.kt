@@ -91,6 +91,10 @@ internal val DarkPalette =
  */
 internal val AmoledPalette = DarkPalette.copy(amoled = true)
 
+enum class NextPlatform { IOS, ANDROID }
+
+val LocalNextPlatform = staticCompositionLocalOf { NextPlatform.IOS }
+
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
 /**
@@ -133,6 +137,7 @@ fun NextTheme(
     amoled: Boolean? = null,
     fontScale: Float? = null,
     palette: NextPalette? = null,
+    platform: NextPlatform? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
@@ -140,7 +145,7 @@ fun NextTheme(
     // Screens in this module wrap themselves in NextTheme with no args. When an outer shell
     // (MainActivity) already installed the palette + density, re-entering MaterialTheme for every
     // screen is pure nesting cost — skip and inherit.
-    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null
+    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null && platform == null
     if (inherited != null && noOverrides) {
         content()
         return
@@ -179,6 +184,7 @@ fun NextTheme(
         }
     val density = LocalDensity.current
     CompositionLocalProvider(
+        LocalNextPlatform provides (platform ?: LocalNextPlatform.current),
         LocalNext provides palette,
         LocalNextThemed provides true,
         LocalNextFontScale provides scale,
@@ -202,7 +208,18 @@ fun NextTheme(
         ) {
             // MaterialTheme installs a ripple LocalIndication; replace it with the soft Next
             // highlight so Feed / Boards / Settings rows never flash Material ink.
-            CompositionLocalProvider(LocalIndication provides NextHighlightIndication) {
+            CompositionLocalProvider(
+                LocalIndication provides
+                    (
+                        if (LocalNextPlatform.current ==
+                            NextPlatform.IOS
+                        ) {
+                            NextHighlightIndication
+                        } else {
+                            LocalIndication.current
+                        }
+                    ),
+            ) {
                 content()
             }
         }

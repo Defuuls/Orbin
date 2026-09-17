@@ -1,8 +1,11 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -31,7 +34,7 @@ fun FeedScreen(
     subtitle: String? = null,
     railDetail: String? = null,
     showRail: Boolean = true,
-    layout: FeedLayout = FeedLayout.GRID,
+    layout: FeedLayout = FeedLayout.LIST,
     onLayoutChange: (FeedLayout) -> Unit = {},
     sortLabel: String? = null,
     onSort: () -> Unit = {},
@@ -51,8 +54,14 @@ fun FeedScreen(
     showSizeControl: Boolean = false,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
+    headerContent: @Composable () -> Unit = {},
+    query: String = "",
+    onQueryChange: (String) -> Unit = {},
+    groupByBoard: Boolean = true,
+    refreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
 ) {
-    val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
+    val effectiveLayout = layout
     val gridState = rememberLazyGridState()
     var feedSize by rememberSaveable { mutableFloatStateOf(GRID_MIN_CELL.value) }
     val imageGridMinSize = if (showSizeControl) feedSize.dp else IMAGE_MIN_CELL
@@ -76,22 +85,8 @@ fun FeedScreen(
     LaunchedEffect(effectiveLayout, rows, withPreview, gridState) {
         snapshotFlow {
             val candidates =
-                when (effectiveLayout) {
-                    FeedLayout.IMAGES ->
-                        gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
-                            withPreview
-                                .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                                ?.takeIf { !it.muted }
-                                ?.id
-                        }
-
-                    else ->
-                        gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
-                            rows
-                                .getOrNull(item.index - FEED_CONTENT_INDEX_OFFSET)
-                                ?.takeIf { it.hasPreview && !it.muted }
-                                ?.id
-                        }
+                gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
+                    rows.firstOrNull { it.id == item.key && it.hasPreview && !it.muted }?.id
                 }
             candidates.take(MAX_FEED_AUTOPLAY_IDS).firstOrNull()
         }.distinctUntilChanged()
@@ -148,60 +143,95 @@ fun FeedScreen(
                     omittedWithoutPreview = omittedWithoutPreview,
                     sizeValue = feedSize,
                     onSizeChange = { feedSize = it.coerceIn(FEED_SIZE_MIN_DP, FEED_SIZE_MAX_DP) },
-                    showSizeControl = showSizeControl,
+                    showSizeControl = showSizeControl && layout != FeedLayout.LIST,
+                    headerContent = headerContent,
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    refreshing = refreshing,
+                    onRefresh = onRefresh,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
-            if (effectiveLayout == FeedLayout.IMAGES) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(imageGridMinSize),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding =
-                        gridPadding(
-                            bottomPad,
-                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                        ),
-                ) {
-                    fullWidthItem { header() }
-                    itemsIndexed(
-                        withPreview,
-                        key = { _, row -> row.id },
-                        contentType = { _, _ -> "feed-image-cell" },
-                    ) { index, row ->
-                        FeedImageCell(
-                            row,
-                            seed = index,
-                            onClick = onOpenRow,
-                            thumbnail = thumbnail,
-                            tileHeight = imageHeight,
-                        )
+            val visibleRows = if (effectiveLayout == FeedLayout.IMAGES) withPreview else rows
+            val groups =
+                if (groupByBoard) {
+                    visibleRows.groupBy { it.boardTitle to it.board }
+                } else {
+                    linkedMapOf(
+                        ("" to "") to visibleRows,
+                    )
+                }
+            LazyVerticalGrid(
+                columns =
+                    when (effectiveLayout) {
+                        FeedLayout.LIST -> GridCells.Fixed(1)
+                        FeedLayout.GRID -> if (showSizeControl) GridCells.Adaptive(feedSize.dp) else GridCells.Fixed(2)
+                        FeedLayout.IMAGES ->
+                            if (showSizeControl) {
+                                GridCells.Adaptive(
+                                    imageGridMinSize,
+                                )
+                            } else {
+                                GridCells.Fixed(3)
+                            }
+                    },
+                state = gridState,
+                modifier = insets,
+                contentPadding = gridPadding(bottomPad),
+            ) {
+                fullWidthItem { header() }
+                if (visibleRows.isEmpty()) {
+                    item(key = "feed-empty", span = { GridItemSpan(maxLineSpan) }) {
+                        Column(Modifier.padding(vertical = 24.dp)) {
+                            ScreenTitle(
+                                "Nothing here yet",
+                                subtitle = "Try a different search, or follow a few more boards.",
+                                size = 22,
+                            )
+                            onOpenBoards?.let { InlineAction("Explore boards", accent = true, onClick = it) }
+                        }
                     }
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(feedSize.dp),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding =
-                        gridPadding(
-                            bottomPad,
-                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                        ),
-                ) {
-                    fullWidthItem { header() }
-                    itemsIndexed(
-                        rows,
-                        key = { _, row -> row.id },
-                        contentType = { _, row -> if (row.hasPreview) "feed-grid-preview" else "feed-grid" },
-                    ) { index, row ->
-                        FeedGridCell(
-                            row,
-                            seed = index,
-                            onClick = onOpenRow,
-                            thumbnail = thumbnail,
-                            activityText = activityText,
-                        )
+                groups.forEach { (board, group) ->
+                    if (groupByBoard) {
+                        item(key = "board:${board.second}", span = { GridItemSpan(maxLineSpan) }) {
+                            FeedGroupHeading(board.first, board.second, group.size)
+                        }
+                    }
+                    itemsIndexed(group, key = {
+                        _,
+                        row,
+                        ->
+                        row.id
+                    }, contentType = { _, _ -> effectiveLayout.name }) { index, row ->
+                        when (effectiveLayout) {
+                            FeedLayout.LIST ->
+                                FeedListRow(
+                                    row,
+                                    index,
+                                    onOpenRow,
+                                    thumbnail,
+                                    activityText,
+                                    index == 0,
+                                    index == group.lastIndex,
+                                )
+                            FeedLayout.GRID ->
+                                FeedGridCell(
+                                    row,
+                                    index,
+                                    onOpenRow,
+                                    thumbnail,
+                                    activityText = activityText,
+                                )
+                            FeedLayout.IMAGES ->
+                                FeedImageCell(
+                                    row,
+                                    index,
+                                    onOpenRow,
+                                    thumbnail,
+                                    tileHeight = imageHeight,
+                                )
+                        }
                     }
                 }
             }
@@ -218,7 +248,6 @@ internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP
 internal const val FEED_SIZE_STEPS = MEDIA_SIZE_STEPS
 private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
-private const val FEED_CONTENT_INDEX_OFFSET = 1
 
 /** Matches media.video.MAX_FEED_AUTOPLAY_PLAYERS — keep feed ExoPlayer count at 0 or 1. */
 private const val MAX_FEED_AUTOPLAY_IDS = 1
