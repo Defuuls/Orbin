@@ -11,7 +11,7 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [137 — Banana](https://github.com/Defuuls/Orbin/releases/tag/v137-Banana)
+**Current release:** [138 — Cherry](https://github.com/Defuuls/Orbin/releases/tag/v138-Cherry)
 
 **What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
 
