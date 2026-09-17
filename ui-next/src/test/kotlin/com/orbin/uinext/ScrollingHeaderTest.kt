@@ -90,6 +90,27 @@ class ScrollingHeaderTest {
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
+    @Test
+    fun `the boards browse title scrolls away with the grid`() {
+        val boards =
+            List(ROW_COUNT) { index ->
+                BoardTile(
+                    id = "b$index",
+                    path = "/b$index/",
+                    title = if (index == ROW_COUNT - 1) LAST_BOARD_TITLE else "Board $index",
+                )
+            }
+        composeRule.setContent {
+            NextTheme { BoardsScreen(boards = boards, showRail = false) }
+        }
+
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
+
+        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
+    }
+
     private fun scrollToLastRow() = composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
 
     private fun rows() =
@@ -113,5 +134,6 @@ class ScrollingHeaderTest {
     private companion object {
         const val ROW_COUNT = 30
         const val LAST_SUBJECT = "The last thread in the list"
+        const val LAST_BOARD_TITLE = "The last board in the grid"
     }
 }

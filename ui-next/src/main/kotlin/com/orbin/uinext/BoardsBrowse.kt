@@ -113,6 +113,7 @@ fun BoardsScreen(
                     PaddingValues(
                         start = NextSpace.gutterTight,
                         end = NextSpace.gutterTight,
+                        top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
                         bottom = bottomPad.calculateBottomPadding(),
                     ),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

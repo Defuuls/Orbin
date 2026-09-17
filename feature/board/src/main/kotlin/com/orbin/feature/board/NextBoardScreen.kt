@@ -69,6 +69,8 @@ fun NextBoardScreen(
             MessageScreen(
                 title = board,
                 subtitle = stringResource(R.string.next_board_empty),
+                where = board,
+                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme

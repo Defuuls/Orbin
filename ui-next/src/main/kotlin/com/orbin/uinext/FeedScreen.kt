@@ -46,6 +46,7 @@ fun FeedScreen(
     onActivePreviewChanged: (String?) -> Unit = {},
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
     showSizeControl: Boolean = false,
     onOpenBoards: (() -> Unit)? = null,
@@ -122,6 +123,8 @@ fun FeedScreen(
                 gridState.firstVisibleItemScrollOffset > 64
         }
     }
+    LaunchedEffect(showCompactTitle) { onCompactTitleVisibleChange(showCompactTitle) }
+
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
             where = stringResource(R.string.next_feed_title).takeIf { showRail && !hasTabs },

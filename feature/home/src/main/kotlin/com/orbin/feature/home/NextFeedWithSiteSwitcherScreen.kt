@@ -1,5 +1,8 @@
 package com.orbin.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -15,6 +18,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +50,7 @@ fun NextFeedWithSiteSwitcherScreen(
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
+    var compactTitleVisible by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         NextFeedScreen(
@@ -54,6 +61,7 @@ fun NextFeedWithSiteSwitcherScreen(
             showRail = showRail,
             hideRailOnScroll = hideRailOnScroll,
             onChromeVisibleChange = onChromeVisibleChange,
+            onCompactTitleVisibleChange = { compactTitleVisible = it },
             scrollToTopRequest = scrollToTopRequest,
             refreshRequest = refreshRequest,
             filter = filter,
@@ -64,27 +72,33 @@ fun NextFeedWithSiteSwitcherScreen(
         )
 
         if (switcherViewModel.sites.size > 1) {
-            val shape = RoundedCornerShape(20.dp)
-            Row(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                        ).padding(top = 12.dp, end = 14.dp)
-                        .clip(shape)
-                        .background(next.raised)
-                        .border(1.dp, next.hairline, shape)
-                        .selectableGroup()
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(
+                visible = !compactTitleVisible,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                switcherViewModel.sites.forEach { site ->
-                    InlineAction(
-                        label = site.label,
-                        selected = site.id == activeProviderId,
-                        onClick = { switcherViewModel.selectSite(site.id) },
-                    )
+                val shape = RoundedCornerShape(20.dp)
+                Row(
+                    modifier =
+                        Modifier
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(top = 12.dp, end = 14.dp)
+                            .clip(shape)
+                            .background(next.raised)
+                            .border(1.dp, next.hairline, shape)
+                            .selectableGroup()
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    switcherViewModel.sites.forEach { site ->
+                        InlineAction(
+                            label = site.label,
+                            selected = site.id == activeProviderId,
+                            onClick = { switcherViewModel.selectSite(site.id) },
+                        )
+                    }
                 }
             }
         }
