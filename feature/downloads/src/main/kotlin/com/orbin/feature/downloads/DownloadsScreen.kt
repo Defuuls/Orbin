@@ -125,7 +125,6 @@ fun DownloadsScreen(
                 showClearDialog = false
             },
             onDismiss = { showClearDialog = false },
-            confirmLabel = stringResource(R.string.downloads_clear_action),
         )
     }
 }
