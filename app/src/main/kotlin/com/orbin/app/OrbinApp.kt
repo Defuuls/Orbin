@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -21,8 +22,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +31,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -51,6 +51,7 @@ import com.orbin.app.command.CommandTarget
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.core.model.ThreadPresentation
+import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
@@ -145,19 +146,17 @@ fun OrbinApp(
             ) {
                 OfflineBanner(modifier = Modifier.windowInsetsPadding(statusBarInset))
             }
-            Scaffold(
+            Box(
                 modifier =
                     Modifier
                         .weight(1f)
                         .then(if (isOnline) Modifier else Modifier.consumeWindowInsets(statusBarInset)),
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                // Each destination owns its insets via its own top bar / scaffold; applying the
-                // default insets here as well double-pads content with status/navigation-bar strips.
-                contentWindowInsets = WindowInsets(0),
-            ) { padding ->
+            ) {
+                // Each destination owns its insets via its own top bar / chrome; the root no longer
+                // uses Material Scaffold — NextSnackbarHost is the toast layer.
                 OrbinNavHost(
                     navController = navController,
-                    modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
+                    modifier = Modifier.fillMaxSize(),
                     startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     chromeHidesOnScroll = chromeHidesOnScroll,
                     twoPaneBoardDetail = twoPaneBoardDetail,
@@ -168,6 +167,10 @@ fun OrbinApp(
                     onOpenCommands = { commandsOpen = true },
                     feedFilter = feedFilter,
                     onClearFeedFilter = { feedFilter = "" },
+                )
+                NextSnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
         }

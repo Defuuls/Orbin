@@ -4,7 +4,8 @@ There are two layers, and which one applies depends on what you are building.
 
 `core:designsystem` is Jetpack Compose Material 3. Shared Material widgets and palette seeds still
 live here; reachable product surfaces no longer mount `OrbinTheme` / `MaterialOrbinTheme` as a
-shell. Everything below this line describes that Material layer.
+shell (`MaterialOrbinTheme` was removed after Next replaced nested Material chrome). Everything
+below this line describes the remaining Material token layer.
 
 `ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings, media
 wall, search, downloads, gallery, onboarding, and the startup chrome screens. It defines its own palette and type rather than reading `MaterialTheme`, because the visual
@@ -83,7 +84,7 @@ separators — not Material elevation theatre. `InlineAction` is how an action i
 with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
 away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
 
-**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` / `nextClickable` / `NextIconAction` (installed by `NextTheme`) — never a Material ripple. Linear progress uses thin `NextLinearProgress` tracks rather than Material bars.
+**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` / `nextClickable` / `NextIconAction` (installed by `NextTheme`) — never a Material ripple. Progress uses thin `NextLinearProgress` / `NextCircularProgress` rather than Material bars; density uses `NextSlider`; lists refresh with `NextPullToRefresh`; toasts use `NextSnackbarHost`.
 
 
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
@@ -95,8 +96,9 @@ screen inside a theme silently overwrote it.
 Inheritance is also how a reader's settings reach this module. The shell states them once at the
 top — `MainActivity` for the full client, `MinimalActivity` for Orbin Minimal — and the screens
 below say nothing. Nested no-arg `NextTheme` calls short-circuit so screens do not re-enter
-`MaterialTheme`. A few Material widgets (sliders, snackbars, text fields) still appear inside Next screens and
-read the Material colorScheme that `NextTheme` installs; there is no separate Material shell for
+`MaterialTheme`. Sliders, snackbars, and pull-to-refresh inside Next screens are Next controls
+(`NextSlider`, `NextSnackbarHost`, `NextPullToRefresh`); Material `Text` / `Icon` remain as type
+primitives under the colorScheme `NextTheme` installs. There is no separate Material shell for
 gallery or onboarding anymore. A screen here has no view model and cannot read a
 setting, for the same reason it takes rows rather than threads. Three settings arrive that way:
 
@@ -112,8 +114,8 @@ would compound it once per screen.
 
 Dynamic color and the ported imageboard skins deliberately do **not** arrive. This module's palette
 is the argument it makes, and recolouring it from the wallpaper would be the old interface wearing
-this one's layout. Those two still govern the Material surfaces around it — the gallery, the
-onboarding wizard, dialogs and snackbars.
+this one's layout. Those two still map into Next palettes at the shell; gallery, onboarding, dialogs, and snackbars
+draw through Next controls rather than a separate Material destination shell.
 
 Colours come from `next`, not `MaterialTheme`. `boardHue()` gives a board its colour; a merged feed
 is otherwise four grey characters per row. `placeholderArt()` stands in for a thumbnail that has

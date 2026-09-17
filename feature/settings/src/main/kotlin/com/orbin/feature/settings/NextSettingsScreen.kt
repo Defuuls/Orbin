@@ -5,8 +5,6 @@ package com.orbin.feature.settings
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.UpdateStatus
 import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextSnackbarHostState
+import com.orbin.uinext.NextSnackbarResult
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
@@ -51,7 +51,7 @@ private const val THREAD_SCROLL_ARROW_ID = "threadScrollArrow"
 fun NextSettingsScreen(
     onOpenCommands: () -> Unit,
     onRunSetup: () -> Unit,
-    snackbarHostState: SnackbarHostState,
+    snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
     focusId: String? = null,
     onOpenFeed: (() -> Unit)? = null,
@@ -135,7 +135,7 @@ fun NextSettingsScreen(
                 actionLabel = available?.let { "Open" },
                 withDismissAction = true,
             )
-        if (result == SnackbarResult.ActionPerformed && available != null) {
+        if (result == NextSnackbarResult.ActionPerformed && available != null) {
             SafeExternalLinks.open(context, available.url)
         }
     }

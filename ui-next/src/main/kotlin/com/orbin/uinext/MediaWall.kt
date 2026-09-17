@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -128,7 +127,7 @@ fun MediaWallScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 MetaLine(stringResource(R.string.next_media_size_small))
-                                Slider(
+                                NextSlider(
                                     value = imageCellSize,
                                     onValueChange = {
                                         imageCellSize =

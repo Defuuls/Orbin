@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +34,7 @@ import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 
-/** Centered quiet spinner for in-pane loading (Search / Onboarding boards). */
+/** Centered quiet spinner for in-pane loading (Search / Onboarding boards) — Next arc, not M3. */
 @Composable
 fun NextLoading(modifier: Modifier = Modifier) {
     val label = stringResource(R.string.next_status_loading)
@@ -44,12 +42,7 @@ fun NextLoading(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize().semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(28.dp),
-            color = next.accent,
-            trackColor = next.hairline,
-            strokeWidth = 2.5.dp,
-        )
+        NextCircularProgress()
     }
 }
 

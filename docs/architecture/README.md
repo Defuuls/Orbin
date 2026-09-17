@@ -142,9 +142,10 @@ source-boundary rules into merge gates instead of review conventions.
 
 `MainActivity` installs `NextTheme` once at the root so every Next screen inherits palette and
 density without paying a second `MaterialTheme`. Nested no-arg `NextTheme` calls short-circuit.
-Reachable destinations draw through `NextTheme`. `MaterialOrbinTheme` remains available for any
-nested Material widget that still needs a full Material colorScheme, but gallery and onboarding no
-longer wrap themselves in a separate Material shell.
+Reachable destinations draw through `NextTheme`. Nested Material sliders, snackbars, and
+pull-to-refresh were replaced with Next controls (`NextSlider`, `NextSnackbarHost`,
+`NextPullToRefresh`); the former `MaterialOrbinTheme` adapter was removed. Gallery and onboarding
+no longer wrap themselves in a separate Material shell.
 
 ### Lazy beyond-bounds prefetch
 

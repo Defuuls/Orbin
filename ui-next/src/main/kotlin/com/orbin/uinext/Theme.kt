@@ -124,8 +124,8 @@ val next: NextPalette
  * What is deliberately not a parameter is dynamic color and the ported imageboard skins. This
  * module's palette is the argument it makes — calm neutrals, one blue accent, a colour per
  * board — and recolouring it from the wallpaper would be the interface it replaced wearing this
- * one's layout. Those two settings still govern the Material surfaces around it: the gallery, the
- * onboarding wizard, dialogs and snackbars.
+ * one's layout. Dynamic color / skins still map at the app shell into Next palettes; gallery,
+ * onboarding, dialogs, and snackbars draw through Next controls under this theme.
  */
 @Composable
 fun NextTheme(

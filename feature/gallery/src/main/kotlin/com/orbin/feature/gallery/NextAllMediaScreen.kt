@@ -2,8 +2,6 @@ package com.orbin.feature.gallery
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -17,6 +15,7 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 
 /**
@@ -26,7 +25,6 @@ import com.orbin.uinext.NextTheme
  * something is happening: a determinate bar that never leaves is decoration. Failed boards keep
  * their line, because a wall quietly missing a board's files is worse than one that says so.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextAllMediaScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
@@ -63,7 +61,6 @@ fun NextAllMediaScreen(
  * deep scan, complete, partial and empty — can each be composed against fixed state in a screenshot
  * test. The same split the previous wall used, and for the same reason.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextAllMediaContent(
     uiState: AllMediaUiState,
@@ -129,7 +126,7 @@ fun NextAllMediaContent(
             )
             return@NextTheme
         }
-        PullToRefreshBox(
+        NextPullToRefresh(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
             modifier = modifier.fillMaxSize(),
