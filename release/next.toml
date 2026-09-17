@@ -1,27 +1,26 @@
-# Orbin 135 — Rhinovirus
+# Orbin 136 — Apple
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 135
-codename     = "Rhinovirus"
-version_code = 153
+number       = 136
+codename     = "Apple"
+version_code = 154
 
 summary = [
-  "bump Orbin to 135-Rhinovirus / versionCode 153",
-  "ship the Apple-inspired Orbin Next visual language across primary screens, chrome, and remaining Material shells",
+  "bump Orbin to 136-Apple / versionCode 154",
+  "finish Apple Next polish: Feed/Boards motion, full-app consistency, Material leftovers, VideoPlayer",
 ]
 
 [changelog]
-Added = [
-  "Introduced an Apple-inspired Orbin Next visual language: calm neutrals with one blue accent, OLED-black dark surfaces, large titles, generous spacing, and continuous large radii (#488).",
-  "Added a floating DestinationPill for Feed / Boards / Media / Settings, with Command via a refined Go sheet, and a new Boards destination screen (#488).",
-  "Added Next dialog, empty/loading/error, and form primitives (NextConfirmDialog, NextLoading / NextEmpty / NextError, NextTextField / NextToggle / NextSelect) for consistent chrome (#490).",
+Fixed = [
+  "Cleared Boards compact-title overlap and restored Feed DestinationPill on loading / error / empty states (#493).",
 ]
 
 Changed = [
-  "Restyled primary Next screens (Feed, Boards, All Media, Thread, Settings) and Command onto the new design tokens and surfaces (#488).",
-  "Adopted compact collapsing title bars on primary Next screens so chrome stays clear of scrolling content (#489).",
-  "Fixed Settings text-row Done / IME commit on short API 31 AVDs so edits save reliably (#489).",
-  "Migrated Search, Downloads confirm, Onboarding, Safe Mode, Downgrade gate, App lock, and remaining Material shells onto Next controls and status panes (#490).",
+  "Softened Feed/Boards motion and presentation toward Apple-like transitions and chrome (#494).",
+  "Extended Apple Next consistency across remaining destinations beyond Feed/Boards (#495).",
+  "Switched forward release codenames to the fruit pool from v136 (#496).",
+  "Replaced deferred Material leftovers (Snackbar/Scaffold, Slider, PullToRefresh, spinner, Modern* shells) with Next controls (#497).",
+  "Migrated VideoPlayer chrome from Material3 to Next (#498).",
 ]
