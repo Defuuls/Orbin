@@ -1,10 +1,9 @@
 package com.orbin.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,13 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.uinext.InlineAction
-import com.orbin.uinext.next
+import com.orbin.uinext.nextFrosted
+import com.orbin.uinext.tokens.NextMotion
+import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.NextSpace
 
 @Composable
 fun NextFeedWithSiteSwitcherScreen(
@@ -74,20 +75,18 @@ fun NextFeedWithSiteSwitcherScreen(
         if (switcherViewModel.sites.size > 1) {
             AnimatedVisibility(
                 visible = !compactTitleVisible,
-                enter = fadeIn(),
-                exit = fadeOut(),
+                enter = fadeIn(tween(NextMotion.CHROME_MS)),
+                exit = fadeOut(tween(NextMotion.CHROME_MS)),
                 modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                val shape = RoundedCornerShape(20.dp)
+                val shape = RoundedCornerShape(NextRadius.pill)
                 Row(
                     modifier =
                         Modifier
                             .windowInsetsPadding(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                            ).padding(top = 12.dp, end = 14.dp)
-                            .clip(shape)
-                            .background(next.raised)
-                            .border(1.dp, next.hairline, shape)
+                            ).padding(top = 12.dp, end = NextSpace.chromeInset)
+                            .nextFrosted(shape)
                             .selectableGroup()
                             .padding(horizontal = 4.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,

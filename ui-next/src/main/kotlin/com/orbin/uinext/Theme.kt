@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -198,8 +199,13 @@ fun NextTheme(
             colorScheme = scheme,
             typography = orbinTypography(1f),
             shapes = OrbinShapes,
-            content = content,
-        )
+        ) {
+            // MaterialTheme installs a ripple LocalIndication; replace it with the soft Next
+            // highlight so Feed / Boards / Settings rows never flash Material ink.
+            CompositionLocalProvider(LocalIndication provides NextHighlightIndication) {
+                content()
+            }
+        }
     }
 }
 

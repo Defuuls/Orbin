@@ -1,20 +1,20 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,15 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
@@ -46,8 +42,8 @@ data class BoardTile(
 )
 
 /**
- * Primary Boards destination: airy grid of soft tiles on the grouped ground, with DestinationPill
- * chrome when sibling destinations are wired.
+ * Primary Boards destination: inset grouped list on the grouped ground (iOS Settings / Files
+ * rhythm), with DestinationPill chrome when sibling destinations are wired.
  */
 @Composable
 fun BoardsScreen(
@@ -64,10 +60,10 @@ fun BoardsScreen(
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
-    val gridState = rememberLazyGridState()
+    val listState = rememberLazyListState()
     val railVisible =
         if (hideRailOnScroll) {
-            scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
+            scrollingUp({ listState.firstVisibleItemIndex }, { listState.firstVisibleItemScrollOffset })
         } else {
             true
         }
@@ -91,8 +87,8 @@ fun BoardsScreen(
     val boardsTitle = stringResource(R.string.next_launchpad_boards)
     val showCompactTitle by remember {
         derivedStateOf {
-            gridState.firstVisibleItemIndex > 0 ||
-                gridState.firstVisibleItemScrollOffset > 64
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 64
         }
     }
 
@@ -105,21 +101,16 @@ fun BoardsScreen(
             destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(158.dp),
-                state = gridState,
+            LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize().contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        start = NextSpace.gutterTight,
-                        end = NextSpace.gutterTight,
                         top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                        bottom = bottomPad.calculateBottomPadding(),
+                        bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap,
                     ),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                fullWidthItem {
+                item(key = "boards-title") {
                     Column {
                         ScreenTitle(
                             text = stringResource(R.string.next_launchpad_boards),
@@ -142,8 +133,13 @@ fun BoardsScreen(
                         }
                     }
                 }
-                items(boards, key = { it.id }) { board ->
-                    BoardTileCard(board = board, onClick = { onOpenBoard(board) })
+                item(key = "boards-group") {
+                    GroupedSection {
+                        boards.forEachIndexed { index, board ->
+                            BoardListRow(board = board, onClick = { onOpenBoard(board) })
+                            if (index < boards.lastIndex) GroupedDivider()
+                        }
+                    }
                 }
             }
         }
@@ -156,77 +152,78 @@ fun BoardsScreen(
 }
 
 @Composable
-private fun BoardTileCard(
+private fun BoardListRow(
     board: BoardTile,
     onClick: () -> Unit,
 ) {
     val hue = boardHue(board.path)
-    Box(
+    val letter =
+        board.path
+            .trim('/')
+            .take(1)
+            .uppercase()
+            .ifEmpty { "?" }
+    Row(
         modifier =
             Modifier
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(NextRadius.card))
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            hue.copy(alpha = if (next.dark) 0.55f else 0.85f),
-                            hue.copy(alpha = if (next.dark) 0.28f else 0.55f),
-                        ),
-                    ),
-                ).clickable(role = Role.Button, onClick = onClick),
+                .fillMaxWidth()
+                .nextClickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text =
-                board.path
-                    .trim('/')
-                    .take(1)
-                    .uppercase()
-                    .ifEmpty { "?" },
-            color = Color.White.copy(alpha = 0.92f),
-            fontSize = 52.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-1).sp,
-            modifier = Modifier.align(Alignment.Center),
-        )
-        if (board.nsfw) {
-            Text(
-                text = stringResource(R.string.next_boards_nsfw),
-                style = NextType.caption2,
-                color = Color.White,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(10.dp)
-                        .clip(RoundedCornerShape(NextRadius.tight))
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
-            )
-        }
-        Column(
+        Box(
             modifier =
                 Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
-                        ),
-                    ).padding(horizontal = 12.dp, vertical = 10.dp),
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(NextRadius.control))
+                    .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = board.path,
+                text = letter,
                 style = NextType.headline,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                color = hue,
             )
+        }
+        WidthSpacer(12)
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = board.path,
+                    style = NextType.headline,
+                    color = next.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (board.nsfw) {
+                    WidthSpacer(8)
+                    Text(
+                        text = stringResource(R.string.next_boards_nsfw),
+                        style = NextType.caption2,
+                        color = next.muted,
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(NextRadius.tight))
+                                .background(next.ink.copy(alpha = if (next.dark) 0.14f else 0.06f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
             Text(
                 text = board.title,
                 style = NextType.footnote,
-                color = Color.White.copy(alpha = 0.85f),
+                color = next.muted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        WidthSpacer(8)
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = next.faint,
+            modifier = Modifier.size(22.dp),
+        )
     }
 }

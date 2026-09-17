@@ -1,11 +1,5 @@
 package com.orbin.app.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,8 +12,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,8 +29,6 @@ import com.orbin.feature.search.SearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.NextChromeHost
-
-private const val TRANSITION_MS = 300
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
@@ -66,34 +56,10 @@ fun OrbinNavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier,
-        enterTransition = {
-            if (targetState.destination.slidesOver(threadPresentation)) {
-                slideInHorizontally(tween(TRANSITION_MS)) { width -> width }
-            } else {
-                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
-            }
-        },
-        exitTransition = {
-            if (targetState.destination.slidesOver(threadPresentation)) {
-                ExitTransition.None
-            } else {
-                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(TRANSITION_MS))
-            }
-        },
-        popEnterTransition = {
-            if (initialState.destination.slidesOver(threadPresentation)) {
-                EnterTransition.None
-            } else {
-                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
-            }
-        },
-        popExitTransition = {
-            if (initialState.destination.slidesOver(threadPresentation)) {
-                slideOutHorizontally(tween(TRANSITION_MS)) { width -> width }
-            } else {
-                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS))
-            }
-        },
+        enterTransition = { nextEnter(threadPresentation) },
+        exitTransition = { nextExit(threadPresentation) },
+        popEnterTransition = { nextPopEnter(threadPresentation) },
+        popExitTransition = { nextPopExit(threadPresentation) },
     ) {
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
@@ -276,10 +242,6 @@ fun OrbinNavHost(
         }
     }
 }
-
-private fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
-    hasRoute(Route.Settings::class) ||
-        (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))
 
 internal val threadRouteSaver =
     listSaver<Route.Thread?, Any>(
