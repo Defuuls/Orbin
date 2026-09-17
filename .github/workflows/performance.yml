@@ -68,7 +68,13 @@ jobs:
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew :benchmark:connectedCheck -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,DEBUGGABLE
+          # The benchmark target is deliberately a non-minified release build for repeatable CI
+          # measurements. It is profileable, but does not carry the production profileable-by-shell
+          # manifest flag. The baseline-profile generator is hardware-only and runs separately.
+          script: >-
+            ./gradlew :benchmark:connectedCheck
+            -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,DEBUGGABLE,NOT-PROFILEABLE
+            -Pandroid.testInstrumentationRunnerArguments.notClass=com.orbin.benchmark.BaselineProfileGenerator
       - name: Upload benchmark reports
         if: always()
         uses: actions/upload-artifact@v7
