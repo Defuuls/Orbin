@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [138-Cherry] - 2026-09-17
+
+### Changed
+- Made ui-next the authoritative iOS visual layer so legacy imageboard themes no longer override app chrome (#505).
+- Kept legacy theme light/dark intent while preserving the explicit Android platform-theme option (#505).
+- Stabilized hosted CI macrobenchmarks by gating deterministic cold and warm startup measurements (#505).
+
+
 ## [137-Banana] - 2026-09-17
 
 ### Added
@@ -2249,7 +2257,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v137-Banana...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...HEAD
+[138-Cherry]: https://github.com/Defuuls/Orbin/compare/v137-Banana...v138-Cherry
 [137-Banana]: https://github.com/Defuuls/Orbin/compare/v136-Apple...v137-Banana
 [136-Apple]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...v136-Apple
 [135-Rhinovirus]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...v135-Rhinovirus
