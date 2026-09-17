@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [137-Banana] - 2026-09-17
+
+### Added
+- Added list, grid, and photo feed layouts with search, refresh, grouped boards, and sorting (#502).
+- Added searchable board discovery and following controls (#502).
+
+### Changed
+- Aligned cards, typography, spacing, navigation motion, settings, threads, and controls with the new design (#502).
+- Added a saved iOS/Android platform theme choice with distinct visual controls (#502).
+
+
 ## [136-Apple] - 2026-09-17
 
 ### Fixed
@@ -2238,7 +2249,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v136-Apple...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v137-Banana...HEAD
+[137-Banana]: https://github.com/Defuuls/Orbin/compare/v136-Apple...v137-Banana
 [136-Apple]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...v136-Apple
 [135-Rhinovirus]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...v135-Rhinovirus
 [134-Rotavirus]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...v134-Rotavirus
