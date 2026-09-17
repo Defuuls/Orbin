@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":domain"))
     implementation(project(":network"))
+    // VideoPlayer chrome uses NextSlider / Next progress / NextIconAction / InlineAction.
+    implementation(project(":ui-next"))
 
     implementation(libs.androidx.core.ktx)
     // Named directly rather than leaned on transitively: this module builds requests itself,

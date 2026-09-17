@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -23,16 +26,8 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -69,6 +65,14 @@ import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
 import com.orbin.media.di.VideoMediaDataSource
 import com.orbin.network.interceptor.RetryAfterTracker
+import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextCircularProgress
+import com.orbin.uinext.NextIconAction
+import com.orbin.uinext.NextSlider
+import com.orbin.uinext.next
+import com.orbin.uinext.nextClickable
+import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.NextType
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -274,21 +278,14 @@ fun VideoPlayer(
                 playerView.useController = false
             },
         )
-        LinearProgressIndicator(
-            progress = { bufferedProgress.coerceAtLeast(progress) },
+        VideoPassiveProgress(
+            progress = progress,
+            bufferedProgress = bufferedProgress,
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-            color = Color.White.copy(alpha = PASSIVE_PROGRESS_ALPHA),
-            trackColor = Color.White.copy(alpha = PASSIVE_PROGRESS_TRACK_ALPHA),
-        )
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = Color.Transparent,
         )
         if (isBuffering) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                NextCircularProgress()
             }
         }
         if (playbackError != null) {
@@ -309,12 +306,14 @@ fun VideoPlayer(
                                 playbackError.orEmpty()
                             },
                         color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = NextType.body,
                         textAlign = TextAlign.Center,
                     )
-                    Button(onClick = { SafeExternalLinks.open(context, url) }) {
-                        Text(stringResource(R.string.media_open_in_browser))
-                    }
+                    InlineAction(
+                        label = stringResource(R.string.media_open_in_browser),
+                        accent = true,
+                        onClick = { SafeExternalLinks.open(context, url) },
+                    )
                 }
             }
         } else if (controlsVisible) {
@@ -426,13 +425,22 @@ private fun VideoControls(
         modifier = modifier.background(Color.Black.copy(alpha = CONTROLS_OVERLAY_ALPHA)),
         contentAlignment = Alignment.Center,
     ) {
-        FilledTonalIconButton(
-            onClick = onPlayPause,
-            modifier = Modifier.size(72.dp),
+        Box(
+            modifier =
+                Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(next.raised.copy(alpha = PLAY_BUTTON_FILL_ALPHA))
+                    .nextClickable(
+                        onClickLabel = if (isPlaying) "Pause" else "Play",
+                        onClick = onPlayPause,
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = if (isPlaying) "Pause" else "Play",
+                tint = next.ink,
                 modifier = Modifier.size(40.dp),
             )
         }
@@ -444,9 +452,10 @@ private fun VideoControls(
                     .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Slider(
+            NextSlider(
                 value = progress,
                 onValueChange = onSeek,
+                valueRange = 0f..1f,
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(
@@ -457,43 +466,70 @@ private fun VideoControls(
                 Text(
                     text = timestampText,
                     color = Color.White,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = NextType.footnote,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
+                    NextIconAction(
+                        imageVector =
+                            if (isMuted) {
+                                Icons.AutoMirrored.Filled.VolumeOff
+                            } else {
+                                Icons.AutoMirrored.Filled.VolumeUp
+                            },
+                        contentDescription = if (isMuted) "Unmute" else "Mute",
                         onClick = onMuteToggle,
-                        modifier = Modifier.widthIn(min = 48.dp),
-                    ) {
-                        Icon(
-                            imageVector =
-                                if (isMuted) {
-                                    Icons.AutoMirrored.Filled.VolumeOff
-                                } else {
-                                    Icons.AutoMirrored.Filled.VolumeUp
-                                },
-                            contentDescription = if (isMuted) "Unmute" else "Mute",
-                            tint = Color.White,
-                        )
-                    }
-                    TextButton(onClick = onLoopToggle) {
-                        Text(
-                            text = if (isLooping) "Loop" else "Once",
-                            color = if (isLooping) MaterialTheme.colorScheme.primary else Color.White,
-                        )
-                    }
-                    IconButton(
+                        tint = Color.White,
+                    )
+                    InlineAction(
+                        label = if (isLooping) "Loop" else "Once",
+                        accent = isLooping,
+                        onClick = onLoopToggle,
+                    )
+                    NextIconAction(
+                        imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
+                        contentDescription = if (isFullscreen) "Exit fullscreen" else "Enter fullscreen",
                         onClick = onFullscreenToggle,
-                        modifier = Modifier.widthIn(min = 48.dp),
-                    ) {
-                        Icon(
-                            imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
-                            contentDescription = if (isFullscreen) "Exit fullscreen" else "Enter fullscreen",
-                            tint = Color.White,
-                        )
-                    }
+                        tint = Color.White,
+                    )
                 }
             }
         }
+    }
+}
+
+/**
+ * Always-on bottom scrub track — Next hairline language (3dp pill) with a white buffered fill and
+ * accent played fill so it stays readable over video without Material LinearProgressIndicator.
+ */
+@Composable
+private fun VideoPassiveProgress(
+    progress: Float,
+    bufferedProgress: Float,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(NextRadius.pill)
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(PASSIVE_PROGRESS_HEIGHT)
+                .clip(shape)
+                .background(Color.White.copy(alpha = PASSIVE_PROGRESS_TRACK_ALPHA)),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(bufferedProgress.coerceAtLeast(progress).coerceIn(0f, 1f))
+                    .background(Color.White.copy(alpha = PASSIVE_PROGRESS_ALPHA)),
+        )
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .background(next.accent),
+        )
     }
 }
 
@@ -579,6 +615,8 @@ private const val ERROR_OVERLAY_ALPHA = 0.68f
 private const val CONTROLS_OVERLAY_ALPHA = 0.38f
 private const val PASSIVE_PROGRESS_ALPHA = 0.65f
 private const val PASSIVE_PROGRESS_TRACK_ALPHA = 0.22f
+private const val PLAY_BUTTON_FILL_ALPHA = 0.92f
+private val PASSIVE_PROGRESS_HEIGHT = 3.dp
 private const val PERCENT_DIVISOR = 100f
 private const val PROGRESS_UPDATE_MS = 250L
 private const val CONTROLS_AUTO_HIDE_MS = 2_500L
