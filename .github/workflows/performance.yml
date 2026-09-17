@@ -66,7 +66,10 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          # Emulator 37's gfxstream/SwiftShader path intermittently invalidates color buffers
+          # during Compose-heavy macrobenchmarks on hosted Linux runners. Force the stable
+          # software GLES path instead and disable snapshots so every run starts cleanly.
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           # The benchmark target is deliberately a non-minified release build for repeatable CI
           # measurements. It is profileable, but does not carry the production profileable-by-shell
