@@ -48,7 +48,18 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Seed debug signing key
-        run: ./gradlew :app:assembleDebug
+        run: |
+          mkdir -p "$HOME/.config/.android"
+          keytool -genkeypair -noprompt \
+            -keystore "$HOME/.config/.android/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000
+          ./gradlew :app:assembleDebug
       - name: Run macrobenchmarks
         uses: reactivecircus/android-emulator-runner@v2
         with:
