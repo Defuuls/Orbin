@@ -1,26 +1,24 @@
-# Orbin 136 — Apple
+# Orbin 137 — Banana
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 136
-codename     = "Apple"
-version_code = 154
+number       = 137
+codename     = "Banana"
+version_code = 155
 
 summary = [
-  "bump Orbin to 136-Apple / versionCode 154",
-  "finish Apple Next polish: Feed/Boards motion, full-app consistency, Material leftovers, VideoPlayer",
+  "bump Orbin to 137-Banana / versionCode 155",
+  "ship the iOS-inspired design across feeds, boards, settings, and threads",
 ]
 
 [changelog]
-Fixed = [
-  "Cleared Boards compact-title overlap and restored Feed DestinationPill on loading / error / empty states (#493).",
+Added = [
+  "Added list, grid, and photo feed layouts with search, refresh, grouped boards, and sorting (#502).",
+  "Added searchable board discovery and following controls (#502).",
 ]
 
 Changed = [
-  "Softened Feed/Boards motion and presentation toward Apple-like transitions and chrome (#494).",
-  "Extended Apple Next consistency across remaining destinations beyond Feed/Boards (#495).",
-  "Switched forward release codenames to the fruit pool from v136 (#496).",
-  "Replaced deferred Material leftovers (Snackbar/Scaffold, Slider, PullToRefresh, spinner, Modern* shells) with Next controls (#497).",
-  "Migrated VideoPlayer chrome from Material3 to Next (#498).",
+  "Aligned cards, typography, spacing, navigation motion, settings, threads, and controls with the new design (#502).",
+  "Added a saved iOS/Android platform theme choice with distinct visual controls (#502).",
 ]
