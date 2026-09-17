@@ -1,8 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,18 +89,12 @@ private fun DestructiveConfirm(
 ) {
     val red = if (next.dark) Color(0xFFFF453A) else Color(0xFFFF3B30)
     val shape = RoundedCornerShape(NextRadius.control)
-    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier =
             Modifier
                 .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
                 .clip(shape)
-                .clickable(
-                    role = Role.Button,
-                    indication = null,
-                    interactionSource = interaction,
-                    onClick = onClick,
-                ),
+                .nextClickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

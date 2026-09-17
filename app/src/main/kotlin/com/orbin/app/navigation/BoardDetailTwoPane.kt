@@ -1,12 +1,13 @@
 package com.orbin.app.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.MessageScreen
@@ -75,13 +77,25 @@ fun BoardDetailTwoPane(
             )
         }
 
-        VerticalDivider(color = next.hairline)
+        Box(
+            modifier =
+                Modifier
+                    .width(0.5.dp)
+                    .fillMaxHeight()
+                    .background(next.hairline),
+        )
 
         Box(modifier = Modifier.weight(DETAIL_PANE_WEIGHT).fillMaxHeight()) {
+            // Soft Next push inside the detail pane (empty ↔ thread), not Material defaults.
+            val presentation = ThreadPresentation.PAGE
             NavHost(
                 navController = detailNavController,
                 startDestination = DetailPaneEmpty,
                 modifier = Modifier.fillMaxSize(),
+                enterTransition = { nextEnter(presentation) },
+                exitTransition = { nextExit(presentation) },
+                popEnterTransition = { nextPopEnter(presentation) },
+                popExitTransition = { nextPopExit(presentation) },
             ) {
                 composable<DetailPaneEmpty> {
                     NextTheme {

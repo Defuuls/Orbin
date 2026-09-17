@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -192,7 +191,7 @@ fun ThreadScreen(
                                             .weight(1f)
                                             .padding(2.5.dp)
                                             .clip(RoundedCornerShape(14.dp))
-                                            .clickable { onOpenFile(cell) },
+                                            .nextClickable(onClick = { onOpenFile(cell) }),
                                 ) {
                                     val shape = Modifier.fillMaxWidth().aspectRatio(1f)
                                     if (fileTile != null) fileTile(cell, shape) else MediaTile(modifier = shape)
@@ -266,7 +265,7 @@ private fun PostView(
             Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .clickable { onClick(post) },
+                .nextClickable(onClick = { onClick(post) }),
     ) {
         repeat(post.depth.coerceAtMost(MAX_REPLY_DEPTH)) {
             Box(
@@ -298,7 +297,7 @@ private fun PostView(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .clickable(
+                        .nextClickable(
                             onClickLabel = if (collapsed) expandLabel else collapseLabel,
                             onClick = { onToggleCollapse(post) },
                         ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },

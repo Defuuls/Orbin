@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +37,7 @@ import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MetaLine
 import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
@@ -176,20 +176,10 @@ private fun DownloadProgress(record: DownloadRecord) {
             },
         )
         if (record.status in ACTIVE_DOWNLOAD_STATUSES) {
-            if (fraction != null) {
-                LinearProgressIndicator(
-                    progress = { fraction },
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                    color = next.accent,
-                    trackColor = next.hairline,
-                )
-            } else {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                    color = next.accent,
-                    trackColor = next.hairline,
-                )
-            }
+            NextLinearProgress(
+                progress = fraction,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
     }
 }

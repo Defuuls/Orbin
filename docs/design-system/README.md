@@ -83,7 +83,7 @@ separators — not Material elevation theatre. `InlineAction` is how an action i
 with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
 away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
 
-**Motion is Next, not Material.** Hierarchical Feed/Board→Thread pushes use a soft horizontal slide + fade with parallax (`NextMotion`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` (installed by `NextTheme`) — never a Material ripple.
+**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` / `nextClickable` / `NextIconAction` (installed by `NextTheme`) — never a Material ripple. Linear progress uses thin `NextLinearProgress` tracks rather than Material bars.
 
 
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly

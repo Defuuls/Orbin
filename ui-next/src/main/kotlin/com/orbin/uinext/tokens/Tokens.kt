@@ -1,5 +1,7 @@
 package com.orbin.uinext.tokens
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -207,4 +209,7 @@ object NextMotion {
 
     /** Subtle horizontal nudge when swapping primary tabs. */
     const val TAB_NUDGE = 0.06f
+
+    /** iOS navigation-style ease — soft settle, no Material linear snap. */
+    val Ease: Easing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
 }

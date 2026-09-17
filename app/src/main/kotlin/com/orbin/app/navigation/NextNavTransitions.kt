@@ -3,7 +3,6 @@ package com.orbin.app.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,19 +15,19 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.tokens.NextMotion
 
-/** iOS navigation-style ease — soft settle, no Material linear snap. */
-internal val NextNavEasing = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+/** @see NextMotion.Ease */
+internal val NextNavEasing = NextMotion.Ease
 
 private fun offsetSpec(push: Boolean) =
     tween<IntOffset>(
         durationMillis = if (push) NextMotion.PUSH_MS else NextMotion.TAB_MS,
-        easing = NextNavEasing,
+        easing = NextMotion.Ease,
     )
 
 private fun fadeSpec(push: Boolean) =
     tween<Float>(
         durationMillis = if (push) NextMotion.PUSH_MS else NextMotion.TAB_MS,
-        easing = NextNavEasing,
+        easing = NextMotion.Ease,
     )
 
 /**

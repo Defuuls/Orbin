@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -184,12 +183,11 @@ fun MediaWallScreen(
                             Modifier
                                 .padding(2.5.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .clickable(
+                                .nextClickable(
                                     role = Role.Button,
                                     onClickLabel = stringResource(R.string.next_open_file),
-                                ) {
-                                    onOpen(cell)
-                                }.semantics { contentDescription = description },
+                                    onClick = { onOpen(cell) },
+                                ).semantics { contentDescription = description },
                         contentAlignment = Alignment.BottomStart,
                     ) {
                         val shape = Modifier.fillMaxWidth().height(imageHeight)
