@@ -45,6 +45,7 @@ import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -62,6 +63,7 @@ fun NextFeedScreen(
     showRail: Boolean = true,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
     refreshRequest: Int = 0,
     filter: String = "",
@@ -93,13 +95,25 @@ fun NextFeedScreen(
             }
         }
 
+    // Match FeedScreen: a non-null settings action opts into DestinationPill chrome.
+    val onDestination: ((NextDestination) -> Unit) = { dest ->
+        when (dest) {
+            NextDestination.FEED -> Unit
+            NextDestination.BOARDS -> onOpenBoards?.invoke()
+            NextDestination.MEDIA -> onOpenMedia?.invoke()
+            NextDestination.SETTINGS -> onOpenSettings()
+        }
+    }
+
     NextTheme {
         when (val state = uiState) {
             is SubscribedFeedUiState.Loading ->
                 MessageScreen(
                     title = stringResource(R.string.next_feed_title),
                     subtitle = stringResource(R.string.next_feed_loading),
-                    where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                    where = stringResource(R.string.next_feed_title).takeIf { !showRail },
+                    destination = NextDestination.FEED.takeIf { showRail },
+                    onDestination = onDestination.takeIf { showRail },
                     action = railAction,
                     onSearch = onOpenCommands,
                     modifier = modifier,
@@ -111,7 +125,9 @@ fun NextFeedScreen(
                     subtitle = state.message,
                     actionLabel = stringResource(R.string.next_feed_try_again),
                     onAction = viewModel::refresh,
-                    where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                    where = stringResource(R.string.next_feed_title).takeIf { !showRail },
+                    destination = NextDestination.FEED.takeIf { showRail },
+                    onDestination = onDestination.takeIf { showRail },
                     action = railAction,
                     onSearch = onOpenCommands,
                     modifier = modifier,
@@ -152,7 +168,9 @@ fun NextFeedScreen(
                     MessageScreen(
                         title = stringResource(R.string.next_feed_title),
                         subtitle = stringResource(R.string.next_feed_loading),
-                        where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                        where = stringResource(R.string.next_feed_title).takeIf { !showRail },
+                        destination = NextDestination.FEED.takeIf { showRail },
+                        onDestination = onDestination.takeIf { showRail },
                         action = railAction,
                         onSearch = onOpenCommands,
                         modifier = modifier,
@@ -169,7 +187,9 @@ fun NextFeedScreen(
                             },
                         actionLabel = if (filtered) stringResource(R.string.next_feed_clear_filter) else null,
                         onAction = onClearFilter,
-                        where = stringResource(R.string.next_feed_title).takeIf { showRail },
+                        where = stringResource(R.string.next_feed_title).takeIf { !showRail },
+                        destination = NextDestination.FEED.takeIf { showRail },
+                        onDestination = onDestination.takeIf { showRail },
                         action = railAction,
                         onSearch = onOpenCommands,
                         modifier = modifier,
@@ -216,6 +236,7 @@ fun NextFeedScreen(
                             onClearFilter = onClearFilter,
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
+                            onCompactTitleVisibleChange = onCompactTitleVisibleChange,
                             scrollToTopRequest = scrollToTopRequest,
                             railAction = railAction,
                             onSearch = onOpenCommands,
