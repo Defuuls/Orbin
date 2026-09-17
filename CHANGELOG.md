@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [135-Rhinovirus] - 2026-09-17
+
+### Added
+- Introduced an Apple-inspired Orbin Next visual language: calm neutrals with one blue accent, OLED-black dark surfaces, large titles, generous spacing, and continuous large radii (#488).
+- Added a floating DestinationPill for Feed / Boards / Media / Settings, with Command via a refined Go sheet, and a new Boards destination screen (#488).
+- Added Next dialog, empty/loading/error, and form primitives (NextConfirmDialog, NextLoading / NextEmpty / NextError, NextTextField / NextToggle / NextSelect) for consistent chrome (#490).
+
+### Changed
+- Restyled primary Next screens (Feed, Boards, All Media, Thread, Settings) and Command onto the new design tokens and surfaces (#488).
+- Adopted compact collapsing title bars on primary Next screens so chrome stays clear of scrolling content (#489).
+- Fixed Settings text-row Done / IME commit on short API 31 AVDs so edits save reliably (#489).
+- Migrated Search, Downloads confirm, Onboarding, Safe Mode, Downgrade gate, App lock, and remaining Material shells onto Next controls and status panes (#490).
+
+
 ## [134-Rotavirus] - 2026-09-16
 
 ### Removed
@@ -2211,7 +2225,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...HEAD
+[135-Rhinovirus]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...v135-Rhinovirus
 [134-Rotavirus]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...v134-Rotavirus
 [133-Norovirus]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...v133-Norovirus
 [132-Influenza]: https://github.com/Defuuls/Orbin/compare/v131-Varicella...v132-Influenza
