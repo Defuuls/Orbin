@@ -20,18 +20,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,25 +38,28 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.designsystem.component.ModernConfirmDialog
 import com.orbin.core.model.Board
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
-import com.orbin.core.ui.state.EmptyView
-import com.orbin.core.ui.state.ErrorView
-import com.orbin.core.ui.state.LoadingView
 import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MetaLine
+import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextEmpty
+import com.orbin.uinext.NextError
+import com.orbin.uinext.NextLoading
+import com.orbin.uinext.NextSelect
+import com.orbin.uinext.NextTextField
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.NextToggleRow
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 
 /** Search screen: board-scoped catalog search with recent-query chips and saved searches. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SearchScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
@@ -176,55 +169,43 @@ fun SearchScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BoardDropdown(
+private fun BoardSelect(
     boards: List<Board>,
     selectedBoard: Board?,
     onSelected: (Board?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = modifier,
-    ) {
-        OutlinedTextField(
-            value = selectedBoard?.let { "/${it.id.value}/ - ${it.title}" }.orEmpty(),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.search_subscribed_board)) },
-            placeholder = { Text(stringResource(R.string.search_all_subscribed_boards)) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
-            modifier =
-                Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.search_all_subscribed_boards)) },
-                onClick = {
-                    onSelected(null)
-                    expanded = false
-                },
-            )
-            boards.forEach { board ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.search_board_item, board.id.value, board.title)) },
-                    onClick = {
-                        onSelected(board)
-                        expanded = false
-                    },
-                )
+    val allLabel = stringResource(R.string.search_all_subscribed_boards)
+    val options =
+        remember(boards, allLabel) {
+            listOf(allLabel) +
+                boards.map { board ->
+                    "/${board.id.value}/ - ${board.title}"
+                }
+        }
+    val selectedIndex =
+        when {
+            selectedBoard == null -> 0
+            else -> {
+                val boardIndex = boards.indexOfFirst { it.id == selectedBoard.id }
+                if (boardIndex >= 0) boardIndex + 1 else 0
             }
         }
-    }
+    NextSelect(
+        label = stringResource(R.string.search_subscribed_board),
+        options = options,
+        selectedIndex = selectedIndex,
+        onSelect = { index ->
+            if (index <= 0) {
+                onSelected(null)
+            } else {
+                onSelected(boards.getOrNull(index - 1))
+            }
+        },
+        placeholder = allLabel,
+        modifier = modifier,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -250,60 +231,56 @@ private fun SearchTabContent(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        BoardDropdown(
+        BoardSelect(
             boards = subscribedBoards,
             selectedBoard = selectedBoard,
             onSelected = onBoardSelected,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         )
-        OutlinedTextField(
+        NextTextField(
             value = query,
             onValueChange = onQueryChange,
-            label = { Text(stringResource(R.string.search_query_label)) },
+            label = stringResource(R.string.search_query_label),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions =
                 KeyboardActions(
                     onSearch = { onSearch(query) },
                 ),
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
 
         SearchTypeFilters(
             selected = contentTypes,
             onToggle = onToggleContentType,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 12.dp),
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
         ) {
-            OutlinedTextField(
+            NextTextField(
                 value = minReplies,
                 onValueChange = onMinRepliesChange,
-                label = { Text(stringResource(R.string.search_min_replies)) },
+                label = stringResource(R.string.search_min_replies),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            NextToggleRow(
+                label = stringResource(R.string.search_include_nsfw),
+                checked = includeNsfw,
+                onCheckedChange = onNsfwToggle,
                 modifier = Modifier.weight(1f),
-            ) {
-                Checkbox(
-                    checked = includeNsfw,
-                    onCheckedChange = onNsfwToggle,
-                )
-                Text(stringResource(R.string.search_include_nsfw))
-            }
+            )
         }
 
         if (saveRecentSearches && recents.isNotEmpty()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 12.dp),
             ) {
                 recents.forEach { recent ->
                     InlineAction(
@@ -315,12 +292,12 @@ private fun SearchTabContent(
         }
 
         when (val s = state) {
-            SearchUiState.Idle -> EmptyView(stringResource(R.string.search_idle_hint))
-            SearchUiState.Loading -> LoadingView()
-            is SearchUiState.Error -> ErrorView(s.message)
+            SearchUiState.Idle -> NextEmpty(stringResource(R.string.search_idle_hint))
+            SearchUiState.Loading -> NextLoading()
+            is SearchUiState.Error -> NextError(s.message)
             is SearchUiState.Results ->
                 if (s.results.isEmpty()) {
-                    EmptyView(stringResource(R.string.search_no_matches))
+                    NextEmpty(stringResource(R.string.search_no_matches))
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -396,48 +373,61 @@ private fun SavedSearchesTabContent(
 
     Column(modifier = modifier) {
         if (savedSearches.isEmpty()) {
-            EmptyView(stringResource(R.string.search_no_saved))
+            NextEmpty(stringResource(R.string.search_no_saved))
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(savedSearches, key = { it.id }) { search ->
-                    ListItem(
+                    Row(
                         modifier =
-                            Modifier.clickable { onLoadSearch(search) },
-                        headlineContent = { Text(search.text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        supportingContent = {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onLoadSearch(search) }
+                                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                search.text,
+                                style = NextType.body,
+                                color = next.ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 search.board?.let { board ->
                                     Text(
                                         stringResource(R.string.search_board_slug, board.value),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = NextType.caption1,
+                                        color = next.muted,
                                     )
                                 }
                                 if (search.filters.contentTypes.isNotEmpty()) {
                                     Text(
                                         search.filters.contentTypes.joinToString(", ") { it.label },
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = NextType.caption1,
+                                        color = next.muted,
                                     )
                                 }
                             }
-                        },
-                        trailingContent = {
-                            IconButton(onClick = { pendingDelete = search }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.search_delete))
-                            }
-                        },
-                    )
-                    HorizontalDivider()
+                        }
+                        IconButton(onClick = { pendingDelete = search }) {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.search_delete),
+                                tint = next.accent,
+                            )
+                        }
+                    }
+                    GroupedDivider()
                 }
             }
         }
     }
 
     pendingDelete?.let { search ->
-        ModernConfirmDialog(
+        NextConfirmDialog(
             title = stringResource(R.string.search_delete_saved_title),
-            text = stringResource(R.string.search_delete_saved_text, search.text),
+            message = stringResource(R.string.search_delete_saved_text, search.text),
             onConfirm = {
                 onDeleteSearch(search.id)
                 pendingDelete = null

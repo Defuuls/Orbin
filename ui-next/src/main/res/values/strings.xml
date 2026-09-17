@@ -107,4 +107,11 @@
         <item quantity="other">%d results</item>
     </plurals>
 
+    <!-- Shared confirm / status -->
+    <string name="next_confirm_cancel">Cancel</string>
+    <string name="next_confirm_delete">Delete</string>
+    <string name="next_status_retry">Retry</string>
+    <string name="next_status_loading">Loading</string>
+    <string name="next_toggle_on">On</string>
+    <string name="next_toggle_off">Off</string>
 </resources>

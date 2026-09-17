@@ -23,22 +23,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,12 +52,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
-import com.orbin.core.ui.state.EmptyView
-import com.orbin.core.ui.state.ErrorView
-import com.orbin.core.ui.state.LoadingView
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.uinext.InlineAction
+import com.orbin.uinext.NextEmpty
+import com.orbin.uinext.NextError
+import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.NextToggle
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextSpace
@@ -252,7 +249,7 @@ private fun StartStep(
         )
         Text(
             text = "Choose boards to follow, tune playback, and lock down the defaults before browsing.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = next.muted,
         )
 
         ProviderSelector(providers, selectedProvider, onProviderSelected)
@@ -270,7 +267,7 @@ private fun ProviderSelector(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Select a site", style = MaterialTheme.typography.labelLarge)
+        Text("Select a site", style = NextType.subheadline)
         Row(
             modifier =
                 Modifier
@@ -280,10 +277,11 @@ private fun ProviderSelector(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             providers.forEach { provider ->
-                FilterChip(
-                    selected = provider.metadata.id == selectedProvider.metadata.id,
+                InlineAction(
+                    label = provider.metadata.displayName,
+                    selected =
+                        provider.metadata.id == selectedProvider.metadata.id,
                     onClick = { onProviderSelected(provider) },
-                    label = { Text(provider.metadata.displayName, maxLines = 1) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -301,10 +299,14 @@ private fun SignalPanel(settings: AppSettings) {
                 .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SetupSignal(Icons.Filled.Palette, "Display", settings.themeMode.name.lowercase())
-        SetupSignal(Icons.Filled.PlayCircle, "Media", if (settings.autoplayVideos) "autoplay on" else "manual playback")
-        SetupSignal(Icons.Filled.Security, "Network", "https only")
-        SetupSignal(Icons.Filled.Lock, "App lock", if (settings.biometricLockEnabled) "biometric" else "off")
+        SetupSignal(Icons.Outlined.Palette, "Display", settings.themeMode.name.lowercase())
+        SetupSignal(
+            Icons.Outlined.PlayCircle,
+            "Media",
+            if (settings.autoplayVideos) "autoplay on" else "manual playback",
+        )
+        SetupSignal(Icons.Outlined.Security, "Network", "https only")
+        SetupSignal(Icons.Outlined.Lock, "App lock", if (settings.biometricLockEnabled) "biometric" else "off")
     }
 }
 
@@ -318,9 +320,9 @@ private fun SetupSignal(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = next.accent, modifier = Modifier.size(18.dp))
         Text(title, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-        Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Text(value, color = next.muted, style = NextType.footnote)
     }
 }
 
@@ -334,11 +336,11 @@ private fun BoardsStep(
     onRetry: () -> Unit,
 ) {
     when (state) {
-        OnboardingBoardsState.Loading -> LoadingView()
-        is OnboardingBoardsState.Error -> ErrorView(state.message, onRetry = onRetry)
+        OnboardingBoardsState.Loading -> NextLoading()
+        is OnboardingBoardsState.Error -> NextError(state.message, onRetry = onRetry)
         is OnboardingBoardsState.Success ->
             if (state.boards.isEmpty()) {
-                EmptyView("No boards available")
+                NextEmpty("No boards available")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -374,7 +376,7 @@ private fun BoardHeader(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Subscribe to boards", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Subscribe to boards", style = NextType.title3, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetaChip("$subscribedCount subscribed")
             MetaChip("$favoriteCount favorites")
@@ -396,9 +398,9 @@ private fun BoardRow(
         }
     val favoriteTint =
         if (isFavorite) {
-            MaterialTheme.colorScheme.primary
+            next.accent
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
+            next.muted
         }
 
     Row(
@@ -415,33 +417,33 @@ private fun BoardRow(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "/${board.id.value}/",
-                    color = MaterialTheme.colorScheme.primary,
+                    color = next.accent,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = NextType.headline,
                 )
                 Text(
                     text = board.title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = NextType.body,
                 )
             }
             Text(
                 text = boardDescription,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                color = next.muted,
+                style = NextType.footnote,
             )
         }
         IconButton(onClick = { onFavoriteChange(board.id.value, !isFavorite) }) {
             Icon(
-                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                imageVector = if (isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
                 contentDescription = if (isFavorite) "Remove favorite" else "Favorite board",
                 tint = favoriteTint,
             )
         }
-        Switch(
+        NextToggle(
             checked = isSubscribed,
             onCheckedChange = { onSubscriptionChange(board.id.value, it) },
         )
@@ -462,7 +464,7 @@ private fun BoardMonogram(id: String) {
             text = id.take(1).uppercase(),
             color = Color.White,
             fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.titleMedium,
+            style = NextType.title3,
         )
     }
 }
@@ -475,14 +477,14 @@ private fun AppearanceStep(
     onAmoled: (Boolean) -> Unit,
 ) {
     SetupPage {
-        PreferenceHeader(Icons.Filled.Palette, "Display preferences", "Theme and contrast")
+        PreferenceHeader(Icons.Outlined.Palette, "Display preferences", "Theme and contrast")
         SurfacePanel {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AppThemeMode.entries.forEach { mode ->
-                    FilterChip(
+                    InlineAction(
+                        label = mode.name.lowercase().replaceFirstChar { it.uppercase() },
                         selected = settings.themeMode == mode,
                         onClick = { onThemeMode(mode) },
-                        label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
                     )
                 }
             }
@@ -500,7 +502,7 @@ private fun MediaStep(
     onPreload: (Boolean) -> Unit,
 ) {
     SetupPage {
-        PreferenceHeader(Icons.Filled.PlayCircle, "Media behavior", "Images, videos, and thread browsing")
+        PreferenceHeader(Icons.Outlined.PlayCircle, "Media behavior", "Images, videos, and thread browsing")
         SurfacePanel {
             PreferenceSwitch(
                 "Autoplay videos",
@@ -521,7 +523,7 @@ private fun PrivacyStep(
     onSaveRecentSearches: (Boolean) -> Unit,
 ) {
     SetupPage {
-        PreferenceHeader(Icons.Filled.Security, "Privacy & network", "Transport security and local access")
+        PreferenceHeader(Icons.Outlined.Security, "Privacy & network", "Transport security and local access")
         SurfacePanel {
             PreferenceSwitch(
                 "Data encrypted at rest",
@@ -564,15 +566,15 @@ private fun DoneStep(
     favoriteCount: Int,
 ) {
     SetupPage {
-        Text("Ready to browse", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Ready to browse", style = NextType.title2, fontWeight = FontWeight.Bold)
         Text(
             text = "Your setup is saved. You can run this again from Settings whenever you want.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = next.muted,
         )
         SurfacePanel {
-            SetupSignal(Icons.Filled.Notifications, "Subscribed boards", subscribedCount.toString())
-            SetupSignal(Icons.Filled.Star, "Favorite boards", favoriteCount.toString())
-            SetupSignal(Icons.Filled.Check, "Setup", "complete")
+            SetupSignal(Icons.Outlined.Notifications, "Subscribed boards", subscribedCount.toString())
+            SetupSignal(Icons.Outlined.Star, "Favorite boards", favoriteCount.toString())
+            SetupSignal(Icons.Outlined.Check, "Setup", "complete")
         }
     }
 }
@@ -606,13 +608,13 @@ private fun PreferenceHeader(
     subtitle: String,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(icon, contentDescription = null, tint = next.accent)
         Column {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(title, style = NextType.title3, fontWeight = FontWeight.Bold)
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = NextType.footnote,
+                color = next.muted,
             )
         }
     }
@@ -634,27 +636,25 @@ private fun PreferenceSwitch(
             Text(title, fontWeight = FontWeight.SemiBold)
             Text(
                 subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                color = next.muted,
+                style = NextType.footnote,
             )
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        NextToggle(checked = checked, onCheckedChange = onChange)
     }
 }
 
 @Composable
 private fun MetaChip(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        shape = RoundedCornerShape(4.dp),
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-        )
-    }
+    Text(
+        text = text,
+        style = NextType.caption1,
+        color = next.muted,
+        modifier =
+            Modifier
+                .background(next.elevated, RoundedCornerShape(4.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+    )
 }
 
 private const val HUE_DEGREES = 360

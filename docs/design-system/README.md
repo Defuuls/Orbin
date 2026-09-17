@@ -2,12 +2,12 @@
 
 There are two layers, and which one applies depends on what you are building.
 
-`core:designsystem` is Jetpack Compose Material 3. Components, the gallery and the onboarding
-wizard use `OrbinTheme` and read colors, typography and shapes from `MaterialTheme` rather than
-hardcoding visual tokens locally. Everything below this line describes that layer.
+`core:designsystem` is Jetpack Compose Material 3. Shared Material widgets and palette seeds still
+live here; reachable product surfaces no longer mount `OrbinTheme` / `MaterialOrbinTheme` as a
+shell. Everything below this line describes that Material layer.
 
-`ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings and media
-wall. It defines its own palette and type rather than reading `MaterialTheme`, because the visual
+`ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings, media
+wall, search, downloads, gallery, onboarding, and the startup chrome screens. It defines its own palette and type rather than reading `MaterialTheme`, because the visual
 style is part of what it replaced: Apple-inspired calm neutrals with one system-blue accent, OLED
 dark surfaces, DestinationPill chrome, and inset grouped Settings. See [the ui-next section](#ui-next)
 below before changing anything in that module. Orbin Minimal draws from this layer too: it is the
@@ -92,8 +92,9 @@ screen inside a theme silently overwrote it.
 Inheritance is also how a reader's settings reach this module. The shell states them once at the
 top — `MainActivity` for the full client, `MinimalActivity` for Orbin Minimal — and the screens
 below say nothing. Nested no-arg `NextTheme` calls short-circuit so screens do not re-enter
-`MaterialTheme`. Material-only destinations re-wrap `OrbinTheme` via `MaterialOrbinTheme` instead
-of nesting both themes around the whole tree. A screen here has no view model and cannot read a
+`MaterialTheme`. A few Material widgets (sliders, snackbars, text fields) still appear inside Next screens and
+read the Material colorScheme that `NextTheme` installs; there is no separate Material shell for
+gallery or onboarding anymore. A screen here has no view model and cannot read a
 setting, for the same reason it takes rows rather than threads. Three settings arrive that way:
 
 | Setting | Effect here |
