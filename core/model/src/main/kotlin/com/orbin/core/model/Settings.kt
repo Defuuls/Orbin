@@ -26,6 +26,15 @@ enum class ColorTheme(
     TOMORROW_NIGHT("Tomorrow Dark"),
 }
 
+/** Visual language, independent of light/dark mode and the existing color skins. */
+@Serializable
+enum class PlatformTheme(
+    val label: String,
+) {
+    IOS("iOS"),
+    ANDROID("Android"),
+}
+
 /** App icon variant for home screen. */
 @Serializable
 private const val MILLIS_PER_MINUTE = 60_000L
@@ -159,6 +168,7 @@ data class AppSettings(
     val mediaFilter: MediaFilter = MediaFilter.ALL,
     /** How stale the subscribed feed may be before returning to it reloads it. */
     val feedRefreshInterval: FeedRefreshInterval = FeedRefreshInterval.ALWAYS,
+    val platformTheme: PlatformTheme = PlatformTheme.IOS,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,

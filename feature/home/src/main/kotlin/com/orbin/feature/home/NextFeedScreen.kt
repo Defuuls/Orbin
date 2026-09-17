@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import com.orbin.media.video.pickFeedAutoplayRowId
 import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.FeedSortSheet
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
@@ -69,6 +71,7 @@ fun NextFeedScreen(
     railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
+    headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(refreshRequest) {
@@ -79,9 +82,21 @@ fun NextFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val layoutName by viewModel.feedLayoutName.collectAsStateWithLifecycle()
-    // Legacy "LIST" (removed) maps to GRID so older saved state keeps working.
+    var localQuery by rememberSaveable { mutableStateOf("") }
+    var sortOpen by rememberSaveable { mutableStateOf(false) }
+    val effectiveFilter = localQuery.ifBlank { filter }
+    if (sortOpen) {
+        FeedSortSheet(
+            FeedSort.entries.map { it.label },
+            FeedSort.entries.indexOf(settings.feedSort),
+            onSelect = { viewModel.setFeedSort(FeedSort.entries[it]) },
+            onDismiss = { sortOpen = false },
+        )
+    }
+    // Existing saved layouts retain their meaning; the handoff restores the list layout.
     val layout =
         when (layoutName) {
+            FeedLayout.LIST.name -> FeedLayout.LIST
             FeedLayout.IMAGES.name -> FeedLayout.IMAGES
             else -> FeedLayout.GRID
         }
@@ -147,14 +162,14 @@ fun NextFeedScreen(
                             ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
                     viewModel.prefetchFeedThumbs(urls)
                 }
-                LaunchedEffect(state.boards, visited, filter, settings.feedSort, mutedTokens) {
+                LaunchedEffect(state.boards, visited, effectiveFilter, settings.feedSort, mutedTokens) {
                     entries =
                         withContext(Dispatchers.Default) {
                             feedEntries(
                                 feeds = state.boards,
                                 visited = visited,
                                 nowMillis = System.currentTimeMillis(),
-                                filter = filter,
+                                filter = effectiveFilter,
                                 sort = settings.feedSort,
                                 mutedTokens = mutedTokens,
                             )
@@ -166,25 +181,6 @@ fun NextFeedScreen(
                     MessageScreen(
                         title = stringResource(R.string.next_feed_title),
                         subtitle = stringResource(R.string.next_feed_loading),
-                        where = stringResource(R.string.next_feed_title).takeIf { !showRail },
-                        destination = NextDestination.FEED.takeIf { showRail },
-                        onDestination = onDestination.takeIf { showRail },
-                        action = railAction,
-                        onSearch = onOpenCommands,
-                        modifier = modifier,
-                    )
-                } else if (entries.isEmpty()) {
-                    val filtered = filter.isNotBlank()
-                    MessageScreen(
-                        title = stringResource(R.string.next_feed_title),
-                        subtitle =
-                            if (filtered) {
-                                stringResource(R.string.next_feed_no_matches, filter)
-                            } else {
-                                stringResource(R.string.next_feed_empty)
-                            },
-                        actionLabel = if (filtered) stringResource(R.string.next_feed_clear_filter) else null,
-                        onAction = onClearFilter,
                         where = stringResource(R.string.next_feed_title).takeIf { !showRail },
                         destination = NextDestination.FEED.takeIf { showRail },
                         onDestination = onDestination.takeIf { showRail },
@@ -227,9 +223,15 @@ fun NextFeedScreen(
                             showRail = showRail,
                             layout = layout,
                             showSizeControl = true,
+                            headerContent = headerContent,
+                            query = localQuery,
+                            onQueryChange = { localQuery = it },
+                            groupByBoard = settings.feedSort == FeedSort.BOARD,
+                            refreshing = isRefreshing,
+                            onRefresh = viewModel::refresh,
                             onLayoutChange = { viewModel.setFeedLayoutName(it.name) },
                             sortLabel = settings.feedSort.label,
-                            onSort = viewModel::cycleFeedSort,
+                            onSort = { sortOpen = true },
                             filter = filter.takeIf { it.isNotBlank() },
                             onClearFilter = onClearFilter,
                             hideRailOnScroll = hideRailOnScroll,
@@ -394,6 +396,14 @@ private fun CatalogThread.toEntry(
                 hasPreview = originalPost.attachments.isNotEmpty(),
                 read = key in visited,
                 muted = muted,
+                // Keep this mapping platform-independent: it is also used by JVM tests and does
+                // not need Android's styled-text implementation for a two-line feed preview.
+                excerpt =
+                    originalPost.comment.raw
+                        .replace(Regex("<[^>]*>"), "")
+                        .replace("&nbsp;", " ")
+                        .trim(),
+                threadNumber = key.thread.value.toString(),
             ),
     )
 }

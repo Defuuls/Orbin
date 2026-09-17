@@ -9,6 +9,7 @@ import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PlatformTheme
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ThreadPresentation
@@ -196,6 +197,9 @@ private class Rows {
         settings: AppSettings,
         vm: SettingsViewModel,
     ) = listOf(
+        choice("platformTheme", "Platform theme", PlatformTheme.entries, settings.platformTheme, {
+            it.label
+        }, vm::setPlatformTheme),
         choice("colorTheme", "Color theme", ColorTheme.entries, settings.colorTheme, { it.label }, vm::setColorTheme),
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
         toggle("dynamicColor", "Dynamic color", settings.dynamicColor, vm::setDynamicColor),

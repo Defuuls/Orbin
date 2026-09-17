@@ -114,6 +114,7 @@ class BackupService
                 setMediaFilter(settings.mediaFilter)
                 setFeedRefreshInterval(settings.feedRefreshInterval)
                 setThreadPresentation(settings.threadPresentation)
+                setPlatformTheme(settings.platformTheme)
                 setThemeMode(settings.themeMode)
                 setColorTheme(settings.colorTheme)
                 setDynamicColor(settings.dynamicColor)

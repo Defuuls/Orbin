@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 enum class FeedLayout {
+    LIST,
     GRID,
     IMAGES,
 }
@@ -20,4 +21,7 @@ data class FeedRow(
     val unread: Int = 0,
     val id: String = "$board:$subject",
     val muted: Boolean = false,
+    val excerpt: String = "",
+    val boardTitle: String = board,
+    val threadNumber: String = id.substringAfterLast('/'),
 )

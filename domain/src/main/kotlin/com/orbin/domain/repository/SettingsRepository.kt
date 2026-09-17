@@ -9,6 +9,7 @@ import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
+import com.orbin.core.model.PlatformTheme
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
@@ -40,6 +41,8 @@ interface SettingsRepository {
     suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval)
 
     suspend fun setThreadPresentation(presentation: ThreadPresentation)
+
+    suspend fun setPlatformTheme(theme: PlatformTheme)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 

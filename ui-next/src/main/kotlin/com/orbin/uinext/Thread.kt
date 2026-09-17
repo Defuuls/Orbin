@@ -264,6 +264,9 @@ private fun PostView(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .padding(horizontal = GUTTER, vertical = 5.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(next.raised)
                 .height(IntrinsicSize.Min)
                 .nextClickable(onClick = { onClick(post) }),
     ) {

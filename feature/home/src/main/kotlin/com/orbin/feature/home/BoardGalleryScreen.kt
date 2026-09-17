@@ -35,6 +35,7 @@ fun BoardGalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
+    val subscribed by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val openBoard: (Board) -> Unit = { board ->
         onOpenBoard(providerId, board.id.value, board.title)
@@ -50,13 +51,14 @@ fun BoardGalleryScreen(
         }
 
     val tiles =
-        remember(visibleBoards) {
+        remember(visibleBoards, subscribed) {
             visibleBoards.map { board ->
                 BoardTile(
                     id = board.id.value,
                     path = "/${board.id.value}/",
                     title = board.title,
                     nsfw = board.isNsfw,
+                    followed = board.id.value in subscribed,
                 )
             }
         }
@@ -115,6 +117,8 @@ fun BoardGalleryScreen(
                 } else {
                     BoardsScreen(
                         boards = tiles,
+                        subtitle = "Find your people. Follow your interests.",
+                        onFollowBoard = { board, checked -> viewModel.setSubscribed(board.id, checked) },
                         onOpenBoard = { tile ->
                             visibleBoards.firstOrNull { it.id.value == tile.id }?.let(openBoard)
                         },

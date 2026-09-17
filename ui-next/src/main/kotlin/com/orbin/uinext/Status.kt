@@ -161,16 +161,5 @@ fun NextToggle(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    InlineAction(
-        label =
-            if (checked) {
-                stringResource(R.string.next_toggle_on)
-            } else {
-                stringResource(R.string.next_toggle_off)
-            },
-        accent = checked,
-        selected = checked,
-        onClick = { onCheckedChange(!checked) },
-        modifier = modifier,
-    )
+    PlatformSwitch(checked, onCheckedChange, modifier)
 }
