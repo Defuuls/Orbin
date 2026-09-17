@@ -40,14 +40,15 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path("gradle/libs.versions.toml")
           text = path.read_text()
-          fixed = 'kotlin = "2.4.20"'
           compatible = 'kotlin = "2.4.10"'
-          if fixed not in text:
-              raise SystemExit("Expected Kotlin 2.4.20 version catalog entry was not found")
-          path.write_text(text.replace(fixed, compatible, 1))
+          updated, replacements = re.subn(r'^kotlin = ".*"$', compatible, text, count=1, flags=re.MULTILINE)
+          if replacements != 1:
+              raise SystemExit("Expected one Kotlin version catalog entry")
+          path.write_text(updated)
           PY
 
       - name: Build Android project

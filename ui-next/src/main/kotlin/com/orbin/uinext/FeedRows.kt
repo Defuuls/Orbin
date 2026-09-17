@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
@@ -241,7 +242,7 @@ internal fun FeedImageCell(
                 .semantics { contentDescription = description },
         contentAlignment = Alignment.BottomStart,
     ) {
-        val tile = Modifier.fillMaxWidth().aspectRatio(1f)
+        val tile = Modifier.fillMaxWidth().height(tileHeight)
         if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
         Pill(
             text = "#${row.threadNumber.takeLast(4)}",

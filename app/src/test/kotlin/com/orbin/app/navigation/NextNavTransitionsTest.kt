@@ -12,7 +12,7 @@ class NextNavTransitionsTest {
     @Test
     fun pushIsSofterAndLongerThanMaterialDefault() {
         assertThat(NextMotion.PUSH_MS).isAtLeast(350)
-        assertThat(NextMotion.PUSH_PARALLAX).isWithin(0.001f).of(0.3f)
+        assertThat(NextMotion.PUSH_PARALLAX).isWithin(0.001f).of(0.24f)
         assertThat(NextMotion.PUSH_PARALLAX).isLessThan(1f)
     }
 

@@ -40,6 +40,21 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
+private val DarkBackground = Color(0xFF141218)
+private val DarkRaised = Color(0xFF211F26)
+private val DarkElevated = Color(0xFF2B2930)
+private val DarkAccent = Color(0xFFD0BCFF)
+private val DarkAccentSoft = Color(0xFF4A4458)
+private val DarkOnAccent = Color(0xFF381E72)
+private val LightBackground = Color(0xFFFEF7FF)
+private val LightRaised = Color(0xFFF7F2FA)
+private val LightElevated = Color(0xFFF3EDF7)
+private val LightInk = Color(0xFF1D1B20)
+private val LightMuted = Color(0xFF49454F)
+private val LightHairline = Color(0xFFE7E0EC)
+private val LightAccent = Color(0xFF6750A4)
+private val LightAccentSoft = Color(0xFFE8DEF8)
+
 /** Material color roles for the handoff's Android counterpart, including dark/AMOLED support. */
 fun materialPalette(
     dark: Boolean,
@@ -47,25 +62,25 @@ fun materialPalette(
 ): NextPalette =
     if (dark) {
         DarkPalette.copy(
-            background = if (amoled) Color.Black else Color(0xFF141218),
-            raised = Color(0xFF211F26),
-            elevated = Color(0xFF2B2930),
-            accent = Color(0xFFD0BCFF),
-            accentSoft = Color(0xFF4A4458),
-            onAccent = Color(0xFF381E72),
+            background = if (amoled) Color.Black else DarkBackground,
+            raised = DarkRaised,
+            elevated = DarkElevated,
+            accent = DarkAccent,
+            accentSoft = DarkAccentSoft,
+            onAccent = DarkOnAccent,
             amoled = amoled,
         )
     } else {
         LightPalette.copy(
-            background = Color(0xFFFEF7FF),
-            raised = Color(0xFFF7F2FA),
-            elevated = Color(0xFFF3EDF7),
-            ink = Color(0xFF1D1B20),
-            muted = Color(0xFF49454F),
-            faint = Color(0xFF49454F),
-            hairline = Color(0xFFE7E0EC),
-            accent = Color(0xFF6750A4),
-            accentSoft = Color(0xFFE8DEF8),
+            background = LightBackground,
+            raised = LightRaised,
+            elevated = LightElevated,
+            ink = LightInk,
+            muted = LightMuted,
+            faint = LightMuted,
+            hairline = LightHairline,
+            accent = LightAccent,
+            accentSoft = LightAccentSoft,
         )
     }
 
