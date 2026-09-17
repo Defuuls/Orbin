@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [136-Apple] - 2026-09-17
+
+### Fixed
+- Cleared Boards compact-title overlap and restored Feed DestinationPill on loading / error / empty states (#493).
+
+### Changed
+- Softened Feed/Boards motion and presentation toward Apple-like transitions and chrome (#494).
+- Extended Apple Next consistency across remaining destinations beyond Feed/Boards (#495).
+- Switched forward release codenames to the fruit pool from v136 (#496).
+- Replaced deferred Material leftovers (Snackbar/Scaffold, Slider, PullToRefresh, spinner, Modern* shells) with Next controls (#497).
+- Migrated VideoPlayer chrome from Material3 to Next (#498).
+
+
 ## [135-Rhinovirus] - 2026-09-17
 
 ### Added
@@ -2225,7 +2238,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v136-Apple...HEAD
+[136-Apple]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...v136-Apple
 [135-Rhinovirus]: https://github.com/Defuuls/Orbin/compare/v134-Rotavirus...v135-Rhinovirus
 [134-Rotavirus]: https://github.com/Defuuls/Orbin/compare/v133-Norovirus...v134-Rotavirus
 [133-Norovirus]: https://github.com/Defuuls/Orbin/compare/v132-Influenza...v133-Norovirus
