@@ -10,42 +10,55 @@ import kotlin.math.min
 /**
  * Maps a persisted [ColorSchemeVariant] onto the Next shell palette.
  *
- * Default / Tomorrow stay on the curated Apple-inspired Next grounds. Imageboard skins expand from their
- * [ChanThemeSeeds] so Color theme in settings actually recolors Feed and the rest of ui-next,
- * not only Material-only destinations.
+ * ui-next is the authoritative application chrome. Color themes may influence board/content
+ * identity, but they must not replace the shell's grouped background, raised surfaces, typography
+ * contrast, separators, or system-blue interaction language. This keeps the full app visually
+ * consistent with the iOS-inspired design instead of letting legacy imageboard skins recolor the
+ * navigation and controls.
+ *
+ * Tomorrow / Tomorrow Night still select their historical light/dark preference. Imageboard skins
+ * retain their own dark/light preference, but only as a mode hint; their seed colors are not used
+ * for application chrome.
  */
 fun ColorSchemeVariant.toNextPalette(
     darkPreference: Boolean,
     amoled: Boolean,
 ): NextPalette {
-    seeds?.let { return it.toNextPalette(amoled = amoled && it.dark) }
     val dark =
         when (this) {
             ColorSchemeVariant.TOMORROW -> false
             ColorSchemeVariant.TOMORROW_NIGHT -> true
-            else -> darkPreference
+            else -> seeds?.dark ?: darkPreference
         }
-    return when {
+    return canonicalNextPalette(dark = dark, amoled = amoled)
+}
+
+/** The one palette family used by ui-next application chrome. */
+fun canonicalNextPalette(
+    dark: Boolean,
+    amoled: Boolean,
+): NextPalette =
+    when {
         dark && amoled -> AmoledPalette
         dark -> DarkPalette
         else -> LightPalette
     }
-}
 
+/**
+ * Legacy seed conversion is intentionally retained for isolated content previews and contrast
+ * tests. Do not use this for app chrome; [canonicalNextPalette] is the shell contract.
+ */
 internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
     val panel = if (amoled && dark) AmoledRaised else surface
     val body = onSurface
     val accent = ensureAccentWithOnColor(primary, bg, listOf(primaryVariant, subject, body))
     val accentOn = onColorFor(accent)
-    // Prefer readable tiers over aggressive fade — imageboard seeds often ship mid-grey body text.
     val muted = ensureContrast(body.copy(alpha = if (dark) 0.92f else 0.88f), bg, listOf(body))
     val faint = ensureContrast(body.copy(alpha = if (dark) 0.82f else 0.78f), bg, listOf(muted, body))
     val elevatedPanel =
         if (amoled && dark) {
             AmoledElevated
-        } else if (dark) {
-            panel
         } else {
             panel
         }
@@ -101,8 +114,6 @@ private fun onColorFor(accent: Color): Color {
     return if (white >= black) Color.White else Color.Black
 }
 
-/** Picks [preferred] when it clears AA on [background]; otherwise the first fallback that does,
- * otherwise blends [preferred] toward black/white until AA is met. */
 private fun ensureContrast(
     preferred: Color,
     background: Color,
