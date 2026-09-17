@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships signed, tag-driven releases. The **current full-client release is v128 — Rei**.
+Orbin ships signed, tag-driven releases. The **current full-client release is v135 — Rhinovirus**.
 
 For the complete chronological record, use:
 
@@ -11,30 +11,26 @@ This wiki page is an **era guide and narrative**, not a second changelog. Keepin
 entries synchronized in two places creates documentation drift, so the repository CHANGELOG is the
 single detailed history.
 
-## Current era: contagious diseases
+## Current era: fruits
 
-From **v129**, full Orbin releases are named after **highly contagious diseases**, hardcoded in
+From **v136**, full Orbin releases are named after **fruits**, listed under `[fruit]` in
 [`release/codenames.txt`](https://github.com/Defuuls/Orbin/blob/main/release/codenames.txt). The
-Japanese-name era ran **v100 — Sakura** through **v128 — Rei**.
+contagious-disease era ran **v129 — Measles** through **v135 — Rhinovirus**. The Japanese-name era
+ran **v100 — Sakura** through **v128 — Rei**.
 
 Orbin Minimal uses a separate pool (terminal clinical conditions from its own v17). Names must not be
 reused across the two applications.
 
-The current release, **v128 — Rei**, closes the Japanese-name era on the modern architecture/UI
-generation: modular Clean Architecture, the app-agnostic `ui-next` seam, encrypted local persistence,
-provider contracts, privacy-safe provider diagnostics, comprehensive CI gates, and adaptive Compose
-UI. Recent ships expanded Color theme onto the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal,
-Lain, and friends), widened Mild→Wild media sizing, and polished Feed / All Media / Command chrome.
-
-Changes merged after v128 are documented under the CHANGELOG's Unreleased section until the next
-release is cut (expected first disease-era tag: **v129 — Measles**, unless another unused pool name
-is chosen).
+The current release, **v135 — Rhinovirus**, closes the disease-naming era. Changes merged after v135
+are documented under the CHANGELOG's Unreleased section until the next release is cut (expected first
+fruit-era tag: **v136 — Apple**, unless another unused pool name is chosen).
 
 ## Release eras
 
 | Range | Theme | Notes |
 | --- | --- | --- |
-| v129+ | Highly contagious diseases | Current naming era; pool in `release/codenames.txt` |
+| v136+ | Fruits | Current naming era; `[fruit]` pool in `release/codenames.txt` |
+| v129–v135 | Highly contagious diseases | Closed at v135 — Rhinovirus; shipped names kept under `[disease]` |
 | v100–v128 | Popular Japanese female names | Closed at v128 — Rei |
 | v91–v99 | Pasta | Short transitional era after the star releases |
 | v30–v90 | Stars and related astronomical names | Long-running middle era, with a few historical naming irregularities |

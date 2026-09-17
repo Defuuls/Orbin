@@ -112,7 +112,8 @@ Codename eras change; the tag format `v<number>-<Codename>` does not:
 
 | Range | Theme |
 | --- | --- |
-| v129+ | Highly contagious diseases (current; see [`release/codenames.txt`](../../release/codenames.txt)) |
+| v136+ | Fruits (current; `[fruit]` in [`release/codenames.txt`](../../release/codenames.txt)) |
+| v129–v135 | Highly contagious diseases (closed; `[disease]` in the same file) |
 | v100–v128 | Popular Japanese female names |
 | v91–v99 | Pasta |
 | v30–v90 | Stars / astronomical names |
@@ -121,8 +122,9 @@ Codename eras change; the tag format `v<number>-<Codename>` does not:
 Orbin Minimal uses its **own** codename file (terminal clinical conditions from its v17). Names must
 not be reused across either product. See [`docs/wiki/Release-History.md`](../wiki/Release-History.md).
 
-From v129, pick an unused Display name from `release/codenames.txt` — check
-`git tag --list 'v*'` as well, not memory or an existing doc.
+From v136, pick an unused Display name from the `[fruit]` section of `release/codenames.txt` — check
+`git tag --list 'v*'` as well, not memory or an existing doc. Disease-era names under `[disease]` remain
+valid only for manifests in the v129–v135 range.
 
 ## Cutting a release
 
