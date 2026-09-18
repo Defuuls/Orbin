@@ -7,6 +7,10 @@ number       = 139
 codename     = "Date"
 version_code = 157
 
+# One line for the README's "What's new in <number>:" highlight. Optional —
+# leaving it out removes that line rather than letting it name a stale release.
+highlight = "Settings in three categories (General, Display & Media, Privacy & Data), and a two-tab bottom chrome — Feed and Settings."
+
 summary = [
   "bump Orbin to 139-Date / versionCode 157",
   "reduce settings to three categories and the bottom chrome to Feed and Settings",

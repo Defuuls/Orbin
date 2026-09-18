@@ -9,7 +9,8 @@ copy of the same edits.
 Commands
 --------
 plan     Validate the manifest and emit ``KEY=value`` lines for ``$GITHUB_OUTPUT``.
-prepare  Apply the release edits to gradle.properties, CHANGELOG.md, README.md,
+prepare  Apply the release edits to gradle.properties, CHANGELOG.md, README.md
+         (current-release label and the one-line "What's new" highlight),
          docs/wiki/Home.md and the README hero SVG. Idempotent: re-running on an
          already-prepared tree is a no-op rather than a second changelog section.
 verify   Assert the working tree already carries exactly what the manifest describes.
@@ -23,6 +24,7 @@ import os
 import re
 import sys
 import tomllib
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
@@ -37,6 +39,8 @@ CODENAMES_FILE = ROOT / "release" / "codenames.txt"
 DISEASE_ERA_FROM = 129
 FRUIT_ERA_FROM = 136
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
+# README's one-line release highlight: **What's new in <number>:** <highlight>
+HIGHLIGHT_LINE = re.compile(r"^\*\*What's new in [^:\n]*:\*\*.*$", re.M)
 SECTION_HEADER = re.compile(r"^\[(disease|fruit)\]\s*$", re.IGNORECASE)
 
 
@@ -47,11 +51,24 @@ class ManifestError(Exception):
 class Release:
     """A validated release description, with the names derived from it."""
 
-    def __init__(self, number: int, codename: str, version_code: int, summary: list[str]):
+    def __init__(
+        self,
+        number: int,
+        codename: str,
+        version_code: int,
+        summary: list[str],
+        highlight: str = "",
+    ):
         self.number = number
         self.codename = codename
         self.version_code = version_code
         self.summary = summary
+        # Empty when the manifest names no highlight; see _apply_highlight.
+        self.highlight = highlight
+
+    @property
+    def highlight_line(self) -> str:
+        return f"**What's new in {self.number}:** {self.highlight}"
 
     @property
     def version_name(self) -> str:
@@ -170,7 +187,19 @@ def load_manifest() -> tuple[Release, dict[str, list[str]]]:
     if not isinstance(summary, list) or not all(isinstance(line, str) for line in summary):
         raise ManifestError("'summary' must be an array of strings")
 
-    release = Release(number, codename, version_code, [line.strip() for line in summary if line.strip()])
+    highlight = data.get("highlight", "")
+    if not isinstance(highlight, str):
+        raise ManifestError(f"'highlight' must be a string, got {highlight!r}")
+    # Collapses any newline into a space, so the line can only ever be one line.
+    highlight = " ".join(highlight.split())
+
+    release = Release(
+        number,
+        codename,
+        version_code,
+        [line.strip() for line in summary if line.strip()],
+        highlight,
+    )
     if not release.summary:
         release.summary = [
             f"bump Orbin to {release.version_name} / versionCode {release.version_code}",
@@ -204,11 +233,42 @@ def _read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8")
 
 
-def _replace_once(rel: str, pattern: str, replacement: str, text: str, flags: int = 0) -> str:
+def _replace_once(
+    rel: str,
+    pattern: str,
+    replacement: str | Callable[[re.Match[str]], str],
+    text: str,
+    flags: int = 0,
+) -> str:
     updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
     if count != 1:
         raise ManifestError(f"{rel} does not contain the expected release marker")
     return updated
+
+
+def _apply_highlight(readme: str, release: Release) -> str:
+    """Write, refresh or drop the README's one-line release highlight.
+
+    Nothing used to maintain this line, so it advertised "What's new in 128"
+    directly beneath a current-release label reading 139. A highlight naming a
+    release nobody ships any more is worse than no highlight, so an absent
+    ``highlight`` removes the line rather than leaving the previous release's
+    copy standing. Both directions are idempotent, and the replacement is a
+    callable so backslashes in the prose are never read as group references.
+    """
+    if not release.highlight:
+        readme, _ = re.subn(HIGHLIGHT_LINE.pattern + r"\n\n?", "", readme, count=1, flags=re.M)
+        return readme
+    if HIGHLIGHT_LINE.search(readme):
+        return HIGHLIGHT_LINE.sub(lambda _: release.highlight_line, readme, count=1)
+    # First release to carry one: seat it under the current-release label.
+    return _replace_once(
+        "README.md",
+        r"^(\*\*Current release:\*\* .*)$",
+        lambda match: f"{match.group(1)}\n\n{release.highlight_line}",
+        readme,
+        flags=re.M,
+    )
 
 
 def _update_release_docs(release: Release, today: str) -> None:
@@ -218,6 +278,7 @@ def _update_release_docs(release: Release, today: str) -> None:
         f"**Current release:** [{release.number} — {release.codename}]({BASE_URL}/releases/tag/{release.tag})",
         _read("README.md"),
     )
+    readme = _apply_highlight(readme, release)
     _write("README.md", readme)
 
     home = _replace_once(
@@ -333,6 +394,11 @@ def command_verify(release: Release, _sections: dict[str, list[str]]) -> int:
     readme = _read("README.md")
     if f"releases/tag/{release.tag}" not in readme or f"[{release.number} — {release.codename}]" not in readme:
         problems.append("README.md current-release metadata is stale")
+    if release.highlight:
+        if release.highlight_line not in readme:
+            problems.append("README.md release highlight is missing or does not match the manifest")
+    elif HIGHLIGHT_LINE.search(readme):
+        problems.append("README.md still carries a release highlight the manifest no longer names")
 
     home = _read("docs/wiki/Home.md")
     if f"**v{release.number} — {release.codename}**" not in home:

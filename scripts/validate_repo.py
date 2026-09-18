@@ -63,6 +63,15 @@ def check_version_consistency(version_name: str) -> None:
         fail("version", f"README.md current-release link does not point at v{version_name}")
     if codename and f"[{number} — {codename}]" not in readme:
         fail("version", f"README.md current-release label is not '{number} — {codename}'")
+    # The highlight is optional, but one naming an old release is how the README
+    # came to advertise "What's new in 128" beside a current release of 139.
+    highlight = re.search(r"^\*\*What's new in ([^:\n]*):\*\*", readme, re.M)
+    if highlight and highlight.group(1).strip() != number:
+        fail(
+            "version",
+            f"README.md says \"What's new in {highlight.group(1).strip()}\" but the current release is {number}; "
+            "set 'highlight' in release/next.toml, or drop the line",
+        )
 
     home = read("docs/wiki/Home.md")
     if codename and f"**v{number} — {codename}**" not in home:
@@ -188,6 +197,8 @@ def check_release_tooling() -> None:
     for doc in ("README.md", "docs/wiki/Home.md", HERO_SVG):
         if doc not in script:
             fail("release-tooling", f"prepare_release.py does not update {doc}")
+    if "What's new in" not in script:
+        fail("release-tooling", "prepare_release.py no longer maintains the README release highlight")
 
     workflow = read(".github/workflows/cut-release.yml")
     code = "\n".join(line for line in workflow.splitlines() if not line.lstrip().startswith("#"))
