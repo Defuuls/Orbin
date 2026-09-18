@@ -11,6 +11,12 @@ number       = 136          # release number; the tag becomes v136-<Codename>
 codename     = "Apple"      # from release/codenames.txt [fruit] (v136+); never one already tagged
 version_code = 154          # Android versionCode; must exceed the current value
 
+# Optional. One line for the README's "What's new in <number>:" highlight.
+# Omitting it REMOVES that line rather than leaving the previous release's copy,
+# which is how the README came to advertise "What's new in 128" beside a current
+# release of 139.
+highlight = "Gallery paging survives a mid-scroll cache eviction."
+
 # Optional. The release PR's summary bullets; derived from the version when omitted.
 summary = [
   "bump Orbin to 136-Apple / versionCode 154",
@@ -48,7 +54,8 @@ full Orbin release updates these together:
 
 - `gradle.properties` — `versionCode` and `versionName`
 - `CHANGELOG.md` — closes the release section and updates comparison links
-- `README.md` — current release label and GitHub Release link
+- `README.md` — current release label and GitHub Release link, plus the one-line
+  `**What's new in <number>:**` highlight when the manifest sets `highlight`
 - `docs/wiki/Home.md` — current release row and release date
 - `docs/assets/orbin-hero-screenshot.svg` — the hero's machine-readable release marker, visible
   version/codename badge, and accessible description
@@ -59,7 +66,10 @@ design asset and is not regenerated on every release.
 
 The release verifier and `scripts/validate_repo.py` both check that the README, Wiki home, and hero
 SVG agree with `gradle.properties`. A stale version badge therefore blocks release publication
-instead of silently shipping mismatched documentation.
+instead of silently shipping mismatched documentation. The same now holds for the README highlight:
+`validate_repo.py` fails when a `What's new in <number>` line names anything but the current
+release, and `prepare_release.py verify` fails when it disagrees with the manifest or lingers after
+`highlight` is dropped.
 
 Run and review the same logic locally:
 
