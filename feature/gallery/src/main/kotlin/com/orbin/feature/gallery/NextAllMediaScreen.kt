@@ -100,7 +100,7 @@ fun NextAllMediaContent(
             MessageScreen(
                 title = stringResource(R.string.next_media_title),
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
-                where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
+                where = stringResource(R.string.next_media_title),
                 destination =
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },
@@ -116,7 +116,7 @@ fun NextAllMediaContent(
                 subtitle = stringResource(R.string.next_media_empty),
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
-                where = stringResource(R.string.next_media_title).takeIf { !hasTabs },
+                where = stringResource(R.string.next_media_title),
                 destination =
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },

@@ -11,7 +11,8 @@ import org.junit.Test
  * previous version of that split is exactly what broke: the index named *screens*, so typing a
  * setting's name opened a category screen rather than the setting. Now it names row ids, and an id
  * that matches nothing would scroll the list nowhere at all — silently. This is the test that makes
- * the drift loud.
+ * the drift loud, in both directions: an index entry for a row the list no longer offers is the
+ * same bug wearing the other hat.
  */
 class SettingsIndexTest {
     @Test
@@ -56,44 +57,24 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
-    /**
-     * Quiet hours only mean anything while there are notifications to be quiet about.
-     *
-     * Asserted here rather than on a device: the list is lazy, so on screen an absent row and a row
-     * merely scrolled out of view look exactly the same.
-     */
+    /** Three headings, in the order the list draws them. */
     @Test
-    fun `quiet hours appear only when watch notifications are on`() {
-        val on = buildModel(watchNotifications = true).groups.flatMap { it.second }.map { it.id }
-        val off = buildModel(watchNotifications = false).groups.flatMap { it.second }.map { it.id }
-
-        assertThat(on).containsAtLeast("quietStart", "quietEnd")
-        assertThat(off).containsNoneOf("quietStart", "quietEnd")
+    fun `the list is the three headings and nothing else`() {
+        assertThat(buildModel().groups.map { it.first }).containsExactly(GENERAL, DISPLAY, PRIVACY).inOrder()
     }
 
-    /** HTTPS-only is shown for transparency and must read as on without being switchable. */
+    /** No heading may end up empty: a heading with nothing under it is a heading you scroll past. */
     @Test
-    fun `https only is stated rather than offered`() {
-        val row = allRows().first { it.id == "httpsOnly" }
-
-        assertThat(row.kind).isEqualTo(SettingKind.INFO)
-        assertThat(row.value).isEqualTo("Always enforced")
+    fun `every heading has rows under it`() {
+        val empty = buildModel().groups.filter { it.second.isEmpty() }.map { it.first }
+        assertThat(empty).isEmpty()
     }
 
-    /**
-     * Encrypted DNS has no off switch, so this notice is the only way a user learns their lookups
-     * have stopped being private. It has to actually change when the monitor says so.
-     */
+    /** Two rows cannot share an id: the id is what a search result and a tap both key off. */
     @Test
-    fun `the dns notice reflects whether lookups are encrypted`() {
-        val encrypted = buildModel().groups.flatMap { it.second }.first { it.id == "dnsPrivacy" }
-        val fallingBack =
-            buildModel(fallback = true).groups.flatMap { it.second }.first { it.id == "dnsPrivacy" }
-
-        assertThat(encrypted.value).isEqualTo("Encrypted")
-        assertThat(encrypted.hint).contains("Encrypted DNS is always on")
-        assertThat(fallingBack.value).isEqualTo("Not private right now")
-        assertThat(fallingBack.hint).contains("system resolver")
+    fun `no row id appears twice`() {
+        val duplicates = allRows().groupBy { it.id }.filterValues { it.size > 1 }.keys
+        assertThat(duplicates).isEmpty()
     }
 
     /** The updater's own check only exists while the updater does. */
@@ -112,19 +93,12 @@ class SettingsIndexTest {
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(
-        internalUpdater: Boolean = true,
-        watchNotifications: Boolean = true,
-        fallback: Boolean = false,
-    ) = buildSettings(
-        settings =
-            com.orbin.core.model
-                .AppSettings(
-                    internalUpdaterEnabled = internalUpdater,
-                    threadWatchNotificationsEnabled = watchNotifications,
-                ),
-        vm = io.mockk.mockk(relaxed = true),
-        updateState = "Up to date",
-        dnsFallbackActive = fallback,
-    )
+    private fun buildModel(internalUpdater: Boolean = true) =
+        buildSettings(
+            settings =
+                com.orbin.core.model
+                    .AppSettings(internalUpdaterEnabled = internalUpdater),
+            vm = io.mockk.mockk(relaxed = true),
+            updateState = "Up to date",
+        )
 }

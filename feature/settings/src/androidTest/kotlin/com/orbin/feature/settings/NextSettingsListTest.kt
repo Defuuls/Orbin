@@ -5,17 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
@@ -30,11 +25,14 @@ import org.junit.runner.RunWith
 /**
  * Editing a setting from the list, on a device.
  *
- * Only the two behaviours that need one: a row has to reach the repository, and a text row has to
- * write on Save rather than on every keystroke. Which rows are *present* — quiet hours gated on
- * watch notifications, HTTPS-only stated rather than offered, the DNS notice tracking the monitor —
- * is a property of the registry, so it is asserted in `SettingsIndexTest` where a row being
- * off-screen cannot be mistaken for a row being absent.
+ * Only the behaviour that needs one: a row has to reach the repository. Which rows are *present* —
+ * the update check gated on the in-app updater, the three headings and nothing else — is a property
+ * of the registry, so it is asserted in `SettingsIndexTest` where a row being off-screen cannot be
+ * mistaken for a row being absent.
+ *
+ * The companion test for text rows went with the rows themselves: this list offers no text field
+ * any more. `:ui-next` still renders [SettingKind.TEXT] and the registry still carries the commit
+ * plumbing, so that test comes back with the first text row that does.
  *
  * The list is lazy, so a row has to be scrolled to before it exists to look at.
  */
@@ -50,36 +48,10 @@ class NextSettingsListTest {
     fun togglingARowWritesItThrough() {
         setContent()
 
-        scrollTo("Thread watch notifications").performClick()
+        scrollTo("Personalized feed").performClick()
         composeTestRule.waitForIdle()
 
-        assertThat(repository.current.threadWatchNotificationsEnabled).isFalse()
-    }
-
-    /** A string setting is written on Save, not on every keystroke. */
-    @Test
-    fun editingATextRowWritesItThroughOnSave() {
-        setContent()
-
-        scrollTo("Custom user agent").performClick()
-        composeTestRule.waitForIdle()
-
-        composeTestRule.onNode(hasSetTextAction()).performTextReplacement("Orbin/1.0")
-        composeTestRule.waitForIdle()
-        assertThat(repository.current.userAgent).isEmpty()
-
-        // Keep Done visible for humans, but commit through the IME action: on short API 31
-        // AVDs the soft keyboard covers the Done control and a synthetic click hits the IME
-        // window instead of the row action.
-        composeTestRule
-            .onNode(hasScrollAction())
-            .performScrollToNode(hasTextExactly("Done"))
-        composeTestRule.onNode(hasTextExactly("Done")).assertIsDisplayed()
-        composeTestRule.onNode(hasSetTextAction()).performImeAction()
-        composeTestRule.waitUntil(timeoutMillis = 3_000) {
-            repository.current.userAgent == "Orbin/1.0"
-        }
-        assertThat(repository.current.userAgent).isEqualTo("Orbin/1.0")
+        assertThat(repository.current.personalizedHomeFeed).isFalse()
     }
 
     /** Brings a row into composition — in a lazy list an off-screen row is not there to be found. */
@@ -96,7 +68,7 @@ class NextSettingsListTest {
         composeTestRule.setContent {
             val settings by viewModel.settings.collectAsState()
             var expanded by remember { mutableStateOf<String?>(null) }
-            val model = buildSettings(settings, viewModel, "Up to date", dnsFallbackActive = false)
+            val model = buildSettings(settings, viewModel, "Up to date")
             NextTheme {
                 SettingsScreen(
                     groups = model.groups,

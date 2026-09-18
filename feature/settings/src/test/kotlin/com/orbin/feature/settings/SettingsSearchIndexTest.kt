@@ -6,16 +6,16 @@ import org.junit.Test
 class SettingsSearchIndexTest {
     @Test
     fun `matches is case-insensitive against the label`() {
-        val entry = SettingsSearchEntry("biometric", "Lock with biometrics", PRIVACY)
+        val entry = SettingsSearchEntry("biometric", "App lock", PRIVACY)
 
-        assertThat(entry.matches("BIOMETRICS")).isTrue()
+        assertThat(entry.matches("APP LOCK")).isTrue()
         assertThat(entry.matches("lock")).isTrue()
         assertThat(entry.matches("nonexistent")).isFalse()
     }
 
     @Test
     fun `matches also checks the group heading`() {
-        val entry = SettingsSearchEntry("userAgent", "Custom user agent", PRIVACY)
+        val entry = SettingsSearchEntry("biometric", "App lock", PRIVACY)
 
         assertThat(entry.matches("privacy")).isTrue()
     }
