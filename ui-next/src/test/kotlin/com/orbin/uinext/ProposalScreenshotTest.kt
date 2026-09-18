@@ -227,12 +227,12 @@ class ProposalScreenshotTest {
     @Test
     fun commandMaxText() = capture("next_command_max_text", fontScale = MAX_FONT_SCALE) { commandContent() }
 
+    /** The list at rest: every row closed. */
     @Test
     fun settings() =
         capture("next_settings") {
             SettingsScreen(
                 groups = settingsGroups(),
-                expandedId = "colorTheme",
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
@@ -244,19 +244,22 @@ class ProposalScreenshotTest {
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(
                 groups = settingsGroups(),
-                expandedId = "colorTheme",
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
             )
         }
 
+    /**
+     * A row being changed where it stands, which is the only way this list edits anything: the
+     * choice opens its options underneath rather than opening a screen over them.
+     */
     @Test
     fun settingsEditing() =
         capture("next_settings_editing") {
             SettingsScreen(
                 groups = settingsGroups(),
-                expandedId = "hiddenTags",
+                expandedId = "themeMode",
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
@@ -268,7 +271,20 @@ class ProposalScreenshotTest {
         capture("next_settings_editing_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(
                 groups = settingsGroups(),
-                expandedId = "hiddenTags",
+                expandedId = "themeMode",
+                onOpenFeed = {},
+                onOpenBoards = {},
+                onOpenMedia = {},
+            )
+        }
+
+    /** Keeps [SettingTextEditor] covered; see [textEditorGroup]. */
+    @Test
+    fun settingsTextEditor() =
+        capture("next_settings_text_editor") {
+            SettingsScreen(
+                groups = textEditorGroup(),
+                expandedId = "userAgent",
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
@@ -396,31 +412,56 @@ class ProposalScreenshotTest {
             ),
         )
 
+    /**
+     * The settings surface as `:feature:settings` actually builds it.
+     *
+     * Ids, labels, headings and order mirror `buildSettings`, so these captures show the list
+     * people really get rather than a list this file invented. `SettingsIndexTest` holds the
+     * registry and its search index together; nothing holds this fixture to either, so it is kept
+     * short on purpose — enough of each heading to show the shape, and every row real.
+     */
     private fun settingsGroups() =
         listOf(
-            "Content & feed" to
+            "General" to
                 listOf(
-                    SettingItem("filter", "Built-in content filter", "Always on", SettingKind.INFO),
-                    SettingItem(
-                        id = "hiddenTags",
-                        label = "Hidden tags",
-                        value = "3",
-                        kind = SettingKind.TEXT,
-                        text = "spoilers, politics, meta",
-                        hint = "Comma-separated. Threads matching any of them are hidden.",
-                    ),
+                    SettingItem("personalized", "Personalized feed", "On", SettingKind.TOGGLE),
                     SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
                     SettingItem(
-                        id = "threadLimit",
-                        label = "Threads per board",
-                        value = "All",
+                        id = "feedSort",
+                        label = "Feed sort",
+                        value = "Board",
                         kind = SettingKind.CHOICE,
-                        options = listOf("6", "12", "18", "All"),
-                        selected = 3,
+                        options = listOf("Board", "Active", "Replies", "Images", "Created", "A-Z"),
+                        selected = 0,
                     ),
+                    SettingItem("fullScreenFeed", "Full-screen browsing", "Off", SettingKind.TOGGLE),
                 ),
-            "Storage & backup" to
+            "Display & Media" to
                 listOf(
+                    SettingItem(
+                        id = "themeMode",
+                        label = "Theme",
+                        value = "System",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("System", "Light", "Dark"),
+                        selected = 0,
+                    ),
+                    SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
+                    SettingItem(
+                        id = "fontScale",
+                        label = "Text size",
+                        value = "Default",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("Small", "Default", "Large", "XL"),
+                        selected = 1,
+                    ),
+                    SettingItem("autoplay", "Autoplay videos", "Off", SettingKind.TOGGLE),
+                    SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
+                ),
+            "Privacy & Data" to
+                listOf(
+                    SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
+                    SettingItem("recentSearches", "Save recent searches", "Off", SettingKind.TOGGLE),
                     SettingItem(
                         id = "importBackup",
                         label = "Import data",
@@ -431,32 +472,28 @@ class ProposalScreenshotTest {
                                 "destroy an existing setup.",
                     ),
                 ),
-            "Appearance" to
+        )
+
+    /**
+     * A text row, which the settings list no longer has one of.
+     *
+     * [SettingTextEditor] is still live in `:ui-next` and the registry still carries the commit
+     * plumbing, so the editor keeps a capture of its own rather than riding on a settings fixture
+     * that would have to misrepresent the list to provide it. Deliberately not [settingsGroups]:
+     * this is a component under test, not the app's settings surface.
+     */
+    private fun textEditorGroup() =
+        listOf(
+            "Text row" to
                 listOf(
                     SettingItem(
-                        id = "colorTheme",
-                        label = "Color theme",
-                        value = "Yotsuba",
-                        kind = SettingKind.CHOICE,
-                        options = listOf("Orbin", "Yotsuba", "Tomorrow", "Photon"),
-                        selected = 1,
-                    ),
-                    SettingItem("dynamicColor", "Dynamic color", "Off", SettingKind.TOGGLE),
-                    SettingItem("amoled", "AMOLED black", "On", SettingKind.TOGGLE),
-                    SettingItem(
-                        id = "fontScale",
-                        label = "Font size",
+                        id = "userAgent",
+                        label = "Custom user agent",
                         value = "Default",
-                        kind = SettingKind.CHOICE,
-                        options = listOf("Small", "Default", "Large", "XL"),
-                        selected = 1,
+                        kind = SettingKind.TEXT,
+                        text = "Orbin/1.0",
+                        hint = "Sent with every request. Leave empty to use Orbin's default.",
                     ),
-                ),
-            "Media & playback" to
-                listOf(
-                    SettingItem("autoplay", "Autoplay videos", "On", SettingKind.TOGGLE),
-                    SettingItem("autoplayFeed", "Autoplay videos in feed", "Off", SettingKind.TOGGLE),
-                    SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
                 ),
         )
 
