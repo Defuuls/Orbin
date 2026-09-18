@@ -20,6 +20,14 @@ name: Cut Release
 # cutter used to get wrong, and it is why this workflow can stay on `main` indefinitely.
 #
 # To cut a release: write `release/next.toml` and merge it. Everything else follows.
+#
+# The prepare phase pushes its branch and opens the PR with RELEASE_BOT_TOKEN when that
+# secret is set, falling back to the workflow's own GITHUB_TOKEN when it is not. The
+# fallback works, but GitHub refuses to start workflow runs from events raised by
+# GITHUB_TOKEN — a recursion guard — so a release PR opened that way sits with its
+# required checks "expected" and never running, and cannot be merged without dispatching
+# CI by hand. A PAT (or GitHub App token) with `repo` scope raises the push and
+# pull_request events as a real actor, so CI starts on its own.
 
 on:
   push:
@@ -56,11 +64,23 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DRY_RUN: ${{ inputs.dry_run || false }}
+      # The secrets context reaches a job's env but not a step's `if`, so the presence of
+      # the token is resolved here and tested as a string below.
+      HAS_BOT_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN != '' }}
     steps:
+      - name: Warn when the release PR will not start CI
+        if: env.HAS_BOT_TOKEN != 'true'
+        run: >-
+          echo "::warning::RELEASE_BOT_TOKEN is not set - the release PR will be opened
+          with GITHUB_TOKEN, whose events do not start workflow runs, so its required
+          checks stay 'expected' until CI is dispatched by hand against the prep branch."
+
       - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
+          # Pushing the prep branch with this token is what makes CI run on the release PR.
+          token: ${{ secrets.RELEASE_BOT_TOKEN || github.token }}
 
       - name: Fetch tags
         run: git fetch --tags --force
@@ -124,7 +144,7 @@ jobs:
       - name: Open the release pull request
         if: steps.phase.outputs.mode == 'prepare' && env.DRY_RUN != 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN || github.token }}
           BRANCH: ${{ steps.plan.outputs.branch }}
           VERSION_NAME: ${{ steps.plan.outputs.version_name }}
         run: |
@@ -150,6 +170,9 @@ jobs:
           python3 scripts/prepare_release.py verify
           python3 scripts/validate_repo.py
 
+      # GITHUB_TOKEN is deliberate here: workflow_dispatch is exempt from the recursion
+      # guard that stops its push and pull_request events from starting runs, so this
+      # dispatch works without the PAT and does not need it.
       - name: Dispatch the signed release build
         if: steps.phase.outputs.mode == 'publish' && env.DRY_RUN != 'true'
         env:
