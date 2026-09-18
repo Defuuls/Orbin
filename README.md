@@ -13,7 +13,7 @@ does not post, reply, or create threads.
 
 **Current release:** [139 — Date](https://github.com/Defuuls/Orbin/releases/tag/v139-Date)
 
-**What's new in 128:** Color themes on the Next shell (Yotsuba, Warosu, Miku, Penumbra, Royal, Lain, and friends).
+**What's new in 139:** Settings in three categories (General, Display & Media, Privacy & Data), and a two-tab bottom chrome — Feed and Settings.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

@@ -39,9 +39,15 @@
 
 ## Release & Version Management
 
-- Version naming: themed codenames, one era at a time. Pasta names ran v91-v99 and stars ran
-  v30-v90 (ending at v90-Vega). Current codenames are popular Japanese female names.
-- Pick a codename not already used by an existing Orbin tag; check `git tag --list`.
+- Version naming: themed codenames, one era at a time. Stars ran v30-v90 (ending at v90-Vega),
+  pasta v91-v99, Japanese female names v100-v128, and diseases v129-v135. **Fruit is the current
+  era, from v136** (Apple, Banana, Cherry, Date...).
+- `release/codenames.txt` holds the pools and `release/README.md` documents the procedure; those
+  two are authoritative, and `scripts/prepare_release.py` enforces the right pool for the release
+  number. Update them, not this file, when the era changes.
+- Pick a codename not already used by an existing Orbin tag; check `git tag --list` (run
+  `git fetch --tags` first — a fresh clone has none, so the list looks empty and every name
+  looks free).
 - versionCode increments by 1 for each release in `gradle.properties`
   (`orbin.versionCode` / `orbin.versionName`).
 - CHANGELOG.md documents all changes with Added/Changed/Fixed/Removed sections.
