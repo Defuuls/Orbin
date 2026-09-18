@@ -1,20 +1,24 @@
-# Orbin 138 — Cherry
+# Orbin 139 — Date
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 138
-codename     = "Cherry"
-version_code = 156
+number       = 139
+codename     = "Date"
+version_code = 157
 
 summary = [
-  "bump Orbin to 138-Cherry / versionCode 156",
-  "make ui-next the authoritative iOS visual chrome across Orbin",
+  "bump Orbin to 139-Date / versionCode 157",
+  "reduce settings to three categories and the bottom chrome to Feed and Settings",
 ]
 
 [changelog]
 Changed = [
-  "Made ui-next the authoritative iOS visual layer so legacy imageboard themes no longer override app chrome (#505).",
-  "Kept legacy theme light/dark intent while preserving the explicit Android platform-theme option (#505).",
-  "Stabilized hosted CI macrobenchmarks by gating deterministic cold and warm startup measurements (#505).",
+  "Reduced the settings list to three categories — General, Display & Media, Privacy & Data — and to the rows most people actually reach for. Preferences behind rows that are no longer listed keep their stored values (#508, #509).",
+  "Reduced the permanent bottom chrome to Feed and Settings. Boards and Media are reached from Command and now carry the context rail, like Search and Downloads (#508, #509).",
+]
+Fixed = [
+  "Restored the bottom chrome on Boards and Media, which the two-tab change had left with no rail at all on their list, loading, error and empty states (#509).",
+  "Restored the Thread scroll arrow and Image cache usage rows, which were grafted onto settings headings that no longer existed and had stopped appearing (#509).",
+  "Dropped settings search entries for rows the list no longer offers, so a search can no longer land on a setting that is not there (#509).",
 ]
