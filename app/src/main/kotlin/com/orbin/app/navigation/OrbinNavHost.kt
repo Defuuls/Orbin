@@ -214,7 +214,6 @@ fun OrbinNavHost(
         composable<Route.Settings> { backStackEntry ->
             NextSettingsScreen(
                 onOpenCommands = onOpenCommands,
-                onRunSetup = { navController.navigate(Route.Onboarding) },
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 focusId = backStackEntry.toRoute<Route.Settings>().focus,
                 onOpenFeed = {

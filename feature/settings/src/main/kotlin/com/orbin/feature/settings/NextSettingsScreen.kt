@@ -29,7 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
-private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
 private const val BYTES_PER_MB = 1024L * 1024L
 private const val UI_PREFS_FILE = "orbin_ui_preferences"
 private const val THREAD_SCROLL_ARROW_KEY = "thread_scroll_arrow"
@@ -44,13 +43,10 @@ private const val THREAD_SCROLL_ARROW_ID = "threadScrollArrow"
  * navigates now. Toggles flip, choices and text fields open under their own row, and the actions
  * that need the system — a folder picker, a file to write a backup into — open that system picker
  * over this screen.
- *
- * [onRunSetup] is the one thing here that is genuinely somewhere else: the first-run wizard.
  */
 @Composable
 fun NextSettingsScreen(
     onOpenCommands: () -> Unit,
-    onRunSetup: () -> Unit,
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
     focusId: String? = null,
@@ -61,7 +57,6 @@ fun NextSettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
-    val diagnosticsStatus by viewModel.diagnosticsStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -102,26 +97,11 @@ fun NextSettingsScreen(
                 }
             }
         }
-    val diagnosticsExporter =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-            uri ?: return@rememberLauncherForActivityResult
-            viewModel.exportDiagnostics { report ->
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.use { it.write(report.toByteArray()) }
-                        ?: error("Could not open the selected file")
-                }
-            }
-        }
 
     LaunchedEffect(backupStatus) {
         val status = backupStatus ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(status.message())
         viewModel.clearBackupStatus()
-    }
-    LaunchedEffect(diagnosticsStatus) {
-        val status = diagnosticsStatus ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(message = status.message(), withDismissAction = true)
-        viewModel.clearDiagnosticsStatus()
     }
     // The row itself reports progress; the snackbar exists to carry the "Open" action, so it is
     // only worth raising once the check has actually finished.
@@ -208,7 +188,6 @@ fun NextSettingsScreen(
                             onFolder = { folderPicker.launch(null) },
                             onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
                             onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                            onDiagnostics = { diagnosticsExporter.launch(DIAGNOSTICS_FILE_NAME) },
                             onClear = { confirmClear = true },
                             onClearImageCache = viewModel::clearImageCache,
                             onCheckUpdates = {
@@ -216,7 +195,6 @@ fun NextSettingsScreen(
                                     viewModel.checkForUpdate(appVersionName(context))
                                 }
                             },
-                            onRunSetup = onRunSetup,
                         )
                     SettingKind.INFO -> Unit
                 }
@@ -248,27 +226,22 @@ fun NextSettingsScreen(
     }
 }
 
-@Suppress("LongParameterList")
 private fun dispatch(
     item: SettingItem,
     onFolder: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
-    onDiagnostics: () -> Unit,
     onClear: () -> Unit,
     onClearImageCache: () -> Unit,
     onCheckUpdates: () -> Unit,
-    onRunSetup: () -> Unit,
 ) {
     when (item.id) {
         "downloadFolder" -> onFolder()
         "exportBackup" -> onExport()
         "importBackup" -> onImport()
-        "crashDetails" -> onDiagnostics()
         "clearActivity" -> onClear()
         "clearImageCache" -> onClearImageCache()
         "checkUpdates" -> onCheckUpdates()
-        "runSetup" -> onRunSetup()
     }
 }
 
@@ -290,14 +263,6 @@ private fun BackupStatus.message(): String =
                     ""
                 }
         is BackupStatus.Failed -> message
-    }
-
-private fun DiagnosticsStatus.message(): String =
-    when (this) {
-        DiagnosticsStatus.Exported -> "Crash details saved"
-        DiagnosticsStatus.Empty -> "No crashes have been recorded"
-        DiagnosticsStatus.Cleared -> "Crash details deleted"
-        is DiagnosticsStatus.Failed -> message
     }
 
 private fun UpdateCheckState.availableRelease(): UpdateStatus.Available? =

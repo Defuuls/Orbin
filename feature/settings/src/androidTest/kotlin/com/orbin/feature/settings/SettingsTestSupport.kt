@@ -3,7 +3,6 @@ package com.orbin.feature.settings
 import com.orbin.core.model.AppSettings
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
-import com.orbin.core.testing.repository.FakeDiagnosticsRepository
 import com.orbin.core.testing.repository.FakeDnsPrivacyMonitor
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
@@ -35,7 +34,6 @@ internal fun testSettingsViewModel(
                 FakeProviderRegistry(),
             ),
         updateRepository = FakeUpdateRepository(),
-        diagnosticsRepository = FakeDiagnosticsRepository(),
         dnsPrivacyMonitor = dnsMonitor,
         registry = FakeProviderRegistry(),
     )

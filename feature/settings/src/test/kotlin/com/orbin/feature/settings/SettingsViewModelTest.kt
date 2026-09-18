@@ -9,7 +9,6 @@ import com.orbin.core.model.UpdateStatus
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
-import com.orbin.core.testing.repository.FakeDiagnosticsRepository
 import com.orbin.core.testing.repository.FakeDnsPrivacyMonitor
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
@@ -168,7 +167,6 @@ class SettingsViewModelTest {
         backupService =
             BackupService(settings, FakeBoardPreferencesRepository(), bookmarks, searches, registry),
         updateRepository = updateRepository,
-        diagnosticsRepository = FakeDiagnosticsRepository(),
         dnsPrivacyMonitor = FakeDnsPrivacyMonitor(),
         registry = registry,
     )
