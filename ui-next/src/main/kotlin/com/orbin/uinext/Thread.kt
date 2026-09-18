@@ -75,7 +75,6 @@ fun ThreadScreen(
     onDownloadAll: () -> Unit = {},
     onShare: () -> Unit = {},
     onClassicReader: (() -> Unit)? = null,
-    onSearch: () -> Unit = {},
     onPostClick: (Post) -> Unit = {},
     listState: LazyListState? = null,
     scrollToPostId: String? = null,
@@ -239,7 +238,6 @@ fun ThreadScreen(
                 ContextRail(
                     where = subject,
                     detail = board,
-                    onSearch = onSearch,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }

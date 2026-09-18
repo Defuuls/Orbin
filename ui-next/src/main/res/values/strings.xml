@@ -15,10 +15,6 @@
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
     <string name="next_settings_title">Settings</string>
 
-    <!-- The one affordance on the rail, and the rail's own detail lines.
-         Opens the command surface (not the thread Search destination). -->
-    <string name="next_action_search">Go</string>
-    <string name="next_action_go_cd">Open commands</string>
     <string name="next_command_clear">Clear</string>
     <string name="next_command_clear_cd">Clear query</string>
     <string name="next_launchpad_boards">Boards</string>

@@ -51,7 +51,6 @@ fun MediaWallScreen(
     showRail: Boolean = true,
     showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
-    onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -104,7 +103,6 @@ fun MediaWallScreen(
                 } else {
                     null
                 },
-            onSearch = onSearch,
             railVisible = railVisible,
             destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },

@@ -26,6 +26,7 @@ class InlineActionAccessibilityTest {
     val composeRule = createComposeRule()
 
     private val isButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+    private val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
 
     @Test
     fun `an action announces itself as a button`() {
@@ -64,13 +65,19 @@ class InlineActionAccessibilityTest {
         composeRule.onAllNodes(isButton).assertCountEquals(0)
     }
 
+    /**
+     * The rail's Go button used to stand for the chrome here. It is gone, so the pill's tabs are
+     * the only thing in the bottom chrome left to hit — and they are drawn as a Column of icon and
+     * caption rather than a control, so their touch target is asserted rather than assumed.
+     */
     @Test
-    fun `the rail's search affordance is a button of the same minimum size`() {
+    fun `a destination tab is at least the minimum touch target`() {
         composeRule.setContent {
-            NextTheme { ContextRail(where = "Feed", detail = "7 boards", onSearch = {}) }
+            NextTheme { DestinationPill(selected = NextDestination.FEED, onSelect = {}) }
         }
 
-        composeRule.onNode(isButton).assertHeightIsAtLeast(MIN_TOUCH_TARGET)
-        composeRule.onNode(isButton).assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+        composeRule.onAllNodes(isTab).assertCountEquals(2)
+        composeRule.onAllNodes(isTab)[0].assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+        composeRule.onAllNodes(isTab)[1].assertHeightIsAtLeast(MIN_TOUCH_TARGET)
     }
 }

@@ -53,6 +53,8 @@ fun NextSettingsScreen(
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -166,10 +168,12 @@ fun NextSettingsScreen(
             subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
             focusId = focusId,
-            onSearch = onOpenCommands,
             onOpenFeed = onOpenFeed,
             onOpenBoards = onOpenBoards,
             onOpenMedia = onOpenMedia,
+            onOpenSearch = onOpenSearch,
+            onOpenDownloads = onOpenDownloads,
+            onOpenCommands = onOpenCommands,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE ->

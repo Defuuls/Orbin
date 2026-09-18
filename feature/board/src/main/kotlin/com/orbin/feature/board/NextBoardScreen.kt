@@ -34,7 +34,6 @@ import com.orbin.uinext.NextTheme
 @Composable
 fun NextBoardScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
-    onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -70,7 +69,6 @@ fun NextBoardScreen(
                 title = board,
                 subtitle = stringResource(R.string.next_board_empty),
                 where = board,
-                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme
@@ -85,7 +83,6 @@ fun NextBoardScreen(
             onLayoutChange = { layout = if (it == FeedLayout.IMAGES) it else FeedLayout.GRID },
             sortLabel = catalogSort.label,
             onSort = viewModel::cycleCatalogSort,
-            onSearch = onOpenCommands,
             onOpenRow = { row ->
                 row.threadId()?.let { id ->
                     onOpenThread(

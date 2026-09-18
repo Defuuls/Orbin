@@ -3,7 +3,6 @@ package com.orbin.feature.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.uinext.PlatformSegments
@@ -11,7 +10,6 @@ import com.orbin.uinext.PlatformSegments
 @Composable
 fun NextFeedWithSiteSwitcherScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
-    onOpenCommands: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
@@ -21,7 +19,6 @@ fun NextFeedWithSiteSwitcherScreen(
     refreshRequest: Int = 0,
     filter: String = "",
     onClearFilter: () -> Unit = {},
-    railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
@@ -29,7 +26,6 @@ fun NextFeedWithSiteSwitcherScreen(
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
     NextFeedScreen(
         onOpenThread = onOpenThread,
-        onOpenCommands = onOpenCommands,
         onOpenSettings = onOpenSettings,
         modifier = modifier,
         showRail = showRail,
@@ -39,7 +35,6 @@ fun NextFeedWithSiteSwitcherScreen(
         refreshRequest = refreshRequest,
         filter = filter,
         onClearFilter = onClearFilter,
-        railAction = railAction,
         onOpenBoards = onOpenBoards,
         onOpenMedia = onOpenMedia,
         headerContent = {

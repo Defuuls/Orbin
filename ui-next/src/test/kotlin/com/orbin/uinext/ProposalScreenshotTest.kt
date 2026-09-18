@@ -236,6 +236,9 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
+                onOpenSearch = {},
+                onOpenDownloads = {},
+                onOpenCommands = {},
             )
         }
 
@@ -247,6 +250,9 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
+                onOpenSearch = {},
+                onOpenDownloads = {},
+                onOpenCommands = {},
             )
         }
 
@@ -263,6 +269,9 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
+                onOpenSearch = {},
+                onOpenDownloads = {},
+                onOpenCommands = {},
             )
         }
 
@@ -275,6 +284,9 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
+                onOpenSearch = {},
+                onOpenDownloads = {},
+                onOpenCommands = {},
             )
         }
 
@@ -288,6 +300,9 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
+                onOpenSearch = {},
+                onOpenDownloads = {},
+                onOpenCommands = {},
             )
         }
 

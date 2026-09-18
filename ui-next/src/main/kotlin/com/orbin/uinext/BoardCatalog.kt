@@ -43,7 +43,6 @@ fun BoardScreen(
     onSort: () -> Unit = {},
     showRail: Boolean = true,
     onOpenRow: (FeedRow) -> Unit = {},
-    onSearch: () -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -69,7 +68,6 @@ fun BoardScreen(
             where = board.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
             detail = stringResource(R.string.next_rail_catalog),
-            onSearch = onSearch,
             railVisible = railVisible,
         ) { bottomPad ->
             val header: @Composable () -> Unit = {

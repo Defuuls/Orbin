@@ -36,6 +36,9 @@ class WindowInsetsTest {
                 FeedScreen(
                     rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
                     subtitle = "1 thread",
+                    // Anchors the rail assertion below: the rail's own "Feed" label is also the
+                    // screen title, and the Go button that used to be unambiguous is gone.
+                    railDetail = "7 boards",
                 )
             }
         }
@@ -45,9 +48,10 @@ class WindowInsetsTest {
         // The first row is below the status bar rather than under the clock.
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
-        // The rail's affordance is above the gesture handle rather than behind it.
-        val go = composeRule.onNodeWithText("Go").getUnclippedBoundsInRoot()
-        assertThat(go.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+        // The rail is above the gesture handle rather than behind it.
+        // substring: the rail pads its detail with two leading spaces.
+        val rail = composeRule.onNodeWithText("7 boards", substring = true).getUnclippedBoundsInRoot()
+        assertThat(rail.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 
     @Test

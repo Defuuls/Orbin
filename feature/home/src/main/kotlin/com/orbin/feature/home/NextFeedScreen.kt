@@ -57,7 +57,6 @@ private const val RELATIVE_TIME_TICK_MS = 60_000L
 @Composable
 fun NextFeedScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
-    onOpenCommands: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
@@ -68,7 +67,6 @@ fun NextFeedScreen(
     refreshRequest: Int = 0,
     filter: String = "",
     onClearFilter: () -> Unit = {},
-    railAction: String = stringResource(com.orbin.uinext.R.string.next_action_search),
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
@@ -127,8 +125,6 @@ fun NextFeedScreen(
                     where = stringResource(R.string.next_feed_title).takeIf { !showRail },
                     destination = NextDestination.FEED.takeIf { showRail },
                     onDestination = onDestination.takeIf { showRail },
-                    action = railAction,
-                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
 
@@ -141,8 +137,6 @@ fun NextFeedScreen(
                     where = stringResource(R.string.next_feed_title).takeIf { !showRail },
                     destination = NextDestination.FEED.takeIf { showRail },
                     onDestination = onDestination.takeIf { showRail },
-                    action = railAction,
-                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
 
@@ -184,8 +178,6 @@ fun NextFeedScreen(
                         where = stringResource(R.string.next_feed_title).takeIf { !showRail },
                         destination = NextDestination.FEED.takeIf { showRail },
                         onDestination = onDestination.takeIf { showRail },
-                        action = railAction,
-                        onSearch = onOpenCommands,
                         modifier = modifier,
                     )
                 } else {
@@ -238,8 +230,6 @@ fun NextFeedScreen(
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,
                             scrollToTopRequest = scrollToTopRequest,
-                            railAction = railAction,
-                            onSearch = onOpenCommands,
                             onSettings = onOpenSettings,
                             onOpenBoards = onOpenBoards,
                             onOpenMedia = onOpenMedia,

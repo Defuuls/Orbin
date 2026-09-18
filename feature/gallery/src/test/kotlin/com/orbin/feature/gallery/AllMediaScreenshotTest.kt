@@ -159,7 +159,6 @@ class AllMediaScreenshotTest {
                             isRefreshing = false,
                             onRefresh = {},
                             onOpenMedia = { _, _, _, _ -> },
-                            onOpenCommands = {},
                         )
                     }
                 }
