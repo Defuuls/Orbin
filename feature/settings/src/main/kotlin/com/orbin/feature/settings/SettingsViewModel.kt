@@ -20,7 +20,6 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.UpdateStatus
-import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
@@ -53,20 +52,15 @@ class SettingsViewModel
         private val downloadRepository: DownloadRepository,
         private val backupService: BackupService,
         private val updateRepository: UpdateRepository,
-        private val diagnosticsRepository: DiagnosticsRepository,
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
-        private val _diagnosticsStatus = MutableStateFlow<DiagnosticsStatus?>(null)
         private val _imageCacheUsageBytes = MutableStateFlow(0L)
 
         val imageCacheUsageBytes: StateFlow<Long> = _imageCacheUsageBytes.asStateFlow()
-
-        /** Result of the last diagnostics export or clear, for a snackbar. */
-        val diagnosticsStatus: StateFlow<DiagnosticsStatus?> = _diagnosticsStatus.asStateFlow()
 
         /** State of a manual update check, for the button and its result message. */
         val updateCheck: StateFlow<UpdateCheckState> = _updateCheck.asStateFlow()
@@ -246,31 +240,6 @@ class SettingsViewModel
                     }
             }
 
-        fun exportDiagnostics(sink: suspend (String) -> Unit) =
-            update {
-                val report = diagnosticsRepository.exportReport()
-                _diagnosticsStatus.value =
-                    if (report == null) {
-                        DiagnosticsStatus.Empty
-                    } else {
-                        runCatching { sink(report) }
-                            .fold(
-                                onSuccess = { DiagnosticsStatus.Exported },
-                                onFailure = { DiagnosticsStatus.Failed(it.message ?: "Could not write the file") },
-                            )
-                    }
-            }
-
-        fun clearDiagnostics() =
-            update {
-                diagnosticsRepository.clearReports()
-                _diagnosticsStatus.value = DiagnosticsStatus.Cleared
-            }
-
-        fun clearDiagnosticsStatus() {
-            _diagnosticsStatus.value = null
-        }
-
         fun clearBackupStatus() {
             _backupStatus.value = null
         }
@@ -288,18 +257,6 @@ private object EmptyImageCacheRepository : ImageCacheRepository {
     override suspend fun usageBytes(): Long = 0L
 
     override suspend fun clear() = Unit
-}
-
-sealed interface DiagnosticsStatus {
-    data object Exported : DiagnosticsStatus
-
-    data object Empty : DiagnosticsStatus
-
-    data object Cleared : DiagnosticsStatus
-
-    data class Failed(
-        val message: String,
-    ) : DiagnosticsStatus
 }
 
 sealed interface BackupStatus {
