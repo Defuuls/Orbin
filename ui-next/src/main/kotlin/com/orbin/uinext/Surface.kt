@@ -11,7 +11,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -87,8 +86,6 @@ fun DestinationPill(
     selected: NextDestination,
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier = Modifier,
-    action: String = stringResource(R.string.next_action_search),
-    onCommand: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
@@ -112,7 +109,6 @@ fun DestinationPill(
                     .windowInsetsPadding(railInsets)
                     .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier =
@@ -134,25 +130,6 @@ fun DestinationPill(
                     icon = Icons.Outlined.Settings,
                     selected = selected == NextDestination.SETTINGS,
                     onClick = { onSelect(NextDestination.SETTINGS) },
-                )
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
-                        .clip(RoundedCornerShape(NextRadius.pill))
-                        .nextClickable(role = Role.Button, onClick = onCommand),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = action,
-                    style = NextType.tab,
-                    color = next.onAccent,
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(NextRadius.pill))
-                            .background(next.accent)
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
                 )
             }
         }
@@ -220,8 +197,6 @@ fun ContextRail(
     where: String,
     modifier: Modifier = Modifier,
     detail: String? = null,
-    action: String = stringResource(R.string.next_action_search),
-    onSearch: () -> Unit = {},
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
@@ -246,7 +221,7 @@ fun ContextRail(
                     .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom)
                     .heightIn(min = RAIL_HEIGHT)
                     .nextFrosted(RoundedCornerShape(NextRadius.pill))
-                    .padding(start = 18.dp, end = 6.dp),
+                    .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -265,25 +240,6 @@ fun ContextRail(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(0.45f, fill = false),
-                )
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
-                        .clip(RoundedCornerShape(NextRadius.control))
-                        .nextClickable(role = Role.Button, onClick = onSearch),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = action,
-                    style = NextType.tab,
-                    color = next.onAccent,
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(NextRadius.control))
-                            .background(next.accent)
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
@@ -595,8 +551,6 @@ fun NextScaffold(
     where: String?,
     modifier: Modifier = Modifier,
     detail: String? = null,
-    action: String = stringResource(R.string.next_action_search),
-    onSearch: () -> Unit = {},
     railVisible: Boolean = true,
     destination: NextDestination? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
@@ -617,14 +571,9 @@ fun NextScaffold(
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
                     if (pillDestination != null && onDestination != null) {
-                        DestinationPill(
-                            selected = pillDestination,
-                            onSelect = onDestination,
-                            action = action,
-                            onCommand = onSearch,
-                        )
+                        DestinationPill(selected = pillDestination, onSelect = onDestination)
                     } else if (where != null) {
-                        ContextRail(where = where, detail = detail, action = action, onSearch = onSearch)
+                        ContextRail(where = where, detail = detail)
                     }
                 }
             }
@@ -689,16 +638,12 @@ fun MessageScreen(
     actionLabel: String? = null,
     onAction: () -> Unit = {},
     where: String? = null,
-    action: String = stringResource(R.string.next_action_search),
-    onSearch: () -> Unit = {},
     destination: NextDestination? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
 ) {
     NextScaffold(
         where = where.takeIf { !destination.drawsPill() },
         modifier = modifier,
-        action = action,
-        onSearch = onSearch,
         destination = destination,
         onDestination = onDestination,
     ) { _ ->

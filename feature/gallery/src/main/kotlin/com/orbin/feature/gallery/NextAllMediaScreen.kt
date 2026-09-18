@@ -28,7 +28,6 @@ import com.orbin.uinext.NextTheme
 @Composable
 fun NextAllMediaScreen(
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
-    onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -46,7 +45,6 @@ fun NextAllMediaScreen(
         showSizeControl = true,
         onRefresh = viewModel::refresh,
         onOpenMedia = onOpenMedia,
-        onOpenCommands = onOpenCommands,
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
@@ -70,7 +68,6 @@ fun NextAllMediaContent(
     showSizeControl: Boolean = false,
     onRefresh: () -> Unit,
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
-    onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
@@ -105,7 +102,6 @@ fun NextAllMediaContent(
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },
                 onDestination = onDestination,
-                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme
@@ -121,7 +117,6 @@ fun NextAllMediaContent(
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },
                 onDestination = onDestination,
-                onSearch = onOpenCommands,
                 modifier = modifier,
             )
             return@NextTheme
@@ -143,7 +138,6 @@ fun NextAllMediaContent(
                 showSizeControl = showSizeControl,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
-                onSearch = onOpenCommands,
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
                 onOpenSettings = onOpenSettings,

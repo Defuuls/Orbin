@@ -299,7 +299,6 @@ private fun LoadedThread(
                 onDownloadAll = viewModel::downloadAllMedia,
                 onShare = viewModel::exportLinks,
                 showRail = onOpenCommands != null,
-                onSearch = onOpenCommands ?: {},
                 body = { row ->
                     presentation.rowsById[row.id]?.let { entry ->
                         PostCommentText(

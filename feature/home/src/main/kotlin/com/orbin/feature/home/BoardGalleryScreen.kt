@@ -24,7 +24,6 @@ import com.orbin.uinext.NextTheme
 @Composable
 fun BoardGalleryScreen(
     onOpenBoard: (provider: String, board: String, title: String) -> Unit,
-    onOpenCommands: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
@@ -86,7 +85,6 @@ fun BoardGalleryScreen(
                     where = "Boards",
                     destination = NextDestination.BOARDS.takeIf { onDestination != null },
                     onDestination = onDestination,
-                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
             is HomeUiState.Error ->
@@ -98,7 +96,6 @@ fun BoardGalleryScreen(
                     where = "Boards",
                     destination = NextDestination.BOARDS.takeIf { onDestination != null },
                     onDestination = onDestination,
-                    onSearch = onOpenCommands,
                     modifier = modifier,
                 )
             is HomeUiState.Success ->
@@ -114,7 +111,6 @@ fun BoardGalleryScreen(
                         where = "Boards",
                         destination = NextDestination.BOARDS.takeIf { onDestination != null },
                         onDestination = onDestination,
-                        onSearch = onOpenCommands,
                         modifier = modifier,
                     )
                 } else {
@@ -126,7 +122,6 @@ fun BoardGalleryScreen(
                             visibleBoards.firstOrNull { it.id.value == tile.id }?.let(openBoard)
                         },
                         onRandom = { visibleBoards.randomOrNull()?.let(openBoard) },
-                        onSearch = onOpenCommands,
                         onOpenFeed = onOpenFeed,
                         onOpenMedia = onOpenMedia,
                         onOpenSettings = onOpenSettings,

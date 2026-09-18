@@ -64,7 +64,6 @@ fun OrbinNavHost(
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
-                onOpenCommands = onOpenCommands,
                 onOpenSettings = { navController.navigate(Route.Settings()) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -79,7 +78,6 @@ fun OrbinNavHost(
 
         composable<Route.BoardGallery> {
             BoardGalleryScreen(
-                onOpenCommands = onOpenCommands,
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
@@ -99,7 +97,6 @@ fun OrbinNavHost(
         composable<Route.Search> {
             NextChromeHost(
                 where = "Search",
-                onOpenCommands = onOpenCommands,
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
                     SearchScreen(onOpenThread = openThread)
@@ -116,7 +113,6 @@ fun OrbinNavHost(
                         Route.Gallery(provider, board, thread, startIndex = 0, attachmentId = attachmentId),
                     )
                 },
-                onOpenCommands = onOpenCommands,
                 onOpenFeed = {
                     navController.navigate(Route.NextFeed) {
                         popUpTo(Route.NextFeed) { inclusive = false }
@@ -163,7 +159,6 @@ fun OrbinNavHost(
             } else {
                 NextBoardScreen(
                     onOpenThread = openThread,
-                    onOpenCommands = onOpenCommands,
                     hideRailOnScroll = chromeHidesOnScroll,
                     onChromeVisibleChange = onChromeVisibleChange,
                 )
@@ -203,7 +198,6 @@ fun OrbinNavHost(
         composable<Route.Downloads> {
             NextChromeHost(
                 where = "Downloads",
-                onOpenCommands = onOpenCommands,
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
                     DownloadsScreen(onBack = navController::navigateUp)
@@ -224,6 +218,8 @@ fun OrbinNavHost(
                 },
                 onOpenBoards = { navController.navigate(Route.BoardGallery) },
                 onOpenMedia = { navController.navigate(Route.AllMedia) },
+                onOpenSearch = { navController.navigate(Route.Search) },
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
             )
         }
 

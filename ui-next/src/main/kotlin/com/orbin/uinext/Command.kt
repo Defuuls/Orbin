@@ -254,12 +254,26 @@ fun SettingsScreen(
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
-    onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
+    onOpenCommands: (() -> Unit)? = null,
 ) {
     val entries = remember(groups) { groups.flatten() }
+    // Everything that is a place rather than a preference. Search, Downloads and the command
+    // sheet are here because they have nowhere else to be: none is a tab, and the Go button that
+    // used to reach the sheet — and through it the other two — is gone from the chrome.
+    // "Search" is the thread-search destination; "Commands" is the sheet that jumps to anything.
+    val library =
+        listOfNotNull(
+            onOpenBoards?.let { "Boards" to it },
+            onOpenMedia?.let { "All media" to it },
+            onOpenSearch?.let { "Search" to it },
+            onOpenDownloads?.let { "Downloads" to it },
+            onOpenCommands?.let { "Commands" to it },
+        )
     val state = rememberLazyListState()
     LaunchedEffect(focusId, entries) {
         val index = entries.indexOfFirst { it is SettingsEntry.Row && it.item.id == focusId }
@@ -291,7 +305,6 @@ fun SettingsScreen(
         NextScaffold(
             where = settingsTitle.takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
-            onSearch = onSearch,
             destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
@@ -311,22 +324,11 @@ fun SettingsScreen(
                         subtitle = subtitle,
                     )
                 }
-                if (onOpenBoards != null || onOpenMedia != null) {
+                if (library.isNotEmpty()) {
                     item(key = "library") {
                         GroupedSection(header = "Library") {
-                            onOpenBoards?.let {
-                                InlineAction(
-                                    "Boards",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = it,
-                                )
-                            }
-                            onOpenMedia?.let {
-                                InlineAction(
-                                    "All media",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = it,
-                                )
+                            library.forEach { (label, open) ->
+                                InlineAction(label, modifier = Modifier.fillMaxWidth(), onClick = open)
                             }
                         }
                     }

@@ -73,7 +73,6 @@ fun BoardDetailTwoPane(
                 onOpenThread = { provider, board, thread, title ->
                     onThreadSelected(Route.Thread(provider, board, thread, title))
                 },
-                onOpenCommands = onOpenCommands,
             )
         }
 

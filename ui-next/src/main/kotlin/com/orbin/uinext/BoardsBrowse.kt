@@ -58,7 +58,6 @@ fun BoardsScreen(
     onOpenBoard: (BoardTile) -> Unit = {},
     onFollowBoard: ((BoardTile, Boolean) -> Unit)? = null,
     onRandom: (() -> Unit)? = null,
-    onSearch: () -> Unit = {},
     onOpenFeed: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -116,7 +115,6 @@ fun BoardsScreen(
         NextScaffold(
             where = stringResource(R.string.next_launchpad_boards).takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
-            onSearch = onSearch,
             railVisible = railVisible,
             destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },
