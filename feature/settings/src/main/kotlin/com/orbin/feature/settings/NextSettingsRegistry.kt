@@ -12,9 +12,9 @@ import com.orbin.uinext.SettingKind
 /**
  * The intentionally small public settings surface.
  *
- * Orbin keeps sensible defaults for implementation details and exposes only choices that most
- * people can understand and are likely to change. Existing stored preferences remain compatible;
- * removing a row here does not delete or reset its value.
+ * Three buckets are enough: how Orbin behaves, how it looks and plays media, and the local/device
+ * controls people may need occasionally. Existing stored preferences remain compatible; hiding a
+ * row here never deletes or resets its value.
  */
 internal fun buildSettings(
     settings: AppSettings,
@@ -25,10 +25,8 @@ internal fun buildSettings(
     val rows = Rows()
     val groups = listOf(
         "General" to rows.general(settings, vm),
-        "Appearance" to rows.appearance(settings, vm),
-        "Media" to rows.media(settings, vm),
-        "Privacy" to rows.privacy(settings, vm),
-        "Data" to rows.data(settings, vm, updateState),
+        "Display & Media" to rows.displayAndMedia(settings, vm),
+        "Privacy & Data" to rows.privacyAndData(settings, vm, updateState),
     )
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
 }
@@ -67,18 +65,6 @@ private class Rows {
         )
     }
 
-    fun text(
-        id: String,
-        label: String,
-        value: String,
-        current: String,
-        hint: String,
-        onChange: (String) -> Unit,
-    ): SettingItem {
-        texts[id] = onChange
-        return SettingItem(id, label, value, SettingKind.TEXT, text = current, hint = hint)
-    }
-
     fun action(
         id: String,
         label: String,
@@ -90,11 +76,6 @@ private class Rows {
         toggle("personalized", "Personalized feed", settings.personalizedHomeFeed, vm::setPersonalizedHomeFeed),
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
         choice("feedSort", "Feed sort", FeedSort.entries, settings.feedSort, { it.label }, vm::setFeedSort),
-    )
-
-    fun appearance(settings: AppSettings, vm: SettingsViewModel) = listOf(
-        choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
-        toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         choice(
             "threadPresentation",
             "Open threads",
@@ -104,6 +85,11 @@ private class Rows {
             vm::setThreadPresentation,
         ),
         toggle("fullScreenFeed", "Full-screen browsing", settings.fullScreenFeedChrome, vm::setFullScreenFeedChrome),
+    )
+
+    fun displayAndMedia(settings: AppSettings, vm: SettingsViewModel) = listOf(
+        choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
+        toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         choice(
             "fontScale",
             "Text size",
@@ -112,15 +98,12 @@ private class Rows {
             { it.label },
             { vm.setFontScale(it.scale) },
         ),
-    )
-
-    fun media(settings: AppSettings, vm: SettingsViewModel) = listOf(
         toggle("autoplay", "Autoplay videos", settings.autoplayVideos, vm::setAutoplay),
         toggle("mute", "Mute by default", settings.muteByDefault, vm::setMute),
         toggle("preload", "Preload images", settings.preloadImages, vm::setPreload),
     )
 
-    fun privacy(settings: AppSettings, vm: SettingsViewModel) = listOf(
+    fun privacyAndData(settings: AppSettings, vm: SettingsViewModel, updateState: String) = listOfNotNull(
         toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
         toggle("recentSearches", "Save recent searches", settings.saveRecentSearches, vm::setSaveRecentSearches),
         action(
@@ -129,9 +112,6 @@ private class Rows {
             "Delete",
             "Deletes browsing history, recent searches and download history on this device.",
         ),
-    )
-
-    fun data(settings: AppSettings, vm: SettingsViewModel, updateState: String) = listOfNotNull(
         action(
             "downloadFolder",
             "Downloads folder",
