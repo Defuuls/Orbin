@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [139-Date] - 2026-09-18
+
+### Changed
+- Reduced the settings list to three categories — General, Display & Media, Privacy & Data — and to the rows most people actually reach for. Preferences behind rows that are no longer listed keep their stored values (#508, #509).
+- Reduced the permanent bottom chrome to Feed and Settings. Boards and Media are reached from Command and now carry the context rail, like Search and Downloads (#508, #509).
+
+### Fixed
+- Restored the bottom chrome on Boards and Media, which the two-tab change had left with no rail at all on their list, loading, error and empty states (#509).
+- Restored the Thread scroll arrow and Image cache usage rows, which were grafted onto settings headings that no longer existed and had stopped appearing (#509).
+- Dropped settings search entries for rows the list no longer offers, so a search can no longer land on a setting that is not there (#509).
+
+
 
 ## [138-Cherry] - 2026-09-17
 
@@ -2258,7 +2270,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v139-Date...HEAD
+[139-Date]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...v139-Date
 [138-Cherry]: https://github.com/Defuuls/Orbin/compare/v137-Banana...v138-Cherry
 [137-Banana]: https://github.com/Defuuls/Orbin/compare/v136-Apple...v137-Banana
 [136-Apple]: https://github.com/Defuuls/Orbin/compare/v135-Rhinovirus...v136-Apple
