@@ -63,7 +63,6 @@ fun NextSettingsScreen(
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val diagnosticsStatus by viewModel.diagnosticsStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
-    val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val uiPrefs =
@@ -141,14 +140,16 @@ fun NextSettingsScreen(
     }
 
     val model =
-        remember(settings, updateCheck, dnsFallbackActive) {
-            buildSettings(settings, viewModel, updateCheck.rowValue(context), dnsFallbackActive)
+        remember(settings, updateCheck) {
+            buildSettings(settings, viewModel, updateCheck.rowValue(context))
         }
     val groups =
         remember(model, imageCacheUsageBytes, threadScrollArrowEnabled) {
+            // Keyed off the heading constants, not literals: these two rows are grafted onto groups
+            // the registry owns, and a renamed heading would otherwise drop them without a word.
             model.groups.map { (name, items) ->
                 when (name) {
-                    "Appearance" ->
+                    DISPLAY ->
                         name to
                             (
                                 items +
@@ -162,7 +163,7 @@ fun NextSettingsScreen(
                                                 "reader bar so you can move between posts without scrubbing.",
                                     )
                             )
-                    "Storage & backup" ->
+                    PRIVACY ->
                         name to
                             (
                                 items +

@@ -35,9 +35,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -64,7 +62,12 @@ import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 
-/** Primary destinations for the floating pill chrome. Search / Downloads stay Command-only. */
+/**
+ * Every destination the app can show.
+ *
+ * Only [FEED] and [SETTINGS] earn a place in the permanent chrome; [BOARDS] and [MEDIA] are
+ * reached from Command and carry a [ContextRail], the same as Search and Downloads.
+ */
 enum class NextDestination {
     FEED,
     BOARDS,
@@ -73,11 +76,11 @@ enum class NextDestination {
 }
 
 /**
- * The permanent chrome for primary destinations: a floating pill for Feed / Boards / Media /
- * Settings, with Command as a trailing Go affordance.
+ * The permanent chrome: a floating pill for Feed and Settings, with Command as a trailing Go
+ * affordance.
  *
- * Replaces the old single-context rail + header launchpad chips. Secondary screens (thread, board
- * catalog, Search, Downloads) keep [ContextRail].
+ * Two tabs rather than four. Boards and Media are things you go and do, not places you live, so
+ * they are reached through Command and keep [ContextRail] like every other secondary screen.
  */
 @Composable
 fun DestinationPill(
@@ -125,18 +128,6 @@ fun DestinationPill(
                     icon = Icons.Outlined.Home,
                     selected = selected == NextDestination.FEED,
                     onClick = { onSelect(NextDestination.FEED) },
-                )
-                DestinationTab(
-                    label = stringResource(R.string.next_launchpad_boards),
-                    icon = Icons.Outlined.GridView,
-                    selected = selected == NextDestination.BOARDS,
-                    onClick = { onSelect(NextDestination.BOARDS) },
-                )
-                DestinationTab(
-                    label = stringResource(R.string.next_launchpad_media),
-                    icon = Icons.Outlined.PhotoLibrary,
-                    selected = selected == NextDestination.MEDIA,
-                    onClick = { onSelect(NextDestination.MEDIA) },
                 )
                 DestinationTab(
                     label = stringResource(R.string.next_settings_title),
@@ -594,8 +585,10 @@ fun MediaTile(
 /**
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
- * Pass [destination] + [onDestination] for primary tab chrome; pass [where] for contextual rail.
- * Prefer destination chrome on Feed / Boards / Media / Settings.
+ * Pass [destination] + [onDestination] for tab chrome; pass [where] for the contextual rail. Only
+ * [NextDestination.FEED] and [NextDestination.SETTINGS] draw the tab chrome — a screen that passes
+ * any other destination falls back to [where], so Boards and Media read as places you went rather
+ * than places you live.
  */
 @Composable
 fun NextScaffold(
@@ -609,25 +602,24 @@ fun NextScaffold(
     onDestination: ((NextDestination) -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val showDestination = destination != null && onDestination != null
-    val showRail = where != null && !showDestination
-    val bottom = (if (showDestination || showRail) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
+    val pillDestination = destination?.takeIf { it.drawsPill() }
+    val showPill = pillDestination != null && onDestination != null
+    val showRail = where != null && !showPill
+    val bottom = (if (showPill || showRail) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
     Surface {
         Box(modifier = modifier.fillMaxSize()) {
             content(PaddingValues(bottom = bottom))
-            if (showDestination || showRail) {
+            if (showPill || showRail) {
                 AnimatedVisibility(
                     visible = railVisible,
                     enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(),
                     exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
-                    val selectedDestination = destination
-                    val selectDestination = onDestination
-                    if (selectedDestination != null && selectDestination != null) {
+                    if (pillDestination != null && onDestination != null) {
                         DestinationPill(
-                            selected = selectedDestination,
-                            onSelect = selectDestination,
+                            selected = pillDestination,
+                            onSelect = onDestination,
                             action = action,
                             onCommand = onSearch,
                         )
@@ -643,6 +635,18 @@ fun NextScaffold(
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
 val RAIL_HEIGHT = 56.dp
+
+/** The destinations that earn a tab in the permanent chrome. Everything else gets a [ContextRail]. */
+private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.SETTINGS)
+
+/**
+ * Whether this destination draws the permanent pill rather than a [ContextRail].
+ *
+ * The one place the rule is decided. A screen that passes Boards or Media answers `false` here and
+ * falls back to its `where`, which is why every destination screen has to keep supplying one —
+ * otherwise it would draw no bottom chrome at all.
+ */
+internal fun NextDestination?.drawsPill(): Boolean = this in CHROME_DESTINATIONS
 
 private val RAIL_CLEARANCE = 28.dp
 private val NO_RAIL_CLEARANCE = 16.dp
@@ -691,7 +695,7 @@ fun MessageScreen(
     onDestination: ((NextDestination) -> Unit)? = null,
 ) {
     NextScaffold(
-        where = where.takeIf { destination == null },
+        where = where.takeIf { !destination.drawsPill() },
         modifier = modifier,
         action = action,
         onSearch = onSearch,

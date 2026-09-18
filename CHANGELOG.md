@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Reduced the settings list to three headings — General, Display & Media, Privacy & Data — and to the
+  rows most people actually reach for. Preferences behind the rows that are no longer listed keep
+  their stored values and are untouched.
+- Reduced the permanent bottom chrome to Feed and Settings. Boards and Media are reached from Command
+  and now carry the context rail, like Search and Downloads.
+
+### Fixed
+- Restored the bottom chrome on Boards and Media, which the two-tab change had left with no rail at
+  all on their list, loading, error and empty states.
+- Restored the Thread scroll arrow and Image cache usage rows, which were being grafted onto settings
+  headings that no longer existed and so had stopped appearing.
+- Dropped settings search entries for rows the list no longer offers, so a search can no longer land
+  on a setting that is not there.
+
+
 ## [138-Cherry] - 2026-09-17
 
 ### Changed

@@ -4,7 +4,7 @@ package com.orbin.feature.settings
  * One searchable setting: the id of its row, its label, and the group heading it sits under.
  *
  * [id] is the same id [buildSettings] gives the row, which is what makes a search result land on
- * the setting itself rather than near it. The previous index carried a *screen* instead, from when
+ * the setting itself rather than near it. An earlier index carried a *screen* instead, from when
  * there were seven of them; that is how typing a setting's name could put you in the interface this
  * one replaced.
  */
@@ -18,75 +18,38 @@ data class SettingsSearchEntry(
 }
 
 /**
- * Every setting, for the command surface to filter.
+ * Every setting the list offers, for the command surface to filter.
  *
  * Kept as a flat list beside the registry rather than derived from it, because the registry needs
  * live [com.orbin.core.model.AppSettings] and a view model to build a row's current value, and the
- * command surface has neither. `NextSettingsIndexTest` holds the two together: every id here has to
- * exist in the registry, and every row there has to appear here.
+ * command surface has neither. `SettingsIndexTest` holds the two together: every id here has to
+ * exist in the registry, and every row there has to appear here — so a row dropped from the list
+ * cannot go on being searchable, which would find you a setting that is no longer there.
  */
 val settingsSearchIndex =
     listOf(
-        SettingsSearchEntry("permanentFilter", "Built-in content filter", CONTENT),
-        SettingsSearchEntry("harshFilter", "Filter everyday shock words", CONTENT),
-        SettingsSearchEntry("personalized", "Personalized home feed", CONTENT),
-        SettingsSearchEntry("hiddenTags", "Hidden tags", CONTENT),
-        SettingsSearchEntry("mutedTags", "Muted tags", CONTENT),
-        SettingsSearchEntry("hideNsfw", "Hide NSFW boards", CONTENT),
-        SettingsSearchEntry("hideTextOnly", "Hide text-only threads", CONTENT),
-        SettingsSearchEntry("deepScan", "Deep scan for reply media", CONTENT),
-        SettingsSearchEntry("mediaFilter", "Show only", CONTENT),
-        SettingsSearchEntry("refreshInterval", "Refresh feed on return", CONTENT),
-        SettingsSearchEntry("threadLimit", "Threads per board", CONTENT),
-        SettingsSearchEntry("feedSort", "Sort feed by", CONTENT),
-        SettingsSearchEntry("platformTheme", "Platform theme", APPEARANCE),
-        SettingsSearchEntry("colorTheme", "Color theme", APPEARANCE),
-        SettingsSearchEntry("themeMode", "Theme", APPEARANCE),
-        SettingsSearchEntry("dynamicColor", "Dynamic color", APPEARANCE),
-        SettingsSearchEntry("amoled", "AMOLED black", APPEARANCE),
-        SettingsSearchEntry("threadPresentation", "Open threads as", APPEARANCE),
-        SettingsSearchEntry("fullScreenFeed", "Full-screen browsing", APPEARANCE),
-        SettingsSearchEntry("fontScale", "Font size", APPEARANCE),
-        SettingsSearchEntry("thumbnailSize", "Thumbnail size", APPEARANCE),
-        SettingsSearchEntry("autoplay", "Autoplay videos", MEDIA),
-        SettingsSearchEntry("autoplayFeed", "Autoplay videos in feed", MEDIA),
-        SettingsSearchEntry("mute", "Mute by default", MEDIA),
-        SettingsSearchEntry("fullscreenVideo", "Fullscreen video", MEDIA),
-        SettingsSearchEntry("autoRotate", "Auto-rotate video", MEDIA),
-        SettingsSearchEntry("mediaScrollThread", "Media scroll in thread", MEDIA),
-        SettingsSearchEntry("mediaScrollBoard", "Media scroll in board", MEDIA),
-        SettingsSearchEntry("preload", "Preload images", MEDIA),
-        SettingsSearchEntry("preloadOption", "Preload content", MEDIA),
-        SettingsSearchEntry("preloadThrottle", "Preload speed", MEDIA),
-        SettingsSearchEntry("watchNotifications", "Thread watch notifications", NOTIFICATIONS),
-        SettingsSearchEntry("quietStart", "Quiet hours start", NOTIFICATIONS),
-        SettingsSearchEntry("quietEnd", "Quiet hours end", NOTIFICATIONS),
-        SettingsSearchEntry("httpsOnly", "HTTPS only", PRIVACY),
-        SettingsSearchEntry("biometric", "Lock with biometrics", PRIVACY),
+        SettingsSearchEntry("personalized", "Personalized feed", GENERAL),
+        SettingsSearchEntry("hideNsfw", "Hide NSFW boards", GENERAL),
+        SettingsSearchEntry("feedSort", "Feed sort", GENERAL),
+        SettingsSearchEntry("threadPresentation", "Open threads", GENERAL),
+        SettingsSearchEntry("fullScreenFeed", "Full-screen browsing", GENERAL),
+        SettingsSearchEntry("themeMode", "Theme", DISPLAY),
+        SettingsSearchEntry("amoled", "True black", DISPLAY),
+        SettingsSearchEntry("fontScale", "Text size", DISPLAY),
+        SettingsSearchEntry("autoplay", "Autoplay videos", DISPLAY),
+        SettingsSearchEntry("mute", "Mute by default", DISPLAY),
+        SettingsSearchEntry("preload", "Preload images", DISPLAY),
+        SettingsSearchEntry("biometric", "App lock", PRIVACY),
         SettingsSearchEntry("recentSearches", "Save recent searches", PRIVACY),
-        SettingsSearchEntry("doh", "DNS over HTTPS", PRIVACY),
-        SettingsSearchEntry("dnsPrivacy", "DNS privacy", PRIVACY),
-        SettingsSearchEntry("ocsp", "Certificate checks", PRIVACY),
-        SettingsSearchEntry("userAgent", "Custom user agent", PRIVACY),
-        SettingsSearchEntry("connectTimeout", "Connect timeout", PRIVACY),
-        SettingsSearchEntry("readTimeout", "Read timeout", PRIVACY),
         SettingsSearchEntry("clearActivity", "Clear local activity", PRIVACY),
-        SettingsSearchEntry("crashDetails", "Crash details", PRIVACY),
+        SettingsSearchEntry("downloadFolder", "Downloads folder", PRIVACY),
+        SettingsSearchEntry("exportBackup", "Export data", PRIVACY),
+        SettingsSearchEntry("importBackup", "Import data", PRIVACY),
+        SettingsSearchEntry("internalUpdater", "In-app updates", PRIVACY),
         SettingsSearchEntry("checkUpdates", "Check for updates", PRIVACY),
-        SettingsSearchEntry("cacheLimit", "Image cache limit", STORAGE),
-        SettingsSearchEntry("downloadFolder", "Saved media folder", STORAGE),
-        SettingsSearchEntry("downloadOrg", "Organize downloads", STORAGE),
-        SettingsSearchEntry("exportBackup", "Export data", STORAGE),
-        SettingsSearchEntry("importBackup", "Import data", STORAGE),
-        SettingsSearchEntry("internalUpdater", "In-app updates", ADVANCED),
-        SettingsSearchEntry("runSetup", "Run setup again", ADVANCED),
     )
 
 // The group headings, spelled once. They are the same strings buildSettings groups the rows under.
-internal const val CONTENT = "Content & feed"
-internal const val APPEARANCE = "Appearance"
-internal const val MEDIA = "Media & playback"
-internal const val NOTIFICATIONS = "Notifications"
-internal const val PRIVACY = "Privacy & network"
-internal const val STORAGE = "Storage & backup"
-internal const val ADVANCED = "Advanced"
+internal const val GENERAL = "General"
+internal const val DISPLAY = "Display & Media"
+internal const val PRIVACY = "Privacy & Data"

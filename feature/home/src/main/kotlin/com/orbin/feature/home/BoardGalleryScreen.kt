@@ -83,6 +83,7 @@ fun BoardGalleryScreen(
                 MessageScreen(
                     title = "Boards",
                     subtitle = "Loading…",
+                    where = "Boards",
                     destination = NextDestination.BOARDS.takeIf { onDestination != null },
                     onDestination = onDestination,
                     onSearch = onOpenCommands,
@@ -94,6 +95,7 @@ fun BoardGalleryScreen(
                     subtitle = state.message,
                     actionLabel = "Try again",
                     onAction = viewModel::load,
+                    where = "Boards",
                     destination = NextDestination.BOARDS.takeIf { onDestination != null },
                     onDestination = onDestination,
                     onSearch = onOpenCommands,
@@ -109,6 +111,7 @@ fun BoardGalleryScreen(
                             } else {
                                 "Every board is hidden by your board filters"
                             },
+                        where = "Boards",
                         destination = NextDestination.BOARDS.takeIf { onDestination != null },
                         onDestination = onDestination,
                         onSearch = onOpenCommands,

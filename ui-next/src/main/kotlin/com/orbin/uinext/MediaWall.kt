@@ -96,10 +96,10 @@ fun MediaWallScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_all_media_title).takeIf { showRail && !hasTabs },
+            where = stringResource(R.string.next_all_media_title).takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
             detail =
-                if (!hasTabs && total > 0) {
+                if (total > 0) {
                     stringResource(R.string.next_rail_swept, scanned, total)
                 } else {
                     null

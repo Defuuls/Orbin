@@ -114,7 +114,7 @@ fun BoardsScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_launchpad_boards).takeIf { showRail && !hasTabs },
+            where = stringResource(R.string.next_launchpad_boards).takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
             onSearch = onSearch,
             railVisible = railVisible,
