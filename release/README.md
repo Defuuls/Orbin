@@ -47,6 +47,23 @@ The workflow runs on every push to `main` that touches the manifest, `gradle.pro
 So the sequence is: open a PR adding `release/next.toml` → merge it → the cutter opens the
 release PR → merge that → the cutter dispatches the signed build.
 
+### `RELEASE_BOT_TOKEN`
+
+The cutter pushes the prep branch and opens the release PR with the `RELEASE_BOT_TOKEN`
+secret, falling back to the workflow's own `GITHUB_TOKEN` when it is unset.
+
+The fallback opens a PR that cannot be merged without manual help. GitHub does not start
+workflow runs from events raised by `GITHUB_TOKEN` — a guard against a workflow triggering
+itself — so the release PR's required checks stay *expected* and never run, and branch
+protection refuses the merge with `N of N required status checks are expected`. The way out
+is to dispatch CI by hand against the prep branch (`gh workflow run ci.yml --ref
+release/prep-v<tag>`), which is what v140-Elderberry needed.
+
+A personal access token with `repo` scope, or a GitHub App installation token, raises those
+events as a real actor, so CI starts on its own and the PR merges normally. Set it as the
+repository secret `RELEASE_BOT_TOKEN`. The cutter logs a warning on every run where it is
+missing.
+
 ## Files updated automatically
 
 `scripts/prepare_release.py` is the single implementation of the release metadata update. Every
