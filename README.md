@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [139 — Date](https://github.com/Defuuls/Orbin/releases/tag/v139-Date)
+**Current release:** [140 — Elderberry](https://github.com/Defuuls/Orbin/releases/tag/v140-Elderberry)
 
-**What's new in 139:** Settings in three categories (General, Display & Media, Privacy & Data), and a two-tab bottom chrome — Feed and Settings.
+**What's new in 140:** A bottom chrome of just Feed and Settings, with Search, Downloads and Commands moved into Settings › Library.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

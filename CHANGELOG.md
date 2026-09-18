@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [140-Elderberry] - 2026-09-18
+
+### Changed
+- Removed the Go button from the bottom chrome. Search, Downloads and the command sheet now live in Settings › Library, alongside Boards and All media, leaving Feed and Settings the only things competing for the strip (#515).
+- Removed settings rows that could no longer be reached, so the list and its search index describe only what the app actually offers (#514).
+
+### Fixed
+- Corrected the README, which advertised what was new in an old release beside a current one. The release manifest now owns that line, so it moves with each release or disappears rather than going stale (#512, #513).
+
+
 ## [139-Date] - 2026-09-18
 
 ### Changed
@@ -2270,7 +2280,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v139-Date...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...HEAD
+[140-Elderberry]: https://github.com/Defuuls/Orbin/compare/v139-Date...v140-Elderberry
 [139-Date]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...v139-Date
 [138-Cherry]: https://github.com/Defuuls/Orbin/compare/v137-Banana...v138-Cherry
 [137-Banana]: https://github.com/Defuuls/Orbin/compare/v136-Apple...v137-Banana
