@@ -35,9 +35,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -64,7 +62,7 @@ import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 
-/** Primary destinations for the floating pill chrome. Search / Downloads stay Command-only. */
+/** Destinations understood by the app. Only Feed and Settings live in permanent bottom chrome. */
 enum class NextDestination {
     FEED,
     BOARDS,
@@ -73,11 +71,8 @@ enum class NextDestination {
 }
 
 /**
- * The permanent chrome for primary destinations: a floating pill for Feed / Boards / Media /
- * Settings, with Command as a trailing Go affordance.
- *
- * Replaces the old single-context rail + header launchpad chips. Secondary screens (thread, board
- * catalog, Search, Downloads) keep [ContextRail].
+ * Minimal permanent chrome: Feed and Settings, with Command as the trailing action.
+ * Boards and Media remain available through Feed and Command instead of occupying permanent tabs.
  */
 @Composable
 fun DestinationPill(
@@ -125,18 +120,6 @@ fun DestinationPill(
                     icon = Icons.Outlined.Home,
                     selected = selected == NextDestination.FEED,
                     onClick = { onSelect(NextDestination.FEED) },
-                )
-                DestinationTab(
-                    label = stringResource(R.string.next_launchpad_boards),
-                    icon = Icons.Outlined.GridView,
-                    selected = selected == NextDestination.BOARDS,
-                    onClick = { onSelect(NextDestination.BOARDS) },
-                )
-                DestinationTab(
-                    label = stringResource(R.string.next_launchpad_media),
-                    icon = Icons.Outlined.PhotoLibrary,
-                    selected = selected == NextDestination.MEDIA,
-                    onClick = { onSelect(NextDestination.MEDIA) },
                 )
                 DestinationTab(
                     label = stringResource(R.string.next_settings_title),
@@ -594,8 +577,7 @@ fun MediaTile(
 /**
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
- * Pass [destination] + [onDestination] for primary tab chrome; pass [where] for contextual rail.
- * Prefer destination chrome on Feed / Boards / Media / Settings.
+ * Pass [destination] + [onDestination] for permanent Feed / Settings chrome; pass [where] for contextual rail.
  */
 @Composable
 fun NextScaffold(
