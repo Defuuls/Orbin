@@ -1,28 +1,26 @@
-# Orbin 139 — Date
+# Orbin 140 — Elderberry
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 139
-codename     = "Date"
-version_code = 157
+number       = 140
+codename     = "Elderberry"
+version_code = 158
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Settings in three categories (General, Display & Media, Privacy & Data), and a two-tab bottom chrome — Feed and Settings."
+highlight = "A bottom chrome of just Feed and Settings, with Search, Downloads and Commands moved into Settings › Library."
 
 summary = [
-  "bump Orbin to 139-Date / versionCode 157",
-  "reduce settings to three categories and the bottom chrome to Feed and Settings",
+  "bump Orbin to 140-Elderberry / versionCode 158",
+  "remove the Go button and re-home its destinations in Settings › Library",
 ]
 
 [changelog]
 Changed = [
-  "Reduced the settings list to three categories — General, Display & Media, Privacy & Data — and to the rows most people actually reach for. Preferences behind rows that are no longer listed keep their stored values (#508, #509).",
-  "Reduced the permanent bottom chrome to Feed and Settings. Boards and Media are reached from Command and now carry the context rail, like Search and Downloads (#508, #509).",
+  "Removed the Go button from the bottom chrome. Search, Downloads and the command sheet now live in Settings › Library, alongside Boards and All media, leaving Feed and Settings the only things competing for the strip (#515).",
+  "Removed settings rows that could no longer be reached, so the list and its search index describe only what the app actually offers (#514).",
 ]
 Fixed = [
-  "Restored the bottom chrome on Boards and Media, which the two-tab change had left with no rail at all on their list, loading, error and empty states (#509).",
-  "Restored the Thread scroll arrow and Image cache usage rows, which were grafted onto settings headings that no longer existed and had stopped appearing (#509).",
-  "Dropped settings search entries for rows the list no longer offers, so a search can no longer land on a setting that is not there (#509).",
+  "Corrected the README, which advertised what was new in an old release beside a current one. The release manifest now owns that line, so it moves with each release or disappears rather than going stale (#512, #513).",
 ]
