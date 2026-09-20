@@ -74,7 +74,7 @@ roborazzi = "1.74.0"
 
 # Quality
 detekt = "1.23.8"
-dependencyAnalysis = "3.19.1"
+dependencyAnalysis = "3.19.2"
 ktlintGradle = "14.2.0"
 
 [libraries]
