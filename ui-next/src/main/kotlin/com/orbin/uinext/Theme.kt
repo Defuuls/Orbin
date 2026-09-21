@@ -174,7 +174,10 @@ fun NextTheme(
 
 /** One board colour: light ground and dark ground values. */
 @Immutable
-internal data class BoardHue(val light: Color, val dark: Color)
+internal data class BoardHue(
+    val light: Color,
+    val dark: Color,
+)
 
 /**
  * Ten board hues — all clear 4.5:1 AA contrast on their respective grounds.

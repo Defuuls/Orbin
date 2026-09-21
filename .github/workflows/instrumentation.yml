@@ -36,6 +36,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
 
@@ -118,6 +122,7 @@ jobs:
 
       - name: Upload logcat
         if: failure()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: logcat-api-${{ matrix.api-level }}
@@ -126,6 +131,7 @@ jobs:
 
       - name: Upload instrumentation reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: instrumentation-reports-api-${{ matrix.api-level }}

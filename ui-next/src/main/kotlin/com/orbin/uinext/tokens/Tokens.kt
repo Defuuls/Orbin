@@ -223,6 +223,7 @@ object NextType {
         )
 
     // Convenience aliases used in ui-next components
+
     /** Screen/section primary title (maps to headlineMedium). */
     val largeTitle = headlineMedium
 

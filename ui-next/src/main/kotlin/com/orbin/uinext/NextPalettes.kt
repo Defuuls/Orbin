@@ -38,7 +38,10 @@ fun ColorSchemeVariant.toNextPalette(
  * at the shell level.
  */
 @Composable
-internal fun nextPaletteFromM3(dark: Boolean, amoled: Boolean): NextPalette {
+internal fun nextPaletteFromM3(
+    dark: Boolean,
+    amoled: Boolean,
+): NextPalette {
     val cs = MaterialTheme.colorScheme
     return NextPalette(
         // Flat matte background — M3 surface/background, no iOS grey
@@ -70,7 +73,10 @@ internal fun nextPaletteFromM3(dark: Boolean, amoled: Boolean): NextPalette {
 }
 
 /** The one palette family used by ui-next application chrome. */
-fun canonicalNextPalette(dark: Boolean, amoled: Boolean): NextPalette =
+fun canonicalNextPalette(
+    dark: Boolean,
+    amoled: Boolean,
+): NextPalette =
     when {
         dark && amoled -> AmoledPalette
         dark -> DarkPalette
@@ -124,6 +130,7 @@ internal val DarkAmoledPalette = AmoledPalette
 // ── Legacy contrast utilities (kept for ChanThemeSeeds.toNextPalette) ──────
 
 /** Contrast-safe accent for imageboard skin content surfaces. Not used for shell chrome. */
+@Suppress("MagicNumber")
 internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
     val panel = if (amoled && dark) Color(0xFF1C1C1E) else surface
@@ -150,12 +157,17 @@ internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     )
 }
 
-private fun ensureAccentWithOnColor(preferred: Color, background: Color, fallbacks: List<Color>): Color {
+private fun ensureAccentWithOnColor(
+    preferred: Color,
+    background: Color,
+    fallbacks: List<Color>,
+): Color {
     val candidates = listOf(preferred) + fallbacks
-    candidates.firstOrNull { color ->
-        contrastRatio(color, background) >= AA_NORMAL_TEXT &&
-            max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
-    }?.let { return it }
+    candidates
+        .firstOrNull { color ->
+            contrastRatio(color, background) >= AA_NORMAL_TEXT &&
+                max(contrastRatio(Color.White, color), contrastRatio(Color.Black, color)) >= AA_NORMAL_TEXT
+        }?.let { return it }
 
     val towardBgOpposite = if (background.luminance() > LUMINANCE_MIDPOINT) Color.Black else Color.White
     var best = preferred
@@ -166,7 +178,10 @@ private fun ensureAccentWithOnColor(preferred: Color, background: Color, fallbac
         val onChip = max(contrastRatio(Color.White, candidate), contrastRatio(Color.Black, candidate))
         val score = min(onBg, onChip)
         if (onBg >= AA_NORMAL_TEXT && onChip >= AA_NORMAL_TEXT) return candidate
-        if (score > bestScore) { best = candidate; bestScore = score }
+        if (score > bestScore) {
+            best = candidate
+            bestScore = score
+        }
     }
     return best
 }
@@ -177,7 +192,10 @@ private fun onColorFor(accent: Color): Color {
     return if (white >= black) Color.White else Color.Black
 }
 
-private fun Color.blend(other: Color, fraction: Float): Color =
+private fun Color.blend(
+    other: Color,
+    fraction: Float,
+): Color =
     Color(
         red = red + (other.red - red) * fraction,
         green = green + (other.green - green) * fraction,
@@ -185,13 +203,17 @@ private fun Color.blend(other: Color, fraction: Float): Color =
         alpha = 1f,
     )
 
-private fun contrastRatio(foreground: Color, background: Color): Float {
-    val composed = Color(
-        red = foreground.red * foreground.alpha + background.red * (1f - foreground.alpha),
-        green = foreground.green * foreground.alpha + background.green * (1f - foreground.alpha),
-        blue = foreground.blue * foreground.alpha + background.blue * (1f - foreground.alpha),
-        alpha = 1f,
-    )
+private fun contrastRatio(
+    foreground: Color,
+    background: Color,
+): Float {
+    val composed =
+        Color(
+            red = foreground.red * foreground.alpha + background.red * (1f - foreground.alpha),
+            green = foreground.green * foreground.alpha + background.green * (1f - foreground.alpha),
+            blue = foreground.blue * foreground.alpha + background.blue * (1f - foreground.alpha),
+            alpha = 1f,
+        )
     val l1 = composed.luminance()
     val l2 = background.luminance()
     val lighter = max(l1, l2)
@@ -199,6 +221,7 @@ private fun contrastRatio(foreground: Color, background: Color): Float {
     return (lighter + LUMINANCE_OFFSET) / (darker + LUMINANCE_OFFSET)
 }
 
+@Suppress("MagicNumber")
 private fun Color.luminance(): Float {
     fun linearize(v: Float) = if (v <= 0.04045f) v / 12.92f else ((v + 0.055f) / 1.055f).let { it * it * it }
     return 0.2126f * linearize(red) + 0.7152f * linearize(green) + 0.0722f * linearize(blue)
