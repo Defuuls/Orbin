@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -42,7 +41,7 @@ fun FeedScreen(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     activityText: @Composable (FeedRow) -> String = { it.activity },
     onActivePreviewChanged: (String?) -> Unit = {},
-    hideRailOnScroll: Boolean = false,
+    hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
@@ -114,7 +113,7 @@ fun FeedScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_feed_title).takeIf { showRail && !hasTabs },
+            where = feedTitle.takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
             detail = railDetail.takeIf { !hasTabs },
             railVisible = railVisible,
@@ -211,11 +210,6 @@ fun FeedScreen(
                 }
             }
         }
-        CompactTitleBar(
-            title = feedTitle,
-            visible = showCompactTitle,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
     }
 }
 

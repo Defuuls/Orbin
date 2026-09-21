@@ -37,7 +37,7 @@ class ScrollingHeaderTest {
         scrollToLastRow()
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
-        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     /** The grid is the harder case: a header there has to span every column rather than take a cell. */
@@ -51,7 +51,7 @@ class ScrollingHeaderTest {
         scrollToLastRow()
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
-        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     @Test

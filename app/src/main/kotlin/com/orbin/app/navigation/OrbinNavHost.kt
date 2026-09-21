@@ -38,7 +38,7 @@ fun OrbinNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: Route = Route.NextFeed,
-    chromeHidesOnScroll: Boolean = false,
+    chromeHidesOnScroll: Boolean = true,
     twoPaneBoardDetail: Boolean = false,
     subscribedFeedScrollToTopRequest: Int = 0,
     subscribedFeedRefreshRequest: Int = 0,

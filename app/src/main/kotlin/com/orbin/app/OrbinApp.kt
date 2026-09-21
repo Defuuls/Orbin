@@ -70,7 +70,6 @@ fun OrbinApp(
     isOnline: Boolean = true,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val tabletFeedChrome = maxWidth >= TABLET_MIN_WIDTH && maxHeight >= TABLET_MIN_HEIGHT
         val twoPaneBoardDetail = maxWidth >= TWO_PANE_MIN_WIDTH
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = backStackEntry?.destination
@@ -86,8 +85,7 @@ fun OrbinApp(
             isNextFeed ||
                 currentDestination?.hasRoute(Route.Board::class) == true ||
                 isAllMedia
-        val chromeHidesOnScroll =
-            scrollAwayScreen && (fullScreenFeedChrome || tabletFeedChrome)
+        val chromeHidesOnScroll = scrollAwayScreen
         var chromeVisible by rememberSaveable { mutableStateOf(true) }
         var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
         var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
@@ -254,14 +252,9 @@ private tailrec fun Context.findActivity(): Activity? =
         else -> null
     }
 
-private val TABLET_MIN_WIDTH = 600.dp
-private val TABLET_MIN_HEIGHT = 480.dp
-
 /**
  * Width at which the catalog and a thread are shown side by side.
  *
- * Material's expanded breakpoint, and higher than [TABLET_MIN_WIDTH] on purpose: 600dp is enough
- * to justify a roomier dock but not to split into two readable columns. Height is not part of the
- * test — two columns work in landscape on a short viewport, where the tablet feed chrome does not.
+ * Material's expanded breakpoint: 840dp is enough to split into two readable columns.
  */
 private val TWO_PANE_MIN_WIDTH = 840.dp

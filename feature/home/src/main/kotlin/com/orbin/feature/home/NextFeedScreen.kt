@@ -60,7 +60,7 @@ fun NextFeedScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
-    hideRailOnScroll: Boolean = false,
+    hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,

@@ -13,7 +13,7 @@ fun NextFeedWithSiteSwitcherScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
-    hideRailOnScroll: Boolean = false,
+    hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
     refreshRequest: Int = 0,
