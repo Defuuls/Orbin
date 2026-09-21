@@ -68,6 +68,7 @@ jobs:
 
       - name: Upload analysis reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: static-analysis-reports
@@ -92,6 +93,7 @@ jobs:
 
       - name: Upload test reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: unit-test-reports
@@ -115,6 +117,7 @@ jobs:
         run: ./gradlew assembleDebugAndroidTest -Porbin.warningsAsErrors=true
 
       - name: Upload debug APK
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: orbin-debug-apk
