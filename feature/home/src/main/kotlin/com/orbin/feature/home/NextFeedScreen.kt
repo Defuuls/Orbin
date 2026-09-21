@@ -1,14 +1,7 @@
 package com.orbin.feature.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,10 +10,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -37,9 +28,6 @@ import com.orbin.core.model.matchesFilterTokens
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.media.video.VideoPlayer
-import com.orbin.media.video.canAutoplayInFeed
-import com.orbin.media.video.pickFeedAutoplayRowId
 import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
@@ -250,13 +238,9 @@ fun NextFeedScreen(
                             },
                             thumbnail = { row, tileModifier ->
                                 byId[row.id]?.attachment?.let { attachment ->
-                                    FeedPreview(
+                                    MediaThumbnail(
                                         attachment = attachment,
-                                        autoplay =
-                                            settings.autoplayVideosInFeed &&
-                                                row.id ==
-                                                pickFeedAutoplayRowId(listOfNotNull(activePreviewId)),
-                                        fitWholeImage = false,
+                                        contentScale = ContentScale.Crop,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
                                 }
@@ -266,57 +250,6 @@ fun NextFeedScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun FeedPreview(
-    attachment: MediaAttachment,
-    autoplay: Boolean,
-    modifier: Modifier = Modifier,
-    fitWholeImage: Boolean = false,
-) {
-    // Tap-to-play covers Images/Grid when ambient autoplay is off or this row is not the
-    // single active preview. Without it, MediaThumbnail used to install an empty clickable that
-    // swallowed the parent cell's open-thread click — especially broken in Images layout where
-    // the whole tile is the thumbnail.
-    var playRequested by remember(attachment.sourceUrl) { mutableStateOf(false) }
-    val playInline = playRequested || canAutoplayInFeed(attachment, autoplay)
-    if (playInline) {
-        Box(modifier = modifier) {
-            VideoPlayer(
-                url = attachment.sourceUrl,
-                modifier = Modifier.fillMaxSize(),
-                autoPlay = true,
-                muted = true,
-            )
-            // Autoplay / inline play starts muted with controls hidden — keep a persistent affordance.
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.VolumeOff,
-                contentDescription = stringResource(com.orbin.uinext.R.string.next_autoplay_muted),
-                tint = Color.White,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .background(
-                            Color.Black.copy(alpha = 0.55f),
-                            CircleShape,
-                        ).padding(6.dp),
-            )
-        }
-    } else {
-        MediaThumbnail(
-            attachment = attachment,
-            modifier = modifier,
-            contentScale = if (fitWholeImage) ContentScale.Fit else ContentScale.Crop,
-            onClick =
-                if (attachment.isPlayable && !attachment.isSpoiler) {
-                    { playRequested = true }
-                } else {
-                    null
-                },
-        )
     }
 }
 

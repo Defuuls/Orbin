@@ -3,7 +3,6 @@ package com.orbin.feature.settings
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
@@ -97,9 +96,7 @@ private class Rows {
         settings: AppSettings,
         vm: SettingsViewModel,
     ) = listOf(
-        toggle("personalized", "Personalized feed", settings.personalizedHomeFeed, vm::setPersonalizedHomeFeed),
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
-        choice("feedSort", "Feed sort", FeedSort.entries, settings.feedSort, { it.label }, vm::setFeedSort),
         choice(
             "threadPresentation",
             "Open threads",
@@ -108,9 +105,6 @@ private class Rows {
             { it.label },
             vm::setThreadPresentation,
         ),
-        // The label, not the id or the stored key: renaming either would reset the preference for
-        // everyone who has it on. It covers the catalog and the media wall as well as the feed.
-        toggle("fullScreenFeed", "Full-screen browsing", settings.fullScreenFeedChrome, vm::setFullScreenFeedChrome),
     )
 
     fun displayAndMedia(
