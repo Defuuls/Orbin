@@ -1,6 +1,6 @@
 [versions]
 # Android / Build
-agp = "9.4.0"
+agp = "9.4.1"
 # Kotlin 2.4.20 fixes CVE-2026-53914 (unsafe build-cache metadata deserialization).
 # The current CodeQL Java/Kotlin extractor supports Kotlin through 2.4.20, so keep this at or above
 # the fixed release and let Dependabot surface future updates normally.
