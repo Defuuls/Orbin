@@ -1,8 +1,8 @@
 # Orbin brand
 
-![Orbin brand showcase](assets/orbin-brand-showcase.svg)
+![Orbin brand showcase](assets/orbin-brand-showcase.png)
 
-Orbin's identity is built around a **broken orbital O**: a compact mark that suggests motion and navigation without turning the product into a literal space theme. The mark is intentionally white-only so it works cleanly across Android adaptive icons, monochrome themed icons, splash screens, documentation, and dark UI surfaces.
+Orbin's identity is built around an orbital mark: a planetary sphere and trajectory ring that suggests motion and navigation. The mark works cleanly across Android adaptive icons, monochrome themed icons, splash screens, documentation, and UI surfaces.
 
 ## Core idea
 
@@ -12,10 +12,10 @@ Orbin is a privacy-focused, read-only imageboard browser. The brand should feel 
 
 ## Mark anatomy
 
-- **Broken orbit:** establishes the O silhouette while keeping the form open and directional.
-- **Trajectory wedge:** adds forward motion and gives the mark a distinct upper-right profile.
-- **Satellite node:** creates an ownable detail that helps the icon remain recognizable at launcher size.
-- **Open center:** protects legibility as the mark scales down.
+- **Trajectory wedge:** adds forward direction and speed to the orbital path.
+- **Broken orbit:** establishes the readable O silhouette while keeping the form open.
+- **Satellite node:** creates an ownable detail that helps the icon remain recognizable at small sizes.
+- **Open counter:** protects legibility as the mark scales down.
 
 The production Android vector lives at `app/src/main/res/drawable/ic_launcher_orbit_foreground.xml`.
 
@@ -23,10 +23,12 @@ The production Android vector lives at `app/src/main/res/drawable/ic_launcher_or
 
 | Role | Value | Usage |
 | --- | --- | --- |
-| Orbit black | `#0D0D11` | Legacy launcher field and deepest brand background |
-| Icon field | `#171717` | Primary launcher and splash background |
-| Surface | `#212121` | Dark UI and supporting brand surfaces |
-| Mark | `#FFFFFF` | Primary logo geometry and monochrome source |
+| Aubergine | `#4B2E63` | Deep primary identity and dark surfaces |
+| Mauve | `#B776A7` | Warm tonal accents and secondary surfaces |
+| Blush | `#F6E8E6` | Light background and high-contrast fields |
+| Lilac | `#C9B4E6` | Interactive chips and soft containers |
+| Plum | `#8A5C8F` | Active states and board accents |
+| Eggplant | `#2E1B42` | Primary brand ground and splash surface |
 
 The logo should remain white on dark in first-party brand material. Android may tint the monochrome source automatically for themed icons.
 

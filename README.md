@@ -1,6 +1,6 @@
 # Orbin
 
-![Orbin brand showcase](docs/assets/orbin-brand-showcase.svg)
+![Orbin brand showcase](docs/assets/orbin-brand-showcase.png)
 
 Orbin is a modern, privacy-focused, open-source **Android imageboard browser** built with Kotlin,
 Jetpack Compose, and Material 3. It targets **Android 12+ (API 31+)** and uses a modular Clean
