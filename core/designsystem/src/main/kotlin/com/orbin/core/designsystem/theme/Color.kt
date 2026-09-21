@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
  * Light scheme — 40/90/80 tone convention for primary/container/on-container.
  */
 
-// ── Primary (eggplant purple) ──────────────────────────────────────────────
 internal val EggplantPrimary = Color(0xFF7B4F8A)
 internal val EggplantOnPrimary = Color(0xFFFFFFFF)
 internal val EggplantPrimaryContainer = Color(0xFFF3DAFF)

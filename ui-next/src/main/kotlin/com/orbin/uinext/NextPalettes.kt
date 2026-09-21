@@ -130,6 +130,7 @@ internal val DarkAmoledPalette = AmoledPalette
 // ── Legacy contrast utilities (kept for ChanThemeSeeds.toNextPalette) ──────
 
 /** Contrast-safe accent for imageboard skin content surfaces. Not used for shell chrome. */
+@Suppress("MagicNumber")
 internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
     val panel = if (amoled && dark) Color(AMOLED_PANEL_ARGB) else surface
@@ -220,6 +221,7 @@ private fun contrastRatio(
     return (lighter + LUMINANCE_OFFSET) / (darker + LUMINANCE_OFFSET)
 }
 
+@Suppress("MagicNumber")
 private fun Color.luminance(): Float {
     fun linearize(v: Float) =
         if (v <= SRGB_LINEAR_THRESHOLD) {
