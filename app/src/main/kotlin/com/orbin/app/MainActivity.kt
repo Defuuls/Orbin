@@ -45,6 +45,8 @@ import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.applePalette
+import com.orbin.uinext.bananaPalette
 import com.orbin.uinext.materialPalette
 import com.orbin.uinext.next
 import com.orbin.uinext.toNextPalette
@@ -464,13 +466,18 @@ private fun AppContent(
     // MaterialOrbinTheme adapter is gone.
     val colorVariant = settings.colorTheme.toDesignSystem()
     val nextPalette =
-        if (settings.colorTheme == com.orbin.core.model.ColorTheme.ORBIN) {
-            materialPalette(settings.themeMode.isDark(), settings.amoled)
-        } else {
-            colorVariant.toNextPalette(
-                darkPreference = settings.themeMode.isDark(),
-                amoled = settings.amoled,
-            )
+        when (settings.colorTheme) {
+            com.orbin.core.model.ColorTheme.ORBIN ->
+                materialPalette(settings.themeMode.isDark(), settings.amoled)
+            com.orbin.core.model.ColorTheme.BANANA ->
+                bananaPalette(settings.themeMode.isDark(), settings.amoled)
+            com.orbin.core.model.ColorTheme.APPLE ->
+                applePalette(settings.themeMode.isDark(), settings.amoled)
+            else ->
+                colorVariant.toNextPalette(
+                    darkPreference = settings.themeMode.isDark(),
+                    amoled = settings.amoled,
+                )
         }
     NextTheme(
         darkTheme = nextPalette.dark,

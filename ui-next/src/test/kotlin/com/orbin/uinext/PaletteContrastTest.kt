@@ -55,12 +55,44 @@ class PaletteContrastTest {
      */
     @Test
     fun `the three text tiers stay visibly separated`() {
-        listOf(LightPalette, DarkPalette, AmoledPalette).forEach { palette ->
+        listOf(
+            LightPalette,
+            DarkPalette,
+            AmoledPalette,
+            bananaPalette(dark = false),
+            bananaPalette(dark = true),
+            applePalette(dark = false),
+            applePalette(dark = true),
+        ).forEach { palette ->
             val ink = ratio(palette.ink, palette.background)
             val muted = ratio(palette.muted, palette.background)
             val faint = ratio(palette.faint, palette.background)
             assertThat(ink).isGreaterThan(muted)
             assertThat(muted).isGreaterThan(faint)
+        }
+    }
+
+    @Test
+    fun `banana palette clears AA on light, dark and AMOLED grounds`() {
+        listOf(
+            bananaPalette(dark = false) to "banana light",
+            bananaPalette(dark = true) to "banana dark",
+            bananaPalette(dark = true, amoled = true) to "banana amoled",
+        ).forEach { (palette, name) ->
+            assertPalette(palette, name)
+            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
+        }
+    }
+
+    @Test
+    fun `apple palette clears AA on light, dark and AMOLED grounds`() {
+        listOf(
+            applePalette(dark = false) to "apple light",
+            applePalette(dark = true) to "apple dark",
+            applePalette(dark = true, amoled = true) to "apple amoled",
+        ).forEach { (palette, name) ->
+            assertPalette(palette, name)
+            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
         }
     }
 
@@ -139,6 +171,8 @@ class PaletteContrastTest {
     fun `exposed color themes clear AA on their Next grounds`() {
         val variants =
             listOf(
+                ColorSchemeVariant.BANANA,
+                ColorSchemeVariant.APPLE,
                 ColorSchemeVariant.YOTSUBA,
                 ColorSchemeVariant.YOTSUBA_P,
                 ColorSchemeVariant.WAROSU,

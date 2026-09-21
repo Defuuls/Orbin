@@ -2,6 +2,7 @@ package com.orbin.feature.settings
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.OFF_LABEL
@@ -117,6 +118,7 @@ private class Rows {
         vm: SettingsViewModel,
     ) = listOf(
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
+        choice("colorTheme", "Color scheme", ColorTheme.entries, settings.colorTheme, { it.label }, vm::setColorTheme),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         choice(
             "fontScale",

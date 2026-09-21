@@ -79,6 +79,134 @@ fun materialPalette(
         )
     }
 
+// ── Banana Theme (Pale matte yellow) ──────────────────────────────────────
+private val BananaLightBackground = Color(0xFFFFFDF0)
+private val BananaLightRaised = Color(0xFFF9F5E4)
+private val BananaLightElevated = Color(0xFFF2ECE7)
+private val BananaLightInk = Color(0xFF1E1B10)
+private val BananaLightHairline = Color(0xFFE4DEC8)
+private val BananaLightAccent = Color(0xFF755C00)
+private val BananaLightAccentSoft = Color(0xFFFFEEA2)
+private val BananaLightOnAccent = Color(0xFFFFFFFF)
+private val BananaLightAccentContainer = Color(0xFFFFEEA2)
+private val BananaLightOnAccentContainer = Color(0xFF241A00)
+
+private val BananaDarkBackground = Color(0xFF15140F)
+private val BananaDarkRaised = Color(0xFF211F18)
+private val BananaDarkElevated = Color(0xFF2B281E)
+private val BananaDarkInk = Color(0xFFE9E2D2)
+private val BananaDarkHairline = Color(0xFF4B4638)
+private val BananaDarkAccent = Color(0xFFE8C547)
+private val BananaDarkAccentSoft = Color(0xFF554100)
+private val BananaDarkOnAccent = Color(0xFF3B2F00)
+private val BananaDarkAccentContainer = Color(0xFF554100)
+private val BananaDarkOnAccentContainer = Color(0xFFFFEEA2)
+
+/** Pale matte yellow palette: warm matte cream surfaces, harvest gold accent. */
+fun bananaPalette(
+    dark: Boolean,
+    amoled: Boolean = false,
+): NextPalette =
+    if (dark) {
+        NextPalette(
+            background = if (amoled) Color.Black else BananaDarkBackground,
+            raised = BananaDarkRaised,
+            elevated = BananaDarkElevated,
+            ink = BananaDarkInk,
+            muted = BananaDarkInk.copy(alpha = 0.78f),
+            faint = BananaDarkInk.copy(alpha = 0.65f),
+            hairline = BananaDarkHairline,
+            accent = BananaDarkAccent,
+            accentSoft = BananaDarkAccentSoft,
+            onAccent = BananaDarkOnAccent,
+            accentContainer = BananaDarkAccentContainer,
+            onAccentContainer = BananaDarkOnAccentContainer,
+            dark = true,
+            amoled = amoled,
+        )
+    } else {
+        NextPalette(
+            background = BananaLightBackground,
+            raised = BananaLightRaised,
+            elevated = BananaLightElevated,
+            ink = BananaLightInk,
+            muted = BananaLightInk.copy(alpha = 0.75f),
+            faint = BananaLightInk.copy(alpha = 0.62f),
+            hairline = BananaLightHairline,
+            accent = BananaLightAccent,
+            accentSoft = BananaLightAccentSoft,
+            onAccent = BananaLightOnAccent,
+            accentContainer = BananaLightAccentContainer,
+            onAccentContainer = BananaLightOnAccentContainer,
+            dark = false,
+            amoled = false,
+        )
+    }
+
+// ── Apple Theme (Pale matte green) ────────────────────────────────────────
+private val AppleLightBackground = Color(0xFFF7FAF5)
+private val AppleLightRaised = Color(0xFFEDF3EC)
+private val AppleLightElevated = Color(0xFFE3ECE2)
+private val AppleLightInk = Color(0xFF131D14)
+private val AppleLightHairline = Color(0xFFD2DFD1)
+private val AppleLightAccent = Color(0xFF366B37)
+private val AppleLightAccentSoft = Color(0xFFCCE8CB)
+private val AppleLightOnAccent = Color(0xFFFFFFFF)
+private val AppleLightAccentContainer = Color(0xFFCCE8CB)
+private val AppleLightOnAccentContainer = Color(0xFF002204)
+
+private val AppleDarkBackground = Color(0xFF101611)
+private val AppleDarkRaised = Color(0xFF1A221B)
+private val AppleDarkElevated = Color(0xFF232E24)
+private val AppleDarkInk = Color(0xFFDEE5DF)
+private val AppleDarkHairline = Color(0xFF3E4C3F)
+private val AppleDarkAccent = Color(0xFF9DD49B)
+private val AppleDarkAccentSoft = Color(0xFF1C5220)
+private val AppleDarkOnAccent = Color(0xFF033908)
+private val AppleDarkAccentContainer = Color(0xFF1C5220)
+private val AppleDarkOnAccentContainer = Color(0xFFB9F1B6)
+
+/** Pale matte green palette: celadon surfaces, crisp deep apple green accent. */
+fun applePalette(
+    dark: Boolean,
+    amoled: Boolean = false,
+): NextPalette =
+    if (dark) {
+        NextPalette(
+            background = if (amoled) Color.Black else AppleDarkBackground,
+            raised = AppleDarkRaised,
+            elevated = AppleDarkElevated,
+            ink = AppleDarkInk,
+            muted = AppleDarkInk.copy(alpha = 0.78f),
+            faint = AppleDarkInk.copy(alpha = 0.65f),
+            hairline = AppleDarkHairline,
+            accent = AppleDarkAccent,
+            accentSoft = AppleDarkAccentSoft,
+            onAccent = AppleDarkOnAccent,
+            accentContainer = AppleDarkAccentContainer,
+            onAccentContainer = AppleDarkOnAccentContainer,
+            dark = true,
+            amoled = amoled,
+        )
+    } else {
+        NextPalette(
+            background = AppleLightBackground,
+            raised = AppleLightRaised,
+            elevated = AppleLightElevated,
+            ink = AppleLightInk,
+            muted = AppleLightInk.copy(alpha = 0.75f),
+            faint = AppleLightInk.copy(alpha = 0.62f),
+            hairline = AppleLightHairline,
+            accent = AppleLightAccent,
+            accentSoft = AppleLightAccentSoft,
+            onAccent = AppleLightOnAccent,
+            accentContainer = AppleLightAccentContainer,
+            onAccentContainer = AppleLightOnAccentContainer,
+            dark = false,
+            amoled = false,
+        )
+    }
+
 @Composable
 fun PlatformSwitch(
     checked: Boolean,

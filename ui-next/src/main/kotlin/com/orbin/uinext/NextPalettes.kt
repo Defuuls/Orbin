@@ -21,14 +21,15 @@ import kotlin.math.min
 fun ColorSchemeVariant.toNextPalette(
     darkPreference: Boolean,
     amoled: Boolean,
-): NextPalette {
-    val dark =
-        when (this) {
-            // Skins retain their own light/dark preference as a mode hint only.
-            else -> seeds?.dark ?: darkPreference
+): NextPalette =
+    when (this) {
+        ColorSchemeVariant.BANANA -> bananaPalette(dark = darkPreference, amoled = amoled)
+        ColorSchemeVariant.APPLE -> applePalette(dark = darkPreference, amoled = amoled)
+        else -> {
+            val dark = seeds?.dark ?: darkPreference
+            canonicalNextPalette(dark = dark, amoled = amoled)
         }
-    return canonicalNextPalette(dark = dark, amoled = amoled)
-}
+    }
 
 /**
  * Builds a [NextPalette] from the current M3 [MaterialTheme.colorScheme].

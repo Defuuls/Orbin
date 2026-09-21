@@ -34,6 +34,7 @@ val settingsSearchIndex =
         SettingsSearchEntry("threadPresentation", "Open threads", GENERAL),
         SettingsSearchEntry("fullScreenFeed", "Full-screen browsing", GENERAL),
         SettingsSearchEntry("themeMode", "Theme", DISPLAY),
+        SettingsSearchEntry("colorTheme", "Color scheme", DISPLAY),
         SettingsSearchEntry("amoled", "True black", DISPLAY),
         SettingsSearchEntry("fontScale", "Text size", DISPLAY),
         SettingsSearchEntry("autoplay", "Autoplay videos", DISPLAY),

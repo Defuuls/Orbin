@@ -100,6 +100,8 @@ enum class ColorSchemeVariant(
     val seeds: ChanThemeSeeds? = null,
 ) {
     ORBIN,
+    BANANA(BananaSeeds),
+    APPLE(AppleSeeds),
     AVELLANA(AvellanaSeeds),
     EVITA(EvitaSeeds),
     HISPAPERRO(HispaperroSeeds),
@@ -123,6 +125,32 @@ enum class ColorSchemeVariant(
 }
 
 // ── Imageboard skin seeds (palette metadata only — shell ignores these) ────
+private val BananaSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFFFFDF0),
+        surface = Color(0xFFF9F5E4),
+        surfaceAlt = Color(0xFFF2ECE7),
+        onSurface = Color(0xFF1E1B10),
+        primary = Color(0xFF755C00),
+        primaryVariant = Color(0xFFFFEEA2),
+        outline = Color(0xFFE4DEC8),
+        highlight = Color(0xFFFFEEA2),
+        subject = Color(0xFF755C00),
+    )
+private val AppleSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFF7FAF5),
+        surface = Color(0xFFEDF3EC),
+        surfaceAlt = Color(0xFFE3ECE2),
+        onSurface = Color(0xFF131D14),
+        primary = Color(0xFF366B37),
+        primaryVariant = Color(0xFFCCE8CB),
+        outline = Color(0xFFD2DFD1),
+        highlight = Color(0xFFCCE8CB),
+        subject = Color(0xFF366B37),
+    )
 private val AvellanaSeeds =
     ChanThemeSeeds(
         dark = true,

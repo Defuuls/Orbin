@@ -15,6 +15,8 @@ enum class ColorTheme(
     val label: String,
 ) {
     ORBIN("Default"),
+    BANANA("Banana"),
+    APPLE("Apple"),
     YOTSUBA("Yotsuba"),
     YOTSUBA_P("Yotsuba B"),
     WAROSU("Warosu"),
