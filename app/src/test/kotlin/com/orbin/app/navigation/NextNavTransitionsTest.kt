@@ -6,20 +6,27 @@ import org.junit.Test
 
 /**
  * Motion tokens gate the Feed↔Boards↔Thread feel. If PUSH collapses back to a 300ms linear
- * Material default, the rest of the Apple Next chrome reads as Android again.
+ * Material default, hierarchical navigation stops reading as a push at all.
+ *
+ * The M3 Expressive redesign dropped the iOS parallax drift on the outgoing screen, so there is
+ * no PUSH_PARALLAX to assert here — a push now slides a full container width.
  */
 class NextNavTransitionsTest {
     @Test
     fun pushIsSofterAndLongerThanMaterialDefault() {
         assertThat(NextMotion.PUSH_MS).isAtLeast(350)
-        assertThat(NextMotion.PUSH_PARALLAX).isWithin(0.001f).of(0.24f)
-        assertThat(NextMotion.PUSH_PARALLAX).isLessThan(1f)
     }
 
     @Test
     fun tabSwapIsShorterThanHierarchicalPush() {
         assertThat(NextMotion.TAB_MS).isLessThan(NextMotion.PUSH_MS)
-        assertThat(NextMotion.TAB_NUDGE).isLessThan(NextMotion.PUSH_PARALLAX)
+    }
+
+    @Test
+    fun siblingTabNudgeStaysAShortLateralOffset() {
+        // A lateral tab swap must not read as a hierarchical push: nudge a fraction, not a width.
+        assertThat(NextMotion.TAB_NUDGE).isGreaterThan(0f)
+        assertThat(NextMotion.TAB_NUDGE).isLessThan(0.2f)
     }
 
     @Test

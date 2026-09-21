@@ -96,8 +96,6 @@ fun CommandSheet(
                     .imePadding()
                     .nextFrosted(
                         shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
-                        lightAlpha = 0.94f,
-                        darkAlpha = 0.88f,
                     ).windowInsetsPadding(sheetInsets),
         ) {
             Box(

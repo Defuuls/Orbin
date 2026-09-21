@@ -96,7 +96,9 @@ private val DarkColors =
  * Imageboard skins continue to work via their [ChanThemeSeeds], applied only to
  * content surfaces — the app shell always uses [ORBIN].
  */
-enum class ColorSchemeVariant(val seeds: ChanThemeSeeds? = null) {
+enum class ColorSchemeVariant(
+    val seeds: ChanThemeSeeds? = null,
+) {
     ORBIN,
     AVELLANA(AvellanaSeeds),
     EVITA(EvitaSeeds),
@@ -121,26 +123,266 @@ enum class ColorSchemeVariant(val seeds: ChanThemeSeeds? = null) {
 }
 
 // ── Imageboard skin seeds (palette metadata only — shell ignores these) ────
-private val AvellanaSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF030D13), surface = Color(0xFF01080C), surfaceAlt = Color(0xFF01080C), onSurface = Color(0xFFCCCCCC), primary = Color(0xFF00CCE4), primaryVariant = Color(0xFFE5F9FD), outline = Color(0xFF065E81), highlight = Color(0xFF000000), subject = Color(0xFF00CCE4))
-private val EvitaSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFFFFFFF), surface = Color(0xFF74ACDF), surfaceAlt = Color(0xFF74ACDF), onSurface = Color(0xFF0E1539), primary = Color(0xFFFFFF40), primaryVariant = Color(0xFFFFFFFF), outline = Color(0xFF000000), highlight = Color(0xFFFCBF49), subject = Color(0xFFFFFF40))
-private val HispaperroSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF312901), surface = Color(0xFF27170C), surfaceAlt = Color(0xFF27170C), onSurface = Color(0xFFE32636), primary = Color(0xFFFF1414), primaryVariant = Color(0xFF6CE077), outline = Color(0xFFFF7575), highlight = Color(0xFF522200), subject = Color(0xFFFF1414))
-private val HispasexySeeds = ChanThemeSeeds(dark = false, background = Color(0xFFF7F7F8), surface = Color(0xFFFFFFFF), surfaceAlt = Color(0xFFFFFFFF), onSurface = Color(0xFF000000), primary = Color(0xFFD41564), primaryVariant = Color(0xFF000000), outline = Color(0xFFF08DBD), highlight = Color(0xFFFFCCAA), subject = Color(0xFFEB176F))
-private val HispitaSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFFFFFEE), surface = Color(0xFFF2E1D6), surfaceAlt = Color(0xFFF2E1D6), onSurface = Color(0xFF800000), primary = Color(0xFFE60000), primaryVariant = Color(0xFF1F8F2A), outline = Color(0xFF880000), highlight = Color(0xFFFFCCAA), subject = Color(0xFFE60000))
-private val LainSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF000000), surface = Color(0xFF000000), surfaceAlt = Color(0xFF000000), onSurface = Color(0xFFAC737F), primary = Color(0xFF808080), primaryVariant = Color(0xFFDD0000), outline = Color(0xFFBB7585), highlight = Color(0xFF9988EE), subject = Color(0xFFFFFFFF))
-private val MikuSeeds = ChanThemeSeeds(dark = false, background = Color(0xFF94D8DA), surface = Color(0xFFB6DDDE), surfaceAlt = Color(0xFFB3E3E4), onSurface = Color(0xFF111111), primary = Color(0xFF004758), primaryVariant = Color(0xFF007367), outline = Color(0xFF78998C), highlight = Color(0xFF95D2D3), subject = Color(0xFF800000))
-private val MoeosSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFFFFFFF), surface = Color(0xFFA9ADFF), surfaceAlt = Color(0xFFA9ADFF), onSurface = Color(0xFF111111), primary = Color(0xFF3F6BD8), primaryVariant = Color(0xFFA9ADFF), outline = Color(0xFF888888), highlight = Color(0xFFFFFFFF), subject = Color(0xFFCC1105))
-private val MoepheusSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF000000), surface = Color(0xFF212820), surfaceAlt = Color(0xFF212820), onSurface = Color(0xFFACACAC), primary = Color(0xFF4DAD2D), primaryVariant = Color(0xFFFFFFFF), outline = Color(0xFF3A4538), highlight = Color(0xFFFFCCAA), subject = Color(0xFF4DAD2D))
-private val PenumbraSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF1D1F21), surface = Color(0xFF282A2E), surfaceAlt = Color(0xFF1D1F21), onSurface = Color(0xFFACACAC), primary = Color(0xFFFFB300), primaryVariant = Color(0xFFDD0000), outline = Color(0xFF117743), highlight = Color(0xFF3B162B), subject = Color(0xFF34ED3A))
-private val PenumbraClearSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFCCCCCC), surface = Color(0xFFDDDDDD), surfaceAlt = Color(0xFFCCCCCC), onSurface = Color(0xFF000000), primary = Color(0xFF222222), primaryVariant = Color(0xFFDD0000), outline = Color(0xFF000000), highlight = Color(0xFF868686), subject = Color(0xFF0F0C5D))
-private val RedchanitSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF3B4357), surface = Color(0xFF343C4E), surfaceAlt = Color(0xFF333333), onSurface = Color(0xFFC5C8C6), primary = Color(0xFFA266F1), primaryVariant = Color(0xFF81A2BE), outline = Color(0xFF6F6F6F), highlight = Color(0xFF7F8CA8), subject = Color(0xFF0F0C5D))
-private val RoyalSeeds = ChanThemeSeeds(dark = true, background = Color(0xFF2B181E), surface = Color(0xFF3C212A), surfaceAlt = Color(0xFF472732), onSurface = Color(0xFFC5B184), primary = Color(0xFFF9C440), primaryVariant = Color(0xFFF9C440), outline = Color(0xFF888888), highlight = Color(0xFF3C212A), subject = Color(0xFFFFF394))
-private val Sonic3Seeds = ChanThemeSeeds(dark = false, background = Color(0xFFF6F6F6), surface = Color(0xFFF6F6F6), surfaceAlt = Color(0xFFF6F6F6), onSurface = Color(0xFF000000), primary = Color(0xFF000000), primaryVariant = Color(0xFFDD0000), outline = Color(0xFF000000), highlight = Color(0xFF000000), subject = Color(0xFF0F0C5D))
-private val VivianSeeds = ChanThemeSeeds(dark = false, background = Color(0xFF84CA50), surface = Color(0xFF8872E4), surfaceAlt = Color(0xFFB19CD9), onSurface = Color(0xFF111111), primary = Color(0xFF3F6BD8), primaryVariant = Color(0xFF81A2BE), outline = Color(0xFF888888), highlight = Color(0xFF84CA50), subject = Color(0xFFCC1105))
-private val WarosuSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFCFECD1), surface = Color(0xFFD6F0DA), surfaceAlt = Color(0xFFCFECD1), onSurface = Color(0xFF333333), primary = Color(0xFF335588), primaryVariant = Color(0xFFDD0000), outline = Color(0xFF333333), highlight = Color(0xFFBBE6C2), subject = Color(0xFFCC1105))
-private val Win95Seeds = ChanThemeSeeds(dark = false, background = Color(0xFFC0C0C0), surface = Color(0xFFC0C0C0), surfaceAlt = Color(0xFFEEF2FF), onSurface = Color(0xFF000000), primary = Color(0xFF222222), primaryVariant = Color(0xFF555555), outline = Color(0xFF888888), highlight = Color(0xFFC0C0C0), subject = Color(0xFF0000FF))
-private val YotsubaSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFFED6AF), surface = Color(0xFFF0E0D6), surfaceAlt = Color(0xFFF0E0D6), onSurface = Color(0xFF800000), primary = Color(0xFF0000EE), primaryVariant = Color(0xFFFF0000), outline = Color(0xFF880000), highlight = Color(0xFFFFCCAA), subject = Color(0xFFCC1105))
-private val YotsubaPSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFAAA2D8), surface = Color(0xFFC9C4EA), surfaceAlt = Color(0xFFE4E4F9), onSurface = Color(0xFF111111), primary = Color(0xFF3F6BD8), primaryVariant = Color(0xFF81A2BE), outline = Color(0xFF888888), highlight = Color(0xFFA590CE), subject = Color(0xFF090910))
-private val YukkuriSeeds = ChanThemeSeeds(dark = false, background = Color(0xFFCCFFCC), surface = Color(0xFFEFEFEF), surfaceAlt = Color(0xFFCCFFCC), onSurface = Color(0xFF111111), primary = Color(0xFF3F6BD8), primaryVariant = Color(0xFF81A2BE), outline = Color(0xFF808080), highlight = Color(0xFFA590CE), subject = Color(0xFFFF0000))
+private val AvellanaSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF030D13),
+        surface = Color(0xFF01080C),
+        surfaceAlt = Color(0xFF01080C),
+        onSurface = Color(0xFFCCCCCC),
+        primary = Color(0xFF00CCE4),
+        primaryVariant = Color(0xFFE5F9FD),
+        outline = Color(0xFF065E81),
+        highlight = Color(0xFF000000),
+        subject = Color(0xFF00CCE4),
+    )
+private val EvitaSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFFFFFFF),
+        surface = Color(0xFF74ACDF),
+        surfaceAlt = Color(0xFF74ACDF),
+        onSurface = Color(0xFF0E1539),
+        primary = Color(0xFFFFFF40),
+        primaryVariant = Color(0xFFFFFFFF),
+        outline = Color(0xFF000000),
+        highlight = Color(0xFFFCBF49),
+        subject = Color(0xFFFFFF40),
+    )
+private val HispaperroSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF312901),
+        surface = Color(0xFF27170C),
+        surfaceAlt = Color(0xFF27170C),
+        onSurface = Color(0xFFE32636),
+        primary = Color(0xFFFF1414),
+        primaryVariant = Color(0xFF6CE077),
+        outline = Color(0xFFFF7575),
+        highlight = Color(0xFF522200),
+        subject = Color(0xFFFF1414),
+    )
+private val HispasexySeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFF7F7F8),
+        surface = Color(0xFFFFFFFF),
+        surfaceAlt = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF000000),
+        primary = Color(0xFFD41564),
+        primaryVariant = Color(0xFF000000),
+        outline = Color(0xFFF08DBD),
+        highlight = Color(0xFFFFCCAA),
+        subject = Color(0xFFEB176F),
+    )
+private val HispitaSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFFFFFEE),
+        surface = Color(0xFFF2E1D6),
+        surfaceAlt = Color(0xFFF2E1D6),
+        onSurface = Color(0xFF800000),
+        primary = Color(0xFFE60000),
+        primaryVariant = Color(0xFF1F8F2A),
+        outline = Color(0xFF880000),
+        highlight = Color(0xFFFFCCAA),
+        subject = Color(0xFFE60000),
+    )
+private val LainSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF000000),
+        surface = Color(0xFF000000),
+        surfaceAlt = Color(0xFF000000),
+        onSurface = Color(0xFFAC737F),
+        primary = Color(0xFF808080),
+        primaryVariant = Color(0xFFDD0000),
+        outline = Color(0xFFBB7585),
+        highlight = Color(0xFF9988EE),
+        subject = Color(0xFFFFFFFF),
+    )
+private val MikuSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFF94D8DA),
+        surface = Color(0xFFB6DDDE),
+        surfaceAlt = Color(0xFFB3E3E4),
+        onSurface = Color(0xFF111111),
+        primary = Color(0xFF004758),
+        primaryVariant = Color(0xFF007367),
+        outline = Color(0xFF78998C),
+        highlight = Color(0xFF95D2D3),
+        subject = Color(0xFF800000),
+    )
+private val MoeosSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFFFFFFF),
+        surface = Color(0xFFA9ADFF),
+        surfaceAlt = Color(0xFFA9ADFF),
+        onSurface = Color(0xFF111111),
+        primary = Color(0xFF3F6BD8),
+        primaryVariant = Color(0xFFA9ADFF),
+        outline = Color(0xFF888888),
+        highlight = Color(0xFFFFFFFF),
+        subject = Color(0xFFCC1105),
+    )
+private val MoepheusSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF000000),
+        surface = Color(0xFF212820),
+        surfaceAlt = Color(0xFF212820),
+        onSurface = Color(0xFFACACAC),
+        primary = Color(0xFF4DAD2D),
+        primaryVariant = Color(0xFFFFFFFF),
+        outline = Color(0xFF3A4538),
+        highlight = Color(0xFFFFCCAA),
+        subject = Color(0xFF4DAD2D),
+    )
+private val PenumbraSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF1D1F21),
+        surface = Color(0xFF282A2E),
+        surfaceAlt = Color(0xFF1D1F21),
+        onSurface = Color(0xFFACACAC),
+        primary = Color(0xFFFFB300),
+        primaryVariant = Color(0xFFDD0000),
+        outline = Color(0xFF117743),
+        highlight = Color(0xFF3B162B),
+        subject = Color(0xFF34ED3A),
+    )
+private val PenumbraClearSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFCCCCCC),
+        surface = Color(0xFFDDDDDD),
+        surfaceAlt = Color(0xFFCCCCCC),
+        onSurface = Color(0xFF000000),
+        primary = Color(0xFF222222),
+        primaryVariant = Color(0xFFDD0000),
+        outline = Color(0xFF000000),
+        highlight = Color(0xFF868686),
+        subject = Color(0xFF0F0C5D),
+    )
+private val RedchanitSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF3B4357),
+        surface = Color(0xFF343C4E),
+        surfaceAlt = Color(0xFF333333),
+        onSurface = Color(0xFFC5C8C6),
+        primary = Color(0xFFA266F1),
+        primaryVariant = Color(0xFF81A2BE),
+        outline = Color(0xFF6F6F6F),
+        highlight = Color(0xFF7F8CA8),
+        subject = Color(0xFF0F0C5D),
+    )
+private val RoyalSeeds =
+    ChanThemeSeeds(
+        dark = true,
+        background = Color(0xFF2B181E),
+        surface = Color(0xFF3C212A),
+        surfaceAlt = Color(0xFF472732),
+        onSurface = Color(0xFFC5B184),
+        primary = Color(0xFFF9C440),
+        primaryVariant = Color(0xFFF9C440),
+        outline = Color(0xFF888888),
+        highlight = Color(0xFF3C212A),
+        subject = Color(0xFFFFF394),
+    )
+private val Sonic3Seeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFF6F6F6),
+        surface = Color(0xFFF6F6F6),
+        surfaceAlt = Color(0xFFF6F6F6),
+        onSurface = Color(0xFF000000),
+        primary = Color(0xFF000000),
+        primaryVariant = Color(0xFFDD0000),
+        outline = Color(0xFF000000),
+        highlight = Color(0xFF000000),
+        subject = Color(0xFF0F0C5D),
+    )
+private val VivianSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFF84CA50),
+        surface = Color(0xFF8872E4),
+        surfaceAlt = Color(0xFFB19CD9),
+        onSurface = Color(0xFF111111),
+        primary = Color(0xFF3F6BD8),
+        primaryVariant = Color(0xFF81A2BE),
+        outline = Color(0xFF888888),
+        highlight = Color(0xFF84CA50),
+        subject = Color(0xFFCC1105),
+    )
+private val WarosuSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFCFECD1),
+        surface = Color(0xFFD6F0DA),
+        surfaceAlt = Color(0xFFCFECD1),
+        onSurface = Color(0xFF333333),
+        primary = Color(0xFF335588),
+        primaryVariant = Color(0xFFDD0000),
+        outline = Color(0xFF333333),
+        highlight = Color(0xFFBBE6C2),
+        subject = Color(0xFFCC1105),
+    )
+private val Win95Seeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFC0C0C0),
+        surface = Color(0xFFC0C0C0),
+        surfaceAlt = Color(0xFFEEF2FF),
+        onSurface = Color(0xFF000000),
+        primary = Color(0xFF222222),
+        primaryVariant = Color(0xFF555555),
+        outline = Color(0xFF888888),
+        highlight = Color(0xFFC0C0C0),
+        subject = Color(0xFF0000FF),
+    )
+private val YotsubaSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFFED6AF),
+        surface = Color(0xFFF0E0D6),
+        surfaceAlt = Color(0xFFF0E0D6),
+        onSurface = Color(0xFF800000),
+        primary = Color(0xFF0000EE),
+        primaryVariant = Color(0xFFFF0000),
+        outline = Color(0xFF880000),
+        highlight = Color(0xFFFFCCAA),
+        subject = Color(0xFFCC1105),
+    )
+private val YotsubaPSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFAAA2D8),
+        surface = Color(0xFFC9C4EA),
+        surfaceAlt = Color(0xFFE4E4F9),
+        onSurface = Color(0xFF111111),
+        primary = Color(0xFF3F6BD8),
+        primaryVariant = Color(0xFF81A2BE),
+        outline = Color(0xFF888888),
+        highlight = Color(0xFFA590CE),
+        subject = Color(0xFF090910),
+    )
+private val YukkuriSeeds =
+    ChanThemeSeeds(
+        dark = false,
+        background = Color(0xFFCCFFCC),
+        surface = Color(0xFFEFEFEF),
+        surfaceAlt = Color(0xFFCCFFCC),
+        onSurface = Color(0xFF111111),
+        primary = Color(0xFF3F6BD8),
+        primaryVariant = Color(0xFF81A2BE),
+        outline = Color(0xFF808080),
+        highlight = Color(0xFFA590CE),
+        subject = Color(0xFFFF0000),
+    )
 
 /**
  * The Orbin Material 3 theme — eggplant-seeded, flat, matte.
