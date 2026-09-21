@@ -1,5 +1,7 @@
 package com.orbin.uinext.tokens
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.runtime.Immutable
@@ -224,6 +226,10 @@ object NextType {
     /** Screen/section primary title (maps to headlineMedium). */
     val largeTitle = headlineMedium
 
+    val title1 = headlineLarge
+    val title2 = headlineMedium
+    val title3 = headlineSmall
+
     /** Row primary text (maps to bodyLarge). */
     val body = bodyLarge
 
@@ -261,6 +267,9 @@ object NextType {
  */
 @Immutable
 object NextMotion {
+    /** M3 emphasized easing — standard smooth deceleration */
+    val Ease: Easing = CubicBezierEasing(0.2f, 0.0f, 0f, 1.0f)
+
     /** Standard navigation push — medium-low stiffness, no bounce. */
     val pushSpec: SpringSpec<Float> =
         SpringSpec(

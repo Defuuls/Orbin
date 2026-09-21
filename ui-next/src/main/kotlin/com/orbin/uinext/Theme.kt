@@ -58,6 +58,10 @@ data class NextPalette(
     val amoled: Boolean = false,
 )
 
+enum class NextPlatform { IOS, ANDROID }
+
+val LocalNextPlatform = staticCompositionLocalOf { NextPlatform.ANDROID }
+
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
 private val LocalNextThemed = staticCompositionLocalOf { false }
@@ -76,12 +80,6 @@ val next: NextPalette
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits
  * and inherits — no recomposition cost, no parameter compounding.
- *
- * What is NOT a parameter:
- * - Platform (iOS/Android) — this is Android. The iOS platform enum and iOS ripple suppression
- *   are removed. M3 ripple is the indication, matching the platform.
- * - Frosted glass / blur — removed. Surfaces are solid matte.
- * - Parallax / iOS easing — removed. Motion uses M3 spring physics (see NextMotion).
  */
 @Composable
 fun NextTheme(
@@ -89,12 +87,13 @@ fun NextTheme(
     amoled: Boolean? = null,
     fontScale: Float? = null,
     palette: NextPalette? = null,
+    platform: NextPlatform? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
     val inheritedScale = LocalNextFontScale.current
 
-    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null
+    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null && platform == null
     if (inherited != null && noOverrides) {
         content()
         return
@@ -142,7 +141,7 @@ fun NextTheme(
     val resolvedPalette =
         palette ?: run {
             when {
-                dark && black -> DarkAmoledPalette
+                dark && black -> AmoledPalette
                 dark -> DarkPalette
                 else -> LightPalette
             }
@@ -150,6 +149,7 @@ fun NextTheme(
 
     val density = LocalDensity.current
     CompositionLocalProvider(
+        LocalNextPlatform provides (platform ?: LocalNextPlatform.current),
         LocalNext provides resolvedPalette,
         LocalNextThemed provides true,
         LocalNextFontScale provides scale,
@@ -178,24 +178,24 @@ internal data class BoardHue(val light: Color, val dark: Color)
 
 /**
  * Ten board hues — all clear 4.5:1 AA contrast on their respective grounds.
- * Updated to harmonize with the eggplant primary palette (warm purples, dusty roses).
  * `PaletteContrastTest` verifies all twenty values.
  */
 internal val BoardHues =
     listOf(
-        BoardHue(light = Color(0xFF6B3F7A), dark = Color(0xFFDFACF0)), // eggplant (primary)
-        BoardHue(light = Color(0xFF7A4A58), dark = Color(0xFFF5B7C4)), // dusty rose
         BoardHue(light = Color(0xFF2C6BC4), dark = Color(0xFF74A9F8)), // blue
-        BoardHue(light = Color(0xFF1B7A55), dark = Color(0xFF5FC79A)), // green
         BoardHue(light = Color(0xFF8F6206), dark = Color(0xFFE9B54C)), // amber
+        BoardHue(light = Color(0xFF1B7A55), dark = Color(0xFF5FC79A)), // green
+        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
+        BoardHue(light = Color(0xFFB83A6E), dark = Color(0xFFEE87B4)), // magenta
         BoardHue(light = Color(0xFF116C74), dark = Color(0xFF5CC6D0)), // teal
         BoardHue(light = Color(0xFFA6491F), dark = Color(0xFFEE9468)), // rust
         BoardHue(light = Color(0xFF4A54C6), dark = Color(0xFF93A0F5)), // indigo
         BoardHue(light = Color(0xFF5F6F14), dark = Color(0xFFB6CB55)), // olive
-        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
+        BoardHue(light = Color(0xFF8C3A8C), dark = Color(0xFFD98BD9)), // plum
     )
 
-private val PinnedBoardHues = mapOf("/g/" to 2, "/ck/" to 4, "/p/" to 3, "/lit/" to 9, "/aco/" to 1)
+private val PinnedBoardHues =
+    mapOf("/g/" to 0, "/ck/" to 1, "/p/" to 2, "/lit/" to 3, "/aco/" to 4)
 
 internal fun boardHueIndex(board: String): Int = PinnedBoardHues[board] ?: board.hashCode().mod(BoardHues.size)
 

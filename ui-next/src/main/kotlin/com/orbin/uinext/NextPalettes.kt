@@ -72,7 +72,7 @@ internal fun nextPaletteFromM3(dark: Boolean, amoled: Boolean): NextPalette {
 /** The one palette family used by ui-next application chrome. */
 fun canonicalNextPalette(dark: Boolean, amoled: Boolean): NextPalette =
     when {
-        dark && amoled -> DarkAmoledPalette
+        dark && amoled -> AmoledPalette
         dark -> DarkPalette
         else -> LightPalette
     }
@@ -87,8 +87,8 @@ internal val LightPalette =
         raised = Color(0xFFF9F3F9),
         elevated = Color(0xFFF3EDF3),
         ink = Color(0xFF1D1B1E),
-        muted = Color(0xFF4D4050),
-        faint = Color(0xFF4D4050).copy(alpha = 0.60f),
+        muted = Color(0xFF1D1B1E).copy(alpha = 0.75f),
+        faint = Color(0xFF1D1B1E).copy(alpha = 0.62f),
         hairline = Color(0xFFCEC2CF),
         accent = Color(0xFF7B4F8A),
         accentSoft = Color(0xFFF3DAFF),
@@ -101,12 +101,12 @@ internal val LightPalette =
 
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF151217),
+        background = Color(0xFF000000),
         raised = Color(0xFF1D1B1E),
         elevated = Color(0xFF221F24),
         ink = Color(0xFFE8E0E9),
-        muted = Color(0xFFCFC2CF),
-        faint = Color(0xFFCFC2CF).copy(alpha = 0.68f),
+        muted = Color(0xFFE8E0E9).copy(alpha = 0.75f),
+        faint = Color(0xFFE8E0E9).copy(alpha = 0.60f),
         hairline = Color(0xFF4D4050),
         accent = Color(0xFFDFACF0),
         accentSoft = Color(0xFF613472),
@@ -117,13 +117,9 @@ internal val DarkPalette =
         amoled = false,
     )
 
-internal val DarkAmoledPalette =
-    DarkPalette.copy(
-        background = Color(0xFF000000),
-        raised = Color(0xFF0D0A0F),
-        elevated = Color(0xFF141116),
-        amoled = true,
-    )
+internal val AmoledPalette = DarkPalette.copy(amoled = true)
+
+internal val DarkAmoledPalette = AmoledPalette
 
 // ── Legacy contrast utilities (kept for ChanThemeSeeds.toNextPalette) ──────
 
