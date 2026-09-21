@@ -1,9 +1,9 @@
 # Orbin
 
-![Orbin brand showcase](docs/assets/orbin-brand-showcase.png)
+![Orbin brand showcase](docs/assets/orbin-brand-showcase.svg)
 
 Orbin is a modern, privacy-focused, open-source **Android imageboard browser** built with Kotlin,
-Jetpack Compose, and Material 3. It targets **Android 12+ (API 31+)** and uses a modular Clean
+Jetpack Compose, and Material 3 Expressive. It targets **Android 12+ (API 31+)** and uses a modular Clean
 Architecture with engine-specific behavior isolated behind a provider contract.
 
 Orbin is deliberately **read-only**: it browses boards, catalogs, threads, links, and media, but
@@ -25,6 +25,8 @@ does not post, reply, or create threads.
 
 ![Orbin feed on a compact phone](docs/assets/orbin-hero-screenshot.svg)
 
+![Orbin thread viewer](docs/assets/orbin-thread-screenshot.svg)
+
 ![Orbin settings](docs/assets/orbin-settings-screenshot.svg)
 
 ---
@@ -38,14 +40,17 @@ does not post, reply, or create threads.
 - **Subscribed feed.** Threads from followed boards are merged and ordered by activity, with
   board identity, read state, filtering, pull-to-refresh, and optional inline video autoplay.
 - **Readable grid-first catalogs.** Feed and board catalogs use an adaptive card grid as the
-  primary presentation. The old List option is no longer exposed. Cards maintain useful width on
-  compact phones, prioritize the subject over secondary metadata, and adapt across larger screens.
+  primary presentation. Cards maintain useful width on compact phones, prioritize the subject over
+  secondary metadata, and adapt across larger screens.
 - **Images view.** A media-first image grid remains available when visual scanning matters more
   than thread metadata.
 - **Wide-screen two-pane navigation.** At 840dp and above, a board catalog and its open thread can
   remain side by side without losing navigation state.
 - **Offline awareness.** Network state and typed failures are surfaced explicitly rather than
   turning failed requests into unexplained blank screens.
+- **Focused bottom chrome.** Feed and Settings make up the primary bottom navigation strip, with
+  Search, Downloads, Commands, and All media organized within Settings › Library for clean, focused
+  navigation.
 
 ### Thread reader
 
@@ -70,8 +75,13 @@ does not post, reply, or create threads.
 
 ### Personalization and accessibility
 
-- Material 3, dynamic color, light/dark/AMOLED modes, global font scaling, and Color themes
+- **Material 3 Expressive redesign.** Flat, matte surfaces, tonal selection containers (`primaryContainer`),
+  expressive shape scale (24dp cards, 28dp sheets), and `SpringSpec` physics seeded from a soft eggplant
+  palette (`#7B4F8A`).
+- Dynamic color, light/dark/AMOLED modes, global font scaling, and Color themes
   (Yotsuba, Warosu, Miku, Lain, and more) that recolor the Next shell including Feed.
+- **Cosmic orbit app icon.** Stylized planetary orbit mark with deep space hues and monochrome
+  themed launcher icon support.
 - Adaptive layouts for compact phones, tablets, foldables, landscape, and edge-to-edge windows.
 - Read/unread hierarchy, screen-reader semantics, touch-target and contrast checks, and screenshot
   coverage for normal, dark, AMOLED, large-text, and maximum-text configurations.
@@ -130,10 +140,12 @@ Orbin/
 ├── media/                    # Image/video/download infrastructure
 ├── ui-next/                  # App-agnostic Compose screen kit
 ├── feature-*/                # Feature ViewModels and presentation mapping
-├── provider-api/             # Provider contracts and shared models
-├── provider-vichan/          # 4chan/Vichan implementation
-├── provider-lynxchan/        # BBW Chan/LynxChan implementation
-└── provider-registry/        # Provider registration and contract checks
+├── provider/
+│   ├── api/                  # Provider contracts and shared models
+│   ├── vichan/               # 4chan/Vichan reference implementation
+│   ├── lynxchan/             # BBW Chan/LynxChan implementation
+│   └── registry/             # Provider registration and contract checks
+└── core/                     # Common utilities, models, UI primitives, design system
 ```
 
 ## Quality gates
