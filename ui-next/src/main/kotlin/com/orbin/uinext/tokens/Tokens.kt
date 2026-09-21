@@ -303,4 +303,6 @@ object NextMotion {
     const val PUSH_MS = 350
     const val TAB_MS = 200
     const val CHROME_MS = 180
+    const val PUSH_PARALLAX = 0.24f
+    const val TAB_NUDGE = 0.06f
 }
