@@ -133,7 +133,7 @@ internal val DarkAmoledPalette = AmoledPalette
 @Suppress("MagicNumber")
 internal fun ChanThemeSeeds.toNextPalette(amoled: Boolean): NextPalette {
     val bg = if (amoled && dark) Color.Black else background
-    val panel = if (amoled && dark) Color(0xFF1C1C1E) else surface
+    val panel = if (amoled && dark) Color(AMOLED_PANEL_ARGB) else surface
     val body = onSurface
     val accent = ensureAccentWithOnColor(primary, bg, listOf(primaryVariant, subject, body))
     val accentOn = onColorFor(accent)
@@ -223,9 +223,30 @@ private fun contrastRatio(
 
 @Suppress("MagicNumber")
 private fun Color.luminance(): Float {
-    fun linearize(v: Float) = if (v <= 0.04045f) v / 12.92f else ((v + 0.055f) / 1.055f).let { it * it * it }
-    return 0.2126f * linearize(red) + 0.7152f * linearize(green) + 0.0722f * linearize(blue)
+    fun linearize(v: Float) =
+        if (v <= SRGB_LINEAR_THRESHOLD) {
+            v / SRGB_LINEAR_DIVISOR
+        } else {
+            ((v + SRGB_GAMMA_OFFSET) / SRGB_GAMMA_DIVISOR).let { it * it * it }
+        }
+    return LUMINANCE_RED * linearize(red) +
+        LUMINANCE_GREEN * linearize(green) +
+        LUMINANCE_BLUE * linearize(blue)
 }
+
+/** AMOLED panel fill — near-black elevated surface for true-black skins. */
+private const val AMOLED_PANEL_ARGB = 0xFF1C1C1E
+
+// sRGB electro-optical transfer function constants (IEC 61966-2-1).
+private const val SRGB_LINEAR_THRESHOLD = 0.04045f
+private const val SRGB_LINEAR_DIVISOR = 12.92f
+private const val SRGB_GAMMA_OFFSET = 0.055f
+private const val SRGB_GAMMA_DIVISOR = 1.055f
+
+// WCAG 2.x relative-luminance channel weights.
+private const val LUMINANCE_RED = 0.2126f
+private const val LUMINANCE_GREEN = 0.7152f
+private const val LUMINANCE_BLUE = 0.0722f
 
 private const val AA_NORMAL_TEXT = 4.5f
 private const val LUMINANCE_MIDPOINT = 0.5f

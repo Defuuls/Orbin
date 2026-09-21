@@ -304,6 +304,12 @@ object NextMotion {
     const val PUSH_MS = 350
     const val TAB_MS = 200
     const val CHROME_MS = 180
-    const val PUSH_PARALLAX = 0.24f
+
+    /**
+     * Sibling-tab slide offset as a fraction of container width.
+     *
+     * M3 shared-axis transitions nudge sibling panes a short distance rather than sliding a
+     * full width, which is what distinguishes a lateral tab swap from a hierarchical push.
+     */
     const val TAB_NUDGE = 0.06f
 }

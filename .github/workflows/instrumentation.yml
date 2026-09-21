@@ -75,14 +75,6 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
-      # Only the modules that actually have androidTest sources. A blanket
-      # `connectedDebugAndroidTest` also builds, installs and runs an empty instrumentation APK for
-      # every other module, which fails outright: the convention plugins name AndroidJUnitRunner as
-      # the runner for all of them but only these depend on it. Discovering the list keeps it
-      # correct as modules gain and lose test sources.
-      #
-      # Resolved in its own step because the emulator action runs each line of `script:` as its
-      # own `sh -c`, so a multi-line command substitution arrives as unrelated fragments.
       - name: Resolve modules with instrumentation tests
         run: |
           TASKS=$(find . -type d -path '*/src/androidTest' -not -path './build/*' \
@@ -103,16 +95,9 @@ jobs:
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          # Compose tests wait on idleness, which never arrives while animations run.
           disable-animations: true
-          # One line on purpose. The action runs each line of `script:` as a separate `sh -c`, so
-          # multi-line scripts share no state and stop at the first failing line — which is why
-          # logcat has to be chained onto the Gradle invocation rather than following it. It also
-          # has to happen here rather than in a later step: the action tears the emulator down when
-          # this step ends, and `adb logcat -d` against no device blocks instead of failing.
           script: ./gradlew $INSTRUMENTATION_TASKS --continue; S=$?; timeout 60 adb logcat -d > logcat-api-${{ matrix.api-level }}.txt 2>&1; exit $S
 
-      # Instrumentation failures usually report only that a test failed; the reason is in logcat.
       - name: Summarise logcat
         if: failure()
         run: |
