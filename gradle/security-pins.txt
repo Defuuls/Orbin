@@ -34,7 +34,9 @@
 # response to another. 4.1.136.Final — what this pinned before — is the last affected release.
 io.netty:netty-*                                    | 4.1.137.Final | Dependabot reports multiple Netty CVEs in the Gradle plugin classpath.
 
-org.bouncycastle:bc*-jdk18on                        | 1.84          | Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.
+org.bouncycastle:bc*-jdk18on                        | 1.85          | Dependabot reports Bouncy Castle CVEs in the Gradle plugin classpath.
+
+com.squareup.wire:wire-runtime                      | 6.4.5         | Fix decoder integer overflow and unauthenticated crash (CVE-2026-63126).
 
 org.apache.commons:commons-compress                 | 1.28.0        | Dependabot reports Apache Commons Compress CVEs.
 
