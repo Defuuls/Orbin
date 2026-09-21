@@ -93,7 +93,6 @@ internal fun AnimatedContentTransitionScope<NavBackStackEntry>.nextExit(
             slideOutOfContainer(
                 AnimatedContentTransitionScope.SlideDirection.Start,
                 offsetSpec(push = true),
-                targetOffset = { full -> (full * NextMotion.PUSH_PARALLAX).toInt() },
             ) + fadeOut(fadeSpec(push = true))
     }
 }
@@ -110,7 +109,6 @@ internal fun AnimatedContentTransitionScope<NavBackStackEntry>.nextPopEnter(
             slideIntoContainer(
                 AnimatedContentTransitionScope.SlideDirection.End,
                 offsetSpec(push = true),
-                initialOffset = { full -> (full * NextMotion.PUSH_PARALLAX).toInt() },
             ) + fadeIn(fadeSpec(push = true))
     }
 }

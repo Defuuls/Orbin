@@ -50,9 +50,4 @@ fun Modifier.nextAccentSurface(shape: Shape): Modifier =
  * Backwards-compatible chrome fill: maps to flat matte [nextElevatedSurface].
  */
 @Composable
-fun Modifier.nextFrosted(
-    shape: Shape,
-    lightAlpha: Float = 1f,
-    darkAlpha: Float = 1f,
-): Modifier = nextElevatedSurface(shape)
-
+fun Modifier.nextFrosted(shape: Shape): Modifier = nextElevatedSurface(shape)

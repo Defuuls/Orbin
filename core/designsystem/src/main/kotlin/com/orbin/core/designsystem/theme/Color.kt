@@ -2,7 +2,7 @@ package com.orbin.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
+/*
  * M3 tonal palette seeded from soft eggplant (#7B5C8B).
  *
  * Generated via Material HCT (Hue-Chroma-Tone) algorithm, matching Material Theme Builder
@@ -106,6 +106,7 @@ internal val AmoledSurfaceContainerHigh = Color(0xFF1E1B20)
 internal val AmoledSurfaceContainerHighest = Color(0xFF28252A)
 
 // ── Semantic accents (post renderer) ──────────────────────────────────────
+
 /** Imageboard greentext — kept period-accurate; shifts toward eggplant's warm complement. */
 val GreentextColor = Color(0xFF5A7A2A)
 
