@@ -436,15 +436,7 @@ private fun SettingRow(
                 }
             }
         }
-        if (item.id == "platformTheme") {
-            PlatformSegments(
-                item.options,
-                item.options.indexOf(item.value),
-                { onSelectOption(item, it) },
-                Modifier.padding(12.dp),
-            )
-        }
-        if (!expanded || item.id == "platformTheme") return@Column
+        if (!expanded) return@Column
         if (item.kind == SettingKind.TEXT && item.hint != null) {
             Text(
                 text = item.hint,

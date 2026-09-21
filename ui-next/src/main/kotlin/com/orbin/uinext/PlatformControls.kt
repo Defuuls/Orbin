@@ -1,7 +1,5 @@
 package com.orbin.uinext
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -10,26 +8,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextMotion
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 
 private val DarkBackground = Color(0xFF141218)
@@ -90,30 +85,19 @@ fun PlatformSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (LocalNextPlatform.current == NextPlatform.ANDROID) {
-        Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier)
-        return
-    }
-    val offset by animateDpAsState(if (checked) 20.dp else 0.dp, tween(320, easing = NextMotion.Ease), label = "switch")
-    Box(
-        modifier =
-            modifier
-                .sizeIn(minWidth = 51.dp, minHeight = 48.dp)
-                .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier.size(51.dp, 31.dp).clip(CircleShape).background(if (checked) Color(0xFF34C759) else next.hairline),
-        ) {
-            Box(
-                Modifier
-                    .padding(2.dp)
-                    .offset(x = offset)
-                    .size(27.dp)
-                    .background(Color.White, CircleShape),
-            )
-        }
-    }
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        colors =
+            SwitchDefaults.colors(
+                checkedThumbColor = next.onAccent,
+                checkedTrackColor = next.accent,
+                uncheckedThumbColor = next.muted,
+                uncheckedTrackColor = next.faint,
+                uncheckedBorderColor = next.hairline,
+            ),
+    )
 }
 
 @Composable
@@ -123,44 +107,35 @@ fun PlatformSegments(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val android = LocalNextPlatform.current == NextPlatform.ANDROID
-    val shape = RoundedCornerShape(if (android) 20.dp else 9.dp)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .then(
-                if (android) {
-                    Modifier.border(
-                        1.dp,
-                        next.muted,
-                        shape,
-                    )
-                } else {
-                    Modifier.background(next.ink.copy(alpha = 0.06f))
-                },
-            ).selectableGroup()
-            .padding(2.dp),
+            .border(1.dp, next.hairline, shape)
+            .background(next.elevated)
+            .selectableGroup()
+            .padding(3.dp),
     ) {
         labels.forEachIndexed { index, label ->
+            val isSelected = index == selected
             Box(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .clip(RoundedCornerShape(if (android) 18.dp else 7.dp))
+                    .heightIn(min = 44.dp)
+                    .clip(RoundedCornerShape(17.dp))
                     .background(
-                        if (index ==
-                            selected
-                        ) {
-                            if (android) next.accentSoft else next.raised
-                        } else {
-                            Color.Transparent
-                        },
-                    ).selectable(selected = index == selected, role = Role.Tab, onClick = { onSelect(index) })
+                        if (isSelected) next.accentSoft else Color.Transparent,
+                    ).selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
                     .padding(horizontal = 6.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(label, style = NextType.footnote, color = next.ink, fontWeight = FontWeight.SemiBold)
+                Text(
+                    label,
+                    style = NextType.footnote,
+                    color = if (isSelected) next.accent else next.ink,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                )
             }
         }
     }
@@ -204,22 +179,14 @@ fun FeedSortSheet(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val ios = LocalNextPlatform.current == NextPlatform.IOS
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = next.raised,
         contentColor = next.ink,
-        shape = RoundedCornerShape(topStart = if (ios) 14.dp else 28.dp, topEnd = if (ios) 14.dp else 28.dp),
-        modifier = if (ios) Modifier.padding(horizontal = 8.dp) else Modifier,
-        dragHandle =
-            if (ios) {
-                null
-            } else {
-                {
-                    androidx.compose.material3.BottomSheetDefaults
-                        .DragHandle()
-                }
-            },
+        shape = RoundedCornerShape(topStart = NextRadius.sheet, topEnd = NextRadius.sheet),
+        dragHandle = {
+            BottomSheetDefaults.DragHandle()
+        },
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Sort your feed", style = NextType.footnote, color = next.muted, modifier = Modifier.padding(8.dp))
@@ -240,7 +207,6 @@ fun FeedSortSheet(
                     onDismiss()
                 }
             }
-            if (ios) InlineAction("Cancel", modifier = Modifier.fillMaxWidth(), onClick = onDismiss)
         }
     }
 }

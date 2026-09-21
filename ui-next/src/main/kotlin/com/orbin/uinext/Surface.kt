@@ -358,15 +358,15 @@ fun GroupedSection(
     }
 }
 
-/** Divider drawn inside a [GroupedSection], inset from the leading edge. */
+/** Divider drawn inside a [GroupedSection]. */
 @Composable
 fun GroupedDivider(modifier: Modifier = Modifier) {
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(start = NextSpace.rowX)
-                .height(0.5.dp)
+                .padding(horizontal = NextSpace.rowX)
+                .height(1.dp)
                 .background(next.hairline),
     )
 }
@@ -443,7 +443,7 @@ fun InlineAction(
         if (selected == null) {
             Modifier.clickable(
                 role = Role.Button,
-                indication = NextHighlightIndication,
+                indication = androidx.compose.material3.ripple(color = next.accent),
                 interactionSource = interaction,
                 onClick = onClick,
             )

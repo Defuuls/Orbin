@@ -214,7 +214,6 @@ fun NextFeedScreen(
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
                             layout = layout,
-                            showSizeControl = true,
                             headerContent = headerContent,
                             query = localQuery,
                             onQueryChange = { localQuery = it },

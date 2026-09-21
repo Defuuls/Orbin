@@ -168,7 +168,7 @@ data class AppSettings(
     val mediaFilter: MediaFilter = MediaFilter.ALL,
     /** How stale the subscribed feed may be before returning to it reloads it. */
     val feedRefreshInterval: FeedRefreshInterval = FeedRefreshInterval.ALWAYS,
-    val platformTheme: PlatformTheme = PlatformTheme.IOS,
+    val platformTheme: PlatformTheme = PlatformTheme.ANDROID,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val dynamicColor: Boolean = true,

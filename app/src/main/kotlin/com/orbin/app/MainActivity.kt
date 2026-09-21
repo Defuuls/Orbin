@@ -40,7 +40,6 @@ import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
-import com.orbin.core.model.PlatformTheme
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.InlineAction
@@ -465,9 +464,7 @@ private fun AppContent(
     // MaterialOrbinTheme adapter is gone.
     val colorVariant = settings.colorTheme.toDesignSystem()
     val nextPalette =
-        if (settings.platformTheme == PlatformTheme.ANDROID &&
-            settings.colorTheme == com.orbin.core.model.ColorTheme.ORBIN
-        ) {
+        if (settings.colorTheme == com.orbin.core.model.ColorTheme.ORBIN) {
             materialPalette(settings.themeMode.isDark(), settings.amoled)
         } else {
             colorVariant.toNextPalette(
@@ -480,7 +477,7 @@ private fun AppContent(
         amoled = nextPalette.amoled,
         fontScale = settings.fontScale,
         palette = nextPalette,
-        platform = if (settings.platformTheme == PlatformTheme.IOS) NextPlatform.IOS else NextPlatform.ANDROID,
+        platform = NextPlatform.ANDROID,
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),

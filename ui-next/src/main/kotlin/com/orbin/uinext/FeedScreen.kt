@@ -14,11 +14,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +46,6 @@ fun FeedScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     scrollToTopRequest: Int = 0,
-    showSizeControl: Boolean = false,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
@@ -61,9 +57,7 @@ fun FeedScreen(
 ) {
     val effectiveLayout = layout
     val gridState = rememberLazyGridState()
-    var feedSize by rememberSaveable { mutableFloatStateOf(GRID_MIN_CELL.value) }
-    val imageGridMinSize = if (showSizeControl) feedSize.dp else IMAGE_MIN_CELL
-    val imageHeight = if (showSizeControl) (feedSize * FEED_IMAGE_TILE_HEIGHT_RATIO).dp else 124.dp
+    val imageHeight = 280.dp
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
@@ -137,9 +131,6 @@ fun FeedScreen(
                     filter = filter,
                     onClearFilter = onClearFilter,
                     omittedWithoutPreview = omittedWithoutPreview,
-                    sizeValue = feedSize,
-                    onSizeChange = { feedSize = it.coerceIn(FEED_SIZE_MIN_DP, FEED_SIZE_MAX_DP) },
-                    showSizeControl = showSizeControl && layout != FeedLayout.LIST,
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,
@@ -158,19 +149,7 @@ fun FeedScreen(
                     )
                 }
             LazyVerticalGrid(
-                columns =
-                    when (effectiveLayout) {
-                        FeedLayout.LIST -> GridCells.Fixed(1)
-                        FeedLayout.GRID -> if (showSizeControl) GridCells.Adaptive(feedSize.dp) else GridCells.Fixed(2)
-                        FeedLayout.IMAGES ->
-                            if (showSizeControl) {
-                                GridCells.Adaptive(
-                                    imageGridMinSize,
-                                )
-                            } else {
-                                GridCells.Fixed(3)
-                            }
-                    },
+                columns = GridCells.Fixed(1),
                 state = gridState,
                 modifier = insets,
                 contentPadding = gridPadding(bottomPad),
@@ -243,7 +222,6 @@ fun FeedScreen(
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP
 internal const val FEED_SIZE_STEPS = MEDIA_SIZE_STEPS
-private const val FEED_IMAGE_TILE_HEIGHT_RATIO = 0.74f
 
 /** Matches media.video.MAX_FEED_AUTOPLAY_PLAYERS — keep feed ExoPlayer count at 0 or 1. */
 private const val MAX_FEED_AUTOPLAY_IDS = 1

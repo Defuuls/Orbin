@@ -48,7 +48,7 @@ internal fun FeedListRow(
     first: Boolean,
     last: Boolean,
 ) {
-    val radius = if (LocalNextPlatform.current == NextPlatform.IOS) 14.dp else 16.dp
+    val radius = 16.dp
     Column(
         Modifier
             .fillMaxWidth()

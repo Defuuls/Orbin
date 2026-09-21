@@ -74,9 +74,7 @@ private class NextHighlightNode(
 }
 
 /**
- * Clickable with the Next highlight and no Material ripple — use when a call site already
- * supplied `indication = null` and should keep an explicit interaction source, or when the
- * surrounding theme has not installed [NextHighlightIndication].
+ * Clickable with the Material 3 ripple indication tinted by current accent color.
  */
 @Composable
 fun Modifier.nextClickable(
@@ -88,7 +86,7 @@ fun Modifier.nextClickable(
     val interaction = remember { MutableInteractionSource() }
     return clickable(
         interactionSource = interaction,
-        indication = NextHighlightIndication,
+        indication = androidx.compose.material3.ripple(color = next.accent),
         enabled = enabled,
         onClickLabel = onClickLabel,
         role = role,

@@ -335,7 +335,7 @@ class SettingsRepositoryImpl
                 threadPresentation =
                     this[Keys.threadPresentation]?.toEnumOrDefault(ThreadPresentation.PAGE)
                         ?: ThreadPresentation.PAGE,
-                platformTheme = this[Keys.platformTheme]?.toEnumOrDefault(PlatformTheme.IOS) ?: PlatformTheme.IOS,
+                platformTheme = PlatformTheme.ANDROID,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)

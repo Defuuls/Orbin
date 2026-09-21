@@ -39,16 +39,12 @@ internal fun FeedHeader(
     sortLabel: String? = null,
     onSort: () -> Unit = {},
     omittedWithoutPreview: Int = 0,
-    sizeValue: Float = GRID_MIN_CELL.value,
-    onSizeChange: (Float) -> Unit = {},
-    showSizeControl: Boolean = true,
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     refreshing: Boolean = false,
     onRefresh: () -> Unit = {},
 ) {
-    val sizeDescription = stringResource(R.string.next_media_size_control)
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
         Column(Modifier.padding(horizontal = 0.dp)) {
@@ -85,27 +81,6 @@ internal fun FeedHeader(
             }
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
-            }
-        }
-        if (showSizeControl) {
-            Gap(8)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MetaLine(stringResource(R.string.next_media_size_small))
-                NextSlider(
-                    value = sizeValue,
-                    onValueChange = onSizeChange,
-                    valueRange = FEED_SIZE_MIN_DP..FEED_SIZE_MAX_DP,
-                    steps = FEED_SIZE_STEPS,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp)
-                            .semantics { contentDescription = sizeDescription },
-                )
-                MetaLine(stringResource(R.string.next_media_size_large))
             }
         }
         if (layout == FeedLayout.IMAGES && omittedWithoutPreview > 0) {
@@ -161,7 +136,7 @@ internal fun FeedGridCell(
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().height(110.dp)
+        val tile = Modifier.fillMaxWidth().height(240.dp)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -221,7 +196,7 @@ internal fun FeedImageCell(
     seed: Int,
     onClick: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
-    tileHeight: Dp = 124.dp,
+    tileHeight: Dp = 280.dp,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = Modifier.padding(2.5.dp), onClick = onClick)
