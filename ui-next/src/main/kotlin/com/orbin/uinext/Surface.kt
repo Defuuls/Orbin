@@ -88,20 +88,8 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    // Flat matte nav bar — solid elevated surface, no gradient scrim, no frosted glass.
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(RAIL_HEIGHT + 58.dp + bottomInset())
-                    .background(
-                        Brush.verticalGradient(
-                            0f to next.background.copy(alpha = 0f),
-                            0.4f to next.background.copy(alpha = 0.88f),
-                            1f to next.background,
-                        ),
-                    ),
-        )
         Row(
             modifier =
                 Modifier
@@ -115,7 +103,7 @@ fun DestinationPill(
                     Modifier
                         .weight(1f)
                         .heightIn(min = RAIL_HEIGHT)
-                        .nextFrosted(RoundedCornerShape(NextRadius.pill))
+                        .nextElevatedSurface(RoundedCornerShape(NextRadius.pill))
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -148,38 +136,36 @@ private fun RowScope.DestinationTab(
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
         label = "tabFill",
     )
-    val selectedFill =
-        next.accent.copy(
-            alpha =
-                (if (next.dark) NextMaterials.SELECTED_FILL_DARK else NextMaterials.SELECTED_FILL_LIGHT) * fill,
-        )
-    val tint = if (selected) next.accent else next.muted
+    // M3 nav bar: primaryContainer fill for selected indicator, transparent otherwise
+    val indicatorFill = next.accentContainer.copy(alpha = fill)
+    val iconTint = if (selected) next.onAccentContainer else next.muted
+    val labelTint = if (selected) next.onAccentContainer else next.muted
     Box(
         modifier =
             Modifier
                 .weight(1f)
                 .sizeIn(minHeight = MIN_TOUCH_TARGET)
                 .clip(RoundedCornerShape(NextRadius.pill))
-                .background(selectedFill)
+                .background(indicatorFill)
                 .selectable(selected = selected, role = Role.Tab, onClick = onClick)
                 .semantics { this.selected = selected },
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(18.dp),
+                tint = iconTint,
+                modifier = Modifier.size(24.dp), // M3 nav bar icon spec
             )
             Text(
                 text = label,
-                style = NextType.caption2,
+                style = NextType.labelMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                color = tint,
+                color = labelTint,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -187,11 +173,6 @@ private fun RowScope.DestinationTab(
     }
 }
 
-/**
- * Contextual chrome for secondary screens: where you are, plus Command.
- *
- * Used by Thread, board catalogs, Search and Downloads — places that are not primary tabs.
- */
 @Composable
 fun ContextRail(
     where: String,
@@ -199,20 +180,8 @@ fun ContextRail(
     detail: String? = null,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    // Flat matte context bar — solid elevated surface, no gradient, no frosted glass.
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(RAIL_HEIGHT + 58.dp + bottomInset())
-                    .background(
-                        Brush.verticalGradient(
-                            0f to next.background.copy(alpha = 0f),
-                            0.45f to next.background.copy(alpha = 0.92f),
-                            1f to next.background,
-                        ),
-                    ),
-        )
         Row(
             modifier =
                 Modifier
@@ -220,7 +189,7 @@ fun ContextRail(
                     .windowInsetsPadding(railInsets)
                     .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom)
                     .heightIn(min = RAIL_HEIGHT)
-                    .nextFrosted(RoundedCornerShape(NextRadius.pill))
+                    .nextElevatedSurface(RoundedCornerShape(NextRadius.pill))
                     .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -278,7 +247,7 @@ fun CompactTitleBar(
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ).padding(horizontal = 12.dp, vertical = 6.dp)
-                    .nextFrosted(RoundedCornerShape(NextRadius.control))
+                    .nextElevatedSurface(RoundedCornerShape(NextRadius.control))
                     .padding(horizontal = 14.dp, vertical = 10.dp)
                     .testTag(NextTitleTags.COMPACT),
             contentAlignment = Alignment.Center,
@@ -355,7 +324,7 @@ fun Hairline(
     )
 }
 
-/** Inset grouped card — Settings-style sections on the grouped background. */
+/** M3 tonal card section — flat card on surface background, sentence-case header. */
 @Composable
 fun GroupedSection(
     modifier: Modifier = Modifier,
@@ -366,25 +335,25 @@ fun GroupedSection(
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = NextSpace.gutterTight)) {
         if (header != null) {
             Text(
-                text = header.uppercase(),
-                style = NextType.sectionHeader,
-                color = next.muted,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp, top = 4.dp),
+                // M3 Expressive: sentence case, not ALL CAPS
+                text = header,
+                style = NextType.labelSmall,
+                color = next.accent,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp, top = 2.dp),
             )
         }
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(NextRadius.card))
-                    .background(next.raised),
+                    .nextSurface(RoundedCornerShape(NextRadius.card)),
             content = content,
         )
         if (footer != null) {
             Text(
                 text = footer,
-                style = NextType.caption1,
-                color = next.faint,
+                style = NextType.bodySmall,
+                color = next.muted,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
             )
         }

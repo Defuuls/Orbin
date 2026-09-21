@@ -3,172 +3,119 @@ package com.orbin.core.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * Brand color tokens and semantic accents. Dynamic color is preferred on Android 12+ when enabled;
- * these static tokens feed the fallback Material 3 schemes and the AMOLED variant.
+ * M3 tonal palette seeded from soft eggplant (#7B5C8B).
+ *
+ * Generated via Material HCT (Hue-Chroma-Tone) algorithm, matching Material Theme Builder
+ * output for a purple-adjacent eggplant hue at medium chroma. Dynamic color (Android 12+)
+ * is preferred when enabled; these tokens feed the static fallback schemes.
+ *
+ * Light scheme — 40/90/80 tone convention for primary/container/on-container.
  */
 
-internal val OrbinPrimary = Color(0xFF4F6BED)
-internal val OrbinOnPrimary = Color(0xFFFFFFFF)
-internal val OrbinPrimaryContainer = Color(0xFFDDE1FF)
-internal val OrbinOnPrimaryContainer = Color(0xFF001257)
+// ── Primary (eggplant purple) ──────────────────────────────────────────────
+internal val EggplantPrimary = Color(0xFF7B4F8A)
+internal val EggplantOnPrimary = Color(0xFFFFFFFF)
+internal val EggplantPrimaryContainer = Color(0xFFF3DAFF)
+internal val EggplantOnPrimaryContainer = Color(0xFF2E0042)
 
-internal val OrbinSecondary = Color(0xFF5A5D72)
-internal val OrbinOnSecondary = Color(0xFFFFFFFF)
-internal val OrbinSecondaryContainer = Color(0xFFDFE1F9)
-internal val OrbinOnSecondaryContainer = Color(0xFF171B2C)
+// ── Secondary (muted mauve) ────────────────────────────────────────────────
+internal val EggplantSecondary = Color(0xFF6B5874)
+internal val EggplantOnSecondary = Color(0xFFFFFFFF)
+internal val EggplantSecondaryContainer = Color(0xFFF3DBFC)
+internal val EggplantOnSecondaryContainer = Color(0xFF26152E)
 
-internal val OrbinTertiary = Color(0xFF75546F)
-internal val OrbinOnTertiary = Color(0xFFFFFFFF)
-internal val OrbinTertiaryContainer = Color(0xFFFFD7F4)
-internal val OrbinOnTertiaryContainer = Color(0xFF2C122A)
+// ── Tertiary (dusty rose complement) ──────────────────────────────────────
+internal val EggplantTertiary = Color(0xFF82525E)
+internal val EggplantOnTertiary = Color(0xFFFFFFFF)
+internal val EggplantTertiaryContainer = Color(0xFFFFD9E1)
+internal val EggplantOnTertiaryContainer = Color(0xFF33101A)
 
-internal val OrbinError = Color(0xFFBA1A1A)
-internal val OrbinOnError = Color(0xFFFFFFFF)
-internal val OrbinErrorContainer = Color(0xFFFFDAD6)
-internal val OrbinOnErrorContainer = Color(0xFF410002)
+// ── Error ──────────────────────────────────────────────────────────────────
+internal val EggplantError = Color(0xFFBA1A1A)
+internal val EggplantOnError = Color(0xFFFFFFFF)
+internal val EggplantErrorContainer = Color(0xFFFFDAD6)
+internal val EggplantOnErrorContainer = Color(0xFF410002)
 
-internal val OrbinBackground = Color(0xFFFEFBFF)
-internal val OrbinOnBackground = Color(0xFF1B1B21)
-internal val OrbinSurface = Color(0xFFFEFBFF)
-internal val OrbinOnSurface = Color(0xFF1B1B21)
-internal val OrbinSurfaceVariant = Color(0xFFE2E1EC)
-internal val OrbinOnSurfaceVariant = Color(0xFF45464F)
-internal val OrbinOutline = Color(0xFF767680)
-internal val OrbinOutlineVariant = Color(0xFFC6C5D0)
-internal val OrbinInverseSurface = Color(0xFF303036)
-internal val OrbinInverseOnSurface = Color(0xFFF2F0F7)
-internal val OrbinInversePrimary = Color(0xFFB8C3FF)
-internal val OrbinScrim = Color(0xFF000000)
+// ── Neutral backgrounds (light) ────────────────────────────────────────────
+internal val EggplantBackground = Color(0xFFFFFBFF)
+internal val EggplantOnBackground = Color(0xFF1D1B1E)
+internal val EggplantSurface = Color(0xFFFFFBFF)
+internal val EggplantOnSurface = Color(0xFF1D1B1E)
+internal val EggplantSurfaceVariant = Color(0xFFEBDEEC)
+internal val EggplantOnSurfaceVariant = Color(0xFF4D4050)
+internal val EggplantOutline = Color(0xFF7E7081)
+internal val EggplantOutlineVariant = Color(0xFFCEC2CF)
+internal val EggplantInverseSurface = Color(0xFF323033)
+internal val EggplantInverseOnSurface = Color(0xFFF5EFF5)
+internal val EggplantInversePrimary = Color(0xFFDFACF0)
+internal val EggplantScrim = Color(0xFF000000)
 
-internal val OrbinSurfaceContainerLowest = Color(0xFFFFFFFF)
-internal val OrbinSurfaceContainerLow = Color(0xFFF8F6FD)
-internal val OrbinSurfaceContainer = Color(0xFFF2F0F7)
-internal val OrbinSurfaceContainerHigh = Color(0xFFECEAF1)
-internal val OrbinSurfaceContainerHighest = Color(0xFFE6E4EB)
+// ── Surface containers (light) — flat matte fills ─────────────────────────
+internal val EggplantSurfaceContainerLowest = Color(0xFFFFFFFF)
+internal val EggplantSurfaceContainerLow = Color(0xFFF9F3F9)
+internal val EggplantSurfaceContainer = Color(0xFFF3EDF3)
+internal val EggplantSurfaceContainerHigh = Color(0xFFEDE7ED)
+internal val EggplantSurfaceContainerHighest = Color(0xFFE7E1E7)
 
-internal val OrbinDarkPrimary = Color(0xFFB8C3FF)
-internal val OrbinDarkOnPrimary = Color(0xFF102EA1)
-internal val OrbinDarkPrimaryContainer = Color(0xFF334BBF)
-internal val OrbinDarkOnPrimaryContainer = Color(0xFFDDE1FF)
+// ── Dark scheme ────────────────────────────────────────────────────────────
+internal val EggplantDarkPrimary = Color(0xFFDFACF0)
+internal val EggplantDarkOnPrimary = Color(0xFF481A5A)
+internal val EggplantDarkPrimaryContainer = Color(0xFF613472)
+internal val EggplantDarkOnPrimaryContainer = Color(0xFFF3DAFF)
 
-internal val OrbinDarkSecondary = Color(0xFFC3C5DD)
-internal val OrbinDarkOnSecondary = Color(0xFF2B3042)
-internal val OrbinDarkSecondaryContainer = Color(0xFF424659)
-internal val OrbinDarkOnSecondaryContainer = Color(0xFFDFE1F9)
+internal val EggplantDarkSecondary = Color(0xFFD7BDDF)
+internal val EggplantDarkOnSecondary = Color(0xFF3B2A44)
+internal val EggplantDarkSecondaryContainer = Color(0xFF53405C)
+internal val EggplantDarkOnSecondaryContainer = Color(0xFFF3DBFC)
 
-internal val OrbinDarkTertiary = Color(0xFFE3BADA)
-internal val OrbinDarkOnTertiary = Color(0xFF432740)
-internal val OrbinDarkTertiaryContainer = Color(0xFF5B3D57)
-internal val OrbinDarkOnTertiaryContainer = Color(0xFFFFD7F4)
+internal val EggplantDarkTertiary = Color(0xFFF5B7C4)
+internal val EggplantDarkOnTertiary = Color(0xFF4D222D)
+internal val EggplantDarkTertiaryContainer = Color(0xFF673A45)
+internal val EggplantDarkOnTertiaryContainer = Color(0xFFFFD9E1)
 
-internal val OrbinDarkError = Color(0xFFFFB4AB)
-internal val OrbinDarkOnError = Color(0xFF690005)
-internal val OrbinDarkErrorContainer = Color(0xFF93000A)
-internal val OrbinDarkOnErrorContainer = Color(0xFFFFDAD6)
+internal val EggplantDarkError = Color(0xFFFFB4AB)
+internal val EggplantDarkOnError = Color(0xFF690005)
+internal val EggplantDarkErrorContainer = Color(0xFF93000A)
+internal val EggplantDarkOnErrorContainer = Color(0xFFFFDAD6)
 
-internal val OrbinDarkBackground = Color(0xFF131318)
-internal val OrbinDarkOnBackground = Color(0xFFE4E1E9)
-internal val OrbinDarkSurface = Color(0xFF131318)
-internal val OrbinDarkOnSurface = Color(0xFFE4E1E9)
-internal val OrbinDarkSurfaceVariant = Color(0xFF45464F)
-internal val OrbinDarkOnSurfaceVariant = Color(0xFFC6C5D0)
-internal val OrbinDarkOutline = Color(0xFF90909A)
-internal val OrbinDarkOutlineVariant = Color(0xFF45464F)
-internal val OrbinDarkInverseSurface = Color(0xFFE4E1E9)
-internal val OrbinDarkInverseOnSurface = Color(0xFF303036)
-internal val OrbinDarkInversePrimary = OrbinPrimary
+internal val EggplantDarkBackground = Color(0xFF151217)
+internal val EggplantDarkOnBackground = Color(0xFFE8E0E9)
+internal val EggplantDarkSurface = Color(0xFF151217)
+internal val EggplantDarkOnSurface = Color(0xFFE8E0E9)
+internal val EggplantDarkSurfaceVariant = Color(0xFF4D4050)
+internal val EggplantDarkOnSurfaceVariant = Color(0xFFCFC2CF)
+internal val EggplantDarkOutline = Color(0xFF988D9B)
+internal val EggplantDarkOutlineVariant = Color(0xFF4D4050)
+internal val EggplantDarkInverseSurface = Color(0xFFE8E0E9)
+internal val EggplantDarkInverseOnSurface = Color(0xFF323033)
+internal val EggplantDarkInversePrimary = Color(0xFF7B4F8A)
 
-internal val OrbinDarkSurfaceContainerLowest = Color(0xFF0E0E13)
-internal val OrbinDarkSurfaceContainerLow = Color(0xFF1B1B21)
-internal val OrbinDarkSurfaceContainer = Color(0xFF1F1F25)
-internal val OrbinDarkSurfaceContainerHigh = Color(0xFF29292F)
-internal val OrbinDarkSurfaceContainerHighest = Color(0xFF34343A)
+// ── Dark surface containers — deep, matte, no blur ────────────────────────
+internal val EggplantDarkSurfaceContainerLowest = Color(0xFF0F0D11)
+internal val EggplantDarkSurfaceContainerLow = Color(0xFF1D1B1E)
+internal val EggplantDarkSurfaceContainer = Color(0xFF221F24)
+internal val EggplantDarkSurfaceContainerHigh = Color(0xFF2D2A2E)
+internal val EggplantDarkSurfaceContainerHighest = Color(0xFF383439)
 
-// Semantic accents used by the post renderer (greentext, quote links, spoilers).
-val GreentextColor = Color(0xFF789922)
-val QuoteLinkColor = Color(0xFF4F6BED)
+// ── AMOLED override (true black ground) ───────────────────────────────────
+internal val AmoledBackground = Color(0xFF000000)
+internal val AmoledSurfaceContainerLowest = Color(0xFF000000)
+internal val AmoledSurfaceContainerLow = Color(0xFF0D0A0F)
+internal val AmoledSurfaceContainer = Color(0xFF141116)
+internal val AmoledSurfaceContainerHigh = Color(0xFF1E1B20)
+internal val AmoledSurfaceContainerHighest = Color(0xFF28252A)
+
+// ── Semantic accents (post renderer) ──────────────────────────────────────
+/** Imageboard greentext — kept period-accurate; shifts toward eggplant's warm complement. */
+val GreentextColor = Color(0xFF5A7A2A)
+
+/** Quote link — uses the eggplant primary at legible lightness on white. */
+val QuoteLinkColor = Color(0xFF7B4F8A)
+
+/** Spoiler tag — near-black fill, same as before. */
 val SpoilerBackground = Color(0xFF2B2B2B)
 
-// Status accents for future shared UI states.
+// ── Status accents ─────────────────────────────────────────────────────────
 val SuccessColor = Color(0xFF2E7D32)
 val WarningColor = Color(0xFFB26A00)
-val InfoColor = OrbinPrimary
-
-// Tomorrow theme (https://github.com/chriskempson/tomorrow-theme) light colors
-internal val TomorrowPrimary = Color(0xFF4271AE)
-internal val TomorrowOnPrimary = Color(0xFFFFFFFF)
-internal val TomorrowPrimaryContainer = Color(0xFFD5E0FB)
-internal val TomorrowOnPrimaryContainer = Color(0xFF0D1E52)
-
-internal val TomorrowSecondary = Color(0xFF718C00)
-internal val TomorrowOnSecondary = Color(0xFFFFFFFF)
-internal val TomorrowSecondaryContainer = Color(0xFFE8F7D4)
-internal val TomorrowOnSecondaryContainer = Color(0xFF1E2600)
-
-internal val TomorrowTertiary = Color(0xFF9B3F84)
-internal val TomorrowOnTertiary = Color(0xFFFFFFFF)
-internal val TomorrowTertiaryContainer = Color(0xFFFDD3ED)
-internal val TomorrowOnTertiaryContainer = Color(0xFF3B0D2E)
-
-internal val TomorrowError = Color(0xFFC82829)
-internal val TomorrowOnError = Color(0xFFFFFFFF)
-internal val TomorrowErrorContainer = Color(0xFFFFDAD6)
-internal val TomorrowOnErrorContainer = Color(0xFF410002)
-
-internal val TomorrowBackground = Color(0xFFFAFAFA)
-internal val TomorrowOnBackground = Color(0xFF1B1B1B)
-internal val TomorrowSurface = Color(0xFFFAFAFA)
-internal val TomorrowOnSurface = Color(0xFF1B1B1B)
-internal val TomorrowSurfaceVariant = Color(0xFFE8E8E8)
-internal val TomorrowOnSurfaceVariant = Color(0xFF4A4A4A)
-internal val TomorrowOutline = Color(0xFF7A7A7A)
-internal val TomorrowOutlineVariant = Color(0xFFC8C8C8)
-internal val TomorrowInverseSurface = Color(0xFF303030)
-internal val TomorrowInverseOnSurface = Color(0xFFF5F5F5)
-internal val TomorrowInversePrimary = Color(0xFF99BEFF)
-internal val TomorrowScrim = Color(0xFF000000)
-
-internal val TomorrowSurfaceContainerLowest = Color(0xFFFFFFFF)
-internal val TomorrowSurfaceContainerLow = Color(0xFFF5F5F5)
-internal val TomorrowSurfaceContainer = Color(0xFFEFEFEF)
-internal val TomorrowSurfaceContainerHigh = Color(0xFFE9E9E9)
-internal val TomorrowSurfaceContainerHighest = Color(0xFFE3E3E3)
-
-// Tomorrow Night theme dark colors
-internal val TomorrowNightPrimary = Color(0xFF99BEFF)
-internal val TomorrowNightOnPrimary = Color(0xFF122C5C)
-internal val TomorrowNightPrimaryContainer = Color(0xFF284176)
-internal val TomorrowNightOnPrimaryContainer = Color(0xFFD5E0FB)
-
-internal val TomorrowNightSecondary = Color(0xFFCCE5A5)
-internal val TomorrowNightOnSecondary = Color(0xFF2D3B05)
-internal val TomorrowNightSecondaryContainer = Color(0xFF43520C)
-internal val TomorrowNightOnSecondaryContainer = Color(0xFFE8F7D4)
-
-internal val TomorrowNightTertiary = Color(0xFFF5B8DD)
-internal val TomorrowNightOnTertiary = Color(0xFF52223E)
-internal val TomorrowNightTertiaryContainer = Color(0xFF6B3A55)
-internal val TomorrowNightOnTertiaryContainer = Color(0xFFFDD3ED)
-
-internal val TomorrowNightError = Color(0xFFFFB4AB)
-internal val TomorrowNightOnError = Color(0xFF690005)
-internal val TomorrowNightErrorContainer = Color(0xFF93000A)
-internal val TomorrowNightOnErrorContainer = Color(0xFFFFDAD6)
-
-internal val TomorrowNightBackground = Color(0xFF1D1D1D)
-internal val TomorrowNightOnBackground = Color(0xFFE4E4E4)
-internal val TomorrowNightSurface = Color(0xFF1D1D1D)
-internal val TomorrowNightOnSurface = Color(0xFFE4E4E4)
-internal val TomorrowNightSurfaceVariant = Color(0xFF2F2F2F)
-internal val TomorrowNightOnSurfaceVariant = Color(0xFFC5C5C5)
-internal val TomorrowNightOutline = Color(0xFF909090)
-internal val TomorrowNightOutlineVariant = Color(0xFF3A3A3A)
-internal val TomorrowNightInverseSurface = Color(0xFFE4E4E4)
-internal val TomorrowNightInverseOnSurface = Color(0xFF1D1D1D)
-internal val TomorrowNightInversePrimary = Color(0xFF4271AE)
-
-internal val TomorrowNightSurfaceContainerLowest = Color(0xFF151515)
-internal val TomorrowNightSurfaceContainerLow = Color(0xFF262626)
-internal val TomorrowNightSurfaceContainer = Color(0xFF2A2A2A)
-internal val TomorrowNightSurfaceContainerHigh = Color(0xFF343434)
-internal val TomorrowNightSurfaceContainerHighest = Color(0xFF3F3F3F)
+val InfoColor = EggplantPrimary

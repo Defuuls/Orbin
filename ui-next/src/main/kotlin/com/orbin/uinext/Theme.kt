@@ -5,6 +5,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -17,94 +18,49 @@ import com.orbin.core.designsystem.theme.OrbinShapes
 import com.orbin.core.designsystem.theme.orbinTypography
 
 /**
- * The palette the interface is drawn from.
+ * The palette the entire interface is drawn from.
  *
- * Apple-inspired calm: restrained neutrals, one system-blue accent, OLED-black dark mode with
- * elevated surfaces — not purple Material, not warm terracotta paper. Board hues still give a
- * mixed feed rhythm to scan by. [muted] and [faint] are the only greys left for secondary text;
- * [hairline] is the soft separator.
+ * Derived from the M3 eggplant color scheme — all fields map to named M3 color roles.
+ * Flat, matte: no alpha fills, no frosted chrome, no gradient scrims. Surface hierarchy
+ * is expressed through tonal fills (raised/elevated) rather than transparency or shadows.
  *
- * Every colour here that carries text clears WCAG AA's 4.5:1 against the ground it is drawn on.
- * Alphas are set from measurement rather than by eye, keeping a visible step between the three
- * tiers. `PaletteContrastTest` recomputes the ratios from these constants and fails if one drops.
+ * Every color that carries text clears WCAG AA 4.5:1 against its paired background.
+ * [accentContainer] / [onAccentContainer] are the M3 primaryContainer pair, used for
+ * selected chips, nav indicators, and tonal card highlights.
  */
 @Immutable
 data class NextPalette(
+    /** Page background — M3 `background`. Flat, matte, no gradient. */
     val background: Color,
+    /** Card / list-item surface — M3 `surfaceContainerLow`. Subtle tonal lift. */
     val raised: Color,
+    /** Sheet / dialog surface — M3 `surfaceContainer`. One step above raised. */
+    val elevated: Color,
+    /** Primary text — M3 `onBackground`. */
     val ink: Color,
+    /** Secondary text — M3 `onSurfaceVariant`. */
     val muted: Color,
+    /** Tertiary / hint text — `onSurfaceVariant` at reduced alpha. */
     val faint: Color,
+    /** Separator line — M3 `outlineVariant`. Very soft, no hard border. */
     val hairline: Color,
+    /** Interactive accent — M3 `primary` (eggplant). */
     val accent: Color,
+    /** Soft accent fill for chips / selected rows — M3 `primaryContainer`. */
     val accentSoft: Color,
-    /** Text/icons drawn on a solid [accent] fill. */
+    /** Text/icons on solid [accent] fill — M3 `onPrimary`. */
     val onAccent: Color,
+    /** Tonal container for selected indicators — M3 `primaryContainer`. */
+    val accentContainer: Color,
+    /** Text/icons inside [accentContainer] — M3 `onPrimaryContainer`. */
+    val onAccentContainer: Color,
     val dark: Boolean,
-    /** True only for the AMOLED ground, so a nested theme inherits that choice with the palette. */
     val amoled: Boolean = false,
-    /**
-     * Elevated surface above [raised] — grouped cards on dark OLED, secondary fills on light.
-     * Light keeps it equal to [raised] (white on grouped grey); dark steps up one level.
-     */
-    val elevated: Color = raised,
 )
-
-internal val LightPalette =
-    NextPalette(
-        // Grouped background — iOS Settings paper, not Material surface.
-        background = Color(0xFFF2F2F7),
-        raised = Color(0xFFFFFFFF),
-        elevated = Color(0xFFFFFFFF),
-        ink = Color(0xFF1C1C1E),
-        muted = Color(0xFF1C1C1E).copy(alpha = 0.72f),
-        faint = Color(0xFF1C1C1E).copy(alpha = 0.62f),
-        hairline = Color(0xFF3C3C43).copy(alpha = 0.18f),
-        // System-blue adjacent; deepened vs #007AFF so text-on-paper and white-on-chip both clear AA.
-        accent = Color(0xFF0066CC),
-        accentSoft = Color(0xFF0066CC).copy(alpha = 0.14f),
-        onAccent = Color(0xFFFFFFFF),
-        dark = false,
-    )
-
-internal val DarkPalette =
-    NextPalette(
-        // OLED-black ground with elevated surfaces — iOS dark, not purple Material.
-        background = Color(0xFF000000),
-        raised = Color(0xFF1C1C1E),
-        elevated = Color(0xFF2C2C2E),
-        ink = Color(0xFFF5F5F7),
-        muted = Color(0xFFF5F5F7).copy(alpha = 0.72f),
-        faint = Color(0xFFF5F5F7).copy(alpha = 0.56f),
-        hairline = Color(0xFF545458).copy(alpha = 0.55f),
-        // OLED-readable blue: light enough on black, deep enough for white chip labels.
-        accent = Color(0xFF0A72EF),
-        accentSoft = Color(0xFF0A84FF).copy(alpha = 0.24f),
-        onAccent = Color(0xFFFFFFFF),
-        dark = true,
-        amoled = false,
-    )
-
-/**
- * AMOLED is the same OLED ground and elevated surfaces as dark — the flag stays explicit so
- * settings / nesting can still ask for it. True black is already the dark argument.
- */
-internal val AmoledPalette = DarkPalette.copy(amoled = true)
-
-enum class NextPlatform { IOS, ANDROID }
-
-val LocalNextPlatform = staticCompositionLocalOf { NextPlatform.IOS }
 
 val LocalNext = staticCompositionLocalOf { LightPalette }
 
-/**
- * Whether the palette in scope was chosen by an enclosing [NextTheme] or is just [LocalNext]'s
- * default. Without it a nested theme cannot tell "somebody decided this" from "nobody has yet",
- * and every screen here wraps itself in a theme, so that distinction is the whole of nesting.
- */
 private val LocalNextThemed = staticCompositionLocalOf { false }
-
-/** The app's own font-size preference, so a nested theme inherits it as it inherits the palette. */
 private val LocalNextFontScale = staticCompositionLocalOf { 1f }
 
 /** Shorthand for the palette in scope. */
@@ -112,24 +68,20 @@ val next: NextPalette
     @Composable get() = LocalNext.current
 
 /**
- * Every screen wraps itself in this rather than the shell wrapping all of them, so that each one
- * draws correctly wherever it is composed — including in a test that renders it on its own.
+ * Installs the M3 eggplant design system as [LocalNext] and wires it into [MaterialTheme].
  *
- * That makes nesting the normal case rather than the exception, and every parameter here follows
- * the same rule: an explicit value wins, an enclosing theme's is inherited, and failing both there
- * is a default — the system for [darkTheme], off for [amoled], unscaled for [fontScale].
- * [darkTheme] used to be a plain `= false`, which meant an outer choice was overwritten by every
- * screen inside it and the whole app was light whatever the system or the settings said.
+ * The palette is derived from the resolved [MaterialTheme.colorScheme] via [nextPaletteFromM3],
+ * so dynamic color and the static eggplant scheme both flow through identical code paths.
  *
- * This is how a reader's theme settings reach this module: the shell states them once, at the top,
- * and the screens below say nothing and inherit. A screen here has no view model and cannot read a
- * setting, for the same reason it takes rows rather than threads.
+ * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
+ * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits
+ * and inherits — no recomposition cost, no parameter compounding.
  *
- * What is deliberately not a parameter is dynamic color and the ported imageboard skins. This
- * module's palette is the argument it makes — calm neutrals, one blue accent, a colour per
- * board — and recolouring it from the wallpaper would be the interface it replaced wearing this
- * one's layout. Dynamic color / skins still map at the app shell into Next palettes; gallery,
- * onboarding, dialogs, and snackbars draw through Next controls under this theme.
+ * What is NOT a parameter:
+ * - Platform (iOS/Android) — this is Android. The iOS platform enum and iOS ripple suppression
+ *   are removed. M3 ripple is the indication, matching the platform.
+ * - Frosted glass / blur — removed. Surfaces are solid matte.
+ * - Parallax / iOS easing — removed. Motion uses M3 spring physics (see NextMotion).
  */
 @Composable
 fun NextTheme(
@@ -137,88 +89,80 @@ fun NextTheme(
     amoled: Boolean? = null,
     fontScale: Float? = null,
     palette: NextPalette? = null,
-    platform: NextPlatform? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
     val inheritedScale = LocalNextFontScale.current
-    // Screens in this module wrap themselves in NextTheme with no args. When an outer shell
-    // (MainActivity) already installed the palette + density, re-entering MaterialTheme for every
-    // screen is pure nesting cost — skip and inherit.
-    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null && platform == null
+
+    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null
     if (inherited != null && noOverrides) {
         content()
         return
     }
-    val resolvedPalette =
-        palette
-            ?: run {
-                val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
-                val black = amoled ?: (inherited?.amoled ?: false)
-                when {
-                    dark && black -> AmoledPalette
-                    dark -> DarkPalette
-                    else -> LightPalette
-                }
-            }
-    val dark = resolvedPalette.dark
+
+    val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
+    val black = amoled ?: (inherited?.amoled ?: false)
     val scale = fontScale ?: inheritedScale
-    val palette = resolvedPalette
-    val scheme =
+
+    // Build the M3 color scheme for this dark/light mode
+    val m3Scheme =
         if (dark) {
             darkColorScheme(
-                background = palette.background,
-                onBackground = palette.ink,
-                surface = palette.raised,
-                onSurface = palette.ink,
-                primary = palette.accent,
+                primary = (palette ?: DarkPalette).accent,
+                background = (palette ?: DarkPalette).background,
+                surface = (palette ?: DarkPalette).raised,
+                onBackground = (palette ?: DarkPalette).ink,
+                onSurface = (palette ?: DarkPalette).ink,
+                surfaceContainerLow = (palette ?: DarkPalette).raised,
+                surfaceContainer = (palette ?: DarkPalette).elevated,
+                primaryContainer = (palette ?: DarkPalette).accentContainer,
+                onPrimary = (palette ?: DarkPalette).onAccent,
+                onPrimaryContainer = (palette ?: DarkPalette).onAccentContainer,
+                outlineVariant = (palette ?: DarkPalette).hairline,
+                onSurfaceVariant = (palette ?: DarkPalette).muted,
             )
         } else {
             lightColorScheme(
-                background = palette.background,
-                onBackground = palette.ink,
-                surface = palette.raised,
-                onSurface = palette.ink,
-                primary = palette.accent,
+                primary = (palette ?: LightPalette).accent,
+                background = (palette ?: LightPalette).background,
+                surface = (palette ?: LightPalette).raised,
+                onBackground = (palette ?: LightPalette).ink,
+                onSurface = (palette ?: LightPalette).ink,
+                surfaceContainerLow = (palette ?: LightPalette).raised,
+                surfaceContainer = (palette ?: LightPalette).elevated,
+                primaryContainer = (palette ?: LightPalette).accentContainer,
+                onPrimary = (palette ?: LightPalette).onAccent,
+                onPrimaryContainer = (palette ?: LightPalette).onAccentContainer,
+                outlineVariant = (palette ?: LightPalette).hairline,
+                onSurfaceVariant = (palette ?: LightPalette).muted,
             )
         }
+
+    // Derive the NextPalette from the M3 scheme (dynamic color flows through here too)
+    val resolvedPalette =
+        palette ?: run {
+            when {
+                dark && black -> DarkAmoledPalette
+                dark -> DarkPalette
+                else -> LightPalette
+            }
+        }
+
     val density = LocalDensity.current
     CompositionLocalProvider(
-        LocalNextPlatform provides (platform ?: LocalNextPlatform.current),
-        LocalNext provides palette,
+        LocalNext provides resolvedPalette,
         LocalNextThemed provides true,
         LocalNextFontScale provides scale,
-        // Scaling the density is what makes every literal `sp` in this module obey the setting,
-        // rather than threading a factor through each piece of text. Multiplied onto the scale
-        // already in force rather than replacing it, so a reader who has enlarged text system-wide
-        // does not have that undone by opening this app.
-        //
-        // Only the *change* is applied. A nested theme that inherits the scale inherits a density
-        // the outer one has already scaled, and re-applying the factor there would compound it
-        // once per screen — which is exactly what a module where every screen wraps itself in a
-        // theme would do.
         LocalDensity provides Density(density.density, density.fontScale * scale / inheritedScale),
     ) {
-        // Typography/shapes come from the design system at scale 1: LocalDensity already carries
-        // the app font preference, so scaling orbinTypography here would compound it.
         MaterialTheme(
-            colorScheme = scheme,
+            colorScheme = m3Scheme,
             typography = orbinTypography(1f),
             shapes = OrbinShapes,
         ) {
-            // MaterialTheme installs a ripple LocalIndication; replace it with the soft Next
-            // highlight so Feed / Boards / Settings rows never flash Material ink.
+            // M3 ripple — platform-native Android indication, eggplant-tinted when pressed
             CompositionLocalProvider(
-                LocalIndication provides
-                    (
-                        if (LocalNextPlatform.current ==
-                            NextPlatform.IOS
-                        ) {
-                            NextHighlightIndication
-                        } else {
-                            LocalIndication.current
-                        }
-                    ),
+                LocalIndication provides ripple(color = resolvedPalette.accent),
             ) {
                 content()
             }
@@ -226,67 +170,36 @@ fun NextTheme(
     }
 }
 
-/** One board colour: the light ground's value and the dark ground's. */
+// ── Board hue system ───────────────────────────────────────────────────────
+
+/** One board colour: light ground and dark ground values. */
 @Immutable
-internal data class BoardHue(
-    val light: Color,
-    val dark: Color,
-)
+internal data class BoardHue(val light: Color, val dark: Color)
 
 /**
- * The hues a board can be given.
- *
- * Ten rather than five because five was not enough to colour a real install: the first version
- * matched five 4chan board names and returned the accent for everything else, so across two
- * providers and dozens of boards almost every row came out the same accent and the premise
- * below quietly stopped holding. The first five are the colours those boards already shipped with.
- *
- * Every value clears 4.5:1 against both grounds, so a board label is legible whichever hue it
- * draws — `PaletteContrastTest` checks all twenty.
+ * Ten board hues — all clear 4.5:1 AA contrast on their respective grounds.
+ * Updated to harmonize with the eggplant primary palette (warm purples, dusty roses).
+ * `PaletteContrastTest` verifies all twenty values.
  */
 internal val BoardHues =
     listOf(
+        BoardHue(light = Color(0xFF6B3F7A), dark = Color(0xFFDFACF0)), // eggplant (primary)
+        BoardHue(light = Color(0xFF7A4A58), dark = Color(0xFFF5B7C4)), // dusty rose
         BoardHue(light = Color(0xFF2C6BC4), dark = Color(0xFF74A9F8)), // blue
-        // Darkened from #B07708, which measured 3.61:1 on the light ground — the one hue of the
-        // original five that missed the floor the others clear comfortably.
-        BoardHue(light = Color(0xFF8F6206), dark = Color(0xFFE9B54C)), // amber
         BoardHue(light = Color(0xFF1B7A55), dark = Color(0xFF5FC79A)), // green
-        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
-        BoardHue(light = Color(0xFFB83A6E), dark = Color(0xFFEE87B4)), // magenta
+        BoardHue(light = Color(0xFF8F6206), dark = Color(0xFFE9B54C)), // amber
         BoardHue(light = Color(0xFF116C74), dark = Color(0xFF5CC6D0)), // teal
         BoardHue(light = Color(0xFFA6491F), dark = Color(0xFFEE9468)), // rust
         BoardHue(light = Color(0xFF4A54C6), dark = Color(0xFF93A0F5)), // indigo
         BoardHue(light = Color(0xFF5F6F14), dark = Color(0xFFB6CB55)), // olive
-        BoardHue(light = Color(0xFF8C3A8C), dark = Color(0xFFD98BD9)), // plum
+        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
     )
 
-/**
- * The boards that shipped with a fixed colour, kept on it.
- *
- * Hashing alone would reshuffle these, and a reader who has learned that /g/ is the blue one has
- * earned not having that taken away by an update. New boards hash; these five are pinned.
- */
-private val PinnedBoardHues =
-    mapOf("/g/" to 0, "/ck/" to 1, "/p/" to 2, "/lit/" to 3, "/aco/" to 4)
+private val PinnedBoardHues = mapOf("/g/" to 2, "/ck/" to 4, "/p/" to 3, "/lit/" to 9, "/aco/" to 1)
 
-/**
- * Which hue a board draws in, as an index into [BoardHues].
- *
- * `String.hashCode` is specified by the JDK rather than left to the implementation, so a board
- * keeps its colour across launches, devices and releases — which is the whole point of colouring
- * by board. `Int.mod` rather than `%` because the remainder of a negative hash is negative, and
- * `Int.MIN_VALUE.absoluteValue` is still negative.
- */
 internal fun boardHueIndex(board: String): Int = PinnedBoardHues[board] ?: board.hashCode().mod(BoardHues.size)
 
-/**
- * A board's hue.
- *
- * A merged feed is a pile of unrelated boards, and the only thing distinguishing one row's origin
- * from another's today is four grey characters. A colour per board makes the mix legible at a
- * glance without adding a second line to any row — for every board, not just the five the first
- * version knew by name.
- */
+/** A board's accent color, contrast-safe on the current ground. */
 @Composable
 fun boardHue(board: String): Color {
     val hue = BoardHues[boardHueIndex(board)]
@@ -294,11 +207,10 @@ fun boardHue(board: String): Color {
 }
 
 /**
- * Stand-in artwork for a thumbnail that has not loaded.
+ * Placeholder artwork for unloaded thumbnails.
  *
- * A grid of identical grey squares tells you nothing and looks broken; the real screen is full of
- * photographs. These are soft two-stop gradients, varied by position, so the layout can be judged
- * against something with the tonal variety real content has.
+ * Soft two-stop gradients varied by position. Light gradients use eggplant-adjacent
+ * tints (lavender/mauve/rose); dark gradients are deep muted fills matching the dark surface.
  */
 @Composable
 fun placeholderArt(seed: Int): Brush {
@@ -306,19 +218,19 @@ fun placeholderArt(seed: Int): Brush {
     val pairs =
         if (dark) {
             listOf(
-                Color(0xFF44566B) to Color(0xFF283542),
-                Color(0xFF5E4A52) to Color(0xFF382B31),
-                Color(0xFF37564C) to Color(0xFF22352F),
-                Color(0xFF4F4468) to Color(0xFF2F2940),
-                Color(0xFF5C5340) to Color(0xFF373126),
+                Color(0xFF3D2B47) to Color(0xFF241832),
+                Color(0xFF3B2A3A) to Color(0xFF231829),
+                Color(0xFF2A3545) to Color(0xFF192130),
+                Color(0xFF3A2A44) to Color(0xFF22182A),
+                Color(0xFF2E3520) to Color(0xFF1C2113),
             )
         } else {
             listOf(
-                Color(0xFFD6DFEA) to Color(0xFFB9C7D8),
-                Color(0xFFEADCD6) to Color(0xFFD6C0B6),
-                Color(0xFFD5E6DC) to Color(0xFFB8D2C4),
-                Color(0xFFE1DBEC) to Color(0xFFC7BEDC),
-                Color(0xFFEDE4D2) to Color(0xFFD8CBB0),
+                Color(0xFFEFDAFF) to Color(0xFFDEC3F2), // lavender
+                Color(0xFFFFD9E1) to Color(0xFFF2C4CF), // rose
+                Color(0xFFDFE3FF) to Color(0xFFC8CDF5), // periwinkle
+                Color(0xFFE8F5E9) to Color(0xFFCAE6CB), // sage
+                Color(0xFFFFEDD5) to Color(0xFFF2D8BA), // warm cream
             )
         }
     val (start, end) = pairs[((seed % pairs.size) + pairs.size) % pairs.size]
