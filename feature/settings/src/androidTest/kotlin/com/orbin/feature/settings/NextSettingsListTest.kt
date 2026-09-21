@@ -48,10 +48,10 @@ class NextSettingsListTest {
     fun togglingARowWritesItThrough() {
         setContent()
 
-        scrollTo("Personalized feed").performClick()
+        scrollTo("Hide NSFW boards").performClick()
         composeTestRule.waitForIdle()
 
-        assertThat(repository.current.personalizedHomeFeed).isFalse()
+        assertThat(repository.current.hideNsfwBoards).isTrue()
     }
 
     /** Brings a row into composition — in a lazy list an off-screen row is not there to be found. */

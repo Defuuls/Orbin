@@ -28,11 +28,8 @@ data class SettingsSearchEntry(
  */
 val settingsSearchIndex =
     listOf(
-        SettingsSearchEntry("personalized", "Personalized feed", GENERAL),
         SettingsSearchEntry("hideNsfw", "Hide NSFW boards", GENERAL),
-        SettingsSearchEntry("feedSort", "Feed sort", GENERAL),
         SettingsSearchEntry("threadPresentation", "Open threads", GENERAL),
-        SettingsSearchEntry("fullScreenFeed", "Full-screen browsing", GENERAL),
         SettingsSearchEntry("themeMode", "Theme", DISPLAY),
         SettingsSearchEntry("colorTheme", "Color scheme", DISPLAY),
         SettingsSearchEntry("amoled", "True black", DISPLAY),

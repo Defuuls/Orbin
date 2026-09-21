@@ -108,10 +108,8 @@ fun OrbinNavHost(
             NextAllMediaScreen(
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
-                onOpenMedia = { provider, board, thread, attachmentId ->
-                    navController.navigate(
-                        Route.Gallery(provider, board, thread, startIndex = 0, attachmentId = attachmentId),
-                    )
+                onOpenMedia = { provider, board, thread, _ ->
+                    openThread(provider, board, thread, "No.$thread")
                 },
                 onOpenFeed = {
                     navController.navigate(Route.NextFeed) {
