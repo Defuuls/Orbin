@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [140 — Elderberry](https://github.com/Defuuls/Orbin/releases/tag/v140-Elderberry)
+**Current release:** [141 — Fig](https://github.com/Defuuls/Orbin/releases/tag/v141-Fig)
 
-**What's new in 140:** A bottom chrome of just Feed and Settings, with Search, Downloads and Commands moved into Settings › Library.
+**What's new in 141:** Material 3 Expressive redesign with a soft eggplant palette and new cosmic orbit planetary app icon.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

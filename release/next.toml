@@ -1,26 +1,31 @@
-# Orbin 140 — Elderberry
+# Orbin 141 — Fig
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 140
-codename     = "Elderberry"
-version_code = 158
+number       = 141
+codename     = "Fig"
+version_code = 159
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "A bottom chrome of just Feed and Settings, with Search, Downloads and Commands moved into Settings › Library."
+highlight = "Material 3 Expressive redesign with a soft eggplant palette and new cosmic orbit planetary app icon."
 
 summary = [
-  "bump Orbin to 140-Elderberry / versionCode 158",
-  "remove the Go button and re-home its destinations in Settings › Library",
+  "bump Orbin to 141-Fig / versionCode 159",
+  "Material 3 Expressive redesign with soft eggplant palette",
+  "cosmic eggplant planetary app icon",
+  "dependency and security maintenance",
 ]
 
 [changelog]
-Changed = [
-  "Removed the Go button from the bottom chrome. Search, Downloads and the command sheet now live in Settings › Library, alongside Boards and All media, leaving Feed and Settings the only things competing for the strip (#515).",
-  "Removed settings rows that could no longer be reached, so the list and its search index describe only what the app actually offers (#514).",
+Added = [
+  "Cosmic eggplant planetary app icon featuring stylized orbital rings and deep space hues (#524).",
 ]
-Fixed = [
-  "Corrected the README, which advertised what was new in an old release beside a current one. The release manifest now owns that line, so it moves with each release or disappears rather than going stale (#512, #513).",
+Changed = [
+  "Redesigned the UI shell with flat, matte Material 3 Expressive styling seeded from a soft eggplant palette (#526).",
+  "Upgraded core toolchain and dependencies: Android Gradle Plugin 9.4.1, Media3 1.11.1, Robolectric 4.17, and Dependency Analysis 3.19.2 (#519, #520, #521, #522).",
+]
+Security = [
+  "Pinned patched runtime versions for Bouncy Castle and Wire to resolve upstream advisory alerts (#525).",
 ]

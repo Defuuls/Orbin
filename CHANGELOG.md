@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [141-Fig] - 2026-09-21
+
+### Added
+- Cosmic eggplant planetary app icon featuring stylized orbital rings and deep space hues (#524).
+
+### Changed
+- Redesigned the UI shell with flat, matte Material 3 Expressive styling seeded from a soft eggplant palette (#526).
+- Upgraded core toolchain and dependencies: Android Gradle Plugin 9.4.1, Media3 1.11.1, Robolectric 4.17, and Dependency Analysis 3.19.2 (#519, #520, #521, #522).
+
+### Security
+- Pinned patched runtime versions for Bouncy Castle and Wire to resolve upstream advisory alerts (#525).
+
+
 ## [140-Elderberry] - 2026-09-18
 
 ### Changed
@@ -2280,7 +2293,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v141-Fig...HEAD
+[141-Fig]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...v141-Fig
 [140-Elderberry]: https://github.com/Defuuls/Orbin/compare/v139-Date...v140-Elderberry
 [139-Date]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...v139-Date
 [138-Cherry]: https://github.com/Defuuls/Orbin/compare/v137-Banana...v138-Cherry
