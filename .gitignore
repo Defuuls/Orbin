@@ -20,6 +20,7 @@ local.properties
 *.keystore
 *.jks
 keystore.properties
+/tools/
 
 # Build outputs
 *.apk

@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [142-Grape] - 2026-09-21
+
+### Added
+- Two new pale matte color themes: Banana (warm cream and harvest gold) and Apple (pale celadon and forest green).
+- Exposed Color scheme selection in Display & Media settings with search index integration.
+
+### Changed
+- Streamlined feed interface by removing the floating top feed bar during scroll.
+- Floating bottom navigation bar now automatically disappears when scrolling down and returns on scroll up by default.
+- Defaulted Feed Grid and Images layouts to single-column full-size media presentation.
+
+
 ## [141-Fig] - 2026-09-21
 
 ### Added
@@ -2293,7 +2305,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v141-Fig...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v142-Grape...HEAD
+[142-Grape]: https://github.com/Defuuls/Orbin/compare/v141-Fig...v142-Grape
 [141-Fig]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...v141-Fig
 [140-Elderberry]: https://github.com/Defuuls/Orbin/compare/v139-Date...v140-Elderberry
 [139-Date]: https://github.com/Defuuls/Orbin/compare/v138-Cherry...v139-Date

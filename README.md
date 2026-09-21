@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [141 — Fig](https://github.com/Defuuls/Orbin/releases/tag/v141-Fig)
+**Current release:** [142 — Grape](https://github.com/Defuuls/Orbin/releases/tag/v142-Grape)
 
-**What's new in 141:** Material 3 Expressive redesign with a soft eggplant palette and new cosmic orbit planetary app icon.
+**What's new in 142:** Material 3 Expressive updates, new Banana and Apple themes, and streamlined feed with auto-hiding navigation.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
