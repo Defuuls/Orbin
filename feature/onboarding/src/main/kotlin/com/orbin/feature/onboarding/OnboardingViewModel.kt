@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -87,15 +88,21 @@ class OnboardingViewModel
             activeProvider.onEach { loadBoards() }.launchIn(viewModelScope)
         }
 
+        private var loadJob: Job? = null
+
         fun loadBoards() {
-            viewModelScope.launch {
-                _boards.value = OnboardingBoardsState.Loading
-                _boards.value =
-                    when (val result = boardRepository.refreshBoards(activeProvider.value.metadata.id)) {
-                        is OrbinResult.Success -> OnboardingBoardsState.Success(result.data.toImmutableList())
-                        is OrbinResult.Failure -> OnboardingBoardsState.Error(result.error.message)
-                    }
-            }
+            loadJob?.cancel()
+            val targetProviderId = activeProvider.value.metadata.id
+            loadJob =
+                viewModelScope.launch {
+                    _boards.value = OnboardingBoardsState.Loading
+                    val result = boardRepository.refreshBoards(targetProviderId)
+                    _boards.value =
+                        when (result) {
+                            is OrbinResult.Success -> OnboardingBoardsState.Success(result.data.toImmutableList())
+                            is OrbinResult.Failure -> OnboardingBoardsState.Error(result.error.message)
+                        }
+                }
         }
 
         fun setSubscribed(

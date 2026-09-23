@@ -91,6 +91,38 @@ class LynxChanMapperTest {
     }
 
     @Test
+    fun `catalog thread maps files array when present`() {
+        val dto =
+            LynxChanCatalogThread(
+                threadId = 42,
+                subject = "Video Thread",
+                postCount = 10,
+                fileCount = 1,
+                files =
+                    listOf(
+                        LynxChanFile(
+                            originalName = "clip.webm",
+                            path = "/.media/video123.webm",
+                            thumb = "/.media/t_video123",
+                            mime = "video/webm",
+                            size = 1024L,
+                            width = 1920,
+                            height = 1080,
+                        ),
+                    ),
+            )
+        val threads = mapper.mapCatalog(board, listOf(dto))
+        ProviderContract.requireValidCatalog(threads)
+        val thread = threads.single()
+        val attachment = thread.originalPost.attachments.single()
+        assertThat(attachment.type).isEqualTo(MediaType.VIDEO)
+        assertThat(attachment.sourceUrl).isEqualTo("https://bbw-chan.link/.media/video123.webm")
+        assertThat(attachment.thumbnailUrl).isEqualTo("https://bbw-chan.link/.media/t_video123")
+        assertThat(attachment.width).isEqualTo(1920)
+        assertThat(attachment.height).isEqualTo(1080)
+    }
+
+    @Test
     fun `catalog creation time is preferred with last bump fallback`() {
         val withCreation =
             mapper

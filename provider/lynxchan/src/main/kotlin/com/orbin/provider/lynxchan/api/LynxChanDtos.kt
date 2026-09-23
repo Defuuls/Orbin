@@ -47,6 +47,7 @@ data class LynxChanCatalogThread(
     val creation: String? = null,
     val thumb: String? = null,
     val mime: String? = null,
+    val files: List<LynxChanFile> = emptyList(),
 )
 
 @Serializable

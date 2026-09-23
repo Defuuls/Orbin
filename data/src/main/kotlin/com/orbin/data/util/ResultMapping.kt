@@ -3,17 +3,23 @@ package com.orbin.data.util
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.provider.api.ProviderException
+import kotlinx.coroutines.CancellationException
 
 /**
  * Runs a provider call and normalizes its outcome into an [OrbinResult], translating the typed
  * [ProviderException] hierarchy into the app's [DataError] categories. This is the single place
  * provider failures cross into the rest of the app.
  */
+@Suppress("TooGenericExceptionCaught")
 internal suspend fun <T> runCatchingProvider(block: suspend () -> T): OrbinResult<T> =
     try {
         OrbinResult.Success(block())
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: ProviderException) {
         OrbinResult.Failure(e.toDataError())
+    } catch (e: Exception) {
+        OrbinResult.Failure(DataError.Unknown(e))
     }
 
 internal fun ProviderException.toDataError(): DataError =

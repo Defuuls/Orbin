@@ -18,6 +18,7 @@ import com.orbin.provider.lynxchan.api.LynxChanCatalogThread
 import com.orbin.provider.lynxchan.api.LynxChanFile
 import com.orbin.provider.lynxchan.api.LynxChanPost
 import com.orbin.provider.lynxchan.api.LynxChanThreadResponse
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import java.net.URI
@@ -79,10 +80,16 @@ class LynxChanMapper(
             subject = dto.subject?.takeIf { it.isNotBlank() },
             comment = comment,
             createdAtMillis = dto.creation.parseIsoOrNull() ?: dto.lastBump.parseIsoOrZero(),
-            attachments = listOfNotNull(catalogThumbAttachment(dto)).toImmutableList(),
+            attachments = mapCatalogAttachments(dto),
             repliesTo = comment.quotedPosts.toImmutableList(),
             backlinks = persistentListOf(),
         )
+    }
+
+    private fun mapCatalogAttachments(dto: LynxChanCatalogThread): ImmutableList<MediaAttachment> {
+        val mappedFiles = dto.files.mapNotNull(::mapFile)
+        if (mappedFiles.isNotEmpty()) return mappedFiles.toImmutableList()
+        return listOfNotNull(catalogThumbAttachment(dto)).toImmutableList()
     }
 
     private fun catalogThumbAttachment(dto: LynxChanCatalogThread): MediaAttachment? {
