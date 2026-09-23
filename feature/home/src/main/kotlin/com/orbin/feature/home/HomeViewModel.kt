@@ -14,6 +14,7 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -74,17 +75,21 @@ class HomeViewModel
             activeProvider.onEach { load() }.launchIn(viewModelScope)
         }
 
+        private var loadJob: Job? = null
+
         fun load() {
-            viewModelScope.launch {
-                _uiState.value = HomeUiState.Loading
-                val provider = activeProvider.value
-                _uiState.value =
-                    when (val result = boardRepository.refreshBoards(provider.metadata.id)) {
-                        is OrbinResult.Success ->
-                            HomeUiState.Success(provider.metadata.displayName, result.data.toImmutableList())
-                        is OrbinResult.Failure -> HomeUiState.Error(result.error.message)
-                    }
-            }
+            loadJob?.cancel()
+            val provider = activeProvider.value
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.value = HomeUiState.Loading
+                    _uiState.value =
+                        when (val result = boardRepository.refreshBoards(provider.metadata.id)) {
+                            is OrbinResult.Success ->
+                                HomeUiState.Success(provider.metadata.displayName, result.data.toImmutableList())
+                            is OrbinResult.Failure -> HomeUiState.Error(result.error.message)
+                        }
+                }
         }
 
         fun setFavorite(

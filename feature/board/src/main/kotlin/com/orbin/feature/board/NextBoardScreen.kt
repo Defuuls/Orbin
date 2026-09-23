@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
@@ -58,16 +59,39 @@ fun NextBoardScreen(
     val rows =
         remember(snapshot, visitedThreadIds, watchedUnread, board, threads.itemCount) {
             List(threads.itemCount) { index ->
-                snapshot[index]?.toRow(board, visitedThreadIds, watchedUnread)
+                snapshot.getOrNull(index)?.toRow(board, visitedThreadIds, watchedUnread)
             }
         }
     val rowFor: (Int) -> FeedRow? = { index -> rows.getOrNull(index) }
 
     NextTheme {
+        val refreshState = threads.loadState.refresh
+        if (refreshState is LoadState.Loading && threads.itemCount == 0) {
+            MessageScreen(
+                title = board,
+                subtitle = stringResource(R.string.board_loading),
+                where = board,
+                modifier = modifier,
+            )
+            return@NextTheme
+        }
+        if (refreshState is LoadState.Error && threads.itemCount == 0) {
+            MessageScreen(
+                title = board,
+                subtitle = refreshState.error.localizedMessage ?: stringResource(R.string.board_load_error),
+                actionLabel = stringResource(R.string.board_try_again),
+                onAction = threads::retry,
+                where = board,
+                modifier = modifier,
+            )
+            return@NextTheme
+        }
         if (threads.itemCount == 0) {
             MessageScreen(
                 title = board,
                 subtitle = stringResource(R.string.next_board_empty),
+                actionLabel = stringResource(R.string.board_refresh),
+                onAction = threads::refresh,
                 where = board,
                 modifier = modifier,
             )

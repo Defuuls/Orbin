@@ -12,8 +12,8 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.CatalogRepository
-import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -56,6 +56,7 @@ private class CatalogPagingSource(
 ) : PagingSource<Int, CatalogThread>() {
     private var cached: List<CatalogThread>? = null
 
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CatalogThread> =
         try {
             val provider =
@@ -79,7 +80,9 @@ private class CatalogPagingSource(
                 prevKey = if (offset == 0) null else (offset - PAGE_SIZE).coerceAtLeast(0),
                 nextKey = if (end >= all.size) null else end,
             )
-        } catch (e: ProviderException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             LoadResult.Error(e)
         }
 

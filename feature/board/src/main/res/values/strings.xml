@@ -19,4 +19,7 @@
     <!-- A post number shown imageboard-style, e.g. No.12345. -->
     <string name="board_post_number">No.%1$d</string>
     <string name="next_board_empty">Nothing on this board right now.</string>
+    <string name="board_loading">Loading…</string>
+    <string name="board_try_again">Try again</string>
+    <string name="board_refresh">Refresh</string>
 </resources>
