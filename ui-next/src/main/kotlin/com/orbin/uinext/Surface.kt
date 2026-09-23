@@ -564,7 +564,7 @@ private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.SE
  */
 internal fun NextDestination?.drawsPill(): Boolean = this in CHROME_DESTINATIONS
 
-private val RAIL_CLEARANCE = 28.dp
+private val RAIL_CLEARANCE = 48.dp
 private val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */

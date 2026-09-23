@@ -23,5 +23,8 @@ data class FeedRow(
     val muted: Boolean = false,
     val excerpt: String = "",
     val boardTitle: String = board,
-    val threadNumber: String = id.substringAfterLast('/'),
+    val threadNumber: String =
+        id.substringAfterLast('/').trimStart(':').takeIf { candidate ->
+            candidate.isNotEmpty() && candidate.all { it.isDigit() }
+        } ?: "",
 )

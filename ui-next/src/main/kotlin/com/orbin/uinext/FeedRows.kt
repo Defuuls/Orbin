@@ -181,8 +181,10 @@ internal fun FeedGridCell(
             MetaLine(row.excerpt, maxLines = 2, modifier = Modifier.padding(horizontal = 8.dp))
             Gap(6)
         }
+        val threadInfo =
+            if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
         MetaLine(
-            "#${row.threadNumber} · ${rowCounts(row)}",
+            threadInfo,
             maxLines = 2,
             modifier = Modifier.padding(horizontal = 8.dp),
         )
@@ -217,11 +219,13 @@ internal fun FeedImageCell(
     ) {
         val tile = Modifier.fillMaxWidth().height(tileHeight)
         if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
-        Pill(
-            text = "#${row.threadNumber.takeLast(4)}",
-            tint = boardHue(row.board),
-            modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
-        )
+        if (row.threadNumber.isNotBlank()) {
+            Pill(
+                text = "#${row.threadNumber.takeLast(4)}",
+                tint = boardHue(row.board),
+                modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
+            )
+        }
     }
 }
 

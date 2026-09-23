@@ -99,7 +99,7 @@ fun CommandSheet(
                     ).windowInsetsPadding(sheetInsets),
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
@@ -111,7 +111,7 @@ fun CommandSheet(
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 18.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = GUTTER, end = GUTTER, top = 4.dp, bottom = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -259,7 +259,6 @@ fun SettingsScreen(
     onOpenDownloads: (() -> Unit)? = null,
     onOpenCommands: (() -> Unit)? = null,
 ) {
-    val entries = remember(groups) { groups.flatten() }
     // Everything that is a place rather than a preference. Search, Downloads and the command
     // sheet are here because they have nowhere else to be: none is a tab, and the Go button that
     // used to reach the sheet — and through it the other two — is gone from the chrome.
@@ -273,9 +272,13 @@ fun SettingsScreen(
             onOpenCommands?.let { "Commands" to it },
         )
     val state = rememberLazyListState()
-    LaunchedEffect(focusId, entries) {
-        val index = entries.indexOfFirst { it is SettingsEntry.Row && it.item.id == focusId }
-        if (index >= 0) state.animateScrollToItem(index + 1)
+    LaunchedEffect(focusId, expandedId, groups) {
+        val targetId = focusId ?: expandedId ?: return@LaunchedEffect
+        val groupIndex = groups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
+        if (groupIndex >= 0) {
+            val lazyItemIndex = 1 + (if (library.isNotEmpty()) 1 else 0) + groupIndex
+            state.scrollToItem(lazyItemIndex)
+        }
     }
     val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenMedia != null
     val onDestination: ((NextDestination) -> Unit)? =
@@ -325,8 +328,33 @@ fun SettingsScreen(
                 if (library.isNotEmpty()) {
                     item(key = "library") {
                         GroupedSection(header = "Library") {
-                            library.forEach { (label, open) ->
-                                InlineAction(label, modifier = Modifier.fillMaxWidth(), onClick = open)
+                            library.forEachIndexed { index, (label, open) ->
+                                Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .nextClickable(role = Role.Button, onClick = open)
+                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text = label,
+                                        fontSize = 15.5.sp,
+                                        letterSpacing = (-0.1).sp,
+                                        color = next.ink,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        text = "›",
+                                        fontSize = 18.sp,
+                                        color = next.muted,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+                                if (index < library.lastIndex) {
+                                    GroupedDivider()
+                                }
                             }
                         }
                     }
@@ -357,29 +385,6 @@ fun SettingsScreen(
         )
     }
 }
-
-private sealed interface SettingsEntry {
-    val key: String
-
-    data class Heading(
-        val text: String,
-    ) : SettingsEntry {
-        override val key: String get() = "heading:$text"
-    }
-
-    data class Row(
-        val item: SettingItem,
-        val last: Boolean,
-    ) : SettingsEntry {
-        override val key: String get() = "row:${item.id}"
-    }
-}
-
-private fun List<Pair<String, List<SettingItem>>>.flatten(): List<SettingsEntry> =
-    flatMap { (heading, rows) ->
-        listOf(SettingsEntry.Heading(heading)) +
-            rows.mapIndexed { index, item -> SettingsEntry.Row(item, last = index == rows.lastIndex) }
-    }
 
 @Composable
 private fun SettingRow(
@@ -449,7 +454,9 @@ private fun SettingRow(
             item.kind == SettingKind.TEXT -> SettingTextEditor(item, onCommitText)
             item.options.isNotEmpty() ->
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, end = GUTTER, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
                 ) {
                     item.options.forEachIndexed { index, option ->
                         InlineAction(
@@ -457,7 +464,6 @@ private fun SettingRow(
                             accent = index == item.selected,
                             onClick = { onSelectOption(item, index) },
                         )
-                        WidthSpacer(4)
                     }
                 }
         }

@@ -52,6 +52,7 @@ fun NextTextField(
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leading: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(NextRadius.control)
@@ -75,6 +76,9 @@ fun NextTextField(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (leading != null) {
+                leading()
+            }
             Box(modifier = Modifier.weight(1f)) {
                 if (value.isEmpty() && placeholder != null) {
                     Text(
