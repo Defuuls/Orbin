@@ -276,27 +276,32 @@ fun SchematicSearch(
     placeholder: String,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            Icons.Default.Search,
-            contentDescription = null,
-            tint = next.muted,
-            modifier = Modifier.padding(end = 8.dp).size(18.dp),
-        )
-        NextTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = placeholder,
-            modifier = Modifier.weight(1f),
-            trailing = {
-                if (value.isNotEmpty()) {
-                    IconButton(onClick = { onValueChange("") }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear search", tint = next.muted)
-                    }
+    NextTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = placeholder,
+        modifier = modifier.fillMaxWidth(),
+        leading = {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null,
+                tint = next.muted,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        trailing = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Clear search",
+                        tint = next.muted,
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
-            },
-        )
-    }
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -461,24 +461,33 @@ class ProposalScreenshotTest {
 
     private fun feedRows() =
         listOf(
-            FeedRow("Anyone else running a home server on ARM?", "/g/", "4m", 218, 31),
-            FeedRow("Weekly desktop thread", "/g/", "12m", 94, 88),
-            FeedRow("What did you cook this week", "/ck/", "31m", 47, 22, read = true),
-            FeedRow("Film photography general — grain edition", "/p/", "1h", 156, 140),
-            FeedRow("Old ThinkPads that still earn their keep", "/g/", "2h", 63, 19),
-            FeedRow("Reading list for winter", "/lit/", "3h", 28, 4, hasPreview = false, read = true),
-            FeedRow("Post your desk setup", "/g/", "4h", 311, 205),
-            FeedRow("Cheap mechanical keyboards worth having", "/g/", "6h", 88, 17),
+            FeedRow("Anyone else running a home server on ARM?", "/g/", "4m", 218, 31, id = "/g/8834912"),
+            FeedRow("Weekly desktop thread", "/g/", "12m", 94, 88, id = "/g/8834710"),
+            FeedRow("What did you cook this week", "/ck/", "31m", 47, 22, read = true, id = "/ck/1482019"),
+            FeedRow("Film photography general — grain edition", "/p/", "1h", 156, 140, id = "/p/4091823"),
+            FeedRow("Old ThinkPads that still earn their keep", "/g/", "2h", 63, 19, id = "/g/8833910"),
+            FeedRow(
+                "Reading list for winter",
+                "/lit/",
+                "3h",
+                28,
+                4,
+                hasPreview = false,
+                read = true,
+                id = "/lit/2219481",
+            ),
+            FeedRow("Post your desk setup", "/g/", "4h", 311, 205, id = "/g/8832104"),
+            FeedRow("Cheap mechanical keyboards worth having", "/g/", "6h", 88, 17, id = "/g/8831940"),
         )
 
     private fun boardRows() =
         listOf(
-            FeedRow("Anyone else running a home server on ARM?", "/g/", "4m", 218, 31),
-            FeedRow("Weekly desktop thread", "/g/", "12m", 94, 88),
-            FeedRow("Old ThinkPads that still earn their keep", "/g/", "31m", 63, 19),
-            FeedRow("Post your desk setup", "/g/", "1h", 311, 205, read = true),
-            FeedRow("Cheap mechanical keyboards worth having", "/g/", "2h", 88, 17),
-            FeedRow("Self-hosting what you actually use", "/g/", "3h", 41, 6, hasPreview = false),
+            FeedRow("Anyone else running a home server on ARM?", "/g/", "4m", 218, 31, id = "/g/8834912"),
+            FeedRow("Weekly desktop thread", "/g/", "12m", 94, 88, id = "/g/8834710"),
+            FeedRow("Old ThinkPads that still earn their keep", "/g/", "31m", 63, 19, id = "/g/8833910"),
+            FeedRow("Post your desk setup", "/g/", "1h", 311, 205, read = true, id = "/g/8832104"),
+            FeedRow("Cheap mechanical keyboards worth having", "/g/", "2h", 88, 17, id = "/g/8831940"),
+            FeedRow("Self-hosting what you actually use", "/g/", "3h", 41, 6, hasPreview = false, id = "/g/8830155"),
         )
 
     private fun posts() =

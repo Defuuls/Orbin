@@ -98,10 +98,18 @@ internal fun FeedListRow(
                         )
                     }
                     Gap(4)
-                    Row {
-                        MetaLine("#${row.threadNumber}", color = next.accent)
-                        WidthSpacer(6)
-                        MetaLine("· ${rowCounts(row)} · ${activityText(row)}", modifier = Modifier.weight(1f))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (row.threadNumber.isNotBlank()) {
+                            MetaLine("#${row.threadNumber}", color = next.accent)
+                            WidthSpacer(6)
+                        }
+                        val countText =
+                            if (row.threadNumber.isNotBlank()) {
+                                "· ${rowCounts(row)} · ${activityText(row)}"
+                            } else {
+                                "${rowCounts(row)} · ${activityText(row)}"
+                            }
+                        MetaLine(countText, modifier = Modifier.weight(1f))
                     }
                 }
             }
