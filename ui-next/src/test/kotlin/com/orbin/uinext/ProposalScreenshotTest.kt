@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -54,6 +55,30 @@ class ProposalScreenshotTest {
     @Test
     fun feedAmoled() =
         capture("next_feed_amoled", dark = true, amoled = true) {
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
+        }
+
+    @Test
+    fun feedBanana() =
+        capture("next_feed_banana", palette = bananaPalette(dark = false)) {
+            FeedScreen(
+                rows = feedRows(),
+                subtitle = SAMPLE_SUBTITLE,
+                onOpenBoards = {},
+                onOpenMedia = {},
+                onSettings = {},
+            )
+        }
+
+    @Test
+    fun feedApple() =
+        capture("next_feed_apple", palette = applePalette(dark = false)) {
             FeedScreen(
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
@@ -145,6 +170,40 @@ class ProposalScreenshotTest {
         }
 
     @Test
+    fun boardLoading() =
+        capture("next_board_loading") {
+            MessageScreen(
+                title = "/g/",
+                subtitle = "Loading…",
+                where = "/g/",
+            )
+        }
+
+    @Test
+    fun boardError() =
+        capture("next_board_error") {
+            MessageScreen(
+                title = "/g/",
+                subtitle = "Couldn't load this board's catalog",
+                actionLabel = "Try again",
+                onAction = {},
+                where = "/g/",
+            )
+        }
+
+    @Test
+    fun boardEmpty() =
+        capture("next_board_empty") {
+            MessageScreen(
+                title = "/g/",
+                subtitle = "Nothing on this board right now.",
+                actionLabel = "Refresh",
+                onAction = {},
+                where = "/g/",
+            )
+        }
+
+    @Test
     fun boardsBrowse() =
         capture("next_boards") {
             BoardsScreen(
@@ -177,6 +236,28 @@ class ProposalScreenshotTest {
     @Test
     fun threadDark() =
         capture("next_thread_dark", dark = true) {
+            ThreadScreen(
+                subject = "Anyone else running a home server on ARM?",
+                board = "/g/",
+                posts = posts(),
+                watching = true,
+            )
+        }
+
+    @Test
+    fun threadBanana() =
+        capture("next_thread_banana", palette = bananaPalette(dark = false)) {
+            ThreadScreen(
+                subject = "Anyone else running a home server on ARM?",
+                board = "/g/",
+                posts = posts(),
+                watching = true,
+            )
+        }
+
+    @Test
+    fun threadApple() =
+        capture("next_thread_apple", palette = applePalette(dark = false)) {
             ThreadScreen(
                 subject = "Anyone else running a home server on ARM?",
                 board = "/g/",
@@ -358,10 +439,11 @@ class ProposalScreenshotTest {
         dark: Boolean = false,
         amoled: Boolean = false,
         fontScale: Float = 1f,
-        content: @androidx.compose.runtime.Composable () -> Unit,
+        palette: NextPalette? = null,
+        content: @Composable () -> Unit,
     ) {
         composeRule.setContent {
-            NextTheme(darkTheme = dark, amoled = amoled, fontScale = fontScale) {
+            NextTheme(darkTheme = dark, amoled = amoled, fontScale = fontScale, palette = palette) {
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box { content() }
                 }
