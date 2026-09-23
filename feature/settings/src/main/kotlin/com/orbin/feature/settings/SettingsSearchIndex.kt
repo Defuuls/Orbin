@@ -29,16 +29,12 @@ data class SettingsSearchEntry(
 val settingsSearchIndex =
     listOf(
         SettingsSearchEntry("hideNsfw", "Hide NSFW boards", GENERAL),
-        SettingsSearchEntry("threadPresentation", "Open threads", GENERAL),
         SettingsSearchEntry("themeMode", "Theme", DISPLAY),
         SettingsSearchEntry("colorTheme", "Color scheme", DISPLAY),
         SettingsSearchEntry("amoled", "True black", DISPLAY),
         SettingsSearchEntry("fontScale", "Text size", DISPLAY),
-        SettingsSearchEntry("autoplay", "Autoplay videos", DISPLAY),
         SettingsSearchEntry("mute", "Mute by default", DISPLAY),
-        SettingsSearchEntry("preload", "Preload images", DISPLAY),
         SettingsSearchEntry("biometric", "App lock", PRIVACY),
-        SettingsSearchEntry("recentSearches", "Save recent searches", PRIVACY),
         SettingsSearchEntry("clearActivity", "Clear local activity", PRIVACY),
         SettingsSearchEntry("downloadFolder", "Downloads folder", PRIVACY),
         SettingsSearchEntry("exportBackup", "Export data", PRIVACY),

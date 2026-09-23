@@ -118,7 +118,7 @@ fun GalleryScreen(
                         VideoPlayer(
                             url = item.sourceUrl,
                             modifier = Modifier.fillMaxSize(),
-                            autoPlay = settings.autoplayVideos,
+                            autoPlay = true,
                             muted = settings.muteByDefault,
                             // Only the settled page plays, so swiping away stops its audio.
                             active = isActive,
