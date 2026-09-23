@@ -3,7 +3,6 @@ package com.orbin.feature.settings
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
@@ -97,14 +96,6 @@ private class Rows {
         vm: SettingsViewModel,
     ) = listOf(
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
-        choice(
-            "threadPresentation",
-            "Open threads",
-            ThreadPresentation.entries,
-            settings.threadPresentation,
-            { it.label },
-            vm::setThreadPresentation,
-        ),
     )
 
     fun displayAndMedia(
@@ -122,9 +113,7 @@ private class Rows {
             { it.label },
             { option -> vm.setFontScale(option.scale) },
         ),
-        toggle("autoplay", "Autoplay videos", settings.autoplayVideos, vm::setAutoplay),
         toggle("mute", "Mute by default", settings.muteByDefault, vm::setMute),
-        toggle("preload", "Preload images", settings.preloadImages, vm::setPreload),
     )
 
     fun privacyAndData(
@@ -133,7 +122,6 @@ private class Rows {
         updateState: String,
     ) = listOfNotNull(
         toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
-        toggle("recentSearches", "Save recent searches", settings.saveRecentSearches, vm::setSaveRecentSearches),
         action(
             "clearActivity",
             "Clear local activity",

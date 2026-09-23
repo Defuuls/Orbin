@@ -148,15 +148,12 @@ fun OnboardingScreen(
                     SetupStep.MEDIA ->
                         MediaStep(
                             settings,
-                            viewModel::setAutoplay,
                             viewModel::setMute,
-                            viewModel::setPreload,
                         )
                     SetupStep.PRIVACY ->
                         PrivacyStep(
                             settings,
                             viewModel::setBiometricLock,
-                            viewModel::setSaveRecentSearches,
                         )
                     SetupStep.DONE -> DoneStep(subscribed.size, favorites.size)
                 }
@@ -299,7 +296,7 @@ private fun SignalPanel(settings: AppSettings) {
         SetupSignal(
             Icons.Outlined.PlayCircle,
             "Media",
-            if (settings.autoplayVideos) "autoplay on" else "manual playback",
+            if (settings.muteByDefault) "muted by default" else "unmuted",
         )
         SetupSignal(Icons.Outlined.Security, "Network", "https only")
         SetupSignal(Icons.Outlined.Lock, "App lock", if (settings.biometricLockEnabled) "biometric" else "off")
@@ -492,21 +489,12 @@ private fun AppearanceStep(
 @Composable
 private fun MediaStep(
     settings: AppSettings,
-    onAutoplay: (Boolean) -> Unit,
     onMute: (Boolean) -> Unit,
-    onPreload: (Boolean) -> Unit,
 ) {
     SetupPage {
-        PreferenceHeader(Icons.Outlined.PlayCircle, "Media behavior", "Images, videos, and thread browsing")
+        PreferenceHeader(Icons.Outlined.PlayCircle, "Media behavior", "Audio and video in thread gallery")
         SurfacePanel {
-            PreferenceSwitch(
-                "Autoplay videos",
-                "Start video playback as media comes into view",
-                settings.autoplayVideos,
-                onAutoplay,
-            )
             PreferenceSwitch("Mute by default", "Keep videos quiet until you opt in", settings.muteByDefault, onMute)
-            PreferenceSwitch("Preload images", "Load nearby media ahead of time", settings.preloadImages, onPreload)
         }
     }
 }
@@ -515,7 +503,6 @@ private fun MediaStep(
 private fun PrivacyStep(
     settings: AppSettings,
     onBiometricLock: (Boolean) -> Unit,
-    onSaveRecentSearches: (Boolean) -> Unit,
 ) {
     SetupPage {
         PreferenceHeader(Icons.Outlined.Security, "Privacy & network", "Transport security and local access")
@@ -544,12 +531,6 @@ private fun PrivacyStep(
                 "Require fingerprint or device credential on launch",
                 settings.biometricLockEnabled,
                 onBiometricLock,
-            )
-            PreferenceSwitch(
-                "Save recent searches",
-                "Keep search suggestions on this device",
-                settings.saveRecentSearches,
-                onSaveRecentSearches,
             )
         }
     }
