@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -258,33 +258,23 @@ private fun PostView(
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
 ) {
-    Row(
+    val depthCount = post.depth.coerceAtMost(MAX_REPLY_DEPTH)
+    val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = GUTTER, vertical = 5.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(next.raised)
-                .height(IntrinsicSize.Min)
                 .nextClickable(onClick = { onClick(post) }),
     ) {
-        repeat(post.depth.coerceAtMost(MAX_REPLY_DEPTH)) {
-            Box(
-                modifier =
-                    Modifier
-                        .padding(start = GUTTER, top = 14.dp, bottom = 14.dp)
-                        .fillMaxHeight()
-                        .width(2.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(boardHue(board).copy(alpha = 0.30f)),
-            )
-        }
         Column(
             modifier =
                 Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .padding(
-                        start = if (post.depth == 0) GUTTER else 13.dp,
+                        start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
                         end = GUTTER,
                         top = 15.dp,
                         bottom = 15.dp,
@@ -360,9 +350,25 @@ private fun PostView(
                 }
             }
         }
+        if (depthCount > 0) {
+            Row(modifier = Modifier.matchParentSize().padding(top = 14.dp, bottom = 14.dp)) {
+                repeat(depthCount) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(start = GUTTER)
+                                .fillMaxHeight()
+                                .width(REPLY_DEPTH_BAR_WIDTH)
+                                .clip(RoundedCornerShape(1.dp))
+                                .background(boardHue(board).copy(alpha = 0.30f)),
+                    )
+                }
+            }
+        }
     }
 }
 
 private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 62.dp
+private val REPLY_DEPTH_BAR_WIDTH = 2.dp

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -373,12 +374,16 @@ private fun PostMedia(
     if (scrollable) {
         val pagerState = rememberPagerState(pageCount = { attachments.size })
         val stableAspectRatio = attachments.first().threadAspectRatio()
-        Column {
-            HorizontalPager(state = pagerState, beyondViewportPageCount = 0) { page ->
+        Column(modifier = modifier) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth().aspectRatio(stableAspectRatio),
+                beyondViewportPageCount = 0,
+            ) { page ->
                 val attachment = attachments[page]
                 MediaThumbnail(
                     attachment = attachment,
-                    modifier = modifier.aspectRatio(stableAspectRatio).clip(shape),
+                    modifier = Modifier.fillMaxWidth().clip(shape),
                     fullResolution = true,
                     onClick = { onOpen(attachment.id) },
                 )
@@ -392,11 +397,11 @@ private fun PostMedia(
         }
         return
     }
-    Column {
+    Column(modifier = modifier) {
         attachments.forEachIndexed { index, attachment ->
             MediaThumbnail(
                 attachment = attachment,
-                modifier = modifier.aspectRatio(attachment.threadAspectRatio()).clip(shape),
+                modifier = Modifier.fillMaxWidth().aspectRatio(attachment.threadAspectRatio()).clip(shape),
                 fullResolution = true,
                 onClick = { onOpen(attachment.id) },
             )
