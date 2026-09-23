@@ -1,30 +1,26 @@
-# Orbin 142 — Grape
+# Orbin 143 — Honeydew
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 142
-codename     = "Grape"
-version_code = 160
+number       = 143
+codename     = "Honeydew"
+version_code = 161
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Material 3 Expressive updates, new Banana and Apple themes, and streamlined feed with auto-hiding navigation."
+highlight = "Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader."
 
 summary = [
-  "bump Orbin to 142-Grape / versionCode 160",
-  "Material 3 Expressive updates with settings theme selection",
-  "pale matte Banana and Apple color themes",
-  "uncluttered feed with top bar removed and auto-hiding bottom navigation",
+  "bump Orbin to 143-Honeydew / versionCode 161",
+  "fix thread crash from intrinsic measurement of pager media",
+  "restrict media playback to the thread view",
 ]
 
 [changelog]
-Added = [
-  "Two new pale matte color themes: Banana (warm cream and harvest gold) and Apple (pale celadon and forest green).",
-  "Exposed Color scheme selection in Display & Media settings with search index integration.",
+Fixed = [
+  "Stopped thread posts from requesting intrinsic height of HorizontalPager media, which crashed Compose with IllegalStateException on multi-attachment posts.",
 ]
 Changed = [
-  "Streamlined feed interface by removing the floating top feed bar during scroll.",
-  "Floating bottom navigation bar now automatically disappears when scrolling down and returns on scroll up by default.",
-  "Defaulted Feed Grid and Images layouts to single-column full-size media presentation.",
+  "Restricted media playback to the thread reader and streamlined related settings.",
 ]
