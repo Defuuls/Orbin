@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val PAGE_SIZE = 20
+private const val PAGE_SIZE = 100
+private const val INITIAL_LOAD_SIZE = 500
 
 /**
  * Catalog repository exposing a Paging 3 stream. The vichan/4chan catalog endpoint returns the
@@ -40,7 +41,7 @@ class CatalogRepositoryImpl
                 config =
                     PagingConfig(
                         pageSize = PAGE_SIZE,
-                        initialLoadSize = PAGE_SIZE,
+                        initialLoadSize = INITIAL_LOAD_SIZE,
                         enablePlaceholders = false,
                     ),
                 pagingSourceFactory = {

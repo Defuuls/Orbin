@@ -189,7 +189,7 @@ data class AppSettings(
     val preloadOption: PreloadOption = PreloadOption.IMAGES,
     val preloadThrottleMode: PreloadThrottleMode = PreloadThrottleMode.MODERATE,
     val imageCacheLimitMb: Int = 256,
-    val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.TWELVE,
+    val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.ALL,
     /** How the subscribed feed orders threads. Defaults to board code A–Z. */
     val feedSort: FeedSort = FeedSort.BOARD,
     val downloadFolderUri: String = "",
