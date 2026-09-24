@@ -62,7 +62,12 @@ fun NextBoardScreen(
                 snapshot.getOrNull(index)?.toRow(board, visitedThreadIds, watchedUnread)
             }
         }
-    val rowFor: (Int) -> FeedRow? = { index -> rows.getOrNull(index) }
+    val rowFor: (Int) -> FeedRow? = { index ->
+        if (index in 0 until threads.itemCount) {
+            threads[index]
+        }
+        rows.getOrNull(index)
+    }
 
     NextTheme {
         val refreshState = threads.loadState.refresh

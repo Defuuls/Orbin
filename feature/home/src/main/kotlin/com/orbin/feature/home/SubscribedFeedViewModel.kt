@@ -348,7 +348,13 @@ class SubscribedFeedViewModel
         ): ImmutableList<CatalogThread> {
             val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
             val effectiveLimit = limitOverride ?: settings.feedThreadLimit
-            return (effectiveLimit.count?.let(catalog::take) ?: catalog)
+            val scoped =
+                if (effectiveLimit == FeedThreadLimit.ALL) {
+                    catalog
+                } else {
+                    effectiveLimit.count?.let(catalog::take) ?: catalog
+                }
+            return scoped
                 .filterNot { thread ->
                     thread.matchesFilterTokens(settings.hiddenTokens, settings.harshContentFilter)
                 }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }

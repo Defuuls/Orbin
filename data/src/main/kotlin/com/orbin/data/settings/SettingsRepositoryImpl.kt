@@ -359,9 +359,10 @@ class SettingsRepositoryImpl
                     this[Keys.preloadThrottleMode]?.toEnumOrDefault(PreloadThrottleMode.MODERATE)
                         ?: PreloadThrottleMode.MODERATE,
                 feedThreadLimit =
-                    this[Keys.feedThreadLimit]
-                        ?.toEnumOrDefault(FeedThreadLimit.TWELVE)
-                        ?: FeedThreadLimit.TWELVE,
+                    when (this[Keys.feedThreadLimit]) {
+                        null, "TWELVE" -> FeedThreadLimit.ALL
+                        else -> this[Keys.feedThreadLimit]?.toEnumOrDefault(FeedThreadLimit.ALL) ?: FeedThreadLimit.ALL
+                    },
                 feedSort =
                     this[Keys.feedSort]?.toEnumOrDefault(FeedSort.BOARD)
                         ?: FeedSort.BOARD,

@@ -157,6 +157,25 @@ class SubscribedFeedViewModelTest {
             assertThat(recreated.feedLayoutName.value).isEqualTo("IMAGES")
         }
 
+    @Test
+    fun `maximum amount of threads loads from each board by default`() =
+        runTest {
+            val manyThreads = (1L..25L).map { catalogThread(it, attachment("img$it", MediaType.IMAGE)) }
+            val provider = catalogProvider(manyThreads)
+            val registry = FakeProviderRegistry(provider)
+            val settingsRepository = FakeSettingsRepository()
+
+            val viewModel = createViewModel(registry, settingsRepository, subscribed = setOf(healthyBoard))
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+
+                val threads = state.boards.single().threads
+                assertThat(threads).hasSize(25)
+            }
+        }
+
     private fun createViewModel(
         registry: FakeProviderRegistry,
         settingsRepository: FakeSettingsRepository,
