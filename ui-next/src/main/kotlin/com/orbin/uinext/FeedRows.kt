@@ -6,11 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,11 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextRadius
@@ -32,13 +28,10 @@ import com.orbin.uinext.tokens.NextRadius
 @Composable
 internal fun FeedHeader(
     subtitle: String,
-    layout: FeedLayout,
-    onLayoutChange: (FeedLayout) -> Unit,
     filter: String?,
     onClearFilter: () -> Unit,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
-    omittedWithoutPreview: Int = 0,
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
@@ -53,27 +46,12 @@ internal fun FeedHeader(
             SchematicSearch(query, onQueryChange, "Sift through your threads")
             Gap(8)
         }
-        // Primary destinations live in DestinationPill; header keeps layout / sort only.
+        // Primary destinations live in DestinationPill; header keeps refresh / sort only.
         FlowRow(
-            modifier = Modifier.fillMaxWidth().selectableGroup().padding(horizontal = GUTTER - 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            InlineAction(
-                label = "List",
-                selected = layout == FeedLayout.LIST,
-                onClick = { onLayoutChange(FeedLayout.LIST) },
-            )
-            InlineAction(
-                label = stringResource(R.string.next_layout_grid),
-                selected = layout == FeedLayout.GRID,
-                onClick = { onLayoutChange(FeedLayout.GRID) },
-            )
-            InlineAction(
-                label = stringResource(R.string.next_layout_images),
-                selected = layout == FeedLayout.IMAGES,
-                onClick = { onLayoutChange(FeedLayout.IMAGES) },
-            )
             if (refreshing) {
                 NextCircularProgress(modifier = Modifier.padding(12.dp))
             } else {
@@ -82,18 +60,6 @@ internal fun FeedHeader(
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
             }
-        }
-        if (layout == FeedLayout.IMAGES && omittedWithoutPreview > 0) {
-            Gap(8)
-            MetaLine(
-                pluralStringResource(
-                    R.plurals.next_feed_images_omitted,
-                    omittedWithoutPreview,
-                    omittedWithoutPreview,
-                ),
-                modifier = Modifier.padding(horizontal = GUTTER),
-                color = next.faint,
-            )
         }
         if (filter != null) {
             Gap(10)
@@ -136,7 +102,7 @@ internal fun FeedGridCell(
                     onClickLabel = stringResource(R.string.next_open_thread),
                 ) { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().height(240.dp)
+        val tile = Modifier.fillMaxWidth().mediaTileSize(row)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -192,42 +158,21 @@ internal fun FeedGridCell(
     }
 }
 
-@Composable
-internal fun FeedImageCell(
-    row: FeedRow,
-    seed: Int,
-    onClick: (FeedRow) -> Unit,
-    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
-    tileHeight: Dp = 280.dp,
-) {
-    if (row.muted) {
-        CollapsedFeedRow(row = row, modifier = Modifier.padding(2.5.dp), onClick = onClick)
-        return
+/**
+ * Sizes a grid tile to its media's own aspect ratio, so the thumbnail can be drawn whole instead of
+ * centre-cropped into a fixed-height box. Extreme ratios are clamped to keep a single tile from
+ * dwarfing the screen; the image inside still fits without cropping, letterboxed if needed.
+ */
+private fun Modifier.mediaTileSize(row: FeedRow): Modifier =
+    if (row.hasPreview && row.mediaAspectRatio > 0f) {
+        aspectRatio(row.mediaAspectRatio.coerceIn(MIN_TILE_ASPECT, MAX_TILE_ASPECT))
+    } else {
+        height(FALLBACK_TILE_HEIGHT)
     }
-    val description = stringResource(R.string.next_image_cell_description, row.subject, row.board)
-    Box(
-        modifier =
-            Modifier
-                .padding(1.5.dp)
-                .clip(RoundedCornerShape(NextRadius.tight))
-                .nextClickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(R.string.next_open_thread),
-                ) { onClick(row) }
-                .semantics { contentDescription = description },
-        contentAlignment = Alignment.BottomStart,
-    ) {
-        val tile = Modifier.fillMaxWidth().height(tileHeight)
-        if (thumbnail != null) thumbnail(row, tile) else MediaTile(modifier = tile, seed = seed, radius = 10.dp)
-        if (row.threadNumber.isNotBlank()) {
-            Pill(
-                text = "#${row.threadNumber.takeLast(4)}",
-                tint = boardHue(row.board),
-                modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
-            )
-        }
-    }
-}
+
+private const val MIN_TILE_ASPECT = 0.5f
+private const val MAX_TILE_ASPECT = 3f
+private val FALLBACK_TILE_HEIGHT = 240.dp
 
 /** A muted thread stays reachable, but loses its preview and metadata until the reader opens it. */
 @Composable

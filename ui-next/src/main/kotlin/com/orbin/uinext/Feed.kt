@@ -1,11 +1,5 @@
 package com.orbin.uinext
 
-enum class FeedLayout {
-    LIST,
-    GRID,
-    IMAGES,
-}
-
 /**
  * A feed/catalog row. Production callers must pass a thread-stable [id]
  * (`"board/thread"`); the `"$board:$subject"` default is only for previews/tests.
@@ -23,6 +17,11 @@ data class FeedRow(
     val muted: Boolean = false,
     val excerpt: String = "",
     val boardTitle: String = board,
+    /**
+     * Width/height of the preview media, or 0 when unknown. Grid tiles size themselves to it so the
+     * whole image shows instead of a centre crop.
+     */
+    val mediaAspectRatio: Float = 0f,
     val threadNumber: String =
         id.substringAfterLast('/').trimStart(':').takeIf { candidate ->
             candidate.isNotEmpty() && candidate.all { it.isDigit() }

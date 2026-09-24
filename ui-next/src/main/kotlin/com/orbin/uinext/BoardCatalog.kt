@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,8 +36,6 @@ fun BoardScreen(
     rowAt: (Int) -> FeedRow?,
     rowKey: (Int) -> Any = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
     modifier: Modifier = Modifier,
-    layout: FeedLayout = FeedLayout.GRID,
-    onLayoutChange: (FeedLayout) -> Unit = {},
     sortLabel: String? = null,
     onSort: () -> Unit = {},
     showRail: Boolean = true,
@@ -47,7 +44,6 @@ fun BoardScreen(
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
 ) {
-    val effectiveLayout = if (layout == FeedLayout.IMAGES) FeedLayout.IMAGES else FeedLayout.GRID
     val gridState = rememberLazyGridState()
     val railVisible =
         if (!hideRailOnScroll) {
@@ -97,21 +93,9 @@ fun BoardScreen(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .selectableGroup()
                                 .padding(horizontal = GUTTER - 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        InlineAction(
-                            label = stringResource(R.string.next_layout_grid),
-                            selected = effectiveLayout == FeedLayout.GRID,
-                            onClick = { onLayoutChange(FeedLayout.GRID) },
-                        )
-                        WidthSpacer(4)
-                        InlineAction(
-                            label = stringResource(R.string.next_layout_images),
-                            selected = effectiveLayout == FeedLayout.IMAGES,
-                            onClick = { onLayoutChange(FeedLayout.IMAGES) },
-                        )
                         Box(modifier = Modifier.weight(1f))
                         if (sortLabel != null) {
                             InlineAction("$sortLabel ▾", onClick = onSort)
@@ -122,50 +106,26 @@ fun BoardScreen(
                 }
             }
             val insets = Modifier.fillMaxSize().contentInsets()
-            if (effectiveLayout == FeedLayout.IMAGES) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(IMAGE_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding =
-                        gridPadding(
-                            bottomPad,
-                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                        ),
-                ) {
-                    fullWidthItem { header() }
-                    items(
-                        count = itemCount,
-                        key = rowKey,
-                        contentType = { "catalog-image-cell" },
-                    ) { index ->
-                        rowAt(index)?.takeIf { it.hasPreview }?.let { row ->
-                            FeedImageCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                        }
-                    }
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(GRID_MIN_CELL),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding =
-                        gridPadding(
-                            bottomPad,
-                            top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                        ),
-                ) {
-                    fullWidthItem { header() }
-                    items(
-                        count = itemCount,
-                        key = rowKey,
-                        contentType = { index ->
-                            if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
-                        },
-                    ) { index ->
-                        rowAt(index)?.let { row ->
-                            FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
-                        }
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(GRID_MIN_CELL),
+                state = gridState,
+                modifier = insets,
+                contentPadding =
+                    gridPadding(
+                        bottomPad,
+                        top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                    ),
+            ) {
+                fullWidthItem { header() }
+                items(
+                    count = itemCount,
+                    key = rowKey,
+                    contentType = { index ->
+                        if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
+                    },
+                ) { index ->
+                    rowAt(index)?.let { row ->
+                        FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
                     }
                 }
             }

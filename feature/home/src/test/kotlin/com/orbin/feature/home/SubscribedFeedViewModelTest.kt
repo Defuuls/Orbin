@@ -1,6 +1,5 @@
 package com.orbin.feature.home
 
-import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.lock.AppLockController
@@ -127,7 +126,6 @@ class SubscribedFeedViewModelTest {
                     settingsRepository = settingsRepository,
                     historyRepository = FakeHistoryRepository(),
                     appLockController = AppLockController(),
-                    savedStateHandle = SavedStateHandle(),
                     imagePreloader = mockk(relaxed = true),
                 )
 
@@ -141,20 +139,6 @@ class SubscribedFeedViewModelTest {
                 assertThat(state.failedBoards).containsExactly(deadBoard)
                 assertThat(state.stale).isTrue()
             }
-        }
-
-    @Test
-    fun `feed layout state survives view model recreation`() =
-        runTest {
-            val registry = FakeProviderRegistry(catalogProvider(emptyList()))
-            val settingsRepository = FakeSettingsRepository()
-            val handle = SavedStateHandle()
-            val first = createViewModel(registry, settingsRepository, emptySet(), handle)
-
-            first.setFeedLayoutName("IMAGES")
-
-            val recreated = createViewModel(registry, settingsRepository, emptySet(), handle)
-            assertThat(recreated.feedLayoutName.value).isEqualTo("IMAGES")
         }
 
     @Test
@@ -180,7 +164,6 @@ class SubscribedFeedViewModelTest {
         registry: FakeProviderRegistry,
         settingsRepository: FakeSettingsRepository,
         subscribed: Set<BoardId>,
-        savedStateHandle: SavedStateHandle = SavedStateHandle(),
     ) = SubscribedFeedViewModel(
         registry = registry,
         observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
@@ -189,7 +172,6 @@ class SubscribedFeedViewModelTest {
         settingsRepository = settingsRepository,
         historyRepository = FakeHistoryRepository(),
         appLockController = AppLockController(),
-        savedStateHandle = savedStateHandle,
         imagePreloader = mockk(relaxed = true),
     )
 

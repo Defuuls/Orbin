@@ -3,10 +3,7 @@ package com.orbin.feature.board
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -21,7 +18,6 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
-import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextTheme
@@ -29,7 +25,7 @@ import com.orbin.uinext.NextTheme
 /**
  * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
  *
- * A catalog is a feed scoped to one board, so it reuses the feed's grid and image layouts.
+ * A catalog is a feed scoped to one board, so it reuses the feed's grid layout.
  * Rows are handed over by index because the catalog is paged.
  */
 @Composable
@@ -46,7 +42,6 @@ fun NextBoardScreen(
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
-    var layout by rememberSaveable { mutableStateOf(FeedLayout.GRID) }
 
     val board = "/${viewModel.boardId}/"
     val snapshot = threads.itemSnapshotList
@@ -108,8 +103,6 @@ fun NextBoardScreen(
             itemCount = threads.itemCount,
             rowAt = rowFor,
             rowKey = catalogItemKey,
-            layout = layout,
-            onLayoutChange = { layout = if (it == FeedLayout.IMAGES) it else FeedLayout.GRID },
             sortLabel = catalogSort.label,
             onSort = viewModel::cycleCatalogSort,
             onOpenRow = { row ->
@@ -129,7 +122,8 @@ fun NextBoardScreen(
                     byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                         MediaThumbnail(
                             attachment = attachment,
-                            contentScale = ContentScale.Crop,
+                            fullResolution = true,
+                            contentScale = ContentScale.Fit,
                             modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                         )
                     }
@@ -161,4 +155,5 @@ private fun CatalogThread.toRow(
         hasPreview = originalPost.attachments.isNotEmpty(),
         read = key.thread.value in visited,
         unread = unreadByThread[key.thread.value] ?: 0,
+        mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
     )

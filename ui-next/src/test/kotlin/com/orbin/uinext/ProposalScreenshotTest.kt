@@ -124,20 +124,6 @@ class ProposalScreenshotTest {
             FeedScreen(
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
-                layout = FeedLayout.GRID,
-                onOpenBoards = {},
-                onOpenMedia = {},
-                onSettings = {},
-            )
-        }
-
-    @Test
-    fun feedImages() =
-        capture("next_feed_images") {
-            FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                layout = FeedLayout.IMAGES,
                 onOpenBoards = {},
                 onOpenMedia = {},
                 onSettings = {},

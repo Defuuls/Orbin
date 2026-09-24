@@ -28,7 +28,6 @@ import com.orbin.core.model.matchesFilterTokens
 import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.FeedLayout
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.FeedSortSheet
@@ -67,7 +66,6 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val layoutName by viewModel.feedLayoutName.collectAsStateWithLifecycle()
     var localQuery by rememberSaveable { mutableStateOf("") }
     var sortOpen by rememberSaveable { mutableStateOf(false) }
     val effectiveFilter = localQuery.ifBlank { filter }
@@ -79,13 +77,6 @@ fun NextFeedScreen(
             onDismiss = { sortOpen = false },
         )
     }
-    // Existing saved layouts retain their meaning; the handoff restores the list layout.
-    val layout =
-        when (layoutName) {
-            FeedLayout.LIST.name -> FeedLayout.LIST
-            FeedLayout.IMAGES.name -> FeedLayout.IMAGES
-            else -> FeedLayout.GRID
-        }
     val nowMillis by
         produceState(initialValue = System.currentTimeMillis()) {
             while (true) {
@@ -201,14 +192,12 @@ fun NextFeedScreen(
                             subtitle = statusSubtitle,
                             railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
-                            layout = layout,
                             headerContent = headerContent,
                             query = localQuery,
                             onQueryChange = { localQuery = it },
                             groupByBoard = settings.feedSort == FeedSort.BOARD,
                             refreshing = isRefreshing,
                             onRefresh = viewModel::refresh,
-                            onLayoutChange = { viewModel.setFeedLayoutName(it.name) },
                             sortLabel = settings.feedSort.label,
                             onSort = { sortOpen = true },
                             filter = filter.takeIf { it.isNotBlank() },
@@ -240,7 +229,8 @@ fun NextFeedScreen(
                                 byId[row.id]?.attachment?.let { attachment ->
                                     MediaThumbnail(
                                         attachment = attachment,
-                                        contentScale = ContentScale.Crop,
+                                        fullResolution = true,
+                                        contentScale = ContentScale.Fit,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
                                     )
                                 }
@@ -326,6 +316,7 @@ private fun CatalogThread.toEntry(
                         .replace("&nbsp;", " ")
                         .trim(),
                 threadNumber = key.thread.value.toString(),
+                mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
             ),
     )
 }

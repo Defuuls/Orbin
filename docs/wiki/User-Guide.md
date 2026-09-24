@@ -47,8 +47,8 @@ Legacy saved List state is interpreted as Grid, so upgrades do not strand an old
 ## Boards and catalogs
 
 Board catalogs use the same grid-first presentation and readability rules as the subscribed feed.
-Sorting and paging remain available. The Images layout is useful when browsing a board primarily by
-its OP media.
+Sorting and paging remain available. Each card shows the OP media uncropped, at its own aspect
+ratio, so a board can be browsed by its media without switching layouts.
 
 On screens at least 840dp wide, opening a thread from a catalog can keep the catalog visible in a
 two-pane layout. Moving across the width threshold preserves the open thread rather than resetting
