@@ -1,25 +1,24 @@
-# Orbin 144 — Jackfruit
+# Orbin 145 — Kiwi
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 144
-codename     = "Jackfruit"
-version_code = 162
+number       = 145
+codename     = "Kiwi"
+version_code = 163
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Boards and the subscribed feed now load every thread in the catalog instead of stopping short."
+highlight = "The feed and board catalogs are grid-only now, and every card shows its image uncropped at full resolution."
 
 summary = [
-  "bump Orbin to 144-Jackfruit / versionCode 162",
-  "load the full catalog from each board in board view and the subscribed feed",
+  "bump Orbin to 145-Kiwi / versionCode 163",
+  "remove the List and Images layouts; feed and catalogs are grid-only",
+  "show OP media uncropped at its own aspect ratio",
 ]
 
 [changelog]
-Fixed = [
-  "Loaded the full catalog from each board: board paging now requests the whole catalog up front, and the subscribed feed defaults to all threads per board instead of twelve (#535).",
-]
 Changed = [
-  "Migrated the previous twelve-thread feed default to All threads per board; other explicit limits are kept (#535).",
+  "Removed the List and Images layouts and the layout switcher; the subscribed feed and board catalogs now use the grid only (#538).",
+  "Grid cards show the OP media uncropped at its own aspect ratio, loading the full-resolution image instead of a centre-cropped thumbnail (#538).",
 ]
