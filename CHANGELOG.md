@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [144-Jackfruit] - 2026-09-24
+
+### Fixed
+- Loaded the full catalog from each board: board paging now requests the whole catalog up front, and the subscribed feed defaults to all threads per board instead of twelve (#535).
+
+### Changed
+- Migrated the previous twelve-thread feed default to All threads per board; other explicit limits are kept (#535).
+
+
 ## [143-Honeydew] - 2026-09-23
 
 ### Fixed
@@ -2314,7 +2323,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v143-Honeydew...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v144-Jackfruit...HEAD
+[144-Jackfruit]: https://github.com/Defuuls/Orbin/compare/v143-Honeydew...v144-Jackfruit
 [143-Honeydew]: https://github.com/Defuuls/Orbin/compare/v142-Grape...v143-Honeydew
 [142-Grape]: https://github.com/Defuuls/Orbin/compare/v141-Fig...v142-Grape
 [141-Fig]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...v141-Fig
