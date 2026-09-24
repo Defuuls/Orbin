@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [143 — Honeydew](https://github.com/Defuuls/Orbin/releases/tag/v143-Honeydew)
+**Current release:** [144 — Jackfruit](https://github.com/Defuuls/Orbin/releases/tag/v144-Jackfruit)
 
-**What's new in 143:** Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader.
+**What's new in 144:** Boards and the subscribed feed now load every thread in the catalog instead of stopping short.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
