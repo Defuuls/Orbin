@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [143-Honeydew] - 2026-09-23
+
+### Fixed
+- Stopped thread posts from requesting intrinsic height of HorizontalPager media, which crashed Compose with IllegalStateException on multi-attachment posts.
+
+### Changed
+- Restricted media playback to the thread reader and streamlined related settings.
+
+
 ## [142-Grape] - 2026-09-21
 
 ### Added
@@ -2305,7 +2314,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v142-Grape...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v143-Honeydew...HEAD
+[143-Honeydew]: https://github.com/Defuuls/Orbin/compare/v142-Grape...v143-Honeydew
 [142-Grape]: https://github.com/Defuuls/Orbin/compare/v141-Fig...v142-Grape
 [141-Fig]: https://github.com/Defuuls/Orbin/compare/v140-Elderberry...v141-Fig
 [140-Elderberry]: https://github.com/Defuuls/Orbin/compare/v139-Date...v140-Elderberry
