@@ -31,6 +31,7 @@ import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
 import io.mockk.mockk
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -163,6 +164,7 @@ class SubscribedFeedViewModelTest {
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `returning to the feed reuses it and only a refresh fetches the catalogs again`() =
         runTest {
@@ -172,7 +174,8 @@ class SubscribedFeedViewModelTest {
             val viewModel = createViewModel(registry, FakeSettingsRepository(), subscribed = setOf(healthyBoard))
 
             viewModel.uiState.test {
-                while (awaitItem() !is SubscribedFeedUiState.Success) Unit
+                var state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
                 cancelAndIgnoreRemainingEvents()
             }
             val callsAfterFirstLoad = catalogCalls.get()
