@@ -6,6 +6,10 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Removed the List and Images layouts and the layout switcher; the subscribed feed and board catalogs now use the grid only.
+- Grid cards show the OP media uncropped at its own aspect ratio, loading the full-resolution image instead of a centre-cropped thumbnail.
+
 ## [144-Jackfruit] - 2026-09-24
 
 ### Fixed

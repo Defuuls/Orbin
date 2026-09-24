@@ -40,4 +40,16 @@ data class MediaAttachment(
     /** Aspect ratio (width/height) guarding against divide-by-zero for layout placeholders. */
     val aspectRatio: Float
         get() = if (width > 0 && height > 0) width.toFloat() / height.toFloat() else 1f
+
+    /**
+     * Aspect ratio (width/height) of the media, falling back to the thumbnail's dimensions, or 0
+     * when neither is known — so callers can tell "unknown" apart from a square image.
+     */
+    val previewAspectRatio: Float
+        get() =
+            when {
+                width > 0 && height > 0 -> width.toFloat() / height.toFloat()
+                thumbnailWidth > 0 && thumbnailHeight > 0 -> thumbnailWidth.toFloat() / thumbnailHeight.toFloat()
+                else -> 0f
+            }
 }

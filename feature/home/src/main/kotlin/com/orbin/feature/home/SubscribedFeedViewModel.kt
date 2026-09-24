@@ -3,7 +3,6 @@
 package com.orbin.feature.home
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.lock.AppLockController
@@ -87,7 +86,6 @@ class SubscribedFeedViewModel
         private val settingsRepository: SettingsRepository,
         historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
-        private val savedStateHandle: SavedStateHandle,
         private val imagePreloader: ImagePreloader,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
@@ -99,17 +97,9 @@ class SubscribedFeedViewModel
                 .map { it.metadata.id.value }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, activeProvider.value.metadata.id.value)
 
-        /** Reading layout is session UI state, but SavedStateHandle lets it survive process recreation. */
-        val feedLayoutName: StateFlow<String> =
-            savedStateHandle.getStateFlow(FEED_LAYOUT_KEY, DEFAULT_FEED_LAYOUT)
-
         /** Prefetch near-viewport feed thumbnails under [viewModelScope]. */
         fun prefetchFeedThumbs(urls: List<String>) {
             imagePreloader.prefetchBatch(urls, viewModelScope, maxDimensionPx = FEED_PREFETCH_MAX_PX)
-        }
-
-        fun setFeedLayoutName(name: String) {
-            savedStateHandle[FEED_LAYOUT_KEY] = name
         }
 
         private val refreshRequests = MutableStateFlow(0)
@@ -366,8 +356,6 @@ class SubscribedFeedViewModel
             const val TAG = "SubscribedFeedViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
             const val MAX_CONCURRENT_BOARD_LOADS = 4
-            const val FEED_LAYOUT_KEY = "feedLayout"
-            const val DEFAULT_FEED_LAYOUT = "LIST"
             const val FEED_PREFETCH_MAX_PX = 480
         }
     }

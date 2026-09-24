@@ -30,15 +30,6 @@
     <string name="next_rail_catalog">catalog</string>
     <string name="next_rail_swept">%1$d/%2$d swept</string>
 
-    <!-- The layout switcher -->
-    <string name="next_layout_list">List</string>
-    <string name="next_layout_grid">Grid</string>
-    <string name="next_layout_images">Images</string>
-    <plurals name="next_feed_images_omitted">
-        <item quantity="one">%d text-only thread hidden in Images</item>
-        <item quantity="other">%d text-only threads hidden in Images</item>
-    </plurals>
-
     <!-- Feed rows -->
     <plurals name="next_row_replies">
         <item quantity="one">%d reply</item>
@@ -59,7 +50,6 @@
     <!-- What pressing something does, for readers who are told rather than shown -->
     <string name="next_open_thread">Open thread</string>
     <string name="next_open_file">Open file</string>
-    <string name="next_image_cell_description">%1$s, %2$s</string>
     <string name="next_media_cell_description">File from %1$s</string>
 
     <!-- The filter, when one is active -->

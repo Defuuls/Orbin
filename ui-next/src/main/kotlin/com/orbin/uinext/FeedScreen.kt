@@ -30,8 +30,6 @@ fun FeedScreen(
     subtitle: String? = null,
     railDetail: String? = null,
     showRail: Boolean = true,
-    layout: FeedLayout = FeedLayout.LIST,
-    onLayoutChange: (FeedLayout) -> Unit = {},
     sortLabel: String? = null,
     onSort: () -> Unit = {},
     filter: String? = null,
@@ -54,9 +52,7 @@ fun FeedScreen(
     refreshing: Boolean = false,
     onRefresh: () -> Unit = {},
 ) {
-    val effectiveLayout = layout
     val gridState = rememberLazyGridState()
-    val imageHeight = 280.dp
 
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
@@ -68,12 +64,10 @@ fun FeedScreen(
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-    val withPreview = remember(rows) { rows.filter { it.hasPreview } }
-    val omittedWithoutPreview = rows.size - withPreview.size
     val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
 
     // Emit at most one on-screen preview id so callers can hard-cap feed ExoPlayers to 0–1.
-    LaunchedEffect(effectiveLayout, rows, withPreview, gridState) {
+    LaunchedEffect(rows, gridState) {
         snapshotFlow {
             val candidates =
                 gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
@@ -123,13 +117,10 @@ fun FeedScreen(
             val header: @Composable () -> Unit = {
                 FeedHeader(
                     subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
-                    layout = effectiveLayout,
-                    onLayoutChange = onLayoutChange,
                     sortLabel = sortLabel,
                     onSort = onSort,
                     filter = filter,
                     onClearFilter = onClearFilter,
-                    omittedWithoutPreview = omittedWithoutPreview,
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,
@@ -138,7 +129,7 @@ fun FeedScreen(
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
-            val visibleRows = if (effectiveLayout == FeedLayout.IMAGES) withPreview else rows
+            val visibleRows = rows
             val groups =
                 if (groupByBoard) {
                     visibleRows.groupBy { it.boardTitle to it.board }
@@ -177,35 +168,14 @@ fun FeedScreen(
                         row,
                         ->
                         row.id
-                    }, contentType = { _, _ -> effectiveLayout.name }) { index, row ->
-                        when (effectiveLayout) {
-                            FeedLayout.LIST ->
-                                FeedListRow(
-                                    row,
-                                    index,
-                                    onOpenRow,
-                                    thumbnail,
-                                    activityText,
-                                    index == 0,
-                                    index == group.lastIndex,
-                                )
-                            FeedLayout.GRID ->
-                                FeedGridCell(
-                                    row,
-                                    index,
-                                    onOpenRow,
-                                    thumbnail,
-                                    activityText = activityText,
-                                )
-                            FeedLayout.IMAGES ->
-                                FeedImageCell(
-                                    row,
-                                    index,
-                                    onOpenRow,
-                                    thumbnail,
-                                    tileHeight = imageHeight,
-                                )
-                        }
+                    }, contentType = { _, _ -> "feed-grid" }) { index, row ->
+                        FeedGridCell(
+                            row,
+                            index,
+                            onOpenRow,
+                            thumbnail,
+                            activityText = activityText,
+                        )
                     }
                 }
             }

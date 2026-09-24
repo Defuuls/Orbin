@@ -92,13 +92,7 @@ class UniformityTest {
     }
 
     @Test
-    fun `feed layout modes and destination tabs maintain complete semantic definitions`() {
-        assertThat(FeedLayout.entries).containsExactly(
-            FeedLayout.LIST,
-            FeedLayout.GRID,
-            FeedLayout.IMAGES,
-        )
-
+    fun `destination tabs maintain complete semantic definitions`() {
         assertThat(NextDestination.entries).containsExactly(
             NextDestination.FEED,
             NextDestination.BOARDS,

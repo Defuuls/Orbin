@@ -42,8 +42,8 @@ does not post, reply, or create threads.
 - **Readable grid-first catalogs.** Feed and board catalogs use an adaptive card grid as the
   primary presentation. Cards maintain useful width on compact phones, prioritize the subject over
   secondary metadata, and adapt across larger screens.
-- **Images view.** A media-first image grid remains available when visual scanning matters more
-  than thread metadata.
+- **Uncropped previews.** Each card shows the OP's media whole, sized to its own aspect ratio,
+  instead of a centre crop.
 - **Wide-screen two-pane navigation.** At 840dp and above, a board catalog and its open thread can
   remain side by side without losing navigation state.
 - **Offline awareness.** Network state and typed failures are surfaced explicitly rather than

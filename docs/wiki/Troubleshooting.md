@@ -5,13 +5,12 @@ a release, also check the repository CHANGELOG and the latest GitHub release not
 
 ## In-app behavior
 
-### Where did List view go?
+### Where did the List and Images views go?
 
-List is no longer a selectable feed/catalog layout. Orbin now uses the adaptive **Grid** as the
-primary thread presentation, tuned so cards stay readable on compact phones. **Images** remains as
-the media-first alternative.
-
-If an older install had List saved, Orbin treats that legacy value as Grid automatically.
+Feeds and board catalogs now have a single layout: the adaptive **Grid**, tuned so cards stay
+readable on compact phones. The layout switcher is gone. Each card shows its OP media uncropped,
+at the media's own aspect ratio, so the Images view's media-first browsing is covered by the grid
+itself.
 
 ### Why are there fewer columns than before?
 

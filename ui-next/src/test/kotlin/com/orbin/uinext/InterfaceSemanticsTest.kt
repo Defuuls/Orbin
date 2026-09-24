@@ -5,10 +5,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
 import org.junit.Test
@@ -24,46 +21,35 @@ class InterfaceSemanticsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the layout switcher exposes list grid and images`() {
+    fun `the feed is grid only and offers no layout switcher`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+            NextTheme { FeedScreen(rows = ROWS) }
         }
-        composeRule.onNodeWithText("Grid").assertIsSelected()
-        composeRule.onNodeWithText("Images").assertIsNotSelected()
-        composeRule.onNodeWithText("List").assertIsNotSelected()
+        composeRule.onNodeWithText("List").assertDoesNotExist()
+        composeRule.onNodeWithText("Grid").assertDoesNotExist()
+        composeRule.onNodeWithText("Images").assertDoesNotExist()
     }
 
     @Test
-    fun `the grid layout option is a single choice rather than a plain button`() {
+    fun `a board catalog offers no layout switcher`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = ROWS.size,
+                    rowAt = ROWS::getOrNull,
+                )
+            }
         }
-        composeRule.onNodeWithText("Grid").assert(hasRole(Role.RadioButton))
-    }
-
-    @Test
-    fun `the list layout is a selectable reading density`() {
-        composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.LIST) }
-        }
-        composeRule.onNodeWithText("List").assertIsSelected()
-        composeRule.onNodeWithText("Grid").assertIsNotSelected()
-    }
-
-    @Test
-    fun `an image cell names the thread it opens`() {
-        composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.IMAGES) }
-        }
-        composeRule
-            .onNodeWithContentDescription("${ROWS[0].subject}, ${ROWS[0].board}")
-            .assertHasClickAction()
+        composeRule.onNodeWithText("Grid").assertDoesNotExist()
+        composeRule.onNodeWithText("Images").assertDoesNotExist()
     }
 
     @Test
     fun `a grid feed cell is a button`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+            NextTheme { FeedScreen(rows = ROWS) }
         }
         composeRule
             .onNodeWithText(ROWS[0].subject)
@@ -74,7 +60,7 @@ class InterfaceSemanticsTest {
     @Test
     fun `a grid feed cell reads as one node carrying its metadata`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, layout = FeedLayout.GRID) }
+            NextTheme { FeedScreen(rows = ROWS) }
         }
         composeRule
             .onNodeWithText(ROWS[0].subject)

@@ -24,10 +24,9 @@ links, and media but does not post, reply, or create threads.
 ## Highlights
 
 - **Color themes on the Next shell.** Default, Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, Lain, Tomorrow, and Tomorrow Dark recolor Feed and friends — not only Material destinations.
-- **Grid-first browsing.** Feed and board catalogs now use an adaptive readable grid as the main
-  presentation. The old List option has been removed from the UI. Cards keep useful width on
-  compact phones and emphasize thread subjects over secondary metadata. An Images view remains
-  available for media-first browsing.
+- **Grid-only browsing.** Feed and board catalogs use a single adaptive readable grid; the List and
+  Images layouts have been removed. Cards keep useful width on compact phones, emphasize thread
+  subjects over secondary metadata, and show OP media uncropped at its own aspect ratio.
 - **Multi-provider architecture.** Engine behavior lives behind `ImageBoardProvider`; Vichan and
   LynxChan ship today. Shared provider contracts validate normalized results at the registry
   boundary.

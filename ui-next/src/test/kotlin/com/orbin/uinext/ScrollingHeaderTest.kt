@@ -44,7 +44,7 @@ class ScrollingHeaderTest {
     @Test
     fun `the feed header scrolls away in the grid`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = rows(), showRail = false, layout = FeedLayout.GRID) }
+            NextTheme { FeedScreen(rows = rows(), showRail = false) }
         }
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
