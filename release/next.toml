@@ -1,26 +1,25 @@
-# Orbin 143 — Honeydew
+# Orbin 144 — Jackfruit
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 143
-codename     = "Honeydew"
-version_code = 161
+number       = 144
+codename     = "Jackfruit"
+version_code = 162
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader."
+highlight = "Boards and the subscribed feed now load every thread in the catalog instead of stopping short."
 
 summary = [
-  "bump Orbin to 143-Honeydew / versionCode 161",
-  "fix thread crash from intrinsic measurement of pager media",
-  "restrict media playback to the thread view",
+  "bump Orbin to 144-Jackfruit / versionCode 162",
+  "load the full catalog from each board in board view and the subscribed feed",
 ]
 
 [changelog]
 Fixed = [
-  "Stopped thread posts from requesting intrinsic height of HorizontalPager media, which crashed Compose with IllegalStateException on multi-attachment posts.",
+  "Loaded the full catalog from each board: board paging now requests the whole catalog up front, and the subscribed feed defaults to all threads per board instead of twelve (#535).",
 ]
 Changed = [
-  "Restricted media playback to the thread reader and streamlined related settings.",
+  "Migrated the previous twelve-thread feed default to All threads per board; other explicit limits are kept (#535).",
 ]
