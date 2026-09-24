@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [142 — Grape](https://github.com/Defuuls/Orbin/releases/tag/v142-Grape)
+**Current release:** [143 — Honeydew](https://github.com/Defuuls/Orbin/releases/tag/v143-Honeydew)
 
-**What's new in 142:** Material 3 Expressive updates, new Banana and Apple themes, and streamlined feed with auto-hiding navigation.
+**What's new in 143:** Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
