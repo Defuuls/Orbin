@@ -35,8 +35,6 @@ internal fun FeedHeader(
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
-    refreshing: Boolean = false,
-    onRefresh: () -> Unit = {},
 ) {
     Column {
         ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
@@ -46,17 +44,12 @@ internal fun FeedHeader(
             SchematicSearch(query, onQueryChange, "Sift through your threads")
             Gap(8)
         }
-        // Primary destinations live in DestinationPill; header keeps refresh / sort only.
+        // Primary destinations live in DestinationPill and refreshing is pull-to-refresh; the header keeps sort only.
         FlowRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (refreshing) {
-                NextCircularProgress(modifier = Modifier.padding(12.dp))
-            } else {
-                InlineAction("Refresh", onClick = onRefresh)
-            }
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
             }

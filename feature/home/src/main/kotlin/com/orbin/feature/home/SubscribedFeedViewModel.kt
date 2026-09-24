@@ -11,7 +11,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
@@ -178,11 +177,11 @@ class SubscribedFeedViewModel
             inputs: FeedInputs,
             load: suspend () -> SubscribedFeedUiState,
         ): SubscribedFeedUiState {
+            // Coming back to the feed restarts this flow (the stateIn stops after STOP_TIMEOUT_MS
+            // without subscribers), but it must not refetch: only a pull to refresh bumps
+            // refreshCount, and an unchanged key means the cached feed is still the answer.
             lastLoad?.let { cached ->
-                val age = System.currentTimeMillis() - cached.loadedAtMillis
-                if (cached.inputs == inputs && inputs.settings.feedRefreshInterval.allowsReuse(age)) {
-                    return cached.state
-                }
+                if (cached.inputs == inputs) return cached.state
             }
 
             return try {
@@ -372,7 +371,6 @@ private data class FeedLoadSettings(
     val harshContentFilter: Boolean,
     val hiddenTokens: Set<String>,
     val mediaFilter: MediaFilter,
-    val feedRefreshInterval: FeedRefreshInterval,
 )
 
 private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
@@ -383,7 +381,6 @@ private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
         harshContentFilter = harshContentFilter,
         hiddenTokens = hiddenTagTokens(),
         mediaFilter = mediaFilter,
-        feedRefreshInterval = feedRefreshInterval,
     )
 
 private data class FeedInputs(
@@ -414,9 +411,4 @@ private fun SubscribedFeedUiState.Success.withCachedFailures(
                 }.toImmutableList(),
         stale = true,
     )
-}
-
-internal fun FeedRefreshInterval.allowsReuse(ageMillis: Long): Boolean {
-    val staleAfter = staleAfterMillis ?: return true
-    return ageMillis < staleAfter
 }
