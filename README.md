@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [144 — Jackfruit](https://github.com/Defuuls/Orbin/releases/tag/v144-Jackfruit)
+**Current release:** [145 — Kiwi](https://github.com/Defuuls/Orbin/releases/tag/v145-Kiwi)
 
-**What's new in 144:** Boards and the subscribed feed now load every thread in the catalog instead of stopping short.
+**What's new in 145:** The feed and board catalogs are grid-only now, and every card shows its image uncropped at full resolution.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

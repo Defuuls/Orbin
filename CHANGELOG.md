@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [145-Kiwi] - 2026-09-24
+
+### Changed
+- Removed the List and Images layouts and the layout switcher; the subscribed feed and board catalogs now use the grid only (#538).
+- Grid cards show the OP media uncropped at its own aspect ratio, loading the full-resolution image instead of a centre-cropped thumbnail (#538).
+
+
 ## [144-Jackfruit] - 2026-09-24
 
 ### Fixed
@@ -2323,7 +2330,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v144-Jackfruit...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v145-Kiwi...HEAD
+[145-Kiwi]: https://github.com/Defuuls/Orbin/compare/v144-Jackfruit...v145-Kiwi
 [144-Jackfruit]: https://github.com/Defuuls/Orbin/compare/v143-Honeydew...v144-Jackfruit
 [143-Honeydew]: https://github.com/Defuuls/Orbin/compare/v142-Grape...v143-Honeydew
 [142-Grape]: https://github.com/Defuuls/Orbin/compare/v141-Fig...v142-Grape
