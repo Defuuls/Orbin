@@ -6,7 +6,6 @@ import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DownloadRepository
@@ -96,8 +95,6 @@ class SettingsViewModel
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
 
-        fun setFeedSort(sort: FeedSort) = update { repository.setFeedSort(sort) }
-
         fun refreshImageCacheUsage() =
             update {
                 _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
@@ -110,8 +107,6 @@ class SettingsViewModel
             }
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
-
-        fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
 
         fun clearLocalActivity() =
             update {

@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -54,16 +53,8 @@ class SettingsRepositoryImpl
             edit { it[Keys.amoled] = enabled }
         }
 
-        override suspend fun setFeedSort(sort: FeedSort) {
-            edit { it[Keys.feedSort] = sort.name }
-        }
-
         override suspend fun setBiometricLockEnabled(enabled: Boolean) {
             edit { it[Keys.biometricLock] = enabled }
-        }
-
-        override suspend fun setSaveRecentSearches(enabled: Boolean) {
-            edit { it[Keys.saveRecentSearches] = enabled }
         }
 
         override suspend fun setOnboardingCompleted(completed: Boolean) {
@@ -155,26 +146,17 @@ class SettingsRepositoryImpl
                 deepMediaScan = this[Keys.deepMediaScan] ?: false,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 amoled = this[Keys.amoled] ?: false,
-                feedSort =
-                    this[Keys.feedSort]?.toEnumOrDefault(FeedSort.BOARD)
-                        ?: FeedSort.BOARD,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
-                saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
-
-        private inline fun <reified T : Enum<T>> String.toEnumOrDefault(default: T): T =
-            runCatching { enumValueOf<T>(this) }.getOrDefault(default)
 
         private object Keys {
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val deepMediaScan = booleanPreferencesKey("deep_media_scan")
             val themeMode = stringPreferencesKey("theme_mode")
             val amoled = booleanPreferencesKey("amoled")
-            val feedSort = stringPreferencesKey("feed_sort")
             val biometricLock = booleanPreferencesKey("biometric_lock")
-            val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 

@@ -108,8 +108,6 @@ class BackupService
                 setDeepMediaScan(settings.deepMediaScan)
                 setThemeMode(settings.themeMode)
                 setAmoled(settings.amoled)
-                setFeedSort(settings.feedSort)
-                setSaveRecentSearches(settings.saveRecentSearches)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

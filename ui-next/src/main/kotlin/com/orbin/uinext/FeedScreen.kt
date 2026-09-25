@@ -29,8 +29,6 @@ fun FeedScreen(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     showRail: Boolean = true,
-    sortLabel: String? = null,
-    onSort: () -> Unit = {},
     onOpenRow: (FeedRow) -> Unit = {},
     onSettings: (() -> Unit)? = null,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
@@ -107,8 +105,6 @@ fun FeedScreen(
             val header: @Composable () -> Unit = {
                 FeedHeader(
                     subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
-                    sortLabel = sortLabel,
-                    onSort = onSort,
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,

@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -44,9 +43,7 @@ class SettingsRepositoryImplTest {
         repository.setDeepMediaScan(true)
         repository.setThemeMode(AppThemeMode.DARK)
         repository.setAmoled(true)
-        repository.setFeedSort(FeedSort.TITLE)
         repository.setBiometricLockEnabled(true)
-        repository.setSaveRecentSearches(true)
         repository.setActiveProviderId(ProviderId("test-provider"))
         repository.setOnboardingCompleted(true)
     }
@@ -57,9 +54,7 @@ class SettingsRepositoryImplTest {
             deepMediaScan = true,
             themeMode = AppThemeMode.DARK,
             amoled = true,
-            feedSort = FeedSort.TITLE,
             biometricLockEnabled = true,
-            saveRecentSearches = true,
             activeProviderId = "test-provider",
             onboardingCompleted = true,
         )

@@ -28,7 +28,6 @@ import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.FeedSortSheet
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
@@ -58,16 +57,7 @@ fun NextFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     var localQuery by rememberSaveable { mutableStateOf("") }
-    var sortOpen by rememberSaveable { mutableStateOf(false) }
     val effectiveFilter = localQuery
-    if (sortOpen) {
-        FeedSortSheet(
-            FeedSort.entries.map { it.label },
-            FeedSort.entries.indexOf(settings.feedSort),
-            onSelect = { viewModel.setFeedSort(FeedSort.entries[it]) },
-            onDismiss = { sortOpen = false },
-        )
-    }
     val nowMillis by
         produceState(initialValue = System.currentTimeMillis()) {
             while (true) {
@@ -125,7 +115,7 @@ fun NextFeedScreen(
                             ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
                     viewModel.prefetchFeedThumbs(urls)
                 }
-                LaunchedEffect(state.boards, visited, effectiveFilter, settings.feedSort) {
+                LaunchedEffect(state.boards, visited, effectiveFilter) {
                     entries =
                         withContext(Dispatchers.Default) {
                             feedEntries(
@@ -133,7 +123,7 @@ fun NextFeedScreen(
                                 visited = visited,
                                 nowMillis = System.currentTimeMillis(),
                                 filter = effectiveFilter,
-                                sort = settings.feedSort,
+                                sort = FeedSort.ACTIVITY,
                             )
                         }
                     presentationReady = true
@@ -183,9 +173,8 @@ fun NextFeedScreen(
                             headerContent = headerContent,
                             query = localQuery,
                             onQueryChange = { localQuery = it },
-                            groupByBoard = settings.feedSort == FeedSort.BOARD,
-                            sortLabel = settings.feedSort.label,
-                            onSort = { sortOpen = true },
+                            // One list, newest activity first; each card names its own board.
+                            groupByBoard = false,
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,
@@ -239,7 +228,7 @@ internal fun feedEntries(
     visited: Set<ThreadKey>,
     nowMillis: Long,
     filter: String = "",
-    sort: FeedSort = FeedSort.BOARD,
+    sort: FeedSort = FeedSort.ACTIVITY,
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }

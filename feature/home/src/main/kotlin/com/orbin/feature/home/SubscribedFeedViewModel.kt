@@ -11,7 +11,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
@@ -238,18 +237,6 @@ class SubscribedFeedViewModel
         }
 
         /** Cycles Board → Active → Replies → Images → Created → A-Z and persists the choice. */
-        fun setFeedSort(sort: FeedSort) {
-            viewModelScope.launch { settingsRepository.setFeedSort(sort) }
-        }
-
-        fun cycleFeedSort() {
-            viewModelScope.launch {
-                val values = FeedSort.entries
-                val current = settings.value.feedSort
-                settingsRepository.setFeedSort(values[(values.indexOf(current) + 1) % values.size])
-            }
-        }
-
         private suspend fun loadSubscribedFeeds(
             provider: ImageBoardProvider,
             boards: List<Board>,

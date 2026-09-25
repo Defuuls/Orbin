@@ -12,6 +12,8 @@ All notable changes to Orbin are documented here. The format is based on
 - Video starts muted, and an unmute carries over to the next video until Orbin closes.
 
 ### Removed
+- The feed's sort menu. The feed is one list with the newest activity first, and each card names its board.
+- Search's board picker, content-type filters, minimum-replies and NSFW switches, saved searches and the saved-recent-searches preference. Search is one field over the boards you follow, and it skips NSFW boards when Settings hides them.
 - The Color scheme, Text size, Mute by default, Downloads folder and In-app updates rows. Orbin uses one palette, follows the system font size, and saves downloads to `Downloads/Orbin`. The update check is always available. The Banana, Apple and imageboard palettes are gone.
 - Onboarding's Display, Playback, Privacy and Done steps, and its favorite-board stars.
 
