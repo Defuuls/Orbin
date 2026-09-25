@@ -1,24 +1,26 @@
-# Orbin 145 — Kiwi
+# Orbin 146 — Lemon
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 145
-codename     = "Kiwi"
-version_code = 163
+number       = 146
+codename     = "Lemon"
+version_code = 164
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "The feed and board catalogs are grid-only now, and every card shows its image uncropped at full resolution."
+highlight = "The feed refreshes only when you pull down, and Settings drops its Library section for Search and Downloads beside the image cache."
 
 summary = [
-  "bump Orbin to 145-Kiwi / versionCode 163",
-  "remove the List and Images layouts; feed and catalogs are grid-only",
-  "show OP media uncropped at its own aspect ratio",
+  "bump Orbin to 146-Lemon / versionCode 164",
+  "refresh the subscribed feed only by pulling down",
+  "remove the Settings Library section; move Search and Downloads beside the image cache",
+  "remove the unused personalized home feed preference",
 ]
 
 [changelog]
 Changed = [
-  "Removed the List and Images layouts and the layout switcher; the subscribed feed and board catalogs now use the grid only (#538).",
-  "Grid cards show the OP media uncropped at its own aspect ratio, loading the full-resolution image instead of a centre-cropped thumbnail (#538).",
+  "The subscribed feed only refreshes when you pull down. Returning to it keeps the feed as you left it instead of reloading every board, and the header's Refresh button is gone (#541).",
+  "Removed the Library section from Settings, including its Boards, All media and Commands entries. Search and Downloads now sit in Privacy & Data, next to the image cache (#542).",
+  "Removed the unused \"personalized home feed\" preference. It had no setting and no effect; older backups that include it still import (#542).",
 ]

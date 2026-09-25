@@ -6,11 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- The subscribed feed only refreshes when you pull down. Returning to it keeps the feed as you left it instead of reloading every board, and the header's Refresh button is gone.
-- Removed the Library section from Settings, including its Boards, All media and Commands entries. Search and Downloads now sit in Privacy & Data, next to the image cache.
-- Removed the unused "personalized home feed" preference. It had no setting and no effect; older backups that include it still import.
-
 ## [145-Kiwi] - 2026-09-24
 
 ### Changed
