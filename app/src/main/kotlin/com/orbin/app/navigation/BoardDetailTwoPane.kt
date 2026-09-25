@@ -35,7 +35,6 @@ fun BoardDetailTwoPane(
     onOpenGallery: (provider: String, board: String, thread: Long, index: Int) -> Unit,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
-    onOpenCommands: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -114,7 +113,6 @@ fun BoardDetailTwoPane(
                         },
                         mediaScrollIndex = mediaScrollIndex,
                         onMediaScrollConsumed = onMediaScrollConsumed,
-                        onOpenCommands = onOpenCommands,
                     )
                 }
             }

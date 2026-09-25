@@ -162,7 +162,6 @@ fun OrbinApp(
                     subscribedFeedRefreshRequest = feedRefreshRequest,
                     threadPresentation = threadPresentation,
                     onChromeVisibleChange = { chromeVisible = it },
-                    onOpenCommands = { commandsOpen = true },
                     feedFilter = feedFilter,
                     onClearFeedFilter = { feedFilter = "" },
                 )

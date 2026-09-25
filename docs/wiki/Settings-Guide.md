@@ -22,7 +22,6 @@ never resets the preference behind it.
 | True black | Uses pure black surfaces in dark mode. |
 | Text size | Changes Orbin's text scale (Small, Default, Large, XL). |
 | Mute by default | Sets the initial audio state for video playback in threads. |
-| Thread scroll arrow | Shows Top / Unread / Bottom jump actions on the thread reader bar. |
 
 ## Privacy & Data
 

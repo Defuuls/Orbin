@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Cleaned up the thread reader's bottom edge: removed the floating bar that repeated the thread's title and board, and the optional "↓" next-post arrow along with its "Thread scroll arrow" setting. The Top / Unread / Bottom jump buttons remain.
+
 ## [146-Lemon] - 2026-09-25
 
 ### Changed

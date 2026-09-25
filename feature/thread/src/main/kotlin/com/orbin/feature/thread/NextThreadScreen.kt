@@ -1,20 +1,14 @@
 package com.orbin.feature.thread
 
-import android.content.SharedPreferences
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -27,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -38,8 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -52,7 +43,6 @@ import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
@@ -64,14 +54,12 @@ import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.next
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import com.orbin.uinext.Post as NextPost
 
 @Composable
 fun NextThreadScreen(
     onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenCommands: (() -> Unit)? = null,
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
@@ -86,26 +74,6 @@ fun NextThreadScreen(
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val snackbarHostState = remember { NextSnackbarHostState() }
-    val context = LocalContext.current
-    val uiPrefs =
-        remember(context) {
-            context.getSharedPreferences(UI_PREFS_FILE, android.content.Context.MODE_PRIVATE)
-        }
-    var threadScrollArrowEnabled by remember {
-        mutableStateOf(uiPrefs.getBoolean(THREAD_SCROLL_ARROW_KEY, false))
-    }
-
-    DisposableEffect(uiPrefs) {
-        val listener =
-            SharedPreferences.OnSharedPreferenceChangeListener { preferences, key ->
-                if (key == THREAD_SCROLL_ARROW_KEY) {
-                    threadScrollArrowEnabled = preferences.getBoolean(THREAD_SCROLL_ARROW_KEY, false)
-                }
-            }
-        uiPrefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { uiPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-
     LaunchedEffect(exportMessage) {
         exportMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -146,12 +114,10 @@ fun NextThreadScreen(
                     snackbarHostState = snackbarHostState,
                     thumbnailSize = thumbnailSize,
                     mediaScroll = mediaScroll,
-                    showScrollArrow = threadScrollArrowEnabled,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
                     viewModel = viewModel,
                     onOpenMedia = onOpenMedia,
-                    onOpenCommands = onOpenCommands,
                     modifier = modifier,
                 )
         }
@@ -169,18 +135,15 @@ private fun LoadedThread(
     snackbarHostState: NextSnackbarHostState,
     thumbnailSize: ThumbnailSize,
     mediaScroll: Boolean,
-    showScrollArrow: Boolean,
     mediaScrollIndex: Int?,
     onMediaScrollConsumed: () -> Unit,
     viewModel: ThreadViewModel,
     onOpenMedia: (Int) -> Unit,
-    onOpenCommands: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val thread = state.thread
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
     val collapsed =
         rememberSaveable(
@@ -205,18 +168,6 @@ private fun LoadedThread(
     fun openMedia(index: Int) {
         saveVisiblePost(flush = true)
         onOpenMedia(index)
-    }
-
-    fun jumpToNextPost() {
-        if (rows.isEmpty()) return
-        val current = listState.firstVisibleItemIndex
-        val target =
-            when {
-                current <= 0 -> 1
-                current >= rows.size -> 1
-                else -> (current + 1).coerceAtMost(rows.size)
-            }
-        scope.launch { listState.animateScrollToItem(target) }
     }
 
     LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored) {
@@ -299,7 +250,6 @@ private fun LoadedThread(
                 onWatch = viewModel::toggleBookmark,
                 onDownloadAll = viewModel::downloadAllMedia,
                 onShare = viewModel::exportLinks,
-                showRail = onOpenCommands != null,
                 body = { row ->
                     presentation.rowsById[row.id]?.let { entry ->
                         PostCommentText(
@@ -324,24 +274,6 @@ private fun LoadedThread(
                     )
                 },
             )
-            val arrowEnabled = showScrollArrow && onOpenCommands != null
-            val canStepPosts = layout == ThreadLayout.POSTS && rows.size > 1
-            if (arrowEnabled && canStepPosts) {
-                InlineAction(
-                    label = "↓",
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(
-                                    WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-                                ),
-                            ).padding(end = 98.dp, bottom = 14.dp)
-                            .semantics { contentDescription = "Jump to next post" },
-                    accent = true,
-                    onClick = ::jumpToNextPost,
-                )
-            }
             NextSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -486,8 +418,6 @@ private fun ThumbnailSize.threadGridColumns(): Int =
         ThumbnailSize.FILL -> FILL_COLUMNS
     }
 
-private const val UI_PREFS_FILE = "orbin_ui_preferences"
-private const val THREAD_SCROLL_ARROW_KEY = "thread_scroll_arrow"
 private const val COMPACT_COLUMNS = 4
 private const val MEDIUM_COLUMNS = 3
 private const val LARGE_COLUMNS = 2

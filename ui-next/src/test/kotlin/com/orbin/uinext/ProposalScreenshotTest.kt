@@ -493,8 +493,8 @@ class ProposalScreenshotTest {
      * The settings surface as `:feature:settings` actually builds it, with default values.
      *
      * Ids, labels, hints, headings and order mirror `buildSettings` plus the rows
-     * `NextSettingsScreen` adds to its groups (Thread scroll arrow under Display & Media; the image
-     * cache, Downloads and Search under Privacy & Data). `SettingsIndexTest` holds the registry and
+     * `NextSettingsScreen` adds to its groups (the image cache, Downloads and Search under Privacy &
+     * Data). `SettingsIndexTest` holds the registry and
      * its search index together; nothing holds this fixture to either, so when a row is added,
      * removed or renamed there, change it here too or these captures show a list nobody gets.
      */
@@ -547,15 +547,6 @@ class ProposalScreenshotTest {
                 selected = 1,
             ),
             SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
-            SettingItem(
-                id = "threadScrollArrow",
-                label = "Thread scroll arrow",
-                value = "Off",
-                kind = SettingKind.TOGGLE,
-                hint =
-                    "Shows Top / Unread / Bottom jump actions on the Next thread reader bar so you " +
-                        "can move between posts without scrubbing.",
-            ),
         )
 
     private fun privacyAndDataRows() =

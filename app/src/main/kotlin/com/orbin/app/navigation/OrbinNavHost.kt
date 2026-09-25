@@ -44,7 +44,6 @@ fun OrbinNavHost(
     subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onChromeVisibleChange: (Boolean) -> Unit = {},
-    onOpenCommands: () -> Unit = {},
     feedFilter: String = "",
     onClearFeedFilter: () -> Unit = {},
 ) {
@@ -151,7 +150,6 @@ fun OrbinNavHost(
                         backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
                             NO_THREAD_MEDIA_SCROLL_INDEX
                     },
-                    onOpenCommands = onOpenCommands,
                     onBack = navController::navigateUp,
                 )
             } else {
@@ -178,7 +176,6 @@ fun OrbinNavHost(
                     backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
                         NO_THREAD_MEDIA_SCROLL_INDEX
                 },
-                onOpenCommands = onOpenCommands,
             )
         }
 
