@@ -39,7 +39,7 @@ import org.robolectric.annotation.Config
  *
  * Not the registry and not the ViewModel on their own: the real [NextSettingsScreen] over a real
  * [SettingsViewModel], driven only by what a person can do — scroll, tap a row, tap an option,
- * confirm a dialog. Each step checks both halves of "it worked": the value reached the repository,
+ * tap again to confirm. Each step checks both halves of "it worked": the value reached the repository,
  * and the row on screen now says so.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -53,8 +53,6 @@ class SettingsUserJourneyTest {
     private val searches = FakeSearchRepository()
     private val downloads = FakeDownloadRepository()
     private val imageCache = RecordingImageCache(bytes = 12L * 1024 * 1024)
-    private var openedDownloads = 0
-    private var openedSearch = 0
 
     @Test
     fun everyToggleFlipsOnAndBackOff() {
@@ -82,7 +80,15 @@ class SettingsUserJourneyTest {
     fun settingsCarriesOnlyTheShortList() {
         launch()
 
-        listOf("Color scheme", "Text size", "Mute by default", "In-app updates", "Downloads folder").forEach {
+        listOf(
+            "Color scheme",
+            "Text size",
+            "Mute by default",
+            "In-app updates",
+            "Downloads folder",
+            "Downloads",
+            "Search",
+        ).forEach {
             composeRule.onNodeWithText(it).assertDoesNotExist()
         }
         listOf(
@@ -95,34 +101,37 @@ class SettingsUserJourneyTest {
             "Check for updates",
             "Export data",
             "Import data",
-            "Downloads",
-            "Search",
         ).forEach { row(it).assertExists() }
     }
 
     @Test
-    fun clearingLocalActivityAsksFirstThenClears() {
+    fun clearingLocalActivityTakesASecondTapThenClears() {
         runBlocking { searches.recordQuery("thinkpad") }
         launch()
 
         row("Clear local activity").performClick()
-        composeRule.onNodeWithText("Clear local activity?").assertExists()
-        composeRule.onNodeWithText("Clear").performClick()
+        composeRule.waitForIdle()
+        row("Clear local activity").assertTextContains("Tap again to delete")
+        assertThat(runBlocking { searches.observeRecentQueries().first() }).containsExactly("thinkpad")
+
+        row("Clear local activity").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Clear local activity?").assertDoesNotExist()
         assertThat(runBlocking { searches.observeRecentQueries().first() }).isEmpty()
+        row("Clear local activity").assertTextContains("Delete")
     }
 
     @Test
-    fun cancellingTheClearKeepsEverything() {
+    fun oneTapThenWaitingKeepsEverything() {
         runBlocking { searches.recordQuery("thinkpad") }
         launch()
 
         row("Clear local activity").performClick()
-        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.mainClock.advanceTimeBy(5_000L)
         composeRule.waitForIdle()
 
+        row("Clear local activity").assertTextContains("Delete")
+        composeRule.onNodeWithText("Tap again to delete").assertDoesNotExist()
         assertThat(runBlocking { searches.observeRecentQueries().first() }).containsExactly("thinkpad")
     }
 
@@ -146,17 +155,6 @@ class SettingsUserJourneyTest {
         composeRule.waitForIdle()
 
         row("Check for updates").assertTextContains("Up to date")
-    }
-
-    @Test
-    fun downloadsAndSearchOpenFromSettings() {
-        launch()
-
-        row("Downloads").performClick()
-        row("Search").performClick()
-
-        assertThat(openedDownloads).isEqualTo(1)
-        assertThat(openedSearch).isEqualTo(1)
     }
 
     /** Taps a toggle row on, then off, checking the repository and the switch each time. */
@@ -224,8 +222,6 @@ class SettingsUserJourneyTest {
         composeRule.setContent {
             NextSettingsScreen(
                 snackbarHostState = NextSnackbarHostState(),
-                onOpenSearch = { openedSearch++ },
-                onOpenDownloads = { openedDownloads++ },
                 viewModel = viewModel,
             )
         }

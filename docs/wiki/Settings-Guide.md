@@ -1,7 +1,7 @@
 # Settings Guide
 
 Settings opens from the gear in the Feed header. It is deliberately short: a few preferences, the
-things you do to your data, and two places. Everything else is decided by the app, so there is
+things you do to your data, and nothing else. Everything else is decided by the app, so there is
 nothing to tune before browsing. Settings take effect immediately, and local preference storage is
 encrypted.
 
@@ -18,7 +18,7 @@ encrypted.
 
 | Setting | What it does |
 | --- | --- |
-| Clear local activity | Deletes browsing history, recent searches and download history stored on this device. |
+| Clear local activity | Deletes browsing history, recent searches and download history stored on this device. Tap once and the row reads "Tap again to delete"; a second tap within a few seconds clears it. |
 | Clear image cache | Shows the image cache size and clears it. Images download again when needed. |
 | Check for updates | Asks GitHub whether a newer release exists. Installation stays manual. |
 | Export data | Writes settings, boards, bookmarks and saved searches to a file you choose. |
@@ -27,12 +27,10 @@ encrypted.
 **Important:** exported backup files are plain JSON and are not encrypted. The live app database
 and preferences are encrypted, but portable exports are intentionally readable outside Orbin.
 
-## Places
+## Elsewhere
 
-| Row | What it opens |
-| --- | --- |
-| Downloads | The files you have saved from threads. |
-| Search | Search across the catalogs of the boards you follow. |
+- **Saved files** open from **Saved ›** under the All media title.
+- **Search** opens from **Search threads ›** under the Boards title.
 
 ## Decided for you
 

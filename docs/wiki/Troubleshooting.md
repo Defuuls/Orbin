@@ -37,16 +37,15 @@ inactive boards, media URL forms, missing media paths, and catalog timestamp var
 
 ### Where do saved thread links go?
 
-Use **Save links** in the thread actions. Orbin deduplicates the thread's external links and writes
-them as a plain-text file in the configured **Saved media folder**, defaulting to
-`Downloads/Orbin`.
+Open the thread's **Files** view and tap **Save links as text**. Orbin deduplicates the thread's
+external links and writes them as a plain-text file in `Downloads/Orbin`.
 
 The file is plaintext. If the URLs are sensitive, store or delete it accordingly.
 
 ### Where do downloads go?
 
-Downloads use the saved-media location and organization configured in Settings. Folder structure can
-be flat or organized by board/thread depending on the selected option.
+Downloads go to `Downloads/Orbin`, in a folder per board and thread. **Saved ›** under the All
+media title lists them.
 
 ### Why is All media incomplete?
 

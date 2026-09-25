@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -205,11 +207,20 @@ fun SpoilerOverlay(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize().background(Color.Black.copy(alpha = SPOILER_SCRIM_ALPHA)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = Icons.Filled.VisibilityOff,
-            contentDescription = stringResource(R.string.media_spoiler),
-            tint = Color.White,
-        )
+        // Named in words as well as by the icon: a crossed-out eye alone reads as "hidden", not why.
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Filled.VisibilityOff,
+                contentDescription = null,
+                tint = Color.White,
+            )
+            Text(
+                text = stringResource(R.string.media_spoiler),
+                color = Color.White,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 

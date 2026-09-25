@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -63,6 +64,8 @@ fun BoardsScreen(
     onOpenSettings: (() -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    // Search reads threads on the boards you follow, so it lives with the boards.
+    onOpenSearch: (() -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var following by rememberSaveable { mutableStateOf(false) }
@@ -142,6 +145,11 @@ fun BoardsScreen(
                         )
                         Column(Modifier.padding(horizontal = GUTTER)) {
                             SchematicSearch(query, { query = it }, "Search boards")
+                            if (onOpenSearch != null) {
+                                Box(modifier = Modifier.padding(top = 4.dp).offset(x = (-4).dp)) {
+                                    InlineAction(stringResource(R.string.next_search_threads), onClick = onOpenSearch)
+                                }
+                            }
                             Gap(12)
                             PlatformSegments(
                                 listOf(

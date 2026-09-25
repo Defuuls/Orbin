@@ -75,6 +75,7 @@ fun OrbinNavHost(
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
                 onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenSearch = { navController.navigate(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
             )
@@ -100,6 +101,7 @@ fun OrbinNavHost(
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenSaved = { navController.navigate(Route.Downloads) },
             )
         }
 
@@ -196,8 +198,6 @@ fun OrbinNavHost(
         composable<Route.Settings> {
             NextSettingsScreen(
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
-                onOpenSearch = { navController.navigate(Route.Search) },
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
             )
         }
 

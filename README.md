@@ -49,7 +49,7 @@ does not post, reply, or create threads.
 - **Offline awareness.** Network state and typed failures are surfaced explicitly rather than
   turning failed requests into unexplained blank screens.
 - **Three tabs.** Feed, Media and Boards make up the bottom navigation. Settings opens from the gear
-  in the Feed header, and holds only a few rows; Search and Downloads open from the bottom of it.
+  in the Feed header, and holds only a few rows. Search opens from Boards, and saved files open from Media.
 
 ### Thread reader
 

@@ -37,6 +37,7 @@ fun NextAllMediaScreen(
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     title: String? = null,
+    onOpenSaved: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,6 +51,7 @@ fun NextAllMediaScreen(
         onOpenMedia = onOpenMedia,
         onSave = viewModel::save,
         title = title,
+        onOpenSaved = onOpenSaved,
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
@@ -79,6 +81,7 @@ fun NextAllMediaContent(
     onOpenSettings: (() -> Unit)? = null,
     onSave: ((AllMediaItem) -> Unit)? = null,
     title: String? = null,
+    onOpenSaved: (() -> Unit)? = null,
 ) {
     val wallTitle = title ?: stringResource(R.string.next_media_title)
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
@@ -151,6 +154,7 @@ fun NextAllMediaContent(
                 onOpenBoards = onOpenBoards,
                 onOpenSettings = onOpenSettings,
                 title = title,
+                onOpenSaved = onOpenSaved,
                 onLongPress = onSave?.let { { cell -> actionsFor = byId[cell.id] } },
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->

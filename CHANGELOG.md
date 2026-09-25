@@ -7,6 +7,11 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Improved
+- Clear local activity confirms in place: the first tap turns the row into "Tap again to delete", and a second tap within four seconds clears. The dialog is gone.
+- The offline banner floats over the top of the screen instead of pushing the layout down.
+- Screen titles and section headers are marked as headings for screen readers.
+- Spoilered media says "Spoiler" under its icon.
+- "All Boards" is now "All boards", in sentence case like every other label.
 - The thread header is a Posts / Files switch and a watch bell. Download all and Save links as text (renamed from "Save links") sit above the file grid.
 - The last post scrolls fully clear of the Top / Bottom jump pill.
 - Board catalogs refresh by pulling down, like the feed, threads and All media.
@@ -18,6 +23,7 @@ All notable changes to Orbin are documented here. The format is based on
 - Board labels on media use white text on a dark scrim, so they stay readable over any image.
 
 ### Added
+- **Saved ›** under the All media title opens your downloads, and **Search threads ›** under the Boards title opens search.
 - Every board catalog has a Media wall action that opens that board's files as a wall, like All media for one board.
 - The feed card in view plays its media in place: a video loops silently and a GIF animates. Only one plays at a time, never a spoilered one, and tapping still opens the thread.
 - Longer videos resume where you left off when reopened, until Orbin closes.
@@ -31,7 +37,7 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Changed
 - Video is simpler. The controls are play/pause, the progress bar and mute. Clips up to 30 seconds loop and longer videos play once. Turning the phone sideways goes fullscreen. A tap shows or hides the controls immediately instead of waiting out the double-tap delay. The Loop/Once and fullscreen buttons are gone.
-- Settings is now one short list in three untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data; then Downloads and Search.
+- Settings is now one short list in two untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data. Downloads and Search moved to Media and Boards.
 - First run is one step: pick the boards to follow, then start browsing.
 - Video starts muted, and an unmute carries over to the next video until Orbin closes.
 

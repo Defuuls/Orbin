@@ -8,10 +8,10 @@ import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 
 /**
- * The whole settings surface: a handful of rows in three untitled cards.
+ * The whole settings surface: a handful of rows in two untitled cards.
  *
- * Preferences first (what Orbin shows and whether it locks), then the things you do to your data,
- * then the two places reached from here. Built from [AppSettings] rather than from category
+ * Preferences first (what Orbin shows and whether it locks), then the things you do to your data.
+ * Places live where they belong: Downloads on the Media tab, Search on the Boards tab. Built from [AppSettings] rather than from category
  * screens, so a row cannot show a stale value or go missing because a screen forgot it. Every row
  * is editable or runnable where it stands.
  *
@@ -22,14 +22,13 @@ internal fun buildSettings(
     vm: SettingsViewModel,
     updateState: String,
     imageCacheLabel: String = "Empty · Clear",
-    includePlaces: Boolean = false,
+    clearArmed: Boolean = false,
 ): SettingsModel {
     val rows = Rows()
     val groups =
-        listOfNotNull(
+        listOf(
             rows.preferences(settings, vm),
-            rows.data(updateState, imageCacheLabel),
-            rows.places().takeIf { includePlaces },
+            rows.data(updateState, imageCacheLabel, clearArmed),
         ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
 }
@@ -104,11 +103,13 @@ private class Rows {
     fun data(
         updateState: String,
         imageCacheLabel: String,
+        clearArmed: Boolean,
     ) = listOf(
         action(
             "clearActivity",
             "Clear local activity",
-            "Delete",
+            // Confirmed in place: the first tap arms the row, a second tap deletes.
+            if (clearArmed) "Tap again to delete" else "Delete",
             "Deletes browsing history, recent searches and download history on this device.",
         ),
         action("clearImageCache", "Clear image cache", imageCacheLabel),
@@ -116,12 +117,6 @@ private class Rows {
         action("exportBackup", "Export data", "Save"),
         action("importBackup", "Import data", "Restore"),
     )
-
-    fun places() =
-        listOf(
-            action(OPEN_DOWNLOADS_ID, "Downloads", "Open ›"),
-            action(OPEN_SEARCH_ID, "Search", "Open ›"),
-        )
 }
 
 /**
@@ -156,6 +151,3 @@ private fun Enum<*>.titleCase(): String = name.lowercase().replace('_', ' ').rep
 
 /** The cards carry no headings: a few rows need no sections. */
 internal const val NO_HEADING = ""
-
-internal const val OPEN_DOWNLOADS_ID = "openDownloads"
-internal const val OPEN_SEARCH_ID = "openSearch"
