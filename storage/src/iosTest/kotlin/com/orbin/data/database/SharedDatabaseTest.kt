@@ -48,6 +48,7 @@ class SharedDatabaseTest {
                     title = "Hi",
                     thumbnailUrl = "https://i.example/7s.jpg",
                     createdAtMillis = 5L,
+                    isWatched = true,
                     lastSeenReplyCount = 3,
                     latestReplyCount = 3,
                 )
