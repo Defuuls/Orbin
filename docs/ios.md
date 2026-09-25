@@ -26,7 +26,8 @@ over in later steps.
 
 ## Building on a Mac
 
-You need Xcode 16 or newer, a JDK 17 on the `PATH`, and XcodeGen:
+You need a Mac with Apple silicon (the simulator build is arm64 only), Xcode 16 or newer, a JDK 17
+on the `PATH`, and XcodeGen:
 
 ```bash
 brew install xcodegen

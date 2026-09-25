@@ -53,6 +53,9 @@ targets:
         OTHER_LDFLAGS: $(inherited) -framework OrbinKit
         # The Gradle build writes outside the sandbox Xcode gives script phases.
         ENABLE_USER_SCRIPT_SANDBOXING: false
+        # The Kotlin framework is built for Apple silicon simulators only (iosSimulatorArm64), so
+        # the simulator build must not ask for an Intel slice.
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
     preBuildScripts:
       - name: Build OrbinKit (Kotlin)
         basedOnDependencyAnalysis: false
