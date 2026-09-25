@@ -35,4 +35,6 @@
     <string name="lock_error_timeout">Unlock timed out. Try again.</string>
 
     <string name="offline_banner">You\'re offline</string>
+
+    <string name="two_pane_pick_thread">Pick a thread from the catalog</string>
 </resources>

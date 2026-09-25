@@ -1,6 +1,7 @@
 package com.orbin.buildlogic
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.Lint
 import org.gradle.api.Project
 
 /**
@@ -20,7 +21,12 @@ import org.gradle.api.Project
  */
 internal fun Project.configureLint(commonExtension: CommonExtension) {
     // AGP 9 exposes `lint` as a property rather than a block-taking function.
-    commonExtension.lint.apply {
+    configureAndroidLint(commonExtension.lint)
+}
+
+/** The same settings for a multiplatform module's Android target, which has no [CommonExtension]. */
+internal fun Project.configureAndroidLint(lint: Lint) {
+    lint.apply {
         baseline = file("lint-baseline.xml")
 
         // Fail on errors; warnings stay visible in the report without gating the build.

@@ -21,6 +21,7 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.compose.multiplatform.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
 }
@@ -55,6 +56,10 @@ gradlePlugin {
         register("kmpLibrary") {
             id = "orbin.kmp.library"
             implementationClass = "KmpLibraryConventionPlugin"
+        }
+        register("kmpCompose") {
+            id = "orbin.kmp.compose"
+            implementationClass = "KmpComposeConventionPlugin"
         }
         register("jvmLibrary") {
             id = "orbin.jvm.library"

@@ -122,6 +122,6 @@ is otherwise four grey characters per row. `placeholderArt()` stands in for a th
 not loaded, as a gradient rather than flat grey, so a layout can be judged against something with
 the tonal variety real content has.
 
-Every screen is recorded as a golden under `ui-next/src/test/screenshots`. Re-record with
-`./gradlew :ui-next:recordRoborazziDebug` and commit what changes; CI verifies them, and the
+Every screen is recorded as a golden under `ui-next/src/androidHostTest/screenshots`. Re-record
+with `./gradlew :ui-next:recordRoborazziAndroidHostTest` and commit what changes; CI verifies them, and the
 Screenshots workflow's path filter includes `ui-next/**` so a change here cannot land unverified.

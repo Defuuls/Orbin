@@ -11,7 +11,7 @@ The architecture's executable enforcement lives in [engineering quality gates](q
 
 | Layer | Modules | Responsibility | Android? |
 | --- | --- | --- | --- |
-| Presentation | `app`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes |
+| Presentation | `app`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes; `ui-next` and `core:designsystem` shared with iOS† |
 | Domain | `domain` | Use cases, repository **contracts** | no* |
 | Data | `data`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | `data`, `network`, `media` yes; `provider:*` no |
 | Model | `core:model` | Pure domain entities shared by all layers | no |
@@ -25,6 +25,13 @@ They carry no DI annotations: the Hilt bindings for domain use cases live in `da
 `HttpClient` that `network` builds on the app's OkHttp client, and the Android side of `core:common` — dispatcher qualifiers and their Hilt
 module, external links, the app-lock signal — lives in `core:common-android`, which re-exports
 `core:common`. `domain` exposes `PagingData` through the multiplatform `paging-common`.
+
+† `ui-next` and `core:designsystem` are Compose Multiplatform (`orbin.kmp.compose`: an Android
+library target plus iOS targets). Their code lives in `commonMain`; what differs per platform goes
+behind `expect`/`actual` (today only dynamic color, which iOS does not have). `ui-next`'s strings
+are Compose resources in `commonMain/composeResources`, read with
+`org.jetbrains.compose.resources.stringResource(Res.string.…)`. The host tests still render
+through Robolectric, so the screenshot goldens are unchanged by the move.
 
 ## Module dependency graph
 

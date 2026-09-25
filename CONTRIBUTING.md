@@ -50,7 +50,7 @@ Every behavioral change ships with tests:
 ```bash
 ./gradlew test                    # all JVM unit tests
 ./gradlew connectedCheck          # instrumented tests (device/emulator)
-./gradlew verifyRoborazziDebug    # screenshot tests
+./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest   # screenshot tests
 ```
 
 ## Commit & PR process
