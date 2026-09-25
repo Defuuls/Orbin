@@ -107,13 +107,9 @@ class BackupService
                 setHideNsfwBoards(settings.hideNsfwBoards)
                 setDeepMediaScan(settings.deepMediaScan)
                 setThemeMode(settings.themeMode)
-                setColorTheme(settings.colorTheme)
                 setAmoled(settings.amoled)
-                setFontScale(settings.fontScale)
-                setMuteByDefault(settings.muteByDefault)
                 setFeedSort(settings.feedSort)
                 setSaveRecentSearches(settings.saveRecentSearches)
-                setInternalUpdaterEnabled(settings.internalUpdaterEnabled)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

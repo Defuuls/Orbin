@@ -3,8 +3,6 @@ package com.orbin.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppSettings
-import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -43,9 +41,8 @@ sealed interface OnboardingBoardsState {
 }
 
 /**
- * Drives the first-run setup wizard: loads the active provider's boards for the subscribe step,
- * exposes the live [AppSettings] for the preference steps, and persists the "onboarding completed"
- * flag when the user finishes. Reuses the same repositories as home/settings.
+ * Drives first run: loads the selected provider's boards to follow and persists the "onboarding
+ * completed" flag when the reader starts browsing. Reuses the same repositories as home/settings.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -73,16 +70,6 @@ class OnboardingViewModel
                 .flatMapLatest { provider -> boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id) }
                 .map { ids -> ids.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
-
-        val favoriteBoardIds: StateFlow<Set<String>> =
-            activeProvider
-                .flatMapLatest { provider -> boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id) }
-                .map { ids -> ids.map { it.value }.toSet() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
-
-        val settings: StateFlow<AppSettings> =
-            settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
         init {
             activeProvider.onEach { loadBoards() }.launchIn(viewModelScope)
@@ -115,23 +102,6 @@ class OnboardingViewModel
                 subscribed,
             )
         }
-
-        fun setFavorite(
-            boardId: String,
-            favorite: Boolean,
-        ) = update {
-            boardPreferencesRepository.setFavoriteBoard(activeProvider.value.metadata.id, BoardId(boardId), favorite)
-        }
-
-        fun setThemeMode(mode: AppThemeMode) = update { settingsRepository.setThemeMode(mode) }
-
-        fun setAmoled(enabled: Boolean) = update { settingsRepository.setAmoled(enabled) }
-
-        fun setMute(enabled: Boolean) = update { settingsRepository.setMuteByDefault(enabled) }
-
-        fun setBiometricLock(enabled: Boolean) = update { settingsRepository.setBiometricLockEnabled(enabled) }
-
-        fun setSaveRecentSearches(enabled: Boolean) = update { settingsRepository.setSaveRecentSearches(enabled) }
 
         fun setSelectedProvider(provider: ImageBoardProvider) {
             _selectedProvider.value = provider

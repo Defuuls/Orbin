@@ -65,30 +65,6 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun feedBanana() =
-        capture("next_feed_banana", palette = bananaPalette(dark = false)) {
-            FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenMedia = {},
-                onSettings = {},
-            )
-        }
-
-    @Test
-    fun feedApple() =
-        capture("next_feed_apple", palette = applePalette(dark = false)) {
-            FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenMedia = {},
-                onSettings = {},
-            )
-        }
-
-    @Test
     fun feedLargeText() =
         capture("next_feed_large_text", fontScale = XL_FONT_SCALE) {
             FeedScreen(
@@ -218,28 +194,6 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun threadBanana() =
-        capture("next_thread_banana", palette = bananaPalette(dark = false)) {
-            ThreadScreen(
-                subject = "Anyone else running a home server on ARM?",
-                board = "/g/",
-                posts = posts(),
-                watching = true,
-            )
-        }
-
-    @Test
-    fun threadApple() =
-        capture("next_thread_apple", palette = applePalette(dark = false)) {
-            ThreadScreen(
-                subject = "Anyone else running a home server on ARM?",
-                board = "/g/",
-                posts = posts(),
-                watching = true,
-            )
-        }
-
-    @Test
     fun threadMaxText() =
         capture("next_thread_max_text", fontScale = MAX_FONT_SCALE) {
             ThreadScreen(
@@ -272,6 +226,15 @@ class ProposalScreenshotTest {
                 watching = true,
                 layout = ThreadLayout.FILES,
                 files = mediaCells().take(7),
+            )
+        }
+
+    /** The list at rest: every row closed. */
+    @Test
+    fun settings() =
+        capture("next_settings") {
+            SettingsScreen(
+                groups = settingsGroups(),
             )
         }
 
@@ -429,132 +392,42 @@ class ProposalScreenshotTest {
             ),
         )
 
-    /**
-     * The settings surface as `:feature:settings` actually builds it, with default values.
-     *
-     * Ids, labels, hints, headings and order mirror `buildSettings` plus the rows
-     * `NextSettingsScreen` adds to its groups (the image cache, Downloads and Search under Privacy &
-     * Data). `SettingsIndexTest` holds the registry and
-     * its search index together; nothing holds this fixture to either, so when a row is added,
-     * removed or renamed there, change it here too or these captures show a list nobody gets.
-     */
+    /** Mirrors the real list: three untitled cards, preferences, data, then places. */
     private fun settingsGroups() =
         listOf(
-            "General" to listOf(SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE)),
-            "Display & Media" to displayAndMediaRows(),
-            "Privacy & Data" to privacyAndDataRows(),
-        )
-
-    private fun displayAndMediaRows() =
-        listOf(
-            SettingItem(
-                id = "themeMode",
-                label = "Theme",
-                value = "System",
-                kind = SettingKind.CHOICE,
-                options = listOf("System", "Light", "Dark"),
-                selected = 0,
-            ),
-            SettingItem(
-                id = "colorTheme",
-                label = "Color scheme",
-                value = "Default",
-                kind = SettingKind.CHOICE,
-                options =
-                    listOf(
-                        "Default",
-                        "Banana",
-                        "Apple",
-                        "Yotsuba",
-                        "Yotsuba B",
-                        "Warosu",
-                        "Miku",
-                        "Penumbra",
-                        "Royal",
-                        "Lain",
-                        "Tomorrow",
-                        "Tomorrow Dark",
+            "" to
+                listOf(
+                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
+                    SettingItem(
+                        id = "themeMode",
+                        label = "Theme",
+                        value = "System",
+                        kind = SettingKind.CHOICE,
+                        options = listOf("System", "Light", "Dark"),
+                        selected = 0,
                     ),
-                selected = 0,
-            ),
-            SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
-            SettingItem(
-                id = "fontScale",
-                label = "Text size",
-                value = "Default",
-                kind = SettingKind.CHOICE,
-                options = listOf("Small", "Default", "Large", "XL"),
-                selected = 1,
-            ),
-            SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
-        )
-
-    private fun privacyAndDataRows() =
-        listOf(
-            SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
-            SettingItem(
-                id = "clearActivity",
-                label = "Clear local activity",
-                value = "Delete",
-                kind = SettingKind.ACTION,
-                hint =
-                    "Deletes browsing history, recent searches and download history stored on " +
-                        "this device.",
-            ),
-            SettingItem(
-                id = "downloadFolder",
-                label = "Downloads folder",
-                value = "Downloads/Orbin",
-                kind = SettingKind.ACTION,
-                hint = "Opens the system folder picker.",
-            ),
-            SettingItem(
-                id = "exportBackup",
-                label = "Export data",
-                value = "Save",
-                kind = SettingKind.ACTION,
-                hint =
-                    "Writes settings, boards, bookmarks and saved searches to a file you choose. " +
-                        "It is plain JSON and is not encrypted.",
-            ),
-            SettingItem(
-                id = "importBackup",
-                label = "Import data",
-                value = "Restore",
-                kind = SettingKind.ACTION,
-                hint =
-                    "Merges a backup into what is already here, so a restore cannot " +
-                        "destroy an existing setup.",
-            ),
-            SettingItem("internalUpdater", "In-app updates", "On", SettingKind.TOGGLE),
-            SettingItem(
-                id = "checkUpdates",
-                label = "Check for updates",
-                value = "Up to date",
-                kind = SettingKind.ACTION,
-                hint = "Asks GitHub whether a newer release exists.",
-            ),
-            SettingItem(
-                id = "clearImageCache",
-                label = "Image cache usage",
-                value = "Empty · Clear",
-                kind = SettingKind.ACTION,
-                hint = "Deletes cached image files. They will be downloaded again when needed.",
-            ),
-            SettingItem(
-                id = "openDownloads",
-                label = "Downloads",
-                value = "Open ›",
-                kind = SettingKind.ACTION,
-                hint = "Files you have saved from threads.",
-            ),
-            SettingItem(
-                id = "openSearch",
-                label = "Search",
-                value = "Open ›",
-                kind = SettingKind.ACTION,
-                hint = "Searches the catalogs of the boards you follow.",
-            ),
+                    SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
+                    SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
+                ),
+            "" to
+                listOf(
+                    SettingItem(
+                        id = "clearActivity",
+                        label = "Clear local activity",
+                        value = "Delete",
+                        kind = SettingKind.ACTION,
+                        hint = "Deletes browsing history, recent searches and download history on this device.",
+                    ),
+                    SettingItem("clearImageCache", "Clear image cache", "12 MB · Clear", SettingKind.ACTION),
+                    SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION),
+                    SettingItem("exportBackup", "Export data", "Save", SettingKind.ACTION),
+                    SettingItem("importBackup", "Import data", "Restore", SettingKind.ACTION),
+                ),
+            "" to
+                listOf(
+                    SettingItem("openDownloads", "Downloads", "Open ›", SettingKind.ACTION),
+                    SettingItem("openSearch", "Search", "Open ›", SettingKind.ACTION),
+                ),
         )
 
     /**

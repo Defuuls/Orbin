@@ -5,13 +5,11 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
@@ -52,28 +50,12 @@ class SettingsRepositoryImpl
             edit { it[Keys.themeMode] = mode.name }
         }
 
-        override suspend fun setColorTheme(theme: ColorTheme) {
-            edit { it[Keys.colorTheme] = theme.name }
-        }
-
         override suspend fun setAmoled(enabled: Boolean) {
             edit { it[Keys.amoled] = enabled }
         }
 
-        override suspend fun setFontScale(scale: Float) {
-            edit { it[Keys.fontScale] = scale }
-        }
-
-        override suspend fun setMuteByDefault(enabled: Boolean) {
-            edit { it[Keys.mute] = enabled }
-        }
-
         override suspend fun setFeedSort(sort: FeedSort) {
             edit { it[Keys.feedSort] = sort.name }
-        }
-
-        override suspend fun setDownloadFolderUri(uri: String) {
-            edit { it[Keys.downloadFolderUri] = uri }
         }
 
         override suspend fun setBiometricLockEnabled(enabled: Boolean) {
@@ -82,10 +64,6 @@ class SettingsRepositoryImpl
 
         override suspend fun setSaveRecentSearches(enabled: Boolean) {
             edit { it[Keys.saveRecentSearches] = enabled }
-        }
-
-        override suspend fun setInternalUpdaterEnabled(enabled: Boolean) {
-            edit { it[Keys.internalUpdater] = enabled }
         }
 
         override suspend fun setOnboardingCompleted(completed: Boolean) {
@@ -176,19 +154,12 @@ class SettingsRepositoryImpl
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
                 deepMediaScan = this[Keys.deepMediaScan] ?: false,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
-                colorTheme =
-                    this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
-                        ?: ColorTheme.ORBIN,
                 amoled = this[Keys.amoled] ?: false,
-                fontScale = this[Keys.fontScale] ?: 1f,
-                muteByDefault = this[Keys.mute] ?: true,
                 feedSort =
                     this[Keys.feedSort]?.toEnumOrDefault(FeedSort.BOARD)
                         ?: FeedSort.BOARD,
-                downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
-                internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             )
@@ -200,15 +171,10 @@ class SettingsRepositoryImpl
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
             val deepMediaScan = booleanPreferencesKey("deep_media_scan")
             val themeMode = stringPreferencesKey("theme_mode")
-            val colorTheme = stringPreferencesKey("color_theme")
             val amoled = booleanPreferencesKey("amoled")
-            val fontScale = floatPreferencesKey("font_scale")
-            val mute = booleanPreferencesKey("mute_by_default")
             val feedSort = stringPreferencesKey("feed_sort")
-            val downloadFolderUri = stringPreferencesKey("download_folder_uri")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
-            val internalUpdater = booleanPreferencesKey("internal_updater")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
 

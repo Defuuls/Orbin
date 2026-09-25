@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -25,8 +24,8 @@ private const val READY_TIMEOUT_MS = 20_000L
  * Wiring mistakes that are invisible to unit tests and to compilation show up here as a blank
  * screen or a crash on launch.
  *
- * It asserts on the first-run wizard, which is what a fresh settings store produces and which needs
- * no network.
+ * It asserts on the first-run screen, which is what a fresh settings store produces and which needs
+ * no network to draw.
  *
  * **This test was disabled twice, for two different reasons, and both are now gone.**
  *
@@ -71,24 +70,17 @@ class OrbinAppTest {
 
     @Test
     fun theAppLaunchesAndShowsFirstRunSetup() {
-        // The wizard opens on its START step, which is this text. "Privacy & network" belongs to
-        // the PRIVACY step several taps away, and asserting on it here was a second, independent
-        // mistake in this test.
-        awaitText("Orbin setup")
+        awaitText("Welcome to Orbin")
     }
 
-    /**
-     * The privacy step is where the always-on guarantees are stated. If a DNS switch ever returns
-     * to it, this fails — which is the point.
-     */
+    /** First run is one step: pick boards, then start browsing. Nothing else is asked. */
     @Test
-    fun theSetupPrivacyStepStatesWhatIsAlwaysOn() {
-        awaitText("Orbin setup")
-        composeTestRule.onNodeWithText("Privacy").performClick()
+    fun firstRunAsksOnlyForBoards() {
+        awaitText("Welcome to Orbin")
 
-        composeTestRule.onNodeWithText("HTTPS only").assertExists()
-        composeTestRule.onNodeWithText("DNS over HTTPS").assertExists()
-        composeTestRule.onNodeWithText("Always on — pick a resolver in Settings").assertExists()
+        composeTestRule.onNodeWithText("Start browsing").assertExists()
+        composeTestRule.onNodeWithText("Continue").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Privacy").assertDoesNotExist()
     }
 
     /**

@@ -6,8 +6,9 @@ instructions.
 
 ## Getting started
 
-On first launch, Orbin walks through provider/board selection and key appearance, media, and privacy
-preferences. Those choices can be changed later in Settings.
+On first launch, Orbin asks one thing: which boards to follow. Pick a few and start browsing; you
+can follow more at any time from the Boards tab. Everything else has a sensible default, and the
+handful of real choices live in Settings (the gear in the Feed header).
 
 Orbin is a **read-only browser**. It can browse, watch, save, download, search, filter, and export,
 but it does not post, reply, or create threads.
@@ -31,8 +32,7 @@ On compact phones, cards are prevented from shrinking into tiny columns. The gri
 Subjects use a stronger text hierarchy and can occupy several lines before truncating. Preview
 images use a consistent card proportion so text does not get squeezed unpredictably.
 
-The **Images** layout remains available when you want a media-first wall instead of thread cards.
-Legacy saved List state is interpreted as Grid, so upgrades do not strand an old preference.
+For a media-first wall of every file from the boards you follow, open the **Media** tab.
 
 ### Feed behavior
 

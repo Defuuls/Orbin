@@ -49,7 +49,7 @@ does not post, reply, or create threads.
 - **Offline awareness.** Network state and typed failures are surfaced explicitly rather than
   turning failed requests into unexplained blank screens.
 - **Three tabs.** Feed, Media and Boards make up the bottom navigation. Settings opens from the gear
-  in the Feed header; Search and Downloads open from Settings › Privacy & Data.
+  in the Feed header, and holds only a few rows; Search and Downloads open from the bottom of it.
 
 ### Thread reader
 
@@ -58,16 +58,16 @@ does not post, reply, or create threads.
 - Inline images/video, multi-attachment carousels, collapsible posts, thread statistics, and a
   dedicated Files view for scanning every attachment.
 - Reading history and persistent scroll-position restore.
-- Watch threads and receive new-reply notifications with configurable quiet hours.
+- Watch threads and receive new-reply notifications.
 - **Save links.** Thread external links can be deduplicated and exported as a plain-text file to
-  the configured saved-media folder, which defaults to `Downloads/Orbin`.
-- Download thread media using the same configurable storage hierarchy as normal downloads.
+  `Downloads/Orbin`.
+- Download thread media into `Downloads/Orbin`, organised by board and thread.
 
 ### Media
 
 - Coil 3 image loading and Media3 video playback with caching, progressive loading, zoom,
-  swipe-gallery navigation, preloading, autoplay, mute controls, fullscreen playback, and native
-  downloads.
+  swipe-gallery navigation, preloading, autoplay, mute controls (an unmute carries to the next
+  video until Orbin closes), double-tap to skip 5 seconds, fullscreen playback, and native downloads.
 - **All media** provides one continuous wall of media discovered across board catalogs.
 - Optional **deep scan** follows threads to discover media attached to replies.
 - Download organization can be flat, by board, by thread, or board then thread.

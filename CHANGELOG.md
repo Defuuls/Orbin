@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Settings is now one short list in three untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data; then Downloads and Search.
+- First run is one step: pick the boards to follow, then start browsing.
+- Video starts muted, and an unmute carries over to the next video until Orbin closes.
+
+### Removed
+- The Color scheme, Text size, Mute by default, Downloads folder and In-app updates rows. Orbin uses one palette, follows the system font size, and saves downloads to `Downloads/Orbin`. The update check is always available. The Banana, Apple and imageboard palettes are gone.
+- Onboarding's Display, Playback, Privacy and Done steps, and its favorite-board stars.
+
 ### Removed
 - About twenty stored preferences that still changed behavior but could no longer be edited anywhere, now fixed at their previous defaults: hidden and muted tags, hide text-only threads, the harsh content filter, the media-type filter, thread presentation, thumbnail size, fullscreen video and auto-rotate, the global feed thread limit, image cache size, download folder layout, DNS resolver, user agent, network timeouts, full-screen feed chrome, thread-watch notification toggle and quiet hours, and media scrolling in threads and catalogs. The permanent content filter is unchanged, and older backups that contain these keys still import.
 - The command palette, which nothing could open any more, along with the settings search index and the feed filter it drove.

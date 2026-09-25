@@ -20,10 +20,20 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
-    /** Three headings, in the order the list draws them. */
+    /** The whole surface: preferences, then data, then places, with nothing else on it. */
     @Test
-    fun `the list is the three headings and nothing else`() {
-        assertThat(buildModel().groups.map { it.first }).containsExactly(GENERAL, DISPLAY, PRIVACY).inOrder()
+    fun `settings is a short list with nothing hidden behind it`() {
+        assertThat(buildModel(includePlaces = true).groups.map { rows -> rows.second.map { it.id } })
+            .containsExactly(
+                listOf("hideNsfw", "themeMode", "amoled", "biometric"),
+                listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
+                listOf("openDownloads", "openSearch"),
+            ).inOrder()
+    }
+
+    @Test
+    fun `the cards carry no headings`() {
+        assertThat(buildModel().groups.map { it.first }.toSet()).containsExactly(NO_HEADING)
     }
 
     /** No heading may end up empty: a heading with nothing under it is a heading you scroll past. */
@@ -40,28 +50,19 @@ class SettingsIndexTest {
         assertThat(duplicates).isEmpty()
     }
 
-    /** The updater's own check only exists while the updater does. */
-    @Test
-    fun `the update check appears only when in-app updates are on`() {
-        assertThat(rowIds(internalUpdater = true)).contains("checkUpdates")
-        assertThat(rowIds(internalUpdater = false)).doesNotContain("checkUpdates")
-    }
-
-    private fun rowIds(internalUpdater: Boolean) =
-        buildModel(internalUpdater).groups.flatMap { it.second }.map { it.id }
-
     private fun allRows() = buildModel().groups.flatMap { it.second }
 
     /**
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(internalUpdater: Boolean = true) =
+    private fun buildModel(includePlaces: Boolean = false) =
         buildSettings(
             settings =
                 com.orbin.core.model
-                    .AppSettings(internalUpdaterEnabled = internalUpdater),
+                    .AppSettings(),
             vm = io.mockk.mockk(relaxed = true),
             updateState = "Up to date",
+            includePlaces = includePlaces,
         )
 }

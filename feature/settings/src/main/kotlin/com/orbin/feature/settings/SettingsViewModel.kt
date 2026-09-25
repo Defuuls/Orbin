@@ -6,7 +6,6 @@ import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
@@ -97,10 +96,6 @@ class SettingsViewModel
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
 
-        fun setFontScale(scale: Float) = update { repository.setFontScale(scale) }
-
-        fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
-
         fun setFeedSort(sort: FeedSort) = update { repository.setFeedSort(sort) }
 
         fun refreshImageCacheUsage() =
@@ -114,15 +109,9 @@ class SettingsViewModel
                 _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
             }
 
-        fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
-
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
         fun setSaveRecentSearches(enabled: Boolean) = update { repository.setSaveRecentSearches(enabled) }
-
-        fun setInternalUpdater(enabled: Boolean) = update { repository.setInternalUpdaterEnabled(enabled) }
-
-        fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
 
         fun clearLocalActivity() =
             update {

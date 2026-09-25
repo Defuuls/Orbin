@@ -3,7 +3,6 @@ package com.orbin.uinext
 import androidx.compose.ui.graphics.Color
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import org.junit.Test
 import kotlin.math.pow
 
@@ -59,40 +58,12 @@ class PaletteContrastTest {
             LightPalette,
             DarkPalette,
             AmoledPalette,
-            bananaPalette(dark = false),
-            bananaPalette(dark = true),
-            applePalette(dark = false),
-            applePalette(dark = true),
         ).forEach { palette ->
             val ink = ratio(palette.ink, palette.background)
             val muted = ratio(palette.muted, palette.background)
             val faint = ratio(palette.faint, palette.background)
             assertThat(ink).isGreaterThan(muted)
             assertThat(muted).isGreaterThan(faint)
-        }
-    }
-
-    @Test
-    fun `banana palette clears AA on light, dark and AMOLED grounds`() {
-        listOf(
-            bananaPalette(dark = false) to "banana light",
-            bananaPalette(dark = true) to "banana dark",
-            bananaPalette(dark = true, amoled = true) to "banana amoled",
-        ).forEach { (palette, name) ->
-            assertPalette(palette, name)
-            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
-        }
-    }
-
-    @Test
-    fun `apple palette clears AA on light, dark and AMOLED grounds`() {
-        listOf(
-            applePalette(dark = false) to "apple light",
-            applePalette(dark = true) to "apple dark",
-            applePalette(dark = true, amoled = true) to "apple amoled",
-        ).forEach { (palette, name) ->
-            assertPalette(palette, name)
-            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
         }
     }
 
@@ -165,27 +136,6 @@ class PaletteContrastTest {
             return if (c <= 0.03928) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
         }
         return 0.2126 * channel(color.red) + 0.7152 * channel(color.green) + 0.0722 * channel(color.blue)
-    }
-
-    @Test
-    fun `exposed color themes clear AA on their Next grounds`() {
-        val variants =
-            listOf(
-                ColorSchemeVariant.BANANA,
-                ColorSchemeVariant.APPLE,
-                ColorSchemeVariant.YOTSUBA,
-                ColorSchemeVariant.YOTSUBA_P,
-                ColorSchemeVariant.WAROSU,
-                ColorSchemeVariant.MIKU,
-                ColorSchemeVariant.PENUMBRA,
-                ColorSchemeVariant.ROYAL,
-                ColorSchemeVariant.LAIN,
-            )
-        variants.forEach { variant ->
-            val palette = variant.toNextPalette(darkPreference = false, amoled = false)
-            assertPalette(palette, variant.name)
-            assertRatio("${variant.name} onAccent on accent", palette.onAccent, palette.accent)
-        }
     }
 
     private companion object {

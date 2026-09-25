@@ -65,7 +65,6 @@ fun GalleryScreen(
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val media by viewModel.media.collectAsStateWithLifecycle()
-    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -119,7 +118,6 @@ fun GalleryScreen(
                             url = item.sourceUrl,
                             modifier = Modifier.fillMaxSize(),
                             autoPlay = true,
-                            muted = settings.muteByDefault,
                             // Only the settled page plays, so swiping away stops its audio.
                             active = isActive,
                             // Only the active page controls the gallery chrome.

@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import org.junit.Test
@@ -39,40 +38,6 @@ class UniformityTest {
     }
 
     @Test
-    fun `every color scheme variant resolves to a valid next palette in all modes`() {
-        ColorSchemeVariant.entries.forEach { variant ->
-            val light = variant.toNextPalette(darkPreference = false, amoled = false)
-            val dark = variant.toNextPalette(darkPreference = true, amoled = false)
-            val amoled = variant.toNextPalette(darkPreference = true, amoled = true)
-
-            assertThat(light).isNotNull()
-            assertThat(dark).isNotNull()
-            assertThat(amoled).isNotNull()
-
-            if (variant == ColorSchemeVariant.BANANA ||
-                variant == ColorSchemeVariant.APPLE ||
-                variant == ColorSchemeVariant.ORBIN
-            ) {
-                assertThat(light.dark).isFalse()
-                assertThat(dark.dark).isTrue()
-                assertThat(amoled.dark).isTrue()
-                assertThat(amoled.amoled).isTrue()
-                assertThat(amoled.background).isEqualTo(Color.Black)
-            }
-
-            // Primary text must achieve WCAG AA (4.5:1)
-            assertContrast("${variant.name} light ink", light.ink, light.background)
-            assertContrast("${variant.name} dark ink", dark.ink, dark.background)
-            assertContrast("${variant.name} amoled ink", amoled.ink, amoled.background)
-
-            // Interactive accent must achieve WCAG AA (4.5:1)
-            assertContrast("${variant.name} light onAccent", light.onAccent, light.accent)
-            assertContrast("${variant.name} dark onAccent", dark.onAccent, dark.accent)
-            assertContrast("${variant.name} amoled onAccent", amoled.onAccent, amoled.accent)
-        }
-    }
-
-    @Test
     fun `all board hues maintain WCAG AA contrast across light and dark grounds`() {
         BoardHues.forEachIndexed { index, hue ->
             val lightRatio = contrastRatio(hue.light, LightPalette.background)
@@ -99,17 +64,6 @@ class UniformityTest {
             NextDestination.MEDIA,
             NextDestination.SETTINGS,
         )
-    }
-
-    private fun assertContrast(
-        label: String,
-        foreground: Color,
-        background: Color,
-    ) {
-        val r = contrastRatio(foreground, background)
-        assertWithMessage("$label failed contrast floor (got $r, needed 4.5)")
-            .that(r)
-            .isAtLeast(4.5f)
     }
 
     private fun contrastRatio(

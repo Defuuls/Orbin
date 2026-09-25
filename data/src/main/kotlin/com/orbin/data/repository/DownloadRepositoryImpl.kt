@@ -5,10 +5,8 @@ package com.orbin.data.repository
 import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
-import android.provider.DocumentsContract
 import android.provider.MediaStore
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
@@ -19,9 +17,7 @@ import com.orbin.core.model.PermanentContentFilter
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.domain.repository.DownloadRepository
-import com.orbin.domain.repository.SettingsRepository
 import com.orbin.network.NetworkConfig
-import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
@@ -29,12 +25,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URI
 import javax.inject.Inject
@@ -52,8 +46,6 @@ class DownloadRepositoryImpl
     constructor(
         @ApplicationContext private val context: Context,
         private val dao: DownloadDao,
-        private val settingsRepository: SettingsRepository,
-        @BaseOkHttp private val okHttpClient: OkHttpClient,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : DownloadRepository {
         private val downloadManager: DownloadManager
@@ -105,13 +97,8 @@ class DownloadRepositoryImpl
                 // The file name comes from the remote post; sanitise it so it can never escape the
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)
-                val settings = settingsRepository.settings.first()
                 val relativeDir =
                     buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
-                val customFolderUri = settings.downloadFolderUri
-                if (customFolderUri.isNotBlank()) {
-                    return@withContext downloadToFolder(uri, safeName, customFolderUri, relativeDir)
-                }
 
                 val request =
                     DownloadManager
@@ -144,135 +131,6 @@ class DownloadRepositoryImpl
                 id
             }
 
-        private suspend fun downloadToFolder(
-            uri: Uri,
-            safeName: String,
-            folderUri: String,
-            relativeDir: String,
-        ): Long {
-            val id = -System.currentTimeMillis()
-            dao.upsert(
-                DownloadEntity(
-                    id = id,
-                    url = uri.toString(),
-                    fileName = safeName,
-                    status = DownloadStatus.RUNNING.name,
-                    createdAtMillis = System.currentTimeMillis(),
-                    relativeDir = relativeDir,
-                ),
-            )
-
-            val parentDirUri =
-                resolveTargetDirectory(folderUri.toParentDocumentUri(), relativeDir)
-                    ?: return id.also { dao.updateStatus(id, DownloadStatus.FAILED.name) }
-            val target =
-                DocumentsContract.createDocument(
-                    context.contentResolver,
-                    parentDirUri,
-                    MIME_OCTET_STREAM,
-                    safeName,
-                ) ?: return id.also { dao.updateStatus(id, DownloadStatus.FAILED.name) }
-
-            runCatching {
-                okHttpClient
-                    .newCall(Request.Builder().url(uri.toString()).build())
-                    .execute()
-                    .use { response ->
-                        if (!response.isSuccessful) error("Download failed with HTTP ${response.code}")
-                        val body = response.body
-                        val total = body.contentLength().takeIf { it > 0L }
-                        directProgress.value =
-                            directProgress.value + (id to TransferSnapshot(DownloadStatus.RUNNING, 0L, total))
-                        context.contentResolver.openOutputStream(target)?.use { output ->
-                            body.byteStream().use { input ->
-                                val buffer = ByteArray(COPY_BUFFER_SIZE)
-                                var downloaded = 0L
-                                while (true) {
-                                    val count = input.read(buffer)
-                                    if (count < 0) break
-                                    output.write(buffer, 0, count)
-                                    downloaded += count
-                                    directProgress.value =
-                                        directProgress.value +
-                                        (id to TransferSnapshot(DownloadStatus.RUNNING, downloaded, total))
-                                }
-                            }
-                        } ?: error("Unable to open selected folder")
-                    }
-            }.onSuccess {
-                dao.updateStatus(id, DownloadStatus.COMPLETED.name)
-            }.onFailure {
-                dao.updateStatus(id, DownloadStatus.FAILED.name)
-            }
-            directProgress.value = directProgress.value - id
-            return id
-        }
-
-        /**
-         * Walks [relativeDir]'s segments under [rootUri], creating each subdirectory (via SAF) the
-         * first time it's needed and reusing it on every later download into the same board/thread.
-         * Returns null instead of falling back to an ancestor if any requested directory cannot be
-         * resolved, so organization failures can never silently flatten a download into the root.
-         */
-        private fun resolveTargetDirectory(
-            rootUri: Uri,
-            relativeDir: String,
-        ): Uri? {
-            if (relativeDir.isBlank()) return rootUri
-            var current = rootUri
-            for (segment in relativeDir.trim('/').split('/')) {
-                current = findOrCreateDirectory(current, segment) ?: return null
-            }
-            return current
-        }
-
-        private fun findOrCreateDirectory(
-            parentUri: Uri,
-            name: String,
-        ): Uri? {
-            val existingId = findChildDirectoryId(parentUri, name)
-            if (existingId != null) return DocumentsContract.buildDocumentUriUsingTree(parentUri, existingId)
-            return DocumentsContract.createDocument(
-                context.contentResolver,
-                parentUri,
-                DocumentsContract.Document.MIME_TYPE_DIR,
-                name,
-            )
-        }
-
-        private fun findChildDirectoryId(
-            parentUri: Uri,
-            name: String,
-        ): String? {
-            val childrenUri =
-                DocumentsContract.buildChildDocumentsUriUsingTree(parentUri, DocumentsContract.getDocumentId(parentUri))
-            val projection =
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE,
-                )
-            return runCatching {
-                context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
-                    cursor.firstMatchingDirectoryId(name)
-                }
-            }.getOrNull()
-        }
-
-        private fun Cursor.firstMatchingDirectoryId(name: String): String? {
-            while (moveToNext()) {
-                val mime = getString(2)
-                val displayName = getString(1)
-                if (mime == DocumentsContract.Document.MIME_TYPE_DIR && displayName == name) return getString(0)
-            }
-            return null
-        }
-
-        private fun String.toParentDocumentUri(): Uri {
-            val treeUri = Uri.parse(this)
-            return DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
-        }
-
         /** Reduce a remote-supplied name to a safe basename: no separators, traversal or controls. */
         private fun sanitizeFileName(raw: String): String {
             val base = raw.substringAfterLast('/').substringAfterLast('\\')
@@ -300,15 +158,10 @@ class DownloadRepositoryImpl
         override suspend fun retry(id: Long): Long =
             withContext(ioDispatcher) {
                 val entity = dao.getById(id) ?: return@withContext SKIPPED_ID
-                val settings = settingsRepository.settings.first()
-                val customFolderUri = settings.downloadFolderUri
                 val uri = Uri.parse(entity.url)
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
                 dao.updateStatus(id, DownloadStatus.QUEUED.name)
-                if (customFolderUri.isNotBlank()) {
-                    return@withContext downloadToFolder(uri, entity.fileName, customFolderUri, entity.relativeDir)
-                }
 
                 val request =
                     DownloadManager
@@ -348,22 +201,7 @@ class DownloadRepositoryImpl
             content: String,
         ): Boolean =
             withContext(ioDispatcher) {
-                val folderUri = settingsRepository.settings.first().downloadFolderUri
-                if (folderUri.isBlank()) {
-                    return@withContext writeTextToDefaultDownloads(fileName, content)
-                }
-                val target =
-                    DocumentsContract.createDocument(
-                        context.contentResolver,
-                        folderUri.toParentDocumentUri(),
-                        MIME_TEXT_PLAIN,
-                        sanitizeFileName(fileName),
-                    ) ?: return@withContext false
-                runCatching {
-                    context.contentResolver.openOutputStream(target)?.use { output ->
-                        output.write(content.toByteArray())
-                    } ?: error("Unable to open selected folder")
-                }.isSuccess
+                writeTextToDefaultDownloads(fileName, content)
             }
 
         private fun writeTextToDefaultDownloads(
