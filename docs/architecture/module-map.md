@@ -24,7 +24,8 @@ large repository locally understandable without tracing the whole dependency gra
 | `provider:vichan` | Vichan/4chan protocol adapter | Vichan JSON/HTML quirks change |
 | `provider:lynxchan` | LynxChan/BBWChan protocol adapter | LynxChan JSON/HTML quirks change |
 | `core:model` | immutable domain entities and pure sorting/filtering | a concept or pure rule belongs everywhere |
-| `core:common` | result types, dispatchers, cross-cutting primitives | shared non-UI infrastructure changes |
+| `core:common` | result types and connectivity contracts, shared with iOS | a platform-neutral primitive changes |
+| `core:common-android` | dispatcher qualifiers + Hilt module, external links, app-lock signal | Android-side cross-cutting infrastructure changes |
 | `core:designsystem` | reusable visual tokens/components | shared Material styling changes |
 | `core:ui` | shared domain-aware Compose primitives | reusable rendering such as parsed post comments changes |
 | `core:testing` | fakes, fixtures and test helpers | multiple modules need the same test setup |

@@ -1,20 +1,19 @@
 plugins {
-    alias(libs.plugins.orbin.android.library)
-    alias(libs.plugins.orbin.android.hilt)
+    alias(libs.plugins.orbin.kmp.library)
 }
 
-android {
-    namespace = "com.orbin.core.common"
-}
-
-dependencies {
-    api(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.browser)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
+// Platform-neutral primitives shared with iOS. Android and Hilt pieces live in
+// :core:common-android.
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
+        }
+    }
 }

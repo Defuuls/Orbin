@@ -18,7 +18,7 @@ dependencies {
     api(project(":domain"))
     implementation(project(":provider:api"))
     implementation(project(":network"))
-    implementation(project(":core:common"))
+    implementation(project(":core:common-android"))
     implementation(project(":core:model"))
 
     implementation(libs.androidx.core.ktx)

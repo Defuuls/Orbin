@@ -16,7 +16,7 @@ android {
 dependencies {
     api(project(":core:designsystem"))
     implementation(project(":core:model"))
-    implementation(project(":core:common"))
+    implementation(project(":core:common-android"))
 
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)

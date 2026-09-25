@@ -16,7 +16,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
-    implementation(project(":core:common"))
+    implementation(project(":core:common-android"))
     implementation(project(":domain"))
     implementation(project(":network"))
     // VideoPlayer chrome uses NextSlider / Next progress / NextIconAction / InlineAction.
