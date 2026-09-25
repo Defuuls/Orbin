@@ -1,0 +1,68 @@
+name: iOS
+
+# Builds the iOS app on macOS: the shared Kotlin tests on the iOS simulator, then the Xcode
+# project for the simulator. No signing, so it needs no secrets and runs on every PR that can
+# change what the iOS app compiles. Uploading to TestFlight is testflight.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'app-ios/**'
+      - 'iosApp/**'
+      - 'ui-next/**'
+      - 'core/designsystem/**'
+      - 'core/model/**'
+      - 'core/common/**'
+      - 'domain/**'
+      - 'provider/**'
+      - 'build-logic/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: iOS app (simulator)
+    # Apple silicon, so the arm64 simulator tests run natively.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+
+      - name: Shared tests on the iOS simulator
+        run: ./gradlew :app-ios:iosSimulatorArm64Test
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen --spec iosApp/project.yml
+
+      - name: Build the app for the simulator
+        run: >-
+          xcodebuild build
+          -project iosApp/Orbin.xcodeproj
+          -scheme Orbin
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test reports
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-test-reports
+          path: app-ios/build/reports/tests/**
+          if-no-files-found: ignore

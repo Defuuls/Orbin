@@ -63,6 +63,9 @@ graph TD
     core_ui --> core_designsystem[core:designsystem]
 
     app --> ui_next[ui-next]
+    app_ios[app-ios] --> ui_next
+    app_ios --> provider_vichan
+    app_ios --> provider_lynxchan
     feature_home --> ui_next
     feature_board --> ui_next
     feature_thread --> ui_next

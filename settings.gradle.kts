@@ -28,6 +28,7 @@ rootProject.name = "Orbin"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":app")
+include(":app-ios")
 include(":benchmark")
 
 include(":core:common")

@@ -23,7 +23,11 @@ tests and Android lint. The cheap structural checks fail before Gradle work begi
 - `core:model` has no project dependencies and imports no Android or outer-layer Orbin package.
 - Multiplatform modules (`core:model`, `core:common`, `domain`, every `provider:*`, and the
   shared UI in `core:designsystem` and `ui-next`) compile for iOS in the **Shared code (iOS targets)**
-  CI job, so JVM-only APIs cannot enter code an iOS app will share.
+  CI job, so JVM-only APIs cannot enter code an iOS app will share. The **iOS** workflow then runs
+  `:app-ios`'s tests on the iOS simulator and builds the Xcode app, on macOS.
+- `:app-ios` is the iOS composition root: nothing depends on it, and it depends only on modules
+  that build for iOS (never `:app`, `:data`, `:network`, `:media`, `core:ui`, `core:common-android`
+  or a feature).
 - `domain` points inward to `core:*` and `provider:api`, never concrete infrastructure.
 - feature modules do not depend on other feature modules.
 - provider implementations do not depend on app, features, data, media, UI, or another provider

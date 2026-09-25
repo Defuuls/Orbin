@@ -144,3 +144,13 @@ jobs:
             release-staging/*.sha256
             release-staging/*-mapping.txt
           fail_on_unmatched_files: true
+
+  # Upload the same release to TestFlight for the iOS app. It skips itself, with a notice, until
+  # the App Store Connect secrets are configured (docs/ios.md).
+  testflight:
+    name: TestFlight
+    needs: release
+    uses: ./.github/workflows/testflight.yml
+    secrets: inherit
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
