@@ -65,6 +65,7 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.ksp) apply false
@@ -104,6 +105,12 @@ subprojects {
         parallel = true
         config.setFrom(rootProject.files("config/detekt/detekt.yml"))
         basePath = rootProject.projectDir.absolutePath
+    }
+    // detekt's default source set is src/main and src/test; multiplatform code lives elsewhere.
+    pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+        extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+            source.from("src/commonMain/kotlin", "src/jvmTest/kotlin")
+        }
     }
 
     extensions.configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {

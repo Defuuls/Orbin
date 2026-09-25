@@ -1,5 +1,7 @@
 package com.orbin.core.model
 
+import kotlin.time.Clock
+
 /** Scope a search runs against. Local scopes work offline; remote depends on provider support. */
 enum class SearchScope {
     /** Search within already-loaded posts of the current thread. */
@@ -53,5 +55,5 @@ data class SavedSearch(
     val text: String,
     val board: BoardId? = null,
     val filters: SearchFilters = SearchFilters(),
-    val createdAtMillis: Long = System.currentTimeMillis(),
+    val createdAtMillis: Long = Clock.System.now().toEpochMilliseconds(),
 )
