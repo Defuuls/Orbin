@@ -197,7 +197,6 @@ fun NextFeedScreen(
                         FeedScreen(
                             rows = rows,
                             subtitle = statusSubtitle,
-                            railDetail = boardCountLabel(state.boards.size),
                             showRail = showRail,
                             headerContent = headerContent,
                             query = localQuery,

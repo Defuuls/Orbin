@@ -28,7 +28,6 @@ fun FeedScreen(
     rows: List<FeedRow>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    railDetail: String? = null,
     showRail: Boolean = true,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
@@ -107,7 +106,6 @@ fun FeedScreen(
         NextScaffold(
             where = feedTitle.takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
-            detail = railDetail.takeIf { !hasTabs },
             railVisible = railVisible,
             destination = NextDestination.FEED.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },
@@ -171,6 +169,7 @@ fun FeedScreen(
                             onOpenRow,
                             thumbnail,
                             activityText = activityText,
+                            showBoard = !groupByBoard,
                         )
                     }
                 }

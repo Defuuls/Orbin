@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,7 +62,6 @@ fun BoardScreen(
         NextScaffold(
             where = board.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
-            detail = stringResource(R.string.next_rail_catalog),
             railVisible = railVisible,
         ) { bottomPad ->
             val header: @Composable () -> Unit = {
@@ -125,7 +123,7 @@ fun BoardScreen(
                     },
                 ) { index ->
                     rowAt(index)?.let { row ->
-                        FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail)
+                        FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail, showBoard = false)
                     }
                 }
             }

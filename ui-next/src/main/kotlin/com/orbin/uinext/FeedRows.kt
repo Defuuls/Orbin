@@ -79,6 +79,9 @@ internal fun FeedGridCell(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
     activityText: @Composable (FeedRow) -> String = { it.activity },
+    // Off wherever a heading above the card already names the board: a board's catalog, or a feed
+    // grouped by board.
+    showBoard: Boolean = true,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
@@ -111,42 +114,43 @@ internal fun FeedGridCell(
                 MetaLine(stringResource(R.string.next_row_no_image), color = next.faint)
             }
         }
-        Gap(10)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BoardDot(row.board, size = 7.dp)
-            WidthSpacer(6)
-            Text(
-                text = row.board,
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (row.read) next.muted else boardHue(row.board),
-            )
-        }
-        Gap(3)
-        MetaLine(activityText(row), color = next.faint)
-        Gap(6)
-        Text(
-            text = row.subject,
-            fontSize = 15.5.sp,
-            lineHeight = 20.sp,
-            letterSpacing = (-0.15).sp,
-            fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
-            color = if (row.read) next.muted else next.ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Gap(6)
-        if (row.excerpt.isNotBlank()) {
-            MetaLine(row.excerpt, maxLines = 2, modifier = Modifier.padding(horizontal = 8.dp))
+        // One inset for every line of text, so the board, subject and counts share a left edge.
+        Column(modifier = Modifier.padding(horizontal = GRID_TEXT_INSET)) {
+            Gap(10)
+            if (showBoard) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BoardDot(row.board, size = 7.dp)
+                    WidthSpacer(6)
+                    Text(
+                        text = row.board,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (row.read) next.muted else boardHue(row.board),
+                    )
+                }
+                Gap(3)
+            }
+            MetaLine(activityText(row), color = next.faint)
             Gap(6)
+            Text(
+                text = row.subject,
+                fontSize = 15.5.sp,
+                lineHeight = 20.sp,
+                letterSpacing = (-0.15).sp,
+                fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
+                color = if (row.read) next.muted else next.ink,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Gap(6)
+            if (row.excerpt.isNotBlank()) {
+                MetaLine(row.excerpt, maxLines = 2)
+                Gap(6)
+            }
+            val threadInfo =
+                if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
+            MetaLine(threadInfo, maxLines = 2)
         }
-        val threadInfo =
-            if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-        MetaLine(
-            threadInfo,
-            maxLines = 2,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        )
         Gap(12)
     }
 }

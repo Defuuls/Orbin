@@ -1,7 +1,9 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -12,13 +14,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Scrolling down puts the rail away — on every screen that has one.
+ * Scrolling down puts the tab pill away, and secondary screens have no floating bar to put away.
  *
- * This was the feed's behaviour alone. The catalog is drawn from the same row in the same layouts
- * and kept its rail pinned, and the media wall did too, so turning the setting on produced an app
- * that reclaimed the screen on one list and not on the next. Asserted per screen rather than
- * assumed from the shared scaffold, because "they share a scaffold" is exactly the kind of claim
- * that stays true right up until one screen stops passing the flag through.
+ * The catalog and media wall used to carry a floating name bar that repeated their own large title
+ * over the content. They now draw no bottom chrome at all, the same as a thread, so the only bar
+ * left to hide is the Feed / Settings pill. The screens still report scroll direction to the shell
+ * so the system bars can follow.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
@@ -27,44 +28,28 @@ class RailHidesOnScrollTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the catalog puts its rail away as the reader scrolls down`() {
+    fun `the feed puts its tab pill away as the reader scrolls down`() {
         composeRule.setContent {
-            NextTheme {
-                BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = { ROWS.getOrNull(it) },
-                    hideRailOnScroll = true,
-                )
-            }
+            NextTheme { FeedScreen(rows = ROWS, onSettings = {}, hideRailOnScroll = true) }
         }
-        railDetail(CATALOG).assertExists()
+        composeRule.onNodeWithText(SETTINGS_TAB).assertExists()
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        railDetail(CATALOG).assertDoesNotExist()
+        composeRule.onNodeWithText(SETTINGS_TAB).assertDoesNotExist()
     }
 
     @Test
-    fun `the catalog keeps its rail when the setting is off`() {
+    fun `the feed keeps its tab pill when the setting is off`() {
         composeRule.setContent {
-            NextTheme {
-                BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = { ROWS.getOrNull(it) },
-                    hideRailOnScroll = false,
-                )
-            }
+            NextTheme { FeedScreen(rows = ROWS, onSettings = {}, hideRailOnScroll = false) }
         }
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        railDetail(CATALOG).assertExists()
+        composeRule.onNodeWithText(SETTINGS_TAB).assertExists()
     }
 
     @Test
-    fun `the media wall puts its rail away as the reader scrolls down`() {
+    fun `the media wall names itself once, with no floating bar repeating the title`() {
         composeRule.setContent {
             NextTheme {
                 MediaWallScreen(
@@ -72,19 +57,15 @@ class RailHidesOnScrollTest {
                     total = 4,
                     failed = 0,
                     cells = (1..40).map { MediaCell(id = "$it", board = "/g/") },
-                    hideRailOnScroll = true,
                 )
             }
         }
-        railDetail(SWEPT).assertExists()
-        composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
-        composeRule.waitForIdle()
-        railDetail(SWEPT).assertDoesNotExist()
+        composeRule.onAllNodesWithText("All media").assertCountEquals(1)
     }
 
     /** The screen reports the change, so the shell can take the system bars with it. */
     @Test
-    fun `a screen tells the shell when its rail goes away`() {
+    fun `a screen tells the shell when its chrome goes away`() {
         val reported = mutableListOf<Boolean>()
         composeRule.setContent {
             NextTheme {
@@ -100,21 +81,11 @@ class RailHidesOnScrollTest {
         }
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        assert(reported.contains(false)) { "expected the screen to report a hidden rail, got $reported" }
+        assert(reported.contains(false)) { "expected the screen to report hidden chrome, got $reported" }
     }
 
-    /**
-     * The rail's detail line.
-     *
-     * Matched as a substring because the rail spaces the detail off the location with two literal
-     * spaces in the string rather than with layout, so the node's text is "  catalog".
-     */
-    private fun railDetail(text: String) = composeRule.onNodeWithText(text, substring = true)
-
     private companion object {
-        /** Only the rail says these; the titles above them do not. */
-        const val CATALOG = "catalog"
-        const val SWEPT = "4/4 swept"
+        const val SETTINGS_TAB = "Settings"
 
         val ROWS =
             (1..30).map { index ->

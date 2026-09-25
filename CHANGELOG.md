@@ -8,6 +8,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Changed
 - Cleaned up the thread reader's bottom edge: removed the floating bar that repeated the thread's title and board, and the optional "↓" next-post arrow along with its "Thread scroll arrow" setting. The Top / Unread / Bottom jump buttons remain.
+- Removed the floating name bar from Boards, All media, board catalogs, Search and Downloads. Each screen's large title already names it, so the bar only repeated it over the content. Feed and Settings keep their tab bar.
+- Thread jump buttons (Top / Unread / Bottom) now sit on a solid pill, so they stay readable over the posts underneath.
+- Grid cards inset all their text evenly instead of pressing the board, time and subject against the card edge. The board label is left off cards when a heading above them already names the board.
 
 ## [146-Lemon] - 2026-09-25
 

@@ -27,8 +27,6 @@
     </plurals>
     <string name="next_autoplay_muted">Muted autoplay</string>
     <string name="next_two_pane_pick_thread">Pick a thread from the catalog</string>
-    <string name="next_rail_catalog">catalog</string>
-    <string name="next_rail_swept">%1$d/%2$d swept</string>
 
     <!-- Feed rows -->
     <plurals name="next_row_replies">
