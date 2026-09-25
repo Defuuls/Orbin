@@ -25,6 +25,8 @@ tests and Android lint. The cheap structural checks fail before Gradle work begi
   shared UI in `core:designsystem`, `core:ui` and `ui-next`) compile for iOS in the **Shared code (iOS targets)**
   CI job, so JVM-only APIs cannot enter code an iOS app will share. The **iOS** workflow then runs
   `:app-ios`'s tests on the iOS simulator and builds the Xcode app, on macOS.
+- `:storage` (the shared Room database) depends only on `:domain` and `:core:model`. Its
+  database tests run on the iOS simulator in the **iOS** workflow; `data`'s cover Android.
 - `:app-ios` is the iOS composition root: nothing depends on it, and it depends only on modules
   that build for iOS (never `:app`, `:data`, `:network`, `:media`, `core:common-android` or a
   feature).

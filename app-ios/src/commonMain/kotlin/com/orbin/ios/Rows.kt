@@ -1,6 +1,8 @@
 package com.orbin.ios
 
+import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostNode
@@ -25,7 +27,10 @@ internal fun SiteBoard.toTile(): BoardTile =
 
 internal val SiteBoard.tileId: String get() = "${provider.value}/${board.id.value}"
 
-internal fun CatalogThread.toRow(nowMillis: Long): FeedRow =
+internal fun CatalogThread.toRow(
+    nowMillis: Long,
+    read: Boolean = false,
+): FeedRow =
     FeedRow(
         id = "${key.board.value}/${key.thread.value}",
         subject = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}",
@@ -40,7 +45,31 @@ internal fun CatalogThread.toRow(nowMillis: Long): FeedRow =
         hasPreview = originalPost.attachments.isNotEmpty(),
         excerpt = originalPost.comment.plainText(),
         mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
+        read = read,
     )
+
+/** What a thread's bookmark stores, the same fields Android's thread screen writes. */
+internal fun Thread.toBookmark(nowMillis: Long): Bookmark =
+    Bookmark(
+        key = key,
+        title = displayTitle,
+        thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
+        createdAtMillis = nowMillis,
+        lastSeenReplyCount = stats.replyCount,
+        latestReplyCount = stats.replyCount,
+    )
+
+/** The reading-history entry for opening a thread, as Android records it. */
+internal fun Thread.toHistoryEntry(nowMillis: Long): HistoryEntry =
+    HistoryEntry(
+        key = key,
+        title = displayTitle,
+        thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
+        lastVisitedMillis = nowMillis,
+        lastReadPostId = originalPost.id,
+    )
+
+private val Thread.displayTitle: String get() = subject?.takeIf { it.isNotBlank() } ?: "/${key.board.value}/"
 
 internal fun Thread.toPosts(nowMillis: Long): List<NextPost> =
     allPosts.map { post ->

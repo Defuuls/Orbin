@@ -68,9 +68,10 @@ private fun CatalogDestination(
     board: SiteBoard,
 ) {
     val catalog by browser.catalog.collectAsState()
+    val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     Loaded(catalog, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-        val rows = remember(threads) { threads.map { it.toRow(now) } }
+        val rows = remember(threads, visited) { threads.map { it.toRow(now, read = it.key.thread.value in visited) } }
         val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
         BoardScreen(
             board = "/${board.board.id.value}/",
@@ -101,12 +102,22 @@ private fun CatalogThumbnail(
 @Composable
 private fun ThreadDestination(browser: Browser) {
     val thread by browser.thread.collectAsState()
-    Loaded(thread, onRetry = browser::retry) { loaded -> ThreadContent(loaded, onOpenFile = browser::openMedia) }
+    Loaded(thread, onRetry = browser::retry) { loaded ->
+        val watching by remember(loaded.key) { browser.watching(loaded.key) }.collectAsState(false)
+        ThreadContent(
+            thread = loaded,
+            watching = watching,
+            onWatch = { browser.toggleWatch(loaded) },
+            onOpenFile = browser::openMedia,
+        )
+    }
 }
 
 @Composable
 private fun ThreadContent(
     thread: Thread,
+    watching: Boolean,
+    onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
@@ -119,6 +130,8 @@ private fun ThreadContent(
         subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
         board = "/${thread.key.board.value}/",
         posts = posts,
+        watching = watching,
+        onWatch = onWatch,
         scrollToPostId = scrollTarget,
         onScrollConsumed = { scrollTarget = null },
         body = { post ->

@@ -25,6 +25,8 @@ import kotlin.test.assertTrue
 class BrowserTest {
     private val requested = mutableListOf<String>()
     private val userAgents = mutableSetOf<String?>()
+    private val bookmarks = FakeBookmarks()
+    private val history = FakeHistory()
 
     private fun browser(
         scope: CoroutineScope,
@@ -36,7 +38,7 @@ class BrowserTest {
                 userAgents += request.headers[HttpHeaders.UserAgent]
                 reply(request, routes)
             }
-        return Browser(orbinProviders(orbinHttpClient(engine)), scope)
+        return Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, scope, now = { NOW })
     }
 
     private fun MockRequestHandleScope.reply(
@@ -96,7 +98,7 @@ class BrowserTest {
             val routes = mutableMapOf<String, String?>()
             val engine =
                 MockEngine { request -> reply(request, routes) }
-            val browser = Browser(orbinProviders(orbinHttpClient(engine)), backgroundScope)
+            val browser = Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, backgroundScope)
 
             assertIs<Load.Failed>(browser.boards.settled())
 
@@ -142,7 +144,57 @@ class BrowserTest {
             assertEquals(before + 1, requested.size, "retry always fetches")
         }
 
+    @Test
+    fun openingAThreadMarksItReadOnItsBoard() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val g =
+                assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first {
+                    it.board.id.value ==
+                        "g"
+                }
+            assertEquals(emptySet(), browser.visitedThreads(g).first())
+
+            browser.openThread(ThreadKey(g.provider, g.board.id, ThreadId(7)))
+            browser.thread.settled()
+
+            assertEquals(setOf(7L), browser.visitedThreads(g).first { it.isNotEmpty() })
+            assertEquals(
+                NOW,
+                history.entries.value.values
+                    .single()
+                    .lastVisitedMillis,
+            )
+        }
+
+    @Test
+    fun theWatchActionBookmarksTheThreadAndTakesItBackOff() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val g =
+                assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first {
+                    it.board.id.value ==
+                        "g"
+                }
+            val key = ThreadKey(g.provider, g.board.id, ThreadId(7))
+            browser.openThread(key)
+            val thread = assertIs<Load.Ready<Thread>>(browser.thread.settled()).value
+
+            browser.toggleWatch(thread)
+            assertTrue(browser.watching(key).first { it })
+            assertEquals(
+                "Hi",
+                bookmarks.saved.value
+                    .getValue(key)
+                    .title,
+            )
+
+            browser.toggleWatch(thread)
+            assertFalse(browser.watching(key).first { !it })
+        }
+
     private companion object {
+        const val NOW = 1_700_000_000_000L
         const val LYNXCHAN_BOARDS = "bbw-chan.link/boards.js"
         val BOTH_SITES =
             mapOf(

@@ -49,13 +49,17 @@ gradlePlugin {
             id = "orbin.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
-        register("androidRoom") {
-            id = "orbin.android.room"
-            implementationClass = "AndroidRoomConventionPlugin"
-        }
         register("kmpLibrary") {
             id = "orbin.kmp.library"
             implementationClass = "KmpLibraryConventionPlugin"
+        }
+        register("kmpAndroid") {
+            id = "orbin.kmp.android"
+            implementationClass = "KmpAndroidLibraryConventionPlugin"
+        }
+        register("kmpRoom") {
+            id = "orbin.kmp.room"
+            implementationClass = "KmpRoomConventionPlugin"
         }
         register("kmpCompose") {
             id = "orbin.kmp.compose"

@@ -6,6 +6,9 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.HistoryRepository
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import kotlinx.coroutines.CancellationException
@@ -13,11 +16,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 /** Something being fetched: still coming, arrived, or failed with a message to show. */
 sealed interface Load<out T> {
@@ -63,13 +69,19 @@ sealed interface Route {
  * then a thread. The screens are the shared `ui-next` ones; this holds what Android keeps in its
  * ViewModels and navigation graph, in the few lines a read-only first version needs.
  *
+ * Watching a thread and the record of which threads were read go to the shared database through
+ * the same repositories Android uses, so they behave the same on both platforms.
+ *
  * Each destination loads when it is opened and again on [retry]. Going back to a page that already
  * loaded shows it as it was rather than fetching it again. Starting a new load cancels the one
  * still running, so a slow thread cannot overwrite the one the reader opened next.
  */
 class Browser(
     private val providers: List<ImageBoardProvider>,
+    private val bookmarks: BookmarkRepository,
+    private val history: HistoryRepository,
     private val scope: CoroutineScope,
+    private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
@@ -103,6 +115,24 @@ class Browser(
     fun openThread(key: ThreadKey) {
         _backStack.update { it + Route.ThreadPage(key) }
         loadCurrent()
+    }
+
+    /** Thread numbers on [board] the reader has opened, for the catalog's read state. */
+    fun visitedThreads(board: SiteBoard): Flow<Set<Long>> =
+        history.observeVisitedThreadIds(board.provider, board.board.id)
+
+    /** Whether the thread [key] is bookmarked, which the thread screen shows as "watching". */
+    fun watching(key: ThreadKey): Flow<Boolean> = bookmarks.observeBookmark(key).map { it != null }
+
+    /** Bookmarks [thread], or removes its bookmark: the thread screen's watch action, as on Android. */
+    fun toggleWatch(thread: Thread) {
+        scope.launch {
+            if (bookmarks.getBookmark(thread.key) != null) {
+                bookmarks.removeBookmark(thread.key)
+            } else {
+                bookmarks.addBookmark(thread.toBookmark(now()))
+            }
+        }
     }
 
     /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
@@ -184,7 +214,15 @@ class Browser(
     private suspend fun catalogOf(board: SiteBoard): List<CatalogThread> =
         provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board.id))
 
-    private suspend fun threadOf(key: ThreadKey): Thread = provider(key.provider).getThread(key.board, key.thread)
+    private suspend fun threadOf(key: ThreadKey): Thread =
+        provider(key.provider).getThread(key.board, key.thread).also { recordVisit(it) }
+
+    // Android records a visit when a thread loads and skips the permanently filtered ones; so does
+    // this. A failed write only loses the read mark, so it never fails the load.
+    private suspend fun recordVisit(thread: Thread) {
+        if (thread.isPermanentlyFiltered()) return
+        runCatching { history.record(thread.toHistoryEntry(now())) }
+    }
 
     private fun provider(id: ProviderId): ImageBoardProvider =
         byId[id] ?: throw ProviderException.NotFound("No site ${id.value}")

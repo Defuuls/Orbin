@@ -12,10 +12,12 @@ on:
       - 'iosApp/**'
       - 'ui-next/**'
       - 'core/designsystem/**'
+      - 'core/ui/**'
       - 'core/model/**'
       - 'core/common/**'
       - 'domain/**'
       - 'provider/**'
+      - 'storage/**'
       - 'build-logic/**'
       - 'gradle/**'
       - '*.gradle.kts'
@@ -42,7 +44,8 @@ jobs:
         uses: ./.github/actions/setup-jdk-gradle
 
       - name: Shared tests on the iOS simulator
-        run: ./gradlew :app-ios:iosSimulatorArm64Test
+        # The app's logic, and the shared database over the driver the app opens it with.
+        run: ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
 
       - name: Generate the Xcode project
         run: |
@@ -64,5 +67,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ios-test-reports
-          path: app-ios/build/reports/tests/**
+          path: |
+            app-ios/build/reports/tests/**
+            storage/build/reports/tests/**
           if-no-files-found: ignore

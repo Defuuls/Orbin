@@ -137,10 +137,10 @@ androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref =
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
-room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+# SQLite compiled into the app, for Room on iOS (Android keeps its own encrypted open helper).
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 
 # Baseline profiles
@@ -244,8 +244,9 @@ orbin-android-application = { id = "orbin.android.application" }
 orbin-android-library = { id = "orbin.android.library" }
 orbin-android-feature = { id = "orbin.android.feature" }
 orbin-android-hilt = { id = "orbin.android.hilt" }
-orbin-android-room = { id = "orbin.android.room" }
 orbin-jvm-library = { id = "orbin.jvm.library" }
 orbin-kmp-library = { id = "orbin.kmp.library" }
 orbin-kmp-compose = { id = "orbin.kmp.compose" }
+orbin-kmp-android = { id = "orbin.kmp.android" }
+orbin-kmp-room = { id = "orbin.kmp.room" }
 orbin-android-compose = { id = "orbin.android.compose" }

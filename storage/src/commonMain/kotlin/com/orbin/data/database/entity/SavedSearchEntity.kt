@@ -6,6 +6,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchFilters
+import kotlin.time.Clock
 
 @Entity("saved_searches")
 data class SavedSearchEntity(
@@ -17,7 +18,7 @@ data class SavedSearchEntity(
     val minReplies: Int? = null,
     val includeNsfw: Boolean = true,
     val contentTypes: String = "", // Comma-separated enum names
-    val createdAtMillis: Long = System.currentTimeMillis(),
+    val createdAtMillis: Long = Clock.System.now().toEpochMilliseconds(),
 ) {
     fun toDomainModel(): SavedSearch =
         SavedSearch(

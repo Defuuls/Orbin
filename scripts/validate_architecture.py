@@ -142,6 +142,12 @@ def main() -> int:
         if dep.startswith(":feature:") or dep in android_only:
             fail(errors, f":app-ios depends on Android-only module {dep}")
 
+    # :storage is the local database shared with iOS: it builds only on the domain contracts and the
+    # model, never on networking, providers or anything Android-only.
+    for dep in sorted(deps.get(":storage", set())):
+        if dep not in {":domain", ":core:model"}:
+            fail(errors, f":storage may depend only on :domain and :core:model, found {dep}")
+
     # Prevent Android/infrastructure imports from slipping into the pure core model source tree.
     model_root = module_path(":core:model") / "src/commonMain/kotlin"
     forbidden_imports = (
