@@ -12,10 +12,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
@@ -70,13 +68,22 @@ fun OrbinApp(
                 currentDestination?.hasRoute(Route.BoardGallery::class) == true ||
                 isAllMedia
         val chromeHidesOnScroll = scrollAwayScreen
-        // The banner sits above everything, so it is the thing that has to clear the status bar
-        // while it is showing — and then say so, or the screen below it pads for a status bar that
-        // is no longer over any of its content.
+        // The banner floats over the top of whatever screen is showing rather than pushing it
+        // down: losing the network should not make the whole layout jump, twice.
         val statusBarInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-        Column(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Each destination owns its insets via its own top bar / chrome; the root no longer
+            // uses Material Scaffold — NextSnackbarHost is the toast layer.
+            OrbinNavHost(
+                navController = navController,
+                modifier = Modifier.fillMaxSize(),
+                startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
+                chromeHidesOnScroll = chromeHidesOnScroll,
+                twoPaneBoardDetail = twoPaneBoardDetail,
+            )
             AnimatedVisibility(
                 visible = !isOnline,
+                modifier = Modifier.align(Alignment.TopCenter),
                 enter =
                     fadeIn(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
                         slideInVertically(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
@@ -86,26 +93,10 @@ fun OrbinApp(
             ) {
                 OfflineBanner(modifier = Modifier.windowInsetsPadding(statusBarInset))
             }
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .then(if (isOnline) Modifier else Modifier.consumeWindowInsets(statusBarInset)),
-            ) {
-                // Each destination owns its insets via its own top bar / chrome; the root no longer
-                // uses Material Scaffold — NextSnackbarHost is the toast layer.
-                OrbinNavHost(
-                    navController = navController,
-                    modifier = Modifier.fillMaxSize(),
-                    startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
-                    chromeHidesOnScroll = chromeHidesOnScroll,
-                    twoPaneBoardDetail = twoPaneBoardDetail,
-                )
-                NextSnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
+            NextSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }

@@ -41,7 +41,7 @@ For a media-first wall of every file from the boards you follow, open the **Medi
 - Hidden tags remove matching content; muted content remains visible but quieter.
 - The thread-per-board limit controls how much each subscription contributes.
 - Optional inline video autoplay starts muted and stops as the active preview leaves view.
-- Search filters subscribed content and saved searches can be reused.
+- Search is one field over the catalogs of the boards you follow.
 - Network/offline state is surfaced explicitly.
 
 ## Boards and catalogs
@@ -74,22 +74,23 @@ Supported reading behavior includes:
 Files shows the thread's attachments as a media grid. It is useful for quickly scanning or opening
 media without walking the reply tree.
 
-### Save links
+### Save links as text
 
-Use **Save links** from the thread actions to export the thread's external links. Orbin:
+Open a thread's **Files** view and tap **Save links as text** to export the thread's external links. Orbin:
 
 - gathers the links found in thread posts,
 - removes duplicates,
 - writes one URL per line to a plain-text file,
-- saves the file in the configured **Saved media folder**.
+- saves the file in `Downloads/Orbin`.
 
-The default location is `Downloads/Orbin`. The export is plaintext and may contain sensitive URLs,
+The export is plaintext and may contain sensitive URLs,
 so treat it like any other unencrypted note or text file.
 
 ### Downloads
 
-Thread media can be downloaded through Orbin's native download path. The saved-media hierarchy can
-be configured as flat, by board, by thread, or by board then thread.
+Long-press any image or video to save it, or use **Download all** above a thread's Files grid.
+Files go to `Downloads/Orbin`, in a folder per board and thread, and **Saved ›** under the All media
+title lists them.
 
 ## Gallery and media
 
@@ -125,10 +126,10 @@ matters more than speed.
 
 ## Search and filtering
 
-Orbin supports feed filtering, board/content search, saved searches, media-type filtering, hidden
-and muted tags, and poster-oriented filtering where supported by the current settings.
+Search opens from **Search threads ›** under the Boards title. It is one field over the catalogs of
+the boards you follow, and it skips NSFW boards when Settings hides them.
 
-Recent-search history is local and controlled by its privacy setting.
+Recent searches are stored on this device; **Clear local activity** in Settings deletes them.
 
 ## Providers
 

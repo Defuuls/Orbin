@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -17,7 +18,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.UpdateStatus
-import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextSnackbarResult
 import com.orbin.uinext.NextTheme
@@ -25,8 +25,11 @@ import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private const val CLEAR_ARMED_MS = 4_000L
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val BYTES_PER_MB = 1024L * 1024L
 
@@ -44,8 +47,6 @@ private const val BYTES_PER_MB = 1024L * 1024L
 fun NextSettingsScreen(
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
-    onOpenSearch: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -53,8 +54,15 @@ fun NextSettingsScreen(
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
-    var confirmClear by rememberSaveable { mutableStateOf(false) }
+    var clearArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(clearArmed) {
+        if (clearArmed) {
+            delay(CLEAR_ARMED_MS)
+            clearArmed = false
+        }
+    }
 
     // The ViewModel produces the text and never sees a SAF URI; writing the file is this side's job.
     val backupExporter =
@@ -100,10 +108,9 @@ fun NextSettingsScreen(
     }
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
-    val includePlaces = onOpenDownloads != null && onOpenSearch != null
     val model =
-        remember(settings, updateCheck, cacheLabel, includePlaces) {
-            buildSettings(settings, viewModel, updateCheck.rowValue(context), cacheLabel, includePlaces)
+        remember(settings, updateCheck, cacheLabel, clearArmed) {
+            buildSettings(settings, viewModel, updateCheck.rowValue(context), cacheLabel, clearArmed)
         }
     val groups = model.groups
 
@@ -117,23 +124,26 @@ fun NextSettingsScreen(
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
-                        when (item.id) {
-                            OPEN_DOWNLOADS_ID -> onOpenDownloads?.invoke()
-                            OPEN_SEARCH_ID -> onOpenSearch?.invoke()
-                            else ->
-                                dispatch(
-                                    item = item,
-                                    onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                                    onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                                    onClear = { confirmClear = true },
-                                    onClearImageCache = viewModel::clearImageCache,
-                                    onCheckUpdates = {
-                                        if (updateCheck != UpdateCheckState.Checking) {
-                                            viewModel.checkForUpdate(appVersionName(context))
-                                        }
-                                    },
-                                )
-                        }
+                        dispatch(
+                            item = item,
+                            onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                            onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                            onClear = {
+                                if (clearArmed) {
+                                    clearArmed = false
+                                    viewModel.clearLocalActivity()
+                                    scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
+                                } else {
+                                    clearArmed = true
+                                }
+                            },
+                            onClearImageCache = viewModel::clearImageCache,
+                            onCheckUpdates = {
+                                if (updateCheck != UpdateCheckState.Checking) {
+                                    viewModel.checkForUpdate(appVersionName(context))
+                                }
+                            },
+                        )
                     SettingKind.INFO -> Unit
                 }
             },
@@ -146,20 +156,6 @@ fun NextSettingsScreen(
                 expanded = null
             },
             modifier = modifier,
-        )
-    }
-
-    if (confirmClear) {
-        NextConfirmDialog(
-            title = "Clear local activity?",
-            message =
-                "This deletes browsing history, recent searches, and download history stored on this device.",
-            onConfirm = {
-                viewModel.clearLocalActivity()
-                confirmClear = false
-            },
-            onDismiss = { confirmClear = false },
-            confirmLabel = "Clear",
         )
     }
 }

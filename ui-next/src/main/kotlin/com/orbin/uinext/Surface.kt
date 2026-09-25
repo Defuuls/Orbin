@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -267,7 +268,7 @@ fun ScreenTitle(
             text = text,
             style = titleStyle,
             color = next.ink,
-            modifier = Modifier.testTag(NextTitleTags.LARGE),
+            modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
         )
         if (subtitle != null) {
             Text(
@@ -311,7 +312,10 @@ fun GroupedSection(
                 text = header,
                 style = NextType.labelSmall,
                 color = next.accent,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp, top = 2.dp),
+                modifier =
+                    Modifier
+                        .padding(start = 16.dp, end = 16.dp, bottom = 6.dp, top = 2.dp)
+                        .semantics { heading() },
             )
         }
         Column(

@@ -20,14 +20,13 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
-    /** The whole surface: preferences, then data, then places, with nothing else on it. */
+    /** The whole surface: preferences, then data, with nothing else on it. */
     @Test
     fun `settings is a short list with nothing hidden behind it`() {
-        assertThat(buildModel(includePlaces = true).groups.map { rows -> rows.second.map { it.id } })
+        assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
                 listOf("hideNsfw", "themeMode", "amoled", "biometric"),
                 listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
-                listOf("openDownloads", "openSearch"),
             ).inOrder()
     }
 
@@ -56,13 +55,12 @@ class SettingsIndexTest {
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(includePlaces: Boolean = false) =
+    private fun buildModel() =
         buildSettings(
             settings =
                 com.orbin.core.model
                     .AppSettings(),
             vm = io.mockk.mockk(relaxed = true),
             updateState = "Up to date",
-            includePlaces = includePlaces,
         )
 }

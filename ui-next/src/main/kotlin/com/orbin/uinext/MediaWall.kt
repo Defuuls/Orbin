@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -54,6 +55,8 @@ fun MediaWallScreen(
     onLongPress: ((MediaCell) -> Unit)? = null,
     // One board's wall instead of every board's: its name replaces "All media".
     title: String? = null,
+    // What you saved from the wall and elsewhere: Downloads, reached from the media it came from.
+    onOpenSaved: (() -> Unit)? = null,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -126,6 +129,12 @@ fun MediaWallScreen(
                                 ),
                             inset = 0.dp,
                         )
+                        if (onOpenSaved != null) {
+                            Box(modifier = Modifier.offset(x = (-4).dp)) {
+                                InlineAction(stringResource(R.string.next_media_saved), onClick = onOpenSaved)
+                            }
+                            Gap(8)
+                        }
                         if (showSizeControl) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

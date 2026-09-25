@@ -393,7 +393,7 @@ class ProposalScreenshotTest {
             ),
         )
 
-    /** Mirrors the real list: three untitled cards, preferences, data, then places. */
+    /** Mirrors the real list: two untitled cards, preferences then data. */
     private fun settingsGroups() =
         listOf(
             "" to
@@ -423,11 +423,6 @@ class ProposalScreenshotTest {
                     SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION),
                     SettingItem("exportBackup", "Export data", "Save", SettingKind.ACTION),
                     SettingItem("importBackup", "Import data", "Restore", SettingKind.ACTION),
-                ),
-            "" to
-                listOf(
-                    SettingItem("openDownloads", "Downloads", "Open ›", SettingKind.ACTION),
-                    SettingItem("openSearch", "Search", "Open ›", SettingKind.ACTION),
                 ),
         )
 

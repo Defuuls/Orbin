@@ -14,6 +14,8 @@
     <string name="next_all_media_title">All media</string>
     <string name="next_media_tab">Media</string>
     <string name="next_board_media">Media wall</string>
+    <string name="next_media_saved">Saved ›</string>
+    <string name="next_search_threads">Search threads ›</string>
     <string name="next_board_media_subtitle">Every file on this board</string>
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
