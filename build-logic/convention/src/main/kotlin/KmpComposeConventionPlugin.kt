@@ -25,6 +25,8 @@ class KmpComposeConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("org.jetbrains.kotlin.multiplatform")
                 apply("com.android.kotlin.multiplatform.library")
+                // The multiplatform Android plugin has no lint of its own; this adds the `lint` task.
+                apply("com.android.lint")
                 apply("org.jetbrains.compose")
                 apply("org.jetbrains.kotlin.plugin.compose")
             }
