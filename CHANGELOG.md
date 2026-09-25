@@ -6,64 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Improved
-- Clear local activity confirms in place: the first tap turns the row into "Tap again to delete", and a second tap within four seconds clears. The dialog is gone.
-- The offline banner floats over the top of the screen instead of pushing the layout down.
-- Screen titles and section headers are marked as headings for screen readers.
-- Spoilered media says "Spoiler" under its icon.
-- "All Boards" is now "All boards", in sentence case like every other label.
-- The thread header is a Posts / Files switch and a watch bell. Download all and Save links as text (renamed from "Save links") sit above the file grid.
-- The last post scrolls fully clear of the Top / Bottom jump pill.
-- Board catalogs refresh by pulling down, like the feed, threads and All media.
-- A catalog that fails to load says why: offline, too slow, rate-limited or gone.
-- The feed uses the same adaptive grid as board catalogs, so a phone shows two columns instead of one.
-- Very tall media is letterboxed at 4:5 in grids, so one portrait image can no longer fill the screen. The full image is one tap away.
-- Every screen title starts at the same 16dp line. Grid screens used to indent theirs by 32dp.
-- The feed and board catalogs show skeleton cards in the grid's shape while loading, instead of an empty page.
-- Board labels on media use white text on a dark scrim, so they stay readable over any image.
-
-### Added
-- **Saved ›** under the All media title opens your downloads, and **Search threads ›** under the Boards title opens search.
-- Every board catalog has a Media wall action that opens that board's files as a wall, like All media for one board.
-- The feed card in view plays its media in place: a video loops silently and a GIF animates. Only one plays at a time, never a spoilered one, and tapping still opens the thread.
-- Longer videos resume where you left off when reopened, until Orbin closes.
-- Media gestures, with no settings behind them:
-  - Double tap an image to zoom in on that spot, and again to zoom out.
-  - Long-press any image or video, in the viewer or on the All media wall, to Save, Share or Copy link.
-  - Pull past the first or last item in the viewer to close it.
-  - While dragging a video's progress bar, the time you're dragging to shows above it.
-  - Saving shows "Saving to Downloads/Orbin".
-  - Zoom resets when you swipe to another item.
-
-### Changed
-- Video is simpler. The controls are play/pause, the progress bar and mute. Clips up to 30 seconds loop and longer videos play once. Turning the phone sideways goes fullscreen. A tap shows or hides the controls immediately instead of waiting out the double-tap delay. The Loop/Once and fullscreen buttons are gone.
-- Settings is now one short list in two untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data. Downloads and Search moved to Media and Boards.
-- First run is one step: pick the boards to follow, then start browsing.
-- Video starts muted, and an unmute carries over to the next video until Orbin closes.
-
-### Removed
-- The feed's sort menu. The feed is one list with the newest activity first, and each card names its board.
-- Search's board picker, content-type filters, minimum-replies and NSFW switches, saved searches and the saved-recent-searches preference. Search is one field over the boards you follow, and it skips NSFW boards when Settings hides them.
-- The Color scheme, Text size, Mute by default, Downloads folder and In-app updates rows. Orbin uses one palette, follows the system font size, and saves downloads to `Downloads/Orbin`. The update check is always available. The Banana, Apple and imageboard palettes are gone.
-- Onboarding's Display, Playback, Privacy and Done steps, and its favorite-board stars.
-
-### Removed
-- About twenty stored preferences that still changed behavior but could no longer be edited anywhere, now fixed at their previous defaults: hidden and muted tags, hide text-only threads, the harsh content filter, the media-type filter, thread presentation, thumbnail size, fullscreen video and auto-rotate, the global feed thread limit, image cache size, download folder layout, DNS resolver, user agent, network timeouts, full-screen feed chrome, thread-watch notification toggle and quiet hours, and media scrolling in threads and catalogs. The permanent content filter is unchanged, and older backups that contain these keys still import.
-- The command palette, which nothing could open any more, along with the settings search index and the feed filter it drove.
-- Nine stored preferences that nothing read: platform theme, dynamic color, autoplay videos, autoplay in feed, preload images, preload option, preload throttle, feed refresh interval and the OCSP switch. Onboarding's "Dynamic color" switch went with them, and "AMOLED black" is now "True black" as in Settings. Older backups that still contain these keys import normally.
-
-### Fixed
-- Boards, board catalogs and All media could not be reached once you followed a board. The bottom bar is now Feed · Media · Boards, and Settings opens from a gear in the Feed header. Switching tabs no longer stacks screens, and Back from Media or Boards returns to the Feed.
-
-### Added
-- Double tap the left or right half of a video to skip back or forward 5 seconds. Repeated double taps keep adding up ("+15s"), and screen readers get matching "Skip back/forward 5 seconds" actions.
-
-### Changed
-- Cleaned up the thread reader's bottom edge: removed the floating bar that repeated the thread's title and board, and the optional "↓" next-post arrow along with its "Thread scroll arrow" setting. The Top / Unread / Bottom jump buttons remain.
-- Removed the floating name bar from Boards, All media, board catalogs, Search and Downloads. Each screen's large title already names it, so the bar only repeated it over the content. Feed and Settings keep their tab bar.
-- Thread jump buttons (Top / Unread / Bottom) now sit on a solid pill, so they stay readable over the posts underneath.
-- Grid cards inset all their text evenly instead of pressing the board, time and subject against the card edge. The board label is left off cards when a heading above them already names the board.
-
 ## [146-Lemon] - 2026-09-25
 
 ### Changed
