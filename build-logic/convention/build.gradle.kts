@@ -52,6 +52,10 @@ gradlePlugin {
             id = "orbin.android.room"
             implementationClass = "AndroidRoomConventionPlugin"
         }
+        register("kmpLibrary") {
+            id = "orbin.kmp.library"
+            implementationClass = "KmpLibraryConventionPlugin"
+        }
         register("jvmLibrary") {
             id = "orbin.jvm.library"
             implementationClass = "JvmLibraryConventionPlugin"

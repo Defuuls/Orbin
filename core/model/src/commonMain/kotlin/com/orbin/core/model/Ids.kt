@@ -1,5 +1,7 @@
 package com.orbin.core.model
 
+import kotlin.jvm.JvmInline
+
 /*
  * Strongly-typed identifiers. Using value classes instead of raw String/Long makes it
  * impossible to accidentally pass a board id where a thread id is expected, with zero runtime

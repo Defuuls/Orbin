@@ -33,7 +33,7 @@ def included_modules() -> list[str]:
 
 
 def source_imports(module: str) -> list[tuple[pathlib.Path, str]]:
-    root = module_path(module) / "src/main/kotlin"
+    root = next((module_path(module) / d for d in ("src/main/kotlin", "src/commonMain/kotlin") if (module_path(module) / d).exists()), module_path(module) / "src/main/kotlin")
     found: list[tuple[pathlib.Path, str]] = []
     if not root.exists():
         return found
@@ -134,7 +134,7 @@ def main() -> int:
             fail(errors, f"{file.relative_to(ROOT)} crosses ui-next presentation seam: {imported}")
 
     # Prevent Android/infrastructure imports from slipping into the pure core model source tree.
-    model_root = module_path(":core:model") / "src/main/kotlin"
+    model_root = module_path(":core:model") / "src/commonMain/kotlin"
     forbidden_imports = (
         "import android.",
         "import androidx.",

@@ -18,8 +18,10 @@ The architecture's executable enforcement lives in [engineering quality gates](q
 | Cross-cutting | `core:common`, `core:testing` | Result types, dispatchers, test fixtures | yes |
 
 \* `domain` is an Android library only so it can expose Paging types; it contains no Android
-framework usage. `provider:api` and `core:model` are pure-JVM modules — the build will fail if an
-Android dependency leaks into them, which keeps the boundary honest.
+framework usage. `provider:api` is a pure-JVM module, and `core:model` is Kotlin Multiplatform
+(`orbin.kmp.library`: a JVM target for Android plus iOS targets). The build fails if an Android
+dependency leaks into either, and the iOS targets also reject JVM-only APIs in `core:model`, which
+keeps the boundary honest and the module shareable with an iOS app.
 
 ## Module dependency graph
 

@@ -100,6 +100,23 @@ jobs:
           path: '**/build/reports/tests/**'
           if-no-files-found: ignore
 
+  shared-ios:
+    name: Shared code (iOS targets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+
+      # Compiles every multiplatform module for iOS on Linux (klibs only; linking an app needs
+      # macOS). This is what stops a JVM-only API slipping into code the iOS app will share.
+      - name: Compile shared modules for iOS
+        run: >-
+          ./gradlew compileKotlinIosArm64 compileKotlinIosSimulatorArm64
+          -Pkotlin.native.enableKlibsCrossCompilation=true
+          -Porbin.warningsAsErrors=true
+
   build-debug:
     name: Build debug APK
     runs-on: ubuntu-latest
