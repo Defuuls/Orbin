@@ -107,7 +107,8 @@ fun FeedScreen(
         ) { bottomPad ->
             val header: @Composable () -> Unit = {
                 FeedHeader(
-                    subtitle = subtitle ?: pluralStringResource(Res.plurals.next_feed_thread_count, rows.size, rows.size),
+                    subtitle =
+                        subtitle ?: pluralStringResource(Res.plurals.next_feed_thread_count, rows.size, rows.size),
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,

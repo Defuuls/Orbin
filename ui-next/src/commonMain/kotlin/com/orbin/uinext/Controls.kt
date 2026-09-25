@@ -64,13 +64,13 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
-import kotlin.coroutines.resume
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.compose.resources.stringResource
+import kotlin.coroutines.resume
+import kotlin.math.roundToInt
 
 /**
  * Thin continuous slider — Feed / media density.
