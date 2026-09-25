@@ -124,7 +124,6 @@ fun NextFeedScreen(
                                 visited = visited,
                                 nowMillis = System.currentTimeMillis(),
                                 filter = effectiveFilter,
-                                sort = FeedSort.ACTIVITY,
                             )
                         }
                     presentationReady = true
@@ -174,8 +173,8 @@ fun NextFeedScreen(
                             headerContent = headerContent,
                             query = localQuery,
                             onQueryChange = { localQuery = it },
-                            // One list, newest activity first; each card names its own board.
-                            groupByBoard = false,
+                            // Boards A–Z under their own headings, newest activity first within each.
+                            groupByBoard = true,
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,
@@ -231,7 +230,7 @@ internal fun feedEntries(
     visited: Set<ThreadKey>,
     nowMillis: Long,
     filter: String = "",
-    sort: FeedSort = FeedSort.ACTIVITY,
+    sort: FeedSort = FeedSort.BOARD,
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }
