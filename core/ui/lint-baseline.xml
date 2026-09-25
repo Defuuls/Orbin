@@ -1,26 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
+<issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
 
     <issue
-        id="ConstantLocale"
-        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
-        errorLine1="private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(&quot;d MMM yyyy, HH:mm&quot;, Locale.getDefault())"
-        errorLine2="                                                                                                    ~~~~~~~~~~~~~~~~~~~">
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="    val layoutInfo = listState.layoutInfo"
+        errorLine2="                               ~~~~~~~~~~">
         <location
-            file="src/main/kotlin/com/orbin/core/ui/date/DateFormatting.kt"
-            line="8"
-            column="101"/>
+            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
+            line="58"
+            column="32"/>
     </issue>
 
     <issue
-        id="ConstantLocale"
-        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
-        errorLine1="private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(&quot;d MMM yyyy&quot;, Locale.getDefault())"
-        errorLine2="                                                                                         ~~~~~~~~~~~~~~~~~~~">
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="        firstVisibleIndex = listState.firstVisibleItemIndex,"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/kotlin/com/orbin/core/ui/date/DateFormatting.kt"
-            line="9"
-            column="90"/>
+            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
+            line="63"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="    val layoutInfo = gridState.layoutInfo"
+        errorLine2="                               ~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
+            line="85"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="        firstVisibleIndex = gridState.firstVisibleItemIndex,"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
+            line="90"
+            column="39"/>
     </issue>
 
 </issues>

@@ -10,6 +10,11 @@ kotlin {
         // Never packaged into the Android app; the Android target exists so the shared logic here
         // is unit-tested on every `./gradlew test` run, without needing a Mac.
         namespace = "com.orbin.ios"
+
+        // The Compose resources below are packaged as Android assets, which needs this on.
+        androidResources {
+            enable = true
+        }
     }
 
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
@@ -22,11 +27,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":ui-next"))
+            implementation(project(":core:ui"))
             implementation(project(":core:model"))
             implementation(project(":provider:api"))
             implementation(project(":provider:vichan"))
             implementation(project(":provider:lynxchan"))
             implementation(libs.cmp.navigationevent.compose)
+            implementation(libs.cmp.resources)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor3)
             implementation(libs.ktor.client.core)
@@ -49,4 +56,9 @@ kotlin {
             implementation(libs.junit)
         }
     }
+}
+
+// The few strings the iOS app says itself; the shared screens bring their own.
+compose.resources {
+    packageOfResClass = "com.orbin.ios.resources"
 }

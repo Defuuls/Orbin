@@ -137,7 +137,7 @@ def main() -> int:
     # only use modules that build for iOS — never the Android-only app, data or feature layers.
     for module in sorted(m for m in modules if ":app-ios" in deps[m]):
         fail(errors, f"{module} depends on the iOS app module :app-ios")
-    android_only = {":app", ":data", ":network", ":media", ":core:ui", ":core:common-android", ":core:testing"}
+    android_only = {":app", ":data", ":network", ":media", ":core:common-android", ":core:testing"}
     for dep in sorted(deps.get(":app-ios", set())):
         if dep.startswith(":feature:") or dep in android_only:
             fail(errors, f":app-ios depends on Android-only module {dep}")

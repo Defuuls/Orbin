@@ -21,18 +21,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.orbin.core.ui.R
+import com.orbin.core.ui.resources.Res
+import com.orbin.core.ui.resources.ui_loading
+import com.orbin.core.ui.resources.ui_retry
+import org.jetbrains.compose.resources.stringResource
 
 /** Centered progress indicator for full-screen loading. */
 @Composable
 fun LoadingView(modifier: Modifier = Modifier) {
     // Resolved here: the semantics block is not a composable context.
-    val loadingLabel = stringResource(R.string.ui_loading)
+    val loadingLabel = stringResource(Res.string.ui_loading)
     Box(
         modifier = modifier.fillMaxSize().semantics { contentDescription = loadingLabel },
         contentAlignment = Alignment.Center,
@@ -55,7 +57,7 @@ fun ErrorView(
         modifier = modifier,
         action =
             onRetry?.let { retry ->
-                { Button(onClick = retry) { Text(stringResource(R.string.ui_retry)) } }
+                { Button(onClick = retry) { Text(stringResource(Res.string.ui_retry)) } }
             },
     )
 }

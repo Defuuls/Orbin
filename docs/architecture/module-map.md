@@ -28,7 +28,7 @@ large repository locally understandable without tracing the whole dependency gra
 | `core:common` | result types and connectivity contracts, shared with iOS | a platform-neutral primitive changes |
 | `core:common-android` | dispatcher qualifiers + Hilt module, external links, app-lock signal | Android-side cross-cutting infrastructure changes |
 | `core:designsystem` | reusable visual tokens/components (Compose Multiplatform, shared with iOS) | shared Material styling changes |
-| `core:ui` | shared domain-aware Compose primitives | reusable rendering such as parsed post comments changes |
+| `core:ui` | shared domain-aware Compose primitives (Compose Multiplatform, shared with iOS) | reusable rendering such as parsed post comments changes |
 | `core:testing` | fakes, fixtures and test helpers | multiple modules need the same test setup |
 | `benchmark` | baseline profile/performance journeys | startup/scroll performance is being measured |
 | `build-logic` | Gradle convention plugins | module build defaults need changing |

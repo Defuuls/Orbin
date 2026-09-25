@@ -115,6 +115,29 @@ class BrowserTest {
             assertIs<Load.Failed>(browser.thread.settled())
         }
 
+    @Test
+    fun goingBackShowsTheLoadedPageWithoutFetchingItAgain() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val g = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first { it.board.id.value == "g" }
+            browser.openBoard(g)
+            browser.catalog.settled()
+            browser.openThread(ThreadKey(g.provider, g.board.id, ThreadId(7)))
+            browser.thread.settled()
+            val before = requested.size
+
+            browser.openMedia(0)
+            assertEquals(Route.Media(ThreadKey(g.provider, g.board.id, ThreadId(7)), 0), browser.backStack.value.last())
+            assertTrue(browser.back(), "viewer → thread")
+            assertTrue(browser.back(), "thread → catalog")
+            assertIs<Load.Ready<*>>(browser.catalog.value)
+            assertEquals(before, requested.size, "nothing was fetched again")
+
+            browser.retry()
+            browser.catalog.settled()
+            assertEquals(before + 1, requested.size, "retry always fetches")
+        }
+
     private companion object {
         const val LYNXCHAN_BOARDS = "bbw-chan.link/boards.js"
         val BOTH_SITES =

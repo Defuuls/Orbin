@@ -1,9 +1,12 @@
 package com.orbin.ios
 
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostNode
 import com.orbin.core.model.Thread
+import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.provider.api.UriParts
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.Post as NextPost
@@ -28,10 +31,10 @@ internal fun CatalogThread.toRow(nowMillis: Long): FeedRow =
         subject = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}",
         board = key.board.value,
         activity =
-            relativeTime(
+            formatRelativeTime(
                 if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis,
                 nowMillis,
-            ),
+            ).orEmpty(),
         replies = stats.replyCount,
         media = stats.imageCount,
         hasPreview = originalPost.attachments.isNotEmpty(),
@@ -44,7 +47,7 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> =
         NextPost(
             id = post.id.value.toString(),
             number = "No.${post.id.value}",
-            time = relativeTime(post.createdAtMillis, nowMillis),
+            time = formatRelativeTime(post.createdAtMillis, nowMillis).orEmpty(),
             body = post.comment.plainText(),
             hasMedia = post.attachments.isNotEmpty(),
             replies = post.backlinks.size,
@@ -74,28 +77,28 @@ private fun StringBuilder.appendNodes(nodes: List<PostNode>) {
     }
 }
 
-private const val MINUTE_MILLIS = 60_000L
-private const val HOUR_MILLIS = 60 * MINUTE_MILLIS
-private const val DAY_MILLIS = 24 * HOUR_MILLIS
-private const val WEEK_MILLIS = 7 * DAY_MILLIS
-private const val YEAR_MILLIS = 365 * DAY_MILLIS
+/** Every file in the thread, in reading order: what the viewer pages through. */
+internal val Thread.files: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }
+
+/** Where the post with [postId]'s first file sits in [files], or null when it has none. */
+internal fun Thread.firstFileIndex(postId: String): Int? {
+    var index = 0
+    for (post in allPosts) {
+        if (post.id.value.toString() == postId) return index.takeIf { post.attachments.isNotEmpty() }
+        index += post.attachments.size
+    }
+    return null
+}
 
 /**
- * "just now", "5m", "3h", "2d", "4w", "1y" — the Android app's short relative times, with weeks and
- * years in place of its locale-formatted dates. Empty when the time is unknown or in the future.
+ * [url] if it may be handed to the browser, else null: https with a host, nothing else. The same
+ * rule as Android's `SafeExternalLinks.sanitizeHttps`, decided by the same URI grammar ([UriParts]
+ * is checked against `java.net.URI`), so a post link cannot open anything on iOS that it could not
+ * open on Android.
  */
-internal fun relativeTime(
-    epochMillis: Long,
-    nowMillis: Long,
-): String {
-    val delta = nowMillis - epochMillis
-    return when {
-        epochMillis <= 0L || delta < 0L -> ""
-        delta < MINUTE_MILLIS -> "just now"
-        delta < HOUR_MILLIS -> "${delta / MINUTE_MILLIS}m"
-        delta < DAY_MILLIS -> "${delta / HOUR_MILLIS}h"
-        delta < WEEK_MILLIS -> "${delta / DAY_MILLIS}d"
-        delta < YEAR_MILLIS -> "${delta / WEEK_MILLIS}w"
-        else -> "${delta / YEAR_MILLIS}y"
-    }
+internal fun safeExternalLink(url: String): String? {
+    val trimmed = url.trim()
+    if (!trimmed.startsWith("https://", ignoreCase = true)) return null
+    val parts = UriParts.parse(trimmed) ?: return null
+    return trimmed.takeIf { parts.scheme.equals("https", ignoreCase = true) && !parts.host.isNullOrBlank() }
 }

@@ -11,18 +11,21 @@ design system and every `ui-next` screen. What is iOS-only is small:
 
 ## What it does so far
 
-This is the first, read-only version:
+A read-only reader so far:
 
 - boards from every site (the same two the Android app ships), with one site being down never
   hiding the other's boards;
 - a board's catalog, with thumbnails;
-- a thread's posts as text, with thumbnails;
-- the system edge swipe to go back.
+- a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
+  greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
+  that open in the browser when they pass the same https check Android uses;
+- a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
+  Video and audio open in the browser, since there is no iOS player yet;
+- the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
-Not there yet: the merged feed, bookmarks and watched threads, the media viewer and video,
-search, settings, rich post text (greentext, spoilers, tappable quotes) and saved threads. Those
-depend on Android-only layers today (Room, DataStore, Media3, the feature ViewModels) and move
-over in later steps.
+Not there yet: the merged feed, bookmarks and watched threads, an in-app video player, search,
+settings and saved threads. Those depend on Android-only layers today (Room, DataStore, Media3,
+the feature ViewModels) and move over in later steps.
 
 ## Building on a Mac
 

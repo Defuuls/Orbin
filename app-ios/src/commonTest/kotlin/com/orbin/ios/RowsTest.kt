@@ -1,16 +1,26 @@
 package com.orbin.ios
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntSize
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.InlineStyle
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
+import com.orbin.core.model.Post
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
 import com.orbin.core.model.ProviderId
-import kotlinx.collections.immutable.persistentListOf
+import com.orbin.core.model.Thread
+import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 
 class RowsTest {
     @Test
@@ -34,19 +44,6 @@ class RowsTest {
     }
 
     @Test
-    fun relativeTimesMatchAndroidsShortForms() {
-        val now = 1_000_000_000_000L
-        assertEquals("just now", relativeTime(now - 30_000, now))
-        assertEquals("5m", relativeTime(now - 5 * 60_000, now))
-        assertEquals("3h", relativeTime(now - 3 * 3_600_000, now))
-        assertEquals("2d", relativeTime(now - 2 * 86_400_000L, now))
-        assertEquals("4w", relativeTime(now - 28 * 86_400_000L, now))
-        assertEquals("1y", relativeTime(now - 400 * 86_400_000L, now))
-        assertEquals("", relativeTime(0, now), "unknown time")
-        assertEquals("", relativeTime(now + 60_000, now), "clock skew")
-    }
-
-    @Test
     fun theSameBoardOnTwoSitesGetsTwoTiles() {
         val random = Board(BoardId("b"), "Random")
         val one = SiteBoard(ProviderId("one"), "One", random).toTile()
@@ -56,4 +53,68 @@ class RowsTest {
         assertEquals("/b/", one.path)
         assertEquals("Random · One", one.title)
     }
+
+    @Test
+    fun filesAreIndexedAcrossTheThreadInReadingOrder() {
+        val thread =
+            Thread(
+                key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
+                originalPost = post(1, files = 2),
+                replies = persistentListOf(post(2, files = 0), post(3, files = 1)),
+            )
+
+        assertEquals(listOf("1-0", "1-1", "3-0"), thread.files.map { it.id })
+        assertEquals(0, thread.firstFileIndex("1"))
+        assertEquals(2, thread.firstFileIndex("3"))
+        assertNull(thread.firstFileIndex("2"), "a post without files")
+        assertNull(thread.firstFileIndex("9"), "a post not in the thread")
+    }
+
+    @Test
+    fun onlyHttpsLinksWithAHostMayBeOpened() {
+        assertEquals("https://example.com/a", safeExternalLink(" https://example.com/a "))
+        assertEquals("HTTPS://example.com", safeExternalLink("HTTPS://example.com"))
+        listOf(
+            "http://example.com",
+            "https://",
+            "https:///path",
+            "javascript:alert(1)",
+            "data:text/html,hi",
+            "file:///etc/passwd",
+            "intent://x#Intent;end",
+            "example.com",
+            "",
+        ).forEach { assertNull(safeExternalLink(it), it) }
+    }
+
+    @Test
+    fun aZoomedImageCannotBeDraggedPastItsEdges() {
+        val size = IntSize(100, 200)
+
+        assertEquals(Offset.Zero, zoomedOffset(Offset(40f, 40f), 1f, size), "not zoomed: centred")
+        assertEquals(Offset(50f, -100f), zoomedOffset(Offset(80f, -300f), 2f, size), "clamped to the overflow")
+        assertEquals(Offset(10f, 20f), zoomedOffset(Offset(10f, 20f), 2f, size), "within bounds: kept")
+    }
+
+    private fun post(
+        id: Long,
+        files: Int,
+    ): Post =
+        Post(
+            id = PostId(id),
+            board = BoardId("g"),
+            threadId = ThreadId(1),
+            isOriginalPost = id == 1L,
+            attachments =
+                List(files) { index ->
+                    MediaAttachment(
+                        id = "$id-$index",
+                        originalFileName = "f",
+                        extension = "jpg",
+                        type = MediaType.IMAGE,
+                        sourceUrl = "https://i.example/$id-$index.jpg",
+                        thumbnailUrl = "https://i.example/$id-${index}s.jpg",
+                    )
+                }.toPersistentList(),
+        )
 }
