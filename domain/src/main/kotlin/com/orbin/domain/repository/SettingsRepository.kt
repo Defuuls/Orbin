@@ -22,8 +22,6 @@ import kotlinx.coroutines.flow.Flow
 interface SettingsRepository {
     val settings: Flow<AppSettings>
 
-    suspend fun setPersonalizedHomeFeed(enabled: Boolean)
-
     suspend fun setHiddenTags(tags: String)
 
     suspend fun setMutedTags(tags: String)

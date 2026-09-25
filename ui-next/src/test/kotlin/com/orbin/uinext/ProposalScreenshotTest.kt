@@ -303,9 +303,6 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
-                onOpenSearch = {},
-                onOpenDownloads = {},
-                onOpenCommands = {},
             )
         }
 
@@ -317,9 +314,6 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
-                onOpenSearch = {},
-                onOpenDownloads = {},
-                onOpenCommands = {},
             )
         }
 
@@ -336,9 +330,6 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
-                onOpenSearch = {},
-                onOpenDownloads = {},
-                onOpenCommands = {},
             )
         }
 
@@ -351,9 +342,6 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
-                onOpenSearch = {},
-                onOpenDownloads = {},
-                onOpenCommands = {},
             )
         }
 
@@ -367,9 +355,6 @@ class ProposalScreenshotTest {
                 onOpenFeed = {},
                 onOpenBoards = {},
                 onOpenMedia = {},
-                onOpenSearch = {},
-                onOpenDownloads = {},
-                onOpenCommands = {},
             )
         }
 
@@ -505,65 +490,140 @@ class ProposalScreenshotTest {
         )
 
     /**
-     * The settings surface as `:feature:settings` actually builds it.
+     * The settings surface as `:feature:settings` actually builds it, with default values.
      *
-     * Ids, labels, headings and order mirror `buildSettings`, so these captures show the list
-     * people really get rather than a list this file invented. `SettingsIndexTest` holds the
-     * registry and its search index together; nothing holds this fixture to either, so it is kept
-     * short on purpose — enough of each heading to show the shape, and every row real.
+     * Ids, labels, hints, headings and order mirror `buildSettings` plus the rows
+     * `NextSettingsScreen` adds to its groups (Thread scroll arrow under Display & Media; the image
+     * cache, Downloads and Search under Privacy & Data). `SettingsIndexTest` holds the registry and
+     * its search index together; nothing holds this fixture to either, so when a row is added,
+     * removed or renamed there, change it here too or these captures show a list nobody gets.
      */
     private fun settingsGroups() =
         listOf(
-            "General" to
-                listOf(
-                    SettingItem("personalized", "Personalized feed", "On", SettingKind.TOGGLE),
-                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
-                    SettingItem(
-                        id = "feedSort",
-                        label = "Feed sort",
-                        value = "Board",
-                        kind = SettingKind.CHOICE,
-                        options = listOf("Board", "Active", "Replies", "Images", "Created", "A-Z"),
-                        selected = 0,
+            "General" to listOf(SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE)),
+            "Display & Media" to displayAndMediaRows(),
+            "Privacy & Data" to privacyAndDataRows(),
+        )
+
+    private fun displayAndMediaRows() =
+        listOf(
+            SettingItem(
+                id = "themeMode",
+                label = "Theme",
+                value = "System",
+                kind = SettingKind.CHOICE,
+                options = listOf("System", "Light", "Dark"),
+                selected = 0,
+            ),
+            SettingItem(
+                id = "colorTheme",
+                label = "Color scheme",
+                value = "Default",
+                kind = SettingKind.CHOICE,
+                options =
+                    listOf(
+                        "Default",
+                        "Banana",
+                        "Apple",
+                        "Yotsuba",
+                        "Yotsuba B",
+                        "Warosu",
+                        "Miku",
+                        "Penumbra",
+                        "Royal",
+                        "Lain",
+                        "Tomorrow",
+                        "Tomorrow Dark",
                     ),
-                    SettingItem("fullScreenFeed", "Full-screen browsing", "Off", SettingKind.TOGGLE),
-                ),
-            "Display & Media" to
-                listOf(
-                    SettingItem(
-                        id = "themeMode",
-                        label = "Theme",
-                        value = "System",
-                        kind = SettingKind.CHOICE,
-                        options = listOf("System", "Light", "Dark"),
-                        selected = 0,
-                    ),
-                    SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
-                    SettingItem(
-                        id = "fontScale",
-                        label = "Text size",
-                        value = "Default",
-                        kind = SettingKind.CHOICE,
-                        options = listOf("Small", "Default", "Large", "XL"),
-                        selected = 1,
-                    ),
-                    SettingItem("autoplay", "Autoplay videos", "Off", SettingKind.TOGGLE),
-                    SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
-                ),
-            "Privacy & Data" to
-                listOf(
-                    SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
-                    SettingItem("recentSearches", "Save recent searches", "Off", SettingKind.TOGGLE),
-                    SettingItem(
-                        id = "importBackup",
-                        label = "Import data",
-                        value = "Restore",
-                        kind = SettingKind.ACTION,
-                        hint =
-                            "Merges a backup into what is already here, so a restore cannot " +
-                                "destroy an existing setup.",
-                    ),
-                ),
+                selected = 0,
+            ),
+            SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
+            SettingItem(
+                id = "fontScale",
+                label = "Text size",
+                value = "Default",
+                kind = SettingKind.CHOICE,
+                options = listOf("Small", "Default", "Large", "XL"),
+                selected = 1,
+            ),
+            SettingItem("mute", "Mute by default", "On", SettingKind.TOGGLE),
+            SettingItem(
+                id = "threadScrollArrow",
+                label = "Thread scroll arrow",
+                value = "Off",
+                kind = SettingKind.TOGGLE,
+                hint =
+                    "Shows Top / Unread / Bottom jump actions on the Next thread reader bar so you " +
+                        "can move between posts without scrubbing.",
+            ),
+        )
+
+    private fun privacyAndDataRows() =
+        listOf(
+            SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
+            SettingItem(
+                id = "clearActivity",
+                label = "Clear local activity",
+                value = "Delete",
+                kind = SettingKind.ACTION,
+                hint =
+                    "Deletes browsing history, recent searches and download history stored on " +
+                        "this device.",
+            ),
+            SettingItem(
+                id = "downloadFolder",
+                label = "Downloads folder",
+                value = "Downloads/Orbin",
+                kind = SettingKind.ACTION,
+                hint = "Opens the system folder picker.",
+            ),
+            SettingItem(
+                id = "exportBackup",
+                label = "Export data",
+                value = "Save",
+                kind = SettingKind.ACTION,
+                hint =
+                    "Writes settings, boards, bookmarks and saved searches to a file you choose. " +
+                        "It is plain JSON and is not encrypted.",
+            ),
+            SettingItem(
+                id = "importBackup",
+                label = "Import data",
+                value = "Restore",
+                kind = SettingKind.ACTION,
+                hint =
+                    "Merges a backup into what is already here, so a restore cannot " +
+                        "destroy an existing setup.",
+            ),
+            SettingItem("internalUpdater", "In-app updates", "On", SettingKind.TOGGLE),
+            SettingItem(
+                id = "checkUpdates",
+                label = "Check for updates",
+                value = "Up to date",
+                kind = SettingKind.ACTION,
+                hint = "Asks GitHub whether a newer release exists.",
+            ),
+            SettingItem(
+                id = "clearImageCache",
+                label = "Image cache usage",
+                value = "Empty · Clear",
+                kind = SettingKind.ACTION,
+                hint = "Deletes cached image files. They will be downloaded again when needed.",
+            ),
+            SettingItem(
+                id = "openDownloads",
+                label = "Downloads",
+                value = "Open ›",
+                kind = SettingKind.ACTION,
+                hint = "Files you have saved from threads.",
+            ),
+            SettingItem(
+                id = "openSearch",
+                label = "Search",
+                value = "Open ›",
+                kind = SettingKind.ACTION,
+                hint = "Searches the catalogs of the boards you follow.",
+            ),
         )
 
     /**

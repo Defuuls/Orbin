@@ -142,7 +142,6 @@ enum class ThumbnailSize(
  */
 @Serializable
 data class AppSettings(
-    val personalizedHomeFeed: Boolean = true,
     val hiddenTags: String = "",
     val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,

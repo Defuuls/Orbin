@@ -104,7 +104,6 @@ class BackupService
         @Suppress("CyclomaticComplexMethod", "LongMethod")
         private suspend fun restoreSettings(settings: AppSettings) =
             with(settingsRepository) {
-                setPersonalizedHomeFeed(settings.personalizedHomeFeed)
                 setHiddenTags(settings.hiddenTags)
                 setMutedTags(settings.mutedTags)
                 setHideNsfwBoards(settings.hideNsfwBoards)

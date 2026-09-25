@@ -1,113 +1,54 @@
 # Settings Guide
 
-This page describes the current settings model for **v133 (Norovirus)**. Settings take effect immediately
-unless a control explicitly says otherwise. Local preference storage is encrypted.
+Settings is one list under three headings. Every row changes where it stands: a toggle flips, a
+choice opens its options underneath, and an action runs from the row. Settings take effect
+immediately, and local preference storage is encrypted.
 
-The exact wording and grouping can evolve with the interface, so this guide focuses on what each
-control changes rather than preserving old screen choreography.
+Preferences that are no longer offered as rows keep their stored values untouched. Removing a row
+never resets the preference behind it.
 
-## Site / provider
-
-When more than one provider is available, the active-provider control selects which imageboard
-engine Orbin browses. Current builds include Vichan/4chan-compatible and LynxChan/BBW Chan
-providers.
-
-## Content & Feed
+## General
 
 | Setting | What it does |
 | --- | --- |
-| Built-in content filter | Describes Orbin's non-optional built-in safety filtering. |
-| Filter everyday shock words | Optional extra filter on top of the built-in safety filter. |
-| Personalized home feed | Enables the subscribed/personalized feed experience. |
-| Hidden tags | Removes matching content from applicable browsing surfaces. |
-| Muted tags | Keeps matching content visible but de-emphasized. |
-| Hide NSFW boards | Removes NSFW boards from applicable lists/pickers. |
-| Hide text-only threads | Removes threads without displayable media. |
-| Deep scan for reply media | Extends All media by walking threads for reply attachments. Slower and more network-intensive. |
-| Show only | Filters applicable surfaces to all media, images, or videos. |
-| Refresh feed on return | Controls how stale cached feed data may be before an automatic refresh. |
-| Threads per board | Limits each subscribed board's contribution to the combined feed. |
-| Sort feed by | Orders the subscribed feed (activity, replies, images, A–Z by board, and related options). |
+| Hide NSFW boards | Removes NSFW boards from board lists and the subscribed feed. |
 
-Board subscriptions are chosen during onboarding and can be changed later with **Run setup again**
-(Advanced). Browse every board via the Feed/Media **Boards** launchpad or Command → All boards;
-All media is the Media launchpad / Command destination. Search and Downloads are reachable from
-Command (not launchpad chips).
-
-### Feed/catalog layout
-
-Grid is the primary feed and board-catalog presentation. **List is no longer a selectable layout.**
-The grid uses a larger minimum card width and stronger title hierarchy for compact-phone readability.
-An **Images** view remains available for media-first browsing.
-
-Old saved List state is migrated behaviorally by rendering Grid, so no manual preference cleanup is
-required after upgrading.
-
-## Notifications
+## Display & Media
 
 | Setting | What it does |
 | --- | --- |
-| Thread watch notifications | Notifies when watched threads gain replies. |
-| Quiet hours | Suppresses watch notifications during the configured local-time window. |
+| Theme | Light, dark, or follow the system. |
+| Color scheme | Chooses an Orbin or imageboard-inspired palette (Default, Banana, Apple, Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, Lain, Tomorrow, Tomorrow Dark). |
+| True black | Uses pure black surfaces in dark mode. |
+| Text size | Changes Orbin's text scale (Small, Default, Large, XL). |
+| Mute by default | Sets the initial audio state for video playback in threads. |
+| Thread scroll arrow | Shows Top / Unread / Bottom jump actions on the thread reader bar. |
 
-## Appearance
-
-| Setting | What it does |
-| --- | --- |
-| Color theme | Chooses an Orbin/imageboard-inspired palette (Default, Yotsuba, Yotsuba B, Warosu, Miku, Penumbra, Royal, Lain, Tomorrow, Tomorrow Dark). Skins recolor the Next shell including Feed. |
-| Theme mode | Light, dark, or system behavior. |
-| Dynamic color | Uses supported Material You colors from the device. |
-| AMOLED black | Uses pure black surfaces in dark mode where supported. |
-| Open threads as | Controls the navigation presentation used to open a thread. |
-| Full-screen feed | Reduces/hides surrounding chrome to maximize feed space. |
-| Font size | Changes Orbin's global text scale. |
-| Thumbnail/grid size controls | Adjust media/card density on surfaces that expose size control. Feed and All Media use a Mild→Wild range (about 96–400dp). |
-
-The current grid design deliberately refuses extremely narrow thread cards. This means changing size
-may alter column count sooner than older releases did, especially on small phones.
-
-## Media & Playback
+## Privacy & Data
 
 | Setting | What it does |
 | --- | --- |
-| Show media | Filters applicable surfaces to all media, images, or videos. |
-| Autoplay videos | Enables automatic playback where supported. |
-| Autoplay videos in feed | Allows the active feed preview video to play inline; feed autoplay starts muted. |
-| Mute by default | Controls initial audio state in normal playback contexts. |
-| Fullscreen video | Allows edge-to-edge video playback. |
-| Media carousel options | Controls multi-attachment presentation where exposed. |
-| Thumbnail size | Changes attachment/media-wall density where applicable. |
+| App lock | Requires device authentication before Orbin's content is shown. |
+| Clear local activity | Deletes browsing history, recent searches and download history stored on this device. |
+| Downloads folder | Chooses where saved media is written. Default: `Downloads/Orbin`. |
+| Export data | Writes settings, boards, bookmarks and saved searches to a file you choose. |
+| Import data | Merges a backup into the existing setup rather than replacing it. |
+| In-app updates | Enables Orbin's release check against GitHub. Installation stays manual. |
+| Check for updates | Runs that check now (shown while in-app updates are on). |
+| Image cache usage | Shows the image cache size and clears it. Images download again when needed. |
+| Downloads | Opens the files you have saved from threads. |
+| Search | Opens search across the catalogs of the boards you follow. |
 
-## Privacy & Network
+**Important:** exported backup files are plain JSON and are not encrypted. The live app database
+and preferences are encrypted, but portable exports are intentionally readable outside Orbin.
 
-| Setting | What it does |
-| --- | --- |
-| Biometric/app lock | Requires device authentication before protected Orbin content is shown. |
-| Save recent searches | Controls local recent-search history. |
-| DNS resolver | Chooses the encrypted DNS resolver. If a network blocks it, Orbin can report system-resolver fallback. |
-| User agent | Controls the configured HTTP user-agent behavior where exposed. |
-| Internal updater | Enables Orbin's release-metadata update check. Installation remains manual. |
+Application traffic is HTTPS-only. Private app state is excluded from Android cloud backup and
+device transfer.
 
-Application traffic is HTTPS-only. Private app state is excluded from Android cloud backup/device
-transfer.
+## Feed behavior
 
-## Storage & Backup
-
-| Setting | What it does |
-| --- | --- |
-| Saved media folder | Chooses where downloaded media and exported thread-link text files are written. Default: `Downloads/Orbin`. |
-| Folder structure | Organizes downloads flat, by board, by thread, or board then thread. |
-| Export/backup | Writes portable app configuration/data to a user-selected file. |
-| Import/restore | Merges a supported backup into existing state rather than blindly replacing it. |
-
-**Important:** portable backup files and saved-link `.txt` exports are plaintext. The live app
-database/preferences are encrypted, but portable exports are intentionally readable outside Orbin.
-
-## Advanced
-
-| Setting | What it does |
-| --- | --- |
-| Run setup again | Reopens onboarding so you can change provider and board subscriptions. |
+The subscribed feed and board catalogs use a single grid layout. Each card shows the thread's
+media uncropped at its own aspect ratio.
 
 ## Accessibility behavior
 

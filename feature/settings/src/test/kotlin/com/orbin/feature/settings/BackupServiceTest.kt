@@ -44,7 +44,6 @@ import org.junit.Test
 class BackupServiceTest {
     private val populatedSettings =
         AppSettings(
-            personalizedHomeFeed = false,
             hiddenTags = "spoilers",
             mutedTags = "wip",
             hideNsfwBoards = true,

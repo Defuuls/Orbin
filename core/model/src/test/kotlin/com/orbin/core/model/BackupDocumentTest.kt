@@ -21,7 +21,6 @@ class BackupDocumentTest {
             exportedByAppVersion = "59-Betelgeuse",
             settings =
                 AppSettings(
-                    personalizedHomeFeed = false,
                     hiddenTags = "spoilers, wip",
                     themeMode = AppThemeMode.DARK,
                     colorTheme = ColorTheme.TOMORROW_NIGHT,
@@ -84,6 +83,22 @@ class BackupDocumentTest {
 
         assertThat(restored.settings.amoled).isTrue()
         assertThat(restored.subscribedBoards).containsExactly(BackupBoardRef("vichan", "g"))
+    }
+
+    /** personalizedHomeFeed was retired; backups exported while it existed must still import. */
+    @Test
+    fun aBackupCarryingTheRetiredPersonalizedFeedSettingStillImports() {
+        val older =
+            """
+            {
+              "exportedAt": "2026-08-04T12:00:00Z",
+              "settings": { "personalizedHomeFeed": false, "hideNsfwBoards": true }
+            }
+            """.trimIndent()
+
+        val restored = json.decodeFromString(BackupDocument.serializer(), older)
+
+        assertThat(restored.settings).isEqualTo(AppSettings.Default.copy(hideNsfwBoards = true))
     }
 
     /** A backup from an older build must import too, defaulting anything it predates. */

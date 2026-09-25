@@ -33,6 +33,8 @@ private const val BYTES_PER_MB = 1024L * 1024L
 private const val UI_PREFS_FILE = "orbin_ui_preferences"
 private const val THREAD_SCROLL_ARROW_KEY = "thread_scroll_arrow"
 private const val THREAD_SCROLL_ARROW_ID = "threadScrollArrow"
+private const val OPEN_DOWNLOADS_ID = "openDownloads"
+private const val OPEN_SEARCH_ID = "openSearch"
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -46,7 +48,6 @@ private const val THREAD_SCROLL_ARROW_ID = "threadScrollArrow"
  */
 @Composable
 fun NextSettingsScreen(
-    onOpenCommands: () -> Unit,
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
     focusId: String? = null,
@@ -126,7 +127,7 @@ fun NextSettingsScreen(
             buildSettings(settings, viewModel, updateCheck.rowValue(context))
         }
     val groups =
-        remember(model, imageCacheUsageBytes, threadScrollArrowEnabled) {
+        remember(model, imageCacheUsageBytes, threadScrollArrowEnabled, onOpenDownloads, onOpenSearch) {
             // Keyed off the heading constants, not literals: these two rows are grafted onto groups
             // the registry owns, and a renamed heading would otherwise drop them without a word.
             model.groups.map { (name, items) ->
@@ -155,6 +156,28 @@ fun NextSettingsScreen(
                                         value = imageCacheUsageBytes.cacheSizeLabel(),
                                         kind = SettingKind.ACTION,
                                         hint = "Deletes cached image files. They will be downloaded again when needed.",
+                                    ) +
+                                    // Places rather than preferences, kept beside the cache they sit
+                                    // next to on disk now that the Library section is gone.
+                                    listOfNotNull(
+                                        onOpenDownloads?.let {
+                                            SettingItem(
+                                                id = OPEN_DOWNLOADS_ID,
+                                                label = "Downloads",
+                                                value = "Open ›",
+                                                kind = SettingKind.ACTION,
+                                                hint = "Files you have saved from threads.",
+                                            )
+                                        },
+                                        onOpenSearch?.let {
+                                            SettingItem(
+                                                id = OPEN_SEARCH_ID,
+                                                label = "Search",
+                                                value = "Open ›",
+                                                kind = SettingKind.ACTION,
+                                                hint = "Searches the catalogs of the boards you follow.",
+                                            )
+                                        },
                                     )
                             )
                     else -> name to items
@@ -171,9 +194,6 @@ fun NextSettingsScreen(
             onOpenFeed = onOpenFeed,
             onOpenBoards = onOpenBoards,
             onOpenMedia = onOpenMedia,
-            onOpenSearch = onOpenSearch,
-            onOpenDownloads = onOpenDownloads,
-            onOpenCommands = onOpenCommands,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE ->
@@ -187,19 +207,24 @@ fun NextSettingsScreen(
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
-                        dispatch(
-                            item = item,
-                            onFolder = { folderPicker.launch(null) },
-                            onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                            onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                            onClear = { confirmClear = true },
-                            onClearImageCache = viewModel::clearImageCache,
-                            onCheckUpdates = {
-                                if (updateCheck != UpdateCheckState.Checking) {
-                                    viewModel.checkForUpdate(appVersionName(context))
-                                }
-                            },
-                        )
+                        when (item.id) {
+                            OPEN_DOWNLOADS_ID -> onOpenDownloads?.invoke()
+                            OPEN_SEARCH_ID -> onOpenSearch?.invoke()
+                            else ->
+                                dispatch(
+                                    item = item,
+                                    onFolder = { folderPicker.launch(null) },
+                                    onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                    onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                                    onClear = { confirmClear = true },
+                                    onClearImageCache = viewModel::clearImageCache,
+                                    onCheckUpdates = {
+                                        if (updateCheck != UpdateCheckState.Checking) {
+                                            viewModel.checkForUpdate(appVersionName(context))
+                                        }
+                                    },
+                                )
+                        }
                     SettingKind.INFO -> Unit
                 }
             },

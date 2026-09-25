@@ -255,28 +255,13 @@ fun SettingsScreen(
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
-    onOpenSearch: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    onOpenCommands: (() -> Unit)? = null,
 ) {
-    // Everything that is a place rather than a preference. Search, Downloads and the command
-    // sheet are here because they have nowhere else to be: none is a tab, and the Go button that
-    // used to reach the sheet — and through it the other two — is gone from the chrome.
-    // "Search" is the thread-search destination; "Commands" is the sheet that jumps to anything.
-    val library =
-        listOfNotNull(
-            onOpenBoards?.let { "Boards" to it },
-            onOpenMedia?.let { "All media" to it },
-            onOpenSearch?.let { "Search" to it },
-            onOpenDownloads?.let { "Downloads" to it },
-            onOpenCommands?.let { "Commands" to it },
-        )
     val state = rememberLazyListState()
     LaunchedEffect(focusId, expandedId, groups) {
         val targetId = focusId ?: expandedId ?: return@LaunchedEffect
         val groupIndex = groups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
         if (groupIndex >= 0) {
-            val lazyItemIndex = 1 + (if (library.isNotEmpty()) 1 else 0) + groupIndex
+            val lazyItemIndex = 1 + groupIndex
             state.scrollToItem(lazyItemIndex)
         }
     }
@@ -324,40 +309,6 @@ fun SettingsScreen(
                         text = stringResource(R.string.next_settings_title),
                         subtitle = subtitle,
                     )
-                }
-                if (library.isNotEmpty()) {
-                    item(key = "library") {
-                        GroupedSection(header = "Library") {
-                            library.forEachIndexed { index, (label, open) ->
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .nextClickable(role = Role.Button, onClick = open)
-                                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text = label,
-                                        fontSize = 15.5.sp,
-                                        letterSpacing = (-0.1).sp,
-                                        color = next.ink,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text(
-                                        text = "›",
-                                        fontSize = 18.sp,
-                                        color = next.muted,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-                                if (index < library.lastIndex) {
-                                    GroupedDivider()
-                                }
-                            }
-                        }
-                    }
                 }
                 groups.forEach { (heading, rows) ->
                     item(key = "group:$heading") {
