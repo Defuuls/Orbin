@@ -75,6 +75,7 @@ internal fun Thread.toBookmark(nowMillis: Long): Bookmark =
         title = displayTitle,
         thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
         createdAtMillis = nowMillis,
+        isWatched = true,
         lastSeenReplyCount = stats.replyCount,
         latestReplyCount = stats.replyCount,
     )

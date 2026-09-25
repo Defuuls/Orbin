@@ -114,6 +114,7 @@ class RowsTest {
         assertEquals(12, bookmark.lastSeenReplyCount)
         assertEquals(0, bookmark.unreadCount, "nothing unread at the moment it is bookmarked")
         assertEquals(5L, bookmark.createdAtMillis)
+        assertTrue(bookmark.isWatched, "watched, so the board and watch list show it as on Android")
 
         val visit = thread.toHistoryEntry(nowMillis = 7L)
         assertEquals(PostId(1), visit.lastReadPostId)
