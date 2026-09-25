@@ -32,6 +32,8 @@ import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.R
+import com.orbin.media.video.InlineLoop
+import com.orbin.media.video.canAutoplayInFeed
 
 /**
  * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.
@@ -133,6 +135,8 @@ fun MediaThumbnail(
     fullResolution: Boolean = false,
     contentScale: ContentScale = ContentScale.Crop,
     onClick: (() -> Unit)? = null,
+    // The one tile in view plays: a GIF animates from its source, a video loops muted in place.
+    playing: Boolean = false,
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
     // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
@@ -141,12 +145,18 @@ fun MediaThumbnail(
     // memory stays bounded by display size. Small/many-tile layouts keep the cheap thumbnail —
     // fetching full originals for dozens of concurrently-visible tiles costs more in network and
     // decode contention than the extra sharpness is worth.
+    val wantsSource =
+        (fullResolution && attachment.type == MediaType.IMAGE) ||
+            (playing && attachment.type == MediaType.ANIMATED_IMAGE && !attachment.isSpoiler)
     val imageUrl =
-        if (fullResolution && attachment.type == MediaType.IMAGE && attachment.sourceUrl.isNotBlank()) {
+        if (wantsSource &&
+            attachment.sourceUrl.isNotBlank()
+        ) {
             attachment.sourceUrl
         } else {
             attachment.thumbnailUrl
         }
+    val loopsInPlace = playing && canAutoplayInFeed(attachment, autoplayEnabled = true)
 
     Box(
         modifier =
@@ -164,10 +174,11 @@ fun MediaThumbnail(
             // same URL and the placeholder is skipped.
             placeholderUrl = attachment.thumbnailUrl,
         )
+        if (loopsInPlace) InlineLoop(url = attachment.sourceUrl, modifier = Modifier.fillMaxSize())
 
         if (attachment.isSpoiler) {
             SpoilerOverlay()
-        } else if (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO) {
+        } else if (!loopsInPlace && (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO)) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
                 contentDescription = stringResource(R.string.media_play),

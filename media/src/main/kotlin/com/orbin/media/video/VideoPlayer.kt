@@ -3,7 +3,7 @@ package com.orbin.media.video
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -24,8 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -33,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -61,7 +59,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.VideoSize
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -102,18 +99,14 @@ fun VideoPlayer(
     autoPlay: Boolean = false,
     muted: Boolean = SessionAudio.muted,
     active: Boolean = true,
-    fullscreenByDefault: Boolean = false,
-    autoRotate: Boolean = false,
     onFullscreenChange: (Boolean) -> Unit = {},
     onLongPress: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val activity = remember(context) { context.findActivity() }
-    var videoIsLandscape by remember(url) { mutableStateOf(false) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
-    var loopEnabled by rememberSaveable(url) { mutableStateOf(true) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
@@ -140,7 +133,7 @@ fun VideoPlayer(
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {
-                    repeatMode = repeatModeFor(loopEnabled)
+                    repeatMode = repeatModeFor(shouldLoop(0L))
                     volume = if (muted) 0f else 1f
                     playWhenReady = active && autoPlay
                 }
@@ -163,7 +156,8 @@ fun VideoPlayer(
         } else {
             exoPlayer.setMediaItem(MediaItem.fromUri(url))
             exoPlayer.prepare()
-            exoPlayer.seekTo(0)
+            // Pick up where this video was left, for as long as Orbin keeps running.
+            exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
             exoPlayer.playWhenReady = active && autoPlay
             controlsVisible = !autoPlay
         }
@@ -189,21 +183,18 @@ fun VideoPlayer(
         exoPlayer.volume = if (isMuted) 0f else 1f
     }
 
-    LaunchedEffect(loopEnabled) {
-        exoPlayer.repeatMode = repeatModeFor(loopEnabled)
+    // Short clips loop like GIFs; anything longer plays once. Decided by length, not a setting.
+    LaunchedEffect(durationMs) {
+        exoPlayer.repeatMode = repeatModeFor(shouldLoop(durationMs))
     }
 
-    val fullscreen =
-        rememberVideoFullscreenState(
-            url = url,
-            activity = activity,
-            isPlaying = isPlaying,
-            active = active,
-            videoIsLandscape = videoIsLandscape,
-            fullscreenByDefault = fullscreenByDefault,
-            autoRotate = autoRotate,
-            onFullscreenChange = onFullscreenChange,
-        )
+    // Turning the phone sideways is the fullscreen button.
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    VideoFullscreenEffect(
+        activity = activity,
+        fullscreen = active && landscape,
+        onFullscreenChange = onFullscreenChange,
+    )
 
     LaunchedEffect(exoPlayer) {
         while (true) {
@@ -233,11 +224,6 @@ fun VideoPlayer(
                     if (!isPlayingNow) controlsVisible = true
                 }
 
-                override fun onVideoSizeChanged(videoSize: VideoSize) {
-                    // Ignore audio (0x0); rotation applies only to wider-than-tall video.
-                    videoSize.landscapeOrNull()?.let { videoIsLandscape = it }
-                }
-
                 override fun onPlayerError(error: PlaybackException) {
                     Log.w(TAG, "Video failed to load", error)
                     val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
@@ -259,6 +245,7 @@ fun VideoPlayer(
             }
         exoPlayer.addListener(listener)
         onDispose {
+            PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
             exoPlayer.release()
         }
@@ -296,8 +283,10 @@ fun VideoPlayer(
                 .pointerInput(playbackError, exoPlayer, onLongPress) {
                     detectTapGestures(
                         onLongPress = onLongPress?.let { handler -> { handler() } },
-                        onTap = {
-                            if (playbackError == null) controlsVisible = !controlsVisible
+                        // Toggle on release rather than waiting out the double-tap timeout: a double
+                        // tap toggles twice, which leaves the controls as they were, and then seeks.
+                        onPress = {
+                            if (tryAwaitRelease() && playbackError == null) controlsVisible = !controlsVisible
                         },
                         // Left half goes back, right half goes forward, as in most video players.
                         onDoubleTap = { offset ->
@@ -387,8 +376,6 @@ fun VideoPlayer(
             VideoControls(
                 isPlaying = isPlaying,
                 isMuted = isMuted,
-                isLooping = loopEnabled,
-                isFullscreen = fullscreen.value,
                 progress = progress,
                 positionMs = positionMs,
                 durationMs = durationMs,
@@ -400,8 +387,6 @@ fun VideoPlayer(
                     isMuted = !isMuted
                     SessionAudio.muted = isMuted
                 },
-                onLoopToggle = { loopEnabled = !loopEnabled },
-                onFullscreenToggle = { fullscreen.value = !fullscreen.value },
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
                         exoPlayer.seekTo((durationMs * seekProgress).toLong())
@@ -416,6 +401,37 @@ fun VideoPlayer(
 }
 
 /**
+ * Where each longer video was left, so reopening it resumes rather than restarts.
+ *
+ * Only videos too long to loop are remembered, and only until they are nearly finished; a
+ * bounded, in-memory map that ends with the process, so nothing about viewing is stored.
+ */
+internal object PlaybackPositions {
+    private const val MAX_REMEMBERED = 50
+    private const val NEAR_END_MS = 3_000L
+    private val positions =
+        object : LinkedHashMap<String, Long>(MAX_REMEMBERED, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>?) = size > MAX_REMEMBERED
+        }
+
+    @Synchronized
+    fun resumeAt(url: String): Long = positions[url] ?: 0L
+
+    @Synchronized
+    fun remember(
+        url: String,
+        positionMs: Long,
+        durationMs: Long,
+    ) {
+        val worthResuming = !shouldLoop(durationMs) && positionMs in 1 until durationMs - NEAR_END_MS
+        if (worthResuming) positions[url] = positionMs else positions.remove(url)
+    }
+
+    @Synchronized
+    internal fun clear() = positions.clear()
+}
+
+/**
  * Whether the next video opens muted.
  *
  * Every video starts muted until the reader unmutes one; from then on, for as long as Orbin is
@@ -427,76 +443,31 @@ object SessionAudio {
 }
 
 /**
- * Owns the video's fullscreen state and the side effects that drive it: auto-entering fullscreen
- * when playback starts (per the fullscreen/auto-rotate settings), exiting when the page is no
- * longer active, notifying the host, and applying/restoring the immersive + orientation
- * presentation. Returns the fullscreen [MutableState] so the caller can also toggle it manually.
+ * Hides the system bars while [fullscreen] is true and tells the host, so the gallery can put its
+ * own chrome away too. Restores the bars when fullscreen ends or the player leaves composition.
  */
 @Composable
-private fun rememberVideoFullscreenState(
-    url: String,
+private fun VideoFullscreenEffect(
     activity: Activity?,
-    isPlaying: Boolean,
-    active: Boolean,
-    videoIsLandscape: Boolean,
-    fullscreenByDefault: Boolean,
-    autoRotate: Boolean,
+    fullscreen: Boolean,
     onFullscreenChange: (Boolean) -> Unit,
-): MutableState<Boolean> {
-    // The orientation the activity had before this player forced one, restored on exit/dispose.
-    val originalOrientation =
-        remember(activity) { activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
-    val isFullscreen = rememberSaveable(url) { mutableStateOf(false) }
-    // Tracks the one-time auto-entry so a manual exit is not immediately overridden while playing.
-    var hasAutoFullscreened by remember(url) { mutableStateOf(false) }
-    val shouldAutoFullscreen = fullscreenByDefault || (autoRotate && videoIsLandscape)
-
-    LaunchedEffect(shouldAutoFullscreen, isPlaying) {
-        if (shouldAutoFullscreen && isPlaying && !hasAutoFullscreened) {
-            isFullscreen.value = true
-            hasAutoFullscreened = true
-        }
-    }
-
-    // Leaving this page (swipe/close) must never strand the activity locked or immersive.
-    LaunchedEffect(active) {
-        if (!active) {
-            isFullscreen.value = false
-            hasAutoFullscreened = false
-        }
-    }
-
-    LaunchedEffect(isFullscreen.value) { onFullscreenChange(isFullscreen.value) }
-
-    LaunchedEffect(activity, isFullscreen.value, autoRotate, videoIsLandscape) {
-        activity?.applyVideoFullscreen(
-            fullscreen = isFullscreen.value,
-            lockLandscape = autoRotate && videoIsLandscape,
-            originalOrientation = originalOrientation,
-        )
-    }
-
-    // Always restore the original system bars and orientation when the player leaves composition.
+) {
+    LaunchedEffect(fullscreen) { onFullscreenChange(fullscreen) }
+    LaunchedEffect(activity, fullscreen) { activity?.applyVideoFullscreen(fullscreen) }
     DisposableEffect(activity) {
-        onDispose { activity?.applyVideoFullscreen(fullscreen = false, lockLandscape = false, originalOrientation) }
+        onDispose { activity?.applyVideoFullscreen(fullscreen = false) }
     }
-
-    return isFullscreen
 }
 
 @Composable
 private fun VideoControls(
     isPlaying: Boolean,
     isMuted: Boolean,
-    isLooping: Boolean,
-    isFullscreen: Boolean,
     progress: Float,
     positionMs: Long,
     durationMs: Long,
     onPlayPause: () -> Unit,
     onMuteToggle: () -> Unit,
-    onLoopToggle: () -> Unit,
-    onFullscreenToggle: () -> Unit,
     onSeek: (Float) -> Unit,
     scrubbing: Boolean,
     onScrubbingChange: (Boolean) -> Unit,
@@ -562,30 +533,17 @@ private fun VideoControls(
                     color = Color.White,
                     style = NextType.footnote,
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    NextIconAction(
-                        imageVector =
-                            if (isMuted) {
-                                Icons.AutoMirrored.Filled.VolumeOff
-                            } else {
-                                Icons.AutoMirrored.Filled.VolumeUp
-                            },
-                        contentDescription = if (isMuted) "Unmute" else "Mute",
-                        onClick = onMuteToggle,
-                        tint = Color.White,
-                    )
-                    InlineAction(
-                        label = if (isLooping) "Loop" else "Once",
-                        accent = isLooping,
-                        onClick = onLoopToggle,
-                    )
-                    NextIconAction(
-                        imageVector = if (isFullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
-                        contentDescription = if (isFullscreen) "Exit fullscreen" else "Enter fullscreen",
-                        onClick = onFullscreenToggle,
-                        tint = Color.White,
-                    )
-                }
+                NextIconAction(
+                    imageVector =
+                        if (isMuted) {
+                            Icons.AutoMirrored.Filled.VolumeOff
+                        } else {
+                            Icons.AutoMirrored.Filled.VolumeUp
+                        },
+                    contentDescription = if (isMuted) "Unmute" else "Mute",
+                    onClick = onMuteToggle,
+                    tint = Color.White,
+                )
             }
         }
     }
@@ -678,11 +636,8 @@ private interface VideoPlayerEntryPoint {
     fun videoDataSourceFactory(): DataSource.Factory
 }
 
-private fun Context.videoMediaDataSourceFactory(): DataSource.Factory =
+internal fun Context.videoMediaDataSourceFactory(): DataSource.Factory =
     EntryPointAccessors.fromApplication(this, VideoPlayerEntryPoint::class.java).videoDataSourceFactory()
-
-/** True/false when this is real video (non-zero size), null for audio-only (0x0) tracks. */
-private fun VideoSize.landscapeOrNull(): Boolean? = if (width > 0 && height > 0) width > height else null
 
 /** Unwraps the hosting [Activity] from a (possibly wrapped) composition [Context], if any. */
 private tailrec fun Context.findActivity(): Activity? =
@@ -692,29 +647,14 @@ private tailrec fun Context.findActivity(): Activity? =
         else -> null
     }
 
-/**
- * Toggles immersive full-screen presentation on the activity: hides/shows the system bars and,
- * when [lockLandscape] is set, forces sensor-landscape orientation. Exiting restores the system
- * bars and [originalOrientation], so the activity is never left locked or immersive.
- */
-private fun Activity.applyVideoFullscreen(
-    fullscreen: Boolean,
-    lockLandscape: Boolean,
-    originalOrientation: Int,
-) {
+/** Hides the system bars for fullscreen playback, or brings them back. */
+private fun Activity.applyVideoFullscreen(fullscreen: Boolean) {
     val controller = WindowCompat.getInsetsController(window, window.decorView)
     if (fullscreen) {
         controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         controller.hide(WindowInsetsCompat.Type.systemBars())
-        requestedOrientation =
-            if (lockLandscape) {
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            } else {
-                originalOrientation
-            }
     } else {
         controller.show(WindowInsetsCompat.Type.systemBars())
-        requestedOrientation = originalOrientation
     }
 }
 
@@ -732,6 +672,9 @@ internal fun seekTargetMs(
     val target = currentMs.coerceAtLeast(0L) + if (forward) step else -step
     return if (durationMs > 0L) target.coerceIn(0L, durationMs) else target.coerceAtLeast(0L)
 }
+
+/** Clips up to [LOOP_UNDER_MS] loop like GIFs; longer videos play once. Unknown length loops. */
+internal fun shouldLoop(durationMs: Long): Boolean = durationMs <= LOOP_UNDER_MS
 
 internal fun repeatModeFor(loopEnabled: Boolean): Int =
     if (loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
@@ -777,5 +720,6 @@ private const val CONTROLS_AUTO_HIDE_MS = 2_500L
 private const val MILLIS_PER_SECOND = 1_000L
 private const val SECONDS_PER_MINUTE = 60L
 internal const val SKIP_SECONDS = 5
+private const val LOOP_UNDER_MS = 30_000L
 private const val SKIP_LABEL_VISIBLE_MS = 700L
 private const val SKIP_LABEL_FILL_ALPHA = 0.55f

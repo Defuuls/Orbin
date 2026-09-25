@@ -14,6 +14,8 @@ All notable changes to Orbin are documented here. The format is based on
 - Board labels on media use white text on a dark scrim, so they stay readable over any image.
 
 ### Added
+- The feed card in view plays its media in place: a video loops silently and a GIF animates. Only one plays at a time, never a spoilered one, and tapping still opens the thread.
+- Longer videos resume where you left off when reopened, until Orbin closes.
 - Media gestures, with no settings behind them:
   - Double tap an image to zoom in on that spot, and again to zoom out.
   - Long-press any image or video, in the viewer or on the All media wall, to Save, Share or Copy link.
@@ -23,6 +25,7 @@ All notable changes to Orbin are documented here. The format is based on
   - Zoom resets when you swipe to another item.
 
 ### Changed
+- Video is simpler. The controls are play/pause, the progress bar and mute. Clips up to 30 seconds loop and longer videos play once. Turning the phone sideways goes fullscreen. A tap shows or hides the controls immediately instead of waiting out the double-tap delay. The Loop/Once and fullscreen buttons are gone.
 - Settings is now one short list in three untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data; then Downloads and Search.
 - First run is one step: pick the boards to follow, then start browsing.
 - Video starts muted, and an unmute carries over to the next video until Orbin closes.

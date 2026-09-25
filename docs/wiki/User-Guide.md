@@ -97,6 +97,11 @@ Opening an attachment launches the media viewer with image zoom, video playback,
 and background preloading. Returning from the viewer keeps the originating grid synchronized with
 the media you were actually viewing.
 
+Videos are deliberately plain: play/pause, the progress bar and mute. Clips up to 30 seconds loop
+like GIFs; longer ones play once and pick up where you left off if you come back. Turn the phone
+sideways for fullscreen. In the feed, the card you are looking at plays its video silently in place,
+or animates its GIF.
+
 In a video, tap once to show or hide the controls. Double tap the right half to skip forward 5
 seconds or the left half to skip back 5 seconds; keep double tapping to skip further. Drag the
 progress bar to scrub; the time you are dragging to shows above it.
