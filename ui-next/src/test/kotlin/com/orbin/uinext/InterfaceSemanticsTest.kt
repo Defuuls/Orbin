@@ -4,8 +4,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import org.junit.Rule
 import org.junit.Test
@@ -98,6 +100,28 @@ class InterfaceSemanticsTest {
         composeRule.onNodeWithText("All media").assertDoesNotExist()
         composeRule.onNodeWithText("Commands").assertDoesNotExist()
         composeRule.onNodeWithText("Image cache usage").assertExists()
+    }
+
+    @Test
+    fun `a thread shows its title once and keeps only the top and bottom jumps`() {
+        composeRule.setContent {
+            NextTheme {
+                ThreadScreen(
+                    subject = "Weekly desktop thread",
+                    board = "/g/",
+                    posts =
+                        listOf(
+                            Post(number = "1", time = "4m", body = "first"),
+                            Post(number = "2", time = "3m", body = "second"),
+                        ),
+                )
+            }
+        }
+        // The floating rail used to repeat the subject at the bottom of the screen.
+        composeRule.onAllNodesWithText("Weekly desktop thread").assertCountEquals(1)
+        composeRule.onNodeWithText("Top").assertExists()
+        composeRule.onNodeWithText("Bottom").assertExists()
+        composeRule.onNodeWithText("↓").assertDoesNotExist()
     }
 
     private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)

@@ -61,7 +61,6 @@ fun ThreadScreen(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     watching: Boolean = false,
-    showRail: Boolean = true,
     layout: ThreadLayout = ThreadLayout.POSTS,
     onLayoutChange: (ThreadLayout) -> Unit = {},
     files: List<MediaCell> = emptyList(),
@@ -99,9 +98,7 @@ fun ThreadScreen(
                 modifier = Modifier.contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        bottom =
-                            (if (showRail) RAIL_HEIGHT + THREAD_JUMP_CLEARANCE else THREAD_JUMP_CLEARANCE) +
-                                bottomInset(),
+                        bottom = THREAD_JUMP_CLEARANCE + bottomInset(),
                     ),
             ) {
                 item {
@@ -209,7 +206,7 @@ fun ThreadScreen(
                             .align(Alignment.BottomEnd)
                             .padding(
                                 end = GUTTER - 4.dp,
-                                bottom = (if (showRail) RAIL_HEIGHT + 30.dp else 12.dp) + bottomInset(),
+                                bottom = 12.dp + bottomInset(),
                             ),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -232,13 +229,6 @@ fun ThreadScreen(
                         onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
                     )
                 }
-            }
-            if (showRail) {
-                ContextRail(
-                    where = subject,
-                    detail = board,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
             }
         }
     }
