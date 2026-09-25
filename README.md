@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [145 — Kiwi](https://github.com/Defuuls/Orbin/releases/tag/v145-Kiwi)
+**Current release:** [146 — Lemon](https://github.com/Defuuls/Orbin/releases/tag/v146-Lemon)
 
-**What's new in 145:** The feed and board catalogs are grid-only now, and every card shows its image uncropped at full resolution.
+**What's new in 146:** The feed refreshes only when you pull down, and Settings drops its Library section for Search and Downloads beside the image cache.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
