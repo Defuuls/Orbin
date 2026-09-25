@@ -125,15 +125,9 @@ class OnboardingViewModel
 
         fun setThemeMode(mode: AppThemeMode) = update { settingsRepository.setThemeMode(mode) }
 
-        fun setDynamicColor(enabled: Boolean) = update { settingsRepository.setDynamicColor(enabled) }
-
         fun setAmoled(enabled: Boolean) = update { settingsRepository.setAmoled(enabled) }
 
-        fun setAutoplay(enabled: Boolean) = update { settingsRepository.setAutoplayVideos(enabled) }
-
         fun setMute(enabled: Boolean) = update { settingsRepository.setMuteByDefault(enabled) }
-
-        fun setPreload(enabled: Boolean) = update { settingsRepository.setPreloadImages(enabled) }
 
         fun setBiometricLock(enabled: Boolean) = update { settingsRepository.setBiometricLockEnabled(enabled) }
 

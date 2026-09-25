@@ -9,13 +9,9 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.PlatformTheme
-import com.orbin.core.model.PreloadOption
-import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
@@ -113,11 +109,7 @@ class SettingsViewModel
 
         fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
 
-        fun setPlatformTheme(theme: PlatformTheme) = update { repository.setPlatformTheme(theme) }
-
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
-
-        fun setDynamicColor(enabled: Boolean) = update { repository.setDynamicColor(enabled) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
 
@@ -125,19 +117,11 @@ class SettingsViewModel
 
         fun setThumbnailSize(size: ThumbnailSize) = update { repository.setThumbnailSize(size) }
 
-        fun setAutoplay(enabled: Boolean) = update { repository.setAutoplayVideos(enabled) }
-
         fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
 
         fun setFullscreenVideoPlayback(enabled: Boolean) = update { repository.setFullscreenVideoPlayback(enabled) }
 
         fun setAutoRotateVideoFullscreen(enabled: Boolean) = update { repository.setAutoRotateVideoFullscreen(enabled) }
-
-        fun setPreload(enabled: Boolean) = update { repository.setPreloadImages(enabled) }
-
-        fun setPreloadOption(option: PreloadOption) = update { repository.setPreloadOption(option) }
-
-        fun setPreloadThrottleMode(mode: PreloadThrottleMode) = update { repository.setPreloadThrottleMode(mode) }
 
         fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
 
@@ -179,9 +163,6 @@ class SettingsViewModel
 
         fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
 
-        fun setFeedRefreshInterval(interval: FeedRefreshInterval) =
-            update { repository.setFeedRefreshInterval(interval) }
-
         fun setThreadPresentation(presentation: ThreadPresentation) =
             update { repository.setThreadPresentation(presentation) }
 
@@ -195,8 +176,6 @@ class SettingsViewModel
         fun setMediaScrollThreadView(enabled: Boolean) = update { repository.setMediaScrollThreadView(enabled) }
 
         fun setMediaScrollBoardView(enabled: Boolean) = update { repository.setMediaScrollBoardView(enabled) }
-
-        fun setAutoplayVideosInFeed(enabled: Boolean) = update { repository.setAutoplayVideosInFeed(enabled) }
 
         fun clearLocalActivity() =
             update {

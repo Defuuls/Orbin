@@ -52,8 +52,6 @@
     <string name="next_media_cell_description">File from %1$s</string>
 
     <!-- The filter, when one is active -->
-    <string name="next_filter_label">filter</string>
-    <string name="next_filter_clear">Clear</string>
 
     <!-- The board picker -->
 

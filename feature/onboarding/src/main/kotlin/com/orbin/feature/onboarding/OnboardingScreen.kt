@@ -142,7 +142,6 @@ fun OnboardingScreen(
                         AppearanceStep(
                             settings,
                             viewModel::setThemeMode,
-                            viewModel::setDynamicColor,
                             viewModel::setAmoled,
                         )
                     SetupStep.MEDIA ->
@@ -465,7 +464,6 @@ private fun BoardMonogram(id: String) {
 private fun AppearanceStep(
     settings: AppSettings,
     onThemeMode: (AppThemeMode) -> Unit,
-    onDynamicColor: (Boolean) -> Unit,
     onAmoled: (Boolean) -> Unit,
 ) {
     SetupPage {
@@ -480,8 +478,7 @@ private fun AppearanceStep(
                     )
                 }
             }
-            PreferenceSwitch("Dynamic color", "Follow system dynamic colors", settings.dynamicColor, onDynamicColor)
-            PreferenceSwitch("AMOLED black", "Use true black surfaces in dark mode", settings.amoled, onAmoled)
+            PreferenceSwitch("True black", "Use true black surfaces in dark mode", settings.amoled, onAmoled)
         }
     }
 }

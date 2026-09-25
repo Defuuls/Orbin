@@ -47,7 +47,6 @@ private const val OPEN_SEARCH_ID = "openSearch"
 fun NextSettingsScreen(
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
-    focusId: String? = null,
     onOpenSearch: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -164,7 +163,6 @@ fun NextSettingsScreen(
             groups = groups,
             subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
-            focusId = focusId,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE -> model.toggle(item.id)

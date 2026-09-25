@@ -10,13 +10,9 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.PlatformTheme
-import com.orbin.core.model.PreloadOption
-import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
@@ -186,24 +182,12 @@ class FakeSettingsRepository(
         update { copy(mediaFilter = filter) }
     }
 
-    override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
-        update { copy(feedRefreshInterval = interval) }
-    }
-
     override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
         update { copy(threadPresentation = presentation) }
     }
 
-    override suspend fun setPlatformTheme(theme: PlatformTheme) {
-        update { copy(platformTheme = theme) }
-    }
-
     override suspend fun setThemeMode(mode: AppThemeMode) {
         update { copy(themeMode = mode) }
-    }
-
-    override suspend fun setDynamicColor(enabled: Boolean) {
-        update { copy(dynamicColor = enabled) }
     }
 
     override suspend fun setAmoled(enabled: Boolean) {
@@ -218,10 +202,6 @@ class FakeSettingsRepository(
         update { copy(thumbnailSize = size) }
     }
 
-    override suspend fun setAutoplayVideos(enabled: Boolean) {
-        update { copy(autoplayVideos = enabled) }
-    }
-
     override suspend fun setMuteByDefault(enabled: Boolean) {
         update { copy(muteByDefault = enabled) }
     }
@@ -232,18 +212,6 @@ class FakeSettingsRepository(
 
     override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
         update { copy(autoRotateVideoFullscreen = enabled) }
-    }
-
-    override suspend fun setPreloadImages(enabled: Boolean) {
-        update { copy(preloadImages = enabled) }
-    }
-
-    override suspend fun setPreloadOption(option: PreloadOption) {
-        update { copy(preloadOption = option) }
-    }
-
-    override suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode) {
-        update { copy(preloadThrottleMode = mode) }
     }
 
     override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
@@ -264,10 +232,6 @@ class FakeSettingsRepository(
 
     override suspend fun setReadTimeoutSeconds(seconds: Long) {
         update { copy(readTimeoutSeconds = seconds) }
-    }
-
-    override suspend fun setDisableOcspChecking(disable: Boolean) {
-        update { copy(disableOcspChecking = disable) }
     }
 
     override suspend fun setDownloadFolderUri(uri: String) {
@@ -332,10 +296,6 @@ class FakeSettingsRepository(
 
     override suspend fun setMediaScrollBoardView(enabled: Boolean) {
         update { copy(mediaScrollBoardView = enabled) }
-    }
-
-    override suspend fun setAutoplayVideosInFeed(enabled: Boolean) {
-        update { copy(autoplayVideosInFeed = enabled) }
     }
 
     /** The settings as they stand now, for asserting that a screen wrote through. */

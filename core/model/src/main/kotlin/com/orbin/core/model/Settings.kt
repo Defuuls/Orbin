@@ -28,22 +28,8 @@ enum class ColorTheme(
     TOMORROW_NIGHT("Tomorrow Dark"),
 }
 
-/** Visual language, independent of light/dark mode and the existing color skins. */
-@Serializable
-enum class PlatformTheme(
-    val label: String,
-) {
-    IOS("iOS"),
-    ANDROID("Android"),
-}
-
 /** App icon variant for home screen. */
 @Serializable
-private const val MILLIS_PER_MINUTE = 60_000L
-private const val FIVE_MINUTES_MS = 5 * MILLIS_PER_MINUTE
-private const val FIFTEEN_MINUTES_MS = 15 * MILLIS_PER_MINUTE
-private const val THIRTY_MINUTES_MS = 30 * MILLIS_PER_MINUTE
-
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
@@ -70,25 +56,6 @@ enum class DohProvider(
     CLOUDFLARE("Cloudflare"),
     OPENDNS("OpenDNS"),
     NEXTDNS("NextDNS"),
-}
-
-/**
- * How stale the subscribed feed may be before returning to it triggers a reload.
- *
- * [staleAfterMillis] is the age past which the cached feed is discarded: zero always reloads, and
- * null never does. The two ends are what the old on/off setting used to express.
- */
-@Serializable
-enum class FeedRefreshInterval(
-    val label: String,
-    val staleAfterMillis: Long?,
-) {
-    ALWAYS("Always", 0),
-    ONE_MINUTE("1 min", MILLIS_PER_MINUTE),
-    FIVE_MINUTES("5 min", FIVE_MINUTES_MS),
-    FIFTEEN_MINUTES("15 min", FIFTEEN_MINUTES_MS),
-    THIRTY_MINUTES("30 min", THIRTY_MINUTES_MS),
-    NEVER("Never", null),
 }
 
 /** How a tapped thread is presented. */
@@ -167,26 +134,18 @@ data class AppSettings(
      * OP's thumbnail and there would be nothing left to show.
      */
     val mediaFilter: MediaFilter = MediaFilter.ALL,
-    /** How stale the subscribed feed may be before returning to it reloads it. */
-    val feedRefreshInterval: FeedRefreshInterval = FeedRefreshInterval.ALWAYS,
-    val platformTheme: PlatformTheme = PlatformTheme.ANDROID,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
-    val dynamicColor: Boolean = true,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
     val fullScreenFeedChrome: Boolean = false,
     val threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
-    val autoplayVideos: Boolean = false,
     val muteByDefault: Boolean = true,
     /** Play videos in an immersive full-screen presentation (hide system bars and app chrome). */
     val fullscreenVideoPlayback: Boolean = false,
     /** Rotate the screen to landscape automatically when a landscape video starts playing. */
     val autoRotateVideoFullscreen: Boolean = false,
-    val preloadImages: Boolean = true,
-    val preloadOption: PreloadOption = PreloadOption.IMAGES,
-    val preloadThrottleMode: PreloadThrottleMode = PreloadThrottleMode.MODERATE,
     val imageCacheLimitMb: Int = 256,
     val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.ALL,
     /** How the subscribed feed orders threads. Defaults to board code A–Z. */
@@ -198,12 +157,6 @@ data class AppSettings(
     val httpsOnly: Boolean = true,
     val connectTimeoutSeconds: Long = 15,
     val readTimeoutSeconds: Long = 30,
-    /**
-     * Retained for backup compatibility only. Never applied to networking: Android/Conscrypt
-     * ignores the HotSpot OCSP system properties earlier builds set, and Orbin no longer claims
-     * to toggle revocation checking. Default false = do not disable (secure/honest).
-     */
-    val disableOcspChecking: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
     val internalUpdaterEnabled: Boolean = true,
@@ -216,14 +169,6 @@ data class AppSettings(
     val onboardingCompleted: Boolean = false,
     val mediaScrollThreadView: Boolean = true,
     val mediaScrollBoardView: Boolean = false,
-    /**
-     * Autoplay each thread's first attachment inline in the subscribed feed when it's a video,
-     * while its row is on screen. Other attachments stay static thumbnails until the thread is
-     * opened. Always starts muted, independent of [muteByDefault] — feed autoplay is ambient
-     * background motion the user didn't choose to watch, so it never surprises them with audio —
-     * but tapping the video reveals the usual controls to unmute it, same as anywhere else.
-     */
-    val autoplayVideosInFeed: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()

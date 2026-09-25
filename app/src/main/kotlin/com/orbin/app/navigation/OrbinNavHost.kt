@@ -40,12 +40,8 @@ fun OrbinNavHost(
     startDestination: Route = Route.NextFeed,
     chromeHidesOnScroll: Boolean = true,
     twoPaneBoardDetail: Boolean = false,
-    subscribedFeedScrollToTopRequest: Int = 0,
-    subscribedFeedRefreshRequest: Int = 0,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onChromeVisibleChange: (Boolean) -> Unit = {},
-    feedFilter: String = "",
-    onClearFeedFilter: () -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -63,13 +59,9 @@ fun OrbinNavHost(
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
-                onOpenSettings = { navController.navigate(Route.Settings()) },
+                onOpenSettings = { navController.navigate(Route.Settings) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
-                scrollToTopRequest = subscribedFeedScrollToTopRequest,
-                refreshRequest = subscribedFeedRefreshRequest,
-                filter = feedFilter,
-                onClearFilter = onClearFeedFilter,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
                 onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
             )
@@ -82,7 +74,7 @@ fun OrbinNavHost(
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
                 onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
-                onOpenSettings = { navController.navigate(Route.Settings()) },
+                onOpenSettings = { navController.navigate(Route.Settings) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
             )
@@ -107,7 +99,7 @@ fun OrbinNavHost(
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenSettings = { navController.navigate(Route.Settings()) },
+                onOpenSettings = { navController.navigate(Route.Settings) },
             )
         }
 
@@ -190,10 +182,9 @@ fun OrbinNavHost(
             }
         }
 
-        composable<Route.Settings> { backStackEntry ->
+        composable<Route.Settings> {
             NextSettingsScreen(
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
-                focusId = backStackEntry.toRoute<Route.Settings>().focus,
                 onOpenSearch = { navController.navigate(Route.Search) },
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
             )

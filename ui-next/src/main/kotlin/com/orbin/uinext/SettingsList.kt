@@ -1,29 +1,17 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -38,12 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -52,175 +37,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class Command(
-    val label: String,
-    val kind: String,
-    val hint: String? = null,
-    val id: String = "$kind:$label",
-)
-
-@Composable
-fun CommandSheet(
-    query: String,
-    results: List<Command>,
-    modifier: Modifier = Modifier,
-    onQueryChange: (String) -> Unit = {},
-    onSelect: (Command) -> Unit = {},
-    onDismiss: () -> Unit = {},
-    placeholder: String = stringResource(R.string.next_command_placeholder),
-    emptyLabel: String = stringResource(R.string.next_command_empty),
-) {
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
-    val sheetInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val sheetFraction = commandSheetFraction(results.size)
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.36f))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = onDismiss,
-                    ),
-        )
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(sheetFraction)
-                    .align(Alignment.BottomCenter)
-                    .imePadding()
-                    .nextFrosted(
-                        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
-                    ).windowInsetsPadding(sheetInsets),
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(width = 36.dp, height = 5.dp)
-                            .clip(RoundedCornerShape(2.5.dp))
-                            .background(next.muted.copy(alpha = 0.35f)),
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = GUTTER, end = GUTTER, top = 4.dp, bottom = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    if (query.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.6).sp,
-                            color = next.faint,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    BasicTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
-                        singleLine = true,
-                        textStyle =
-                            TextStyle(
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = (-0.6).sp,
-                                color = next.ink,
-                            ),
-                        cursorBrush = SolidColor(next.accent),
-                        modifier = Modifier.fillMaxWidth().focusRequester(focus),
-                    )
-                }
-                WidthSpacer(12)
-                if (query.isNotEmpty()) {
-                    InlineAction(
-                        label = stringResource(R.string.next_command_clear),
-                        onClick = { onQueryChange("") },
-                    )
-                    WidthSpacer(8)
-                }
-                MetaLine(
-                    pluralStringResource(R.plurals.next_command_results, results.size, results.size),
-                    color = next.faint,
-                )
-            }
-            Hairline()
-            if (results.isEmpty()) {
-                Text(
-                    text = emptyLabel,
-                    fontSize = 14.sp,
-                    color = next.muted,
-                    modifier = Modifier.padding(horizontal = GUTTER, vertical = 22.dp),
-                )
-            } else {
-                LazyColumn {
-                    itemsIndexed(results, key = { _, command -> command.id }) { index, command ->
-                        CommandRow(command, onClick = onSelect)
-                        if (index < results.lastIndex) Hairline(inset = true)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun commandSheetFraction(resultCount: Int): Float =
-    when {
-        resultCount <= SMALL_RESULT_COUNT -> SMALL_SHEET_FRACTION
-        resultCount <= MEDIUM_RESULT_COUNT -> MEDIUM_SHEET_FRACTION
-        resultCount <= LARGE_RESULT_COUNT -> LARGE_SHEET_FRACTION
-        else -> MAX_SHEET_FRACTION
-    }
-
-@Composable
-private fun CommandRow(
-    command: Command,
-    onClick: (Command) -> Unit = {},
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .nextClickable(role = Role.Button, onClick = { onClick(command) })
-                .padding(horizontal = GUTTER, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = command.label,
-                fontSize = 15.5.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = (-0.1).sp,
-                color = next.ink,
-            )
-            if (command.hint != null) {
-                Gap(4)
-                MetaLine(command.hint)
-            }
-        }
-        WidthSpacer(12)
-        Pill(command.kind, tint = kindTint(command.kind))
-    }
-}
-
-@Composable
-private fun kindTint(kind: String): Color =
-    when (kind) {
-        "board" -> boardHue("/g/")
-        "search" -> boardHue("/lit/")
-        "thread" -> boardHue("/p/")
-        else -> next.accent
-    }
 
 data class SettingItem(
     val id: String,
@@ -248,14 +64,13 @@ fun SettingsScreen(
     subtitle: String? = null,
     expandedId: String? = null,
     showRail: Boolean = true,
-    focusId: String? = null,
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
 ) {
     val state = rememberLazyListState()
-    LaunchedEffect(focusId, expandedId, groups) {
-        val targetId = focusId ?: expandedId ?: return@LaunchedEffect
+    LaunchedEffect(expandedId, groups) {
+        val targetId = expandedId ?: return@LaunchedEffect
         val groupIndex = groups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
         if (groupIndex >= 0) {
             val lazyItemIndex = 1 + groupIndex
@@ -444,14 +259,6 @@ private fun SettingTextEditor(
 }
 
 private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
-
-private const val SMALL_RESULT_COUNT = 1
-private const val MEDIUM_RESULT_COUNT = 3
-private const val LARGE_RESULT_COUNT = 6
-private const val SMALL_SHEET_FRACTION = 0.42f
-private const val MEDIUM_SHEET_FRACTION = 0.48f
-private const val LARGE_SHEET_FRACTION = 0.60f
-private const val MAX_SHEET_FRACTION = 0.72f
 
 const val ON_LABEL = "On"
 const val OFF_LABEL = "Off"

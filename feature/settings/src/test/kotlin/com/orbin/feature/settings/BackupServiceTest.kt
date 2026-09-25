@@ -7,11 +7,8 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.PreloadOption
-import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -50,29 +47,22 @@ class BackupServiceTest {
             hideTextOnlyThreads = true,
             harshContentFilter = true,
             mediaFilter = MediaFilter.VIDEOS,
-            feedRefreshInterval = FeedRefreshInterval.FIFTEEN_MINUTES,
             threadPresentation = ThreadPresentation.OVERLAY,
             themeMode = AppThemeMode.DARK,
             colorTheme = ColorTheme.TOMORROW_NIGHT,
-            dynamicColor = false,
             amoled = true,
             fontScale = 1.2f,
             fullScreenFeedChrome = true,
             thumbnailSize = ThumbnailSize.FILL,
-            autoplayVideos = true,
             muteByDefault = false,
             fullscreenVideoPlayback = true,
             autoRotateVideoFullscreen = true,
-            preloadImages = false,
-            preloadOption = PreloadOption.NONE,
-            preloadThrottleMode = PreloadThrottleMode.UNLIMITED,
             imageCacheLimitMb = 512,
             feedThreadLimit = FeedThreadLimit.ALL,
             userAgent = "OrbinTest/1.0",
             dohProvider = DohProvider.NEXTDNS,
             connectTimeoutSeconds = 30,
             readTimeoutSeconds = 60,
-            disableOcspChecking = false,
             biometricLockEnabled = true,
             saveRecentSearches = true,
             internalUpdaterEnabled = false,

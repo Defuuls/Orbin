@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,10 +43,6 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.orbin.app.command.CommandAction
-import com.orbin.app.command.CommandDestination
-import com.orbin.app.command.CommandHost
-import com.orbin.app.command.CommandTarget
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.core.model.ThreadPresentation
@@ -57,7 +52,7 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Feed and Settings own DestinationPill chrome; Boards, Media, threads, catalogs,
+ * Root composable. Feed, Media and Boards own DestinationPill chrome; Settings, threads, catalogs,
  * Search and Downloads draw no bottom chrome, since each already carries its own large title.
  */
 @Composable
@@ -87,10 +82,6 @@ fun OrbinApp(
                 isAllMedia
         val chromeHidesOnScroll = scrollAwayScreen
         var chromeVisible by rememberSaveable { mutableStateOf(true) }
-        var feedScrollToTopRequest by rememberSaveable { mutableIntStateOf(0) }
-        var feedRefreshRequest by rememberSaveable { mutableIntStateOf(0) }
-        var commandsOpen by rememberSaveable { mutableStateOf(false) }
-        var feedFilter by rememberSaveable { mutableStateOf("") }
 
         LaunchedEffect(chromeHidesOnScroll) {
             if (!chromeHidesOnScroll) {
@@ -158,12 +149,8 @@ fun OrbinApp(
                     startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     chromeHidesOnScroll = chromeHidesOnScroll,
                     twoPaneBoardDetail = twoPaneBoardDetail,
-                    subscribedFeedScrollToTopRequest = feedScrollToTopRequest,
-                    subscribedFeedRefreshRequest = feedRefreshRequest,
                     threadPresentation = threadPresentation,
                     onChromeVisibleChange = { chromeVisible = it },
-                    feedFilter = feedFilter,
-                    onClearFeedFilter = { feedFilter = "" },
                 )
                 NextSnackbarHost(
                     hostState = snackbarHostState,
@@ -171,63 +158,8 @@ fun OrbinApp(
                 )
             }
         }
-        if (commandsOpen) {
-            CommandHost(
-                onDismiss = { commandsOpen = false },
-                onSelect = { target ->
-                    commandsOpen = false
-                    navController.follow(
-                        target = target,
-                        onRefreshFeed = { feedRefreshRequest++ },
-                        onScrollToTop = { feedScrollToTopRequest++ },
-                        onFilterFeed = { query -> feedFilter = query },
-                    )
-                },
-            )
-        }
     }
 }
-
-/**
- * Sends the user wherever a command points, or performs it if it is not a place.
- *
- * Kept out of [OrbinApp] so the root composable stays a layout rather than also being the
- * navigation table for every command.
- */
-private fun NavHostController.follow(
-    target: CommandTarget,
-    onRefreshFeed: () -> Unit,
-    onScrollToTop: () -> Unit,
-    onFilterFeed: (String) -> Unit,
-) {
-    when (target) {
-        is CommandTarget.OpenBoard -> navigate(Route.Board(target.provider, target.board, target.title))
-        is CommandTarget.OpenThread ->
-            navigate(Route.Thread(target.provider, target.board, target.thread, target.label))
-
-        is CommandTarget.OpenSetting -> navigate(Route.Settings(focus = target.settingId))
-        is CommandTarget.Go -> navigate(target.destination.route())
-        is CommandTarget.Act ->
-            when (target.action) {
-                CommandAction.REFRESH_FEED -> onRefreshFeed()
-                CommandAction.SCROLL_TO_TOP -> onScrollToTop()
-                // Served inside the command surface itself: it holds the lock controller, and
-                // locking must not depend on which screen is behind the sheet.
-                CommandAction.LOCK_NOW -> Unit
-                CommandAction.FILTER_FEED -> onFilterFeed(target.query)
-            }
-    }
-}
-
-private fun CommandDestination.route(): Route =
-    when (this) {
-        CommandDestination.FEED -> Route.NextFeed
-        CommandDestination.ALL_MEDIA -> Route.AllMedia
-        CommandDestination.BOARDS -> Route.BoardGallery
-        CommandDestination.DOWNLOADS -> Route.Downloads
-        CommandDestination.SEARCH -> Route.Search
-        CommandDestination.SETTINGS -> Route.Settings()
-    }
 
 @Composable
 private fun OfflineBanner(modifier: Modifier = Modifier) {

@@ -131,19 +131,6 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun feedFiltered() =
-        capture("next_feed_filtered") {
-            FeedScreen(
-                rows = feedRows().filter { it.board == "/g/" },
-                subtitle = "5 threads across 7 boards",
-                filter = "thinkpad",
-                onOpenBoards = {},
-                onOpenMedia = {},
-                onSettings = {},
-            )
-        }
-
-    @Test
     fun board() =
         capture("next_board") {
             val rows = boardRows()
@@ -289,21 +276,6 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun command() = capture("next_command") { commandContent() }
-
-    @Test
-    fun commandMaxText() = capture("next_command_max_text", fontScale = MAX_FONT_SCALE) { commandContent() }
-
-    /** The list at rest: every row closed. */
-    @Test
-    fun settings() =
-        capture("next_settings") {
-            SettingsScreen(
-                groups = settingsGroups(),
-            )
-        }
-
-    @Test
     fun settingsMaxText() =
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(
@@ -372,23 +344,6 @@ class ProposalScreenshotTest {
                 onOpenSettings = {},
             )
         }
-
-    @androidx.compose.runtime.Composable
-    private fun commandContent() {
-        FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
-        CommandSheet(
-            query = "auto",
-            results =
-                listOf(
-                    Command("Autoplay videos", "setting", "Media · currently on"),
-                    Command("Autoplay videos in feed", "setting", "Media · currently off"),
-                    Command("Auto-rotate video", "setting", "Media · currently on"),
-                    Command("/aco/", "board", "Adult Cartoons · subscribed"),
-                    Command("Automotive threads", "search", "12 saved results"),
-                    Command("Automotive detailing general", "thread", "/o/ · 84 replies · open"),
-                ),
-        )
-    }
 
     private fun capture(
         name: String,

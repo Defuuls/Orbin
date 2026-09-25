@@ -31,8 +31,6 @@ import com.orbin.uinext.tokens.NextSpace
 @Composable
 internal fun FeedHeader(
     subtitle: String,
-    filter: String?,
-    onClearFilter: () -> Unit,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
     headerContent: @Composable () -> Unit = {},
@@ -72,18 +70,6 @@ internal fun FeedHeader(
         ) {
             if (sortLabel != null) {
                 InlineAction("$sortLabel ▾", onClick = onSort)
-            }
-        }
-        if (filter != null) {
-            Gap(10)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Pill(stringResource(R.string.next_filter_label))
-                WidthSpacer(8)
-                MetaLine(filter, modifier = Modifier.weight(1f))
-                InlineAction(stringResource(R.string.next_filter_clear), onClick = onClearFilter)
             }
         }
         Gap(12)

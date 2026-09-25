@@ -15,10 +15,6 @@ fun NextFeedWithSiteSwitcherScreen(
     showRail: Boolean = true,
     hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
-    scrollToTopRequest: Int = 0,
-    refreshRequest: Int = 0,
-    filter: String = "",
-    onClearFilter: () -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
 ) {
@@ -31,10 +27,6 @@ fun NextFeedWithSiteSwitcherScreen(
         showRail = showRail,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
-        scrollToTopRequest = scrollToTopRequest,
-        refreshRequest = refreshRequest,
-        filter = filter,
-        onClearFilter = onClearFilter,
         onOpenBoards = onOpenBoards,
         onOpenMedia = onOpenMedia,
         headerContent = {

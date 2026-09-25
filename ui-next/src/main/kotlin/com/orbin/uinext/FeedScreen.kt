@@ -31,8 +31,6 @@ fun FeedScreen(
     showRail: Boolean = true,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
-    filter: String? = null,
-    onClearFilter: () -> Unit = {},
     onOpenRow: (FeedRow) -> Unit = {},
     onSettings: (() -> Unit)? = null,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
@@ -41,7 +39,6 @@ fun FeedScreen(
     hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
-    scrollToTopRequest: Int = 0,
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
@@ -51,9 +48,6 @@ fun FeedScreen(
 ) {
     val gridState = rememberLazyGridState()
 
-    LaunchedEffect(scrollToTopRequest) {
-        if (scrollToTopRequest > 0) gridState.animateScrollToItem(0)
-    }
     val railVisible =
         if (!hideRailOnScroll) {
             true
@@ -115,8 +109,6 @@ fun FeedScreen(
                     subtitle = subtitle ?: pluralStringResource(R.plurals.next_feed_thread_count, rows.size, rows.size),
                     sortLabel = sortLabel,
                     onSort = onSort,
-                    filter = filter,
-                    onClearFilter = onClearFilter,
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,

@@ -6,6 +6,10 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Removed
+- The command palette, which nothing could open any more, along with the settings search index and the feed filter it drove.
+- Nine stored preferences that nothing read: platform theme, dynamic color, autoplay videos, autoplay in feed, preload images, preload option, preload throttle, feed refresh interval and the OCSP switch. Onboarding's "Dynamic color" switch went with them, and "AMOLED black" is now "True black" as in Settings. Older backups that still contain these keys import normally.
+
 ### Fixed
 - Boards, board catalogs and All media could not be reached once you followed a board. The bottom bar is now Feed · Media · Boards, and Settings opens from a gear in the Feed header. Switching tabs no longer stacks screens, and Back from Media or Boards returns to the Feed.
 

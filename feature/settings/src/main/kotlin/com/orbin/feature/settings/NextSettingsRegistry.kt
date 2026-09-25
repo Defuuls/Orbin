@@ -208,3 +208,8 @@ internal class SettingsModel(
 
 /** SYSTEM -> "System". These enums carry no label, and shouting at the reader is not a design. */
 private fun Enum<*>.titleCase(): String = name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
+
+// The group headings, spelled once.
+internal const val GENERAL = "General"
+internal const val DISPLAY = "Display & Media"
+internal const val PRIVACY = "Privacy & Data"

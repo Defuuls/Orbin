@@ -28,7 +28,6 @@ class BackupDocumentTest {
                     fontScale = 1.2f,
                     feedThreadLimit = FeedThreadLimit.ALL,
                     dohProvider = DohProvider.NEXTDNS,
-                    preloadThrottleMode = PreloadThrottleMode.UNLIMITED,
                     quietHoursStart = "23:00",
                     activeProviderId = "vichan",
                 ),
@@ -99,6 +98,33 @@ class BackupDocumentTest {
         val restored = json.decodeFromString(BackupDocument.serializer(), older)
 
         assertThat(restored.settings).isEqualTo(AppSettings.Default.copy(hideNsfwBoards = true))
+    }
+
+    /** Preferences removed as dead weight must not stop an older backup from restoring. */
+    @Test
+    fun aBackupCarryingRetiredMediaAndThemeSettingsStillImports() {
+        val older =
+            """
+            {
+              "exportedAt": "2026-09-01T12:00:00Z",
+              "settings": {
+                "platformTheme": "IOS",
+                "dynamicColor": false,
+                "autoplayVideos": true,
+                "autoplayVideosInFeed": true,
+                "preloadImages": false,
+                "preloadOption": "ALL",
+                "preloadThrottleMode": "UNLIMITED",
+                "feedRefreshInterval": "FIVE_MINUTES",
+                "disableOcspChecking": true,
+                "amoled": true
+              }
+            }
+            """.trimIndent()
+
+        val restored = json.decodeFromString(BackupDocument.serializer(), older)
+
+        assertThat(restored.settings).isEqualTo(AppSettings.Default.copy(amoled = true))
     }
 
     /** A backup from an older build must import too, defaulting anything it predates. */
