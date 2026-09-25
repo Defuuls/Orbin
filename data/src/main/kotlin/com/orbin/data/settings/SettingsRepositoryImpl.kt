@@ -16,13 +16,9 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.PlatformTheme
-import com.orbin.core.model.PreloadOption
-import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
@@ -87,16 +83,8 @@ class SettingsRepositoryImpl
             edit { it[Keys.mediaFilter] = filter.name }
         }
 
-        override suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval) {
-            edit { it[Keys.feedRefreshInterval] = interval.name }
-        }
-
         override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
             edit { it[Keys.threadPresentation] = presentation.name }
-        }
-
-        override suspend fun setPlatformTheme(theme: PlatformTheme) {
-            edit { it[Keys.platformTheme] = theme.name }
         }
 
         override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -111,10 +99,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.fullScreenFeedChrome] = enabled }
         }
 
-        override suspend fun setDynamicColor(enabled: Boolean) {
-            edit { it[Keys.dynamicColor] = enabled }
-        }
-
         override suspend fun setAmoled(enabled: Boolean) {
             edit { it[Keys.amoled] = enabled }
         }
@@ -127,10 +111,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.thumbnailSize] = size.name }
         }
 
-        override suspend fun setAutoplayVideos(enabled: Boolean) {
-            edit { it[Keys.autoplay] = enabled }
-        }
-
         override suspend fun setMuteByDefault(enabled: Boolean) {
             edit { it[Keys.mute] = enabled }
         }
@@ -141,18 +121,6 @@ class SettingsRepositoryImpl
 
         override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
             edit { it[Keys.autoRotateVideoFullscreen] = enabled }
-        }
-
-        override suspend fun setPreloadImages(enabled: Boolean) {
-            edit { it[Keys.preload] = enabled }
-        }
-
-        override suspend fun setPreloadOption(option: PreloadOption) {
-            edit { it[Keys.preloadOption] = option.name }
-        }
-
-        override suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode) {
-            edit { it[Keys.preloadThrottleMode] = mode.name }
         }
 
         override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
@@ -223,20 +191,12 @@ class SettingsRepositoryImpl
             edit { it[Keys.mediaScrollBoardView] = enabled }
         }
 
-        override suspend fun setAutoplayVideosInFeed(enabled: Boolean) {
-            edit { it[Keys.autoplayVideosInFeed] = enabled }
-        }
-
         override suspend fun setConnectTimeoutSeconds(seconds: Long) {
             edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
         }
 
         override suspend fun setReadTimeoutSeconds(seconds: Long) {
             edit { it[Keys.readTimeoutSeconds] = seconds.toString() }
-        }
-
-        override suspend fun setDisableOcspChecking(disable: Boolean) {
-            edit { it[Keys.disableOcspChecking] = disable }
         }
 
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
@@ -325,34 +285,22 @@ class SettingsRepositoryImpl
                 mediaFilter =
                     this[Keys.mediaFilter]?.toEnumOrDefault(MediaFilter.ALL)
                         ?: MediaFilter.ALL,
-                feedRefreshInterval =
-                    resolveFeedRefreshInterval(this[Keys.feedRefreshInterval], this[Keys.refreshFeedOnReturn]),
                 threadPresentation =
                     this[Keys.threadPresentation]?.toEnumOrDefault(ThreadPresentation.PAGE)
                         ?: ThreadPresentation.PAGE,
-                platformTheme = PlatformTheme.ANDROID,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
                         ?: ColorTheme.ORBIN,
-                dynamicColor = this[Keys.dynamicColor] ?: true,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
                 fullScreenFeedChrome = this[Keys.fullScreenFeedChrome] ?: false,
                 thumbnailSize =
                     this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
                         ?: ThumbnailSize.MEDIUM,
-                autoplayVideos = this[Keys.autoplay] ?: false,
                 muteByDefault = this[Keys.mute] ?: true,
                 fullscreenVideoPlayback = this[Keys.fullscreenVideoPlayback] ?: false,
                 autoRotateVideoFullscreen = this[Keys.autoRotateVideoFullscreen] ?: false,
-                preloadImages = this[Keys.preload] ?: true,
-                preloadOption =
-                    this[Keys.preloadOption]?.toEnumOrDefault(PreloadOption.IMAGES)
-                        ?: PreloadOption.IMAGES,
-                preloadThrottleMode =
-                    this[Keys.preloadThrottleMode]?.toEnumOrDefault(PreloadThrottleMode.MODERATE)
-                        ?: PreloadThrottleMode.MODERATE,
                 feedThreadLimit =
                     when (this[Keys.feedThreadLimit]) {
                         null, "TWELVE" -> FeedThreadLimit.ALL
@@ -373,7 +321,6 @@ class SettingsRepositoryImpl
                 httpsOnly = true,
                 connectTimeoutSeconds = this[Keys.connectTimeoutSeconds]?.toLongOrNull() ?: 15,
                 readTimeoutSeconds = this[Keys.readTimeoutSeconds]?.toLongOrNull() ?: 30,
-                disableOcspChecking = this[Keys.disableOcspChecking] ?: false,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
@@ -384,7 +331,6 @@ class SettingsRepositoryImpl
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
                 mediaScrollThreadView = this[Keys.mediaScrollThreadView] ?: true,
                 mediaScrollBoardView = this[Keys.mediaScrollBoardView] ?: false,
-                autoplayVideosInFeed = this[Keys.autoplayVideosInFeed] ?: false,
             )
 
         private fun AppSettings.toNetworkConfig(): NetworkConfig =
@@ -414,24 +360,16 @@ class SettingsRepositoryImpl
             val harshContentFilter = booleanPreferencesKey("harsh_content_filter")
             val deepMediaScan = booleanPreferencesKey("deep_media_scan")
             val mediaFilter = stringPreferencesKey("media_filter")
-            val refreshFeedOnReturn = booleanPreferencesKey("refresh_feed_on_return")
-            val feedRefreshInterval = stringPreferencesKey("feed_refresh_interval")
             val threadPresentation = stringPreferencesKey("thread_presentation")
-            val platformTheme = stringPreferencesKey("platform_theme")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
             val fullScreenFeedChrome = booleanPreferencesKey("full_screen_feed_chrome")
-            val dynamicColor = booleanPreferencesKey("dynamic_color")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")
             val thumbnailSize = stringPreferencesKey("thumbnail_size")
-            val autoplay = booleanPreferencesKey("autoplay_videos")
             val mute = booleanPreferencesKey("mute_by_default")
             val fullscreenVideoPlayback = booleanPreferencesKey("fullscreen_video_playback")
             val autoRotateVideoFullscreen = booleanPreferencesKey("auto_rotate_video_fullscreen")
-            val preload = booleanPreferencesKey("preload_images")
-            val preloadOption = stringPreferencesKey("preload_option")
-            val preloadThrottleMode = stringPreferencesKey("preload_throttle_mode")
             val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
             val feedSort = stringPreferencesKey("feed_sort")
             val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
@@ -449,10 +387,8 @@ class SettingsRepositoryImpl
             val quietHoursEnd = stringPreferencesKey("quiet_hours_end")
             val connectTimeoutSeconds = stringPreferencesKey("connect_timeout_seconds")
             val readTimeoutSeconds = stringPreferencesKey("read_timeout_seconds")
-            val disableOcspChecking = booleanPreferencesKey("disable_ocsp_checking")
             val mediaScrollThreadView = booleanPreferencesKey("media_scroll_thread_view")
             val mediaScrollBoardView = booleanPreferencesKey("media_scroll_board_view")
-            val autoplayVideosInFeed = booleanPreferencesKey("autoplay_videos_in_feed")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("favorite_boards_${provider.value}")
@@ -466,22 +402,3 @@ class SettingsRepositoryImpl
             ): Preferences.Key<String> = stringPreferencesKey("feed_thread_limit_${provider.value}_${board.value}")
         }
     }
-
-/**
- * Resolves the feed refresh interval, falling back to the boolean setting it replaced.
- *
- * "Refresh feed on return" was on/off; the interval expresses those same two ends plus what lies
- * between them. Reading the old key when the new one is absent means anyone who had deliberately
- * turned refreshing off keeps that behaviour, instead of silently getting refreshes back on their
- * next launch — a setting quietly reverting itself is the kind of thing users notice and cannot
- * explain.
- */
-internal fun resolveFeedRefreshInterval(
-    stored: String?,
-    legacyRefreshOnReturn: Boolean?,
-): FeedRefreshInterval {
-    stored?.let { name ->
-        FeedRefreshInterval.entries.firstOrNull { it.name == name }?.let { return it }
-    }
-    return if (legacyRefreshOnReturn == false) FeedRefreshInterval.NEVER else FeedRefreshInterval.ALWAYS
-}

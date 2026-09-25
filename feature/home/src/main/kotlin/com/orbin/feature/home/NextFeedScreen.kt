@@ -5,7 +5,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -51,31 +50,18 @@ fun NextFeedScreen(
     hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
-    scrollToTopRequest: Int = 0,
-    refreshRequest: Int = 0,
-    filter: String = "",
-    onClearFilter: () -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
     onOpenMedia: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
-    // refreshRequest is a counter owned by the app shell and outlives this screen. Remember the
-    // last one handled so coming back to the feed does not replay an old request as a refresh.
-    var handledRefreshRequest by rememberSaveable { mutableIntStateOf(refreshRequest) }
-    LaunchedEffect(refreshRequest) {
-        if (refreshRequest > handledRefreshRequest) {
-            handledRefreshRequest = refreshRequest
-            viewModel.refresh()
-        }
-    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     var localQuery by rememberSaveable { mutableStateOf("") }
     var sortOpen by rememberSaveable { mutableStateOf(false) }
-    val effectiveFilter = localQuery.ifBlank { filter }
+    val effectiveFilter = localQuery
     if (sortOpen) {
         FeedSortSheet(
             FeedSort.entries.map { it.label },
@@ -204,12 +190,9 @@ fun NextFeedScreen(
                             groupByBoard = settings.feedSort == FeedSort.BOARD,
                             sortLabel = settings.feedSort.label,
                             onSort = { sortOpen = true },
-                            filter = filter.takeIf { it.isNotBlank() },
-                            onClearFilter = onClearFilter,
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,
-                            scrollToTopRequest = scrollToTopRequest,
                             onSettings = onOpenSettings,
                             onOpenBoards = onOpenBoards,
                             onOpenMedia = onOpenMedia,

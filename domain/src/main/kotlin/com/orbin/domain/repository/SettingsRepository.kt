@@ -5,13 +5,9 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.DownloadOrganization
-import com.orbin.core.model.FeedRefreshInterval
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.PlatformTheme
-import com.orbin.core.model.PreloadOption
-import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.ThumbnailSize
@@ -36,15 +32,9 @@ interface SettingsRepository {
 
     suspend fun setMediaFilter(filter: MediaFilter)
 
-    suspend fun setFeedRefreshInterval(interval: FeedRefreshInterval)
-
     suspend fun setThreadPresentation(presentation: ThreadPresentation)
 
-    suspend fun setPlatformTheme(theme: PlatformTheme)
-
     suspend fun setThemeMode(mode: AppThemeMode)
-
-    suspend fun setDynamicColor(enabled: Boolean)
 
     suspend fun setAmoled(enabled: Boolean)
 
@@ -52,19 +42,11 @@ interface SettingsRepository {
 
     suspend fun setThumbnailSize(size: ThumbnailSize)
 
-    suspend fun setAutoplayVideos(enabled: Boolean)
-
     suspend fun setMuteByDefault(enabled: Boolean)
 
     suspend fun setFullscreenVideoPlayback(enabled: Boolean)
 
     suspend fun setAutoRotateVideoFullscreen(enabled: Boolean)
-
-    suspend fun setPreloadImages(enabled: Boolean)
-
-    suspend fun setPreloadOption(option: PreloadOption)
-
-    suspend fun setPreloadThrottleMode(mode: PreloadThrottleMode)
 
     suspend fun setFeedThreadLimit(limit: FeedThreadLimit)
 
@@ -90,9 +72,6 @@ interface SettingsRepository {
 
     suspend fun setReadTimeoutSeconds(seconds: Long)
 
-    /** Backup-compat only; not applied to the OkHttp stack (see NetworkModule). */
-    suspend fun setDisableOcspChecking(disable: Boolean)
-
     suspend fun setOnboardingCompleted(completed: Boolean)
 
     suspend fun setActiveProviderId(id: ProviderId)
@@ -110,6 +89,4 @@ interface SettingsRepository {
     suspend fun setMediaScrollThreadView(enabled: Boolean)
 
     suspend fun setMediaScrollBoardView(enabled: Boolean)
-
-    suspend fun setAutoplayVideosInFeed(enabled: Boolean)
 }

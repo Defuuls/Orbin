@@ -53,17 +53,9 @@ sealed interface Route {
     @Serializable
     data object Downloads : Route
 
-    /**
-     * One settings destination, not eight.
-     *
-     * [focus] is the id of a row to open on, for arriving from the command surface having typed a
-     * setting's name. The seven category screens this replaced were the only reason a settings
-     * result had to name a screen at all.
-     */
+    /** One settings destination, not eight. */
     @Serializable
-    data class Settings(
-        val focus: String? = null,
-    ) : Route
+    data object Settings : Route
 
     @Serializable
     data object Onboarding : Route
