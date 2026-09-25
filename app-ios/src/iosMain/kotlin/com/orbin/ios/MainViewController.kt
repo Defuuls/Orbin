@@ -7,6 +7,7 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
+import com.orbin.data.settings.BoardPreferencesStore
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.MainScope
 import platform.UIKit.UIViewController
@@ -25,6 +26,7 @@ fun MainViewController(): UIViewController {
             providers = orbinProviders(client),
             bookmarks = BookmarkRepositoryImpl(database.bookmarkDao()),
             history = HistoryRepositoryImpl(database.historyDao()),
+            boardPreferences = BoardPreferencesStore(openPreferences()),
             scope = MainScope(),
         )
     return ComposeUIViewController {

@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.orbin.kmp.room)
 }
 
-// The local database, shared with iOS: Room entities, DAOs and the repositories built only on
-// them. No DI annotations — `data` provides these to Android's Hilt graph, `:app-ios` builds them
+// What the reader keeps, shared with iOS: the Room database (entities, DAOs and the repositories
+// built only on them) and the board preferences kept in DataStore. No DI annotations — `data` provides these to Android's Hilt graph, `:app-ios` builds them
 // itself. How the database is opened stays per platform (see OrbinDatabase).
 kotlin {
     android {
@@ -16,6 +16,7 @@ kotlin {
             implementation(project(":core:model"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.immutable)
+            api(libs.androidx.datastore.preferences.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

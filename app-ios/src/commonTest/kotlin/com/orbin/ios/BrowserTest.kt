@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -14,6 +15,8 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,8 +28,10 @@ import kotlin.test.assertTrue
 class BrowserTest {
     private val requested = mutableListOf<String>()
     private val userAgents = mutableSetOf<String?>()
+    private val recording = Mutex()
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
+    private val boardPreferences = FakeBoardPreferences()
 
     private fun browser(
         scope: CoroutineScope,
@@ -34,11 +39,21 @@ class BrowserTest {
     ): Browser {
         val engine =
             MockEngine { request ->
-                requested += request.url.toString()
-                userAgents += request.headers[HttpHeaders.UserAgent]
+                // The engine answers on several threads at once (both sites load together).
+                recording.withLock {
+                    requested += request.url.toString()
+                    userAgents += request.headers[HttpHeaders.UserAgent]
+                }
                 reply(request, routes)
             }
-        return Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, scope, now = { NOW })
+        return Browser(
+            orbinProviders(orbinHttpClient(engine)),
+            bookmarks,
+            history,
+            boardPreferences,
+            scope,
+            now = { NOW },
+        )
     }
 
     private fun MockRequestHandleScope.reply(
@@ -77,7 +92,7 @@ class BrowserTest {
             assertTrue(browser.back())
             assertIs<Route.Catalog>(browser.backStack.value.last())
             assertTrue(browser.back())
-            assertFalse(browser.back(), "the boards list is the bottom of the stack")
+            assertFalse(browser.back(), "the start tab is the bottom of the stack")
 
             assertEquals(setOf<String?>(ORBIN_USER_AGENT), userAgents)
             assertTrue("https://a.4cdn.org/g/thread/7.json" in requested)
@@ -98,11 +113,13 @@ class BrowserTest {
             val routes = mutableMapOf<String, String?>()
             val engine =
                 MockEngine { request -> reply(request, routes) }
-            val browser = Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, backgroundScope)
+            val browser =
+                Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, boardPreferences, backgroundScope)
 
             assertIs<Load.Failed>(browser.boards.settled())
 
             routes += BOTH_SITES
+            browser.openTab(Route.Boards)
             browser.retry()
             assertIs<Load.Ready<*>>(browser.boards.settled())
         }
@@ -193,7 +210,63 @@ class BrowserTest {
             assertFalse(browser.watching(key).first { !it })
         }
 
+    @Test
+    fun followedBoardsOnEverySiteMakeOneFeedSortedByBoard() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            boards.forEach { browser.setFollowed(it, follow = true) }
+
+            val feed = browser.feed.first { it is Load.Ready && it.value.size == 2 }
+            val threads = assertIs<Load.Ready<List<FeedThread>>>(feed).value
+            assertEquals(listOf("b", "g"), threads.map { it.thread.key.board.value }, "board A–Z, across sites")
+            assertEquals(2, threads.map { it.provider }.toSet().size)
+            assertEquals(Route.Feed, browser.backStack.value.single(), "the feed is the start screen")
+        }
+
+    @Test
+    fun aFollowedBoardThatFailsLeavesTheOthersInTheFeed() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            // The LynxChan /b/ catalog is not in the script, so it fails with a 404.
+            boards.forEach { browser.setFollowed(it, follow = true) }
+
+            val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(
+                listOf("g"),
+                assertIs<Load.Ready<List<FeedThread>>>(feed).value.map { it.thread.key.board.value },
+            )
+        }
+
+    @Test
+    fun aBoardsFeedLimitCutsItsThreads() =
+        runTest {
+            val manyThreads = (1..8).joinToString(",") { """{"no":$it,"sub":"T$it","time":$it}""" }
+            val routes = BOTH_SITES + ("a.4cdn.org/g/catalog.json" to """[{"page":1,"threads":[$manyThreads]}]""")
+            val browser = browser(backgroundScope, routes)
+            val g =
+                assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first {
+                    it.board.id.value ==
+                        "g"
+                }
+            boardPreferences.setFeedThreadLimit(g.provider, g.board.id, FeedThreadLimit.SIX)
+
+            browser.setFollowed(g, follow = true)
+
+            val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(6, assertIs<Load.Ready<List<FeedThread>>>(feed).value.size)
+        }
+
+    @Test
+    fun withNothingFollowedTheFeedIsEmptyNotAnError() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            assertEquals(Load.Ready(emptyList()), browser.feed.settled())
+        }
+
     private companion object {
+        val LYNXCHAN_CATALOG = "bbw-chan.link/b/catalog.json" to """[{"threadId":5,"subject":"Hi"}]"""
         const val NOW = 1_700_000_000_000L
         const val LYNXCHAN_BOARDS = "bbw-chan.link/boards.js"
         val BOTH_SITES =

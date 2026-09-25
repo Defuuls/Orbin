@@ -16,14 +16,34 @@ import com.orbin.uinext.Post as NextPost
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
 // adapters do. Kept free of Compose so they are unit-tested on both platforms.
 
-internal fun SiteBoard.toTile(): BoardTile =
+internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
     BoardTile(
         id = tileId,
         path = "/${board.id.value}/",
         // Two sites can both have a /b/, so every title says which site it is on.
         title = "${board.title} · $siteName",
         nsfw = board.isNsfw,
+        followed = followed,
     )
+
+/**
+ * A feed row, laid out as Android's feed lays it out: "/g/" as the board, so the screen groups
+ * by it. The id carries the site too, since both sites can have a /g/ with the same thread number.
+ */
+internal fun FeedThread.toFeedRow(
+    nowMillis: Long,
+    read: Boolean,
+): FeedRow =
+    thread.toRow(nowMillis, read).copy(
+        id = feedRowId,
+        board = "/${thread.key.board.value}/",
+        threadNumber =
+            thread.key.thread.value
+                .toString(),
+    )
+
+internal val FeedThread.feedRowId: String
+    get() = "${provider.value}/${thread.key.board.value}/${thread.key.thread.value}"
 
 internal val SiteBoard.tileId: String get() = "${provider.value}/${board.id.value}"
 

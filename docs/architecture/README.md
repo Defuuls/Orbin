@@ -28,7 +28,10 @@ module, external links, the app-lock signal — lives in `core:common-android`, 
 
 ‡ `storage` is the Room database shared with iOS (`orbin.kmp.room`): entities, DAOs, the
 `OrbinDatabase` schema (exported to `storage/schemas`) and the repositories built only on it
-(bookmarks, history). Only the schema is shared. `data` opens it on Android, encrypted with
+(bookmarks, history). It also holds `BoardPreferencesStore`, which keeps followed and favourite
+boards and feed limits in a Preferences DataStore under the keys Android has always used. Android's
+`SettingsRepositoryImpl` delegates to it over its encrypted settings store, and iOS uses a DataStore
+file of its own. Only the schema is shared. `data` opens it on Android, encrypted with
 SQLCipher, with its migrations and Hilt bindings. `:app-ios` opens it through Room's bundled SQLite
 driver. New migrations must use Room's `Migration.migrate(connection)` so they run on both platforms.
 

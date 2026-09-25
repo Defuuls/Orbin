@@ -11,10 +11,13 @@ design system and every `ui-next` screen. What is iOS-only is small:
 
 ## What it does so far
 
-A read-only reader so far:
+A reader, so far:
 
+- the feed, the start screen as on Android: the newest threads of every board you follow, on
+  every site, sorted board A–Z and newest first within a board, with per-board thread limits and
+  the permanent filter applied as on Android. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), with one site being down never
-  hiding the other's boards;
+  hiding the other's boards, and a switch on each to follow it;
 - a board's catalog, with thumbnails;
 - a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
@@ -26,7 +29,10 @@ A read-only reader so far:
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
-Not there yet: the merged feed (it needs followed boards, which Android keeps in DataStore), unread
+Followed boards live in a DataStore file beside the database, read and written by the same
+`BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
+
+Not there yet: unread
 counts on watched threads (Android fills them from a background refresh iOS does not have yet), an
 in-app video player, search, settings and saved threads. These move over in later steps.
 
