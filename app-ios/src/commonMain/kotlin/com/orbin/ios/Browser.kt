@@ -1,12 +1,17 @@
 package com.orbin.ios
 
 import com.orbin.core.model.Board
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.core.model.matchesFilterTokens
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.provider.api.ImageBoardProvider
@@ -16,13 +21,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.time.Clock
 
 /** Something being fetched: still coming, arrived, or failed with a message to show. */
@@ -45,8 +58,17 @@ data class SiteBoard(
     val board: Board,
 )
 
-/** Where the reader is. The back stack is a list of these, boards at the bottom. */
+/** A thread in the merged feed, with the site it came from. */
+data class FeedThread(
+    val provider: ProviderId,
+    val thread: CatalogThread,
+)
+
+/** Where the reader is. The back stack is a list of these, a tab (feed or boards) at the bottom. */
 sealed interface Route {
+    /** The newest threads of every followed board, one list: the start screen, as on Android. */
+    data object Feed : Route
+
     data object Boards : Route
 
     data class Catalog(
@@ -80,12 +102,13 @@ class Browser(
     private val providers: List<ImageBoardProvider>,
     private val bookmarks: BookmarkRepository,
     private val history: HistoryRepository,
+    private val boardPreferences: BoardPreferencesRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
-    private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Boards))
+    private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Feed))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
 
     private val _boards = MutableStateFlow<Load<List<SiteBoard>>>(Load.Loading)
@@ -97,6 +120,22 @@ class Browser(
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
 
+    private val _feed = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
+    val feed: StateFlow<Load<List<FeedThread>>> = _feed.asStateFlow()
+
+    /** Every followed board, on every site: what the feed is made of and the boards list marks. */
+    val followed: StateFlow<Set<FollowedBoard>> =
+        combine(
+            providers.map { provider ->
+                val id = provider.metadata.id
+                boardPreferences.observeSubscribedBoards(id).map { boards -> boards.map { FollowedBoard(id, it) } }
+            },
+        ) { perSite -> perSite.flatMap { it }.toSet() }
+            .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    private var feedFor: Set<FollowedBoard>? = null
+    private var feedLoad: Job? = null
+
     private var pageLoad: Job? = null
 
     // What the catalog and thread states hold, so returning to them does not fetch them again.
@@ -105,7 +144,30 @@ class Browser(
 
     init {
         loadBoards()
+        // The feed follows the followed set: follow a board and its threads join the list.
+        scope.launch {
+            followed.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+        }
+        loadFeed()
     }
+
+    /** Switches to a tab, leaving whatever was open on the other one. */
+    fun openTab(tab: Route) {
+        require(tab == Route.Feed || tab == Route.Boards) { "Not a tab: $tab" }
+        _backStack.value = listOf(tab)
+        if (tab == Route.Feed) loadFeed()
+    }
+
+    /** Follows or unfollows [board], as the boards list's switch does on Android. */
+    fun setFollowed(
+        board: SiteBoard,
+        follow: Boolean,
+    ) {
+        scope.launch { boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow) }
+    }
+
+    /** Every thread the reader has opened, on any board, for the feed's read state. */
+    fun visitedKeys(): Flow<Set<ThreadKey>> = history.observeVisitedKeys()
 
     fun openBoard(board: SiteBoard) {
         _backStack.update { it + Route.Catalog(board) }
@@ -150,7 +212,11 @@ class Browser(
     }
 
     fun retry() {
-        if (_backStack.value.last() == Route.Boards) loadBoards() else loadCurrent(force = true)
+        when (_backStack.value.last()) {
+            Route.Boards -> loadBoards()
+            Route.Feed -> loadFeed(force = true)
+            else -> loadCurrent(force = true)
+        }
     }
 
     private fun loadBoards() {
@@ -173,7 +239,7 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Boards, is Route.Media -> Unit
+            Route.Feed, Route.Boards, is Route.Media -> Unit
             is Route.Catalog ->
                 if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
                     catalogShown = route.board
@@ -208,6 +274,73 @@ class Browser(
             }
     }
 
+    /**
+     * Loads the feed unless it already holds the current followed set, which is how coming back to
+     * the feed tab shows it as it was, as Android's feed does.
+     */
+    private fun loadFeed(force: Boolean = false) {
+        val boards = followed.value
+        if (!force && boards == feedFor && _feed.value is Load.Ready) return
+        feedFor = boards
+        feedLoad?.cancel()
+        _feed.value = Load.Loading
+        feedLoad =
+            scope.launch {
+                _feed.value =
+                    try {
+                        feedOf(boards)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") error: Exception,
+                    ) {
+                        Load.Failed(error.readable())
+                    }
+            }
+    }
+
+    /**
+     * Android's feed, board by board: each followed board's catalog, at most [MAX_CONCURRENT_BOARD_LOADS]
+     * at a time, cut to the board's thread limit and passed through the permanent filter. A board
+     * that fails to load leaves the others; only when every one fails is the feed an error.
+     */
+    private suspend fun feedOf(boards: Set<FollowedBoard>): Load<List<FeedThread>> {
+        // Board titles come from the boards list when it has loaded, for the permanent filter.
+        val boardInfo =
+            (_boards.value as? Load.Ready)?.value.orEmpty().associateBy { FollowedBoard(it.provider, it.board.id) }
+        val wanted = boards.filterNot { boardInfo[it]?.board?.isPermanentlyFiltered() == true }
+        if (wanted.isEmpty()) return Load.Ready(emptyList())
+        val limits =
+            wanted.groupBy { it.provider }.mapValues { (provider, onSite) ->
+                boardPreferences.observeFeedThreadLimits(provider, onSite.map { it.board }.toSet()).first()
+            }
+        val gate = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
+        val results =
+            coroutineScope {
+                wanted
+                    .map { board ->
+                        async {
+                            gate.withPermit {
+                                runCatching {
+                                    val catalog =
+                                        provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board))
+                                    val limit = limits[board.provider]?.get(board.board)?.count
+                                    (limit?.let(catalog::take) ?: catalog)
+                                        .filterNot { it.matchesFilterTokens(emptySet()) }
+                                        .map { FeedThread(board.provider, it) }
+                                }
+                            }
+                        }
+                    }.awaitAll()
+            }
+        val loaded = results.mapNotNull { it.getOrNull() }
+        return if (loaded.isEmpty()) {
+            Load.Failed(results.firstNotNullOf { it.exceptionOrNull() }.readable())
+        } else {
+            Load.Ready(loaded.flatten().sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }))
+        }
+    }
+
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
         getBoards().map { SiteBoard(metadata.id, metadata.displayName, it) }
 
@@ -230,3 +363,12 @@ class Browser(
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")
+
+/** A board someone follows: its site and its id. */
+data class FollowedBoard(
+    val provider: ProviderId,
+    val board: BoardId,
+)
+
+/** Android loads at most this many followed catalogs at once; so does the iOS feed. */
+private const val MAX_CONCURRENT_BOARD_LOADS = 4

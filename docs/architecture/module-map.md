@@ -19,7 +19,7 @@ large repository locally understandable without tracing the whole dependency gra
 | `feature:onboarding` | first-run flow | onboarding/recovery entry changes |
 | `domain` | repository contracts and use cases | business rules need changing without Android/network details |
 | `data` | repository implementations, DB/DataStore orchestration | caching, persistence or provider-to-domain flow changes |
-| `storage` | the Room schema, DAOs and database-only repositories, shared with iOS | a table, query, migration or bookmark/history rule changes |
+| `storage` | the Room schema, DAOs and database-only repositories, and board preferences (DataStore), shared with iOS | a table, query, migration, bookmark/history rule or followed-board rule changes |
 | `network` | shared OkHttp client, the Ktor client on top of it, connectivity | HTTP policy, DoH, caching or connectivity changes |
 | `media` | Coil/Media3/download mechanics | actual image/video loading or playback changes |
 | `provider:api` | provider SPI, capabilities, contract + diagnostics | cross-engine behavior or provider guarantees change |

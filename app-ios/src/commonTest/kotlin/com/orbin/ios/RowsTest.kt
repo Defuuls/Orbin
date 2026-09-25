@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.InlineStyle
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -22,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RowsTest {
     @Test
@@ -116,6 +118,23 @@ class RowsTest {
         val visit = thread.toHistoryEntry(nowMillis = 7L)
         assertEquals(PostId(1), visit.lastReadPostId)
         assertEquals(7L, visit.lastVisitedMillis)
+    }
+
+    @Test
+    fun feedRowsNameTheBoardLikeAndroidAndKeepSitesApart() {
+        val thread =
+            CatalogThread(
+                key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(42)),
+                originalPost = post(42, files = 0),
+                stats = ThreadStats(),
+            )
+
+        val row = FeedThread(ProviderId("site"), thread).toFeedRow(nowMillis = 0L, read = true)
+
+        assertEquals("/g/", row.board)
+        assertEquals("site/g/42", row.id, "another site's /g/42 is a different row")
+        assertEquals("42", row.threadNumber)
+        assertTrue(row.read)
     }
 
     private fun post(
