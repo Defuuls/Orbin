@@ -110,6 +110,8 @@ Pinch an image to zoom, or double tap the spot you want to look at. Long-press a
 in the viewer or on the All media wall, to save it, share its link or copy its link. Swipe up and
 down to move between files, and keep pulling past the first or last one to close the viewer.
 
+A board's catalog has a **Media wall** action that shows every file on that board as one wall.
+
 ### All media
 
 **All media** sweeps board catalogs and fills a single continuous wall of discovered images and

@@ -10,6 +10,10 @@
     <string name="board_show_image_only_catalog">Show image-only catalog</string>
     <string name="board_show_list_catalog">Show list catalog</string>
     <string name="board_load_error">Couldn\'t load this board\'s catalog</string>
+    <string name="board_error_offline">You\'re offline. Connect and try again.</string>
+    <string name="board_error_slow">The board took too long to answer.</string>
+    <string name="board_error_rate_limited">The board is limiting requests. Try again in a minute.</string>
+    <string name="board_error_gone">This board no longer exists.</string>
     <string name="board_subscribe">Subscribe to thread</string>
     <string name="board_unsubscribe">Unsubscribe from thread</string>
     <string name="board_audio">Audio</string>

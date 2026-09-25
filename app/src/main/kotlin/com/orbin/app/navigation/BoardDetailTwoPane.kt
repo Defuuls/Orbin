@@ -37,6 +37,7 @@ fun BoardDetailTwoPane(
     onMediaScrollConsumed: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenBoardMedia: ((board: String) -> Unit)? = null,
 ) {
     val detailNavController = rememberNavController()
     val detailEntry by detailNavController.currentBackStackEntryAsState()
@@ -72,6 +73,7 @@ fun BoardDetailTwoPane(
                 onOpenThread = { provider, board, thread, title ->
                     onThreadSelected(Route.Thread(provider, board, thread, title))
                 },
+                onOpenMedia = onOpenBoardMedia,
             )
         }
 

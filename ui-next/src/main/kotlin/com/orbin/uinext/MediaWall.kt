@@ -52,6 +52,8 @@ fun MediaWallScreen(
     showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
     onLongPress: ((MediaCell) -> Unit)? = null,
+    // One board's wall instead of every board's: its name replaces "All media".
+    title: String? = null,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -86,7 +88,7 @@ fun MediaWallScreen(
             null
         }
 
-    val mediaTitle = stringResource(R.string.next_all_media_title)
+    val mediaTitle = title ?: stringResource(R.string.next_all_media_title)
     val showCompactTitle by remember {
         derivedStateOf {
             gridState.firstVisibleItemIndex > 0 ||
@@ -96,7 +98,7 @@ fun MediaWallScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(R.string.next_all_media_title).takeIf { showRail },
+            where = mediaTitle.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
             railVisible = railVisible,
             destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
@@ -111,8 +113,17 @@ fun MediaWallScreen(
                 fullWidthItem {
                     Column {
                         ScreenTitle(
-                            text = stringResource(R.string.next_all_media_title),
-                            subtitle = stringResource(R.string.next_all_media_subtitle),
+                            text = mediaTitle,
+                            subtitle =
+                                stringResource(
+                                    if (title ==
+                                        null
+                                    ) {
+                                        R.string.next_all_media_subtitle
+                                    } else {
+                                        R.string.next_board_media_subtitle
+                                    },
+                                ),
                             inset = 0.dp,
                         )
                         if (showSizeControl) {

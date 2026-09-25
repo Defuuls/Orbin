@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,6 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,7 +75,6 @@ fun ThreadScreen(
     onWatch: () -> Unit = {},
     onDownloadAll: () -> Unit = {},
     onShare: () -> Unit = {},
-    onClassicReader: (() -> Unit)? = null,
     onPostClick: (Post) -> Unit = {},
     listState: LazyListState? = null,
     scrollToPostId: String? = null,
@@ -99,6 +100,7 @@ fun ThreadScreen(
                 modifier = Modifier.contentInsets(),
                 contentPadding =
                     PaddingValues(
+                        // Room for the jump pill plus a margin, so the last post can scroll fully clear.
                         bottom = THREAD_JUMP_CLEARANCE + bottomInset(),
                     ),
             ) {
@@ -120,40 +122,56 @@ fun ThreadScreen(
                         MetaLine(subtitle ?: "${posts.size} posts", color = next.faint)
                     }
                     ScreenTitle(text = subject, size = 26)
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    // Two things only: how to read the thread, and whether to be told when it moves.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        InlineAction(
-                            label =
+                        PlatformSegments(
+                            labels =
+                                listOf(
+                                    stringResource(R.string.next_thread_posts),
+                                    stringResource(R.string.next_thread_files),
+                                ),
+                            selected = if (layout == ThreadLayout.FILES) 1 else 0,
+                            onSelect = { index ->
+                                onLayoutChange(
+                                    if (index ==
+                                        1
+                                    ) {
+                                        ThreadLayout.FILES
+                                    } else {
+                                        ThreadLayout.POSTS
+                                    },
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                        WidthSpacer(8)
+                        NextIconAction(
+                            imageVector =
+                                if (watching) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone,
+                            contentDescription =
                                 if (watching) {
                                     stringResource(R.string.next_thread_watching)
                                 } else {
                                     stringResource(R.string.next_thread_watch)
                                 },
-                            accent = watching,
                             onClick = onWatch,
+                            tint = if (watching) next.accent else next.muted,
                         )
-                        InlineAction(
-                            label = stringResource(R.string.next_thread_files),
-                            accent = layout == ThreadLayout.FILES,
-                            onClick = {
-                                onLayoutChange(
-                                    if (layout == ThreadLayout.FILES) ThreadLayout.POSTS else ThreadLayout.FILES,
-                                )
-                            },
-                        )
-                        InlineAction(
-                            label = stringResource(R.string.next_thread_download_all),
-                            onClick = onDownloadAll,
-                        )
-                        InlineAction(stringResource(R.string.next_thread_share), onClick = onShare)
-                        if (onClassicReader != null) {
+                    }
+                    if (layout == ThreadLayout.FILES) {
+                        // What you do with every file belongs with the files, not above the posts.
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
                             InlineAction(
-                                label = stringResource(R.string.next_thread_classic_reader),
-                                onClick = onClassicReader,
+                                label = stringResource(R.string.next_thread_download_all),
+                                onClick = onDownloadAll,
                             )
+                            InlineAction(stringResource(R.string.next_thread_share), onClick = onShare)
                         }
                     }
                     Gap(18)
@@ -363,5 +381,5 @@ private fun PostView(
 
 private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
-private val THREAD_JUMP_CLEARANCE = 62.dp
+private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_DEPTH_BAR_WIDTH = 2.dp

@@ -1,5 +1,6 @@
 package com.orbin.feature.gallery
 
+import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
@@ -90,6 +91,26 @@ class AllMediaViewModelTest {
             advanceUntilIdle()
 
             assertThat(downloads.enqueuedUrls).containsExactly(item.attachment.sourceUrl)
+        }
+
+    @Test
+    fun `a board's own wall sweeps that board alone`() =
+        runTest {
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology"), Board(anime, "Anime")),
+                    catalogs =
+                        mapOf(
+                            tech to listOf(catalogThread(tech, 1L, image("g-1"))),
+                            anime to listOf(catalogThread(anime, 2L, image("a-1"))),
+                        ),
+                    onlyBoard = "g",
+                )
+
+            val state = viewModel.awaitCompletedSweep()
+
+            assertThat(state.items.map { it.attachment.id }).containsExactly("g-1")
+            assertThat(state.boardsTotal).isEqualTo(1)
         }
 
     @Test
@@ -299,10 +320,12 @@ class AllMediaViewModelTest {
         settings: AppSettings = AppSettings.Default,
         threads: Map<ThreadKey, Thread> = emptyMap(),
         downloads: FakeDownloadRepository = FakeDownloadRepository(),
+        onlyBoard: String? = null,
     ): AllMediaViewModel {
         val registry = FakeProviderRegistry(catalogProvider(catalogs, failing, threads))
         val settingsRepository = FakeSettingsRepository(settings)
         return AllMediaViewModel(
+            savedStateHandle = SavedStateHandle(listOfNotNull(onlyBoard?.let { "board" to it }).toMap()),
             providerRegistry = registry,
             observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
             boardRepository = FakeBoardRepository(boards = boards),

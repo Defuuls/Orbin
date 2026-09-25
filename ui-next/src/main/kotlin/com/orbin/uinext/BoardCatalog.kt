@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +38,7 @@ fun BoardScreen(
     modifier: Modifier = Modifier,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
+    onOpenMedia: (() -> Unit)? = null,
     showRail: Boolean = true,
     onOpenRow: (FeedRow) -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
@@ -92,6 +94,9 @@ fun BoardScreen(
                             Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (onOpenMedia != null) {
+                            InlineAction(stringResource(R.string.next_board_media), onClick = onOpenMedia)
+                        }
                         Box(modifier = Modifier.weight(1f))
                         if (sortLabel != null) {
                             InlineAction("$sortLabel ▾", onClick = onSort)
