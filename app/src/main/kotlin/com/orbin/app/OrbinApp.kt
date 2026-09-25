@@ -57,9 +57,8 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Primary destinations (Feed, Boards, Media, Settings) own DestinationPill
- * chrome; Thread / catalog / Search / Downloads use ContextRail. Search and Downloads open through
- * Command only.
+ * Root composable. Feed and Settings own DestinationPill chrome; Boards, Media, threads, catalogs,
+ * Search and Downloads draw no bottom chrome, since each already carries its own large title.
  */
 @Composable
 fun OrbinApp(

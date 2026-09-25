@@ -30,15 +30,14 @@ class WindowInsetsTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `feed content clears the status bar and the rail clears the navigation bar`() {
+    fun `feed content clears the status bar and the tab pill clears the navigation bar`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
                     rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
                     subtitle = "1 thread",
-                    // Anchors the rail assertion below: the rail's own "Feed" label is also the
-                    // screen title, and the Go button that used to be unambiguous is gone.
-                    railDetail = "7 boards",
+                    // Draws the tab pill; its "Settings" tab is the only "Settings" on the feed.
+                    onSettings = {},
                 )
             }
         }
@@ -48,10 +47,9 @@ class WindowInsetsTest {
         // The first row is below the status bar rather than under the clock.
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
-        // The rail is above the gesture handle rather than behind it.
-        // substring: the rail pads its detail with two leading spaces.
-        val rail = composeRule.onNodeWithText("7 boards", substring = true).getUnclippedBoundsInRoot()
-        assertThat(rail.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+        // The pill is above the gesture handle rather than behind it.
+        val pill = composeRule.onNodeWithText("Settings").getUnclippedBoundsInRoot()
+        assertThat(pill.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 
     @Test

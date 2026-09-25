@@ -74,8 +74,31 @@ class InterfaceSemanticsTest {
         }
         composeRule
             .onNodeWithText(ROWS[0].subject)
-            .assert(hasTextContaining(ROWS[0].board))
+            .assert(hasTextContaining(ROWS[0].activity))
             .assert(hasTextContaining("218 replies"))
+    }
+
+    @Test
+    fun `a feed grouped by board names each board once, in its heading`() {
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS) }
+        }
+        composeRule.onAllNodesWithText(ROWS[0].board, substring = true).assertCountEquals(1)
+    }
+
+    @Test
+    fun `a board catalog names its board once and repeats it nowhere below`() {
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = ROWS.size,
+                    rowAt = ROWS::getOrNull,
+                )
+            }
+        }
+        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(1)
     }
 
     @Test

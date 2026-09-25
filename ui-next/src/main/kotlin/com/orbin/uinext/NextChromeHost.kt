@@ -5,31 +5,31 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 
 /**
- * Wraps a still-Material destination (Search, Downloads) in NextTheme + ContextRail so leaving
- * primary tabs does not flip into a blue TopAppBar island. Inner lists may keep Material widgets
- * temporarily; the chrome matches.
+ * Wraps a still-Material destination (Search, Downloads) in NextTheme so leaving primary tabs does
+ * not flip into a blue TopAppBar island. Like every secondary screen it draws no bottom chrome: its
+ * large title says where you are. [where] names the pane for accessibility services.
  */
 @Composable
 fun NextChromeHost(
     where: String,
     modifier: Modifier = Modifier,
-    detail: String? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     NextTheme {
-        val bottom = RAIL_HEIGHT + 28.dp + bottomInset()
-        Box(modifier = modifier.fillMaxSize().background(next.background)) {
+        val bottom = NO_RAIL_CLEARANCE + bottomInset()
+        Box(
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(next.background)
+                    .semantics { paneTitle = where },
+        ) {
             content(PaddingValues(bottom = bottom))
-            ContextRail(
-                where = where,
-                detail = detail,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
     }
 }

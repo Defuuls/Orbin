@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.NextRadius
 import kotlinx.coroutines.launch
 
 enum class ThreadLayout {
@@ -205,9 +206,12 @@ fun ThreadScreen(
                         Modifier
                             .align(Alignment.BottomEnd)
                             .padding(
-                                end = GUTTER - 4.dp,
+                                end = GUTTER,
                                 bottom = 12.dp + bottomInset(),
-                            ),
+                            )
+                            // A solid pill, so the jumps stay legible over the posts they float on.
+                            .nextElevatedSurface(RoundedCornerShape(NextRadius.pill))
+                            .padding(horizontal = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     InlineAction(

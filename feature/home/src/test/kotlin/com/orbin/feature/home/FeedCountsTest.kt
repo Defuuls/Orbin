@@ -36,7 +36,7 @@ class FeedCountsTest {
     }
 
     @Test
-    fun `the rail's board count inflects on its own count`() {
+    fun `the subtitle's board count inflects on its own count`() {
         // Zero takes the plural form in English, which is the case an "if (count == 1)" helper
         // gets right by accident and a locale with a zero form gets wrong.
         val (one, none) = resolve({ boardCountLabel(1) }, { boardCountLabel(0) })

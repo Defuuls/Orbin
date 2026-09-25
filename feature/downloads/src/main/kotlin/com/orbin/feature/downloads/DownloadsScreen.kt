@@ -48,7 +48,7 @@ import com.orbin.uinext.tokens.NextType
  * Download history on the Next language. Transfer + notifications stay with the platform download
  * manager; this screen only lists what Orbin asked for.
  *
- * Hosted under [com.orbin.uinext.NextChromeHost] in the nav graph, so chrome is the ContextRail —
+ * Hosted under [com.orbin.uinext.NextChromeHost] in the nav graph, which draws no bottom chrome —
  * Back / Clear live as inline actions under the large title rather than a Material TopAppBar.
  */
 @Composable
