@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [146-Lemon] - 2026-09-25
+
+### Changed
+- The subscribed feed only refreshes when you pull down. Returning to it keeps the feed as you left it instead of reloading every board, and the header's Refresh button is gone (#541).
+- Removed the Library section from Settings, including its Boards, All media and Commands entries. Search and Downloads now sit in Privacy & Data, next to the image cache (#542).
+- Removed the unused "personalized home feed" preference. It had no setting and no effect; older backups that include it still import (#542).
+
+
 ## [145-Kiwi] - 2026-09-24
 
 ### Changed
@@ -2330,7 +2338,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v145-Kiwi...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v146-Lemon...HEAD
+[146-Lemon]: https://github.com/Defuuls/Orbin/compare/v145-Kiwi...v146-Lemon
 [145-Kiwi]: https://github.com/Defuuls/Orbin/compare/v144-Jackfruit...v145-Kiwi
 [144-Jackfruit]: https://github.com/Defuuls/Orbin/compare/v143-Honeydew...v144-Jackfruit
 [143-Honeydew]: https://github.com/Defuuls/Orbin/compare/v142-Grape...v143-Honeydew
