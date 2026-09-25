@@ -1,13 +1,18 @@
 plugins {
-    alias(libs.plugins.orbin.jvm.library)
+    alias(libs.plugins.orbin.kmp.library)
 }
 
-dependencies {
-    api(project(":core:model"))
-    api(libs.kotlinx.coroutines.core)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinx.immutable)
-    testImplementation(libs.kotlinx.coroutines.test)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":core:model"))
+            api(libs.kotlinx.coroutines.core)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinx.immutable)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+    }
 }

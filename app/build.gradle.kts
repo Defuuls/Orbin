@@ -46,7 +46,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":network"))
     implementation(project(":media"))
-    implementation(project(":core:common"))
+    implementation(project(":core:common-android"))
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":core:designsystem"))

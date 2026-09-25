@@ -31,6 +31,7 @@ include(":app")
 include(":benchmark")
 
 include(":core:common")
+include(":core:common-android")
 include(":core:model")
 include(":core:designsystem")
 include(":core:ui")

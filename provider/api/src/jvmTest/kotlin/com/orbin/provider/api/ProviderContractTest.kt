@@ -1,0 +1,140 @@
+package com.orbin.provider.api
+
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import com.orbin.core.model.Board
+import com.orbin.core.model.BoardId
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
+import com.orbin.core.model.Post
+import com.orbin.core.model.PostId
+import com.orbin.core.model.ProviderId
+import com.orbin.core.model.Thread
+import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadKey
+import kotlinx.collections.immutable.persistentListOf
+import org.junit.Test
+
+class ProviderContractTest {
+    @Test
+    fun `duplicate boards are rejected`() {
+        val boards = listOf(Board(BoardId("a"), "A"), Board(BoardId("a"), "Again"))
+        assertThat(ProviderContract.validateBoards(boards)).contains("duplicate board id 'a'")
+    }
+
+    @Test
+    fun `thread requires absolute safe-shaped media urls`() {
+        val key = ThreadKey(ProviderId("test"), BoardId("a"), ThreadId(10))
+        val op =
+            Post(
+                id = PostId(10),
+                board = key.board,
+                threadId = key.thread,
+                isOriginalPost = true,
+                attachments =
+                    persistentListOf(
+                        MediaAttachment(
+                            id = "x",
+                            originalFileName = "x.jpg",
+                            extension = "jpg",
+                            type = MediaType.IMAGE,
+                            sourceUrl = "/relative.jpg",
+                            thumbnailUrl = "https://example.test/thumb.jpg",
+                        ),
+                    ),
+            )
+        val errors = ProviderContract.validateThread(Thread(key, op))
+        assertThat(errors).contains("post[0] attachment[0] sourceUrl is not absolute HTTPS")
+    }
+
+    @Test
+    fun `thread rejects plaintext http media urls`() {
+        val key = ThreadKey(ProviderId("test"), BoardId("a"), ThreadId(10))
+        val op =
+            Post(
+                id = PostId(10),
+                board = key.board,
+                threadId = key.thread,
+                isOriginalPost = true,
+                attachments =
+                    persistentListOf(
+                        MediaAttachment(
+                            id = "x",
+                            originalFileName = "x.jpg",
+                            extension = "jpg",
+                            type = MediaType.IMAGE,
+                            sourceUrl = "http://example.test/x.jpg",
+                            thumbnailUrl = "https://example.test/thumb.jpg",
+                        ),
+                    ),
+            )
+        val errors = ProviderContract.validateThread(Thread(key, op))
+        assertThat(errors).contains("post[0] attachment[0] sourceUrl is not absolute HTTPS")
+    }
+
+    @Test
+    fun `valid thread passes`() {
+        val key = ThreadKey(ProviderId("test"), BoardId("a"), ThreadId(10))
+        val op =
+            Post(
+                id = PostId(10),
+                board = key.board,
+                threadId = key.thread,
+                isOriginalPost = true,
+            )
+        assertThat(ProviderContract.validateThread(Thread(key, op))).isEmpty()
+    }
+
+    /** Pins which URLs count as absolute HTTPS, so the check stays the same on every platform. */
+    @Test
+    fun `absolute https check matches the contract on edge cases`() {
+        val accepted =
+            listOf(
+                "https://example.test/x.jpg",
+                "HTTPS://Example.Test/x.jpg",
+                "https://example.test:8443/x.jpg?w=1#top",
+                "https://user@example.test/x.jpg",
+                "https://192.0.2.1/x.jpg",
+                "https://[2001:db8::1]/x.jpg",
+                "https://example.test",
+            )
+        val rejected =
+            listOf(
+                "/relative.jpg",
+                "example.test/x.jpg",
+                "http://example.test/x.jpg",
+                "https:///x.jpg",
+                "https://",
+                "https://exa mple.test/x.jpg",
+                "https://example.test/a b.jpg",
+                "https://my_host/x.jpg",
+                "ftp://example.test/x.jpg",
+                "",
+            )
+        accepted.forEach { url -> assertWithMessage(url).that(errorsFor(url)).isEmpty() }
+        rejected.forEach { url -> assertWithMessage(url).that(errorsFor(url)).isNotEmpty() }
+    }
+
+    private fun errorsFor(sourceUrl: String): List<String> {
+        val key = ThreadKey(ProviderId("test"), BoardId("a"), ThreadId(10))
+        val op =
+            Post(
+                id = PostId(10),
+                board = key.board,
+                threadId = key.thread,
+                isOriginalPost = true,
+                attachments =
+                    persistentListOf(
+                        MediaAttachment(
+                            id = "x",
+                            originalFileName = "x.jpg",
+                            extension = "jpg",
+                            type = MediaType.IMAGE,
+                            sourceUrl = sourceUrl,
+                            thumbnailUrl = "https://example.test/thumb.jpg",
+                        ),
+                    ),
+            )
+        return ProviderContract.validateThread(Thread(key, op))
+    }
+}

@@ -15,13 +15,15 @@ The architecture's executable enforcement lives in [engineering quality gates](q
 | Domain | `domain` | Use cases, repository **contracts** | no* |
 | Data | `data`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | yes (except `provider:api`) |
 | Model | `core:model` | Pure domain entities shared by all layers | no |
-| Cross-cutting | `core:common`, `core:testing` | Result types, dispatchers, test fixtures | yes |
+| Cross-cutting | `core:common`, `core:common-android`, `core:testing` | Result types, dispatchers, test fixtures | `core:common` no; others yes |
 
-\* `domain` is an Android library only so it can expose Paging types; it contains no Android
-framework usage. `provider:api` is a pure-JVM module, and `core:model` is Kotlin Multiplatform
-(`orbin.kmp.library`: a JVM target for Android plus iOS targets). The build fails if an Android
-dependency leaks into either, and the iOS targets also reject JVM-only APIs in `core:model`, which
-keeps the boundary honest and the module shareable with an iOS app.
+\* `domain`, `provider:api`, `core:common` and `core:model` are Kotlin Multiplatform
+(`orbin.kmp.library`: a JVM target for Android plus iOS targets), shared with the iOS app. The
+build fails if an Android dependency leaks into them, and the iOS targets reject JVM-only APIs.
+They carry no DI annotations: the Hilt bindings for domain use cases live in `data`
+(`DomainModule`), and the Android side of `core:common` — dispatcher qualifiers and their Hilt
+module, external links, the app-lock signal — lives in `core:common-android`, which re-exports
+`core:common`. `domain` exposes `PagingData` through the multiplatform `paging-common`.
 
 ## Module dependency graph
 
@@ -67,6 +69,8 @@ graph TD
     data --> domain
     data --> network
     data --> provider_api
+    data --> core_common_android[core:common-android]
+    core_common_android --> core_common
 
     provider_vichan[provider:vichan] --> provider_api
     provider_vichan --> network

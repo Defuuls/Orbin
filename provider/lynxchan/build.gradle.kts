@@ -11,7 +11,7 @@ android {
 dependencies {
     api(project(":provider:api"))
     implementation(project(":network"))
-    implementation(project(":core:common"))
+    implementation(project(":core:common-android"))
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.serialization)
