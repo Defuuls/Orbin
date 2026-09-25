@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [146 — Lemon](https://github.com/Defuuls/Orbin/releases/tag/v146-Lemon)
+**Current release:** [147 — Mango](https://github.com/Defuuls/Orbin/releases/tag/v147-Mango)
 
-**What's new in 146:** The feed refreshes only when you pull down, and Settings drops its Library section for Search and Downloads beside the image cache.
+**What's new in 147:** Simple is best: three tabs, a short Settings list, media gestures with no options, and a two-column feed that plays media in place.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
