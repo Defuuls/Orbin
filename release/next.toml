@@ -1,26 +1,51 @@
-# Orbin 146 — Lemon
+# Orbin 147 — Mango
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 146
-codename     = "Lemon"
-version_code = 164
+number       = 147
+codename     = "Mango"
+version_code = 165
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "The feed refreshes only when you pull down, and Settings drops its Library section for Search and Downloads beside the image cache."
+highlight = "Simple is best: three tabs, a short Settings list, media gestures with no options, and a two-column feed that plays media in place."
 
 summary = [
-  "bump Orbin to 146-Lemon / versionCode 164",
-  "refresh the subscribed feed only by pulling down",
-  "remove the Settings Library section; move Search and Downloads beside the image cache",
-  "remove the unused personalized home feed preference",
+  "bump Orbin to 147-Mango / versionCode 165",
+  "Feed · Media · Boards tabs; Settings from the Feed header",
+  "remove the command palette and about thirty hidden preferences",
+  "media gestures, simpler video and inline feed playback",
+  "two-column feed, thread Posts/Files switch, per-board media wall",
 ]
 
 [changelog]
+Added = [
+  "Double tap the left or right half of a video to skip back or forward 5 seconds. Repeated double taps add up (\"+15s\"), and screen readers get matching skip actions (#547).",
+  "Media gestures, with no settings behind them: double tap an image to zoom on that spot; long-press any image or video, in the viewer or on the All media wall, to Save, Share or Copy link; pull past the first or last item to close the viewer; a scrub bubble shows the time while dragging a video's progress bar (#553).",
+  "The feed card in view plays its media in place: a video loops silently and a GIF animates. Only one plays at a time, never a spoilered one, and tapping still opens the thread (#555).",
+  "Longer videos resume where you left off when reopened, until Orbin closes (#555).",
+  "Every board catalog has a Media wall action that opens that board's files as a wall (#556).",
+  "Saved › under the All media title opens your downloads, and Search threads › under the Boards title opens search (#557).",
+]
 Changed = [
-  "The subscribed feed only refreshes when you pull down. Returning to it keeps the feed as you left it instead of reloading every board, and the header's Refresh button is gone (#541).",
-  "Removed the Library section from Settings, including its Boards, All media and Commands entries. Search and Downloads now sit in Privacy & Data, next to the image cache (#542).",
-  "Removed the unused \"personalized home feed\" preference. It had no setting and no effect; older backups that include it still import (#542).",
+  "The bottom bar is Feed · Media · Boards, and Settings opens from a gear in the Feed header. Boards, catalogs and All media are reachable again once you follow a board, and switching tabs no longer stacks screens (#548).",
+  "Settings is one short list in two untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data (#551, #557).",
+  "First run is one step: pick the boards to follow, then start browsing (#551).",
+  "Video is simpler: play/pause, progress and mute. Clips up to 30 seconds loop, turning the phone sideways goes fullscreen, and a tap toggles the controls immediately. Video starts muted and an unmute carries over until Orbin closes (#551, #555).",
+  "Search is one field over the boards you follow, and the feed is one list with the newest activity first (#552).",
+  "The feed uses the same adaptive grid as board catalogs, so a phone shows two columns; very tall media is letterboxed at 4:5; every title starts on the same 16dp line; loading shows skeleton cards (#554).",
+  "The thread header is a Posts / Files switch and a watch bell, with Download all and Save links as text above the file grid (#556).",
+  "Board catalogs refresh by pulling down, and a catalog that fails to load says why: offline, too slow, rate-limited or gone (#556).",
+  "Clear local activity confirms with a second tap in place instead of a dialog (#557).",
+  "Removed the floating name bars and the thread reader's title bar and scroll arrow; jump buttons sit on a solid pill and grid cards inset their text evenly (#546).",
+]
+Accessibility = [
+  "Screen titles and section headers are marked as headings, spoilered media is labelled \"Spoiler\", and board labels on media use white text on a dark scrim (#554, #557).",
+  "The offline banner floats over the screen instead of pushing the layout down (#557).",
+]
+Removed = [
+  "The command palette, the settings search index and the feed filter it drove (#549).",
+  "About thirty stored preferences that nothing read or nothing could edit any more, now fixed at their defaults. Older backups that contain them still import (#549, #550, #551).",
+  "The Color scheme, Text size, Mute by default, Downloads folder and In-app updates rows; the feed's sort menu; Search's filters and saved searches; onboarding's extra steps and favorite-board stars (#551, #552).",
 ]
