@@ -18,11 +18,11 @@ large repository locally understandable without tracing the whole dependency gra
 | `feature:onboarding` | first-run flow | onboarding/recovery entry changes |
 | `domain` | repository contracts and use cases | business rules need changing without Android/network details |
 | `data` | repository implementations, DB/DataStore orchestration | caching, persistence or provider-to-domain flow changes |
-| `network` | shared OkHttp/Retrofit/connectivity | HTTP policy, DoH, caching or connectivity changes |
+| `network` | shared OkHttp client, the Ktor client on top of it, connectivity | HTTP policy, DoH, caching or connectivity changes |
 | `media` | Coil/Media3/download mechanics | actual image/video loading or playback changes |
 | `provider:api` | provider SPI, capabilities, contract + diagnostics | cross-engine behavior or provider guarantees change |
-| `provider:vichan` | Vichan/4chan protocol adapter | Vichan JSON/HTML quirks change |
-| `provider:lynxchan` | LynxChan/BBWChan protocol adapter | LynxChan JSON/HTML quirks change |
+| `provider:vichan` | Vichan/4chan protocol adapter (KMP, Ktor) | Vichan JSON/HTML quirks change |
+| `provider:lynxchan` | LynxChan/BBWChan protocol adapter (KMP, Ktor) | LynxChan JSON/HTML quirks change |
 | `core:model` | immutable domain entities and pure sorting/filtering | a concept or pure rule belongs everywhere |
 | `core:common` | result types and connectivity contracts, shared with iOS | a platform-neutral primitive changes |
 | `core:common-android` | dispatcher qualifiers + Hilt module, external links, app-lock signal | Android-side cross-cutting infrastructure changes |

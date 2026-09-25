@@ -14,6 +14,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -120,6 +122,20 @@ object NetworkModule {
                 }
             }.build()
     }
+
+    /**
+     * The Ktor client the shared providers use, running on the same [BaseOkHttp] client so DoH,
+     * the HTTPS-only interceptor, cookies, headers and the cache apply exactly as before. Ktor
+     * follows redirects itself and refuses an HTTPS-to-HTTP downgrade.
+     */
+    @Provides
+    @Singleton
+    fun providesHttpClient(
+        @BaseOkHttp client: OkHttpClient,
+    ): HttpClient =
+        HttpClient(OkHttp) {
+            engine { preconfigured = client }
+        }
 
     @Provides
     @Singleton

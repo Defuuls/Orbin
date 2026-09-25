@@ -1,27 +1,24 @@
 plugins {
-    alias(libs.plugins.orbin.android.library)
-    alias(libs.plugins.orbin.android.hilt)
+    alias(libs.plugins.orbin.kmp.library)
     alias(libs.plugins.kotlin.serialization)
 }
 
-android {
-    namespace = "com.orbin.provider.lynxchan"
-}
-
-dependencies {
-    api(project(":provider:api"))
-    implementation(project(":network"))
-    implementation(project(":core:common-android"))
-
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.serialization)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.okhttp)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.immutable)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.okhttp.mockwebserver)
+// Shared with iOS. Talks HTTP through Ktor; the engine comes from the host app (OkHttp on
+// Android via :network, Darwin on iOS), and the Android Hilt bindings live in :app.
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":provider:api"))
+            api(libs.ktor.client.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.immutable)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
+        }
+    }
 }

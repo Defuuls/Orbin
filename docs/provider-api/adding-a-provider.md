@@ -16,22 +16,33 @@ include(":provider:tinyib")
 
 ```kotlin
 plugins {
-    alias(libs.plugins.orbin.android.library)
-    alias(libs.plugins.orbin.android.hilt)
+    alias(libs.plugins.orbin.kmp.library)
     alias(libs.plugins.kotlin.serialization)
 }
 
-android { namespace = "com.orbin.provider.tinyib" }
-
-dependencies {
-    api(project(":provider:api"))
-    implementation(project(":network"))
-    implementation(project(":core:common"))
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.serialization)
-    implementation(libs.kotlinx.serialization.json)
+// Shared with iOS: HTTP goes through Ktor, and the engine comes from the host app.
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":provider:api"))
+            api(libs.ktor.client.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+        }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
+        }
+    }
 }
 ```
+
+Provider modules are Kotlin Multiplatform, so `commonMain` cannot use JVM-only APIs such as
+`java.net.URI`, `java.time` or `Character`. Use `UriParts`, `kotlin.time` and
+`codePointToString` from `provider:api` instead; the **Shared code (iOS targets)** CI job fails
+the build if a JVM-only API slips in.
 
 ## 2. Model the wire format
 
@@ -44,7 +55,14 @@ Write a mapper from DTOs to `core:model` types (`Board`, `CatalogThread`, `Threa
 `MediaAttachment`). Parse post markup into a `PostComment` tree (you can reuse or adapt
 `VichanCommentParser` if the engine uses similar HTML). Build absolute media URLs here.
 
-## 4. Implement `ImageBoardProvider`
+## 4. Talk to the engine through Ktor
+
+Declare the endpoints as a small interface and implement it over a Ktor `HttpClient`, as
+`KtorVichanApi` does: build each URL from the site's base with `appendPathSegments`, set
+`expectSuccess = true` so non-2xx responses throw `ResponseException`, and decode the body with
+the shared `Json`. The interface keeps the provider testable with a fake.
+
+## 5. Implement `ImageBoardProvider`
 
 ```kotlin
 class TinyIbProvider(
@@ -73,43 +91,37 @@ class TinyIbProvider(
 **Contract reminders**
 - Run blocking work on the injected IO dispatcher.
 - Never let transport exceptions escape — map them to `ProviderException`
-  (`Network`, `Http`, `NotFound`, `Parse`, `RateLimited`, `Unsupported`).
+  (`Network`, `Http`, `NotFound`, `Parse`, `RateLimited`, `Unsupported`). Ktor's
+  `ResponseException` carries the status and headers; `kotlinx.io.IOException` covers transport
+  failures on every engine.
 - Only advertise a capability in `capabilities` if the corresponding method is implemented.
 - Return fully resolved models (absolute URLs, parsed comments).
 
-## 5. Register with Hilt
+## 6. Register it in the app
+
+The provider module carries no DI annotations. On Android, contribute it to the provider set from
+`app/src/main/kotlin/com/orbin/app/di/ProvidersModule.kt`, using the shared Ktor `HttpClient`
+(which runs on the app's OkHttp client, so DoH and the HTTPS-only policy apply):
 
 ```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-object TinyIbProviderModule {
-
-    @Provides
-    @IntoSet
-    @Singleton
-    fun providesProvider(
-        @BaseOkHttp client: OkHttpClient,
-        json: Json,
-        @Dispatcher(OrbinDispatcher.IO) io: CoroutineDispatcher,
-    ): ImageBoardProvider {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://example.org/api/")
-            .client(client)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-        return TinyIbProvider(retrofit.create(TinyIbApi::class.java), io)
-    }
-}
+@Provides
+@IntoSet
+@Singleton
+fun providesTinyIbProvider(
+    client: HttpClient,
+    json: Json,
+    @Dispatcher(OrbinDispatcher.IO) io: CoroutineDispatcher,
+): ImageBoardProvider = TinyIbProvider(KtorTinyIbApi(client, "https://example.org/api/", json), io)
 ```
 
 Add the module to the app's dependencies in `app/build.gradle.kts`. The provider now appears in
 the `ProviderRegistry` and the provider picker automatically.
 
-## 6. Test it
+## 7. Test it
 
 - Unit-test the mapper and comment parser with representative fixtures.
-- Use `MockWebServer` to test the provider against recorded responses, asserting that error
-  statuses map to the right `ProviderException`.
+- Use Ktor's `MockEngine` to test the provider against recorded responses, asserting the request
+  URLs and that error statuses map to the right `ProviderException` (see `VichanTransportTest`).
 
 ## Checklist
 
@@ -118,5 +130,6 @@ the `ProviderRegistry` and the provider picker automatically.
 - [ ] Mapper produces domain models with absolute URLs and parsed comments
 - [ ] `ImageBoardProvider` implemented; all failures mapped to `ProviderException`
 - [ ] `capabilities` reflect only implemented features
-- [ ] Hilt `@IntoSet` registration added; module wired into `:app`
-- [ ] Unit + MockWebServer tests passing
+- [ ] `@IntoSet` registration added to `ProvidersModule`; module wired into `:app`
+- [ ] Unit + `MockEngine` transport tests passing
+- [ ] Compiles for iOS (the Shared code CI job)
