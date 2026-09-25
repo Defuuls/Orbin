@@ -8,19 +8,14 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.DohProvider
-import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
-import com.orbin.core.model.ThreadPresentation
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
@@ -154,36 +149,12 @@ class FakeSettingsRepository(
 
     override val settings: Flow<AppSettings> = state
 
-    override suspend fun setHiddenTags(tags: String) {
-        update { copy(hiddenTags = tags) }
-    }
-
-    override suspend fun setMutedTags(tags: String) {
-        update { copy(mutedTags = tags) }
-    }
-
     override suspend fun setHideNsfwBoards(enabled: Boolean) {
         update { copy(hideNsfwBoards = enabled) }
     }
 
     override suspend fun setDeepMediaScan(enabled: Boolean) {
         update { copy(deepMediaScan = enabled) }
-    }
-
-    override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
-        update { copy(hideTextOnlyThreads = enabled) }
-    }
-
-    override suspend fun setHarshContentFilter(enabled: Boolean) {
-        update { copy(harshContentFilter = enabled) }
-    }
-
-    override suspend fun setMediaFilter(filter: MediaFilter) {
-        update { copy(mediaFilter = filter) }
-    }
-
-    override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
-        update { copy(threadPresentation = presentation) }
     }
 
     override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -198,52 +169,16 @@ class FakeSettingsRepository(
         update { copy(fontScale = scale) }
     }
 
-    override suspend fun setThumbnailSize(size: ThumbnailSize) {
-        update { copy(thumbnailSize = size) }
-    }
-
     override suspend fun setMuteByDefault(enabled: Boolean) {
         update { copy(muteByDefault = enabled) }
-    }
-
-    override suspend fun setFullscreenVideoPlayback(enabled: Boolean) {
-        update { copy(fullscreenVideoPlayback = enabled) }
-    }
-
-    override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
-        update { copy(autoRotateVideoFullscreen = enabled) }
-    }
-
-    override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
-        update { copy(feedThreadLimit = limit) }
     }
 
     override suspend fun setFeedSort(sort: FeedSort) {
         update { copy(feedSort = sort) }
     }
 
-    override suspend fun setImageCacheLimitMb(megabytes: Int) {
-        update { copy(imageCacheLimitMb = megabytes) }
-    }
-
-    override suspend fun setConnectTimeoutSeconds(seconds: Long) {
-        update { copy(connectTimeoutSeconds = seconds) }
-    }
-
-    override suspend fun setReadTimeoutSeconds(seconds: Long) {
-        update { copy(readTimeoutSeconds = seconds) }
-    }
-
     override suspend fun setDownloadFolderUri(uri: String) {
         update { copy(downloadFolderUri = uri) }
-    }
-
-    override suspend fun setDownloadOrganization(organization: DownloadOrganization) {
-        update { copy(downloadOrganization = organization) }
-    }
-
-    override suspend fun setDohProvider(provider: DohProvider) {
-        update { copy(dohProvider = provider) }
     }
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
@@ -258,10 +193,6 @@ class FakeSettingsRepository(
         update { copy(internalUpdaterEnabled = enabled) }
     }
 
-    override suspend fun setUserAgent(userAgent: String) {
-        update { copy(userAgent = userAgent) }
-    }
-
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         update { copy(onboardingCompleted = completed) }
     }
@@ -272,30 +203,6 @@ class FakeSettingsRepository(
 
     override suspend fun setColorTheme(theme: ColorTheme) {
         update { copy(colorTheme = theme) }
-    }
-
-    override suspend fun setFullScreenFeedChrome(enabled: Boolean) {
-        update { copy(fullScreenFeedChrome = enabled) }
-    }
-
-    override suspend fun setThreadWatchNotificationsEnabled(enabled: Boolean) {
-        update { copy(threadWatchNotificationsEnabled = enabled) }
-    }
-
-    override suspend fun setQuietHoursStart(time: String) {
-        update { copy(quietHoursStart = time) }
-    }
-
-    override suspend fun setQuietHoursEnd(time: String) {
-        update { copy(quietHoursEnd = time) }
-    }
-
-    override suspend fun setMediaScrollThreadView(enabled: Boolean) {
-        update { copy(mediaScrollThreadView = enabled) }
-    }
-
-    override suspend fun setMediaScrollBoardView(enabled: Boolean) {
-        update { copy(mediaScrollBoardView = enabled) }
     }
 
     /** The settings as they stand now, for asserting that a screen wrote through. */

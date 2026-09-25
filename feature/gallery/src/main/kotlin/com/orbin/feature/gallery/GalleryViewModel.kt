@@ -9,7 +9,6 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
-import com.orbin.core.model.filteredBy
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -25,8 +24,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -107,21 +104,18 @@ class GalleryViewModel
          * whole posts it catches, then individual files it catches by name.
          */
         val media: StateFlow<ImmutableList<MediaAttachment>> =
-            combine(
-                observeThread(provider, board, threadId),
-                settings.map { it.mediaFilter }.distinctUntilChanged(),
-            ) { result, filter ->
-                when (result) {
-                    is OrbinResult.Success ->
-                        result.data.allPosts
-                            .filterNot { it.isPermanentlyFiltered() }
-                            .flatMap { it.attachments }
-                            .filterNot { it.isPermanentlyFiltered() }
-                            .filteredBy(filter)
-                            .toImmutableList()
-                    is OrbinResult.Failure -> persistentListOf()
-                }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+            observeThread(provider, board, threadId)
+                .map { result ->
+                    when (result) {
+                        is OrbinResult.Success ->
+                            result.data.allPosts
+                                .filterNot { it.isPermanentlyFiltered() }
+                                .flatMap { it.attachments }
+                                .filterNot { it.isPermanentlyFiltered() }
+                                .toImmutableList()
+                        is OrbinResult.Failure -> persistentListOf()
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
         /**
          * Prefetch the settled page and its immediate neighbours so swipes feel instant without

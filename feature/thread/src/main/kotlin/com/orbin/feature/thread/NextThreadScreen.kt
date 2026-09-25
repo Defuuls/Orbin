@@ -68,8 +68,6 @@ fun NextThreadScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val firstUnreadPostId by viewModel.firstUnreadPostId.collectAsStateWithLifecycle()
-    val thumbnailSize by viewModel.thumbnailSize.collectAsStateWithLifecycle()
-    val mediaScroll by viewModel.mediaScrollEnabled.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
@@ -112,8 +110,6 @@ fun NextThreadScreen(
                     initialScrollPosition = initialScrollPosition,
                     initialScrollLoaded = initialScrollLoaded,
                     snackbarHostState = snackbarHostState,
-                    thumbnailSize = thumbnailSize,
-                    mediaScroll = mediaScroll,
                     mediaScrollIndex = mediaScrollIndex,
                     onMediaScrollConsumed = onMediaScrollConsumed,
                     viewModel = viewModel,
@@ -133,8 +129,6 @@ private fun LoadedThread(
     initialScrollPosition: ThreadScrollPosition?,
     initialScrollLoaded: Boolean,
     snackbarHostState: NextSnackbarHostState,
-    thumbnailSize: ThumbnailSize,
-    mediaScroll: Boolean,
     mediaScrollIndex: Int?,
     onMediaScrollConsumed: () -> Unit,
     viewModel: ThreadViewModel,
@@ -226,7 +220,7 @@ private fun LoadedThread(
                     layout = it
                 },
                 files = presentation.fileCells,
-                fileColumns = thumbnailSize.threadGridColumns(),
+                fileColumns = ThumbnailSize.MEDIUM.threadGridColumns(),
                 onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
                 fileTile = { cell, tileModifier ->
                     presentation.attachmentsById[cell.id]?.let { attachment ->
@@ -268,7 +262,7 @@ private fun LoadedThread(
                             .orEmpty()
                     PostMedia(
                         attachments = postAttachments,
-                        scrollable = mediaScroll,
+                        scrollable = true,
                         modifier = tileModifier,
                         onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
                     )

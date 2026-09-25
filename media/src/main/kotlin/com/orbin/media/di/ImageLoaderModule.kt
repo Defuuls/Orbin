@@ -23,6 +23,9 @@ private const val MEMORY_CACHE_PERCENT = 0.25
 private const val LOW_RAM_MEMORY_CACHE_PERCENT = 0.15
 private const val BYTES_PER_MB = 1024L * 1024L
 
+/** Image disk cache size. A fixed 256 MB: large enough to scroll back without refetching. */
+private const val IMAGE_DISK_CACHE_MB = 256L
+
 /**
  * Builds the singleton Coil [ImageLoader], reusing the app's shared [OkHttpClient] and configuring
  * bounded memory/disk caches. Low-RAM devices reserve less heap for decoded images because video
@@ -39,7 +42,6 @@ object ImageLoaderModule {
     fun providesImageLoader(
         @ApplicationContext context: Context,
         @BaseOkHttp okHttpClient: OkHttpClient,
-        cacheSettings: ImageCacheSettings,
     ): ImageLoader {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val memoryCachePercent =
@@ -59,7 +61,7 @@ object ImageLoaderModule {
                 DiskCache
                     .Builder()
                     .directory(context.cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizeBytes(cacheSettings.limitMb * BYTES_PER_MB)
+                    .maxSizeBytes(IMAGE_DISK_CACHE_MB * BYTES_PER_MB)
                     .build()
             }.crossfade(false)
             .build()

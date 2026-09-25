@@ -5,11 +5,9 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -18,7 +16,6 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeDownloadRepository
@@ -73,61 +70,6 @@ class ThreadViewModelTest {
                 viewModel.toggleBookmark()
                 assertThat(awaitItem()).isFalse()
             }
-        }
-
-    @Test
-    fun `thumbnailSize and mediaScrollEnabled follow settings`() =
-        runTest {
-            val settings =
-                FakeSettingsRepository(
-                    AppSettings.Default.copy(thumbnailSize = ThumbnailSize.LARGE, mediaScrollThreadView = false),
-                )
-            val viewModel = createViewModel(settingsRepository = settings)
-
-            viewModel.thumbnailSize.test { assertThat(awaitItem()).isEqualTo(ThumbnailSize.LARGE) }
-            viewModel.mediaScrollEnabled.test { assertThat(awaitItem()).isFalse() }
-        }
-
-    @Test
-    fun `images-only leaves the posts in place and hides their videos`() =
-        runTest {
-            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.IMAGES))
-            val viewModel = createViewModel(thread = threadWithMixedMedia(), settingsRepository = settings)
-
-            viewModel.uiState.test {
-                var state = awaitItem()
-                while (state !is ThreadUiState.Success) state = awaitItem()
-
-                assertThat(
-                    state.thread.originalPost.attachments
-                        .map { it.id },
-                ).containsExactly("jpg")
-                assertThat(state.thread.replies).hasSize(1)
-                assertThat(
-                    state.thread.replies
-                        .single()
-                        .attachments,
-                ).isEmpty()
-            }
-        }
-
-    @Test
-    fun `downloading all media downloads only what the filter shows`() =
-        runTest {
-            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.VIDEOS))
-            val downloads = FakeDownloadRepository()
-            val viewModel =
-                createViewModel(
-                    thread = threadWithMixedMedia(),
-                    settingsRepository = settings,
-                    downloadRepository = downloads,
-                )
-
-            viewModel.uiState.test { awaitItem() }
-            viewModel.downloadAllMedia()
-
-            assertThat(downloads.enqueuedUrls)
-                .containsExactly("https://example.org/webm", "https://example.org/mp4")
         }
 
     @Test

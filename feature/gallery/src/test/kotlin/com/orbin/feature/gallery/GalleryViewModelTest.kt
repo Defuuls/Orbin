@@ -4,10 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -52,32 +50,6 @@ class GalleryViewModelTest {
                 var media = awaitItem()
                 while (media.isEmpty()) media = awaitItem()
                 assertThat(media.map { it.id }).containsExactly("jpg", "webm", "gif").inOrder()
-            }
-        }
-
-    @Test
-    fun `videos-only pages through the videos alone`() =
-        runTest {
-            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.VIDEOS))
-            val viewModel = createViewModel(settings)
-
-            viewModel.media.test {
-                var media = awaitItem()
-                while (media.none { it.id == "webm" }) media = awaitItem()
-                assertThat(media.map { it.id }).containsExactly("webm")
-            }
-        }
-
-    @Test
-    fun `images-only counts animated images as images`() =
-        runTest {
-            val settings = FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.IMAGES))
-            val viewModel = createViewModel(settings)
-
-            viewModel.media.test {
-                var media = awaitItem()
-                while (media.isEmpty()) media = awaitItem()
-                assertThat(media.map { it.id }).containsExactly("jpg", "gif").inOrder()
             }
         }
 

@@ -8,15 +8,11 @@ import com.orbin.core.common.result.fold
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.ThumbnailSize
-import com.orbin.core.model.filteredBy
-import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
@@ -98,56 +94,37 @@ class ThreadViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        private val mediaFilter: StateFlow<MediaFilter> =
-            settingsRepository.settings
-                .map { it.mediaFilter }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
-
-        private val hiddenTokens: StateFlow<Set<String>> =
-            settingsRepository.settings
-                .map { it.hiddenTagTokens() }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
-
-        private val includeHarsh: StateFlow<Boolean> =
-            settingsRepository.settings
-                .map { it.harshContentFilter }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
+        // Reader tag filters and the media-type filter are gone; the permanent filter still applies.
         val uiState: StateFlow<ThreadUiState> =
-            combine(
-                reloads
-                    .flatMapLatest { attempt ->
-                        observeThread(provider, board, threadId, forceRefresh = attempt > 0)
-                    }.onEach { result ->
-                        if (result is OrbinResult.Success) onThreadLoaded(result.data)
-                        _isRefreshing.value = false
-                    },
-                mediaFilter,
-                hiddenTokens,
-                includeHarsh,
-            ) { result, filter, hidden, harsh ->
-                result.fold(
-                    onSuccess = {
-                        if (it.isPermanentlyFiltered(harsh)) {
-                            ThreadUiState.Blocked
-                        } else {
-                            ThreadUiState.Success(it.filteredBy(filter).hidingMatches(hidden, harsh))
-                        }
-                    },
-                    onFailure = { error ->
-                        val saved = savedThreadRepository.load(threadKey)
-                        when {
-                            saved == null -> ThreadUiState.Error(error.message)
-                            saved.isPermanentlyFiltered(harsh) -> ThreadUiState.Blocked
-                            else ->
-                                ThreadUiState.Success(
-                                    thread = saved.filteredBy(filter).hidingMatches(hidden, harsh),
-                                    fromSavedCopy = true,
-                                )
-                        }
-                    },
-                )
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
+            reloads
+                .flatMapLatest { attempt ->
+                    observeThread(provider, board, threadId, forceRefresh = attempt > 0)
+                }.onEach { result ->
+                    if (result is OrbinResult.Success) onThreadLoaded(result.data)
+                    _isRefreshing.value = false
+                }.map { result ->
+                    result.fold(
+                        onSuccess = {
+                            if (it.isPermanentlyFiltered()) {
+                                ThreadUiState.Blocked
+                            } else {
+                                ThreadUiState.Success(it.hidingMatches(emptySet(), includeHarsh = false))
+                            }
+                        },
+                        onFailure = { error ->
+                            val saved = savedThreadRepository.load(threadKey)
+                            when {
+                                saved == null -> ThreadUiState.Error(error.message)
+                                saved.isPermanentlyFiltered() -> ThreadUiState.Blocked
+                                else ->
+                                    ThreadUiState.Success(
+                                        thread = saved.hidingMatches(emptySet(), includeHarsh = false),
+                                        fromSavedCopy = true,
+                                    )
+                            }
+                        },
+                    )
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
 
         val bookmark: StateFlow<Bookmark?> =
             bookmarkRepository
@@ -175,16 +152,6 @@ class ThreadViewModel
             _isRefreshing.value = true
             reloads.update { it + 1 }
         }
-
-        val thumbnailSize: StateFlow<ThumbnailSize> =
-            settingsRepository.settings
-                .map { it.thumbnailSize }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
-
-        val mediaScrollEnabled: StateFlow<Boolean> =
-            settingsRepository.settings
-                .map { it.mediaScrollThreadView }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
 
         fun toggleBookmark() {
             viewModelScope.launch {

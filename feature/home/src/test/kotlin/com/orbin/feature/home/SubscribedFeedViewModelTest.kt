@@ -3,13 +3,11 @@ package com.orbin.feature.home
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.lock.AppLockController
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -48,37 +46,6 @@ class SubscribedFeedViewModelTest {
 
     private val healthyBoard = BoardId("g")
     private val deadBoard = BoardId("a")
-
-    @Test
-    fun `videos-only hides image threads and strips images from the ones that stay`() =
-        runTest {
-            val provider =
-                catalogProvider(
-                    listOf(
-                        catalogThread(1L, attachment("webm", MediaType.VIDEO), attachment("jpg", MediaType.IMAGE)),
-                        catalogThread(2L, attachment("only-jpg", MediaType.IMAGE)),
-                    ),
-                )
-            val registry = FakeProviderRegistry(provider)
-            val settingsRepository =
-                FakeSettingsRepository(AppSettings.Default.copy(mediaFilter = MediaFilter.VIDEOS))
-
-            val viewModel = createViewModel(registry, settingsRepository, subscribed = setOf(healthyBoard))
-
-            viewModel.uiState.test {
-                var state = awaitItem()
-                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
-
-                val threads = state.boards.single().threads
-                assertThat(threads.map { it.key.thread.value }).containsExactly(1L)
-                assertThat(
-                    threads
-                        .single()
-                        .originalPost.attachments
-                        .map { it.id },
-                ).containsExactly("webm")
-            }
-        }
 
     @Test
     fun `one board failing keeps healthy boards and reports partial failure`() =

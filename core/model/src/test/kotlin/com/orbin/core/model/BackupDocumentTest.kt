@@ -21,14 +21,9 @@ class BackupDocumentTest {
             exportedByAppVersion = "59-Betelgeuse",
             settings =
                 AppSettings(
-                    hiddenTags = "spoilers, wip",
                     themeMode = AppThemeMode.DARK,
                     colorTheme = ColorTheme.TOMORROW_NIGHT,
-                    thumbnailSize = ThumbnailSize.FILL,
                     fontScale = 1.2f,
-                    feedThreadLimit = FeedThreadLimit.ALL,
-                    dohProvider = DohProvider.NEXTDNS,
-                    quietHoursStart = "23:00",
                     activeProviderId = "vichan",
                 ),
             subscribedBoards = listOf(BackupBoardRef("vichan", "g"), BackupBoardRef("lynxchan", "tech")),

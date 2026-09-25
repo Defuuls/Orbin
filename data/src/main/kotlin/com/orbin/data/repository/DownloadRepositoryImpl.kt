@@ -106,7 +106,8 @@ class DownloadRepositoryImpl
                 // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)
                 val settings = settingsRepository.settings.first()
-                val relativeDir = buildRelativeDir(settings.downloadOrganization, boardId, threadId, threadTitle)
+                val relativeDir =
+                    buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
                 val customFolderUri = settings.downloadFolderUri
                 if (customFolderUri.isNotBlank()) {
                     return@withContext downloadToFolder(uri, safeName, customFolderUri, relativeDir)
@@ -124,7 +125,7 @@ class DownloadRepositoryImpl
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
                         .apply {
-                            downloadRequestHeaders(url, settings.userAgent).forEach { (name, value) ->
+                            downloadRequestHeaders(url).forEach { (name, value) ->
                                 addRequestHeader(name, value)
                             }
                         }
@@ -321,7 +322,7 @@ class DownloadRepositoryImpl
                         ).setAllowedOverMetered(true)
                         .setAllowedOverRoaming(true)
                         .apply {
-                            downloadRequestHeaders(entity.url, settings.userAgent)
+                            downloadRequestHeaders(entity.url)
                                 .forEach { (name, value) -> addRequestHeader(name, value) }
                         }
 
@@ -448,14 +449,11 @@ private data class TransferSnapshot(
  *
  * DownloadManager does not use Orbin's OkHttp interceptors, so without these it sends a different
  * request from the one that successfully displays the same file in-app. Keep the policy aligned
- * with HeadersInterceptor: configured User-Agent, media Accept, and same-origin Referer.
+ * with HeadersInterceptor: Orbin's User-Agent, media Accept, and same-origin Referer.
  */
-internal fun downloadRequestHeaders(
-    url: String,
-    configuredUserAgent: String,
-): Map<String, String> =
+internal fun downloadRequestHeaders(url: String): Map<String, String> =
     buildMap {
-        put("User-Agent", configuredUserAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT })
+        put("User-Agent", NetworkConfig.DEFAULT_USER_AGENT)
         put("Accept", DOWNLOAD_ACCEPT)
         downloadOriginReferer(url)?.let { put("Referer", it) }
     }

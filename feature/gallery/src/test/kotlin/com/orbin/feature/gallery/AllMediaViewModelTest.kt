@@ -7,7 +7,6 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -152,32 +151,6 @@ class AllMediaViewModelTest {
             val state = viewModel.awaitCompletedSweep()
 
             assertThat(state.items.map { it.attachment.id }).containsExactly("keep")
-        }
-
-    @Test
-    fun `videos-only leaves the videos alone on the wall`() =
-        runTest {
-            val viewModel =
-                createViewModel(
-                    boards = listOf(Board(tech, "Technology")),
-                    catalogs =
-                        mapOf(
-                            tech to
-                                listOf(
-                                    catalogThread(
-                                        tech,
-                                        1L,
-                                        image("jpg"),
-                                        attachment("webm", MediaType.VIDEO),
-                                    ),
-                                ),
-                        ),
-                    settings = AppSettings.Default.copy(mediaFilter = MediaFilter.VIDEOS),
-                )
-
-            val state = viewModel.awaitCompletedSweep()
-
-            assertThat(state.items.map { it.attachment.id }).containsExactly("webm")
         }
 
     @Test

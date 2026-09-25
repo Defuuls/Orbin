@@ -11,7 +11,6 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.Post
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardRepository
@@ -145,12 +144,6 @@ class AllMediaViewModel
             settingsRepository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
-        private val mediaFilter: StateFlow<MediaFilter> =
-            settingsRepository.settings
-                .map { it.mediaFilter }
-                .distinctUntilChanged()
-                .stateIn(viewModelScope, SharingStarted.Eagerly, MediaFilter.ALL)
-
         private val deepScanEnabled: StateFlow<Boolean> =
             settingsRepository.settings
                 .map { it.deepMediaScan }
@@ -158,11 +151,6 @@ class AllMediaViewModel
                 .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         init {
-            mediaFilter
-                .onEach { filter ->
-                    _uiState.update { it.copy(items = collected.visibleUnder(filter)) }
-                }.launchIn(viewModelScope)
-
             // Toggling the deep scan acts on the sweep already done rather than provoking a new
             // one: switching it on picks up the threads the catalog sweep found, and switching it
             // off stops the walk without disturbing what is already on the wall.
@@ -335,7 +323,7 @@ class AllMediaViewModel
                     .toList()
             if (fresh.isEmpty()) return
             collected = collected + fresh
-            _uiState.update { it.copy(items = collected.visibleUnder(mediaFilter.value)) }
+            _uiState.update { it.copy(items = collected.toImmutableList()) }
         }
 
         private companion object {
@@ -393,7 +381,8 @@ internal data class ScanSettings(
     val hideNsfwBoards: Boolean,
     val hiddenTokens: Set<String>,
 ) {
-    constructor(settings: AppSettings) : this(settings.hideNsfwBoards, settings.hiddenTagTokens())
+    // Reader tags are gone, so only the permanent filter applies on top of the NSFW choice.
+    constructor(settings: AppSettings) : this(settings.hideNsfwBoards, emptySet())
 }
 
 /** The boards a sweep should visit: the reader's board filters, applied as the feed applies them. */
@@ -445,9 +434,6 @@ internal fun List<Post>.mediaItemsFor(
                 threadTitle = target.threadTitle,
             )
         }
-
-private fun List<AllMediaItem>.visibleUnder(filter: MediaFilter): ImmutableList<AllMediaItem> =
-    filter { filter.allows(it.attachment) }.toImmutableList()
 
 /** A short label for the tile: the subject if the thread has one, otherwise the start of the OP. */
 private fun CatalogThread.title(): String {

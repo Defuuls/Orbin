@@ -13,10 +13,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.filteredCatalogBy
-import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -268,7 +265,7 @@ class SubscribedFeedViewModel
                 boards
                     .filter { it.id in subscribedIds }
                     .filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
-                    .filterNot { board -> board.isPermanentlyFiltered(settings.harshContentFilter) }
+                    .filterNot { board -> board.isPermanentlyFiltered() }
                     .sortedBy { it.id.value }
 
             if (subscribedBoards.isEmpty()) {
@@ -289,7 +286,6 @@ class SubscribedFeedViewModel
                                         provider = provider,
                                         board = indexed.value,
                                         override = limitOverrides[indexed.value.id],
-                                        settings = settings,
                                     ),
                             )
                         }
@@ -309,13 +305,12 @@ class SubscribedFeedViewModel
             provider: ImageBoardProvider,
             board: Board,
             override: FeedThreadLimit?,
-            settings: FeedLoadSettings,
         ): BoardLoadResult =
             try {
                 BoardLoadResult(
                     SubscribedBoardFeed(
                         board = board,
-                        threads = loadBoardThreads(provider, board, override, settings),
+                        threads = loadBoardThreads(provider, board, override),
                         threadLimitOverride = override,
                     ),
                 )
@@ -333,21 +328,12 @@ class SubscribedFeedViewModel
             provider: ImageBoardProvider,
             board: Board,
             limitOverride: FeedThreadLimit?,
-            settings: FeedLoadSettings,
         ): ImmutableList<CatalogThread> {
             val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
-            val effectiveLimit = limitOverride ?: settings.feedThreadLimit
-            val scoped =
-                if (effectiveLimit == FeedThreadLimit.ALL) {
-                    catalog
-                } else {
-                    effectiveLimit.count?.let(catalog::take) ?: catalog
-                }
+            val scoped = limitOverride?.count?.let(catalog::take) ?: catalog
+            // No reader tags any more; this is the permanent filter on its own.
             return scoped
-                .filterNot { thread ->
-                    thread.matchesFilterTokens(settings.hiddenTokens, settings.harshContentFilter)
-                }.filterNot { thread -> settings.hideTextOnlyThreads && thread.originalPost.attachments.isEmpty() }
-                .filteredCatalogBy(settings.mediaFilter)
+                .filterNot { thread -> thread.matchesFilterTokens(emptySet()) }
                 .toImmutableList()
         }
 
@@ -364,24 +350,12 @@ private data class BoardLoadResult(
     val failed: Boolean = false,
 )
 
+/** The one setting that shapes the feed; everything else about it is fixed. */
 private data class FeedLoadSettings(
-    val feedThreadLimit: FeedThreadLimit,
     val hideNsfwBoards: Boolean,
-    val hideTextOnlyThreads: Boolean,
-    val harshContentFilter: Boolean,
-    val hiddenTokens: Set<String>,
-    val mediaFilter: MediaFilter,
 )
 
-private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
-    FeedLoadSettings(
-        feedThreadLimit = feedThreadLimit,
-        hideNsfwBoards = hideNsfwBoards,
-        hideTextOnlyThreads = hideTextOnlyThreads,
-        harshContentFilter = harshContentFilter,
-        hiddenTokens = hiddenTagTokens(),
-        mediaFilter = mediaFilter,
-    )
+private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings = FeedLoadSettings(hideNsfwBoards = hideNsfwBoards)
 
 private data class FeedInputs(
     val providerId: String,

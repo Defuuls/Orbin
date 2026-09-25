@@ -24,28 +24,19 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
-import com.orbin.core.model.ThreadPresentation
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextMotion
@@ -59,8 +50,6 @@ import com.orbin.uinext.tokens.NextType
 fun OrbinApp(
     navController: NavHostController = rememberNavController(),
     startWithOnboarding: Boolean = false,
-    fullScreenFeedChrome: Boolean = false,
-    threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     isOnline: Boolean = true,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -81,44 +70,6 @@ fun OrbinApp(
                 currentDestination?.hasRoute(Route.BoardGallery::class) == true ||
                 isAllMedia
         val chromeHidesOnScroll = scrollAwayScreen
-        var chromeVisible by rememberSaveable { mutableStateOf(true) }
-
-        LaunchedEffect(chromeHidesOnScroll) {
-            if (!chromeHidesOnScroll) {
-                chromeVisible = true
-            }
-        }
-        // Leaving a scroll-away screen must not carry its hidden state onto the next one, which
-        // may have no rail to bring back.
-        LaunchedEffect(scrollAwayScreen) {
-            if (!scrollAwayScreen) {
-                chromeVisible = true
-            }
-        }
-
-        // True full screen: while the rail is scrolled away, also hide the status and navigation
-        // bars so the screen uses the entire display instead of leaving inset strips.
-        val view = LocalView.current
-        val immersive = scrollAwayScreen && fullScreenFeedChrome && !chromeVisible
-        DisposableEffect(view, immersive) {
-            val window = view.context.findActivity()?.window
-            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-            if (controller != null) {
-                if (immersive) {
-                    controller.systemBarsBehavior =
-                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                    controller.hide(WindowInsetsCompat.Type.systemBars())
-                } else {
-                    controller.show(WindowInsetsCompat.Type.systemBars())
-                }
-            }
-            onDispose {
-                if (immersive) {
-                    controller?.show(WindowInsetsCompat.Type.systemBars())
-                }
-            }
-        }
-
         // The banner sits above everything, so it is the thing that has to clear the status bar
         // while it is showing — and then say so, or the screen below it pads for a status bar that
         // is no longer over any of its content.
@@ -149,8 +100,6 @@ fun OrbinApp(
                     startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
                     chromeHidesOnScroll = chromeHidesOnScroll,
                     twoPaneBoardDetail = twoPaneBoardDetail,
-                    threadPresentation = threadPresentation,
-                    onChromeVisibleChange = { chromeVisible = it },
                 )
                 NextSnackbarHost(
                     hostState = snackbarHostState,

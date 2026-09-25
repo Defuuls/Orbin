@@ -5,7 +5,6 @@ import androidx.paging.PagingData
 import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
@@ -20,11 +19,9 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
-import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.CatalogRepository
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.Flow
@@ -72,17 +69,6 @@ class BoardViewModelTest {
 
             viewModel.visitedThreadIds.test {
                 assertThat(awaitItem()).containsExactly(5L)
-            }
-        }
-
-    @Test
-    fun `thumbnailSize follows settings`() =
-        runTest {
-            val settings = FakeSettingsRepository(AppSettings.Default.copy(thumbnailSize = ThumbnailSize.LARGE))
-            val viewModel = createViewModel(settingsRepository = settings)
-
-            viewModel.thumbnailSize.test {
-                assertThat(awaitItem()).isEqualTo(ThumbnailSize.LARGE)
             }
         }
 
@@ -195,7 +181,6 @@ class BoardViewModelTest {
     private fun createViewModel(
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
-        settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         catalogRepository: CatalogRepository = FakeCatalogRepository,
         savedStateHandle: SavedStateHandle =
             SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title")),
@@ -204,7 +189,6 @@ class BoardViewModelTest {
         catalogRepository = catalogRepository,
         bookmarkRepository = bookmarkRepository,
         historyRepository = historyRepository,
-        settingsRepository = settingsRepository,
     )
 
     private fun presentation(

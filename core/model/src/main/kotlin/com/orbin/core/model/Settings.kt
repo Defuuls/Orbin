@@ -109,15 +109,7 @@ enum class ThumbnailSize(
  */
 @Serializable
 data class AppSettings(
-    val hiddenTags: String = "",
-    val mutedTags: String = "",
     val hideNsfwBoards: Boolean = false,
-    val hideTextOnlyThreads: Boolean = false,
-    /**
-     * When true, the built-in filter also hides everyday words (`death`, `gun`, `suicide`,
-     * `rent`, …). Off by default so ordinary discussion stays readable.
-     */
-    val harshContentFilter: Boolean = false,
     /**
      * Whether the all-media wall follows its catalog sweep with a slow pass through every thread
      * it found, pulling in the media attached to replies.
@@ -128,47 +120,19 @@ data class AppSettings(
      * minutes, and it only runs while the wall is open.
      */
     val deepMediaScan: Boolean = false,
-    /**
-     * Restricts every view that shows post media to one kind of attachment. Threads whose media
-     * is entirely filtered out drop off the feed and board catalogs, since a catalog cell is its
-     * OP's thumbnail and there would be nothing left to show.
-     */
-    val mediaFilter: MediaFilter = MediaFilter.ALL,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val amoled: Boolean = false,
     val fontScale: Float = 1f,
-    val fullScreenFeedChrome: Boolean = false,
-    val threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
-    val thumbnailSize: ThumbnailSize = ThumbnailSize.MEDIUM,
     val muteByDefault: Boolean = true,
-    /** Play videos in an immersive full-screen presentation (hide system bars and app chrome). */
-    val fullscreenVideoPlayback: Boolean = false,
-    /** Rotate the screen to landscape automatically when a landscape video starts playing. */
-    val autoRotateVideoFullscreen: Boolean = false,
-    val imageCacheLimitMb: Int = 256,
-    val feedThreadLimit: FeedThreadLimit = FeedThreadLimit.ALL,
     /** How the subscribed feed orders threads. Defaults to board code A–Z. */
     val feedSort: FeedSort = FeedSort.BOARD,
     val downloadFolderUri: String = "",
-    val downloadOrganization: DownloadOrganization = DownloadOrganization.BY_BOARD_THEN_THREAD,
-    val userAgent: String = "",
-    val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
-    val httpsOnly: Boolean = true,
-    val connectTimeoutSeconds: Long = 15,
-    val readTimeoutSeconds: Long = 30,
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
     val internalUpdaterEnabled: Boolean = true,
-    val threadWatchNotificationsEnabled: Boolean = true,
-    /** Quiet hours start time in HH:MM format (24-hour), empty string = disabled. */
-    val quietHoursStart: String = "",
-    /** Quiet hours end time in HH:MM format (24-hour), empty string = disabled. */
-    val quietHoursEnd: String = "",
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
-    val mediaScrollThreadView: Boolean = true,
-    val mediaScrollBoardView: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()
@@ -189,14 +153,3 @@ enum class PreloadThrottleMode(
     AGGRESSIVE("Aggressive"),
     UNLIMITED("Unlimited"),
 }
-
-fun AppSettings.hiddenTagTokens(): Set<String> = parseFilterTokens(hiddenTags)
-
-fun AppSettings.mutedTagTokens(): Set<String> = parseFilterTokens(mutedTags)
-
-private fun parseFilterTokens(raw: String): Set<String> =
-    raw
-        .split(',', '\n')
-        .map { token -> token.trim().removePrefix("#").lowercase() }
-        .filter { token -> token.isNotBlank() }
-        .toSet()

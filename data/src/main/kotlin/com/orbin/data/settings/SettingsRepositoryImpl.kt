@@ -6,40 +6,28 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.DohProvider
-import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.ThreadPresentation
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.network.DohConfig
 import com.orbin.network.NetworkConfig
 import com.orbin.network.NetworkConfigProvider
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * [SettingsRepository] persisted with DataStore Preferences. Also implements
- * [NetworkConfigProvider]: it keeps a hot [stateIn] cache of the current settings so the
- * (synchronous) `current()` call the OkHttp graph needs can read the latest values without
- * blocking.
+ * [NetworkConfigProvider], which is fixed: HTTPS only, DNS over HTTPS through Cloudflare, the
+ * default user agent and the default timeouts. None of those had a row anyone could reach.
  */
 @Singleton
 @Suppress("TooManyFunctions")
@@ -47,44 +35,17 @@ class SettingsRepositoryImpl
     @Inject
     constructor(
         private val dataStore: DataStore<Preferences>,
-        @ApplicationScope scope: CoroutineScope,
     ) : SettingsRepository,
         BoardPreferencesRepository,
         NetworkConfigProvider {
         override val settings: Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
 
-        private val cached = settings.stateIn(scope, SharingStarted.Eagerly, AppSettings.Default)
-
-        override suspend fun setHiddenTags(tags: String) {
-            edit { it[Keys.hiddenTags] = tags }
-        }
-
-        override suspend fun setMutedTags(tags: String) {
-            edit { it[Keys.mutedTags] = tags }
-        }
-
         override suspend fun setHideNsfwBoards(enabled: Boolean) {
             edit { it[Keys.hideNsfwBoards] = enabled }
         }
 
-        override suspend fun setHideTextOnlyThreads(enabled: Boolean) {
-            edit { it[Keys.hideTextOnlyThreads] = enabled }
-        }
-
-        override suspend fun setHarshContentFilter(enabled: Boolean) {
-            edit { it[Keys.harshContentFilter] = enabled }
-        }
-
         override suspend fun setDeepMediaScan(enabled: Boolean) {
             edit { it[Keys.deepMediaScan] = enabled }
-        }
-
-        override suspend fun setMediaFilter(filter: MediaFilter) {
-            edit { it[Keys.mediaFilter] = filter.name }
-        }
-
-        override suspend fun setThreadPresentation(presentation: ThreadPresentation) {
-            edit { it[Keys.threadPresentation] = presentation.name }
         }
 
         override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -95,10 +56,6 @@ class SettingsRepositoryImpl
             edit { it[Keys.colorTheme] = theme.name }
         }
 
-        override suspend fun setFullScreenFeedChrome(enabled: Boolean) {
-            edit { it[Keys.fullScreenFeedChrome] = enabled }
-        }
-
         override suspend fun setAmoled(enabled: Boolean) {
             edit { it[Keys.amoled] = enabled }
         }
@@ -107,44 +64,16 @@ class SettingsRepositoryImpl
             edit { it[Keys.fontScale] = scale }
         }
 
-        override suspend fun setThumbnailSize(size: ThumbnailSize) {
-            edit { it[Keys.thumbnailSize] = size.name }
-        }
-
         override suspend fun setMuteByDefault(enabled: Boolean) {
             edit { it[Keys.mute] = enabled }
-        }
-
-        override suspend fun setFullscreenVideoPlayback(enabled: Boolean) {
-            edit { it[Keys.fullscreenVideoPlayback] = enabled }
-        }
-
-        override suspend fun setAutoRotateVideoFullscreen(enabled: Boolean) {
-            edit { it[Keys.autoRotateVideoFullscreen] = enabled }
-        }
-
-        override suspend fun setFeedThreadLimit(limit: FeedThreadLimit) {
-            edit { it[Keys.feedThreadLimit] = limit.name }
         }
 
         override suspend fun setFeedSort(sort: FeedSort) {
             edit { it[Keys.feedSort] = sort.name }
         }
 
-        override suspend fun setImageCacheLimitMb(megabytes: Int) {
-            edit { it[Keys.imageCacheLimitMb] = megabytes }
-        }
-
         override suspend fun setDownloadFolderUri(uri: String) {
             edit { it[Keys.downloadFolderUri] = uri }
-        }
-
-        override suspend fun setDownloadOrganization(organization: DownloadOrganization) {
-            edit { it[Keys.downloadOrganization] = organization.name }
-        }
-
-        override suspend fun setDohProvider(provider: DohProvider) {
-            edit { it[Keys.dohProvider] = provider.name }
         }
 
         override suspend fun setBiometricLockEnabled(enabled: Boolean) {
@@ -159,44 +88,12 @@ class SettingsRepositoryImpl
             edit { it[Keys.internalUpdater] = enabled }
         }
 
-        override suspend fun setUserAgent(userAgent: String) {
-            edit { it[Keys.userAgent] = userAgent }
-        }
-
         override suspend fun setOnboardingCompleted(completed: Boolean) {
             edit { it[Keys.onboardingCompleted] = completed }
         }
 
         override suspend fun setActiveProviderId(id: ProviderId) {
             edit { it[Keys.activeProviderId] = id.value }
-        }
-
-        override suspend fun setThreadWatchNotificationsEnabled(enabled: Boolean) {
-            edit { it[Keys.threadWatchNotifications] = enabled }
-        }
-
-        override suspend fun setQuietHoursStart(time: String) {
-            edit { it[Keys.quietHoursStart] = time }
-        }
-
-        override suspend fun setQuietHoursEnd(time: String) {
-            edit { it[Keys.quietHoursEnd] = time }
-        }
-
-        override suspend fun setMediaScrollThreadView(enabled: Boolean) {
-            edit { it[Keys.mediaScrollThreadView] = enabled }
-        }
-
-        override suspend fun setMediaScrollBoardView(enabled: Boolean) {
-            edit { it[Keys.mediaScrollBoardView] = enabled }
-        }
-
-        override suspend fun setConnectTimeoutSeconds(seconds: Long) {
-            edit { it[Keys.connectTimeoutSeconds] = seconds.toString() }
-        }
-
-        override suspend fun setReadTimeoutSeconds(seconds: Long) {
-            edit { it[Keys.readTimeoutSeconds] = seconds.toString() }
         }
 
         override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
@@ -267,7 +164,7 @@ class SettingsRepositoryImpl
             }
         }
 
-        override fun current(): NetworkConfig = cached.value.toNetworkConfig()
+        override fun current(): NetworkConfig = FIXED_NETWORK_CONFIG
 
         private suspend fun edit(block: (MutablePreferences) -> Unit) {
             dataStore.edit { block(it) }
@@ -276,119 +173,44 @@ class SettingsRepositoryImpl
         @Suppress("ComplexMethod")
         private fun Preferences.toAppSettings(): AppSettings =
             AppSettings(
-                hiddenTags = this[Keys.hiddenTags] ?: "",
-                mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
-                hideTextOnlyThreads = this[Keys.hideTextOnlyThreads] ?: false,
-                harshContentFilter = this[Keys.harshContentFilter] ?: false,
                 deepMediaScan = this[Keys.deepMediaScan] ?: false,
-                mediaFilter =
-                    this[Keys.mediaFilter]?.toEnumOrDefault(MediaFilter.ALL)
-                        ?: MediaFilter.ALL,
-                threadPresentation =
-                    this[Keys.threadPresentation]?.toEnumOrDefault(ThreadPresentation.PAGE)
-                        ?: ThreadPresentation.PAGE,
                 themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
                 colorTheme =
                     this[Keys.colorTheme]?.toEnumOrDefault(ColorTheme.ORBIN)
                         ?: ColorTheme.ORBIN,
                 amoled = this[Keys.amoled] ?: false,
                 fontScale = this[Keys.fontScale] ?: 1f,
-                fullScreenFeedChrome = this[Keys.fullScreenFeedChrome] ?: false,
-                thumbnailSize =
-                    this[Keys.thumbnailSize]?.toEnumOrDefault(ThumbnailSize.MEDIUM)
-                        ?: ThumbnailSize.MEDIUM,
                 muteByDefault = this[Keys.mute] ?: true,
-                fullscreenVideoPlayback = this[Keys.fullscreenVideoPlayback] ?: false,
-                autoRotateVideoFullscreen = this[Keys.autoRotateVideoFullscreen] ?: false,
-                feedThreadLimit =
-                    when (this[Keys.feedThreadLimit]) {
-                        null, "TWELVE" -> FeedThreadLimit.ALL
-                        else -> this[Keys.feedThreadLimit]?.toEnumOrDefault(FeedThreadLimit.ALL) ?: FeedThreadLimit.ALL
-                    },
                 feedSort =
                     this[Keys.feedSort]?.toEnumOrDefault(FeedSort.BOARD)
                         ?: FeedSort.BOARD,
-                imageCacheLimitMb = this[Keys.imageCacheLimitMb] ?: AppSettings.Default.imageCacheLimitMb,
                 downloadFolderUri = this[Keys.downloadFolderUri] ?: "",
-                downloadOrganization =
-                    this[Keys.downloadOrganization]?.toEnumOrDefault(AppSettings.Default.downloadOrganization)
-                        ?: AppSettings.Default.downloadOrganization,
-                userAgent = this[Keys.userAgent] ?: "",
-                dohProvider =
-                    this[Keys.dohProvider]?.toEnumOrDefault(DohProvider.CLOUDFLARE)
-                        ?: DohProvider.CLOUDFLARE,
-                httpsOnly = true,
-                connectTimeoutSeconds = this[Keys.connectTimeoutSeconds]?.toLongOrNull() ?: 15,
-                readTimeoutSeconds = this[Keys.readTimeoutSeconds]?.toLongOrNull() ?: 30,
                 biometricLockEnabled = this[Keys.biometricLock] ?: false,
                 saveRecentSearches = this[Keys.saveRecentSearches] ?: false,
                 internalUpdaterEnabled = this[Keys.internalUpdater] ?: true,
-                threadWatchNotificationsEnabled = this[Keys.threadWatchNotifications] ?: true,
-                quietHoursStart = this[Keys.quietHoursStart] ?: "",
-                quietHoursEnd = this[Keys.quietHoursEnd] ?: "",
                 activeProviderId = this[Keys.activeProviderId] ?: "",
                 onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
-                mediaScrollThreadView = this[Keys.mediaScrollThreadView] ?: true,
-                mediaScrollBoardView = this[Keys.mediaScrollBoardView] ?: false,
             )
-
-        private fun AppSettings.toNetworkConfig(): NetworkConfig =
-            NetworkConfig(
-                userAgent = userAgent.ifBlank { NetworkConfig.DEFAULT_USER_AGENT },
-                dnsOverHttps = dohProvider.toDohConfig(),
-                httpsOnly = httpsOnly,
-                connectTimeoutSeconds = connectTimeoutSeconds,
-                readTimeoutSeconds = readTimeoutSeconds,
-            )
-
-        private fun DohProvider.toDohConfig(): DohConfig =
-            when (this) {
-                DohProvider.CLOUDFLARE -> DohConfig.Cloudflare
-                DohProvider.OPENDNS -> DohConfig.OpenDns
-                DohProvider.NEXTDNS -> DohConfig.NextDns
-            }
 
         private inline fun <reified T : Enum<T>> String.toEnumOrDefault(default: T): T =
             runCatching { enumValueOf<T>(this) }.getOrDefault(default)
 
         private object Keys {
-            val hiddenTags = stringPreferencesKey("hidden_tags")
-            val mutedTags = stringPreferencesKey("muted_tags")
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
-            val hideTextOnlyThreads = booleanPreferencesKey("hide_text_only_threads")
-            val harshContentFilter = booleanPreferencesKey("harsh_content_filter")
             val deepMediaScan = booleanPreferencesKey("deep_media_scan")
-            val mediaFilter = stringPreferencesKey("media_filter")
-            val threadPresentation = stringPreferencesKey("thread_presentation")
             val themeMode = stringPreferencesKey("theme_mode")
             val colorTheme = stringPreferencesKey("color_theme")
-            val fullScreenFeedChrome = booleanPreferencesKey("full_screen_feed_chrome")
             val amoled = booleanPreferencesKey("amoled")
             val fontScale = floatPreferencesKey("font_scale")
-            val thumbnailSize = stringPreferencesKey("thumbnail_size")
             val mute = booleanPreferencesKey("mute_by_default")
-            val fullscreenVideoPlayback = booleanPreferencesKey("fullscreen_video_playback")
-            val autoRotateVideoFullscreen = booleanPreferencesKey("auto_rotate_video_fullscreen")
-            val feedThreadLimit = stringPreferencesKey("feed_thread_limit")
             val feedSort = stringPreferencesKey("feed_sort")
-            val imageCacheLimitMb = intPreferencesKey("image_cache_limit_mb")
             val downloadFolderUri = stringPreferencesKey("download_folder_uri")
-            val downloadOrganization = stringPreferencesKey("download_organization")
-            val userAgent = stringPreferencesKey("user_agent")
-            val dohProvider = stringPreferencesKey("doh_provider")
             val biometricLock = booleanPreferencesKey("biometric_lock")
             val saveRecentSearches = booleanPreferencesKey("save_recent_searches")
             val internalUpdater = booleanPreferencesKey("internal_updater")
             val activeProviderId = stringPreferencesKey("active_provider_id")
             val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
-            val threadWatchNotifications = booleanPreferencesKey("thread_watch_notifications")
-            val quietHoursStart = stringPreferencesKey("quiet_hours_start")
-            val quietHoursEnd = stringPreferencesKey("quiet_hours_end")
-            val connectTimeoutSeconds = stringPreferencesKey("connect_timeout_seconds")
-            val readTimeoutSeconds = stringPreferencesKey("read_timeout_seconds")
-            val mediaScrollThreadView = booleanPreferencesKey("media_scroll_thread_view")
-            val mediaScrollBoardView = booleanPreferencesKey("media_scroll_board_view")
 
             fun favoriteBoards(provider: ProviderId): Preferences.Key<Set<String>> =
                 stringSetPreferencesKey("favorite_boards_${provider.value}")
@@ -402,3 +224,5 @@ class SettingsRepositoryImpl
             ): Preferences.Key<String> = stringPreferencesKey("feed_thread_limit_${provider.value}_${board.value}")
         }
     }
+
+private val FIXED_NETWORK_CONFIG = NetworkConfig()

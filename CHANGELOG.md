@@ -7,6 +7,7 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Removed
+- About twenty stored preferences that still changed behavior but could no longer be edited anywhere, now fixed at their previous defaults: hidden and muted tags, hide text-only threads, the harsh content filter, the media-type filter, thread presentation, thumbnail size, fullscreen video and auto-rotate, the global feed thread limit, image cache size, download folder layout, DNS resolver, user agent, network timeouts, full-screen feed chrome, thread-watch notification toggle and quiet hours, and media scrolling in threads and catalogs. The permanent content filter is unchanged, and older backups that contain these keys still import.
 - The command palette, which nothing could open any more, along with the settings search index and the feed filter it drove.
 - Nine stored preferences that nothing read: platform theme, dynamic color, autoplay videos, autoplay in feed, preload images, preload option, preload throttle, feed refresh interval and the OCSP switch. Onboarding's "Dynamic color" switch went with them, and "AMOLED black" is now "True black" as in Settings. Older backups that still contain these keys import normally.
 
