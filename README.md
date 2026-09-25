@@ -13,7 +13,7 @@ does not post, reply, or create threads.
 
 **Current release:** [143 — Honeydew](https://github.com/Defuuls/Orbin/releases/tag/v143-Honeydew)
 
-**What's new in 143:** Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader.
+**What's new in 143:** Fixes a thread crash on multi-attachment media, eliminates UI overlaps, refines settings, and keeps playback in the thread reader.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

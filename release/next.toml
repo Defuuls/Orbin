@@ -9,18 +9,25 @@ version_code = 161
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Fixes a thread crash when measuring multi-attachment media, and keeps playback in the thread reader."
+highlight = "Fixes a thread crash on multi-attachment media, eliminates UI overlaps, refines settings, and keeps playback in the thread reader."
 
 summary = [
   "bump Orbin to 143-Honeydew / versionCode 161",
   "fix thread crash from intrinsic measurement of pager media",
-  "restrict media playback to the thread view",
+  "restrict media playback to the thread view and streamline settings",
+  "fix BBWChan catalog loading and attachment parsing",
+  "eliminate UI overlaps, integrate search box icon, and refine settings design",
 ]
 
 [changelog]
 Fixed = [
   "Stopped thread posts from requesting intrinsic height of HorizontalPager media, which crashed Compose with IllegalStateException on multi-attachment posts.",
+  "Fixed BBWChan catalog loading and attachment parsing when switching providers.",
+  "Eliminated UI overlaps across floating bottom navigation, settings selection pills, and feed row metadata.",
+  "Integrated search icon cleanly inside search text fields instead of detached in the gutter.",
 ]
 Changed = [
   "Restricted media playback to the thread reader and streamlined related settings.",
+  "Refined Settings Library items into structured list rows with dividers and navigation indicators.",
+  "Increased bottom content clearance so all scrollable lists clear floating navigation chrome.",
 ]
