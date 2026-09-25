@@ -37,8 +37,8 @@ does not post, reply, or create threads.
 
 - **Multi-provider architecture.** Vichan/4chan-compatible and LynxChan engines ship today. New
   engines plug into `ImageBoardProvider` instead of leaking engine rules into the app.
-- **Subscribed feed.** Threads from followed boards are merged and ordered by activity, with
-  board identity, read state, filtering, pull-to-refresh, and optional inline video autoplay.
+- **Subscribed feed.** Threads from followed boards are grouped by board A–Z, most recently
+  active first within each board, with read state, filtering, pull-to-refresh, and inline playback.
 - **Readable grid-first catalogs.** Feed and board catalogs use an adaptive card grid as the
   primary presentation. Cards maintain useful width on compact phones, prioritize the subject over
   secondary metadata, and adapt across larger screens.

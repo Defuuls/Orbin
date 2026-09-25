@@ -30,7 +30,7 @@ class NextFeedMappingTest {
     }
 
     @Test
-    fun `defaults to newest activity first across every board`() {
+    fun `defaults to boards A-Z with the newest activity first within each`() {
         val entries =
             feedEntries(
                 feeds =
@@ -49,8 +49,8 @@ class NextFeedMappingTest {
                 nowMillis = 10_000L,
             )
 
-        assertThat(entries.map { it.key.thread.value }).containsExactly(3L, 2L, 1L).inOrder()
-        assertThat(entries.map { it.key.board.value }).containsExactly("z", "a", "a").inOrder()
+        assertThat(entries.map { it.key.board.value }).containsExactly("a", "a", "z").inOrder()
+        assertThat(entries.map { it.key.thread.value }).containsExactly(2L, 1L, 3L).inOrder()
     }
 
     @Test

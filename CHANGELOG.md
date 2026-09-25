@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- The feed is sorted by board, A–Z, under a heading for each board, with the most recently active threads first within each board. It was one list ordered by activity across every board.
+
 ## [147-Mango] - 2026-09-25
 
 ### Added
