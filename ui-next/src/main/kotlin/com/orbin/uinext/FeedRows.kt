@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.NextSpace
 
 @Composable
 internal fun FeedHeader(
@@ -35,16 +38,33 @@ internal fun FeedHeader(
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
+    onSettings: (() -> Unit)? = null,
 ) {
     Column {
-        ScreenTitle(text = stringResource(R.string.next_feed_title), subtitle = subtitle)
+        Row(verticalAlignment = Alignment.Top) {
+            ScreenTitle(
+                text = stringResource(R.string.next_feed_title),
+                subtitle = subtitle,
+                modifier = Modifier.weight(1f),
+            )
+            // Settings is visited, not lived in, so it sits here rather than taking a tab.
+            if (onSettings != null) {
+                NextIconAction(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = stringResource(R.string.next_settings_title),
+                    onClick = onSettings,
+                    tint = next.muted,
+                    modifier = Modifier.padding(top = NextSpace.titleTop + 14.dp, end = GUTTER - 12.dp),
+                )
+            }
+        }
         Column(Modifier.padding(horizontal = 0.dp)) {
             headerContent()
             Gap(12)
             SchematicSearch(query, onQueryChange, "Sift through your threads")
             Gap(8)
         }
-        // Primary destinations live in DestinationPill and refreshing is pull-to-refresh; the header keeps sort only.
+        // Places live in DestinationPill and refreshing is pull-to-refresh; the header keeps sort only.
         FlowRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),

@@ -79,7 +79,7 @@ fun FeedScreen(
         onDispose { activePreviewCallback.value(null) }
     }
 
-    val hasTabs = onOpenBoards != null || onOpenMedia != null || onSettings != null
+    val hasTabs = onOpenBoards != null || onOpenMedia != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
@@ -87,7 +87,7 @@ fun FeedScreen(
                     NextDestination.FEED -> Unit
                     NextDestination.BOARDS -> onOpenBoards?.invoke()
                     NextDestination.MEDIA -> onOpenMedia?.invoke()
-                    NextDestination.SETTINGS -> onSettings?.invoke()
+                    NextDestination.SETTINGS -> Unit
                 }
             }
         } else {
@@ -120,6 +120,7 @@ fun FeedScreen(
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,
+                    onSettings = onSettings,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()

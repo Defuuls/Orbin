@@ -83,6 +83,7 @@ fun OrbinApp(
         val scrollAwayScreen =
             isNextFeed ||
                 currentDestination?.hasRoute(Route.Board::class) == true ||
+                currentDestination?.hasRoute(Route.BoardGallery::class) == true ||
                 isAllMedia
         val chromeHidesOnScroll = scrollAwayScreen
         var chromeVisible by rememberSaveable { mutableStateOf(true) }

@@ -233,7 +233,6 @@ class SettingsUserJourneyTest {
         composeRule.setContent {
             NextSettingsScreen(
                 snackbarHostState = NextSnackbarHostState(),
-                onOpenFeed = {},
                 onOpenSearch = { openedSearch++ },
                 onOpenDownloads = { openedDownloads++ },
                 viewModel = viewModel,

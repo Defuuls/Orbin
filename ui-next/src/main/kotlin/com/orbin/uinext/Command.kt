@@ -252,9 +252,6 @@ fun SettingsScreen(
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
-    onOpenFeed: (() -> Unit)? = null,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
 ) {
     val state = rememberLazyListState()
     LaunchedEffect(focusId, expandedId, groups) {
@@ -265,21 +262,6 @@ fun SettingsScreen(
             state.scrollToItem(lazyItemIndex)
         }
     }
-    val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenMedia != null
-    val onDestination: ((NextDestination) -> Unit)? =
-        if (hasTabs) {
-            { dest ->
-                when (dest) {
-                    NextDestination.FEED -> onOpenFeed?.invoke()
-                    NextDestination.BOARDS -> onOpenBoards?.invoke()
-                    NextDestination.MEDIA -> onOpenMedia?.invoke()
-                    NextDestination.SETTINGS -> Unit
-                }
-            }
-        } else {
-            null
-        }
-
     val settingsTitle = stringResource(R.string.next_settings_title)
     val showCompactTitle by remember {
         derivedStateOf {
@@ -289,10 +271,9 @@ fun SettingsScreen(
     }
     Box(modifier = modifier.fillMaxSize()) {
         NextScaffold(
-            where = settingsTitle.takeIf { showRail && !hasTabs },
+            // Settings is visited from the Feed header, not a tab, so it draws no tab chrome.
+            where = settingsTitle.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
-            destination = NextDestination.SETTINGS.takeIf { showRail && hasTabs },
-            onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
             LazyColumn(
                 state = state,

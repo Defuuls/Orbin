@@ -48,9 +48,6 @@ fun NextSettingsScreen(
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
     focusId: String? = null,
-    onOpenFeed: (() -> Unit)? = null,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
     onOpenSearch: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -168,9 +165,6 @@ fun NextSettingsScreen(
             subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
             focusId = focusId,
-            onOpenFeed = onOpenFeed,
-            onOpenBoards = onOpenBoards,
-            onOpenMedia = onOpenMedia,
             onActivate = { item ->
                 when (item.kind) {
                     SettingKind.TOGGLE -> model.toggle(item.id)

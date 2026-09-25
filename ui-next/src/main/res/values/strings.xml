@@ -12,6 +12,7 @@
     <!-- Screens -->
     <string name="next_feed_title">Feed</string>
     <string name="next_all_media_title">All media</string>
+    <string name="next_media_tab">Media</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
     <string name="next_settings_title">Settings</string>
 
