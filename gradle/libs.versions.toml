@@ -22,6 +22,12 @@ browser = "1.10.0"
 
 # Compose
 composeBom = "2026.09.00"
+# Compose Multiplatform: the shared UI modules compile against JetBrains' artifacts, which resolve to
+# the androidx ones above on Android (the BOM still wins there) and to Skia-backed ones on iOS.
+# Material 3 and the icon set are versioned separately from the rest of the framework.
+composeMultiplatform = "1.12.1"
+composeMultiplatformMaterial3 = "1.9.0"
+composeMultiplatformIcons = "1.7.3"
 navigationCompose = "2.10.1"
 paging = "3.5.1"
 pagingCompose = "3.5.1"
@@ -88,6 +94,14 @@ androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "b
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 
 # Compose
+cmp-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+cmp-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+cmp-animation = { module = "org.jetbrains.compose.animation:animation", version.ref = "composeMultiplatform" }
+cmp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+cmp-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMultiplatformMaterial3" }
+cmp-material3-window-size = { module = "org.jetbrains.compose.material3:material3-window-size-class", version.ref = "composeMultiplatformMaterial3" }
+cmp-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMultiplatformIcons" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
@@ -196,6 +210,7 @@ roborazzi-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule"
 # Build-logic plugin dependencies (for convention plugins)
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-multiplatform-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
 compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "room" }
@@ -203,6 +218,8 @@ room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref =
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -225,4 +242,5 @@ orbin-android-hilt = { id = "orbin.android.hilt" }
 orbin-android-room = { id = "orbin.android.room" }
 orbin-jvm-library = { id = "orbin.jvm.library" }
 orbin-kmp-library = { id = "orbin.kmp.library" }
+orbin-kmp-compose = { id = "orbin.kmp.compose" }
 orbin-android-compose = { id = "orbin.android.compose" }

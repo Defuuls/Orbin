@@ -33,8 +33,8 @@ cd Orbin
 | Formatting | `./gradlew ktlintCheck` / `./gradlew ktlintFormat` |
 | Static analysis | `./gradlew detekt` |
 | Android instrumentation | `./gradlew connectedDebugAndroidTest` |
-| Screenshot verification | `./gradlew verifyRoborazziDebug` |
-| Record intended screenshot changes | `./gradlew recordRoborazziDebug` |
+| Screenshot verification | `./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest` |
+| Record intended screenshot changes | `./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest` |
 | Architecture validation | `python3 scripts/validate_architecture.py` |
 | Repository consistency | `python3 scripts/validate_repo.py` |
 | Baseline profile | `./gradlew :app:generateReleaseBaselineProfile` |

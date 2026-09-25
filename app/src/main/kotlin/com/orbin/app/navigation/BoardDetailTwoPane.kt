@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.orbin.app.R
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
@@ -101,7 +102,7 @@ fun BoardDetailTwoPane(
                     NextTheme {
                         MessageScreen(
                             title = "Thread",
-                            subtitle = stringResource(com.orbin.uinext.R.string.next_two_pane_pick_thread),
+                            subtitle = stringResource(R.string.two_pane_pick_thread),
                             modifier = Modifier.fillMaxSize(),
                         )
                     }

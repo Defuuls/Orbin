@@ -6,7 +6,7 @@ large repository locally understandable without tracing the whole dependency gra
 | Module | Owns | Start here when… |
 | --- | --- | --- |
 | `app` | application lifecycle, navigation, DI aggregation | a route, top-level shell or process concern is wrong |
-| `ui-next` | stateless screen/layout vocabulary | presentation, spacing or screen composition changes |
+| `ui-next` | stateless screen/layout vocabulary (Compose Multiplatform, shared with iOS) | presentation, spacing or screen composition changes |
 | `feature:home` | subscribed feed state/adapters | feed loading, ordering or read-state presentation changes |
 | `feature:board` | board catalog state/adapters | a board/catalog interaction changes |
 | `feature:thread` | thread reader state/adapters | reading, watch, save/export, scrolling or thread actions change |
@@ -26,7 +26,7 @@ large repository locally understandable without tracing the whole dependency gra
 | `core:model` | immutable domain entities and pure sorting/filtering | a concept or pure rule belongs everywhere |
 | `core:common` | result types and connectivity contracts, shared with iOS | a platform-neutral primitive changes |
 | `core:common-android` | dispatcher qualifiers + Hilt module, external links, app-lock signal | Android-side cross-cutting infrastructure changes |
-| `core:designsystem` | reusable visual tokens/components | shared Material styling changes |
+| `core:designsystem` | reusable visual tokens/components (Compose Multiplatform, shared with iOS) | shared Material styling changes |
 | `core:ui` | shared domain-aware Compose primitives | reusable rendering such as parsed post comments changes |
 | `core:testing` | fakes, fixtures and test helpers | multiple modules need the same test setup |
 | `benchmark` | baseline profile/performance journeys | startup/scroll performance is being measured |

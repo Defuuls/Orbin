@@ -27,8 +27,8 @@ cd Orbin
 | All unit tests | `./gradlew test` |
 | One module's tests | `./gradlew :domain:test` |
 | Instrumented tests | `./gradlew connectedDebugAndroidTest` |
-| Screenshot tests | `./gradlew verifyRoborazziDebug` |
-| Record screenshots | `./gradlew recordRoborazziDebug` |
+| Screenshot tests | `./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest` |
+| Record screenshots | `./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest` |
 | Lint/format | `./gradlew ktlintCheck` / `./gradlew ktlintFormat` |
 | Static analysis | `./gradlew detekt` |
 | Compose compiler metrics | add `-Porbin.enableComposeCompilerReports=true` |

@@ -35,8 +35,9 @@ alert #63 (build-cache metadata) — that fix needs the compiler bump.
 
 
 ### `screenshots.yml` — on PRs touching UI modules
-Verifies Roborazzi goldens (`verifyRoborazziDebug`) for UI modules. Re-record locally with
-`./gradlew recordRoborazziDebug` when intentional UI changes move the goldens; failed runs upload
+Verifies Roborazzi goldens for UI modules: `verifyRoborazziDebug` for Android modules and
+`verifyRoborazziAndroidHostTest` for the Compose Multiplatform ones (`core:designsystem`,
+`ui-next`). Re-record locally with `./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest` when intentional UI changes move the goldens; failed runs upload
 a diffs artifact.
 
 ### `baseline-profile.yml` — manual (`workflow_dispatch`) and monthly

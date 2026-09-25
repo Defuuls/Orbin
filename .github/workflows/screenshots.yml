@@ -1,13 +1,14 @@
 name: Screenshots
 
 # Verifies Roborazzi screenshots against the goldens committed under
-# src/test/screenshots. Recording alone never compared anything — the goldens
+# src/test/screenshots (Android modules) and src/androidHostTest/screenshots
+# (the Compose Multiplatform modules shared with iOS). Recording alone never compared anything — the goldens
 # were checked in but nothing gated them, so a UI regression could land with
 # the screenshot job green.
 #
 # Roborazzi renders through Robolectric on the JVM, which is reproducible
 # across machines. If a legitimate UI change makes this fail, re-record locally
-# (./gradlew recordRoborazziDebug) and commit the new goldens, or download the
+# (./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest) and commit the new goldens, or download the
 # roborazzi-diffs artifact to see what moved.
 on:
   workflow_dispatch:
@@ -35,7 +36,8 @@ jobs:
         uses: ./.github/actions/setup-jdk-gradle
 
       - name: Verify Roborazzi screenshots
-        run: ./gradlew verifyRoborazziDebug
+        # Android modules have a debug variant; multiplatform modules run their Android host tests.
+        run: ./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest
 
       - name: Upload comparison images
         if: failure()
@@ -46,4 +48,5 @@ jobs:
           path: |
             **/build/outputs/roborazzi/**
             **/src/test/screenshots/**
+            **/src/androidHostTest/screenshots/**
           if-no-files-found: ignore
