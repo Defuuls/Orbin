@@ -50,6 +50,12 @@ sealed interface Route {
     data class ThreadPage(
         val key: ThreadKey,
     ) : Route
+
+    /** The full-screen viewer over the files of the open thread, starting at file [index]. */
+    data class Media(
+        val thread: ThreadKey,
+        val index: Int,
+    ) : Route
 }
 
 /**
@@ -57,8 +63,9 @@ sealed interface Route {
  * then a thread. The screens are the shared `ui-next` ones; this holds what Android keeps in its
  * ViewModels and navigation graph, in the few lines a read-only first version needs.
  *
- * Each destination loads when it is opened and again on [retry]. A load still running when the
- * reader navigates away is cancelled, so a slow thread cannot overwrite the one they opened next.
+ * Each destination loads when it is opened and again on [retry]. Going back to a page that already
+ * loaded shows it as it was rather than fetching it again. Starting a new load cancels the one
+ * still running, so a slow thread cannot overwrite the one the reader opened next.
  */
 class Browser(
     private val providers: List<ImageBoardProvider>,
@@ -80,6 +87,10 @@ class Browser(
 
     private var pageLoad: Job? = null
 
+    // What the catalog and thread states hold, so returning to them does not fetch them again.
+    private var catalogShown: SiteBoard? = null
+    private var threadShown: ThreadKey? = null
+
     init {
         loadBoards()
     }
@@ -94,6 +105,12 @@ class Browser(
         loadCurrent()
     }
 
+    /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
+    fun openMedia(index: Int) {
+        val thread = (_backStack.value.last() as? Route.ThreadPage)?.key ?: return
+        _backStack.update { it + Route.Media(thread, index) }
+    }
+
     /** Pops one destination. Returns false at the boards list, where there is nothing to pop. */
     fun back(): Boolean {
         if (_backStack.value.size <= 1) return false
@@ -103,7 +120,7 @@ class Browser(
     }
 
     fun retry() {
-        if (_backStack.value.last() == Route.Boards) loadBoards() else loadCurrent()
+        if (_backStack.value.last() == Route.Boards) loadBoards() else loadCurrent(force = true)
     }
 
     private fun loadBoards() {
@@ -124,33 +141,41 @@ class Browser(
         }
     }
 
-    private fun loadCurrent() {
-        pageLoad?.cancel()
-        pageLoad =
-            when (val route = _backStack.value.last()) {
-                Route.Boards -> null
-                is Route.Catalog -> load(_catalog) { catalogOf(route.board) }
-                is Route.ThreadPage -> load(_thread) { threadOf(route.key) }
-            }
+    private fun loadCurrent(force: Boolean = false) {
+        when (val route = _backStack.value.last()) {
+            Route.Boards, is Route.Media -> Unit
+            is Route.Catalog ->
+                if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
+                    catalogShown = route.board
+                    load(_catalog) { catalogOf(route.board) }
+                }
+            is Route.ThreadPage ->
+                if (force || threadShown != route.key || _thread.value !is Load.Ready) {
+                    threadShown = route.key
+                    load(_thread) { threadOf(route.key) }
+                }
+        }
     }
 
     private fun <T> load(
         target: MutableStateFlow<Load<T>>,
         fetch: suspend () -> T,
-    ): Job {
+    ) {
+        pageLoad?.cancel()
         target.value = Load.Loading
-        return scope.launch {
-            target.value =
-                try {
-                    Load.Ready(fetch())
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") error: Exception,
-                ) {
-                    Load.Failed(error.readable())
-                }
-        }
+        pageLoad =
+            scope.launch {
+                target.value =
+                    try {
+                        Load.Ready(fetch())
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") error: Exception,
+                    ) {
+                        Load.Failed(error.readable())
+                    }
+            }
     }
 
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the iOS app says itself; the shared screens bring their own strings. -->
+<resources>
+    <string name="ios_media_close">Close</string>
+    <string name="ios_media_position">%1$d of %2$d</string>
+    <string name="ios_media_open_in_browser">Open in browser</string>
+    <string name="ios_media_not_viewable">This file plays in the browser.</string>
+</resources>

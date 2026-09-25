@@ -25,14 +25,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.orbin.core.ui.R
+import com.orbin.core.ui.resources.Res
+import com.orbin.core.ui.resources.ui_fast_scrollbar
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * A draggable scrollbar for a [LazyListState], for crossing a long list in one gesture.
@@ -125,7 +126,7 @@ private fun FastScrollbarTrack(
             minThumbPx = minThumbPx,
         )
 
-    val label = stringResource(R.string.ui_fast_scrollbar)
+    val label = stringResource(Res.string.ui_fast_scrollbar)
 
     fun scrollToPress(yPx: Float) {
         onScrollToItem(

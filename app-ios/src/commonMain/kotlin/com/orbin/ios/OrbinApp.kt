@@ -1,18 +1,23 @@
 package com.orbin.ios
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import coil3.compose.AsyncImage
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.Thread
+import com.orbin.core.ui.post.PostCommentText
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.NextError
@@ -40,6 +45,7 @@ fun OrbinApp(browser: Browser) {
             Route.Boards -> BoardsDestination(browser)
             is Route.Catalog -> CatalogDestination(browser, route.board)
             is Route.ThreadPage -> ThreadDestination(browser)
+            is Route.Media -> MediaDestination(browser, route)
         }
     }
 }
@@ -95,29 +101,64 @@ private fun CatalogThumbnail(
 @Composable
 private fun ThreadDestination(browser: Browser) {
     val thread by browser.thread.collectAsState()
-    Loaded(thread, onRetry = browser::retry) { loaded -> ThreadContent(loaded) }
+    Loaded(thread, onRetry = browser::retry) { loaded -> ThreadContent(loaded, onOpenFile = browser::openMedia) }
 }
 
 @Composable
-private fun ThreadContent(thread: Thread) {
+private fun ThreadContent(
+    thread: Thread,
+    onOpenFile: (index: Int) -> Unit,
+) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
     val byId = remember(thread) { thread.allPosts.associateBy { it.id.value.toString() } }
+    val uriHandler = LocalUriHandler.current
+    // Where a tapped quote asks the list to scroll; cleared once the screen has scrolled there.
+    var scrollTarget by remember(thread) { mutableStateOf<String?>(null) }
     ThreadScreen(
         subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
         board = "/${thread.key.board.value}/",
         posts = posts,
+        scrollToPostId = scrollTarget,
+        onScrollConsumed = { scrollTarget = null },
+        body = { post ->
+            byId[post.id]?.let { entry ->
+                PostCommentText(
+                    comment = entry.comment,
+                    selectable = true,
+                    onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                    onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
+                )
+            }
+        },
         media = { post, modifier ->
             byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
                 AsyncImage(
                     model = attachment.thumbnailUrl,
-                    contentDescription = null,
+                    contentDescription = attachment.originalFileName,
                     contentScale = ContentScale.Crop,
-                    modifier = modifier,
+                    modifier = modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
                 )
             }
         },
     )
+}
+
+@Composable
+private fun MediaDestination(
+    browser: Browser,
+    route: Route.Media,
+) {
+    val thread by browser.thread.collectAsState()
+    val files =
+        remember(thread) {
+            (thread as? Load.Ready)
+                ?.value
+                ?.takeIf { it.key == route.thread }
+                ?.files
+                .orEmpty()
+        }
+    MediaViewer(files = files, startIndex = route.index, onClose = { browser.back() })
 }
 
 @Composable

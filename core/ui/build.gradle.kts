@@ -1,29 +1,38 @@
 plugins {
-    alias(libs.plugins.orbin.android.library)
-    alias(libs.plugins.orbin.android.compose)
+    alias(libs.plugins.orbin.kmp.compose)
 }
 
-android {
-    namespace = "com.orbin.core.ui"
+kotlin {
+    android {
+        namespace = "com.orbin.core.ui"
 
-    // Opt in: library modules don't ship Android resources by default (see gradle.properties).
-    // This module's user-facing strings live in res/values/strings.xml so they can be translated.
-    androidResources {
-        enable = true
+        // Opt in: library modules don't ship Android resources by default (see gradle.properties).
+        // The Compose resources below are packaged as Android assets, which needs this on.
+        androidResources {
+            enable = true
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":core:designsystem"))
+            implementation(project(":core:model"))
+            implementation(libs.cmp.resources)
+            implementation(libs.kotlinx.immutable)
+        }
+        androidMain.dependencies {
+            // Pins the Android side to the app's Compose release rather than the older one the
+            // multiplatform artifacts were built against.
+            implementation(project.dependencies.platform(libs.compose.bom))
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.junit)
+            implementation(libs.truth)
+        }
     }
 }
 
-dependencies {
-    api(project(":core:designsystem"))
-    implementation(project(":core:model"))
-    implementation(project(":core:common-android"))
-
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.kotlinx.immutable)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
+// The module's user-facing strings, in `commonMain/composeResources` so both platforms read them.
+compose.resources {
+    packageOfResClass = "com.orbin.core.ui.resources"
 }
