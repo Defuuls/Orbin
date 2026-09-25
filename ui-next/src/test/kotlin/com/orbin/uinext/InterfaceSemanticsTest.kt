@@ -68,6 +68,30 @@ class InterfaceSemanticsTest {
             .assert(hasTextContaining("218 replies"))
     }
 
+    @Test
+    fun `settings has no library section of places`() {
+        composeRule.setContent {
+            NextTheme {
+                SettingsScreen(
+                    groups =
+                        listOf(
+                            "Privacy" to
+                                listOf(
+                                    SettingItem(id = "cache", label = "Image cache usage", value = "Clear"),
+                                ),
+                        ),
+                    onOpenFeed = {},
+                    onOpenBoards = {},
+                    onOpenMedia = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText("Library").assertDoesNotExist()
+        composeRule.onNodeWithText("All media").assertDoesNotExist()
+        composeRule.onNodeWithText("Commands").assertDoesNotExist()
+        composeRule.onNodeWithText("Image cache usage").assertExists()
+    }
+
     private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
 
     private fun hasTextContaining(fragment: String) =
