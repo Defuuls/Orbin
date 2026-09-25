@@ -150,7 +150,14 @@ private fun MediaDestination(
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
-    val files = remember(thread) { (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }?.files.orEmpty() }
+    val files =
+        remember(thread) {
+            (thread as? Load.Ready)
+                ?.value
+                ?.takeIf { it.key == route.thread }
+                ?.files
+                .orEmpty()
+        }
     MediaViewer(files = files, startIndex = route.index, onClose = { browser.back() })
 }
 

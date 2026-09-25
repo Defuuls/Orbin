@@ -119,7 +119,11 @@ class BrowserTest {
     fun goingBackShowsTheLoadedPageWithoutFetchingItAgain() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
-            val g = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first { it.board.id.value == "g" }
+            val g =
+                assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first {
+                    it.board.id.value ==
+                        "g"
+                }
             browser.openBoard(g)
             browser.catalog.settled()
             browser.openThread(ThreadKey(g.provider, g.board.id, ThreadId(7)))

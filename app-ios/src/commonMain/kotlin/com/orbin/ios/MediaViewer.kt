@@ -83,7 +83,11 @@ internal fun MediaViewer(
                 modifier = Modifier.padding(start = 8.dp),
             )
             IconButton(onClick = onClose) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.ios_media_close), tint = Color.White)
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(Res.string.ios_media_close),
+                    tint = Color.White,
+                )
             }
         }
     }

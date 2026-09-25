@@ -163,18 +163,19 @@ class Browser(
     ) {
         pageLoad?.cancel()
         target.value = Load.Loading
-        pageLoad = scope.launch {
-            target.value =
-                try {
-                    Load.Ready(fetch())
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") error: Exception,
-                ) {
-                    Load.Failed(error.readable())
-                }
-        }
+        pageLoad =
+            scope.launch {
+                target.value =
+                    try {
+                        Load.Ready(fetch())
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") error: Exception,
+                    ) {
+                        Load.Failed(error.readable())
+                    }
+            }
     }
 
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
