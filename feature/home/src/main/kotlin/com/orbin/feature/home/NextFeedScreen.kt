@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -59,8 +60,14 @@ fun NextFeedScreen(
     headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
+    // refreshRequest is a counter owned by the app shell and outlives this screen. Remember the
+    // last one handled so coming back to the feed does not replay an old request as a refresh.
+    var handledRefreshRequest by rememberSaveable { mutableIntStateOf(refreshRequest) }
     LaunchedEffect(refreshRequest) {
-        if (refreshRequest > 0) viewModel.refresh()
+        if (refreshRequest > handledRefreshRequest) {
+            handledRefreshRequest = refreshRequest
+            viewModel.refresh()
+        }
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
@@ -196,8 +203,6 @@ fun NextFeedScreen(
                             query = localQuery,
                             onQueryChange = { localQuery = it },
                             groupByBoard = settings.feedSort == FeedSort.BOARD,
-                            refreshing = isRefreshing,
-                            onRefresh = viewModel::refresh,
                             sortLabel = settings.feedSort.label,
                             onSort = { sortOpen = true },
                             filter = filter.takeIf { it.isNotBlank() },

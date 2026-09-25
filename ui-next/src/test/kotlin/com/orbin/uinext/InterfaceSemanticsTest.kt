@@ -31,6 +31,14 @@ class InterfaceSemanticsTest {
     }
 
     @Test
+    fun `the feed refreshes by pulling down, not from a header button`() {
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS) }
+        }
+        composeRule.onNodeWithText("Refresh").assertDoesNotExist()
+    }
+
+    @Test
     fun `a board catalog offers no layout switcher`() {
         composeRule.setContent {
             NextTheme {

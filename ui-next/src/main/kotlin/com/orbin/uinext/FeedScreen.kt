@@ -49,8 +49,6 @@ fun FeedScreen(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     groupByBoard: Boolean = true,
-    refreshing: Boolean = false,
-    onRefresh: () -> Unit = {},
 ) {
     val gridState = rememberLazyGridState()
 
@@ -124,8 +122,6 @@ fun FeedScreen(
                     headerContent = headerContent,
                     query = query,
                     onQueryChange = onQueryChange,
-                    refreshing = refreshing,
-                    onRefresh = onRefresh,
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
