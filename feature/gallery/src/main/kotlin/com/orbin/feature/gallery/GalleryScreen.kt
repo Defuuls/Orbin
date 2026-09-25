@@ -29,14 +29,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.ZoomableImage
@@ -51,6 +58,7 @@ import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /**
  * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
@@ -99,8 +107,26 @@ fun GalleryScreen(
         val closeLabel = stringResource(R.string.gallery_close)
         val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
+        var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
+        val close = {
+            onMediaPageChanged(pagerState.settledPage)
+            onClose()
+        }
+        val save: (MediaAttachment) -> Unit = { attachment ->
+            viewModel.download(attachment)
+            Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+        }
+        val closeThresholdPx = with(LocalDensity.current) { CLOSE_PULL_THRESHOLD.toPx() }
+        val pullToClose = remember(closeThresholdPx) { PullPastEndToClose(closeThresholdPx) { close() } }
 
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    // Pulling past the first or last item closes the viewer.
+                    .nestedScroll(pullToClose),
+        ) {
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
@@ -122,6 +148,7 @@ fun GalleryScreen(
                             active = isActive,
                             // Only the active page controls the gallery chrome.
                             onFullscreenChange = { if (isActive) videoFullscreen = it },
+                            onLongPress = { actionsFor = item },
                         )
                     } else {
                         ZoomableImage(
@@ -131,6 +158,7 @@ fun GalleryScreen(
                             placeholderUrl = item.thumbnailUrl,
                             // Drop full decodes more than one page away from the settled item.
                             active = isNear,
+                            onLongPress = { actionsFor = item },
                         )
                     }
                 }
@@ -153,10 +181,7 @@ fun GalleryScreen(
                 ) {
                     InlineAction(
                         label = closeLabel,
-                        onClick = {
-                            onMediaPageChanged(pagerState.settledPage)
-                            onClose()
-                        },
+                        onClick = close,
                         modifier = Modifier.semantics { contentDescription = closeLabel },
                     )
                     Spacer(modifier = Modifier.weight(1f))
@@ -188,10 +213,18 @@ fun GalleryScreen(
                     InlineAction(
                         label = downloadLabel,
                         accent = true,
-                        onClick = { viewModel.download(currentItem) },
+                        onClick = { save(currentItem) },
                         modifier = Modifier.semantics { contentDescription = downloadLabel },
                     )
                 }
+            }
+
+            actionsFor?.let { attachment ->
+                MediaActionsSheet(
+                    attachment = attachment,
+                    onSave = viewModel::download,
+                    onDismiss = { actionsFor = null },
+                )
             }
 
             if (downloadState.isBusy) {
@@ -216,3 +249,34 @@ fun GalleryScreen(
         }
     }
 }
+
+/**
+ * Closes the viewer when a drag keeps going past the first or last item.
+ *
+ * The pager is vertical, so an ordinary swipe down goes back an item; only the part of a drag the
+ * pager cannot use — past either end — counts towards closing, and only once it is long enough to
+ * be deliberate.
+ */
+private class PullPastEndToClose(
+    private val thresholdPx: Float,
+    private val onClose: () -> Unit,
+) : NestedScrollConnection {
+    private var pulled = 0f
+
+    override fun onPostScroll(
+        consumed: Offset,
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset {
+        if (source == NestedScrollSource.UserInput) pulled += available.y
+        return Offset.Zero
+    }
+
+    override suspend fun onPreFling(available: Velocity): Velocity {
+        if (abs(pulled) >= thresholdPx) onClose()
+        pulled = 0f
+        return Velocity.Zero
+    }
+}
+
+private val CLOSE_PULL_THRESHOLD = 96.dp

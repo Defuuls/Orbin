@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -103,6 +105,7 @@ fun VideoPlayer(
     fullscreenByDefault: Boolean = false,
     autoRotate: Boolean = false,
     onFullscreenChange: (Boolean) -> Unit = {},
+    onLongPress: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -120,6 +123,7 @@ fun VideoPlayer(
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var bufferedProgress by remember { mutableFloatStateOf(0f) }
+    var scrubbing by remember { mutableStateOf(false) }
     // Seconds skipped by the current run of double taps; negative is backwards, 0 hides the label.
     var skipSeconds by remember(url) { mutableIntStateOf(0) }
     var skipGeneration by remember(url) { mutableIntStateOf(0) }
@@ -210,8 +214,8 @@ fun VideoPlayer(
         }
     }
 
-    LaunchedEffect(isPlaying, controlsVisible) {
-        if (isPlaying && controlsVisible) {
+    LaunchedEffect(isPlaying, controlsVisible, scrubbing) {
+        if (isPlaying && controlsVisible && !scrubbing) {
             delay(CONTROLS_AUTO_HIDE_MS)
             controlsVisible = false
         }
@@ -289,8 +293,9 @@ fun VideoPlayer(
     Box(
         modifier =
             modifier
-                .pointerInput(playbackError, exoPlayer) {
+                .pointerInput(playbackError, exoPlayer, onLongPress) {
                     detectTapGestures(
+                        onLongPress = onLongPress?.let { handler -> { handler() } },
                         onTap = {
                             if (playbackError == null) controlsVisible = !controlsVisible
                         },
@@ -402,6 +407,8 @@ fun VideoPlayer(
                         exoPlayer.seekTo((durationMs * seekProgress).toLong())
                     }
                 },
+                scrubbing = scrubbing,
+                onScrubbingChange = { scrubbing = it },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -491,6 +498,8 @@ private fun VideoControls(
     onLoopToggle: () -> Unit,
     onFullscreenToggle: () -> Unit,
     onSeek: (Float) -> Unit,
+    scrubbing: Boolean,
+    onScrubbingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val timestampText =
@@ -528,11 +537,20 @@ private fun VideoControls(
                     .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (scrubbing) {
+                // Where the drag points, above the bar, so a seek can be aimed rather than guessed.
+                ScrubBubble(
+                    text = positionMs.formatTimestamp(),
+                    fraction = progress,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             NextSlider(
                 value = progress,
                 onValueChange = onSeek,
                 valueRange = 0f..1f,
                 modifier = Modifier.fillMaxWidth(),
+                onDragStateChange = onScrubbingChange,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -570,6 +588,32 @@ private fun VideoControls(
                 }
             }
         }
+    }
+}
+
+/** The time under the finger while scrubbing, riding above the thumb. */
+@Composable
+private fun ScrubBubble(
+    text: String,
+    fraction: Float,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val bubbleWidth = SCRUB_BUBBLE_WIDTH
+        val x = ((maxWidth - bubbleWidth) * fraction.coerceIn(0f, 1f))
+        Text(
+            text = text,
+            color = Color.White,
+            style = NextType.footnote,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .padding(start = x)
+                    .width(bubbleWidth)
+                    .clip(RoundedCornerShape(NextRadius.pill))
+                    .background(Color.Black.copy(alpha = SKIP_LABEL_FILL_ALPHA))
+                    .padding(vertical = 4.dp),
+        )
     }
 }
 
@@ -726,6 +770,7 @@ private const val PASSIVE_PROGRESS_ALPHA = 0.65f
 private const val PASSIVE_PROGRESS_TRACK_ALPHA = 0.22f
 private const val PLAY_BUTTON_FILL_ALPHA = 0.92f
 private val PASSIVE_PROGRESS_HEIGHT = 3.dp
+private val SCRUB_BUBBLE_WIDTH = 64.dp
 private const val PERCENT_DIVISOR = 100f
 private const val PROGRESS_UPDATE_MS = 250L
 private const val CONTROLS_AUTO_HIDE_MS = 2_500L

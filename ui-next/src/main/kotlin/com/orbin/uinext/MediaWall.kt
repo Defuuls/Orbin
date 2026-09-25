@@ -51,6 +51,7 @@ fun MediaWallScreen(
     showRail: Boolean = true,
     showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
+    onLongPress: ((MediaCell) -> Unit)? = null,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -177,6 +178,8 @@ fun MediaWallScreen(
                                 .nextClickable(
                                     role = Role.Button,
                                     onClickLabel = stringResource(R.string.next_open_file),
+                                    onLongClick = onLongPress?.let { handler -> { handler(cell) } },
+                                    onLongClickLabel = stringResource(R.string.next_media_actions),
                                     onClick = { onOpen(cell) },
                                 ).semantics { contentDescription = description },
                         contentAlignment = Alignment.BottomStart,

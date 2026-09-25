@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Media gestures, with no settings behind them:
+  - Double tap an image to zoom in on that spot, and again to zoom out.
+  - Long-press any image or video, in the viewer or on the All media wall, to Save, Share or Copy link.
+  - Pull past the first or last item in the viewer to close it.
+  - While dragging a video's progress bar, the time you're dragging to shows above it.
+  - Saving shows "Saving to Downloads/Orbin".
+  - Zoom resets when you swipe to another item.
+
 ### Changed
 - Settings is now one short list in three untitled cards: Hide NSFW boards, Theme, True black and App lock; then Clear local activity, Clear image cache, Check for updates, Export data and Import data; then Downloads and Search.
 - First run is one step: pick the boards to follow, then start browsing.

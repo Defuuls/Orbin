@@ -17,6 +17,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBoardRepository
+import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
@@ -26,6 +27,7 @@ import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.Rule
@@ -69,6 +71,25 @@ class AllMediaViewModelTest {
             assertThat(state.boardsScanned).isEqualTo(2)
             assertThat(state.boardsTotal).isEqualTo(2)
             assertThat(state.failedBoards).isEqualTo(0)
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun `saving a file from the wall downloads that file`() =
+        runTest {
+            val downloads = FakeDownloadRepository()
+            val viewModel =
+                createViewModel(
+                    boards = listOf(Board(tech, "Technology")),
+                    catalogs = mapOf(tech to listOf(catalogThread(tech, 1L, image("g-1")))),
+                    downloads = downloads,
+                )
+            val item = viewModel.awaitCompletedSweep().items.single()
+
+            viewModel.save(item)
+            advanceUntilIdle()
+
+            assertThat(downloads.enqueuedUrls).containsExactly(item.attachment.sourceUrl)
         }
 
     @Test
@@ -277,6 +298,7 @@ class AllMediaViewModelTest {
         failing: Set<BoardId> = emptySet(),
         settings: AppSettings = AppSettings.Default,
         threads: Map<ThreadKey, Thread> = emptyMap(),
+        downloads: FakeDownloadRepository = FakeDownloadRepository(),
     ): AllMediaViewModel {
         val registry = FakeProviderRegistry(catalogProvider(catalogs, failing, threads))
         val settingsRepository = FakeSettingsRepository(settings)
@@ -285,6 +307,7 @@ class AllMediaViewModelTest {
             observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
             boardRepository = FakeBoardRepository(boards = boards),
             settingsRepository = settingsRepository,
+            downloadRepository = downloads,
         )
     }
 

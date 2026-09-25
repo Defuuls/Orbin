@@ -1,7 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.IndicationNodeFactory
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -81,15 +81,19 @@ fun Modifier.nextClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = Role.Button,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     onClick: () -> Unit,
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
-    return clickable(
+    return combinedClickable(
         interactionSource = interaction,
         indication = androidx.compose.material3.ripple(color = next.accent),
         enabled = enabled,
         onClickLabel = onClickLabel,
         role = role,
+        onLongClickLabel = onLongClickLabel,
+        onLongClick = onLongClick,
         onClick = onClick,
     )
 }

@@ -14,6 +14,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardRepository
+import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
@@ -102,6 +103,7 @@ class AllMediaViewModel
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val settingsRepository: SettingsRepository,
+        private val downloadRepository: DownloadRepository,
     ) : ViewModel() {
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -168,6 +170,21 @@ class AllMediaViewModel
                 }.onEach { (provider, boards, scanSettings) ->
                     startScan(provider, boards, scanSettings)
                 }.launchIn(viewModelScope)
+        }
+
+        /** Saves one file from the wall to Downloads/Orbin, in its board and thread folder. */
+        fun save(item: AllMediaItem) {
+            viewModelScope.launch {
+                runCatching {
+                    downloadRepository.enqueue(
+                        url = item.attachment.sourceUrl,
+                        fileName = item.attachment.originalFileName,
+                        boardId = item.key.board.value,
+                        threadId = item.key.thread.value,
+                        threadTitle = item.threadTitle,
+                    )
+                }
+            }
         }
 
         /**
