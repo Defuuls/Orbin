@@ -2,9 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,11 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -32,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 
 private val DarkBackground = Color(0xFF141218)
@@ -174,44 +168,4 @@ fun SchematicSearch(
             }
         },
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FeedSortSheet(
-    labels: List<String>,
-    selected: Int,
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = next.raised,
-        contentColor = next.ink,
-        shape = RoundedCornerShape(topStart = NextRadius.sheet, topEnd = NextRadius.sheet),
-        dragHandle = {
-            BottomSheetDefaults.DragHandle()
-        },
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Sort your feed", style = NextType.footnote, color = next.muted, modifier = Modifier.padding(8.dp))
-            labels.forEachIndexed { index, label ->
-                InlineAction(
-                    label =
-                        if (index ==
-                            selected
-                        ) {
-                            "$label ✓"
-                        } else {
-                            label
-                        },
-                    selected = index == selected,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    onSelect(index)
-                    onDismiss()
-                }
-            }
-        }
-    }
 }

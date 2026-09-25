@@ -1,10 +1,8 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,8 +29,6 @@ import com.orbin.uinext.tokens.NextSpace
 @Composable
 internal fun FeedHeader(
     subtitle: String,
-    sortLabel: String? = null,
-    onSort: () -> Unit = {},
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
@@ -61,16 +57,6 @@ internal fun FeedHeader(
             Gap(12)
             SchematicSearch(query, onQueryChange, "Sift through your threads")
             Gap(8)
-        }
-        // Places live in DestinationPill and refreshing is pull-to-refresh; the header keeps sort only.
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER - 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            if (sortLabel != null) {
-                InlineAction("$sortLabel ▾", onClick = onSort)
-            }
         }
         Gap(12)
         Hairline()

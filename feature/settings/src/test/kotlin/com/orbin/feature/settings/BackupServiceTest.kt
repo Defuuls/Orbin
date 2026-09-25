@@ -39,7 +39,6 @@ class BackupServiceTest {
             themeMode = AppThemeMode.DARK,
             amoled = true,
             biometricLockEnabled = true,
-            saveRecentSearches = true,
             onboardingCompleted = true,
         )
 

@@ -104,10 +104,7 @@ data class AppSettings(
     val deepMediaScan: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val amoled: Boolean = false,
-    /** How the subscribed feed orders threads. Defaults to board code A–Z. */
-    val feedSort: FeedSort = FeedSort.BOARD,
     val biometricLockEnabled: Boolean = false,
-    val saveRecentSearches: Boolean = false,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
 ) {

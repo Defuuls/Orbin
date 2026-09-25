@@ -55,12 +55,6 @@ class HomeViewModel
         private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
         val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-        val favoriteBoardIds: StateFlow<Set<String>> =
-            activeProvider
-                .flatMapLatest { provider -> boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id) }
-                .map { boards -> boards.map { it.value }.toSet() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
-
         val subscribedBoardIds: StateFlow<Set<String>> =
             activeProvider
                 .flatMapLatest { provider -> boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id) }
@@ -90,19 +84,6 @@ class HomeViewModel
                             is OrbinResult.Failure -> HomeUiState.Error(result.error.message)
                         }
                 }
-        }
-
-        fun setFavorite(
-            boardId: String,
-            favorite: Boolean,
-        ) {
-            viewModelScope.launch {
-                boardPreferencesRepository.setFavoriteBoard(
-                    provider = activeProvider.value.metadata.id,
-                    board = BoardId(boardId),
-                    favorite = favorite,
-                )
-            }
         }
 
         fun setSubscribed(

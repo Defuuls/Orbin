@@ -3,6 +3,7 @@ package com.orbin.feature.search
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
+import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -16,6 +17,7 @@ import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -33,14 +35,14 @@ class SearchViewModelTest {
         )
 
     @Test
-    fun `search populates results`() =
+    fun `search populates results from the boards you follow`() =
         runTest {
             val viewModel = createViewModel(FakeSearchRepository(listOf(result)))
+            viewModel.searchableBoards.first { it.isNotEmpty() }
 
-            viewModel.search(text = "match", board = "g")
+            viewModel.search("match")
 
             viewModel.state.test {
-                // The terminal state after a successful search holds the results.
                 var state = awaitItem()
                 while (state !is SearchUiState.Results) state = awaitItem()
                 assertThat(state.results.map { it.title }).containsExactly("Match")
@@ -52,7 +54,7 @@ class SearchViewModelTest {
         runTest {
             val viewModel = createViewModel(FakeSearchRepository(listOf(result)))
 
-            viewModel.search(text = "   ", board = "g")
+            viewModel.search("   ")
 
             viewModel.state.test {
                 assertThat(awaitItem()).isEqualTo(SearchUiState.Idle)
@@ -60,43 +62,49 @@ class SearchViewModelTest {
         }
 
     @Test
-    fun `searching does not record the recent query by default`() =
+    fun `a search is never stored`() =
         runTest {
             val repo = FakeSearchRepository(listOf(result))
             val viewModel = createViewModel(repo)
+            viewModel.searchableBoards.first { it.isNotEmpty() }
 
-            viewModel.search(text = "kotlin", board = "g")
+            viewModel.search("kotlin")
+            viewModel.state.first { it is SearchUiState.Results }
 
-            viewModel.recentQueries.test {
-                assertThat(awaitItem()).isEmpty()
-            }
+            assertThat(repo.observeRecentQueries().first()).isEmpty()
         }
 
     @Test
-    fun `searching records the recent query when enabled`() =
+    fun `nsfw boards are skipped when settings hides them`() =
         runTest {
-            val repo = FakeSearchRepository(listOf(result))
-            val viewModel = createViewModel(repo, AppSettings.Default.copy(saveRecentSearches = true))
+            val boards = listOf(Board(BoardId("g"), "Technology"), Board(BoardId("b"), "Random", isNsfw = true))
+            val subscribed = setOf(BoardId("g"), BoardId("b"))
 
-            viewModel.search(text = "kotlin", board = "g")
+            val hiding =
+                createViewModel(
+                    FakeSearchRepository(),
+                    AppSettings.Default.copy(hideNsfwBoards = true),
+                    boards,
+                    subscribed,
+                )
+            val showing = createViewModel(FakeSearchRepository(), AppSettings.Default, boards, subscribed)
 
-            viewModel.recentQueries.test {
-                var recents = awaitItem()
-                while (recents.isEmpty()) recents = awaitItem()
-                assertThat(recents).contains("kotlin")
-            }
+            assertThat(hiding.searchableBoards.first { it.isNotEmpty() }.map { it.id.value }).containsExactly("g")
+            assertThat(showing.searchableBoards.first { it.size == 2 }.map { it.id.value }).containsExactly("b", "g")
         }
 
     private fun createViewModel(
         repository: FakeSearchRepository,
         settings: AppSettings = AppSettings.Default,
+        boards: List<Board> = listOf(Board(BoardId("g"), "Technology")),
+        subscribed: Set<BoardId> = setOf(BoardId("g")),
     ): SearchViewModel {
         val registry = FakeProviderRegistry()
         val settingsRepository = FakeSettingsRepository(settings)
         return SearchViewModel(
             searchRepository = repository,
-            boardRepository = FakeBoardRepository(),
-            boardPreferencesRepository = FakeBoardPreferencesRepository(),
+            boardRepository = FakeBoardRepository(boards),
+            boardPreferencesRepository = FakeBoardPreferencesRepository(subscribed),
             settingsRepository = settingsRepository,
             registry = registry,
             observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),

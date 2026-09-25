@@ -7,7 +7,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
@@ -164,16 +163,8 @@ class FakeSettingsRepository(
         update { copy(amoled = enabled) }
     }
 
-    override suspend fun setFeedSort(sort: FeedSort) {
-        update { copy(feedSort = sort) }
-    }
-
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         update { copy(biometricLockEnabled = enabled) }
-    }
-
-    override suspend fun setSaveRecentSearches(enabled: Boolean) {
-        update { copy(saveRecentSearches = enabled) }
     }
 
     override suspend fun setOnboardingCompleted(completed: Boolean) {
