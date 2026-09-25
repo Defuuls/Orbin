@@ -205,6 +205,8 @@ fun NextFeedScreen(
                                         fullResolution = true,
                                         contentScale = ContentScale.Fit,
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+                                        // One card at a time plays: the one the feed is centred on.
+                                        playing = row.id == activePreviewId,
                                     )
                                 }
                             },
