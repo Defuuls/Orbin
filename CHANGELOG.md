@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Boards, board catalogs and All media could not be reached once you followed a board. The bottom bar is now Feed · Media · Boards, and Settings opens from a gear in the Feed header. Switching tabs no longer stacks screens, and Back from Media or Boards returns to the Feed.
+
 ### Added
 - Double tap the left or right half of a video to skip back or forward 5 seconds. Repeated double taps keep adding up ("+15s"), and screen readers get matching "Skip back/forward 5 seconds" actions.
 

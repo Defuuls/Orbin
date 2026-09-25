@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
  *
  * The catalog and media wall used to carry a floating name bar that repeated their own large title
  * over the content. They now draw no bottom chrome at all, the same as a thread, so the only bar
- * left to hide is the Feed / Settings pill. The screens still report scroll direction to the shell
+ * left to hide is the Feed / Media / Boards pill. The screens still report scroll direction to the shell
  * so the system bars can follow.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -30,22 +30,22 @@ class RailHidesOnScrollTest {
     @Test
     fun `the feed puts its tab pill away as the reader scrolls down`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onSettings = {}, hideRailOnScroll = true) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, hideRailOnScroll = true) }
         }
-        composeRule.onNodeWithText(SETTINGS_TAB).assertExists()
+        composeRule.onNodeWithText(MEDIA_TAB).assertExists()
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(SETTINGS_TAB).assertDoesNotExist()
+        composeRule.onNodeWithText(MEDIA_TAB).assertDoesNotExist()
     }
 
     @Test
     fun `the feed keeps its tab pill when the setting is off`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onSettings = {}, hideRailOnScroll = false) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, hideRailOnScroll = false) }
         }
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(SETTINGS_TAB).assertExists()
+        composeRule.onNodeWithText(MEDIA_TAB).assertExists()
     }
 
     @Test
@@ -85,7 +85,7 @@ class RailHidesOnScrollTest {
     }
 
     private companion object {
-        const val SETTINGS_TAB = "Settings"
+        const val MEDIA_TAB = "Media"
 
         val ROWS =
             (1..30).map { index ->

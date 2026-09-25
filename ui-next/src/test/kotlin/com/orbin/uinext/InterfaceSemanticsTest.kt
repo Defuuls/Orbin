@@ -6,9 +6,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -113,9 +116,6 @@ class InterfaceSemanticsTest {
                                     SettingItem(id = "cache", label = "Image cache usage", value = "Clear"),
                                 ),
                         ),
-                    onOpenFeed = {},
-                    onOpenBoards = {},
-                    onOpenMedia = {},
                 )
             }
         }
@@ -145,6 +145,27 @@ class InterfaceSemanticsTest {
         composeRule.onNodeWithText("Top").assertExists()
         composeRule.onNodeWithText("Bottom").assertExists()
         composeRule.onNodeWithText("↓").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the tabs are feed, media and boards, and settings is not one of them`() {
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, onOpenBoards = {}, onSettings = {}) }
+        }
+        composeRule.onNode(hasText("Feed") and hasRole(Role.Tab)).assertExists()
+        composeRule.onNode(hasText("Media") and hasRole(Role.Tab)).assertExists()
+        composeRule.onNode(hasText("Boards") and hasRole(Role.Tab)).assertExists()
+        composeRule.onNode(hasText("Settings") and hasRole(Role.Tab)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `settings opens from a button in the feed header`() {
+        var opened = 0
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, onSettings = { opened++ }) }
+        }
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        assert(opened == 1) { "expected the header button to open settings" }
     }
 
     private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)

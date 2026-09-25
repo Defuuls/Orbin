@@ -300,9 +300,6 @@ class ProposalScreenshotTest {
         capture("next_settings") {
             SettingsScreen(
                 groups = settingsGroups(),
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenMedia = {},
             )
         }
 
@@ -311,9 +308,6 @@ class ProposalScreenshotTest {
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(
                 groups = settingsGroups(),
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenMedia = {},
             )
         }
 
@@ -327,9 +321,6 @@ class ProposalScreenshotTest {
             SettingsScreen(
                 groups = settingsGroups(),
                 expandedId = "themeMode",
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenMedia = {},
             )
         }
 
@@ -339,9 +330,6 @@ class ProposalScreenshotTest {
             SettingsScreen(
                 groups = settingsGroups(),
                 expandedId = "themeMode",
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenMedia = {},
             )
         }
 
@@ -352,9 +340,6 @@ class ProposalScreenshotTest {
             SettingsScreen(
                 groups = textEditorGroup(),
                 expandedId = "userAgent",
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenMedia = {},
             )
         }
 

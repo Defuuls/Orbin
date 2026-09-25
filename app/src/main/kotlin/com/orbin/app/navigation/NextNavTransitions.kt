@@ -31,27 +31,24 @@ private fun fadeSpec(push: Boolean) =
     )
 
 /**
- * Primary DestinationPill tabs — Feed / Boards / Media / Settings. Swaps between these should
- * crossfade softly, not push like a hierarchical drill-in.
+ * DestinationPill tabs — Feed / Media / Boards, in pill order. Swaps between these should
+ * crossfade softly, not push like a hierarchical drill-in. Settings is not a tab; it slides over.
  */
 internal fun NavDestination.isPrimaryTab(): Boolean =
     hasRoute(Route.NextFeed::class) ||
-        hasRoute(Route.BoardGallery::class) ||
         hasRoute(Route.AllMedia::class) ||
-        hasRoute(Route.Settings::class)
+        hasRoute(Route.BoardGallery::class)
 
 private const val TAB_FEED = 0
-private const val TAB_BOARDS = 1
-private const val TAB_MEDIA = 2
-private const val TAB_SETTINGS = 3
+private const val TAB_MEDIA = 1
+private const val TAB_BOARDS = 2
 private const val TAB_UNKNOWN = -1
 
 internal fun NavDestination.primaryTabIndex(): Int =
     when {
         hasRoute(Route.NextFeed::class) -> TAB_FEED
-        hasRoute(Route.BoardGallery::class) -> TAB_BOARDS
         hasRoute(Route.AllMedia::class) -> TAB_MEDIA
-        hasRoute(Route.Settings::class) -> TAB_SETTINGS
+        hasRoute(Route.BoardGallery::class) -> TAB_BOARDS
         else -> TAB_UNKNOWN
     }
 

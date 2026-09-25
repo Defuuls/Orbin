@@ -48,8 +48,8 @@ does not post, reply, or create threads.
   remain side by side without losing navigation state.
 - **Offline awareness.** Network state and typed failures are surfaced explicitly rather than
   turning failed requests into unexplained blank screens.
-- **Focused bottom chrome.** Feed and Settings make up the primary bottom navigation strip. Search
-  and Downloads open from Settings › Privacy & Data, beside the image cache.
+- **Three tabs.** Feed, Media and Boards make up the bottom navigation. Settings opens from the gear
+  in the Feed header; Search and Downloads open from Settings › Privacy & Data.
 
 ### Thread reader
 

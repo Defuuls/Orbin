@@ -34,8 +34,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,8 +64,9 @@ import com.orbin.uinext.tokens.NextType
 /**
  * Every destination the app can show.
  *
- * Only [FEED] and [SETTINGS] earn a place in the permanent chrome; [BOARDS] and [MEDIA] are
- * places you go, and like Search, Downloads and threads they carry no bottom chrome at all.
+ * [FEED], [MEDIA] and [BOARDS] are the three places you live, so they are the tabs. [SETTINGS] is
+ * somewhere you visit, opened from the Feed header, and like threads, Search and Downloads it
+ * carries no bottom chrome.
  */
 enum class NextDestination {
     FEED,
@@ -74,11 +76,10 @@ enum class NextDestination {
 }
 
 /**
- * The permanent chrome: a floating pill for Feed and Settings, with Command as a trailing Go
- * affordance.
+ * The permanent chrome: a floating pill with the three places you live — Feed, Media, Boards.
  *
- * Two tabs rather than four. Boards and Media are things you go and do, not places you live, so
- * they draw no bottom chrome, like every other secondary screen.
+ * Settings is not a tab: it is visited, not lived in, so it opens from the Feed header instead of
+ * taking a slot here.
  */
 @Composable
 fun DestinationPill(
@@ -113,10 +114,16 @@ fun DestinationPill(
                     onClick = { onSelect(NextDestination.FEED) },
                 )
                 DestinationTab(
-                    label = stringResource(R.string.next_settings_title),
-                    icon = Icons.Outlined.Settings,
-                    selected = selected == NextDestination.SETTINGS,
-                    onClick = { onSelect(NextDestination.SETTINGS) },
+                    label = stringResource(R.string.next_media_tab),
+                    icon = Icons.Outlined.PhotoLibrary,
+                    selected = selected == NextDestination.MEDIA,
+                    onClick = { onSelect(NextDestination.MEDIA) },
+                )
+                DestinationTab(
+                    label = stringResource(R.string.next_launchpad_boards),
+                    icon = Icons.Outlined.GridView,
+                    selected = selected == NextDestination.BOARDS,
+                    onClick = { onSelect(NextDestination.BOARDS) },
                 )
             }
         }
@@ -467,9 +474,10 @@ fun MediaTile(
 /**
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
- * Pass [destination] + [onDestination] for tab chrome. Only [NextDestination.FEED] and
- * [NextDestination.SETTINGS] draw it; every other screen draws no bottom chrome, because its large
- * title already says where you are and a floating name bar would only repeat it over the content.
+ * Pass [destination] + [onDestination] for tab chrome. Only [NextDestination.FEED],
+ * [NextDestination.MEDIA] and [NextDestination.BOARDS] draw it; every other screen draws no bottom
+ * chrome, because its large title already says where you are and a floating name bar would only
+ * repeat it over the content.
  * [where] names the screen for accessibility services as its pane title.
  */
 @Composable
@@ -510,13 +518,12 @@ val GUTTER = NextSpace.gutter
 val RAIL_HEIGHT = 56.dp
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
-private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.SETTINGS)
+private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.MEDIA, NextDestination.BOARDS)
 
 /**
  * Whether this destination draws the permanent pill.
  *
- * The one place the rule is decided. A screen that passes Boards or Media answers `false` here and
- * draws no bottom chrome.
+ * The one place the rule is decided. Settings answers `false` here and draws no bottom chrome.
  */
 internal fun NextDestination?.drawsPill(): Boolean = this in CHROME_DESTINATIONS
 

@@ -70,8 +70,8 @@ fun OrbinNavHost(
                 refreshRequest = subscribedFeedRefreshRequest,
                 filter = feedFilter,
                 onClearFilter = onClearFeedFilter,
-                onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenMedia = { navController.navigate(Route.AllMedia) },
+                onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
+                onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
             )
         }
 
@@ -80,13 +80,8 @@ fun OrbinNavHost(
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
-                onOpenFeed = {
-                    navController.navigate(Route.NextFeed) {
-                        popUpTo(Route.NextFeed) { inclusive = false }
-                        launchSingleTop = true
-                    }
-                },
-                onOpenMedia = { navController.navigate(Route.AllMedia) },
+                onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
+                onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
                 onOpenSettings = { navController.navigate(Route.Settings()) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -110,13 +105,8 @@ fun OrbinNavHost(
                 onOpenMedia = { provider, board, thread, _ ->
                     openThread(provider, board, thread, "No.$thread")
                 },
-                onOpenFeed = {
-                    navController.navigate(Route.NextFeed) {
-                        popUpTo(Route.NextFeed) { inclusive = false }
-                        launchSingleTop = true
-                    }
-                },
-                onOpenBoards = { navController.navigate(Route.BoardGallery) },
+                onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
+                onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
                 onOpenSettings = { navController.navigate(Route.Settings()) },
             )
         }
@@ -204,14 +194,6 @@ fun OrbinNavHost(
             NextSettingsScreen(
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 focusId = backStackEntry.toRoute<Route.Settings>().focus,
-                onOpenFeed = {
-                    navController.navigate(Route.NextFeed) {
-                        popUpTo(Route.NextFeed) { inclusive = false }
-                        launchSingleTop = true
-                    }
-                },
-                onOpenBoards = { navController.navigate(Route.BoardGallery) },
-                onOpenMedia = { navController.navigate(Route.AllMedia) },
                 onOpenSearch = { navController.navigate(Route.Search) },
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
             )
@@ -246,3 +228,15 @@ internal val threadRouteSaver =
             )
         },
     )
+
+/**
+ * Switches to one of the three tabs. Each tab sits directly on top of the Feed rather than on top
+ * of whatever was open, so Back from Media or Boards always lands on the Feed and switching tabs
+ * never piles screens up.
+ */
+private fun NavHostController.navigateToTab(route: Route) {
+    navigate(route) {
+        popUpTo(Route.NextFeed) { inclusive = false }
+        launchSingleTop = true
+    }
+}
