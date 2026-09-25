@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.first
@@ -44,15 +43,10 @@ class SettingsRepositoryImplTest {
         repository.setHideNsfwBoards(true)
         repository.setDeepMediaScan(true)
         repository.setThemeMode(AppThemeMode.DARK)
-        repository.setColorTheme(ColorTheme.TOMORROW_NIGHT)
         repository.setAmoled(true)
-        repository.setFontScale(1.2f)
-        repository.setMuteByDefault(false)
         repository.setFeedSort(FeedSort.TITLE)
-        repository.setDownloadFolderUri("content://downloads/tree/orbin")
         repository.setBiometricLockEnabled(true)
         repository.setSaveRecentSearches(true)
-        repository.setInternalUpdaterEnabled(false)
         repository.setActiveProviderId(ProviderId("test-provider"))
         repository.setOnboardingCompleted(true)
     }
@@ -62,15 +56,10 @@ class SettingsRepositoryImplTest {
             hideNsfwBoards = true,
             deepMediaScan = true,
             themeMode = AppThemeMode.DARK,
-            colorTheme = ColorTheme.TOMORROW_NIGHT,
             amoled = true,
-            fontScale = 1.2f,
-            muteByDefault = false,
             feedSort = FeedSort.TITLE,
-            downloadFolderUri = "content://downloads/tree/orbin",
             biometricLockEnabled = true,
             saveRecentSearches = true,
-            internalUpdaterEnabled = false,
             activeProviderId = "test-provider",
             onboardingCompleted = true,
         )

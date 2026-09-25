@@ -88,7 +88,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * A Media3/ExoPlayer-backed video player. The player is created per [url], loops by default, and
  * exposes a Loop/Once control so the behavior can be changed while it is playing. The player is
  * released when the composable leaves composition so there are no leaked players. Autoplay and
- * the initial mute state are driven from settings by the caller; tapping the video reveals compact
+ * the initial mute state come from the caller (by default [SessionAudio]); tapping the video reveals compact
  * controls without permanently covering playing media, and double tapping its left or right half
  * skips back or forward [SKIP_SECONDS] seconds.
  */
@@ -98,7 +98,7 @@ fun VideoPlayer(
     url: String,
     modifier: Modifier = Modifier,
     autoPlay: Boolean = false,
-    muted: Boolean = true,
+    muted: Boolean = SessionAudio.muted,
     active: Boolean = true,
     fullscreenByDefault: Boolean = false,
     autoRotate: Boolean = false,
@@ -391,7 +391,10 @@ fun VideoPlayer(
                     exoPlayer.playWhenReady = !isPlaying
                     if (!isPlaying) controlsVisible = false
                 },
-                onMuteToggle = { isMuted = !isMuted },
+                onMuteToggle = {
+                    isMuted = !isMuted
+                    SessionAudio.muted = isMuted
+                },
                 onLoopToggle = { loopEnabled = !loopEnabled },
                 onFullscreenToggle = { fullscreen.value = !fullscreen.value },
                 onSeek = { seekProgress ->
@@ -403,6 +406,17 @@ fun VideoPlayer(
             )
         }
     }
+}
+
+/**
+ * Whether the next video opens muted.
+ *
+ * Every video starts muted until the reader unmutes one; from then on, for as long as Orbin is
+ * running, the next video opens with sound. No setting: the last choice is the answer.
+ */
+object SessionAudio {
+    @Volatile
+    var muted: Boolean = true
 }
 
 /**

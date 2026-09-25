@@ -5,7 +5,6 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -38,13 +37,9 @@ class BackupServiceTest {
         AppSettings(
             hideNsfwBoards = true,
             themeMode = AppThemeMode.DARK,
-            colorTheme = ColorTheme.TOMORROW_NIGHT,
             amoled = true,
-            fontScale = 1.2f,
-            muteByDefault = false,
             biometricLockEnabled = true,
             saveRecentSearches = true,
-            internalUpdaterEnabled = false,
             onboardingCompleted = true,
         )
 
@@ -57,19 +52,10 @@ class BackupServiceTest {
             service(destinationSettings).importFromJson(exported).getOrThrow()
             val restored = destinationSettings.settings.first()
 
-            // downloadFolderUri and biometricLockEnabled are deliberately not restored;
-            // normalise them so the comparison covers every other field without listing them.
-            assertThat(
-                restored.copy(
-                    downloadFolderUri = "",
-                    biometricLockEnabled = false,
-                ),
-            ).isEqualTo(
-                populatedSettings.copy(
-                    downloadFolderUri = "",
-                    biometricLockEnabled = false,
-                ),
-            )
+            // biometricLockEnabled is deliberately not restored; normalise it so the comparison
+            // covers every other field without listing them.
+            assertThat(restored.copy(biometricLockEnabled = false))
+                .isEqualTo(populatedSettings.copy(biometricLockEnabled = false))
         }
 
     @Test

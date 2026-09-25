@@ -22,8 +22,6 @@ class BackupDocumentTest {
             settings =
                 AppSettings(
                     themeMode = AppThemeMode.DARK,
-                    colorTheme = ColorTheme.TOMORROW_NIGHT,
-                    fontScale = 1.2f,
                     activeProviderId = "vichan",
                 ),
             subscribedBoards = listOf(BackupBoardRef("vichan", "g"), BackupBoardRef("lynxchan", "tech")),

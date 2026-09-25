@@ -106,9 +106,9 @@ fun SettingsScreen(
                         subtitle = subtitle,
                     )
                 }
-                groups.forEach { (heading, rows) ->
-                    item(key = "group:$heading") {
-                        GroupedSection(header = heading) {
+                groups.forEachIndexed { groupIndex, (heading, rows) ->
+                    item(key = "group:$groupIndex") {
+                        GroupedSection(header = heading.takeIf { it.isNotBlank() }) {
                             rows.forEachIndexed { index, item ->
                                 SettingRow(
                                     item = item,

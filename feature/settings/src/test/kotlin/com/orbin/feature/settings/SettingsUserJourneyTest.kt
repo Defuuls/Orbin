@@ -15,7 +15,6 @@ import androidx.compose.ui.test.performScrollToNode
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeDnsPrivacyMonitor
@@ -63,9 +62,7 @@ class SettingsUserJourneyTest {
 
         toggle("Hide NSFW boards") { hideNsfwBoards }
         toggle("True black") { amoled }
-        toggle("Mute by default") { muteByDefault }
         toggle("App lock") { biometricLockEnabled }
-        toggle("In-app updates") { internalUpdaterEnabled }
     }
 
     @Test
@@ -76,24 +73,31 @@ class SettingsUserJourneyTest {
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.DARK)
         choose("Theme", "Light")
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.LIGHT)
-
-        choose("Color scheme", ColorTheme.entries.last().label)
-        assertThat(settings.current.colorTheme).isEqualTo(ColorTheme.entries.last())
-
-        choose("Text size", "XL")
-        assertThat(settings.current.fontScale).isEqualTo(1.2f)
-        choose("Text size", "Small")
-        assertThat(settings.current.fontScale).isEqualTo(0.9f)
+        choose("Theme", "System")
+        assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
     }
 
+    /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
     @Test
-    fun everyColorSchemeCanBePicked() {
+    fun settingsCarriesOnlyTheShortList() {
         launch()
 
-        ColorTheme.entries.forEach { theme ->
-            choose("Color scheme", theme.label)
-            assertThat(settings.current.colorTheme).isEqualTo(theme)
+        listOf("Color scheme", "Text size", "Mute by default", "In-app updates", "Downloads folder").forEach {
+            composeRule.onNodeWithText(it).assertDoesNotExist()
         }
+        listOf(
+            "Hide NSFW boards",
+            "Theme",
+            "True black",
+            "App lock",
+            "Clear local activity",
+            "Clear image cache",
+            "Check for updates",
+            "Export data",
+            "Import data",
+            "Downloads",
+            "Search",
+        ).forEach { row(it).assertExists() }
     }
 
     @Test
@@ -126,24 +130,18 @@ class SettingsUserJourneyTest {
     fun theImageCacheShowsItsSizeAndClears() {
         launch()
 
-        row("Image cache usage").assertTextContains("12 MB · Clear")
-        row("Image cache usage").performClick()
+        row("Clear image cache").assertTextContains("12 MB · Clear")
+        row("Clear image cache").performClick()
         composeRule.waitForIdle()
 
         assertThat(imageCache.cleared).isTrue()
-        row("Image cache usage").assertTextContains("Empty · Clear")
+        row("Clear image cache").assertTextContains("Empty · Clear")
     }
 
     @Test
-    fun theUpdateCheckFollowsTheUpdaterAndRuns() {
+    fun theUpdateCheckRuns() {
         launch()
 
-        row("In-app updates").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("Check for updates").assertDoesNotExist()
-
-        row("In-app updates").performClick()
-        composeRule.waitForIdle()
         row("Check for updates").performClick()
         composeRule.waitForIdle()
 
@@ -159,13 +157,6 @@ class SettingsUserJourneyTest {
 
         assertThat(openedDownloads).isEqualTo(1)
         assertThat(openedSearch).isEqualTo(1)
-    }
-
-    @Test
-    fun theDownloadsFolderShowsItsDefault() {
-        launch()
-
-        row("Downloads folder").assertTextContains("Downloads/Orbin")
     }
 
     /** Taps a toggle row on, then off, checking the repository and the switch each time. */

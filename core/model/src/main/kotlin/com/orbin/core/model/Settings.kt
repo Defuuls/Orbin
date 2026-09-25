@@ -10,24 +10,6 @@ enum class AppThemeMode {
     DARK,
 }
 
-@Serializable
-enum class ColorTheme(
-    val label: String,
-) {
-    ORBIN("Default"),
-    BANANA("Banana"),
-    APPLE("Apple"),
-    YOTSUBA("Yotsuba"),
-    YOTSUBA_P("Yotsuba B"),
-    WAROSU("Warosu"),
-    MIKU("Miku"),
-    PENUMBRA("Penumbra"),
-    ROYAL("Royal"),
-    LAIN("Lain"),
-    TOMORROW("Tomorrow"),
-    TOMORROW_NIGHT("Tomorrow Dark"),
-}
-
 /** App icon variant for home screen. */
 @Serializable
 private const val FEED_LIMIT_SIX = 6
@@ -121,16 +103,11 @@ data class AppSettings(
      */
     val deepMediaScan: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    val colorTheme: ColorTheme = ColorTheme.ORBIN,
     val amoled: Boolean = false,
-    val fontScale: Float = 1f,
-    val muteByDefault: Boolean = true,
     /** How the subscribed feed orders threads. Defaults to board code A–Z. */
     val feedSort: FeedSort = FeedSort.BOARD,
-    val downloadFolderUri: String = "",
     val biometricLockEnabled: Boolean = false,
     val saveRecentSearches: Boolean = false,
-    val internalUpdaterEnabled: Boolean = true,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
 ) {

@@ -45,11 +45,8 @@ import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.applePalette
-import com.orbin.uinext.bananaPalette
 import com.orbin.uinext.materialPalette
 import com.orbin.uinext.next
-import com.orbin.uinext.toNextPalette
 import com.orbin.uinext.tokens.NextType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -464,25 +461,12 @@ private fun AppContent(
     // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; nested
     // Material sliders / snackbars / pull-to-refresh were replaced with Next controls, so the
     // MaterialOrbinTheme adapter is gone.
-    val colorVariant = settings.colorTheme.toDesignSystem()
-    val nextPalette =
-        when (settings.colorTheme) {
-            com.orbin.core.model.ColorTheme.ORBIN ->
-                materialPalette(settings.themeMode.isDark(), settings.amoled)
-            com.orbin.core.model.ColorTheme.BANANA ->
-                bananaPalette(settings.themeMode.isDark(), settings.amoled)
-            com.orbin.core.model.ColorTheme.APPLE ->
-                applePalette(settings.themeMode.isDark(), settings.amoled)
-            else ->
-                colorVariant.toNextPalette(
-                    darkPreference = settings.themeMode.isDark(),
-                    amoled = settings.amoled,
-                )
-        }
+    // One palette. Light, dark or the system decides, with true black as the only variation;
+    // text follows the system font size.
+    val nextPalette = materialPalette(settings.themeMode.isDark(), settings.amoled)
     NextTheme(
         darkTheme = nextPalette.dark,
         amoled = nextPalette.amoled,
-        fontScale = settings.fontScale,
         palette = nextPalette,
         platform = NextPlatform.ANDROID,
     ) {

@@ -7,7 +7,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.ColorTheme
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
@@ -165,20 +164,8 @@ class FakeSettingsRepository(
         update { copy(amoled = enabled) }
     }
 
-    override suspend fun setFontScale(scale: Float) {
-        update { copy(fontScale = scale) }
-    }
-
-    override suspend fun setMuteByDefault(enabled: Boolean) {
-        update { copy(muteByDefault = enabled) }
-    }
-
     override suspend fun setFeedSort(sort: FeedSort) {
         update { copy(feedSort = sort) }
-    }
-
-    override suspend fun setDownloadFolderUri(uri: String) {
-        update { copy(downloadFolderUri = uri) }
     }
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
@@ -189,20 +176,12 @@ class FakeSettingsRepository(
         update { copy(saveRecentSearches = enabled) }
     }
 
-    override suspend fun setInternalUpdaterEnabled(enabled: Boolean) {
-        update { copy(internalUpdaterEnabled = enabled) }
-    }
-
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         update { copy(onboardingCompleted = completed) }
     }
 
     override suspend fun setActiveProviderId(id: ProviderId) {
         update { copy(activeProviderId = id.value) }
-    }
-
-    override suspend fun setColorTheme(theme: ColorTheme) {
-        update { copy(colorTheme = theme) }
     }
 
     /** The settings as they stand now, for asserting that a screen wrote through. */

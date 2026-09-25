@@ -2,7 +2,6 @@
 
 package com.orbin.feature.settings
 
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -30,8 +29,6 @@ import kotlinx.coroutines.withContext
 
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val BYTES_PER_MB = 1024L * 1024L
-private const val OPEN_DOWNLOADS_ID = "openDownloads"
-private const val OPEN_SEARCH_ID = "openSearch"
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -59,13 +56,6 @@ fun NextSettingsScreen(
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
 
-    val folderPicker =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-            uri ?: return@rememberLauncherForActivityResult
-            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
-            viewModel.setDownloadFolderUri(uri.toString())
-        }
     // The ViewModel produces the text and never sees a SAF URI; writing the file is this side's job.
     val backupExporter =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -109,59 +99,17 @@ fun NextSettingsScreen(
         }
     }
 
+    val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
+    val includePlaces = onOpenDownloads != null && onOpenSearch != null
     val model =
-        remember(settings, updateCheck) {
-            buildSettings(settings, viewModel, updateCheck.rowValue(context))
+        remember(settings, updateCheck, cacheLabel, includePlaces) {
+            buildSettings(settings, viewModel, updateCheck.rowValue(context), cacheLabel, includePlaces)
         }
-    val groups =
-        remember(model, imageCacheUsageBytes, onOpenDownloads, onOpenSearch) {
-            // Keyed off the heading constant, not a literal: these rows are grafted onto a group the
-            // registry owns, and a renamed heading would otherwise drop them without a word.
-            model.groups.map { (name, items) ->
-                when (name) {
-                    PRIVACY ->
-                        name to
-                            (
-                                items +
-                                    SettingItem(
-                                        id = "clearImageCache",
-                                        label = "Image cache usage",
-                                        value = imageCacheUsageBytes.cacheSizeLabel(),
-                                        kind = SettingKind.ACTION,
-                                        hint = "Deletes cached image files. They will be downloaded again when needed.",
-                                    ) +
-                                    // Places rather than preferences, kept beside the cache they sit
-                                    // next to on disk now that the Library section is gone.
-                                    listOfNotNull(
-                                        onOpenDownloads?.let {
-                                            SettingItem(
-                                                id = OPEN_DOWNLOADS_ID,
-                                                label = "Downloads",
-                                                value = "Open ›",
-                                                kind = SettingKind.ACTION,
-                                                hint = "Files you have saved from threads.",
-                                            )
-                                        },
-                                        onOpenSearch?.let {
-                                            SettingItem(
-                                                id = OPEN_SEARCH_ID,
-                                                label = "Search",
-                                                value = "Open ›",
-                                                kind = SettingKind.ACTION,
-                                                hint = "Searches the catalogs of the boards you follow.",
-                                            )
-                                        },
-                                    )
-                            )
-                    else -> name to items
-                }
-            }
-        }
+    val groups = model.groups
 
     NextTheme {
         SettingsScreen(
             groups = groups,
-            subtitle = "${groups.sumOf { it.second.size }} of them, in one list",
             expandedId = expanded,
             onActivate = { item ->
                 when (item.kind) {
@@ -175,7 +123,6 @@ fun NextSettingsScreen(
                             else ->
                                 dispatch(
                                     item = item,
-                                    onFolder = { folderPicker.launch(null) },
                                     onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
                                     onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
                                     onClear = { confirmClear = true },
@@ -219,7 +166,6 @@ fun NextSettingsScreen(
 
 private fun dispatch(
     item: SettingItem,
-    onFolder: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onClear: () -> Unit,
@@ -227,7 +173,6 @@ private fun dispatch(
     onCheckUpdates: () -> Unit,
 ) {
     when (item.id) {
-        "downloadFolder" -> onFolder()
         "exportBackup" -> onExport()
         "importBackup" -> onImport()
         "clearActivity" -> onClear()

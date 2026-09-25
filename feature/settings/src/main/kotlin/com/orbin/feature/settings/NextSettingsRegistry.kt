@@ -2,36 +2,35 @@ package com.orbin.feature.settings
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 
 /**
- * The intentionally small settings surface, as one list under three headings.
+ * The whole settings surface: a handful of rows in three untitled cards.
  *
- * Built from [AppSettings] rather than from category screens, so a row cannot show a stale value or
- * go missing because a screen forgot it. Every row is editable where it stands: a toggle flips, a
- * choice opens its options underneath, an action runs here. Nothing navigates — a settings list that
- * sends you elsewhere to change a setting is two interfaces.
+ * Preferences first (what Orbin shows and whether it locks), then the things you do to your data,
+ * then the two places reached from here. Built from [AppSettings] rather than from category
+ * screens, so a row cannot show a stale value or go missing because a screen forgot it. Every row
+ * is editable or runnable where it stands.
  *
- * Three headings are enough: how Orbin behaves, how it looks and plays media, and the on-device
- * controls people need occasionally. Rows this list no longer offers keep their stored values
- * untouched; dropping a row here never deletes or resets the preference behind it.
+ * Simple is the rule: anything not listed here is decided by the app, not the reader.
  */
 internal fun buildSettings(
     settings: AppSettings,
     vm: SettingsViewModel,
     updateState: String,
+    imageCacheLabel: String = "Empty · Clear",
+    includePlaces: Boolean = false,
 ): SettingsModel {
     val rows = Rows()
     val groups =
-        listOf(
-            GENERAL to rows.general(settings, vm),
-            DISPLAY to rows.displayAndMedia(settings, vm),
-            PRIVACY to rows.privacyAndData(settings, vm, updateState),
-        )
+        listOfNotNull(
+            rows.preferences(settings, vm),
+            rows.data(updateState, imageCacheLabel),
+            rows.places().takeIf { includePlaces },
+        ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
 }
 
@@ -91,93 +90,39 @@ private class Rows {
         hint: String? = null,
     ): SettingItem = SettingItem(id, label, value, SettingKind.ACTION, hint = hint)
 
-    fun general(
+    fun preferences(
         settings: AppSettings,
         vm: SettingsViewModel,
     ) = listOf(
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
-    )
-
-    fun displayAndMedia(
-        settings: AppSettings,
-        vm: SettingsViewModel,
-    ) = listOf(
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
-        choice("colorTheme", "Color scheme", ColorTheme.entries, settings.colorTheme, { it.label }, vm::setColorTheme),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),
-        choice(
-            "fontScale",
-            "Text size",
-            FontScaleOption.entries,
-            FontScaleOption.fromScale(settings.fontScale),
-            { it.label },
-            { option -> vm.setFontScale(option.scale) },
-        ),
-        toggle("mute", "Mute by default", settings.muteByDefault, vm::setMute),
+        toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
     )
 
-    fun privacyAndData(
-        settings: AppSettings,
-        vm: SettingsViewModel,
+    /** Only destructive actions carry a hint, and it says what goes. */
+    fun data(
         updateState: String,
-    ) = listOfNotNull(
-        toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
+        imageCacheLabel: String,
+    ) = listOf(
         action(
             "clearActivity",
             "Clear local activity",
             "Delete",
-            "Deletes browsing history, recent searches and download history stored on this device.",
+            "Deletes browsing history, recent searches and download history on this device.",
         ),
-        action(
-            "downloadFolder",
-            "Downloads folder",
-            settings.downloadFolderUri.ifBlank { "Downloads/Orbin" },
-            "Opens the system folder picker.",
-        ),
-        action(
-            "exportBackup",
-            "Export data",
-            "Save",
-            "Writes settings, boards, bookmarks and saved searches to a file you choose. " +
-                "It is plain JSON and is not encrypted.",
-        ),
-        action(
-            "importBackup",
-            "Import data",
-            "Restore",
-            "Merges a backup into what is already here, so a restore cannot destroy an existing setup.",
-        ),
-        toggle("internalUpdater", "In-app updates", settings.internalUpdaterEnabled, vm::setInternalUpdater),
-        // Only when the in-app updater is on: a check you cannot run is not a setting.
-        if (settings.internalUpdaterEnabled) {
-            action("checkUpdates", "Check for updates", updateState, "Asks GitHub whether a newer release exists.")
-        } else {
-            null
-        },
+        action("clearImageCache", "Clear image cache", imageCacheLabel),
+        action("checkUpdates", "Check for updates", updateState),
+        action("exportBackup", "Export data", "Save"),
+        action("importBackup", "Import data", "Restore"),
     )
+
+    fun places() =
+        listOf(
+            action(OPEN_DOWNLOADS_ID, "Downloads", "Open ›"),
+            action(OPEN_SEARCH_ID, "Search", "Open ›"),
+        )
 }
-
-/** The four steps the appearance screen offered; font size was never free-form. */
-internal enum class FontScaleOption(
-    val scale: Float,
-    val label: String,
-) {
-    SMALL(FONT_SCALE_SMALL, "Small"),
-    DEFAULT(FONT_SCALE_DEFAULT, "Default"),
-    LARGE(FONT_SCALE_LARGE, "Large"),
-    XLARGE(FONT_SCALE_EXTRA_LARGE, "XL"),
-    ;
-
-    companion object {
-        fun fromScale(scale: Float): FontScaleOption =
-            entries.minByOrNull { option -> kotlin.math.abs(option.scale - scale) } ?: DEFAULT
-    }
-}
-
-private const val FONT_SCALE_SMALL = 0.9f
-private const val FONT_SCALE_DEFAULT = 1f
-private const val FONT_SCALE_LARGE = 1.1f
-private const val FONT_SCALE_EXTRA_LARGE = 1.2f
 
 /**
  * The rows, plus what each one does.
@@ -209,7 +154,8 @@ internal class SettingsModel(
 /** SYSTEM -> "System". These enums carry no label, and shouting at the reader is not a design. */
 private fun Enum<*>.titleCase(): String = name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
 
-// The group headings, spelled once.
-internal const val GENERAL = "General"
-internal const val DISPLAY = "Display & Media"
-internal const val PRIVACY = "Privacy & Data"
+/** The cards carry no headings: a few rows need no sections. */
+internal const val NO_HEADING = ""
+
+internal const val OPEN_DOWNLOADS_ID = "openDownloads"
+internal const val OPEN_SEARCH_ID = "openSearch"

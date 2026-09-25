@@ -2,9 +2,7 @@ package com.orbin.app
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
-import com.orbin.core.designsystem.theme.ColorSchemeVariant
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.ColorTheme
 
 /**
  * Maps persisted theme settings onto the Next theme layer the activity hosts.
@@ -27,8 +25,3 @@ internal fun AppThemeMode.isDark(): Boolean =
         AppThemeMode.LIGHT -> false
         AppThemeMode.DARK -> true
     }
-
-// The two enums are kept name-for-name in sync (core:model persists the setting; the design
-// system owns the palettes), so map by name and fall back to Orbin if they ever diverge.
-internal fun ColorTheme.toDesignSystem(): ColorSchemeVariant =
-    runCatching { ColorSchemeVariant.valueOf(name) }.getOrDefault(ColorSchemeVariant.ORBIN)
