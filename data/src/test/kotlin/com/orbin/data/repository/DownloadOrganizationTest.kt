@@ -1,17 +1,15 @@
 package com.orbin.data.repository
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.DownloadOrganization
 import org.junit.Test
 
 class DownloadOrganizationTest {
     @Test
-    fun `default organization nests by board then thread`() {
-        assertThat(AppSettings.Default.downloadOrganization).isEqualTo(DownloadOrganization.BY_BOARD_THEN_THREAD)
+    fun `board then thread nests by board then thread`() {
         assertThat(
             buildRelativeDir(
-                AppSettings.Default.downloadOrganization,
+                DownloadOrganization.BY_BOARD_THEN_THREAD,
                 "g",
                 123L,
                 "Some thread",

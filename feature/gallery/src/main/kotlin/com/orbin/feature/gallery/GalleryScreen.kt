@@ -122,8 +122,6 @@ fun GalleryScreen(
                             muted = settings.muteByDefault,
                             // Only the settled page plays, so swiping away stops its audio.
                             active = isActive,
-                            fullscreenByDefault = settings.fullscreenVideoPlayback,
-                            autoRotate = settings.autoRotateVideoFullscreen,
                             // Only the active page controls the gallery chrome.
                             onFullscreenChange = { if (isActive) videoFullscreen = it },
                         )

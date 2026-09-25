@@ -7,14 +7,8 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.DohProvider
-import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.FeedSort
-import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.ThreadPresentation
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -95,19 +89,9 @@ class SettingsViewModel
 
         fun setActiveProvider(id: ProviderId) = update { repository.setActiveProviderId(id) }
 
-        fun setHiddenTags(tags: String) = update { repository.setHiddenTags(tags) }
-
-        fun setMutedTags(tags: String) = update { repository.setMutedTags(tags) }
-
         fun setHideNsfwBoards(enabled: Boolean) = update { repository.setHideNsfwBoards(enabled) }
 
-        fun setHideTextOnlyThreads(enabled: Boolean) = update { repository.setHideTextOnlyThreads(enabled) }
-
-        fun setHarshContentFilter(enabled: Boolean) = update { repository.setHarshContentFilter(enabled) }
-
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
-
-        fun setMediaFilter(filter: MediaFilter) = update { repository.setMediaFilter(filter) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
@@ -115,19 +99,9 @@ class SettingsViewModel
 
         fun setFontScale(scale: Float) = update { repository.setFontScale(scale) }
 
-        fun setThumbnailSize(size: ThumbnailSize) = update { repository.setThumbnailSize(size) }
-
         fun setMute(enabled: Boolean) = update { repository.setMuteByDefault(enabled) }
 
-        fun setFullscreenVideoPlayback(enabled: Boolean) = update { repository.setFullscreenVideoPlayback(enabled) }
-
-        fun setAutoRotateVideoFullscreen(enabled: Boolean) = update { repository.setAutoRotateVideoFullscreen(enabled) }
-
-        fun setFeedThreadLimit(limit: FeedThreadLimit) = update { repository.setFeedThreadLimit(limit) }
-
         fun setFeedSort(sort: FeedSort) = update { repository.setFeedSort(sort) }
-
-        fun setImageCacheLimitMb(megabytes: Int) = update { repository.setImageCacheLimitMb(megabytes) }
 
         fun refreshImageCacheUsage() =
             update {
@@ -140,18 +114,7 @@ class SettingsViewModel
                 _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
             }
 
-        fun setUserAgent(userAgent: String) = update { repository.setUserAgent(userAgent) }
-
-        fun setConnectTimeout(seconds: Long) = update { repository.setConnectTimeoutSeconds(seconds) }
-
-        fun setReadTimeout(seconds: Long) = update { repository.setReadTimeoutSeconds(seconds) }
-
         fun setDownloadFolderUri(uri: String) = update { repository.setDownloadFolderUri(uri) }
-
-        fun setDownloadOrganization(organization: DownloadOrganization) =
-            update { repository.setDownloadOrganization(organization) }
-
-        fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
@@ -160,22 +123,6 @@ class SettingsViewModel
         fun setInternalUpdater(enabled: Boolean) = update { repository.setInternalUpdaterEnabled(enabled) }
 
         fun setColorTheme(theme: ColorTheme) = update { repository.setColorTheme(theme) }
-
-        fun setFullScreenFeedChrome(enabled: Boolean) = update { repository.setFullScreenFeedChrome(enabled) }
-
-        fun setThreadPresentation(presentation: ThreadPresentation) =
-            update { repository.setThreadPresentation(presentation) }
-
-        fun setThreadWatchNotifications(enabled: Boolean) =
-            update { repository.setThreadWatchNotificationsEnabled(enabled) }
-
-        fun setQuietHoursStart(time: String) = update { repository.setQuietHoursStart(time) }
-
-        fun setQuietHoursEnd(time: String) = update { repository.setQuietHoursEnd(time) }
-
-        fun setMediaScrollThreadView(enabled: Boolean) = update { repository.setMediaScrollThreadView(enabled) }
-
-        fun setMediaScrollBoardView(enabled: Boolean) = update { repository.setMediaScrollBoardView(enabled) }
 
         fun clearLocalActivity() =
             update {

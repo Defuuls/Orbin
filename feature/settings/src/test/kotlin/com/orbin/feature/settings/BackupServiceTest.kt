@@ -6,17 +6,12 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ColorTheme
-import com.orbin.core.model.DohProvider
-import com.orbin.core.model.FeedThreadLimit
-import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchFilters
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.ThreadPresentation
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeImageBoardProvider
 import com.orbin.core.testing.repository.FakeProviderRegistry
@@ -41,37 +36,16 @@ import org.junit.Test
 class BackupServiceTest {
     private val populatedSettings =
         AppSettings(
-            hiddenTags = "spoilers",
-            mutedTags = "wip",
             hideNsfwBoards = true,
-            hideTextOnlyThreads = true,
-            harshContentFilter = true,
-            mediaFilter = MediaFilter.VIDEOS,
-            threadPresentation = ThreadPresentation.OVERLAY,
             themeMode = AppThemeMode.DARK,
             colorTheme = ColorTheme.TOMORROW_NIGHT,
             amoled = true,
             fontScale = 1.2f,
-            fullScreenFeedChrome = true,
-            thumbnailSize = ThumbnailSize.FILL,
             muteByDefault = false,
-            fullscreenVideoPlayback = true,
-            autoRotateVideoFullscreen = true,
-            imageCacheLimitMb = 512,
-            feedThreadLimit = FeedThreadLimit.ALL,
-            userAgent = "OrbinTest/1.0",
-            dohProvider = DohProvider.NEXTDNS,
-            connectTimeoutSeconds = 30,
-            readTimeoutSeconds = 60,
             biometricLockEnabled = true,
             saveRecentSearches = true,
             internalUpdaterEnabled = false,
-            threadWatchNotificationsEnabled = false,
-            quietHoursStart = "23:00",
-            quietHoursEnd = "07:00",
             onboardingCompleted = true,
-            mediaScrollThreadView = false,
-            mediaScrollBoardView = true,
         )
 
     @Test
@@ -83,18 +57,16 @@ class BackupServiceTest {
             service(destinationSettings).importFromJson(exported).getOrThrow()
             val restored = destinationSettings.settings.first()
 
-            // downloadFolderUri, httpsOnly and biometricLockEnabled are deliberately not restored;
+            // downloadFolderUri and biometricLockEnabled are deliberately not restored;
             // normalise them so the comparison covers every other field without listing them.
             assertThat(
                 restored.copy(
                     downloadFolderUri = "",
-                    httpsOnly = true,
                     biometricLockEnabled = false,
                 ),
             ).isEqualTo(
                 populatedSettings.copy(
                     downloadFolderUri = "",
-                    httpsOnly = true,
                     biometricLockEnabled = false,
                 ),
             )

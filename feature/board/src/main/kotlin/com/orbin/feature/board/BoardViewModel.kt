@@ -14,22 +14,19 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.model.filteredBy
-import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
-import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -48,7 +45,6 @@ class BoardViewModel
         catalogRepository: CatalogRepository,
         private val bookmarkRepository: BookmarkRepository,
         historyRepository: HistoryRepository,
-        settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
@@ -57,16 +53,17 @@ class BoardViewModel
         private val provider = ProviderId(providerId)
         private val board = BoardId(boardId)
 
+        // Nothing about how a catalog is presented is configurable: no reader tags, every kind of
+        // media, and the OP's first attachment only. The permanent filter still applies.
         private val presentationSettings: Flow<CatalogPresentationSettings> =
-            settingsRepository.settings
-                .map { settings ->
-                    CatalogPresentationSettings(
-                        hiddenTokens = settings.hiddenTagTokens(),
-                        includeHarsh = settings.harshContentFilter,
-                        mediaFilter = settings.mediaFilter,
-                        mediaScroll = settings.mediaScrollBoardView,
-                    )
-                }.distinctUntilChanged()
+            flowOf(
+                CatalogPresentationSettings(
+                    hiddenTokens = emptySet(),
+                    includeHarsh = false,
+                    mediaFilter = MediaFilter.ALL,
+                    mediaScroll = false,
+                ),
+            )
 
         val catalogSort: StateFlow<CatalogSort> =
             savedStateHandle.getStateFlow(CATALOG_SORT_KEY, CatalogSort.BUMP_ORDER)
@@ -108,12 +105,6 @@ class BoardViewModel
             historyRepository
                 .observeVisitedThreadIds(provider, board)
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
-
-        val thumbnailSize: StateFlow<ThumbnailSize> =
-            settingsRepository.settings
-                .map { it.thumbnailSize }
-                .distinctUntilChanged()
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThumbnailSize.MEDIUM)
 
         fun toggleThreadSubscription(thread: CatalogThread) {
             viewModelScope.launch {

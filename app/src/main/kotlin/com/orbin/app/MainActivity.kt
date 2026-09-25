@@ -494,8 +494,6 @@ private fun AppContent(
                 OrbinAppProviders {
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
-                        fullScreenFeedChrome = settings.fullScreenFeedChrome,
-                        threadPresentation = settings.threadPresentation,
                         isOnline = isOnline,
                     )
                 }

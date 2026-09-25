@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Board
-import com.orbin.core.model.hiddenTagTokens
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.BoardsScreen
@@ -41,11 +40,12 @@ fun BoardGalleryScreen(
     }
 
     val visibleBoards =
-        remember(uiState, settings.hideNsfwBoards, settings.hiddenTags) {
+        remember(uiState, settings.hideNsfwBoards) {
             (uiState as? HomeUiState.Success)
                 ?.boards
                 ?.filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
-                ?.filterNot { board -> board.matchesFilterTokens(settings.hiddenTagTokens()) }
+                // The permanent filter, with no reader tags on top of it.
+                ?.filterNot { board -> board.matchesFilterTokens(emptySet()) }
                 .orEmpty()
         }
 

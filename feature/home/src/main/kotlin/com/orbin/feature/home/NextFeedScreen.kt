@@ -24,8 +24,6 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
-import com.orbin.core.model.matchesFilterTokens
-import com.orbin.core.model.mutedTagTokens
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.FeedRow
@@ -113,7 +111,6 @@ fun NextFeedScreen(
                 )
 
             is SubscribedFeedUiState.Success -> {
-                val mutedTokens = remember(settings.mutedTags) { settings.mutedTagTokens() }
                 var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
                 var presentationReady by remember { mutableStateOf(false) }
                 var activePreviewId by remember { mutableStateOf<String?>(null) }
@@ -128,7 +125,7 @@ fun NextFeedScreen(
                             ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
                     viewModel.prefetchFeedThumbs(urls)
                 }
-                LaunchedEffect(state.boards, visited, effectiveFilter, settings.feedSort, mutedTokens) {
+                LaunchedEffect(state.boards, visited, effectiveFilter, settings.feedSort) {
                     entries =
                         withContext(Dispatchers.Default) {
                             feedEntries(
@@ -137,7 +134,6 @@ fun NextFeedScreen(
                                 nowMillis = System.currentTimeMillis(),
                                 filter = effectiveFilter,
                                 sort = settings.feedSort,
-                                mutedTokens = mutedTokens,
                             )
                         }
                     presentationReady = true
@@ -244,18 +240,13 @@ internal fun feedEntries(
     nowMillis: Long,
     filter: String = "",
     sort: FeedSort = FeedSort.BOARD,
-    mutedTokens: Set<String> = emptySet(),
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }
         .filter { thread -> thread.matchesFeedFilter(filter) }
         .sortedWith(sort.comparator())
         .map { thread ->
-            thread.toEntry(
-                visited = visited,
-                nowMillis = nowMillis,
-                muted = mutedTokens.isNotEmpty() && thread.matchesFilterTokens(mutedTokens),
-            )
+            thread.toEntry(visited = visited, nowMillis = nowMillis)
         }
 
 internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
@@ -275,7 +266,6 @@ internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
 private fun CatalogThread.toEntry(
     visited: Set<ThreadKey>,
     nowMillis: Long,
-    muted: Boolean,
 ): FeedEntry {
     val title = originalPost.subject ?: "No.${key.thread.value}"
     val activityMillis = activityMillis()
@@ -294,7 +284,6 @@ private fun CatalogThread.toEntry(
                 media = stats.imageCount,
                 hasPreview = originalPost.attachments.isNotEmpty(),
                 read = key in visited,
-                muted = muted,
                 // Keep this mapping platform-independent: it is also used by JVM tests and does
                 // not need Android's styled-text implementation for a two-line feed preview.
                 excerpt =
