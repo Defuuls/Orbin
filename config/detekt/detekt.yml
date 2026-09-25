@@ -30,6 +30,18 @@ complexity:
     # DI @Binds/@Provides modules legitimately group many one-line declarations.
     thresholdInInterfaces: 30
     ignoreAnnotatedFunctions: ['Composable']
+    excludes: &testSources
+      # detekt's default test paths, plus `androidHostTest` — the host tests of the Compose
+      # Multiplatform modules — which the defaults predate. Setting `excludes` replaces the
+      # defaults, so they are all restated.
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/androidHostTest/**'
+      - '**/iosTest/**'
   CyclomaticComplexMethod:
     active: true
     # Compose UI wiring is naturally branchy and already covered by focused UI/unit tests.
@@ -43,6 +55,7 @@ naming:
     active: true
     # Composable functions are PascalCase by convention.
     ignoreAnnotated: ['Composable']
+    excludes: *testSources
   TopLevelPropertyNaming:
     active: true
   MatchingDeclarationName:
@@ -58,6 +71,7 @@ style:
     active: true
     ignoreNumbers: ['-1', '0', '1', '2', '100', '1000']
     ignoreAnnotated: ['Composable', 'Preview']
+    excludes: *testSources
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
   ReturnCount:
