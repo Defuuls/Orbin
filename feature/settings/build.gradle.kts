@@ -12,6 +12,8 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
 
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
