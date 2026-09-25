@@ -94,9 +94,16 @@ private fun CatalogDestination(
 ) {
     val catalog by browser.catalog.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
+    val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
     Loaded(catalog, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-        val rows = remember(threads, visited) { threads.map { it.toRow(now, read = it.key.thread.value in visited) } }
+        val rows =
+            remember(threads, visited, unread) {
+                threads.map { thread ->
+                    val number = thread.key.thread.value
+                    thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
+                }
+            }
         val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
         BoardScreen(
             board = "/${board.board.id.value}/",
@@ -127,12 +134,14 @@ private fun CatalogThumbnail(
 @Composable
 private fun ThreadDestination(browser: Browser) {
     val thread by browser.thread.collectAsState()
+    val firstUnread by browser.firstUnreadPostId.collectAsState()
     Loaded(thread, onRetry = browser::retry) { loaded ->
-        val watching by remember(loaded.key) { browser.watching(loaded.key) }.collectAsState(false)
+        val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
         ThreadContent(
             thread = loaded,
             watching = watching,
-            onWatch = { browser.toggleWatch(loaded) },
+            firstUnreadPostId = firstUnread,
+            onWatch = { browser.watched.toggle(loaded) },
             onOpenFile = browser::openMedia,
         )
     }
@@ -142,6 +151,7 @@ private fun ThreadDestination(browser: Browser) {
 private fun ThreadContent(
     thread: Thread,
     watching: Boolean,
+    firstUnreadPostId: String?,
     onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
 ) {
@@ -157,6 +167,7 @@ private fun ThreadContent(
         posts = posts,
         watching = watching,
         onWatch = onWatch,
+        firstUnreadPostId = firstUnreadPostId,
         scrollToPostId = scrollTarget,
         onScrollConsumed = { scrollTarget = null },
         body = { post ->

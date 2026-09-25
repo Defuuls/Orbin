@@ -138,6 +138,19 @@ class RowsTest {
         assertTrue(row.read)
     }
 
+    @Test
+    fun aWatchedThreadsCatalogRowCarriesItsNewReplies() {
+        val thread =
+            CatalogThread(
+                key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(42)),
+                originalPost = post(42, files = 0),
+                stats = ThreadStats(replyCount = 9),
+            )
+
+        assertEquals(4, thread.toRow(nowMillis = 0L, unread = 4).unread)
+        assertEquals(0, thread.toRow(nowMillis = 0L).unread, "unwatched threads show none")
+    }
+
     private fun post(
         id: Long,
         files: Int,

@@ -27,14 +27,19 @@ A reader, so far:
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
+- unread counts on watched threads in their board's catalog, as on Android. Android keeps them
+  current from a background worker. iOS does the same refresh while the app is open instead
+  (`WatchedThreads`): at launch, on switching tabs and when the app comes to the front, at most
+  once every five minutes. Opening a watched thread clears its count, and the thread screen offers
+  a jump to the first reply you had not seen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 Followed boards live in a DataStore file beside the database, read and written by the same
 `BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
 
-Not there yet: unread
-counts on watched threads (Android fills them from a background refresh iOS does not have yet), an
-in-app video player, search, settings and saved threads. These move over in later steps.
+Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
+background refresh), an in-app video player, search, settings and saved threads. These move over
+in later steps.
 
 ## Building on a Mac
 

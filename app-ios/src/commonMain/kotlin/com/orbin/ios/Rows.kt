@@ -50,6 +50,7 @@ internal val SiteBoard.tileId: String get() = "${provider.value}/${board.id.valu
 internal fun CatalogThread.toRow(
     nowMillis: Long,
     read: Boolean = false,
+    unread: Int = 0,
 ): FeedRow =
     FeedRow(
         id = "${key.board.value}/${key.thread.value}",
@@ -66,6 +67,7 @@ internal fun CatalogThread.toRow(
         excerpt = originalPost.comment.plainText(),
         mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
         read = read,
+        unread = unread,
     )
 
 /** What a thread's bookmark stores, the same fields Android's thread screen writes. */

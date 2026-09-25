@@ -92,7 +92,8 @@ sealed interface Route {
  * ViewModels and navigation graph, in the few lines a read-only first version needs.
  *
  * Watching a thread and the record of which threads were read go to the shared database through
- * the same repositories Android uses, so they behave the same on both platforms.
+ * the same repositories Android uses, so they behave the same on both platforms; [watched] holds
+ * the watch side.
  *
  * Each destination loads when it is opened and again on [retry]. Going back to a page that already
  * loaded shows it as it was rather than fetching it again. Starting a new load cancels the one
@@ -108,6 +109,10 @@ class Browser(
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
+    /** Watching threads, their unread counts, and keeping those counts current. */
+    val watched =
+        WatchedThreads(bookmarks, scope, now) { key -> provider(key.provider).getThread(key.board, key.thread) }
+
     private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Feed))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
 
@@ -122,6 +127,14 @@ class Browser(
 
     private val _feed = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
     val feed: StateFlow<Load<List<FeedThread>>> = _feed.asStateFlow()
+
+    private val _firstUnreadPostId = MutableStateFlow<String?>(null)
+
+    /**
+     * The first reply the reader had not seen when the open thread loaded, if it is watched and has
+     * new replies: where the thread screen's "jump to unread" goes, as on Android.
+     */
+    val firstUnreadPostId: StateFlow<String?> = _firstUnreadPostId.asStateFlow()
 
     /** Every followed board, on every site: what the feed is made of and the boards list marks. */
     val followed: StateFlow<Set<FollowedBoard>> =
@@ -149,6 +162,7 @@ class Browser(
             followed.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
         loadFeed()
+        watched.refresh()
     }
 
     /** Switches to a tab, leaving whatever was open on the other one. */
@@ -156,6 +170,7 @@ class Browser(
         require(tab == Route.Feed || tab == Route.Boards) { "Not a tab: $tab" }
         _backStack.value = listOf(tab)
         if (tab == Route.Feed) loadFeed()
+        watched.refresh()
     }
 
     /** Follows or unfollows [board], as the boards list's switch does on Android. */
@@ -182,20 +197,6 @@ class Browser(
     /** Thread numbers on [board] the reader has opened, for the catalog's read state. */
     fun visitedThreads(board: SiteBoard): Flow<Set<Long>> =
         history.observeVisitedThreadIds(board.provider, board.board.id)
-
-    /** Whether the thread [key] is bookmarked, which the thread screen shows as "watching". */
-    fun watching(key: ThreadKey): Flow<Boolean> = bookmarks.observeBookmark(key).map { it != null }
-
-    /** Bookmarks [thread], or removes its bookmark: the thread screen's watch action, as on Android. */
-    fun toggleWatch(thread: Thread) {
-        scope.launch {
-            if (bookmarks.getBookmark(thread.key) != null) {
-                bookmarks.removeBookmark(thread.key)
-            } else {
-                bookmarks.addBookmark(thread.toBookmark(now()))
-            }
-        }
-    }
 
     /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
     fun openMedia(index: Int) {
@@ -347,8 +348,13 @@ class Browser(
     private suspend fun catalogOf(board: SiteBoard): List<CatalogThread> =
         provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board.id))
 
-    private suspend fun threadOf(key: ThreadKey): Thread =
-        provider(key.provider).getThread(key.board, key.thread).also { recordVisit(it) }
+    private suspend fun threadOf(key: ThreadKey): Thread {
+        _firstUnreadPostId.value = null
+        return provider(key.provider).getThread(key.board, key.thread).also {
+            recordVisit(it)
+            _firstUnreadPostId.value = watched.read(it)
+        }
+    }
 
     // Android records a visit when a thread loads and skips the permanently filtered ones; so does
     // this. A failed write only loses the read mark, so it never fails the load.

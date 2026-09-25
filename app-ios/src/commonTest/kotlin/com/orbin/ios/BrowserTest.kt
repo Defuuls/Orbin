@@ -1,6 +1,9 @@
 package com.orbin.ios
 
+import com.orbin.core.model.BoardId
+import com.orbin.core.model.Bookmark
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -22,6 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** The iOS browser end to end over the real providers, with the network replaced by a script. */
@@ -32,6 +36,8 @@ class BrowserTest {
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
+
+    private var clock = NOW
 
     private fun browser(
         scope: CoroutineScope,
@@ -52,7 +58,7 @@ class BrowserTest {
             history,
             boardPreferences,
             scope,
-            now = { NOW },
+            now = { clock },
         )
     }
 
@@ -197,8 +203,8 @@ class BrowserTest {
             browser.openThread(key)
             val thread = assertIs<Load.Ready<Thread>>(browser.thread.settled()).value
 
-            browser.toggleWatch(thread)
-            assertTrue(browser.watching(key).first { it })
+            browser.watched.toggle(thread)
+            assertTrue(browser.watched.watching(key).first { it })
             assertEquals(
                 "Hi",
                 bookmarks.saved.value
@@ -206,8 +212,8 @@ class BrowserTest {
                     .title,
             )
 
-            browser.toggleWatch(thread)
-            assertFalse(browser.watching(key).first { !it })
+            browser.watched.toggle(thread)
+            assertFalse(browser.watched.watching(key).first { !it })
         }
 
     @Test
@@ -265,9 +271,98 @@ class BrowserTest {
             assertEquals(Load.Ready(emptyList()), browser.feed.settled())
         }
 
+    @Test
+    fun watchedThreadsCatchUpAtLaunchAndShowTheirNewRepliesOnTheirBoard() =
+        runTest {
+            bookmarks.addBookmark(watchedBookmark(seen = 1))
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3)))
+            val g = boardG(browser)
+
+            assertEquals(mapOf(7L to 2), browser.watched.unread(g).first { it.isNotEmpty() })
+        }
+
+    @Test
+    fun openingAWatchedThreadReadsItAndPointsAtTheFirstNewReply() =
+        runTest {
+            bookmarks.addBookmark(watchedBookmark(seen = 1))
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3)))
+            val g = boardG(browser)
+
+            browser.openThread(WATCHED_KEY)
+            browser.thread.settled()
+
+            assertEquals("9", browser.firstUnreadPostId.value, "replies 8, 9 and 10, of which 8 was seen")
+            assertEquals(emptyMap(), browser.watched.unread(g).first { it.isEmpty() })
+            assertEquals(
+                3,
+                bookmarks.saved.value
+                    .getValue(WATCHED_KEY)
+                    .lastSeenReplyCount,
+            )
+        }
+
+    @Test
+    fun anUnwatchedThreadHasNothingToJumpTo() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3)))
+            boardG(browser)
+
+            browser.openThread(WATCHED_KEY)
+            browser.thread.settled()
+
+            assertNull(browser.firstUnreadPostId.value)
+        }
+
+    @Test
+    fun theWatchRefreshRunsAtMostOnceInItsInterval() =
+        runTest {
+            bookmarks.addBookmark(watchedBookmark(seen = 1))
+            val routes = (BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3))).toMutableMap()
+            val browser = browser(backgroundScope, routes)
+            bookmarks.saved.first { it.getValue(WATCHED_KEY).latestReplyCount == 3 }
+
+            routes[WATCHED_THREAD] = threadWithReplies(5)
+            browser.openTab(Route.Boards)
+            browser.watched.refresh()
+            browser.boards.settled()
+            assertEquals(
+                3,
+                bookmarks.saved.value
+                    .getValue(WATCHED_KEY)
+                    .latestReplyCount,
+                "not again so soon",
+            )
+
+            clock += WATCH_REFRESH_INTERVAL_MS
+            browser.watched.refresh()
+            bookmarks.saved.first { it.getValue(WATCHED_KEY).latestReplyCount == 5 }
+        }
+
+    private suspend fun boardG(browser: Browser): SiteBoard =
+        assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first { it.board.id.value == "g" }
+
+    private fun watchedBookmark(seen: Int) =
+        Bookmark(
+            key = WATCHED_KEY,
+            title = "Hi",
+            createdAtMillis = 1L,
+            isWatched = true,
+            lastSeenReplyCount = seen,
+            latestReplyCount = seen,
+        )
+
     private companion object {
         val LYNXCHAN_CATALOG = "bbw-chan.link/b/catalog.json" to """[{"threadId":5,"subject":"Hi"}]"""
         const val NOW = 1_700_000_000_000L
+        const val WATCHED_THREAD = "a.4cdn.org/g/thread/7.json"
+        val WATCHED_KEY = ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(7))
+
+        /** Thread 7 with [count] replies, numbered from 8, and the reply count 4chan reports on the OP. */
+        fun threadWithReplies(count: Int): String {
+            val replies = (8 until 8 + count).joinToString("") { """,{"no":$it,"time":$it}""" }
+            return """{"posts":[{"no":7,"sub":"Hi","time":1,"replies":$count}$replies]}"""
+        }
+
         const val LYNXCHAN_BOARDS = "bbw-chan.link/boards.js"
         val BOTH_SITES =
             mapOf(
