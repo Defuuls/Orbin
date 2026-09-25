@@ -319,12 +319,17 @@ class BrowserTest {
             bookmarks.addBookmark(watchedBookmark(seen = 1))
             val routes = (BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3))).toMutableMap()
             val browser = browser(backgroundScope, routes)
-            bookmarks.saved.first { it.getValue(WATCHED_KEY).latestReplyCount == 3 }
+            browser.watched.refresh().join() // the one started at launch
+            assertEquals(
+                3,
+                bookmarks.saved.value
+                    .getValue(WATCHED_KEY)
+                    .latestReplyCount,
+            )
 
             routes[WATCHED_THREAD] = threadWithReplies(5)
             browser.openTab(Route.Boards)
-            browser.watched.refresh()
-            browser.boards.settled()
+            browser.watched.refresh().join()
             assertEquals(
                 3,
                 bookmarks.saved.value
@@ -334,8 +339,13 @@ class BrowserTest {
             )
 
             clock += WATCH_REFRESH_INTERVAL_MS
-            browser.watched.refresh()
-            bookmarks.saved.first { it.getValue(WATCHED_KEY).latestReplyCount == 5 }
+            browser.watched.refresh().join()
+            assertEquals(
+                5,
+                bookmarks.saved.value
+                    .getValue(WATCHED_KEY)
+                    .latestReplyCount,
+            )
         }
 
     private suspend fun boardG(browser: Browser): SiteBoard =

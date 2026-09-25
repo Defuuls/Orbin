@@ -53,14 +53,18 @@ class WatchedThreads(
      * at a time, and stores its reply count when it has grown, which is what the unread counts are
      * made of. A thread that fails to load keeps what it had. Runs at most once every
      * [WATCH_REFRESH_INTERVAL_MS], so switching tabs does not refetch the whole list each time.
+     *
+     * Returns the refresh: the one just started, the one still running, or the last one when it is
+     * too soon for another.
      */
-    fun refresh() {
+    fun refresh(): Job {
         val at = now()
-        val last = refreshedAt
-        if (refreshing?.isActive == true || (last != null && at - last < WATCH_REFRESH_INTERVAL_MS)) return
+        val previous = refreshing
+        val tooSoon = refreshedAt?.let { at - it < WATCH_REFRESH_INTERVAL_MS } == true
+        if (previous != null && (previous.isActive || tooSoon)) return previous
         refreshedAt = at
-        refreshing =
-            scope.launch {
+        return scope
+            .launch {
                 val watched = runCatching { bookmarks.watchedBookmarks() }.getOrDefault(emptyList())
                 val gate = Semaphore(MAX_CONCURRENT_WATCH_REFRESHES)
                 coroutineScope {
@@ -83,7 +87,7 @@ class WatchedThreads(
                         }
                     }
                 }
-            }
+            }.also { refreshing = it }
     }
 
     /**
