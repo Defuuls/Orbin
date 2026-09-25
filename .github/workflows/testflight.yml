@@ -2,7 +2,9 @@ name: TestFlight
 
 # Archives the iOS app and uploads it to App Store Connect for internal TestFlight testing.
 #
-# Runs by hand, and after each release so iOS testers get the same version as Android.
+# Runs by hand, and from release.yml after each release so iOS testers get the same version as
+# Android.
+#
 # It needs these repository secrets (docs/ios.md explains how to get them):
 #
 #   APPLE_TEAM_ID                 your Apple Developer team id (10 characters)
@@ -14,14 +16,17 @@ name: TestFlight
 # Signing is Xcode's cloud-managed signing through the API key: no certificates or provisioning
 # profiles to export or store.
 #
-# After a release it runs when the Release workflow finishes. It cannot listen for the release
-# itself: that is published with GITHUB_TOKEN, and GitHub does not start workflows from events
-# that token creates.
+# The release runs it as a called workflow rather than this one listening for the release: a
+# release is published with GITHUB_TOKEN, which starts no other workflow, and the alternative
+# (`workflow_run`) would check out code in a job that holds the signing secrets.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
+  workflow_call:
+    inputs:
+      ref:
+        description: The release tag to build.
+        type: string
+        required: true
 
 concurrency:
   group: testflight
@@ -33,7 +38,6 @@ permissions:
 jobs:
   upload:
     name: Upload to TestFlight
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: macos-15
     env:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -45,6 +49,9 @@ jobs:
       # Until the secrets exist, a release skips this quietly; a manual run says what is missing.
       - name: Check signing configuration
         id: config
+        env:
+          # Inside a release, github.workflow names the caller.
+          STARTED_BY_HAND: ${{ github.workflow == 'TestFlight' }}
         run: |
           missing=()
           [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
@@ -53,7 +60,7 @@ jobs:
           [ -n "$API_KEY" ] || missing+=(APP_STORE_CONNECT_KEY)
           if [ ${#missing[@]} -eq 0 ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          elif [ "$STARTED_BY_HAND" = "true" ]; then
             echo "::error::Missing repository secrets: ${missing[*]}. See docs/ios.md."
             exit 1
           else
@@ -64,8 +71,8 @@ jobs:
       - uses: actions/checkout@v7
         if: steps.config.outputs.configured == 'true'
         with:
-          # After a release, build exactly what was released.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # From a release, build exactly the tag it published.
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up JDK and Gradle
         if: steps.config.outputs.configured == 'true'
