@@ -1,6 +1,7 @@
 package com.orbin.feature.gallery
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.model.AppSettings
@@ -99,12 +100,16 @@ data class AllMediaUiState(
 class AllMediaViewModel
     @Inject
     constructor(
+        savedStateHandle: SavedStateHandle,
         providerRegistry: ProviderRegistry,
         observeActiveProvider: ObserveActiveProviderUseCase,
         private val boardRepository: BoardRepository,
         private val settingsRepository: SettingsRepository,
         private val downloadRepository: DownloadRepository,
     ) : ViewModel() {
+        /** Set when the wall was opened from a board's catalog: sweep that board alone. */
+        private val onlyBoard: String? = savedStateHandle.get<String>("board")
+
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, providerRegistry.default())
@@ -163,7 +168,10 @@ class AllMediaViewModel
             activeProvider
                 .flatMapLatest { provider ->
                     combine(
-                        boardRepository.observeBoards(provider.metadata.id).distinctUntilChanged(),
+                        boardRepository
+                            .observeBoards(provider.metadata.id)
+                            .map { boards -> boards.filter { onlyBoard == null || it.id.value == onlyBoard } }
+                            .distinctUntilChanged(),
                         settingsRepository.settings.map { ScanSettings(it) }.distinctUntilChanged(),
                         refreshRequests,
                     ) { boards, scanSettings, _ -> Triple(provider, boards, scanSettings) }

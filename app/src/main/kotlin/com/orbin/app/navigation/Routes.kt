@@ -21,6 +21,12 @@ sealed interface Route {
     @Serializable
     data object AllMedia : Route
 
+    /** One board's media as a wall: the All media wall, swept for [board] alone. */
+    @Serializable
+    data class BoardMedia(
+        val board: String,
+    ) : Route
+
     @Serializable
     data class Board(
         val provider: String,

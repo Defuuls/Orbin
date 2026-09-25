@@ -36,6 +36,7 @@ fun NextAllMediaScreen(
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
+    title: String? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,6 +49,7 @@ fun NextAllMediaScreen(
         onRefresh = viewModel::refresh,
         onOpenMedia = onOpenMedia,
         onSave = viewModel::save,
+        title = title,
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
@@ -76,7 +78,9 @@ fun NextAllMediaContent(
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     onSave: ((AllMediaItem) -> Unit)? = null,
+    title: String? = null,
 ) {
+    val wallTitle = title ?: stringResource(R.string.next_media_title)
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
     var actionsFor by remember { mutableStateOf<AllMediaItem?>(null) }
     val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
@@ -100,9 +104,9 @@ fun NextAllMediaContent(
             }
         if (uiState.isInitialLoad) {
             MessageScreen(
-                title = stringResource(R.string.next_media_title),
+                title = wallTitle,
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
-                where = stringResource(R.string.next_media_title),
+                where = wallTitle,
                 destination =
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },
@@ -113,11 +117,11 @@ fun NextAllMediaContent(
         }
         if (cells.isEmpty()) {
             MessageScreen(
-                title = stringResource(R.string.next_media_title),
+                title = wallTitle,
                 subtitle = stringResource(R.string.next_media_empty),
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
-                where = stringResource(R.string.next_media_title),
+                where = wallTitle,
                 destination =
                     com.orbin.uinext.NextDestination.MEDIA
                         .takeIf { hasTabs },
@@ -146,6 +150,7 @@ fun NextAllMediaContent(
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
                 onOpenSettings = onOpenSettings,
+                title = title,
                 onLongPress = onSave?.let { { cell -> actionsFor = byId[cell.id] } },
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->

@@ -7,6 +7,10 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Improved
+- The thread header is a Posts / Files switch and a watch bell. Download all and Save links as text (renamed from "Save links") sit above the file grid.
+- The last post scrolls fully clear of the Top / Bottom jump pill.
+- Board catalogs refresh by pulling down, like the feed, threads and All media.
+- A catalog that fails to load says why: offline, too slow, rate-limited or gone.
 - The feed uses the same adaptive grid as board catalogs, so a phone shows two columns instead of one.
 - Very tall media is letterboxed at 4:5 in grids, so one portrait image can no longer fill the screen. The full image is one tap away.
 - Every screen title starts at the same 16dp line. Grid screens used to indent theirs by 32dp.
@@ -14,6 +18,7 @@ All notable changes to Orbin are documented here. The format is based on
 - Board labels on media use white text on a dark scrim, so they stay readable over any image.
 
 ### Added
+- Every board catalog has a Media wall action that opens that board's files as a wall, like All media for one board.
 - The feed card in view plays its media in place: a video loops silently and a GIF animates. Only one plays at a time, never a spoilered one, and tapping still opens the thread.
 - Longer videos resume where you left off when reopened, until Orbin closes.
 - Media gestures, with no settings behind them:

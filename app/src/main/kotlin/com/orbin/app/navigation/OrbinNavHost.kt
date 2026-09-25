@@ -103,6 +103,15 @@ fun OrbinNavHost(
             )
         }
 
+        composable<Route.BoardMedia> { backStackEntry ->
+            NextAllMediaScreen(
+                title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
+                onOpenMedia = { provider, board, thread, _ ->
+                    openThread(provider, board, thread, "No.$thread")
+                },
+            )
+        }
+
         composable<Route.Board> { backStackEntry ->
             val mediaScrollIndex by
                 backStackEntry.savedStateHandle
@@ -133,12 +142,14 @@ fun OrbinNavHost(
                             NO_THREAD_MEDIA_SCROLL_INDEX
                     },
                     onBack = navController::navigateUp,
+                    onOpenBoardMedia = { board -> navController.navigate(Route.BoardMedia(board)) },
                 )
             } else {
                 NextBoardScreen(
                     onOpenThread = openThread,
                     hideRailOnScroll = chromeHidesOnScroll,
                     onChromeVisibleChange = onChromeVisibleChange,
+                    onOpenMedia = { board -> navController.navigate(Route.BoardMedia(board)) },
                 )
             }
         }

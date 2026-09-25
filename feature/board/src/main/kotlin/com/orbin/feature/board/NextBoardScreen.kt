@@ -20,6 +20,7 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 
 /**
@@ -34,6 +35,7 @@ fun NextBoardScreen(
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    onOpenMedia: ((board: String) -> Unit)? = null,
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
@@ -79,7 +81,7 @@ fun NextBoardScreen(
         if (refreshState is LoadState.Error && threads.itemCount == 0) {
             MessageScreen(
                 title = board,
-                subtitle = refreshState.error.localizedMessage ?: stringResource(R.string.board_load_error),
+                subtitle = stringResource(refreshState.error.catalogFailure().messageRes),
                 actionLabel = stringResource(R.string.board_try_again),
                 onAction = threads::retry,
                 where = board,
@@ -98,40 +100,46 @@ fun NextBoardScreen(
             )
             return@NextTheme
         }
-        BoardScreen(
-            board = board,
-            description = viewModel.title,
-            itemCount = threads.itemCount,
-            rowAt = rowFor,
-            rowKey = catalogItemKey,
-            sortLabel = catalogSort.label,
-            onSort = viewModel::cycleCatalogSort,
-            onOpenRow = { row ->
-                row.threadId()?.let { id ->
-                    onOpenThread(
-                        viewModel.providerId,
-                        viewModel.boardId,
-                        id,
-                        byThreadId[id]?.originalPost?.subject ?: "No.$id",
-                    )
-                }
-            },
-            hideRailOnScroll = hideRailOnScroll,
-            onChromeVisibleChange = onChromeVisibleChange,
-            thumbnail = { row, tileModifier ->
-                row.threadId()?.let { id ->
-                    byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
-                        MediaThumbnail(
-                            attachment = attachment,
-                            fullResolution = true,
-                            contentScale = ContentScale.Fit,
-                            modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+        NextPullToRefresh(
+            isRefreshing = refreshState is LoadState.Loading,
+            onRefresh = threads::refresh,
+            modifier = modifier,
+        ) {
+            BoardScreen(
+                board = board,
+                description = viewModel.title,
+                itemCount = threads.itemCount,
+                rowAt = rowFor,
+                rowKey = catalogItemKey,
+                sortLabel = catalogSort.label,
+                onSort = viewModel::cycleCatalogSort,
+                onOpenMedia = onOpenMedia?.let { open -> { open(viewModel.boardId) } },
+                onOpenRow = { row ->
+                    row.threadId()?.let { id ->
+                        onOpenThread(
+                            viewModel.providerId,
+                            viewModel.boardId,
+                            id,
+                            byThreadId[id]?.originalPost?.subject ?: "No.$id",
                         )
                     }
-                }
-            },
-            modifier = modifier,
-        )
+                },
+                hideRailOnScroll = hideRailOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
+                thumbnail = { row, tileModifier ->
+                    row.threadId()?.let { id ->
+                        byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
+                            MediaThumbnail(
+                                attachment = attachment,
+                                fullResolution = true,
+                                contentScale = ContentScale.Fit,
+                                modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+                            )
+                        }
+                    }
+                },
+            )
+        }
     }
 }
 
