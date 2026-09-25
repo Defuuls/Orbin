@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [148-Nectarine] - 2026-09-25
+
+### Changed
+- The feed is sorted by board, A–Z, under a heading for each board, with the most recently active threads first within each board. It was one list ordered by activity across every board (#560).
+
+
 ## [147-Mango] - 2026-09-25
 
 ### Added
@@ -2370,7 +2376,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v147-Mango...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...HEAD
+[148-Nectarine]: https://github.com/Defuuls/Orbin/compare/v147-Mango...v148-Nectarine
 [147-Mango]: https://github.com/Defuuls/Orbin/compare/v146-Lemon...v147-Mango
 [146-Lemon]: https://github.com/Defuuls/Orbin/compare/v145-Kiwi...v146-Lemon
 [145-Kiwi]: https://github.com/Defuuls/Orbin/compare/v144-Jackfruit...v145-Kiwi

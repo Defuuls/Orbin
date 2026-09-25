@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [147 — Mango](https://github.com/Defuuls/Orbin/releases/tag/v147-Mango)
+**Current release:** [148 — Nectarine](https://github.com/Defuuls/Orbin/releases/tag/v148-Nectarine)
 
-**What's new in 147:** Simple is best: three tabs, a short Settings list, media gestures with no options, and a two-column feed that plays media in place.
+**What's new in 148:** The feed is sorted by board, A–Z, under a heading for each board.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
