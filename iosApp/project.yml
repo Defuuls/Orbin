@@ -1,0 +1,70 @@
+# XcodeGen spec for the iOS app. The .xcodeproj is generated from this file and not committed:
+#
+#   brew install xcodegen && xcodegen --spec iosApp/project.yml
+#
+# then open iosApp/Orbin.xcodeproj. See docs/ios.md.
+name: Orbin
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    # Overridden by the TestFlight workflow from gradle.properties, so both platforms ship the
+    # same release number.
+    MARKETING_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "1"
+    # Bundle ids are unique across the whole App Store; pass your own with
+    # `xcodebuild ... ORBIN_BUNDLE_ID=...` or change it here.
+    ORBIN_BUNDLE_ID: io.github.defuuls.orbin
+    # Your Apple Developer team, for signing. Empty builds for the simulator only.
+    ORBIN_TEAM_ID: ""
+targets:
+  Orbin:
+    type: application
+    platform: iOS
+    sources:
+      - Orbin
+    info:
+      path: Orbin/Info.plist
+      properties:
+        CFBundleDisplayName: Orbin
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # Compose drives ProMotion displays at their full rate only with this set.
+        CADisableMinimumFrameDurationOnPhone: true
+        # HTTPS only, which is exempt from export compliance, so TestFlight does not ask each build.
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID)
+        DEVELOPMENT_TEAM: $(ORBIN_TEAM_ID)
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        # The Kotlin framework the build phase below produces.
+        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../app-ios/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS: $(inherited) -framework OrbinKit
+        # The Gradle build writes outside the sandbox Xcode gives script phases.
+        ENABLE_USER_SCRIPT_SANDBOXING: false
+    preBuildScripts:
+      - name: Build OrbinKit (Kotlin)
+        basedOnDependencyAnalysis: false
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :app-ios:embedAndSignAppleFrameworkForXcode
+schemes:
+  Orbin:
+    build:
+      targets:
+        Orbin: all
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,141 @@
+name: TestFlight
+
+# Archives the iOS app and uploads it to App Store Connect for internal TestFlight testing.
+#
+# Runs by hand, and after each release so iOS testers get the same version as Android.
+# It needs these repository secrets (docs/ios.md explains how to get them):
+#
+#   APPLE_TEAM_ID                 your Apple Developer team id (10 characters)
+#   APP_STORE_CONNECT_KEY_ID      an App Store Connect API key with the Admin role...
+#   APP_STORE_CONNECT_ISSUER_ID   ...its issuer id...
+#   APP_STORE_CONNECT_KEY         ...and the contents of its .p8 file
+#
+# and optionally the IOS_BUNDLE_ID repository variable (default io.github.defuuls.orbin).
+# Signing is Xcode's cloud-managed signing through the API key: no certificates or provisioning
+# profiles to export or store.
+#
+# After a release it runs when the Release workflow finishes. It cannot listen for the release
+# itself: that is published with GITHUB_TOKEN, and GitHub does not start workflows from events
+# that token creates.
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Upload to TestFlight
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: macos-15
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'io.github.defuuls.orbin' }}
+    steps:
+      # Until the secrets exist, a release skips this quietly; a manual run says what is missing.
+      - name: Check signing configuration
+        id: config
+        run: |
+          missing=()
+          [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
+          [ -n "$KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$API_KEY" ] || missing+=(APP_STORE_CONNECT_KEY)
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. See docs/ios.md."
+            exit 1
+          else
+            echo "::notice::TestFlight upload skipped: secrets not configured (${missing[*]}). See docs/ios.md."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.config.outputs.configured == 'true'
+        with:
+          # After a release, build exactly what was released.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up JDK and Gradle
+        if: steps.config.outputs.configured == 'true'
+        uses: ./.github/actions/setup-jdk-gradle
+
+      - name: Generate the Xcode project
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          brew install xcodegen
+          xcodegen --spec iosApp/project.yml
+
+      # The Android release's number, so both platforms report the same version: "148" from
+      # "148-Nectarine", built as <versionCode>.<run number> so every upload is a new build.
+      - name: Work out the version
+        if: steps.config.outputs.configured == 'true'
+        id: version
+        run: |
+          name=$(sed -n 's/^orbin.versionName=//p' gradle.properties)
+          code=$(sed -n 's/^orbin.versionCode=//p' gradle.properties)
+          echo "marketing=${name%%-*}" >> "$GITHUB_OUTPUT"
+          echo "build=${code}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Archive
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          key="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
+          printf '%s\n' "$API_KEY" > "$key"
+          xcodebuild archive \
+            -project iosApp/Orbin.xcodeproj \
+            -scheme Orbin \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Orbin.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$key" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            ORBIN_TEAM_ID="$TEAM_ID" \
+            ORBIN_BUNDLE_ID="$BUNDLE_ID" \
+            MARKETING_VERSION="${{ steps.version.outputs.marketing }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build }}"
+
+      - name: Upload to App Store Connect
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          key="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>testFlightInternalTestingOnly</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Orbin.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$key" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID"
+          echo "Uploaded build ${{ steps.version.outputs.build }} (version ${{ steps.version.outputs.marketing }})." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8

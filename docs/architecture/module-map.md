@@ -6,6 +6,7 @@ large repository locally understandable without tracing the whole dependency gra
 | Module | Owns | Start here when… |
 | --- | --- | --- |
 | `app` | application lifecycle, navigation, DI aggregation | a route, top-level shell or process concern is wrong |
+| `app-ios` | the iOS app: provider wiring, navigation/loading state, screen adapters (see [docs/ios.md](../ios.md)) | something is wrong only on iOS |
 | `ui-next` | stateless screen/layout vocabulary (Compose Multiplatform, shared with iOS) | presentation, spacing or screen composition changes |
 | `feature:home` | subscribed feed state/adapters | feed loading, ordering or read-state presentation changes |
 | `feature:board` | board catalog state/adapters | a board/catalog interaction changes |

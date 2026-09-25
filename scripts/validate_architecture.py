@@ -133,6 +133,15 @@ def main() -> int:
         if imported.startswith("com.orbin.") and not imported.startswith(allowed_ui_packages):
             fail(errors, f"{file.relative_to(ROOT)} crosses ui-next presentation seam: {imported}")
 
+    # :app-ios is the iOS composition root, as :app is Android's: nothing depends on it, and it may
+    # only use modules that build for iOS — never the Android-only app, data or feature layers.
+    for module in sorted(m for m in modules if ":app-ios" in deps[m]):
+        fail(errors, f"{module} depends on the iOS app module :app-ios")
+    android_only = {":app", ":data", ":network", ":media", ":core:ui", ":core:common-android", ":core:testing"}
+    for dep in sorted(deps.get(":app-ios", set())):
+        if dep.startswith(":feature:") or dep in android_only:
+            fail(errors, f":app-ios depends on Android-only module {dep}")
+
     # Prevent Android/infrastructure imports from slipping into the pure core model source tree.
     model_root = module_path(":core:model") / "src/commonMain/kotlin"
     forbidden_imports = (
