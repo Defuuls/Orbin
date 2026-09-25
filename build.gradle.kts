@@ -113,6 +113,7 @@ subprojects {
         extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
             source.from(
                 "src/commonMain/kotlin",
+                "src/commonTest/kotlin",
                 "src/jvmTest/kotlin",
                 "src/androidMain/kotlin",
                 "src/iosMain/kotlin",
