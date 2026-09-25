@@ -12,10 +12,9 @@ dependencies {
     api(project(":core:common-android"))
 
     api(libs.okhttp)
-    api(libs.retrofit)
+    api(libs.ktor.client.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.okhttp.dnsoverhttps)
-    implementation(libs.retrofit.serialization)
     api(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 

@@ -21,7 +21,7 @@ tests and Android lint. The cheap structural checks fail before Gradle work begi
 `scripts/validate_architecture.py` runs on every pull request and enforces these invariants:
 
 - `core:model` has no project dependencies and imports no Android or outer-layer Orbin package.
-- Multiplatform modules (`core:model`, `core:common`, `provider:api`, `domain`) compile for iOS in the **Shared code (iOS targets)**
+- Multiplatform modules (`core:model`, `core:common`, `domain` and every `provider:*`) compile for iOS in the **Shared code (iOS targets)**
   CI job, so JVM-only APIs cannot enter code an iOS app will share.
 - `domain` points inward to `core:*` and `provider:api`, never concrete infrastructure.
 - feature modules do not depend on other feature modules.
