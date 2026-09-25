@@ -59,10 +59,6 @@ class SettingsRepositoryImpl
 
         private val cached = settings.stateIn(scope, SharingStarted.Eagerly, AppSettings.Default)
 
-        override suspend fun setPersonalizedHomeFeed(enabled: Boolean) {
-            edit { it[Keys.personalizedHomeFeed] = enabled }
-        }
-
         override suspend fun setHiddenTags(tags: String) {
             edit { it[Keys.hiddenTags] = tags }
         }
@@ -320,7 +316,6 @@ class SettingsRepositoryImpl
         @Suppress("ComplexMethod")
         private fun Preferences.toAppSettings(): AppSettings =
             AppSettings(
-                personalizedHomeFeed = this[Keys.personalizedHomeFeed] ?: true,
                 hiddenTags = this[Keys.hiddenTags] ?: "",
                 mutedTags = this[Keys.mutedTags] ?: "",
                 hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
@@ -412,7 +407,6 @@ class SettingsRepositoryImpl
             runCatching { enumValueOf<T>(this) }.getOrDefault(default)
 
         private object Keys {
-            val personalizedHomeFeed = booleanPreferencesKey("personalized_home_feed")
             val hiddenTags = stringPreferencesKey("hidden_tags")
             val mutedTags = stringPreferencesKey("muted_tags")
             val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")

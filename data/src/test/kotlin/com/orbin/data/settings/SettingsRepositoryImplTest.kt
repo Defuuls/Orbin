@@ -51,7 +51,6 @@ class SettingsRepositoryImplTest {
         }
 
     private suspend fun applyAllSettings(repository: SettingsRepositoryImpl) {
-        repository.setPersonalizedHomeFeed(false)
         repository.setHiddenTags("hidden")
         repository.setMutedTags("muted")
         repository.setHideNsfwBoards(true)
@@ -101,7 +100,6 @@ class SettingsRepositoryImplTest {
 
     private fun expectedSettings(): AppSettings =
         AppSettings.Default.copy(
-            personalizedHomeFeed = false,
             hiddenTags = "hidden",
             mutedTags = "muted",
             hideNsfwBoards = true,

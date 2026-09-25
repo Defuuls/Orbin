@@ -158,10 +158,6 @@ class FakeSettingsRepository(
 
     override val settings: Flow<AppSettings> = state
 
-    override suspend fun setPersonalizedHomeFeed(enabled: Boolean) {
-        update { copy(personalizedHomeFeed = enabled) }
-    }
-
     override suspend fun setHiddenTags(tags: String) {
         update { copy(hiddenTags = tags) }
     }

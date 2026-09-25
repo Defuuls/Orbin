@@ -8,6 +8,7 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Changed
 - Removed the Library section from Settings, including its Boards, All media and Commands entries. Search and Downloads now sit in Privacy & Data, next to the image cache.
+- Removed the unused "personalized home feed" preference. It had no setting and no effect; older backups that include it still import.
 
 ## [145-Kiwi] - 2026-09-24
 

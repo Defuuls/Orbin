@@ -99,8 +99,6 @@ class SettingsViewModel
 
         fun setActiveProvider(id: ProviderId) = update { repository.setActiveProviderId(id) }
 
-        fun setPersonalizedHomeFeed(enabled: Boolean) = update { repository.setPersonalizedHomeFeed(enabled) }
-
         fun setHiddenTags(tags: String) = update { repository.setHiddenTags(tags) }
 
         fun setMutedTags(tags: String) = update { repository.setMutedTags(tags) }
