@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -85,7 +89,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * exposes a Loop/Once control so the behavior can be changed while it is playing. The player is
  * released when the composable leaves composition so there are no leaked players. Autoplay and
  * the initial mute state are driven from settings by the caller; tapping the video reveals compact
- * controls without permanently covering playing media.
+ * controls without permanently covering playing media, and double tapping its left or right half
+ * skips back or forward [SKIP_SECONDS] seconds.
  */
 @Suppress("UnsafeOptInUsageError")
 @Composable
@@ -115,6 +120,9 @@ fun VideoPlayer(
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var bufferedProgress by remember { mutableFloatStateOf(0f) }
+    // Seconds skipped by the current run of double taps; negative is backwards, 0 hides the label.
+    var skipSeconds by remember(url) { mutableIntStateOf(0) }
+    var skipGeneration by remember(url) { mutableIntStateOf(0) }
 
     val mediaSourceFactory =
         remember(dataSourceFactory) {
@@ -254,13 +262,58 @@ fun VideoPlayer(
 
     val progress = remember(positionMs, durationMs) { positionMs.progressIn(durationMs) }
 
+    // Hide the skip label once the taps stop; a new double tap restarts the wait.
+    LaunchedEffect(skipGeneration) {
+        if (skipSeconds == 0) return@LaunchedEffect
+        delay(SKIP_LABEL_VISIBLE_MS)
+        skipSeconds = 0
+    }
+
+    val skip: (Boolean) -> Unit = { forward ->
+        exoPlayer.seekTo(
+            seekTargetMs(
+                currentMs = exoPlayer.currentPosition,
+                durationMs = exoPlayer.duration,
+                forward = forward,
+            ),
+        )
+        positionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
+        // Keep counting while the taps go the same way, so three quick double taps read "+15s".
+        val step = if (forward) SKIP_SECONDS else -SKIP_SECONDS
+        skipSeconds = if (skipSeconds != 0 && (skipSeconds > 0) == forward) skipSeconds + step else step
+        skipGeneration++
+    }
+    val skipBackLabel = stringResource(R.string.media_skip_back)
+    val skipForwardLabel = stringResource(R.string.media_skip_forward)
+
     Box(
         modifier =
-            modifier.pointerInput(playbackError) {
-                detectTapGestures {
-                    if (playbackError == null) controlsVisible = !controlsVisible
-                }
-            },
+            modifier
+                .pointerInput(playbackError, exoPlayer) {
+                    detectTapGestures(
+                        onTap = {
+                            if (playbackError == null) controlsVisible = !controlsVisible
+                        },
+                        // Left half goes back, right half goes forward, as in most video players.
+                        onDoubleTap = { offset ->
+                            if (playbackError == null) skip(offset.x >= size.width / 2f)
+                        },
+                    )
+                }.semantics {
+                    if (playbackError == null) {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction(skipBackLabel) {
+                                    skip(false)
+                                    true
+                                },
+                                CustomAccessibilityAction(skipForwardLabel) {
+                                    skip(true)
+                                    true
+                                },
+                            )
+                    }
+                },
     ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -287,6 +340,15 @@ fun VideoPlayer(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 NextCircularProgress()
             }
+        }
+        if (skipSeconds != 0) {
+            SkipLabel(
+                seconds = skipSeconds,
+                modifier =
+                    Modifier
+                        .align(if (skipSeconds > 0) Alignment.CenterEnd else Alignment.CenterStart)
+                        .padding(horizontal = 32.dp),
+            )
         }
         if (playbackError != null) {
             Box(
@@ -497,6 +559,24 @@ private fun VideoControls(
     }
 }
 
+/** "+5s" / "−5s" on the side that was double tapped, over whatever the video is showing. */
+@Composable
+private fun SkipLabel(
+    seconds: Int,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = if (seconds > 0) "+${seconds}s" else "\u2212${-seconds}s",
+        color = Color.White,
+        style = NextType.body,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(NextRadius.pill))
+                .background(Color.Black.copy(alpha = SKIP_LABEL_FILL_ALPHA))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
 /**
  * Always-on bottom scrub track — Next hairline language (3dp pill) with a white buffered fill and
  * accent played fill so it stays readable over video without Material LinearProgressIndicator.
@@ -580,6 +660,21 @@ private fun Activity.applyVideoFullscreen(
     }
 }
 
+/**
+ * Where a double tap lands: [SKIP_SECONDS] from [currentMs], never before the start and, once the
+ * duration is known, never past the end. An unknown duration (still loading, or a live stream)
+ * only clamps at zero.
+ */
+internal fun seekTargetMs(
+    currentMs: Long,
+    durationMs: Long,
+    forward: Boolean,
+): Long {
+    val step = SKIP_SECONDS * MILLIS_PER_SECOND
+    val target = currentMs.coerceAtLeast(0L) + if (forward) step else -step
+    return if (durationMs > 0L) target.coerceIn(0L, durationMs) else target.coerceAtLeast(0L)
+}
+
 internal fun repeatModeFor(loopEnabled: Boolean): Int =
     if (loopEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
 
@@ -622,3 +717,6 @@ private const val PROGRESS_UPDATE_MS = 250L
 private const val CONTROLS_AUTO_HIDE_MS = 2_500L
 private const val MILLIS_PER_SECOND = 1_000L
 private const val SECONDS_PER_MINUTE = 60L
+internal const val SKIP_SECONDS = 5
+private const val SKIP_LABEL_VISIBLE_MS = 700L
+private const val SKIP_LABEL_FILL_ALPHA = 0.55f

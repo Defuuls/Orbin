@@ -97,6 +97,9 @@ Opening an attachment launches the media viewer with image zoom, video playback,
 and background preloading. Returning from the viewer keeps the originating grid synchronized with
 the media you were actually viewing.
 
+In a video, tap once to show or hide the controls. Double tap the right half to skip forward 5
+seconds or the left half to skip back 5 seconds; keep double tapping to skip further.
+
 ### All media
 
 **All media** sweeps board catalogs and fills a single continuous wall of discovered images and

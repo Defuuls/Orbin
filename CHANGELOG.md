@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Double tap the left or right half of a video to skip back or forward 5 seconds. Repeated double taps keep adding up ("+15s"), and screen readers get matching "Skip back/forward 5 seconds" actions.
+
 ### Changed
 - Cleaned up the thread reader's bottom edge: removed the floating bar that repeated the thread's title and board, and the optional "↓" next-post arrow along with its "Thread scroll arrow" setting. The Top / Unread / Bottom jump buttons remain.
 - Removed the floating name bar from Boards, All media, board catalogs, Search and Downloads. Each screen's large title already names it, so the bar only repeated it over the content. Feed and Settings keep their tab bar.
