@@ -28,4 +28,8 @@
     <string name="gallery_close">Close</string>
     <string name="gallery_download">Download</string>
     <string name="gallery_copy_image">Copy image</string>
+    <string name="gallery_share">Share</string>
+    <string name="gallery_copy_link">Copy link</string>
+    <string name="gallery_link_copied">Link copied</string>
+    <string name="gallery_saving">Saving to Downloads/Orbin</string>
 </resources>

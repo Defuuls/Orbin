@@ -51,6 +51,7 @@ fun MediaWallScreen(
     showRail: Boolean = true,
     showSizeControl: Boolean = false,
     onOpen: (MediaCell) -> Unit = {},
+    onLongPress: ((MediaCell) -> Unit)? = null,
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
@@ -112,10 +113,11 @@ fun MediaWallScreen(
                         ScreenTitle(
                             text = stringResource(R.string.next_all_media_title),
                             subtitle = stringResource(R.string.next_all_media_subtitle),
+                            inset = 0.dp,
                         )
                         if (showSizeControl) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 MetaLine(stringResource(R.string.next_media_size_small))
@@ -142,7 +144,7 @@ fun MediaWallScreen(
                         }
                         if (scanning || deepScanning || failed > 0) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (deepScanning) {
@@ -177,6 +179,8 @@ fun MediaWallScreen(
                                 .nextClickable(
                                     role = Role.Button,
                                     onClickLabel = stringResource(R.string.next_open_file),
+                                    onLongClick = onLongPress?.let { handler -> { handler(cell) } },
+                                    onLongClickLabel = stringResource(R.string.next_media_actions),
                                     onClick = { onOpen(cell) },
                                 ).semantics { contentDescription = description },
                         contentAlignment = Alignment.BottomStart,
@@ -187,9 +191,8 @@ fun MediaWallScreen(
                         } else {
                             MediaTile(modifier = shape, seed = index, radius = 16.dp)
                         }
-                        Pill(
+                        MediaBadge(
                             text = cell.board,
-                            tint = boardHue(cell.board),
                             modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
                         )
                     }

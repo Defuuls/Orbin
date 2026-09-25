@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -108,5 +111,55 @@ private fun DestructiveConfirm(
                     .background(red)
                     .padding(horizontal = 13.dp, vertical = 7.dp),
         )
+    }
+}
+
+/** One row in a [NextActionSheet]: a word, and what it does. */
+data class NextSheetAction(
+    val label: String,
+    val onClick: () -> Unit,
+)
+
+/**
+ * A short list of things to do with what was long-pressed.
+ *
+ * Every action closes the sheet after it runs, so a sheet is never left open behind its result.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NextActionSheet(
+    title: String,
+    actions: List<NextSheetAction>,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = next.raised,
+        contentColor = next.ink,
+        shape = RoundedCornerShape(topStart = NextRadius.sheet, topEnd = NextRadius.sheet),
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = title,
+                style = NextType.footnote,
+                color = next.muted,
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+            actions.forEach { action ->
+                InlineAction(
+                    label = action.label,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        action.onClick()
+                        onDismiss()
+                    },
+                )
+            }
+        }
     }
 }

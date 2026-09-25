@@ -98,7 +98,12 @@ and background preloading. Returning from the viewer keeps the originating grid 
 the media you were actually viewing.
 
 In a video, tap once to show or hide the controls. Double tap the right half to skip forward 5
-seconds or the left half to skip back 5 seconds; keep double tapping to skip further.
+seconds or the left half to skip back 5 seconds; keep double tapping to skip further. Drag the
+progress bar to scrub; the time you are dragging to shows above it.
+
+Pinch an image to zoom, or double tap the spot you want to look at. Long-press any image or video,
+in the viewer or on the All media wall, to save it, share its link or copy its link. Swipe up and
+down to move between files, and keep pulling past the first or last one to close the viewer.
 
 ### All media
 

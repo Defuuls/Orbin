@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -45,6 +47,7 @@ fun NextAllMediaScreen(
         showSizeControl = true,
         onRefresh = viewModel::refresh,
         onOpenMedia = onOpenMedia,
+        onSave = viewModel::save,
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
@@ -72,8 +75,10 @@ fun NextAllMediaContent(
     onOpenFeed: (() -> Unit)? = null,
     onOpenBoards: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
+    onSave: ((AllMediaItem) -> Unit)? = null,
 ) {
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
+    var actionsFor by remember { mutableStateOf<AllMediaItem?>(null) }
     val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
 
     NextTheme {
@@ -141,6 +146,7 @@ fun NextAllMediaContent(
                 onOpenFeed = onOpenFeed,
                 onOpenBoards = onOpenBoards,
                 onOpenSettings = onOpenSettings,
+                onLongPress = onSave?.let { { cell -> actionsFor = byId[cell.id] } },
                 onOpen = { cell ->
                     byId[cell.id]?.let { item ->
                         onOpenMedia(
@@ -159,6 +165,14 @@ fun NextAllMediaContent(
                         )
                     }
                 },
+            )
+        }
+        val pressed = actionsFor
+        if (pressed != null && onSave != null) {
+            MediaActionsSheet(
+                attachment = pressed.attachment,
+                onSave = { onSave(pressed) },
+                onDismiss = { actionsFor = null },
             )
         }
     }

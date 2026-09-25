@@ -83,6 +83,8 @@ fun NextSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
     steps: Int = 0,
+    /** True while a finger is dragging the thumb, so a caller can show what the drag points at. */
+    onDragStateChange: (Boolean) -> Unit = {},
 ) {
     val range = (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f)
     var widthPx by remember { mutableFloatStateOf(0f) }
@@ -110,7 +112,11 @@ fun NextSlider(
                 .pointerInput(valueRange, steps, widthPx) {
                     detectTapGestures { offset -> onValueChange(valueAt(offset.x)) }
                 }.pointerInput(valueRange, steps, widthPx) {
-                    detectDragGestures { change, _ ->
+                    detectDragGestures(
+                        onDragStart = { onDragStateChange(true) },
+                        onDragEnd = { onDragStateChange(false) },
+                        onDragCancel = { onDragStateChange(false) },
+                    ) { change, _ ->
                         change.consume()
                         onValueChange(valueAt(change.position.x))
                     }

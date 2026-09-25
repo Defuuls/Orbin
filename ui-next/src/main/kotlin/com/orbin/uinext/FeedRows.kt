@@ -40,6 +40,7 @@ internal fun FeedHeader(
                 text = stringResource(R.string.next_feed_title),
                 subtitle = subtitle,
                 modifier = Modifier.weight(1f),
+                inset = 0.dp,
             )
             // Settings is visited, not lived in, so it sits here rather than taking a tab.
             if (onSettings != null) {
@@ -48,7 +49,7 @@ internal fun FeedHeader(
                     contentDescription = stringResource(R.string.next_settings_title),
                     onClick = onSettings,
                     tint = next.muted,
-                    modifier = Modifier.padding(top = NextSpace.titleTop + 14.dp, end = GUTTER - 12.dp),
+                    modifier = Modifier.padding(top = NextSpace.titleTop + 14.dp),
                 )
             }
         }
@@ -159,7 +160,9 @@ private fun Modifier.mediaTileSize(row: FeedRow): Modifier =
         height(FALLBACK_TILE_HEIGHT)
     }
 
-private const val MIN_TILE_ASPECT = 0.5f
+// Tall media is letterboxed at 4:5 in a grid, so one portrait image cannot fill the screen; the
+// whole image is one tap away.
+private const val MIN_TILE_ASPECT = 0.8f
 private const val MAX_TILE_ASPECT = 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 

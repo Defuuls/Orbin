@@ -86,6 +86,7 @@ fun NextFeedScreen(
                     destination = NextDestination.FEED.takeIf { showRail },
                     onDestination = onDestination.takeIf { showRail },
                     modifier = modifier,
+                    skeleton = true,
                 )
 
             is SubscribedFeedUiState.Error ->

@@ -122,7 +122,8 @@ fun FeedScreen(
                     )
                 }
             LazyVerticalGrid(
-                columns = GridCells.Fixed(1),
+                // Two columns on a phone, more on wider screens: the same grid the catalog uses.
+                columns = GridCells.Adaptive(GRID_MIN_CELL),
                 state = gridState,
                 modifier = insets,
                 contentPadding = gridPadding(bottomPad),
