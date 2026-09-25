@@ -31,9 +31,13 @@ import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
 import io.mockk.mockk
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A single dead/pruned board must not wipe out every other subscribed board's feed.
@@ -160,6 +164,40 @@ class SubscribedFeedViewModelTest {
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `returning to the feed reuses it and only a refresh fetches the catalogs again`() =
+        runTest {
+            val catalogCalls = AtomicInteger()
+            val provider = catalogProvider(listOf(catalogThread(1L, attachment("jpg", MediaType.IMAGE))), catalogCalls)
+            val registry = FakeProviderRegistry(provider)
+            val viewModel = createViewModel(registry, FakeSettingsRepository(), subscribed = setOf(healthyBoard))
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                cancelAndIgnoreRemainingEvents()
+            }
+            val callsAfterFirstLoad = catalogCalls.get()
+            assertThat(callsAfterFirstLoad).isGreaterThan(0)
+
+            // Leave the feed long enough for the shared state to stop, then come back to it.
+            advanceTimeBy(LEAVE_FEED_MS)
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isInstanceOf(SubscribedFeedUiState.Success::class.java)
+                advanceUntilIdle()
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertThat(catalogCalls.get()).isEqualTo(callsAfterFirstLoad)
+
+            viewModel.uiState.test {
+                viewModel.refresh()
+                advanceUntilIdle()
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertThat(catalogCalls.get()).isGreaterThan(callsAfterFirstLoad)
+        }
+
     private fun createViewModel(
         registry: FakeProviderRegistry,
         settingsRepository: FakeSettingsRepository,
@@ -176,20 +214,25 @@ class SubscribedFeedViewModelTest {
     )
 
     /** A provider that answers every catalog request with [threads]. */
-    private fun catalogProvider(threads: List<CatalogThread>) =
-        object : ImageBoardProvider {
-            override val metadata = ProviderMetadata(ProviderId("fourchan"), "Test", "https://example.org")
-            override val capabilities = ProviderCapabilities()
+    private fun catalogProvider(
+        threads: List<CatalogThread>,
+        catalogCalls: AtomicInteger = AtomicInteger(),
+    ) = object : ImageBoardProvider {
+        override val metadata = ProviderMetadata(ProviderId("fourchan"), "Test", "https://example.org")
+        override val capabilities = ProviderCapabilities()
 
-            override suspend fun getBoards(): List<Board> = emptyList()
+        override suspend fun getBoards(): List<Board> = emptyList()
 
-            override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> = threads
-
-            override suspend fun getThread(
-                board: BoardId,
-                thread: ThreadId,
-            ): Thread = throw ProviderException.NotFound("not used")
+        override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> {
+            catalogCalls.incrementAndGet()
+            return threads
         }
+
+        override suspend fun getThread(
+            board: BoardId,
+            thread: ThreadId,
+        ): Thread = throw ProviderException.NotFound("not used")
+    }
 
     private fun catalogThread(
         id: Long,
@@ -218,4 +261,9 @@ class SubscribedFeedViewModelTest {
         sourceUrl = "https://example.org/$id",
         thumbnailUrl = "https://example.org/$id/thumb",
     )
+
+    private companion object {
+        /** Longer than the view model's stop timeout, so its shared state really stops. */
+        const val LEAVE_FEED_MS = 10_000L
+    }
 }
