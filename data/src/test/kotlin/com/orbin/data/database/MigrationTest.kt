@@ -16,7 +16,7 @@ private const val TEST_DB = "migration-test.db"
 
 /**
  * Runs every registered [Migration][androidx.room.migration.Migration] against the exported
- * schema JSON under `data/schemas`. [MigrationTestHelper.runMigrationsAndValidate] fails the test
+ * schema JSON under `storage/schemas`. [MigrationTestHelper.runMigrationsAndValidate] fails the test
  * if the migrated schema doesn't byte-for-byte match what Room expects at that version — the same
  * check Room performs against a real device database at app startup, just moved earlier.
  */

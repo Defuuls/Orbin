@@ -18,6 +18,10 @@ import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.dao.SavedThreadDao
+import com.orbin.data.repository.BookmarkRepositoryImpl
+import com.orbin.data.repository.HistoryRepositoryImpl
+import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.HistoryRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +30,10 @@ import dagger.hilt.components.SingletonComponent
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
-/** Provides the Room database (encrypted at rest via SQLCipher) and its DAOs. */
+/**
+ * Provides the Room database (encrypted at rest via SQLCipher), its DAOs, and the repositories that
+ * `:storage` shares with iOS. The schema lives in `:storage`; how Android opens it lives here.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -87,4 +94,14 @@ object DatabaseModule {
 
     @Provides
     fun providesSavedSearchDao(database: OrbinDatabase): SavedSearchDao = database.savedSearchDao()
+
+    // The repositories built only on the shared database live in `:storage`, shared with iOS, and
+    // carry no DI annotations; this is where Android's graph gets them.
+    @Provides
+    @Singleton
+    fun providesBookmarkRepository(dao: BookmarkDao): BookmarkRepository = BookmarkRepositoryImpl(dao)
+
+    @Provides
+    @Singleton
+    fun providesHistoryRepository(dao: HistoryDao): HistoryRepository = HistoryRepositoryImpl(dao)
 }

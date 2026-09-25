@@ -41,6 +41,7 @@ include(":core:testing")
 include(":domain")
 include(":data")
 include(":network")
+include(":storage")
 include(":media")
 
 include(":provider:api")

@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * downloads, recent searches, saved searches — with no Android backup to recover from.
  *
  * Adding a version now means adding a [Migration] here. The exported schema JSON under
- * `data/schemas` is the source of truth for what changed between two versions.
+ * `storage/schemas` is the source of truth for what changed between two versions.
  */
 internal val MIGRATION_2_3 =
     object : Migration(2, 3) {

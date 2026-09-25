@@ -26,7 +26,7 @@ import kotlinx.collections.immutable.toImmutableList
 
 /** Mappers between Room entities and domain models. The (provider, board, thread) columns map to [ThreadKey]. */
 
-internal fun BookmarkEntity.toDomain(): Bookmark =
+fun BookmarkEntity.toDomain(): Bookmark =
     Bookmark(
         key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(thread)),
         title = title,
@@ -38,7 +38,7 @@ internal fun BookmarkEntity.toDomain(): Bookmark =
         isThreadDead = isThreadDead,
     )
 
-internal fun Bookmark.toEntity(): BookmarkEntity =
+fun Bookmark.toEntity(): BookmarkEntity =
     BookmarkEntity(
         provider = key.provider.value,
         board = key.board.value,
@@ -52,7 +52,7 @@ internal fun Bookmark.toEntity(): BookmarkEntity =
         isThreadDead = isThreadDead,
     )
 
-internal fun HistoryEntity.toDomain(): HistoryEntry =
+fun HistoryEntity.toDomain(): HistoryEntry =
     HistoryEntry(
         key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(thread)),
         title = title,
@@ -62,7 +62,7 @@ internal fun HistoryEntity.toDomain(): HistoryEntry =
         lastReadOffsetPx = lastReadOffsetPx,
     )
 
-internal fun HistoryEntry.toEntity(): HistoryEntity =
+fun HistoryEntry.toEntity(): HistoryEntity =
     HistoryEntity(
         provider = key.provider.value,
         board = key.board.value,
@@ -74,7 +74,7 @@ internal fun HistoryEntry.toEntity(): HistoryEntity =
         lastReadOffsetPx = lastReadOffsetPx,
     )
 
-internal fun BoardEntity.toDomain(): Board =
+fun BoardEntity.toDomain(): Board =
     Board(
         id = BoardId(id),
         title = title,
@@ -88,7 +88,7 @@ internal fun BoardEntity.toDomain(): Board =
         supportsMedia = supportsMedia,
     )
 
-internal fun Board.toEntity(
+fun Board.toEntity(
     provider: ProviderId,
     sortIndex: Int,
     cachedAtMillis: Long,
@@ -116,7 +116,7 @@ internal fun Board.toEntity(
  * child table: a saved attachment is a link, not an entity anything joins against, and two columns
  * keep the whole snapshot one insert per post.
  */
-internal fun Thread.toSavedEntities(savedAtMillis: Long): Pair<SavedThreadEntity, List<SavedPostEntity>> {
+fun Thread.toSavedEntities(savedAtMillis: Long): Pair<SavedThreadEntity, List<SavedPostEntity>> {
     val posts = allPosts
     val savedThread =
         SavedThreadEntity(
@@ -157,7 +157,7 @@ internal fun Thread.toSavedEntities(savedAtMillis: Long): Pair<SavedThreadEntity
  * provider's parser and is not re-derived here, so a saved thread reads as plain text. Quote links
  * and formatting are lost; the words are not.
  */
-internal fun SavedThreadEntity.toDomain(posts: List<SavedPostEntity>): Thread {
+fun SavedThreadEntity.toDomain(posts: List<SavedPostEntity>): Thread {
     val key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(thread))
     val domainPosts = posts.map { it.toDomain(key) }
     return Thread(

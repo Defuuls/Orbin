@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.InlineStyle
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -15,12 +16,14 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThreadStats
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RowsTest {
     @Test
@@ -94,6 +97,45 @@ class RowsTest {
         assertEquals(Offset.Zero, zoomedOffset(Offset(40f, 40f), 1f, size), "not zoomed: centred")
         assertEquals(Offset(50f, -100f), zoomedOffset(Offset(80f, -300f), 2f, size), "clamped to the overflow")
         assertEquals(Offset(10f, 20f), zoomedOffset(Offset(10f, 20f), 2f, size), "within bounds: kept")
+    }
+
+    @Test
+    fun bookmarksAndVisitsStoreWhatAndroidStores() {
+        val thread =
+            Thread(
+                key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
+                originalPost = post(1, files = 1),
+                stats = ThreadStats(replyCount = 12),
+            )
+
+        val bookmark = thread.toBookmark(nowMillis = 5L)
+        assertEquals("/g/", bookmark.title, "no subject: the board")
+        assertEquals("https://i.example/1-0s.jpg", bookmark.thumbnailUrl)
+        assertEquals(12, bookmark.lastSeenReplyCount)
+        assertEquals(0, bookmark.unreadCount, "nothing unread at the moment it is bookmarked")
+        assertEquals(5L, bookmark.createdAtMillis)
+        assertTrue(bookmark.isWatched, "watched, so the board and watch list show it as on Android")
+
+        val visit = thread.toHistoryEntry(nowMillis = 7L)
+        assertEquals(PostId(1), visit.lastReadPostId)
+        assertEquals(7L, visit.lastVisitedMillis)
+    }
+
+    @Test
+    fun feedRowsNameTheBoardLikeAndroidAndKeepSitesApart() {
+        val thread =
+            CatalogThread(
+                key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(42)),
+                originalPost = post(42, files = 0),
+                stats = ThreadStats(),
+            )
+
+        val row = FeedThread(ProviderId("site"), thread).toFeedRow(nowMillis = 0L, read = true)
+
+        assertEquals("/g/", row.board)
+        assertEquals("site/g/42", row.id, "another site's /g/42 is a different row")
+        assertEquals("42", row.threadNumber)
+        assertTrue(row.read)
     }
 
     private fun post(

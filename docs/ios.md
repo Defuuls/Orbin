@@ -6,26 +6,35 @@ design system and every `ui-next` screen. What is iOS-only is small:
 
 | Part | Where | What it does |
 | --- | --- | --- |
-| `:app-ios` | `app-ios/` | The iOS composition root (Kotlin). Builds the providers over Ktor's Darwin engine, holds navigation and loading state (`Browser`), and draws the shared screens. Linked into the app as the static `OrbinKit` framework. |
+| `:app-ios` | `app-ios/` | The iOS composition root (Kotlin). Builds the providers over Ktor's Darwin engine, opens the shared database, holds navigation and loading state (`Browser`), and draws the shared screens. Linked into the app as the static `OrbinKit` framework. |
 | Xcode project | `iosApp/` | A SwiftUI shell that hosts `MainViewController()` full screen, plus the app icon and `Info.plist`. Generated from `iosApp/project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen); the `.xcodeproj` is not committed. |
 
 ## What it does so far
 
-A read-only reader so far:
+A reader, so far:
 
+- the feed, the start screen as on Android: the newest threads of every board you follow, on
+  every site, sorted board A–Z and newest first within a board, with per-board thread limits and
+  the permanent filter applied as on Android. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), with one site being down never
-  hiding the other's boards;
+  hiding the other's boards, and a switch on each to follow it;
 - a board's catalog, with thumbnails;
 - a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
   that open in the browser when they pass the same https check Android uses;
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
   Video and audio open in the browser, since there is no iOS player yet;
+- watching a thread (the thread screen's watch action bookmarks it) and a reading history that
+  marks the threads you have opened as read in the catalog. Both live in the same Room database
+  as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
-Not there yet: the merged feed, bookmarks and watched threads, an in-app video player, search,
-settings and saved threads. Those depend on Android-only layers today (Room, DataStore, Media3,
-the feature ViewModels) and move over in later steps.
+Followed boards live in a DataStore file beside the database, read and written by the same
+`BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
+
+Not there yet: unread
+counts on watched threads (Android fills them from a background refresh iOS does not have yet), an
+in-app video player, search, settings and saved threads. These move over in later steps.
 
 ## Building on a Mac
 

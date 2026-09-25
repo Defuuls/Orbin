@@ -28,6 +28,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":ui-next"))
             implementation(project(":core:ui"))
+            implementation(project(":storage"))
             implementation(project(":core:model"))
             implementation(project(":provider:api"))
             implementation(project(":provider:vichan"))
@@ -43,6 +44,8 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.room.runtime)
         }
         androidMain.dependencies {
             implementation(project.dependencies.platform(libs.compose.bom))

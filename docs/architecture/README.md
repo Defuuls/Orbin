@@ -13,7 +13,7 @@ The architecture's executable enforcement lives in [engineering quality gates](q
 | --- | --- | --- | --- |
 | Presentation | `app`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes; `ui-next`, `core:ui` and `core:designsystem` shared with iOS† |
 | Domain | `domain` | Use cases, repository **contracts** | no* |
-| Data | `data`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | `data`, `network`, `media` yes; `provider:*` no |
+| Data | `data`, `storage`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | `data`, `network`, `media` yes; `storage` shared with iOS‡; `provider:*` no |
 | Model | `core:model` | Pure domain entities shared by all layers | no |
 | Cross-cutting | `core:common`, `core:common-android`, `core:testing` | Result types, dispatchers, test fixtures | `core:common` no; others yes |
 
@@ -25,6 +25,15 @@ They carry no DI annotations: the Hilt bindings for domain use cases live in `da
 `HttpClient` that `network` builds on the app's OkHttp client, and the Android side of `core:common` — dispatcher qualifiers and their Hilt
 module, external links, the app-lock signal — lives in `core:common-android`, which re-exports
 `core:common`. `domain` exposes `PagingData` through the multiplatform `paging-common`.
+
+‡ `storage` is the Room database shared with iOS (`orbin.kmp.room`): entities, DAOs, the
+`OrbinDatabase` schema (exported to `storage/schemas`) and the repositories built only on it
+(bookmarks, history). It also holds `BoardPreferencesStore`, which keeps followed and favourite
+boards and feed limits in a Preferences DataStore under the keys Android has always used. Android's
+`SettingsRepositoryImpl` delegates to it over its encrypted settings store, and iOS uses a DataStore
+file of its own. Only the schema is shared. `data` opens it on Android, encrypted with
+SQLCipher, with its migrations and Hilt bindings. `:app-ios` opens it through Room's bundled SQLite
+driver. New migrations must use Room's `Migration.migrate(connection)` so they run on both platforms.
 
 † `ui-next`, `core:ui` and `core:designsystem` are Compose Multiplatform (`orbin.kmp.compose`: an Android
 library target plus iOS targets). Their code lives in `commonMain`; what differs per platform goes

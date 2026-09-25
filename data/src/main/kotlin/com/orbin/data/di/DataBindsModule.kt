@@ -4,10 +4,8 @@ import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
-import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.CatalogRepositoryImpl
 import com.orbin.data.repository.DownloadRepositoryImpl
-import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.repository.ImageCacheRepositoryImpl
 import com.orbin.data.repository.SavedThreadRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
@@ -18,11 +16,9 @@ import com.orbin.data.version.VersionGuardRepositoryImpl
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
-import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
-import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
@@ -65,14 +61,6 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsThreadRepository(impl: ThreadRepositoryImpl): ThreadRepository
-
-    @Binds
-    @Singleton
-    fun bindsBookmarkRepository(impl: BookmarkRepositoryImpl): BookmarkRepository
-
-    @Binds
-    @Singleton
-    fun bindsHistoryRepository(impl: HistoryRepositoryImpl): HistoryRepository
 
     @Binds
     @Singleton

@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.orbin.android.library)
     alias(libs.plugins.orbin.android.hilt)
-    alias(libs.plugins.orbin.android.room)
 }
 
 android {
@@ -12,10 +11,19 @@ android {
     }
 
     namespace = "com.orbin.data"
+
+    // MigrationTestHelper loads the exported schemas as Android assets, even under Robolectric.
+    // The schema itself is `:storage`'s, shared with iOS.
+    sourceSets {
+        getByName("test") { assets.directories.add("$rootDir/storage/schemas") }
+    }
 }
 
 dependencies {
     api(project(":domain"))
+    // The shared Room schema, DAOs and database-only repositories. This module opens that database
+    // (encrypted, with its migrations) and wires everything into Hilt.
+    api(project(":storage"))
     implementation(project(":provider:api"))
     implementation(project(":network"))
     implementation(project(":core:common-android"))
@@ -29,6 +37,7 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.room.runtime)
     implementation(libs.sqlcipher.android)
 
     testImplementation(libs.junit)
