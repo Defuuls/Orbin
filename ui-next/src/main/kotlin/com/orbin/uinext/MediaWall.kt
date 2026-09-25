@@ -113,10 +113,11 @@ fun MediaWallScreen(
                         ScreenTitle(
                             text = stringResource(R.string.next_all_media_title),
                             subtitle = stringResource(R.string.next_all_media_subtitle),
+                            inset = 0.dp,
                         )
                         if (showSizeControl) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 MetaLine(stringResource(R.string.next_media_size_small))
@@ -143,7 +144,7 @@ fun MediaWallScreen(
                         }
                         if (scanning || deepScanning || failed > 0) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (deepScanning) {
@@ -190,9 +191,8 @@ fun MediaWallScreen(
                         } else {
                             MediaTile(modifier = shape, seed = index, radius = 16.dp)
                         }
-                        Pill(
+                        MediaBadge(
                             text = cell.board,
-                            tint = boardHue(cell.board),
                             modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
                         )
                     }

@@ -72,6 +72,7 @@ fun NextBoardScreen(
                 subtitle = stringResource(R.string.board_loading),
                 where = board,
                 modifier = modifier,
+                skeleton = true,
             )
             return@NextTheme
         }

@@ -125,6 +125,7 @@ class ProposalScreenshotTest {
                 title = "/g/",
                 subtitle = "Loading…",
                 where = "/g/",
+                skeleton = true,
             )
         }
 

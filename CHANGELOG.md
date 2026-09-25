@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Improved
+- The feed uses the same adaptive grid as board catalogs, so a phone shows two columns instead of one.
+- Very tall media is letterboxed at 4:5 in grids, so one portrait image can no longer fill the screen. The full image is one tap away.
+- Every screen title starts at the same 16dp line. Grid screens used to indent theirs by 32dp.
+- The feed and board catalogs show skeleton cards in the grid's shape while loading, instead of an empty page.
+- Board labels on media use white text on a dark scrim, so they stay readable over any image.
+
 ### Added
 - Media gestures, with no settings behind them:
   - Double tap an image to zoom in on that spot, and again to zoom out.

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +32,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -239,6 +244,9 @@ fun ScreenTitle(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     size: Int = 34,
+    // Grids already inset their content by the gutter; they pass zero so every title on every
+    // screen starts at the same 16dp line.
+    inset: Dp = NextSpace.gutter,
 ) {
     val titleStyle =
         when {
@@ -249,8 +257,8 @@ fun ScreenTitle(
     Column(
         modifier =
             modifier.padding(
-                start = NextSpace.gutter,
-                end = NextSpace.gutter,
+                start = inset,
+                end = inset,
                 top = NextSpace.titleTop + 14.dp,
                 bottom = NextSpace.titleBottom,
             ),
@@ -450,6 +458,31 @@ fun Pill(
     )
 }
 
+/**
+ * A board label drawn over media: white on a dark scrim, so it reads on any image, the way the
+ * play button does. [Pill] is for labels on the app's own surfaces.
+ */
+@Composable
+fun MediaBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = NextType.caption2,
+        color = Color.White,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(NextRadius.tight))
+                .background(Color.Black.copy(alpha = MEDIA_BADGE_SCRIM))
+                .padding(horizontal = 7.dp, vertical = 3.dp),
+    )
+}
+
+private const val MEDIA_BADGE_SCRIM = 0.55f
+
 /** Where a thumbnail will load: rounded, filled with stand-in artwork rather than flat grey. */
 @Composable
 fun MediaTile(
@@ -466,7 +499,7 @@ fun MediaTile(
         contentAlignment = Alignment.BottomStart,
     ) {
         if (badge != null) {
-            Pill(text = badge, tint = boardHue(badge), modifier = Modifier.padding(7.dp))
+            MediaBadge(text = badge, modifier = Modifier.padding(7.dp))
         }
     }
 }
@@ -570,6 +603,8 @@ fun MessageScreen(
     where: String? = null,
     destination: NextDestination? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
+    // Loading a grid: show the grid's shape instead of an empty page, so the layout does not jump.
+    skeleton: Boolean = false,
 ) {
     NextScaffold(
         where = where.takeIf { !destination.drawsPill() },
@@ -584,6 +619,49 @@ fun MessageScreen(
                     InlineAction(label = actionLabel, accent = true, onClick = onAction)
                 }
             }
+            if (skeleton) SkeletonGrid(modifier = Modifier.weight(1f))
         }
     }
 }
+
+/**
+ * Stand-in cards in the grid's own shape while its content loads. Hidden from accessibility
+ * services: the screen's subtitle already says it is loading.
+ */
+@Composable
+internal fun SkeletonGrid(modifier: Modifier = Modifier) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(GRID_MIN_CELL),
+        modifier = modifier.fillMaxWidth().clearAndSetSemantics {},
+        contentPadding = PaddingValues(horizontal = GRID_SIDE_INSET),
+        userScrollEnabled = false,
+    ) {
+        items(SKELETON_CARDS) {
+            Column(
+                modifier =
+                    Modifier
+                        .padding(GRID_CELL_PADDING)
+                        .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                        .background(next.raised),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .background(next.hairline.copy(alpha = SKELETON_TILE_ALPHA)),
+                )
+                Column(modifier = Modifier.padding(GRID_TEXT_INSET)) {
+                    PendingBar(width = 36.dp, height = 10.dp)
+                    Gap(8)
+                    PendingBar(width = 120.dp, height = 14.dp)
+                    Gap(6)
+                    PendingBar(width = 88.dp, height = 10.dp)
+                }
+            }
+        }
+    }
+}
+
+private const val SKELETON_CARDS = 6
+private const val SKELETON_TILE_ALPHA = 0.5f

@@ -67,7 +67,7 @@ fun BoardScreen(
             val header: @Composable () -> Unit = {
                 Column {
                     Row(
-                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
+                        modifier = Modifier.padding(top = 26.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         BoardDot(board, size = 10.dp)
@@ -84,14 +84,12 @@ fun BoardScreen(
                         text = description,
                         fontSize = 14.sp,
                         color = next.muted,
-                        modifier = Modifier.padding(start = GUTTER, top = 6.dp),
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                     Gap(16)
                     Row(
                         modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = GUTTER - 4.dp),
+                            Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(modifier = Modifier.weight(1f))
