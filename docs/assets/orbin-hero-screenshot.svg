@@ -1,6 +1,6 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="155-Ugli">
-  <title id="title">Orbin grid-first feed on a compact Android phone</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 155 Ugli showing the adaptive two-column thread grid on a compact phone, Color themes, Mild to Wild sizing, and privacy defaults.</desc>
+  <title id="title">Orbin single-column feed on a compact Android phone</title>
+  <desc id="desc">Screenshot-style illustration of Orbin 155 Ugli showing the single-column card feed on a compact phone, Color themes, Downloads tab, and privacy defaults.</desc>
   <rect width="1200" height="760" fill="#F4F6FA"/>
   <rect x="64" y="72" width="1072" height="616" rx="40" fill="#FFFFFF"/>
 
@@ -11,47 +11,93 @@
   <rect x="96" y="218" width="132" height="36" rx="18" fill="#DCE6FF"/>
   <text id="release-label" x="162" y="241" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">155 · Ugli</text>
 
-  <!-- Phone: centered, screen inset with room for GRID / IMAGES -->
-  <rect x="360" y="100" width="340" height="520" rx="40" fill="#202431"/>
-  <rect x="376" y="116" width="308" height="488" rx="28" fill="#F8F9FC"/>
-  <text x="400" y="160" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#202431">Feed</text>
-  <text x="560" y="158" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#3D5FAD">GRID</text>
-  <text x="604" y="158" font-family="Arial,sans-serif" font-size="11" fill="#778092">IMAGES</text>
+  <text x="96" y="296" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#202431">• One-column feed</text>
+  <text x="96" y="322" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Downloads middle tab</text>
+  <text x="96" y="348" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Uncropped media</text>
+  <text x="96" y="374" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Color themes on Next</text>
+  <text x="96" y="400" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Encrypted local storage</text>
+  <text x="96" y="440" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#274B9F">Material 3 Expressive</text>
 
-  <!-- 2x2 cards inside screen (content box 400–668 x 180–580) -->
-  <rect x="400" y="180" width="124" height="168" rx="16" fill="#FFFFFF"/>
-  <rect x="536" y="180" width="124" height="168" rx="16" fill="#FFFFFF"/>
-  <rect x="400" y="364" width="124" height="168" rx="16" fill="#FFFFFF"/>
-  <rect x="536" y="364" width="124" height="168" rx="16" fill="#F0F2F6"/>
-  <rect x="412" y="192" width="100" height="56" rx="10" fill="#DDE5F4"/>
-  <rect x="548" y="192" width="100" height="56" rx="10" fill="#E6E1EF"/>
-  <rect x="412" y="376" width="100" height="56" rx="10" fill="#E4EBD8"/>
-  <rect x="548" y="376" width="100" height="56" rx="10" fill="#E1E4EA"/>
-  <text x="412" y="274" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Readable</text>
-  <text x="412" y="292" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">compact grid</text>
-  <text x="548" y="274" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Provider quirks</text>
-  <text x="548" y="292" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">normalized</text>
-  <text x="412" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Subjects get</text>
-  <text x="412" y="476" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">room to breathe</text>
-  <text x="548" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">Read state stays</text>
-  <text x="548" y="476" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#596171">quiet</text>
+  <!-- Phone frame (x 360–700, centered) -->
+  <rect x="360" y="88" width="340" height="544" rx="40" fill="#202431"/>
+  <rect x="376" y="104" width="308" height="512" rx="28" fill="#F8F9FC"/>
+
+  <defs>
+    <clipPath id="phone-screen-clip">
+      <rect x="376" y="104" width="308" height="512" rx="28"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#phone-screen-clip)">
+    <!-- Header -->
+    <text x="396" y="138" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#1D2233">Feed</text>
+    <text x="396" y="154" font-family="Arial,sans-serif" font-size="10.5" fill="#717A8C">8 threads across 7 boards</text>
+    <!-- Gear icon -->
+    <circle cx="658" cy="140" r="12" fill="#F0F2F7"/>
+    <path d="M658 135v10m-5-5h10m-3.5-3.5l7 7m0-7l-7 7" stroke="#485062" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="658" cy="140" r="4" fill="#F0F2F7" stroke="#485062" stroke-width="1.5"/>
+
+    <!-- Search box -->
+    <rect x="394" y="166" width="272" height="34" rx="17" fill="#F0F2F7"/>
+    <circle cx="410" cy="183" r="5" fill="none" stroke="#778092" stroke-width="1.8"/>
+    <line x1="414" y1="187" x2="418" y2="191" stroke="#778092" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="424" y="187" font-family="Arial,sans-serif" font-size="11" fill="#778092">Sift through your threads</text>
+
+    <!-- Divider -->
+    <line x1="394" y1="208" x2="666" y2="208" stroke="#E6E9F0" stroke-width="1"/>
+
+    <!-- Board Section Header -->
+    <text x="394" y="228" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#1D2233">/g/</text>
+    <text x="666" y="228" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#778092">5 threads</text>
+
+    <!-- Single Column Card -->
+    <rect x="394" y="238" width="272" height="268" rx="16" fill="#FFFFFF" stroke="#E5EAF3" stroke-width="1"/>
+    <!-- Uncropped media preview in soft lavender -->
+    <rect x="394" y="238" width="272" height="156" rx="16" fill="#E8DCF8"/>
+    <rect x="394" y="378" width="272" height="16" fill="#FFFFFF"/>
+    <!-- Post text and metadata -->
+    <text x="408" y="412" font-family="Arial,sans-serif" font-size="10" fill="#778092">4m</text>
+    <text x="408" y="430" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#1D2233">Anyone else running a home server on ARM?</text>
+    <text x="408" y="448" font-family="Arial,sans-serif" font-size="10" fill="#778092">#8834912 · 218 replies · 31 files</text>
+    <text x="408" y="472" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">Been running a small NAS on an ARM board for about</text>
+    <text x="408" y="488" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">8 months now. Idle draw is under four watts...</text>
+
+    <!-- Peeking second card -->
+    <rect x="394" y="516" width="272" height="40" rx="16" fill="#FAD1D8"/>
+
+    <!-- Bottom Navigation Bar (Feed · Downloads · Boards) -->
+    <rect x="376" y="556" width="308" height="60" fill="#F4F5F9" stroke="#E6E9F0" stroke-width="1"/>
+    <!-- Active Feed tab pill -->
+    <rect x="388" y="562" width="86" height="34" rx="17" fill="#E8DCF8"/>
+    <path d="M431 568l6 5v7h-4v-4h-4v4h-4v-7z" fill="#202431"/>
+    <text x="431" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" font-weight="700" fill="#202431">Feed</text>
+    <!-- Downloads tab -->
+    <path d="M530 568v6m-3-3l3 3 3-3m-5 5h10" stroke="#5A6272" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text x="530" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#5A6272">Downloads</text>
+    <!-- Boards tab -->
+    <rect x="625" y="569" width="4" height="4" rx="1" fill="#5A6272"/>
+    <rect x="631" y="569" width="4" height="4" rx="1" fill="#5A6272"/>
+    <rect x="625" y="575" width="4" height="4" rx="1" fill="#5A6272"/>
+    <rect x="631" y="575" width="4" height="4" rx="1" fill="#5A6272"/>
+    <text x="630" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#5A6272">Boards</text>
+  </g>
 
   <!-- Right column highlights (x 740–1100) -->
   <text x="740" y="150" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#202431">Current release highlights</text>
 
-  <text x="740" y="206" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
-  <text x="740" y="230" font-family="Arial,sans-serif" font-size="13" fill="#596171">Yotsuba, Warosu, Miku, Lain</text>
-  <text x="740" y="250" font-family="Arial,sans-serif" font-size="13" fill="#596171">and more on the Next shell</text>
+  <text x="740" y="204" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Single-column feed</text>
+  <text x="740" y="228" font-family="Arial,sans-serif" font-size="13" fill="#596171">Full-width cards with uncropped</text>
+  <text x="740" y="248" font-family="Arial,sans-serif" font-size="13" fill="#596171">media down to 9:16 and post text</text>
 
-  <text x="740" y="300" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Mild → Wild sizing</text>
-  <text x="740" y="324" font-family="Arial,sans-serif" font-size="13" fill="#596171">Feed and All Media tiles</text>
-  <text x="740" y="344" font-family="Arial,sans-serif" font-size="13" fill="#596171">from 96–400dp</text>
+  <text x="740" y="298" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Downloads tab</text>
+  <text x="740" y="322" font-family="Arial,sans-serif" font-size="13" fill="#596171">Dedicated middle tab with live</text>
+  <text x="740" y="342" font-family="Arial,sans-serif" font-size="13" fill="#596171">progress and one-tap retry</text>
 
-  <text x="740" y="394" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Grid-first shell</text>
-  <text x="740" y="418" font-family="Arial,sans-serif" font-size="13" fill="#596171">Adaptive cards, All Media,</text>
-  <text x="740" y="438" font-family="Arial,sans-serif" font-size="13" fill="#596171">and Command polish</text>
+  <text x="740" y="392" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
+  <text x="740" y="416" font-family="Arial,sans-serif" font-size="13" fill="#596171">Yotsuba, Warosu, Miku, Lain</text>
+  <text x="740" y="436" font-family="Arial,sans-serif" font-size="13" fill="#596171">and more on the Next shell</text>
 
-  <text x="740" y="488" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
-  <text x="740" y="512" font-family="Arial,sans-serif" font-size="13" fill="#596171">Encrypted storage and</text>
-  <text x="740" y="532" font-family="Arial,sans-serif" font-size="13" fill="#596171">HTTPS-only networking</text>
+  <text x="740" y="486" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
+  <text x="740" y="510" font-family="Arial,sans-serif" font-size="13" fill="#596171">Encrypted storage at rest and</text>
+  <text x="740" y="530" font-family="Arial,sans-serif" font-size="13" fill="#596171">DNS-over-HTTPS networking</text>
 </svg>
