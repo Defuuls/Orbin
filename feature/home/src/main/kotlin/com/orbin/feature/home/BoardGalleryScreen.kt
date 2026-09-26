@@ -51,7 +51,7 @@ fun BoardGalleryScreen(
         }
 
     val tiles =
-        remember(visibleBoards, subscribed) {
+        remember(visibleBoards, subscribed, providerId) {
             visibleBoards.map { board ->
                 BoardTile(
                     id = board.id.value,
@@ -59,6 +59,7 @@ fun BoardGalleryScreen(
                     title = board.title,
                     nsfw = board.isNsfw,
                     followed = board.id.value in subscribed,
+                    site = providerId,
                 )
             }
         }

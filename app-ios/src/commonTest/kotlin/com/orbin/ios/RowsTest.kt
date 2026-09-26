@@ -55,6 +55,7 @@ class RowsTest {
         assertNotEquals(one.id, two.id)
         assertEquals("/b/", one.path)
         assertEquals("Random · One", one.title)
+        assertEquals("one", one.site)
     }
 
     @Test
