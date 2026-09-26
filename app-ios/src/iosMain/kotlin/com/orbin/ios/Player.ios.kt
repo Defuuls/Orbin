@@ -14,7 +14,7 @@ import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVKit.AVPlayerViewController
-import platform.CoreGraphics.CGRectZero
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
 import platform.UIKit.UIDevice
@@ -63,7 +63,7 @@ internal actual fun NativeWebMPlayer(
 ) {
     val webView =
         remember(url) {
-            WKWebView(frame = CGRectZero, configuration = WKWebViewConfiguration()).apply {
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = WKWebViewConfiguration()).apply {
                 NSURL.URLWithString(url)?.let { loadRequest(NSURLRequest(uRL = it)) }
             }
         }

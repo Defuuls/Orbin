@@ -37,7 +37,6 @@ class DeviceBackupFiles : BackupFiles {
         if (!contents.encodeToByteArray().toNSData().writeToURL(file, atomically = true)) return false
         return suspendCoroutine { continuation ->
             val sheet = UIActivityViewController(activityItems = listOf(file), applicationActivities = null)
-            sheet.popoverPresentationController?.sourceView = presenter.view
             sheet.completionWithItemsHandler = { _, completed, _, _ -> continuation.resume(completed) }
             presenter.presentViewController(sheet, animated = true, completion = null)
         }
