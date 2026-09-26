@@ -106,6 +106,7 @@ class BackupService
         private suspend fun restoreSettings(settings: AppSettings) =
             with(settingsRepository) {
                 setHideNsfwBoards(settings.hideNsfwBoards)
+                setCoverViolentMedia(settings.coverViolentMedia)
                 setDeepMediaScan(settings.deepMediaScan)
                 setThemeMode(settings.themeMode)
                 setAmoled(settings.amoled)

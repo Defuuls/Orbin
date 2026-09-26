@@ -41,6 +41,7 @@ class SettingsRepositoryImplTest {
 
     private suspend fun applyAllSettings(repository: SettingsRepositoryImpl) {
         repository.setHideNsfwBoards(true)
+        repository.setCoverViolentMedia(false)
         repository.setDeepMediaScan(true)
         repository.setThemeMode(AppThemeMode.DARK)
         repository.setAmoled(true)
@@ -54,6 +55,7 @@ class SettingsRepositoryImplTest {
     private fun expectedSettings(): AppSettings =
         AppSettings.Default.copy(
             hideNsfwBoards = true,
+            coverViolentMedia = false,
             deepMediaScan = true,
             themeMode = AppThemeMode.DARK,
             amoled = true,

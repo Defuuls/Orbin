@@ -110,12 +110,6 @@ object PermanentContentFilter {
             "rent",
         )
 
-    /** A single letter or digit — what counts as being "inside a word". */
-    private const val WORD_CHAR = "[\\p{L}\\p{N}]"
-
-    /** A single character that is neither a letter nor a digit, i.e. a word boundary. */
-    private const val SEPARATOR = "[^\\p{L}\\p{N}]"
-
     /**
      * One pattern for the whole list. Building it once matters: this runs per post, per reply and
      * per catalog cell on every settings change and every page load.
@@ -125,8 +119,8 @@ object PermanentContentFilter {
      * `self-harm` and `selfharm`. The alternation is wrapped in lookarounds rather than `\\b`
      * because `\\b` would treat `_` as a word character and miss `gore_video`.
      */
-    private val alwaysPattern: Regex = compile(terms)
-    private val harshPattern: Regex = compile(terms + harshTerms)
+    private val alwaysPattern: Regex = wholeWordPattern(terms)
+    private val harshPattern: Regex = wholeWordPattern(terms + harshTerms)
 
     fun matches(text: String?): Boolean = matches(text, includeHarsh = false)
 
@@ -142,21 +136,31 @@ object PermanentContentFilter {
         texts: Iterable<String?>,
         includeHarsh: Boolean = false,
     ): Boolean = texts.any { matches(it, includeHarsh) }
-
-    private fun compile(source: Set<String>): Regex =
-        Regex(
-            source
-                .sortedByDescending { it.length }
-                .joinToString(
-                    separator = "|",
-                    prefix = "(?<!$WORD_CHAR)(?:",
-                    postfix = ")(?!$WORD_CHAR)",
-                ) { term ->
-                    term.split(' ').joinToString("$SEPARATOR*") { word -> Regex.escape(word) }
-                },
-            RegexOption.IGNORE_CASE,
-        )
 }
+
+/**
+ * One case-insensitive pattern matching any of [terms] as whole words: letters and digits on either
+ * side mean "inside a word", so `gore` does not match `categorem`. A space in a term means
+ * "separators or nothing", so `self harm` also matches `self-harm` and `selfharm`. Longer terms
+ * come first so an alternation never stops at a shorter prefix.
+ */
+internal fun wholeWordPattern(terms: Set<String>): Regex =
+    Regex(
+        terms
+            .sortedByDescending { it.length }
+            .joinToString(
+                separator = "|",
+                prefix = "(?<!$WORD_CHAR)(?:",
+                postfix = ")(?!$WORD_CHAR)",
+            ) { term -> term.split(' ').joinToString("$SEPARATOR*") { word -> Regex.escape(word) } },
+        RegexOption.IGNORE_CASE,
+    )
+
+/** A single letter or digit — what counts as being "inside a word". */
+private const val WORD_CHAR = "[\\p{L}\\p{N}]"
+
+/** A single character that is neither a letter nor a digit, i.e. a word boundary. */
+private const val SEPARATOR = "[^\\p{L}\\p{N}]"
 
 /**
  * Whether this post is caught by the permanent filter — its text, its poster name, or the name of

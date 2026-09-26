@@ -10,6 +10,7 @@ encrypted.
 | Setting | What it does |
 | --- | --- |
 | Hide NSFW boards | Removes NSFW boards from the board list, the feed and All media. |
+| Cover violent media | On by default. Puts a spoiler cover over the images and videos of posts whose subject, text or filename mentions violence, accidents or graphic footage (for example *fight*, *car crash*, *bodycam*, *nsfl*). If a thread's opening post does, every file in the thread is covered. Open the post to see the media. It reads text only, so unlabelled media is not covered. Clearly labelled gore is hidden outright by a filter that cannot be turned off. |
 | Theme | Light, dark, or follow the system. |
 | True black | Uses pure black surfaces in dark mode. |
 | Feed columns | Foldables and tablets only. How many columns the feed shows on a wide screen: 1–3 on an unfolded foldable ("Feed columns when unfolded"), 1–4 on a tablet. Starts at 2. A foldable's front screen, a phone, and any window narrower than 600dp always show one column. |

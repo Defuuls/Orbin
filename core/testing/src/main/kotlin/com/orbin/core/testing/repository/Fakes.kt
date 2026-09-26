@@ -152,6 +152,10 @@ class FakeSettingsRepository(
         update { copy(hideNsfwBoards = enabled) }
     }
 
+    override suspend fun setCoverViolentMedia(enabled: Boolean) {
+        update { copy(coverViolentMedia = enabled) }
+    }
+
     override suspend fun setDeepMediaScan(enabled: Boolean) {
         update { copy(deepMediaScan = enabled) }
     }

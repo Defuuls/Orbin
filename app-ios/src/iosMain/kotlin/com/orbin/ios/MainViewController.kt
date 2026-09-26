@@ -9,8 +9,10 @@ import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
+import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.first
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
@@ -33,7 +35,11 @@ fun MainViewController(): UIViewController {
     val scope = MainScope()
     val browser =
         Browser(
-            providers = orbinProviders(client),
+            // The same violent-media cover Android applies, following the same setting.
+            providers =
+                orbinProviders(client).map { provider ->
+                    ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
+                },
             bookmarks = BookmarkRepositoryImpl(database.bookmarkDao()),
             history = HistoryRepositoryImpl(database.historyDao()),
             boardPreferences = BoardPreferencesStore(preferences),

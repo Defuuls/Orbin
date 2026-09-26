@@ -1,10 +1,13 @@
 package com.orbin.data.provider
 
 import com.orbin.core.model.ProviderId
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.InstrumentedImageBoardProvider
 import com.orbin.provider.api.ProviderDiagnostics
 import com.orbin.provider.api.ProviderRegistry
+import com.orbin.provider.api.ViolentMediaCoverProvider
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,7 +17,8 @@ import javax.inject.Singleton
  * engine is added.
  *
  * Every provider is wrapped once at this seam with contract validation and privacy-safe timing
- * diagnostics. Features and repositories therefore get the same behavior without engine-specific
+ * diagnostics, then with the violent-media cover the reader can turn off in Settings. Features
+ * and repositories therefore get the same behavior without engine-specific
  * instrumentation code.
  */
 @Singleton
@@ -23,11 +27,14 @@ class ProviderRegistryImpl
     constructor(
         providers: Set<@JvmSuppressWildcards ImageBoardProvider>,
         diagnostics: ProviderDiagnostics,
+        settingsRepository: SettingsRepository,
     ) : ProviderRegistry {
         private val providers: List<ImageBoardProvider> =
             providers
                 .map { InstrumentedImageBoardProvider(it, diagnostics) }
-                .sortedBy { it.metadata.displayName }
+                .map { provider ->
+                    ViolentMediaCoverProvider(provider) { settingsRepository.settings.first().coverViolentMedia }
+                }.sortedBy { it.metadata.displayName }
 
         private val byId: Map<ProviderId, ImageBoardProvider> =
             this.providers.associateBy { it.metadata.id }
