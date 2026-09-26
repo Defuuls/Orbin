@@ -61,7 +61,7 @@ class UniformityTest {
         assertThat(NextDestination.entries).containsExactly(
             NextDestination.FEED,
             NextDestination.BOARDS,
-            NextDestination.MEDIA,
+            NextDestination.DOWNLOADS,
             NextDestination.SETTINGS,
         )
     }

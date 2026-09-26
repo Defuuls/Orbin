@@ -41,8 +41,8 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Feed, Media and Boards own DestinationPill chrome; Settings, threads, catalogs,
- * Search and Downloads draw no bottom chrome, since each already carries its own large title.
+ * Root composable. Feed, Downloads and Boards own DestinationPill chrome; Settings, threads,
+ * catalogs and Search draw no bottom chrome, since each already carries its own large title.
  */
 @Composable
 fun OrbinApp(
@@ -57,7 +57,6 @@ fun OrbinApp(
         val snackbarHostState = LocalOrbinSnackbarHostState.current
 
         val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
-        val isAllMedia = currentDestination?.hasRoute(Route.AllMedia::class) == true
         // The three screens built out of the same scrolling list and the same floating rail. The
         // setting used to reach only the feed, so a reader who had turned it on watched the rail
         // slide away there and stay pinned on a catalog drawn from the identical row — which reads
@@ -65,8 +64,7 @@ fun OrbinApp(
         val scrollAwayScreen =
             isNextFeed ||
                 currentDestination?.hasRoute(Route.Board::class) == true ||
-                currentDestination?.hasRoute(Route.BoardGallery::class) == true ||
-                isAllMedia
+                currentDestination?.hasRoute(Route.BoardGallery::class) == true
         val chromeHidesOnScroll = scrollAwayScreen
         // The banner floats over the top of whatever screen is showing rather than pushing it
         // down: losing the network should not make the whole layout jump, twice.

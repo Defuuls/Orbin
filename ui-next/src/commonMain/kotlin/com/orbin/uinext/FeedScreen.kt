@@ -41,7 +41,7 @@ fun FeedScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
@@ -77,14 +77,14 @@ fun FeedScreen(
         onDispose { activePreviewCallback.value(null) }
     }
 
-    val hasTabs = onOpenBoards != null || onOpenMedia != null
+    val hasTabs = onOpenBoards != null || onOpenDownloads != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
                 when (dest) {
                     NextDestination.FEED -> Unit
                     NextDestination.BOARDS -> onOpenBoards?.invoke()
-                    NextDestination.MEDIA -> onOpenMedia?.invoke()
+                    NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> Unit
                 }
             }

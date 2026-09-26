@@ -1,22 +1,22 @@
-# Orbin 153 — Strawberry
+# Orbin 154 — Tangerine
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 153
-codename     = "Strawberry"
-version_code = 171
+number       = 154
+codename     = "Tangerine"
+version_code = 172
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Media labelled as violent waits behind a spoiler cover."
+highlight = "Downloads takes the middle tab, where Media used to be."
 
 summary = [
-  "bump Orbin to 153-Strawberry / versionCode 171",
-  "cover the media of posts labelled as violent",
+  "bump Orbin to 154-Tangerine / versionCode 172",
+  "make the middle tab Downloads instead of Media",
 ]
 
 [changelog]
-Added = [
-  "**Cover violent media**, on by default in Settings. Images and videos in posts whose subject, text or filename mentions violence, accidents or graphic footage (fight, car crash, bodycam, nsfl and similar) show a spoiler cover until you open them, and never autoplay. When a thread's opening post is labelled, every file in the thread is covered. It reads text only; clearly labelled gore is still hidden outright.",
+Changed = [
+  "The middle tab is now **Downloads**, listing everything you saved with its progress and a retry for failed files. It replaces the Media tab and its All media wall; each board's own media wall stays, reached from its catalog, and its **Saved ›** opens Downloads.",
 ]

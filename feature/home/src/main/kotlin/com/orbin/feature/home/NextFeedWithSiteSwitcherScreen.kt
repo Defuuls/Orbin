@@ -16,7 +16,7 @@ fun NextFeedWithSiteSwitcherScreen(
     hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
@@ -28,7 +28,7 @@ fun NextFeedWithSiteSwitcherScreen(
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
         onOpenBoards = onOpenBoards,
-        onOpenMedia = onOpenMedia,
+        onOpenDownloads = onOpenDownloads,
         headerContent = {
             if (switcherViewModel.sites.size > 1) {
                 PlatformSegments(

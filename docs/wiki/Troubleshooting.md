@@ -44,12 +44,12 @@ The file is plaintext. If the URLs are sensitive, store or delete it accordingly
 
 ### Where do downloads go?
 
-Downloads go to `Downloads/Orbin`, in a folder per board and thread. **Saved ›** under the All
-media title lists them.
+Downloads go to `Downloads/Orbin`, in a folder per board and thread. The **Downloads** tab lists
+them.
 
-### Why is All media incomplete?
+### Why is a board's media wall incomplete?
 
-The normal All media sweep discovers what catalogs expose, which is primarily opening-post media.
+A board's media wall discovers what its catalog exposes, which is primarily opening-post media.
 Enable **Deep scan** if you also need attachments from replies. Deep scan walks threads and is much
 slower by design.
 

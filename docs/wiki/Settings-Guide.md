@@ -9,7 +9,7 @@ encrypted.
 
 | Setting | What it does |
 | --- | --- |
-| Hide NSFW boards | Removes NSFW boards from the board list, the feed and All media. |
+| Hide NSFW boards | Removes NSFW boards from the board list and the feed. |
 | Cover violent media | On by default. Puts a spoiler cover over the images and videos of posts whose subject, text or filename mentions violence, accidents or graphic footage (for example *fight*, *car crash*, *bodycam*, *nsfl*). If a thread's opening post does, every file in the thread is covered. Open the post to see the media. It reads text only, so unlabelled media is not covered. Clearly labelled gore is hidden outright by a filter that cannot be turned off. |
 | Theme | Light, dark, or follow the system. |
 | True black | Uses pure black surfaces in dark mode. |
@@ -32,7 +32,7 @@ and preferences are encrypted, but portable exports are intentionally readable o
 
 ## Elsewhere
 
-- **Saved files** open from **Saved ›** under the All media title.
+- **Saved files** are listed in the **Downloads** tab.
 - **Search** opens from **Search threads ›** under the Boards title.
 
 ## Decided for you

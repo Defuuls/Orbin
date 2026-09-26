@@ -33,9 +33,6 @@ fun NextAllMediaScreen(
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
-    onOpenFeed: (() -> Unit)? = null,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenSettings: (() -> Unit)? = null,
     title: String? = null,
     onOpenSaved: (() -> Unit)? = null,
     viewModel: AllMediaViewModel = hiltViewModel(),
@@ -55,9 +52,6 @@ fun NextAllMediaScreen(
         modifier = modifier,
         hideRailOnScroll = hideRailOnScroll,
         onChromeVisibleChange = onChromeVisibleChange,
-        onOpenFeed = onOpenFeed,
-        onOpenBoards = onOpenBoards,
-        onOpenSettings = onOpenSettings,
     )
 }
 
@@ -76,9 +70,6 @@ fun NextAllMediaContent(
     onRefresh: () -> Unit,
     onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenFeed: (() -> Unit)? = null,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenSettings: (() -> Unit)? = null,
     onSave: ((AllMediaItem) -> Unit)? = null,
     title: String? = null,
     onOpenSaved: (() -> Unit)? = null,
@@ -91,29 +82,11 @@ fun NextAllMediaContent(
     NextTheme {
         // Nothing swept yet and nothing to show: the sweep itself is the content, so the progress
         // line has no grid to sit above.
-        val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenSettings != null
-        val onDestination: ((com.orbin.uinext.NextDestination) -> Unit)? =
-            if (hasTabs) {
-                { dest ->
-                    when (dest) {
-                        com.orbin.uinext.NextDestination.FEED -> onOpenFeed?.invoke()
-                        com.orbin.uinext.NextDestination.BOARDS -> onOpenBoards?.invoke()
-                        com.orbin.uinext.NextDestination.MEDIA -> Unit
-                        com.orbin.uinext.NextDestination.SETTINGS -> onOpenSettings?.invoke()
-                    }
-                }
-            } else {
-                null
-            }
         if (uiState.isInitialLoad) {
             MessageScreen(
                 title = wallTitle,
                 subtitle = stringResource(R.string.next_media_sweeping, uiState.boardsTotal),
                 where = wallTitle,
-                destination =
-                    com.orbin.uinext.NextDestination.MEDIA
-                        .takeIf { hasTabs },
-                onDestination = onDestination,
                 modifier = modifier,
             )
             return@NextTheme
@@ -125,10 +98,6 @@ fun NextAllMediaContent(
                 actionLabel = stringResource(R.string.next_media_rescan),
                 onAction = onRefresh,
                 where = wallTitle,
-                destination =
-                    com.orbin.uinext.NextDestination.MEDIA
-                        .takeIf { hasTabs },
-                onDestination = onDestination,
                 modifier = modifier,
             )
             return@NextTheme
@@ -150,9 +119,6 @@ fun NextAllMediaContent(
                 showSizeControl = showSizeControl,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
-                onOpenFeed = onOpenFeed,
-                onOpenBoards = onOpenBoards,
-                onOpenSettings = onOpenSettings,
                 title = title,
                 onOpenSaved = onOpenSaved,
                 onLongPress = onSave?.let { { cell -> actionsFor = byId[cell.id] } },

@@ -29,6 +29,7 @@ import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.NextChromeHost
+import com.orbin.uinext.NextDestination
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
@@ -63,7 +64,7 @@ fun OrbinNavHost(
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
+                onOpenDownloads = { navController.navigateToTab(Route.Downloads) },
             )
         }
 
@@ -73,7 +74,7 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
-                onOpenMedia = { navController.navigateToTab(Route.AllMedia) },
+                onOpenDownloads = { navController.navigateToTab(Route.Downloads) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
                 onOpenSearch = { navController.navigate(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
@@ -91,26 +92,13 @@ fun OrbinNavHost(
             }
         }
 
-        composable<Route.AllMedia> {
-            NextAllMediaScreen(
-                hideRailOnScroll = chromeHidesOnScroll,
-                onChromeVisibleChange = onChromeVisibleChange,
-                onOpenMedia = { provider, board, thread, _ ->
-                    openThread(provider, board, thread, "No.$thread")
-                },
-                onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
-                onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenSettings = { navController.navigate(Route.Settings) },
-                onOpenSaved = { navController.navigate(Route.Downloads) },
-            )
-        }
-
         composable<Route.BoardMedia> { backStackEntry ->
             NextAllMediaScreen(
                 title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
                 onOpenMedia = { provider, board, thread, _ ->
                     openThread(provider, board, thread, "No.$thread")
                 },
+                onOpenSaved = { navController.navigate(Route.Downloads) },
             )
         }
 
@@ -186,13 +174,16 @@ fun OrbinNavHost(
         }
 
         composable<Route.Downloads> {
-            NextChromeHost(
-                where = "Downloads",
-            ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    DownloadsScreen(onBack = navController::navigateUp)
-                }
-            }
+            DownloadsScreen(
+                onDestination = { destination ->
+                    when (destination) {
+                        NextDestination.FEED -> navController.navigateToTab(Route.NextFeed)
+                        NextDestination.BOARDS -> navController.navigateToTab(Route.BoardGallery)
+                        NextDestination.DOWNLOADS -> Unit
+                        NextDestination.SETTINGS -> navController.navigate(Route.Settings)
+                    }
+                },
+            )
         }
 
         composable<Route.Settings> {
@@ -233,7 +224,7 @@ internal val threadRouteSaver =
 
 /**
  * Switches to one of the three tabs. Each tab sits directly on top of the Feed rather than on top
- * of whatever was open, so Back from Media or Boards always lands on the Feed and switching tabs
+ * of whatever was open, so Back from Downloads or Boards always lands on the Feed and switching tabs
  * never piles screens up.
  */
 private fun NavHostController.navigateToTab(route: Route) {

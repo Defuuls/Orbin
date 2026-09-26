@@ -25,7 +25,7 @@ fun BoardGalleryScreen(
     onOpenBoard: (provider: String, board: String, title: String) -> Unit,
     modifier: Modifier = Modifier,
     onOpenFeed: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     onOpenSearch: (() -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
@@ -64,12 +64,12 @@ fun BoardGalleryScreen(
         }
 
     val onDestination: ((NextDestination) -> Unit)? =
-        if (onOpenFeed != null || onOpenMedia != null || onOpenSettings != null) {
+        if (onOpenFeed != null || onOpenDownloads != null || onOpenSettings != null) {
             { dest ->
                 when (dest) {
                     NextDestination.FEED -> onOpenFeed?.invoke()
                     NextDestination.BOARDS -> Unit
-                    NextDestination.MEDIA -> onOpenMedia?.invoke()
+                    NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> onOpenSettings?.invoke()
                 }
             }
@@ -124,7 +124,7 @@ fun BoardGalleryScreen(
                         },
                         onRandom = { visibleBoards.randomOrNull()?.let(openBoard) },
                         onOpenFeed = onOpenFeed,
-                        onOpenMedia = onOpenMedia,
+                        onOpenDownloads = onOpenDownloads,
                         onOpenSettings = onOpenSettings,
                         onOpenSearch = onOpenSearch,
                         hideRailOnScroll = hideRailOnScroll,

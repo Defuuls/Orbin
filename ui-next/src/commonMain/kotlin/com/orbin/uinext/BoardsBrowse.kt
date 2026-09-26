@@ -76,7 +76,7 @@ fun BoardsScreen(
     onFollowBoard: ((BoardTile, Boolean) -> Unit)? = null,
     onRandom: (() -> Unit)? = null,
     onOpenFeed: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
     onOpenSettings: (() -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -108,14 +108,14 @@ fun BoardsScreen(
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
 
-    val hasTabs = onOpenFeed != null || onOpenMedia != null || onOpenSettings != null
+    val hasTabs = onOpenFeed != null || onOpenDownloads != null || onOpenSettings != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
                 when (dest) {
                     NextDestination.FEED -> onOpenFeed?.invoke()
                     NextDestination.BOARDS -> Unit
-                    NextDestination.MEDIA -> onOpenMedia?.invoke()
+                    NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> onOpenSettings?.invoke()
                 }
             }

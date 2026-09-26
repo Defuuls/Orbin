@@ -148,12 +148,12 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `the tabs are feed, media and boards, and settings is not one of them`() {
+    fun `the tabs are feed, downloads and boards, and settings is not one of them`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, onOpenBoards = {}, onSettings = {}) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
         composeRule.onNode(hasText("Feed") and hasRole(Role.Tab)).assertExists()
-        composeRule.onNode(hasText("Media") and hasRole(Role.Tab)).assertExists()
+        composeRule.onNode(hasText("Downloads") and hasRole(Role.Tab)).assertExists()
         composeRule.onNode(hasText("Boards") and hasRole(Role.Tab)).assertExists()
         composeRule.onNode(hasText("Settings") and hasRole(Role.Tab)).assertDoesNotExist()
     }
@@ -162,7 +162,7 @@ class InterfaceSemanticsTest {
     fun `settings opens from a button in the feed header`() {
         var opened = 0
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, onSettings = { opened++ }) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
         }
         composeRule.onNodeWithContentDescription("Settings").performClick()
         assert(opened == 1) { "expected the header button to open settings" }
