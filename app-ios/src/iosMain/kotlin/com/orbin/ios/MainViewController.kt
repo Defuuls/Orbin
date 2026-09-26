@@ -46,6 +46,8 @@ fun MainViewController(): UIViewController {
             settings = settingsStore,
             scope = scope,
         )
+    // Saving files from threads, and the Downloads tab's list, through the same client and database.
+    val downloads = MediaDownloads(database.downloadDao(), DeviceMediaStore(), ktorMediaFetch(client), scope)
     val lock =
         AppLock(settingsStore.settings, settingsStore::setBiometricLockEnabled, DeviceOwnerAuthenticator(), scope)
     // The app lives as long as this controller, so the observers are never removed.
@@ -62,7 +64,7 @@ fun MainViewController(): UIViewController {
                 .components { add(KtorNetworkFetcherFactory(httpClient = { client })) }
                 .build()
         }
-        OrbinApp(remember { browser }, remember { lock })
+        OrbinApp(remember { browser }, remember { lock }, remember { downloads })
     }
 }
 

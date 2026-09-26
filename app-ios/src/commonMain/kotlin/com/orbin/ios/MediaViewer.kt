@@ -48,9 +48,12 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
+import com.orbin.ios.resources.ios_media_not_saved
 import com.orbin.ios.resources.ios_media_not_viewable
 import com.orbin.ios.resources.ios_media_open_in_browser
 import com.orbin.ios.resources.ios_media_position
+import com.orbin.ios.resources.ios_media_save
+import com.orbin.ios.resources.ios_media_saving
 import com.orbin.ios.resources.ios_media_spoiler_reveal
 import org.jetbrains.compose.resources.stringResource
 
@@ -65,6 +68,7 @@ internal fun MediaViewer(
     files: List<MediaAttachment>,
     startIndex: Int,
     onClose: () -> Unit,
+    onSave: (MediaAttachment) -> Boolean = { false },
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -85,14 +89,42 @@ internal fun MediaViewer(
                 color = Color.White,
                 modifier = Modifier.padding(start = 8.dp),
             )
-            IconButton(onClick = onClose) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = stringResource(Res.string.ios_media_close),
-                    tint = Color.White,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SaveButton(files[pager.currentPage], onSave)
+                IconButton(onClick = onClose) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(Res.string.ios_media_close),
+                        tint = Color.White,
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * Saves the file on screen. Once pressed it says so for that file, and says when a file cannot be
+ * saved at all (not https, or caught by the permanent filter); the Downloads tab has the rest.
+ */
+@Composable
+private fun SaveButton(
+    file: MediaAttachment,
+    onSave: (MediaAttachment) -> Boolean,
+) {
+    var result by remember(file) { mutableStateOf<Boolean?>(null) }
+    TextButton(onClick = { result = onSave(file) }, enabled = result == null) {
+        Text(
+            text =
+                stringResource(
+                    when (result) {
+                        null -> Res.string.ios_media_save
+                        true -> Res.string.ios_media_saving
+                        false -> Res.string.ios_media_not_saved
+                    },
+                ),
+            color = Color.White,
+        )
     }
 }
 

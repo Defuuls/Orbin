@@ -32,6 +32,7 @@ import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -57,6 +58,7 @@ import kotlin.time.Clock
 fun OrbinApp(
     browser: Browser,
     lock: AppLock,
+    downloads: MediaDownloads,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -77,7 +79,7 @@ fun OrbinApp(
         platform = NextPlatform.IOS,
     ) {
         Box(Modifier.fillMaxSize()) {
-            Destination(browser, lock, backStack.last())
+            Destination(browser, lock, downloads, backStack.last())
             LockCover(lock)
         }
     }
@@ -87,16 +89,18 @@ fun OrbinApp(
 private fun Destination(
     browser: Browser,
     lock: AppLock,
+    downloads: MediaDownloads,
     route: Route,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser)
         Route.Boards -> BoardsDestination(browser)
+        Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.ThreadPage -> ThreadDestination(browser)
-        is Route.Media -> MediaDestination(browser, route)
+        is Route.Media -> MediaDestination(browser, downloads, route)
     }
 }
 
@@ -124,6 +128,7 @@ private fun FeedDestination(browser: Browser) {
             onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
             thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
             onOpenBoards = { browser.openTab(Route.Boards) },
+            onOpenDownloads = { browser.openTab(Route.Downloads) },
             onSettings = { browser.open(Route.Settings) },
         )
     }
@@ -146,10 +151,32 @@ private fun BoardsDestination(browser: Browser) {
             onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
             onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
             onOpenFeed = { browser.openTab(Route.Feed) },
+            onOpenDownloads = { browser.openTab(Route.Downloads) },
             onOpenSearch = { browser.open(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
         )
     }
+}
+
+@Composable
+private fun DownloadsDestination(
+    browser: Browser,
+    downloads: MediaDownloads,
+) {
+    val records by downloads.records.collectAsState()
+    DownloadsScreen(
+        records = records,
+        onRetry = downloads::retry,
+        onClear = downloads::clear,
+        onDestination = { destination ->
+            when (destination) {
+                NextDestination.FEED -> browser.openTab(Route.Feed)
+                NextDestination.BOARDS -> browser.openTab(Route.Boards)
+                NextDestination.DOWNLOADS -> Unit
+                NextDestination.SETTINGS -> browser.open(Route.Settings)
+            }
+        },
+    )
 }
 
 @Composable
@@ -351,18 +378,18 @@ private fun ThreadContent(
 @Composable
 private fun MediaDestination(
     browser: Browser,
+    downloads: MediaDownloads,
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
-    val files =
-        remember(thread) {
-            (thread as? Load.Ready)
-                ?.value
-                ?.takeIf { it.key == route.thread }
-                ?.files
-                .orEmpty()
-        }
-    MediaViewer(files = files, startIndex = route.index, onClose = { browser.back() })
+    val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
+    val files = remember(open) { open?.files.orEmpty() }
+    MediaViewer(
+        files = files,
+        startIndex = route.index,
+        onClose = { browser.back() },
+        onSave = { file -> downloads.save(file, route.thread, open?.subject) },
+    )
 }
 
 @Composable
