@@ -82,6 +82,36 @@ class WatchedThreadsTest {
         }
 
     @Test
+    fun failedCountWriteDoesNotPostAnAlertThatWillRepeat() =
+        runTest {
+            val bookmarks =
+                object : FakeBookmarks() {
+                    override suspend fun updateLatest(
+                        key: ThreadKey,
+                        latestReplyCount: Int,
+                        isThreadDead: Boolean,
+                    ) {
+                        error("database write failed")
+                    }
+                }
+            bookmarks.addBookmark(
+                Bookmark(
+                    key,
+                    "Weekly",
+                    createdAtMillis = 0,
+                    isWatched = true,
+                    lastSeenReplyCount = 2,
+                    latestReplyCount = 2,
+                ),
+            )
+            val notifier = Posted()
+            WatchedThreads(bookmarks, backgroundScope, { 0 }, notifier) { thread(5) }.refreshNow()
+
+            assertEquals(2, bookmarks.getBookmark(key)?.latestReplyCount)
+            assertTrue(notifier.posts.isEmpty())
+        }
+
+    @Test
     fun watchingAThreadIsWhenNotificationsAreAskedFor() =
         runTest {
             var asked = 0
