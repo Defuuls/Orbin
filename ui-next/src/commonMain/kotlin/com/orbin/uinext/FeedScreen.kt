@@ -46,6 +46,9 @@ fun FeedScreen(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     groupByBoard: Boolean = true,
+    // A fixed column count the caller chose for this device and window; null fits as many
+    // full-width cards as the window allows.
+    columns: Int? = null,
 ) {
     val gridState = rememberLazyGridState()
 
@@ -128,7 +131,7 @@ fun FeedScreen(
             LazyVerticalGrid(
                 // One full-width card per thread on a phone, its media whole and the opening post
                 // under it; wider screens fit more columns of the same card.
-                columns = GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
+                columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
                 state = gridState,
                 modifier = insets,
                 contentPadding = gridPadding(bottomPad),

@@ -1,6 +1,7 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.FormFactor
 import com.orbin.uinext.SettingKind
 import org.junit.Test
 
@@ -49,18 +50,37 @@ class SettingsIndexTest {
         assertThat(duplicates).isEmpty()
     }
 
+    /** Only a device with a wide screen offers a column count, and only as many as it allows. */
+    @Test
+    fun `feed columns show only on foldables and tablets`() {
+        fun columnsRow(formFactor: FormFactor) =
+            buildModel(formFactor).groups.flatMap { it.second }.firstOrNull { it.id == "feedColumns" }
+
+        assertThat(columnsRow(FormFactor.PHONE)).isNull()
+        with(checkNotNull(columnsRow(FormFactor.FOLDABLE))) {
+            assertThat(label).isEqualTo("Feed columns when unfolded")
+            assertThat(options).containsExactly("1 column", "2 columns", "3 columns").inOrder()
+            assertThat(value).isEqualTo("2 columns")
+        }
+        with(checkNotNull(columnsRow(FormFactor.TABLET))) {
+            assertThat(label).isEqualTo("Feed columns")
+            assertThat(options).containsExactly("1 column", "2 columns", "3 columns", "4 columns").inOrder()
+        }
+    }
+
     private fun allRows() = buildModel().groups.flatMap { it.second }
 
     /**
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel() =
+    private fun buildModel(formFactor: FormFactor = FormFactor.PHONE) =
         buildSettings(
             settings =
                 com.orbin.core.model
                     .AppSettings(),
             vm = io.mockk.mockk(relaxed = true),
             updateState = "Up to date",
+            formFactor = formFactor,
         )
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -24,7 +25,9 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
+import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
@@ -56,6 +59,7 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val formFactor = rememberFormFactor()
     var localQuery by rememberSaveable { mutableStateOf("") }
     val effectiveFilter = localQuery
     val nowMillis by
@@ -175,6 +179,8 @@ fun NextFeedScreen(
                             onQueryChange = { localQuery = it },
                             // Boards A–Z under their own headings, newest activity first within each.
                             groupByBoard = true,
+                            // One column on a phone or folded; the reader's choice unfolded or on a tablet.
+                            columns = feedColumns(formFactor, LocalConfiguration.current.screenWidthDp, settings),
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,

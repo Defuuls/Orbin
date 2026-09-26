@@ -5,9 +5,12 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DEFAULT_WIDE_FEED_COLUMNS
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +55,19 @@ class SettingsStore(
         edit { it[Keys.activeProviderId] = id.value }
     }
 
+    override suspend fun setFeedColumns(
+        formFactor: FormFactor,
+        columns: Int,
+    ) {
+        val key =
+            when (formFactor) {
+                FormFactor.PHONE -> return
+                FormFactor.FOLDABLE -> Keys.unfoldedFeedColumns
+                FormFactor.TABLET -> Keys.tabletFeedColumns
+            }
+        edit { it[key] = columns.coerceIn(1, formFactor.maxFeedColumns) }
+    }
+
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
         dataStore.edit { block(it) }
     }
@@ -66,6 +82,8 @@ class SettingsStore(
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
             activeProviderId = this[Keys.activeProviderId] ?: "",
             onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
+            unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
+            tabletFeedColumns = this[Keys.tabletFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
         )
 
     private object Keys {
@@ -76,5 +94,7 @@ class SettingsStore(
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val activeProviderId = stringPreferencesKey("active_provider_id")
         val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
+        val unfoldedFeedColumns = intPreferencesKey("unfolded_feed_columns")
+        val tabletFeedColumns = intPreferencesKey("tablet_feed_columns")
     }
 }

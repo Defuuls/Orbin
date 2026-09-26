@@ -23,8 +23,10 @@ provider errors, and refresh behavior are handled consistently with board catalo
 On a phone the feed is a single column of full-width cards. Each shows the thread's image or
 video thumbnail at full width, whole down to a 9:16 portrait (taller media is letterboxed), and
 under it the board, subject, up to eight lines of the opening post, and the reply and file counts.
-Tablets and unfolded foldables fit two or more columns of the same card. Board catalogs keep
-their compact grid.
+Foldables and tablets are detected automatically. A foldable's front screen shows one column;
+unfolded, it shows the number chosen in **Settings → Feed columns when unfolded** (1–3, starting at
+2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). Any window
+narrower than 600dp, such as split screen, shows one column. Board catalogs keep their compact grid.
 
 For a media-first wall of every file from the boards you follow, open the **Media** tab.
 

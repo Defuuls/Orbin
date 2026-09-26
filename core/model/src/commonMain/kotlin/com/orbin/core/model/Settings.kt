@@ -107,11 +107,18 @@ data class AppSettings(
     val biometricLockEnabled: Boolean = false,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
+    /** Feed columns on an unfolded foldable's inner screen, 1–3. The front screen is always one. */
+    val unfoldedFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
+    /** Feed columns on a tablet, 1–4. */
+    val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
 ) {
     companion object {
         val Default = AppSettings()
     }
 }
+
+/** Two columns until the reader picks otherwise: a wide screen's first step up from a phone. */
+const val DEFAULT_WIDE_FEED_COLUMNS = 2
 
 /**
  * How fast media preloading is allowed to hit the CDN. The throttled modes trade speed for

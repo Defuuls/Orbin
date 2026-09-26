@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -46,6 +47,8 @@ class SettingsRepositoryImplTest {
         repository.setBiometricLockEnabled(true)
         repository.setActiveProviderId(ProviderId("test-provider"))
         repository.setOnboardingCompleted(true)
+        repository.setFeedColumns(FormFactor.FOLDABLE, 3)
+        repository.setFeedColumns(FormFactor.TABLET, 4)
     }
 
     private fun expectedSettings(): AppSettings =
@@ -57,6 +60,8 @@ class SettingsRepositoryImplTest {
             biometricLockEnabled = true,
             activeProviderId = "test-provider",
             onboardingCompleted = true,
+            unfoldedFeedColumns = 3,
+            tabletFeedColumns = 4,
         )
 
     private fun kotlinx.coroutines.test.TestScope.repository(): SettingsRepositoryImpl {

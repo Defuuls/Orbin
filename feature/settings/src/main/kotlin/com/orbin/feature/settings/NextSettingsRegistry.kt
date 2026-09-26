@@ -2,6 +2,8 @@ package com.orbin.feature.settings
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
+import com.orbin.core.model.feedColumnsFor
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
@@ -24,11 +26,12 @@ internal fun buildSettings(
     imageCacheLabel: String = "Empty · Clear",
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
+    formFactor: FormFactor = FormFactor.PHONE,
 ): SettingsModel {
     val rows = Rows()
     val groups =
         listOf(
-            rows.preferences(settings, vm, checkUpdatesOnLaunch),
+            rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor),
             rows.data(updateState, imageCacheLabel, clearArmed),
         ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
@@ -94,13 +97,36 @@ private class Rows {
         settings: AppSettings,
         vm: SettingsViewModel,
         checkUpdatesOnLaunch: Boolean,
-    ) = listOf(
+        formFactor: FormFactor,
+    ) = listOfNotNull(
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
+        feedColumns(settings, vm, formFactor),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
         toggle("updateOnLaunch", "Tell me about new releases", checkUpdatesOnLaunch, vm::setCheckUpdatesOnLaunch),
     )
+
+    /**
+     * Only a device with a wide screen has a choice: a foldable for its inner screen, a tablet for
+     * its one. A phone, and a foldable's front screen, always show one column.
+     */
+    private fun feedColumns(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+        formFactor: FormFactor,
+    ): SettingItem? {
+        if (formFactor.maxFeedColumns <= 1) return null
+        val label = if (formFactor == FormFactor.FOLDABLE) "Feed columns when unfolded" else "Feed columns"
+        return choice(
+            id = "feedColumns",
+            label = label,
+            values = (1..formFactor.maxFeedColumns).toList(),
+            selected = settings.feedColumnsFor(formFactor),
+            text = { if (it == 1) "1 column" else "$it columns" },
+            onChange = { vm.setFeedColumns(formFactor, it) },
+        )
+    }
 
     /** Only destructive actions carry a hint, and it says what goes. */
     fun data(

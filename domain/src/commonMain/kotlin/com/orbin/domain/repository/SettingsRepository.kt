@@ -2,6 +2,7 @@ package com.orbin.domain.repository
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.Flow
 
@@ -23,4 +24,10 @@ interface SettingsRepository {
     suspend fun setOnboardingCompleted(completed: Boolean)
 
     suspend fun setActiveProviderId(id: ProviderId)
+
+    /** Saves the feed's column count for [formFactor]'s wide screen. A phone has no choice. */
+    suspend fun setFeedColumns(
+        formFactor: FormFactor,
+        columns: Int,
+    )
 }
