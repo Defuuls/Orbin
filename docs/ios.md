@@ -55,6 +55,11 @@ A reader, so far:
   app-wide at launch (`NWParameters.PrivacyContext.default`, iOS 16+) with Android's default
   resolver, Cloudflare; a network whose own DNS is already encrypted keeps it. Unlike Android there
   is no fallback to plain DNS where Cloudflare is blocked, and no resolver setting yet;
+- iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
+  screens size themselves to the window: board catalogs fit more columns, and the feed follows
+  Android's tablet rule (`feedColumns` in `:core:model`): one column on an iPhone or a window
+  narrower than 600 points, otherwise Settings › **Feed columns** (1–4, from 2), a row only an iPad
+  shows. The share sheet opens as a popover in the middle of an iPad's screen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:

@@ -36,6 +36,12 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # iPad takes every orientation, which Split View and Stage Manager also need.
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         # Compose drives ProMotion displays at their full rate only with this set.
         CADisableMinimumFrameDurationOnPhone: true
         # HTTPS only, which is exempt from export compliance, so TestFlight does not ask each build.
@@ -58,7 +64,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID)
         DEVELOPMENT_TEAM: $(ORBIN_TEAM_ID)
         CODE_SIGN_STYLE: Automatic
-        TARGETED_DEVICE_FAMILY: "1"
+        # iPhone and iPad: the shared screens size themselves to the window.
+        TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.0"
         # The Kotlin framework the build phase below produces.

@@ -5,11 +5,14 @@ import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
+import com.orbin.core.model.FormFactor
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillResignActiveNotification
+import platform.UIKit.UIDevice
+import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIViewController
 
 /**
@@ -69,7 +72,7 @@ fun MainViewController(): UIViewController {
                 .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
                 .build()
         }
-        OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup })
+        OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup }, formFactor())
     }
 }
 
@@ -85,3 +88,7 @@ private fun observe(
         action()
     }
 }
+
+/** An iPad is a tablet, with Android's tablet column choice; everything else is a phone. */
+private fun formFactor(): FormFactor =
+    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) FormFactor.TABLET else FormFactor.PHONE

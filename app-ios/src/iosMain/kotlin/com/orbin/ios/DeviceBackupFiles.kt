@@ -1,6 +1,8 @@
 package com.orbin.ios
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
+import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
@@ -14,6 +16,7 @@ import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
+import platform.UIKit.popoverPresentationController
 import platform.UniformTypeIdentifiers.UTTypeJSON
 import platform.darwin.NSObject
 import kotlin.coroutines.resume
@@ -38,6 +41,14 @@ class DeviceBackupFiles : BackupFiles {
         return suspendCoroutine { continuation ->
             val sheet = UIActivityViewController(activityItems = listOf(file), applicationActivities = null)
             sheet.completionWithItemsHandler = { _, completed, _, _ -> continuation.resume(completed) }
+            // iPad shows the sheet as a popover, which must be anchored or presenting it crashes:
+            // the middle of the screen, with no arrow, as there is no button to point at.
+            sheet.popoverPresentationController?.let { popover ->
+                popover.sourceView = presenter.view
+                popover.sourceRect =
+                    presenter.view.bounds.useContents { CGRectMake(size.width / 2, size.height / 2, 0.0, 0.0) }
+                popover.permittedArrowDirections = 0uL
+            }
             presenter.presentViewController(sheet, animated = true, completion = null)
         }
     }
