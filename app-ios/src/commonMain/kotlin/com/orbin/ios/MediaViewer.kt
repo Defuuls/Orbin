@@ -54,8 +54,9 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The thread's files full screen, one per page: swipe between them, pinch or double-tap to zoom an
- * image, back (the edge swipe) or the close button to leave. Video and audio have no player on
- * iOS yet, so their page shows the thumbnail and opens the file in the browser instead.
+ * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
+ * player handles play on their page ([NativePlayer]); the rest, WebM above all, show the thumbnail
+ * and open in the browser.
  */
 @Composable
 internal fun MediaViewer(
@@ -70,7 +71,7 @@ internal fun MediaViewer(
     val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, files.lastIndex)) { files.size }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         HorizontalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
-            MediaPage(files[page])
+            MediaPage(files[page], active = page == pager.currentPage)
         }
         Row(
             modifier = Modifier.fillMaxWidth().safeDrawingPadding().padding(horizontal = 8.dp),
@@ -94,10 +95,17 @@ internal fun MediaViewer(
 }
 
 @Composable
-private fun MediaPage(file: MediaAttachment) {
-    when (file.type) {
-        MediaType.IMAGE, MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
-        MediaType.VIDEO, MediaType.AUDIO, MediaType.UNKNOWN -> ExternalFile(file)
+private fun MediaPage(
+    file: MediaAttachment,
+    active: Boolean,
+) {
+    val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
+    when {
+        file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
+        // Below the top bar, so the player's own controls never sit under the close button.
+        playable != null ->
+            NativePlayer(playable, active, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
+        else -> ExternalFile(file)
     }
 }
 
@@ -207,4 +215,5 @@ internal fun zoomedOffset(
 }
 
 private const val MAX_SCALE = 5f
+private val PLAYER_TOP_INSET = 48.dp
 private const val DOUBLE_TAP_SCALE = 2.5f

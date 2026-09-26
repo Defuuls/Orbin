@@ -50,7 +50,9 @@ targets:
         SWIFT_VERSION: "5.0"
         # The Kotlin framework the build phase below produces.
         FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../app-ios/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
-        OTHER_LDFLAGS: $(inherited) -framework OrbinKit
+        # AVKit and AVFoundation are the media viewer's player; named so the static framework's
+        # system dependencies never rest on autolinking alone.
+        OTHER_LDFLAGS: $(inherited) -framework OrbinKit -framework AVKit -framework AVFoundation
         # The Gradle build writes outside the sandbox Xcode gives script phases.
         ENABLE_USER_SCRIPT_SANDBOXING: false
         # The Kotlin framework is built for Apple silicon simulators only (iosSimulatorArm64), so
