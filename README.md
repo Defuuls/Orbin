@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [151 — Quince](https://github.com/Defuuls/Orbin/releases/tag/v151-Quince)
+**Current release:** [152 — Raspberry](https://github.com/Defuuls/Orbin/releases/tag/v152-Raspberry)
 
-**What's new in 151:** The feed is one column of full-width cards, with the opening post under each image.
+**What's new in 152:** Foldables and tablets can show the feed in more columns.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
