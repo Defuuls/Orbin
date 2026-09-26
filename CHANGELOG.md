@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [155-Ugli] - 2026-09-26
+
+### Changed
+- Releases attach only the APK and its checksum. The R8 mapping file, used to decode crash reports, is kept as a private build artifact for 90 days instead of a release download.
+
+
 ## [154-Tangerine] - 2026-09-26
 
 ### Changed
@@ -2416,7 +2422,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v154-Tangerine...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v155-Ugli...HEAD
+[155-Ugli]: https://github.com/Defuuls/Orbin/compare/v154-Tangerine...v155-Ugli
 [154-Tangerine]: https://github.com/Defuuls/Orbin/compare/v153-Strawberry...v154-Tangerine
 [153-Strawberry]: https://github.com/Defuuls/Orbin/compare/v152-Raspberry...v153-Strawberry
 [152-Raspberry]: https://github.com/Defuuls/Orbin/compare/v151-Quince...v152-Raspberry

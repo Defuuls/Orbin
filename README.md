@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [154 — Tangerine](https://github.com/Defuuls/Orbin/releases/tag/v154-Tangerine)
+**Current release:** [155 — Ugli](https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli)
 
-**What's new in 154:** Downloads takes the middle tab, where Media used to be.
+**What's new in 155:** Release pages carry just the app and its checksum.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
