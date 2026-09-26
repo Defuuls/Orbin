@@ -10,11 +10,11 @@ on:
       - .github/workflows/delete-release-mappings.yml
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   # "list" only prints what matches; "delete" removes it.
-  MODE: list
+  MODE: delete
 
 jobs:
   mappings:
@@ -36,4 +36,5 @@ jobs:
               echo "Deleting $name from $tag"
               gh api -X DELETE "repos/$REPO/releases/assets/$id"
             done < assets.txt
+            echo "REMAINING $(gh api --paginate "repos/$REPO/releases?per_page=100" --jq '.[] | .assets[] | select(.name | test("-mapping\\.txt(\\.sha256)?$")) | .name' | wc -l)"
           fi
