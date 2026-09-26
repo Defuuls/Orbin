@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [149 — Orange](https://github.com/Defuuls/Orbin/releases/tag/v149-Orange)
+**Current release:** [150 — Papaya](https://github.com/Defuuls/Orbin/releases/tag/v150-Papaya)
 
-**What's new in 149:** Orbin tells you about new releases and installs them from the app.
+**What's new in 150:** Nothing plays in the feed; GIFs and videos wait until you open the thread.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
