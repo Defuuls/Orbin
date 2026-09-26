@@ -1,6 +1,6 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Orbin thread viewer screenshot</title>
-  <desc id="desc">A screenshot-style view of the Orbin 141 Fig Android thread viewer showing reply cards with relative post times such as "just now", "5m", and "2h", tappable quote links, and callouts for relative timestamps and accessible links.</desc>
+  <desc id="desc">A screenshot-style view of the Orbin 155 Ugli Android thread viewer showing reply cards with relative post times such as "just now", "5m", and "2h", tappable quote links, and callouts for relative timestamps and accessible links.</desc>
   <rect width="1200" height="760" fill="#F6F7FB"/>
 
   <!-- Left logo card: padded, two-line tagline, no overflow -->
@@ -9,12 +9,12 @@
   <text x="164" y="224" font-family="Inter, Arial, sans-serif" font-size="14" fill="#596171">Modern imageboard</text>
   <text x="164" y="244" font-family="Inter, Arial, sans-serif" font-size="14" fill="#596171">browser for Android</text>
   <rect x="164" y="268" width="128" height="32" rx="16" fill="#DCE6FF"/>
-  <text x="184" y="289" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 141</text>
+  <text x="184" y="289" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 155</text>
   <rect x="164" y="324" width="160" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="164" y="348" width="120" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="164" y="372" width="140" height="12" rx="6" fill="#E5E9F2"/>
   <rect x="164" y="396" width="100" height="12" rx="6" fill="#E5E9F2"/>
-  <text x="164" y="470" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Fig release</text>
+  <text x="164" y="470" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#3157B8">Ugli release</text>
 
   <!-- Phone frame -->
   <rect x="412" y="42" width="376" height="676" rx="36" fill="#15161B"/>
