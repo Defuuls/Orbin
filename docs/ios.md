@@ -17,7 +17,8 @@ A reader, so far:
   every site, sorted board A–Z and newest first within a board, with per-board thread limits and
   the permanent filter applied as on Android. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), with one site being down never
-  hiding the other's boards, and a switch on each to follow it;
+  hiding the other's boards, and a switch on each to follow it. A site that could not be reached
+  is named under the Boards title and tried again when you reopen Boards;
 - search, from the boards list: one query over the catalogs of every board you follow, on every
   site. It matches as Android's does (`matchesSearch` in `:core:model`, after the permanent filter),
   on the same shared `ui-next` screen. A board that fails to load leaves the others, and the query
@@ -49,6 +50,16 @@ A reader, so far:
 - backup and restore (Settings › Export data / Import data) in Android's format, through the share
   sheet and the document picker, so a file from either platform restores on the other. As on
   Android, an import merges and never restores the app lock;
+- encrypted DNS for every request, as Android's always-on DNS-over-HTTPS, so a network that
+  blocks a site through DNS (some mobile carriers do) does not hide it. The SwiftUI shell sets it
+  app-wide at launch (`NWParameters.PrivacyContext.default`, iOS 16+) with Android's default
+  resolver, Cloudflare; a network whose own DNS is already encrypted keeps it. Unlike Android there
+  is no fallback to plain DNS where Cloudflare is blocked, and no resolver setting yet;
+- iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
+  screens size themselves to the window: board catalogs fit more columns, and the feed follows
+  Android's tablet rule (`feedColumns` in `:core:model`): one column on an iPhone or a window
+  narrower than 600 points, otherwise Settings › **Feed columns** (1–4, from 2), a row only an iPad
+  shows. The share sheet opens as a popover in the middle of an iPad's screen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:

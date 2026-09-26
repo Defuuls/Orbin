@@ -2,6 +2,8 @@ package com.orbin.ios
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
+import com.orbin.core.model.feedColumnsFor
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.uinext.OFF_LABEL
@@ -40,6 +42,11 @@ class ReaderSettings(
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
 
+    fun setFeedColumns(
+        formFactor: FormFactor,
+        columns: Int,
+    ): Job = scope.launch { repository.setFeedColumns(formFactor, columns) }
+
     /** Deletes the reading history, which is all the local activity iOS keeps so far. */
     fun clearActivity(): Job = scope.launch { history.clear() }
 }
@@ -50,6 +57,7 @@ internal object SettingIds {
     const val COVER_VIOLENT = "coverViolent"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
+    const val FEED_COLUMNS = "feedColumns"
     const val APP_LOCK = "biometric"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
@@ -67,10 +75,11 @@ internal fun settingsGroups(
     clearArmed: Boolean,
     imageCacheCleared: Boolean,
     backup: BackupState = BackupState.Idle,
+    formFactor: FormFactor = FormFactor.PHONE,
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
         "" to
-            listOf(
+            listOfNotNull(
                 toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
                 toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
                 SettingItem(
@@ -82,6 +91,7 @@ internal fun settingsGroups(
                     selected = settings.themeMode.ordinal,
                 ),
                 toggle(SettingIds.AMOLED, "True black", settings.amoled),
+                feedColumns(settings, formFactor),
                 toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
             ),
         "" to
@@ -124,6 +134,23 @@ internal fun settingsGroups(
                 ),
             ),
     )
+
+/** An iPad's feed column count, as Android's tablet row: only where the device has a choice. */
+private fun feedColumns(
+    settings: AppSettings,
+    formFactor: FormFactor,
+): SettingItem? {
+    if (formFactor.maxFeedColumns <= 1) return null
+    val columns = settings.feedColumnsFor(formFactor).coerceIn(1, formFactor.maxFeedColumns)
+    return SettingItem(
+        id = SettingIds.FEED_COLUMNS,
+        label = "Feed columns",
+        value = columns.toString(),
+        kind = SettingKind.CHOICE,
+        options = (1..formFactor.maxFeedColumns).map { it.toString() },
+        selected = columns - 1,
+    )
+}
 
 private fun toggle(
     id: String,

@@ -1,3 +1,4 @@
+import Network
 import OrbinKit
 import SwiftUI
 
@@ -6,6 +7,7 @@ import SwiftUI
 @main
 struct OrbinApp: App {
     init() {
+        requireEncryptedDns()
         // iOS only runs a background task registered before launch finishes.
         BackgroundRefreshKt.registerBackgroundRefresh()
     }
@@ -17,6 +19,19 @@ struct OrbinApp: App {
                 .ignoresSafeArea()
         }
     }
+}
+
+/// Encrypted DNS for every connection the app makes, URLSession included, as Android's always-on
+/// DNS-over-HTTPS: some networks (mobile carriers especially) block sites by answering their DNS
+/// lookups wrongly. Cloudflare is Android's default resolver, reached by address so looking it up
+/// does not go through the network's DNS either. Networks whose own DNS is already encrypted keep it.
+private func requireEncryptedDns() {
+    guard let resolver = URL(string: "https://cloudflare-dns.com/dns-query") else { return }
+    let addresses: [NWEndpoint] = ["1.1.1.1", "1.0.0.1"].map { .hostPort(host: NWEndpoint.Host($0), port: 443) }
+    NWParameters.PrivacyContext.default.requireEncryptedNameResolution(
+        true,
+        fallbackResolver: .https(resolver, serverAddresses: addresses)
+    )
 }
 
 private struct ComposeView: UIViewControllerRepresentable {

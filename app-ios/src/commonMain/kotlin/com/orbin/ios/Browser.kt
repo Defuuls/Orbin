@@ -145,6 +145,14 @@ class Browser(
     private val _boards = MutableStateFlow<Load<List<SiteBoard>>>(Load.Loading)
     val boards: StateFlow<Load<List<SiteBoard>>> = _boards.asStateFlow()
 
+    private val _unreachableSites = MutableStateFlow<List<String>>(emptyList())
+
+    /**
+     * The sites whose boards failed to load while others loaded, so the Boards screen can say so
+     * rather than the site silently missing from the list.
+     */
+    val unreachableSites: StateFlow<List<String>> = _unreachableSites.asStateFlow()
+
     private val _catalog = MutableStateFlow<Load<List<CatalogThread>>>(Load.Loading)
     val catalog: StateFlow<Load<List<CatalogThread>>> = _catalog.asStateFlow()
 
@@ -205,6 +213,8 @@ class Browser(
         require(tab == Route.Feed || tab == Route.Boards || tab == Route.Downloads) { "Not a tab: $tab" }
         _backStack.value = listOf(tab)
         if (tab == Route.Feed) loadFeed()
+        // A site that could not be reached gets another try, on a new network say.
+        if (tab == Route.Boards && _unreachableSites.value.isNotEmpty()) loadBoards()
         watched.refresh()
     }
 
@@ -271,6 +281,10 @@ class Browser(
                     .map { provider -> async { runCatching { provider.siteBoards() } } }
                     .awaitAll()
             val loaded = perSite.mapNotNull { it.getOrNull() }.flatten()
+            _unreachableSites.value =
+                providers.zip(perSite).filter { (_, result) -> result.isFailure }.map { (provider, _) ->
+                    provider.metadata.displayName
+                }
             _boards.value =
                 if (loaded.isEmpty() && perSite.any { it.isFailure }) {
                     Load.Failed(perSite.firstNotNullOf { it.exceptionOrNull() }.readable())

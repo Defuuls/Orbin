@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- iOS: the app runs natively on iPad (it was an iPhone app shown at iPhone size) in every orientation, Split View and Stage Manager. The feed shows 1–4 columns on an iPad's full width, chosen in Settings → **Feed columns** as on Android tablets, and one column in a narrow window.
+- BBW Chan's boards show a symbol for their topic in the Boards list (a camera for BBW Real, a brush for BBW Drawn, a paw for BB Furries and so on), with the board's path moved to the line under its name. Other boards keep their path on the tile.
+
+### Fixed
+- iOS: 4chan no longer disappears on networks that block it through DNS, such as some mobile carriers. The app now uses encrypted DNS (Cloudflare) for every request, as the Android app does.
+- iOS: a site that can't be reached is named under the Boards title instead of silently missing from the list, and is tried again when you reopen Boards.
+
 ## [155-Ugli] - 2026-09-26
 
 ### Changed

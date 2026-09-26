@@ -113,7 +113,41 @@ class BrowserTest {
 
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             assertEquals(listOf("g"), boards.map { it.board.id.value })
+            assertEquals(listOf("BBW Chan"), browser.unreachableSites.value)
         }
+
+    @Test
+    fun reopeningBoardsRetriesASiteThatCouldNotBeReached() =
+        runTest {
+            val routes = (BOTH_SITES - LYNXCHAN_BOARDS).toMutableMap()
+            val engine = MockEngine { request -> reply(request, routes) }
+            val browser =
+                Browser(
+                    orbinProviders(orbinHttpClient(engine)),
+                    bookmarks,
+                    history,
+                    boardPreferences,
+                    settings,
+                    backgroundScope,
+                )
+            browser.boards.settled()
+            assertEquals(1, browser.unreachableSites.value.size)
+
+            routes += BOTH_SITES
+            browser.openTab(Route.Boards)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            assertEquals(2, boards.size)
+            assertTrue(browser.unreachableSites.value.isEmpty())
+        }
+
+    @Test
+    fun theBoardsSubtitleNamesAnUnreachableSite() {
+        assertNull(boardsSubtitle(12, emptyList()))
+        assertEquals(
+            "1 board · Couldn't reach 4chan; tried again when you reopen Boards",
+            boardsSubtitle(1, listOf("4chan")),
+        )
+    }
 
     @Test
     fun everySiteDownIsAnErrorThatRetryRecoversFrom() =

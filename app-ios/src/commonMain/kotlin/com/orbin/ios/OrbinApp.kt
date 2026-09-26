@@ -3,6 +3,7 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -24,7 +25,9 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.Thread
+import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_search_follow_boards
@@ -60,6 +63,7 @@ fun OrbinApp(
     lock: AppLock,
     downloads: MediaDownloads,
     backup: IosBackup,
+    formFactor: FormFactor = FormFactor.PHONE,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -80,7 +84,7 @@ fun OrbinApp(
         platform = NextPlatform.IOS,
     ) {
         Box(Modifier.fillMaxSize()) {
-            Destination(browser, lock, downloads, backup, backStack.last())
+            Destination(browser, lock, downloads, backup, formFactor, backStack.last())
             LockCover(lock)
         }
     }
@@ -92,14 +96,15 @@ private fun Destination(
     lock: AppLock,
     downloads: MediaDownloads,
     backup: IosBackup,
+    formFactor: FormFactor,
     route: Route,
 ) {
     when (route) {
-        Route.Feed -> FeedDestination(browser)
+        Route.Feed -> FeedDestination(browser, formFactor)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.ThreadPage -> ThreadDestination(browser)
         is Route.Media -> MediaDestination(browser, downloads, route)
@@ -118,21 +123,30 @@ private fun LockCover(lock: AppLock) {
 }
 
 @Composable
-private fun FeedDestination(browser: Browser) {
+private fun FeedDestination(
+    browser: Browser,
+    formFactor: FormFactor,
+) {
     val feed by browser.feed.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
     Loaded(feed, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
         val rows = remember(threads, visited) { threads.map { it.toFeedRow(now, read = it.thread.key in visited) } }
         val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
-        FeedScreen(
-            rows = rows,
-            onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-            thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
-            onOpenBoards = { browser.openTab(Route.Boards) },
-            onOpenDownloads = { browser.openTab(Route.Downloads) },
-            onSettings = { browser.open(Route.Settings) },
-        )
+        // Columns as on Android: one on a phone or a narrow window (split view), the reader's choice
+        // on an iPad's full width.
+        BoxWithConstraints {
+            FeedScreen(
+                rows = rows,
+                columns = feedColumns(formFactor, maxWidth.value.toInt(), settings),
+                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+                thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
+                onOpenBoards = { browser.openTab(Route.Boards) },
+                onOpenDownloads = { browser.openTab(Route.Downloads) },
+                onSettings = { browser.open(Route.Settings) },
+            )
+        }
     }
 }
 
@@ -140,12 +154,14 @@ private fun FeedDestination(browser: Browser) {
 private fun BoardsDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
+    val unreachable by browser.unreachableSites.collectAsState()
     val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
     Loaded(boards, onRetry = browser::retry) { all ->
         // Hidden NSFW boards leave the list, as Android's boards list drops them.
         val list = remember(all, hideNsfw) { if (hideNsfw) all.filterNot { it.board.isNsfw } else all }
         val byTile = remember(list) { list.associateBy { it.tileId } }
         BoardsScreen(
+            subtitle = boardsSubtitle(list.size, unreachable),
             boards =
                 remember(list, followed) {
                     list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in followed) }
@@ -158,6 +174,19 @@ private fun BoardsDestination(browser: Browser) {
             onOpenSettings = { browser.open(Route.Settings) },
         )
     }
+}
+
+/**
+ * The Boards title's subtitle when a site could not be reached (a network blocking it, say), so it
+ * reads as missing rather than never having been there; null keeps the usual board count.
+ */
+internal fun boardsSubtitle(
+    boardCount: Int,
+    unreachable: List<String>,
+): String? {
+    if (unreachable.isEmpty()) return null
+    val count = if (boardCount == 1) "1 board" else "$boardCount boards"
+    return "$count · Couldn't reach ${unreachable.joinToString()}; tried again when you reopen Boards"
 }
 
 @Composable
@@ -186,6 +215,7 @@ private fun SettingsDestination(
     browser: Browser,
     lock: AppLock,
     backup: IosBackup,
+    formFactor: FormFactor,
 ) {
     val settings by browser.settings.current.collectAsState()
     val backupState by backup.state.collectAsState()
@@ -201,7 +231,8 @@ private fun SettingsDestination(
                 clearArmed,
                 imageCacheCleared,
                 backupState,
-            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState) },
+                formFactor,
+            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor) },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
@@ -210,7 +241,7 @@ private fun SettingsDestination(
                 SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
                 SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
-                SettingIds.THEME -> expanded = if (expanded == item.id) null else item.id
+                SettingIds.THEME, SettingIds.FEED_COLUMNS -> expanded = if (expanded == item.id) null else item.id
                 SettingIds.CLEAR_ACTIVITY ->
                     if (clearArmed) {
                         clearArmed = false
@@ -229,7 +260,10 @@ private fun SettingsDestination(
             }
         },
         onSelectOption = { item, index ->
-            if (item.id == SettingIds.THEME) AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
+            when (item.id) {
+                SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
+                SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
+            }
             expanded = null
         },
     )

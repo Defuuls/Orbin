@@ -2,11 +2,13 @@ package com.orbin.ios
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SettingsRowsTest {
     @Test
@@ -26,6 +28,24 @@ class SettingsRowsTest {
         assertEquals(listOf("System", "Light", "Dark"), theme.options)
         assertEquals("Dark", theme.value)
         assertEquals(2, theme.selected)
+    }
+
+    @Test
+    fun anIpadChoosesItsFeedColumnsAndAnIphoneDoesNot() {
+        fun rows(formFactor: FormFactor) =
+            settingsGroups(
+                AppSettings(tabletFeedColumns = 3),
+                clearArmed = false,
+                imageCacheCleared = false,
+                formFactor = formFactor,
+            ).flatMap { it.second }
+
+        val columns = rows(FormFactor.TABLET).single { it.id == SettingIds.FEED_COLUMNS }
+        assertEquals(SettingKind.CHOICE, columns.kind)
+        assertEquals(listOf("1", "2", "3", "4"), columns.options)
+        assertEquals("3", columns.value)
+        assertEquals(2, columns.selected)
+        assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.FEED_COLUMNS })
     }
 
     @Test

@@ -50,6 +50,8 @@ data class BoardTile(
     val title: String,
     val nsfw: Boolean = false,
     val followed: Boolean = false,
+    /** The site the board is on, as its provider id: picks the tile's symbol (see [boardSymbol]). */
+    val site: String? = null,
 )
 
 /**
@@ -227,6 +229,7 @@ private fun BoardListRow(
     onFollow: ((Boolean) -> Unit)? = null,
 ) {
     val hue = boardHue(board.path)
+    val symbol = board.site?.let { boardSymbol(it, board.path.trim('/')) }
     Row(
         modifier =
             Modifier
@@ -243,11 +246,20 @@ private fun BoardListRow(
                     .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = board.path,
-                style = NextType.headline,
-                color = hue,
-            )
+            if (symbol != null) {
+                Icon(
+                    imageVector = symbol,
+                    contentDescription = null,
+                    tint = hue,
+                    modifier = Modifier.size(24.dp),
+                )
+            } else {
+                Text(
+                    text = board.path,
+                    style = NextType.headline,
+                    color = hue,
+                )
+            }
         }
         WidthSpacer(12)
         Column(modifier = Modifier.weight(1f)) {
@@ -275,7 +287,12 @@ private fun BoardListRow(
                 }
             }
             Text(
-                text = if (board.followed) "Following" else "Tap to follow",
+                text =
+                    buildString {
+                        // A symbol takes the path's place on the tile, so the path moves here.
+                        if (symbol != null) append("${board.path} · ")
+                        append(if (board.followed) "Following" else "Tap to follow")
+                    },
                 style = NextType.footnote,
                 color = next.muted,
                 maxLines = 1,

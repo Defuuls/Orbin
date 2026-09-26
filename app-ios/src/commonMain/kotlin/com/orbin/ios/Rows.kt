@@ -24,6 +24,7 @@ internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
         title = "${board.title} · $siteName",
         nsfw = board.isNsfw,
         followed = followed,
+        site = provider.value,
     )
 
 /**
