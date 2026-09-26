@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Orbin — a modern image board client for Android</title>
-  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source image board client for Android, built with Kotlin, Jetpack Compose, and Material 3.">
+  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
   <meta name="theme-color" content="#3157B8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#15161B" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Orbin — a modern image board client for Android">
-  <meta property="og:description" content="A modern, fast, and beautiful open-source image board client for Android, built with Kotlin, Jetpack Compose, and Material 3.">
+  <meta property="og:title" content="Orbin — a modern imageboard client for Android">
+  <meta property="og:description" content="A modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
   <meta property="og:url" content="https://defuuls.github.io/Orbin/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Orbin — a modern image board client for Android">
-  <meta name="twitter:description" content="A modern, fast, and beautiful open-source image board client for Android, built with Kotlin, Jetpack Compose, and Material 3.">
+  <meta name="twitter:title" content="Orbin — a modern imageboard client for Android">
+  <meta name="twitter:description" content="A modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233157B8'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%23FAFBFF'/%3E%3Ccircle cx='49' cy='19' r='6' fill='%23DCE6FF'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -161,7 +161,7 @@
 
 <section class="hero wrap">
   <h1>Orbin</h1>
-  <p class="tagline">A modern, fast, and beautiful open-source image board client for Android — built with Kotlin, Jetpack Compose, and Material 3.</p>
+  <p class="tagline">A modern, fast, and beautiful open-source imageboard client for Android — built with Kotlin, Jetpack Compose, and Material 3 Expressive.</p>
   <div class="cta">
     <!-- Deliberately the releases list, not /releases/latest: two apps are tagged in this
          repository and "latest" resolves by date across both, so it can point at Orbin Minimal. -->
@@ -169,7 +169,8 @@
     <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
   </div>
   <p class="note">Free and AGPLv3-licensed, forever. Not available on Google Play — releases are signed and published on GitHub.</p>
-  <p class="note">Current full-client release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/v141-Fig">141 — Fig</a></strong> (2026-09-21).</p>
+  <p class="note">Current full-client release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli">155 — Ugli</a></strong> (2026-09-26).</p>
+  <p class="note">What&rsquo;s new in 155: <em>Release pages carry just the app and its checksum.</em></p>
 </section>
 
 <section id="about" class="alt">
@@ -184,43 +185,47 @@
     <div class="grid">
       <div class="card">
         <h3>Subscribed feed</h3>
-        <p>One continuous feed of your followed boards, with in-feed search, tap-to-top chrome, an optional true full-screen mode, and an adaptive tablet layout.</p>
+        <p>Followed boards grouped A–Z with the most recently active threads first within each board. On phones, the feed displays as a single column of full-width cards with uncropped media down to 9:16 and up to eight lines of readable post text (with HTML entities decoded and line breaks kept). Automatically detects foldables and tablets with customizable column counts. Pull down to refresh; media stays quiet until opened.</p>
       </div>
       <div class="card">
-        <h3>Browse your way</h3>
-        <p>Feed and board catalogs use a single adaptive Grid, with each thread&rsquo;s media shown uncropped at its own aspect ratio. Mild&rarr;Wild size controls stretch tiles from compact to near full-bleed, and the same patterns show up in All Media.</p>
+        <h3>Readable grid-first catalogs</h3>
+        <p>Board catalogs use an adaptive card grid where the opening post&rsquo;s media is shown uncropped at its true aspect ratio instead of a center crop. Wide screens (840dp+) can keep catalog and thread side by side in a two-pane layout without losing navigation state.</p>
       </div>
       <div class="card">
         <h3>Rich thread viewer</h3>
-        <p>Structured reply trees with quote links and backlinks, relative post times, inline images and video, collapsible replies that survive rotation, a thumbnail-only grid view, and reading history with scroll restore.</p>
+        <p>Native post markup with greentext, quote links, inline quote previews, backlinks, relative timestamps (just now, 5m, 2h), collapsible replies, tap-to-reveal spoilers, persistent reading position, and thread-watching notifications. Plus, deduplicate and save external thread links as a clean text file to <code>Downloads/Orbin</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Downloads tab</h3>
+        <p>The dedicated middle tab lists everything you&rsquo;ve saved, complete with real-time download progress and one-tap retry for failed files. Media files are neatly organized in <code>Downloads/Orbin</code> by board and thread.</p>
+      </div>
+      <div class="card">
+        <h3>Board media walls &amp; deep scan</h3>
+        <p>Every board catalog includes a dedicated Media wall to sweep all files on that board. An opt-in deep scan walks threads to discover reply attachments too &mdash; slower, and far more thorough than a catalog sweep alone.</p>
       </div>
       <div class="card">
         <h3>Media done right</h3>
-        <p>Hardware-accelerated playback, pinch-zoom swipe gallery, background preloading, autoplay and mute toggles, and a native download manager with resume and retry. The subscribed feed can optionally autoplay each thread's first video inline &mdash; muted, starting as it scrolls into view and stopping as it scrolls away &mdash; no need to open the thread.</p>
+        <p>Hardware-accelerated Media3 playback with background preloading, pinch-to-zoom, and double-tap zoom on spot. Double-tap left or right to skip 5 seconds (+15s cumulative), drag to scrub with a timestamp bubble, auto-resume longer videos, and swipe up/down to navigate or dismiss. Videos start muted, and unmuting carries over until Orbin closes.</p>
       </div>
       <div class="card">
-        <h3>Gallery &amp; bookmarks</h3>
-        <p>A gallery scoped to your subscriptions with a built-in Bookmarks tab: watch toggles, unread badges, and background thread-watching notifications.</p>
-      </div>
-      <div class="card">
-        <h3>The whole provider's media, as one wall</h3>
-        <p>Every file on every thread of every board in a single grid that just keeps going. It fills board by board while the sweep runs, so there is something to look at within seconds rather than a spinner, and a fast scrollbar to cross thousands of tiles in one gesture. An opt-in deep scan walks each thread for reply media too &mdash; slower, and far more thorough than a catalog sweep can be on its own.</p>
+        <h3>Content filter &amp; violent media cover</h3>
+        <p>An always-on keyword filter removes gore, shock, and abuse across every board, feed, and search. Additionally, Cover violent media (on by default in Settings) places a spoiler cover over images and videos in posts referencing violence, accidents, or graphic footage until you choose to open them.</p>
       </div>
       <div class="card">
         <h3>Orbin Minimal &mdash; a second, smaller app</h3>
-        <p>A separate APK whose entire interface is your subscribed boards as one flat feed, newest first, with a preview, a board tag and a reply count per row. Tap to read, tap an image to view it. No bottom navigation, no settings hub, no search, gallery, downloads, bookmarks or themes &mdash; the floating rail's one affordance is the board picker, which is the only other place the app has. The screens are the full client's own, so the feed uses the same adaptive Grid and the same pull-to-refresh; with no settings screen, feed autoplay stays off, and videos play when you open the thread. It is a different front end over the same providers, caching, encrypted storage and filters &mdash; not a second implementation &mdash; and it installs alongside the full client rather than replacing it.</p>
+        <p>A separate APK whose entire interface is your subscribed boards as one flat feed, newest first, with a preview, a board tag and a reply count per row. Tap to read, tap an image to view it. No bottom navigation, no settings hub, no search, downloads, or bookmarks &mdash; just the board picker. It shares the same providers, caching, encrypted storage, and content filters, installing alongside the full client.</p>
       </div>
       <div class="card">
         <h3>Make it yours</h3>
-        <p>Material 3 with dynamic color, light/dark and AMOLED-black modes, Color themes (Yotsuba, Warosu, Miku, Lain, and more) that recolor the Next shell, font and thumbnail sizing, and predictive back with smooth transitions. Settings is one scrolling list with headings, so every option is somewhere you can flick past.</p>
+        <p>Material 3 Expressive styling with flat matte surfaces, light/dark and true-black AMOLED modes, and Color themes (Yotsuba, Warosu, Miku, Lain, Apple, Banana, and more). Settings opens directly from the gear in the Feed header and is kept short and focused: only the options you need, with no cluttered menus.</p>
       </div>
       <div class="card">
-        <h3>Built-in content filter</h3>
-        <p>Gore, shock, abuse and violent content is filtered out of every board, thread, feed, search, gallery and download &mdash; there is no setting to turn it off. It is a keyword filter over post text, filenames and board metadata, so it reduces exposure rather than eliminating it, and it is deliberately broad: threads that only mention violence are removed too.</p>
+        <h3>In-app updates</h3>
+        <p>Orbin checks for new releases on launch (at most once a day) or on demand via Settings &rarr; Check for updates. It downloads the signed APK, validates it against its published SHA-256 checksum and Orbin&rsquo;s signing key, and hands off to Android&rsquo;s installer with one tap.</p>
       </div>
       <div class="card">
         <h3>Private by default</h3>
-        <p>Everything local is encrypted at rest, networking is HTTPS-only with optional DNS-over-HTTPS, and a biometric app-lock keeps the app and its previews gated. Nothing syncs off the device implicitly &mdash; and because that also means a reinstall would lose everything, you can export your settings, boards, bookmarks and saved searches to a file you control, then import it back.</p>
+        <p>Everything local is encrypted at rest: Room database content with SQLCipher and preferences via encrypted DataStore with Android Keystore material. HTTPS-only networking with DNS-over-HTTPS (and automatic system resolver fallback), biometric app lock with FLAG_SECURE recents protection, disabled cloud backup, and user-controlled JSON backup export and import.</p>
       </div>
     </div>
   </div>
@@ -230,9 +235,9 @@
   <div class="wrap">
     <h2>Screenshots</h2>
     <div class="shots">
-      <img src="assets/orbin-hero-screenshot.svg" alt="Orbin 141 Fig feed on a compact phone with Color themes, Mild to Wild sizing, and grid-first shell highlights" loading="lazy">
-      <img src="assets/orbin-thread-screenshot.svg" alt="Orbin 141 Fig thread viewer with reply cards, relative post times, and quote links" loading="lazy">
-      <img src="assets/orbin-settings-screenshot.svg" alt="Orbin 141 Fig settings with always-on content filter, appearance controls, and Downloads/Orbin storage" loading="lazy">
+      <img src="assets/orbin-hero-screenshot.svg" alt="Orbin 155 Ugli feed on a compact phone with one-column full-width cards, Color themes, and privacy defaults" loading="lazy">
+      <img src="assets/orbin-thread-screenshot.svg" alt="Orbin 155 Ugli thread viewer with reply cards, relative post times, and quote links" loading="lazy">
+      <img src="assets/orbin-settings-screenshot.svg" alt="Orbin 155 Ugli settings with always-on content filter, violent media cover, and Downloads tab integration" loading="lazy">
     </div>
   </div>
 </section>
@@ -258,6 +263,8 @@
         <strong>Get the APK</strong> from the
         <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>, checking the
         filename matches the app you want, and allow installs from your browser when Android asks.
+        You can also track updates with <a href="https://github.com/ImranR98/Obtainium">Obtainium</a>
+        using this repository&rsquo;s URL.
       </li>
       <li>
         <strong>Verify the download</strong> (optional but encouraged) with the checksum file
@@ -271,7 +278,7 @@
       </li>
       <li>
         <strong>Stay up to date.</strong> Orbin checks for new versions inside the app
-        (Settings → Network &amp; privacy → Internal updater — on by default), or watch the
+        (Settings &rarr; Check for updates, or automatically on launch when &ldquo;Tell me about new releases&rdquo; is enabled &mdash; on by default), or watch the
         <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>.
       </li>
     </ol>
@@ -293,7 +300,7 @@
       </div>
       <div class="card">
         <h3>Quiet on the wire</h3>
-        <p>HTTPS-only networking enforced end-to-end, optional DNS-over-HTTPS (Cloudflare, OpenDNS, NextDNS), opt-in search history, and no cloud backup of local data.</p>
+        <p>HTTPS-only networking enforced end-to-end, encrypted DNS (DNS-over-HTTPS with automatic system resolver fallback), and no cloud backup of local data.</p>
       </div>
     </div>
   </div>
@@ -304,13 +311,14 @@
     <h2>Development</h2>
     <p class="section-lead">
       Orbin is open source under the AGPLv3 license, built as a strict multi-module Clean Architecture
-      Kotlin project. Contributions are welcome.
+      Kotlin project with Kotlin Multiplatform sharing code with an iOS client. Contributions are welcome.
     </p>
     <ul class="links">
       <li><a href="https://github.com/Defuuls/Orbin">Source code</a> — the main repository</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> — user guide, settings guide, release history, troubleshooting</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki/Developer-Guide">Developer guide</a> — building, toolchain, CI, and releases</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules">Architecture</a> — layers, modules, and design decisions</li>
+      <li><a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS documentation</a> — building and testing the iOS application via TestFlight</li>
       <li><a href="https://github.com/Defuuls/Orbin/blob/main/CONTRIBUTING.md">Contributing guide</a> — how to get a change merged</li>
       <li><a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">Changelog</a> — what shipped, release by release</li>
     </ul>

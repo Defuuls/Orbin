@@ -1,6 +1,6 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Orbin settings screenshot</title>
-  <desc id="desc">Screenshot-style Orbin 141 Fig settings: always-on content filter, appearance controls, media, network privacy, and Downloads/Orbin storage.</desc>
+  <desc id="desc">Screenshot-style Orbin 155 Ugli settings: always-on content filter, appearance controls, media, network privacy, and Downloads/Orbin storage.</desc>
   <rect width="1200" height="760" fill="#F6F7FB"/>
 
   <!-- Phone frame -->
@@ -81,9 +81,9 @@
   <text x="148" y="220" font-family="Arial,sans-serif" font-size="14" fill="#596171">Modern imageboard</text>
   <text x="148" y="242" font-family="Arial,sans-serif" font-size="14" fill="#596171">browser for Android</text>
   <rect x="148" y="268" width="132" height="32" rx="16" fill="#DCE6FF"/>
-  <text x="214" y="289" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 141</text>
+  <text x="214" y="289" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="#274B9F">Version 155</text>
   <text x="148" y="336" font-family="Arial,sans-serif" font-size="13" fill="#596171">• Color themes on Next</text>
-  <text x="148" y="364" font-family="Arial,sans-serif" font-size="13" fill="#596171">• Mild → Wild sizing</text>
+  <text x="148" y="364" font-family="Arial,sans-serif" font-size="13" fill="#596171">• Cover violent media</text>
   <text x="148" y="392" font-family="Arial,sans-serif" font-size="13" fill="#596171">• Encrypted at rest</text>
-  <text x="148" y="448" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#3157B8">Fig release</text>
+  <text x="148" y="448" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#3157B8">Ugli release</text>
 </svg>
