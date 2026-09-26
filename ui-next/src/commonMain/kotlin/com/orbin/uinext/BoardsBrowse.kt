@@ -87,16 +87,17 @@ fun BoardsScreen(
     var following by rememberSaveable { mutableStateOf(false) }
     val visibleBoards =
         remember(boards, query, following) {
-            boards.filter {
-                (!following || it.followed) &&
-                    (
-                        it.path.contains(
-                            query,
-                            true,
-                        ) ||
-                            it.title.contains(query, true)
-                    )
-            }.sortedAlphabetically()
+            boards
+                .filter {
+                    (!following || it.followed) &&
+                        (
+                            it.path.contains(
+                                query,
+                                true,
+                            ) ||
+                                it.title.contains(query, true)
+                        )
+                }.sortedAlphabetically()
         }
     val listState = rememberLazyListState()
     val railVisible =
