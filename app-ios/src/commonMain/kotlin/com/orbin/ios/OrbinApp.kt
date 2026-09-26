@@ -59,6 +59,7 @@ fun OrbinApp(
     browser: Browser,
     lock: AppLock,
     downloads: MediaDownloads,
+    backup: IosBackup,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -79,7 +80,7 @@ fun OrbinApp(
         platform = NextPlatform.IOS,
     ) {
         Box(Modifier.fillMaxSize()) {
-            Destination(browser, lock, downloads, backStack.last())
+            Destination(browser, lock, downloads, backup, backStack.last())
             LockCover(lock)
         }
     }
@@ -90,6 +91,7 @@ private fun Destination(
     browser: Browser,
     lock: AppLock,
     downloads: MediaDownloads,
+    backup: IosBackup,
     route: Route,
 ) {
     when (route) {
@@ -97,7 +99,7 @@ private fun Destination(
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock)
+        Route.Settings -> SettingsDestination(browser, lock, backup)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.ThreadPage -> ThreadDestination(browser)
         is Route.Media -> MediaDestination(browser, downloads, route)
@@ -183,8 +185,10 @@ private fun DownloadsDestination(
 private fun SettingsDestination(
     browser: Browser,
     lock: AppLock,
+    backup: IosBackup,
 ) {
     val settings by browser.settings.current.collectAsState()
+    val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf<String?>(null) }
@@ -196,7 +200,8 @@ private fun SettingsDestination(
                 settings,
                 clearArmed,
                 imageCacheCleared,
-            ) { settingsGroups(settings, clearArmed, imageCacheCleared) },
+                backupState,
+            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState) },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
@@ -213,6 +218,8 @@ private fun SettingsDestination(
                     } else {
                         clearArmed = true
                     }
+                SettingIds.EXPORT_BACKUP -> backup.export()
+                SettingIds.IMPORT_BACKUP -> backup.import()
                 SettingIds.CLEAR_IMAGE_CACHE ->
                     scope.launch {
                         imageLoader.memoryCache?.clear()

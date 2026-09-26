@@ -112,7 +112,7 @@ class DeviceMediaStore : MediaStore {
 }
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
-private fun ByteArray.toNSData(): NSData =
+internal fun ByteArray.toNSData(): NSData =
     if (isEmpty()) {
         NSData()
     } else {

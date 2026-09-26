@@ -13,6 +13,7 @@ import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
+import platform.Foundation.NSBundle
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
@@ -33,21 +34,35 @@ fun MainViewController(): UIViewController {
     val preferences = openPreferences()
     val settingsStore = SettingsStore(preferences)
     val scope = MainScope()
+    // The same violent-media cover Android applies, following the same setting.
+    val providers =
+        orbinProviders(client).map { provider ->
+            ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
+        }
+    val bookmarks = BookmarkRepositoryImpl(database.bookmarkDao())
+    val boardPreferences = BoardPreferencesStore(preferences)
     val browser =
         Browser(
-            // The same violent-media cover Android applies, following the same setting.
-            providers =
-                orbinProviders(client).map { provider ->
-                    ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
-                },
-            bookmarks = BookmarkRepositoryImpl(database.bookmarkDao()),
+            providers = providers,
+            bookmarks = bookmarks,
             history = HistoryRepositoryImpl(database.historyDao()),
-            boardPreferences = BoardPreferencesStore(preferences),
+            boardPreferences = boardPreferences,
             settings = settingsStore,
             scope = scope,
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
     val downloads = MediaDownloads(database.downloadDao(), DeviceMediaStore(), ktorMediaFetch(client), scope)
+    // Export and import in Android's backup format, through the system share sheet and file picker.
+    val backup =
+        IosBackup(
+            settings = settingsStore,
+            boardPreferences = boardPreferences,
+            bookmarks = bookmarks,
+            providers = providers.map { it.metadata.id },
+            files = DeviceBackupFiles(),
+            scope = scope,
+            appVersion = appVersion(),
+        )
     val lock =
         AppLock(settingsStore.settings, settingsStore::setBiometricLockEnabled, DeviceOwnerAuthenticator(), scope)
     // The app lives as long as this controller, so the observers are never removed.
@@ -64,9 +79,13 @@ fun MainViewController(): UIViewController {
                 .components { add(KtorNetworkFetcherFactory(httpClient = { client })) }
                 .build()
         }
-        OrbinApp(remember { browser }, remember { lock }, remember { downloads })
+        OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup })
     }
 }
+
+/** "155" for 155-Ugli: the release number TestFlight shows as the version. */
+private fun appVersion(): String =
+    NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: "ios"
 
 private fun observe(
     name: String?,
