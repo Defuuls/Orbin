@@ -40,7 +40,7 @@ For a media-first wall of every file from the boards you follow, open the **Medi
 - Already-read threads are visually de-emphasized without becoming illegible.
 - Hidden tags remove matching content; muted content remains visible but quieter.
 - The thread-per-board limit controls how much each subscription contributes.
-- Optional inline video autoplay starts muted and stops as the active preview leaves view.
+- Nothing plays in the feed: GIFs and videos show a still thumbnail until you open the thread.
 - Search is one field over the catalogs of the boards you follow.
 - Network/offline state is surfaced explicitly.
 
