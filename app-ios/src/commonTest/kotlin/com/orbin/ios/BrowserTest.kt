@@ -36,6 +36,7 @@ class BrowserTest {
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
+    private val settings = FakeSettings()
 
     private var clock = NOW
 
@@ -57,6 +58,7 @@ class BrowserTest {
             bookmarks,
             history,
             boardPreferences,
+            settings,
             scope,
             now = { clock },
         )
@@ -120,7 +122,14 @@ class BrowserTest {
             val engine =
                 MockEngine { request -> reply(request, routes) }
             val browser =
-                Browser(orbinProviders(orbinHttpClient(engine)), bookmarks, history, boardPreferences, backgroundScope)
+                Browser(
+                    orbinProviders(orbinHttpClient(engine)),
+                    bookmarks,
+                    history,
+                    boardPreferences,
+                    settings,
+                    backgroundScope,
+                )
 
             assertIs<Load.Failed>(browser.boards.settled())
 
@@ -356,7 +365,7 @@ class BrowserTest {
             boards.forEach { browser.setFollowed(it, follow = true) }
             browser.followed.first { it.size == 2 }
 
-            browser.openSearch()
+            browser.open(Route.Search)
             assertEquals(Route.Search, browser.backStack.value.last())
             browser.search.setQuery("  hi ")
             browser.search.run()?.join()
@@ -392,6 +401,45 @@ class BrowserTest {
 
             val hits = assertIs<Load.Ready<List<FeedThread>>>(browser.search.results.value).value
             assertEquals(listOf("g"), hits.map { it.thread.key.board.value })
+        }
+
+    @Test
+    fun hidingNsfwBoardsTakesThemOutOfTheFeedAndSearch() =
+        runTest {
+            // 4chan's /g/ says it is work-safe; BBW Chan's boards are NSFW by default.
+            val routes =
+                BOTH_SITES + LYNXCHAN_CATALOG +
+                    ("a.4cdn.org/boards.json" to """{"boards":[{"board":"g","title":"Technology","ws_board":1}]}""")
+            val browser = browser(backgroundScope, routes)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.feed.first { it is Load.Ready && it.value.size == 2 }
+
+            browser.settings.setHideNsfwBoards(true).join()
+
+            val feed = browser.feed.first { it is Load.Ready && it.value.size == 1 }
+            assertEquals(
+                listOf("g"),
+                assertIs<Load.Ready<List<FeedThread>>>(feed).value.map { it.thread.key.board.value },
+            )
+            browser.search.setQuery("hi")
+            browser.search.run()?.join()
+            val hits = assertIs<Load.Ready<List<FeedThread>>>(browser.search.results.value).value
+            assertEquals(listOf("g"), hits.map { it.thread.key.board.value })
+        }
+
+    @Test
+    fun clearingActivityForgetsWhatWasRead() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val g = boardG(browser)
+            browser.openThread(ThreadKey(g.provider, g.board.id, ThreadId(7)))
+            browser.thread.settled()
+            browser.visitedThreads(g).first { it.isNotEmpty() }
+
+            browser.settings.clearActivity().join()
+
+            assertEquals(emptySet(), browser.visitedThreads(g).first())
         }
 
     private suspend fun boardG(browser: Browser): SiteBoard =

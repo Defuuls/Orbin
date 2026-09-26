@@ -1,5 +1,7 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.FeedThreadLimit
@@ -10,6 +12,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -107,4 +110,30 @@ class FakeBoardPreferences : BoardPreferencesRepository {
         board: BoardId,
         limit: FeedThreadLimit?,
     ) = limits.update { all -> if (limit == null) all - (provider to board) else all + ((provider to board) to limit) }
+}
+
+/** App settings kept in memory. The DataStore-backed store is tested in `:storage`. */
+@Suppress("TooManyFunctions")
+class FakeSettings : SettingsRepository {
+    override val settings = MutableStateFlow(AppSettings.Default)
+
+    override suspend fun setHideNsfwBoards(enabled: Boolean) = settings.update { it.copy(hideNsfwBoards = enabled) }
+
+    override suspend fun setDeepMediaScan(enabled: Boolean) = settings.update { it.copy(deepMediaScan = enabled) }
+
+    override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }
+
+    override suspend fun setAmoled(enabled: Boolean) = settings.update { it.copy(amoled = enabled) }
+
+    override suspend fun setBiometricLockEnabled(enabled: Boolean) =
+        settings.update {
+            it.copy(biometricLockEnabled = enabled)
+        }
+
+    override suspend fun setOnboardingCompleted(completed: Boolean) =
+        settings.update {
+            it.copy(onboardingCompleted = completed)
+        }
+
+    override suspend fun setActiveProviderId(id: ProviderId) = settings.update { it.copy(activeProviderId = id.value) }
 }

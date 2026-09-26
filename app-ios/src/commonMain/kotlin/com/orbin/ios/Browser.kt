@@ -14,6 +14,7 @@ import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import kotlinx.coroutines.CancellationException
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -74,6 +76,9 @@ sealed interface Route {
     /** Search over the followed boards, opened from the boards list. */
     data object Search : Route
 
+    /** Settings, opened from the feed's header or the boards list. */
+    data object Settings : Route
+
     data class Catalog(
         val board: SiteBoard,
     ) : Route
@@ -107,10 +112,14 @@ class Browser(
     private val bookmarks: BookmarkRepository,
     private val history: HistoryRepository,
     private val boardPreferences: BoardPreferencesRepository,
+    settings: SettingsRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val byId = providers.associateBy { it.metadata.id }
+
+    /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
+    val settings = ReaderSettings(settings, history, scope)
 
     /** Searching the followed boards' catalogs. */
     val search =
@@ -155,7 +164,8 @@ class Browser(
         ) { perSite -> perSite.flatMap { it }.toSet() }
             .stateIn(scope, SharingStarted.Eagerly, emptySet())
 
-    private var feedFor: Set<FollowedBoard>? = null
+    // What the feed holds: the followed boards, and whether NSFW ones were hidden.
+    private var feedFor: Pair<Set<FollowedBoard>, Boolean>? = null
     private var feedLoad: Job? = null
 
     private var pageLoad: Job? = null
@@ -169,6 +179,14 @@ class Browser(
         // The feed follows the followed set: follow a board and its threads join the list.
         scope.launch {
             followed.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+        }
+        scope.launch {
+            this@Browser
+                .settings.current
+                .map { it.hideNsfwBoards }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
         loadFeed()
         watched.refresh()
@@ -193,8 +211,10 @@ class Browser(
     /** Every thread the reader has opened, on any board, for the feed's read state. */
     fun visitedKeys(): Flow<Set<ThreadKey>> = history.observeVisitedKeys()
 
-    fun openSearch() {
-        _backStack.update { it + Route.Search }
+    /** Opens a page that loads nothing of its own: search or settings. */
+    fun open(page: Route) {
+        require(page == Route.Search || page == Route.Settings) { "Not a page: $page" }
+        _backStack.update { it + page }
     }
 
     fun openBoard(board: SiteBoard) {
@@ -254,7 +274,7 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Feed, Route.Boards, Route.Search, is Route.Media -> Unit
+            Route.Feed, Route.Boards, Route.Search, Route.Settings, is Route.Media -> Unit
             is Route.Catalog ->
                 if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
                     catalogShown = route.board
@@ -295,8 +315,9 @@ class Browser(
      */
     private fun loadFeed(force: Boolean = false) {
         val boards = followed.value
-        if (!force && boards == feedFor && _feed.value is Load.Ready) return
-        feedFor = boards
+        val shown = boards to settings.current.value.hideNsfwBoards
+        if (!force && shown == feedFor && _feed.value is Load.Ready) return
+        feedFor = shown
         feedLoad?.cancel()
         _feed.value = Load.Loading
         feedLoad =
@@ -344,12 +365,17 @@ class Browser(
 
     /**
      * The followed boards a feed or search covers: [boards], less those the permanent filter
-     * catches by title. Titles come from the boards list once it has loaded.
+     * catches by title and, when Settings hides them, NSFW ones, as on Android. What a board is
+     * comes from the boards list once it has loaded.
      */
     private fun searchableBoards(boards: Set<FollowedBoard> = followed.value): List<FollowedBoard> {
         val boardInfo =
             (_boards.value as? Load.Ready)?.value.orEmpty().associateBy { FollowedBoard(it.provider, it.board.id) }
-        return boards.filterNot { boardInfo[it]?.board?.isPermanentlyFiltered() == true }
+        val hideNsfw = settings.current.value.hideNsfwBoards
+        return boards.filterNot { followedBoard ->
+            val board = boardInfo[followedBoard]?.board
+            board != null && (board.isPermanentlyFiltered() || (hideNsfw && board.isNsfw))
+        }
     }
 
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
