@@ -8,6 +8,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
+import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
@@ -40,6 +41,7 @@ class SettingsViewModel
         private val downloadRepository: DownloadRepository,
         private val backupService: BackupService,
         private val updateRepository: UpdateRepository,
+        private val appUpdater: AppUpdater,
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
@@ -49,6 +51,11 @@ class SettingsViewModel
         private val _imageCacheUsageBytes = MutableStateFlow(0L)
 
         val imageCacheUsageBytes: StateFlow<Long> = _imageCacheUsageBytes.asStateFlow()
+
+        /** Whether the app looks for a new release when it opens. */
+        val checkUpdatesOnLaunch: StateFlow<Boolean> = appUpdater.checkOnLaunch
+
+        fun setCheckUpdatesOnLaunch(enabled: Boolean) = appUpdater.setCheckOnLaunch(enabled)
 
         /** State of a manual update check, for the button and its result message. */
         val updateCheck: StateFlow<UpdateCheckState> = _updateCheck.asStateFlow()
@@ -143,7 +150,11 @@ class SettingsViewModel
                 _updateCheck.value = UpdateCheckState.Checking
                 _updateCheck.value =
                     when (val result = updateRepository.checkForUpdate(currentVersionName)) {
-                        is OrbinResult.Success -> UpdateCheckState.Result(result.data)
+                        is OrbinResult.Success -> {
+                            // A newer release opens the same in-app update dialog the launch check does.
+                            (result.data as? UpdateStatus.Available)?.let(appUpdater::offer)
+                            UpdateCheckState.Result(result.data)
+                        }
                         is OrbinResult.Failure -> UpdateCheckState.Failed(result.error.message)
                     }
             }

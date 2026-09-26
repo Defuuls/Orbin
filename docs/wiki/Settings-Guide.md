@@ -13,6 +13,7 @@ encrypted.
 | Theme | Light, dark, or follow the system. |
 | True black | Uses pure black surfaces in dark mode. |
 | App lock | Requires device authentication before Orbin's content is shown. |
+| Tell me about new releases | When on (the default), Orbin checks for a new release at most once a day when it opens and offers to install it. |
 
 ## Your data
 
@@ -20,7 +21,7 @@ encrypted.
 | --- | --- |
 | Clear local activity | Deletes browsing history, recent searches and download history stored on this device. Tap once and the row reads "Tap again to delete"; a second tap within a few seconds clears it. |
 | Clear image cache | Shows the image cache size and clears it. Images download again when needed. |
-| Check for updates | Asks GitHub whether a newer release exists. Installation stays manual. |
+| Check for updates | Asks GitHub whether a newer release exists and, if one does, offers to download and install it from the app. |
 | Export data | Writes settings, boards, bookmarks and saved searches to a file you choose. |
 | Import data | Merges a backup into the existing setup rather than replacing it. |
 

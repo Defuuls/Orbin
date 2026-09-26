@@ -22,12 +22,9 @@ import javax.inject.Inject
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/Defuuls/Orbin/releases/latest"
 
 /**
- * Reads the newest published release from the GitHub API.
- *
- * Only the release *metadata* is fetched; the APK is never downloaded in-app. Sideloading a
- * signed build is the user's decision to make deliberately, on the release page, where the
- * checksums are — an in-app installer would be a materially larger trust surface for the sake of
- * skipping two taps.
+ * Reads the newest published release from the GitHub API: its tag, and where its signed APK and
+ * that APK's checksum are. Downloading and installing is [com.orbin.data.update.AppUpdaterImpl]'s
+ * job, which will not install an APK that fails either the checksum or the signing-key check.
  */
 class UpdateRepositoryImpl
     @Inject
@@ -92,10 +89,14 @@ internal fun parseLatestRelease(
     val release = JSONObject(json)
     val tag = release.getString("tag_name")
     return if (releaseNumber(tag) > releaseNumber(currentVersionName)) {
+        val downloads = release.releaseDownloads()
+        val apk = downloads.keys.firstOrNull { it.startsWith("orbin-") && it.endsWith(".apk") }
         UpdateStatus.Available(
             tag = tag,
             name = release.optString("name").takeIf { it.isNotBlank() } ?: tag,
             url = release.getString("html_url"),
+            apkUrl = apk?.let(downloads::get),
+            checksumUrl = apk?.let { downloads["$it.sha256"] },
         )
     } else {
         UpdateStatus.UpToDate
@@ -110,3 +111,21 @@ internal fun parseLatestRelease(
  * than nagging the user about a release that may not exist.
  */
 private fun releaseNumber(tag: String): Int = tag.removePrefix("v").substringBefore('-').toIntOrNull() ?: 0
+
+/** Each asset's file name to its download URL, keeping only this repository's release downloads. */
+private fun JSONObject.releaseDownloads(): Map<String, String> {
+    val assets = optJSONArray("assets") ?: return emptyMap()
+    return (0 until assets.length())
+        .map(assets::getJSONObject)
+        .associate { it.optString("name") to it.optString("browser_download_url") }
+        .filterValues(::isReleaseDownload)
+}
+
+/**
+ * Only this repository's release downloads, over HTTPS, are fetched. The API response is already
+ * trusted to name the release; this keeps a malformed or tampered asset list from pointing the
+ * downloader anywhere else.
+ */
+private fun isReleaseDownload(url: String): Boolean = url.startsWith(RELEASE_DOWNLOAD_PREFIX)
+
+private const val RELEASE_DOWNLOAD_PREFIX = "https://github.com/Defuuls/Orbin/releases/download/"

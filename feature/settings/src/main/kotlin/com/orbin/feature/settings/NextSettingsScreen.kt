@@ -16,10 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.UpdateStatus
 import com.orbin.uinext.NextSnackbarHostState
-import com.orbin.uinext.NextSnackbarResult
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
@@ -52,6 +50,7 @@ fun NextSettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
+    val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -91,26 +90,24 @@ fun NextSettingsScreen(
         snackbarHostState.showSnackbar(status.message())
         viewModel.clearBackupStatus()
     }
-    // The row itself reports progress; the snackbar exists to carry the "Open" action, so it is
-    // only worth raising once the check has actually finished.
+    // The row itself reports progress; the snackbar says how a finished check went. A newer
+    // release says so in the app-wide update dialog instead, which can install it.
     LaunchedEffect(updateCheck) {
-        val available = updateCheck.availableRelease()
         val message = updateCheck.snackbarMessage() ?: return@LaunchedEffect
-        val result =
-            snackbarHostState.showSnackbar(
-                message = message,
-                actionLabel = available?.let { "Open" },
-                withDismissAction = true,
-            )
-        if (result == NextSnackbarResult.ActionPerformed && available != null) {
-            SafeExternalLinks.open(context, available.url)
-        }
+        snackbarHostState.showSnackbar(message = message, withDismissAction = true)
     }
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
     val model =
-        remember(settings, updateCheck, cacheLabel, clearArmed) {
-            buildSettings(settings, viewModel, updateCheck.rowValue(context), cacheLabel, clearArmed)
+        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch) {
+            buildSettings(
+                settings,
+                viewModel,
+                updateCheck.rowValue(context),
+                cacheLabel,
+                clearArmed,
+                checkUpdatesOnLaunch,
+            )
         }
     val groups = model.groups
 
@@ -197,9 +194,6 @@ private fun BackupStatus.message(): String =
         is BackupStatus.Failed -> message
     }
 
-private fun UpdateCheckState.availableRelease(): UpdateStatus.Available? =
-    (this as? UpdateCheckState.Result)?.status as? UpdateStatus.Available
-
 private fun UpdateCheckState.snackbarMessage(): String? =
     when (this) {
         UpdateCheckState.Idle, UpdateCheckState.Checking -> null
@@ -207,7 +201,8 @@ private fun UpdateCheckState.snackbarMessage(): String? =
         is UpdateCheckState.Result ->
             when (status) {
                 UpdateStatus.UpToDate -> "Orbin is up to date"
-                is UpdateStatus.Available -> "${status.name} is available"
+                // Shown by the update dialog rather than a snackbar.
+                is UpdateStatus.Available -> null
             }
     }
 

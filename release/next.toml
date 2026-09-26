@@ -1,22 +1,26 @@
-# Orbin 148 — Nectarine
+# Orbin 149 — Orange
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 148
-codename     = "Nectarine"
-version_code = 166
+number       = 149
+codename     = "Orange"
+version_code = 167
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "The feed is sorted by board, A–Z, under a heading for each board."
+highlight = "Orbin tells you about new releases and installs them from the app."
 
 summary = [
-  "bump Orbin to 148-Nectarine / versionCode 166",
-  "sort the feed by board A–Z, under a heading per board",
+  "bump Orbin to 149-Orange / versionCode 167",
+  "offer and install new releases from inside the app",
+  "sort the Boards list A–Z by board",
 ]
 
 [changelog]
-Changed = [
-  "The feed is sorted by board, A–Z, under a heading for each board, with the most recently active threads first within each board. It was one list ordered by activity across every board (#560).",
+Added = [
+  "Orbin checks for a new release when it opens, at most once a day, and offers it in a popup. Update downloads the release, checks it against its published SHA-256 checksum and Orbin's signing key, and opens Android's installer to confirm. Settings → Check for updates offers the same, and \"Tell me about new releases\" turns the launch check off.",
+]
+Fixed = [
+  "The Boards list is sorted A–Z by board. It showed boards in the order the site lists them, which isn't alphabetical (#576).",
 ]
