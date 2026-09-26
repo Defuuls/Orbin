@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [152-Raspberry] - 2026-09-26
+
+### Added
+- Foldables and tablets are detected automatically. A foldable's front screen shows the feed in one column; unfolded, Settings → **Feed columns when unfolded** picks 1–3 columns. Tablets get **Feed columns**, 1–4. Both start at 2, and the setting only appears on those devices (#583).
+
+
 ## [151-Quince] - 2026-09-26
 
 ### Changed
@@ -2398,7 +2404,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v151-Quince...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v152-Raspberry...HEAD
+[152-Raspberry]: https://github.com/Defuuls/Orbin/compare/v151-Quince...v152-Raspberry
 [151-Quince]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...v151-Quince
 [150-Papaya]: https://github.com/Defuuls/Orbin/compare/v149-Orange...v150-Papaya
 [149-Orange]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...v149-Orange
