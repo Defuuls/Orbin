@@ -44,23 +44,23 @@ class ApkInstaller
          */
         fun verify(apk: File) {
             val manager = context.packageManager
+
             // The PackageInfoFlags overloads are API 33; these int ones cover minSdk 31 as well.
             @Suppress("DEPRECATION")
-            val candidate =
-                manager.getPackageArchiveInfo(apk.path, PackageManager.GET_SIGNING_CERTIFICATES)
-                    ?: throw UpdateVerificationException("The download isn't a valid app")
+            val candidate = manager.getPackageArchiveInfo(apk.path, PackageManager.GET_SIGNING_CERTIFICATES)
 
             @Suppress("DEPRECATION")
             val installed = manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-            if (candidate.packageName != installed.packageName) {
-                throw UpdateVerificationException("The download isn't Orbin")
-            }
-            if (candidate.longVersionCode <= installed.longVersionCode) {
-                throw UpdateVerificationException("The download isn't newer than this version")
-            }
-            if (candidate.signers() != installed.signers()) {
-                throw UpdateVerificationException("The download isn't signed with Orbin's key")
-            }
+            val problem =
+                when {
+                    candidate == null -> "The download isn't a valid app"
+                    candidate.packageName != installed.packageName -> "The download isn't Orbin"
+                    candidate.longVersionCode <= installed.longVersionCode ->
+                        "The download isn't newer than this version"
+                    candidate.signers() != installed.signers() -> "The download isn't signed with Orbin's key"
+                    else -> null
+                }
+            if (problem != null) throw UpdateVerificationException(problem)
         }
 
         /** Opens the system installer on [apk]; installing replaces, and so closes, the app. */

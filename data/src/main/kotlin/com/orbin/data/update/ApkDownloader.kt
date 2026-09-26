@@ -7,6 +7,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -43,30 +45,9 @@ class ApkDownloader
         ): File {
             val expected = parseSha256(fetchText(checksumUrl))
             target.parentFile?.mkdirs()
-            val digest = MessageDigest.getInstance("SHA-256")
             var verified = false
             try {
-                client.newCall(Request.Builder().url(apkUrl).build()).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Download failed (HTTP ${response.code})")
-                    val body = response.body
-                    val total = body.contentLength().takeIf { it > 0 }
-                    var received = 0L
-                    body.byteStream().use { input ->
-                        target.outputStream().use { output ->
-                            val buffer = ByteArray(BUFFER_BYTES)
-                            while (true) {
-                                currentCoroutineContext().ensureActive()
-                                val read = input.read(buffer)
-                                if (read < 0) break
-                                output.write(buffer, 0, read)
-                                digest.update(buffer, 0, read)
-                                received += read
-                                onProgress(total?.let { received.toFloat() / it })
-                            }
-                        }
-                    }
-                }
-                val actual = digest.digest().toHex()
+                val actual = fetchHashing(apkUrl, target, onProgress)
                 if (actual != expected) {
                     throw UpdateVerificationException("The download doesn't match its published checksum")
                 }
@@ -75,6 +56,44 @@ class ApkDownloader
             } finally {
                 // Cancelled, failed or mismatched: an unverified file is never left for the installer.
                 if (!verified) target.delete()
+            }
+        }
+
+        /** Writes [url] to [target] and returns the SHA-256 of exactly the bytes written, as hex. */
+        private suspend fun fetchHashing(
+            url: String,
+            target: File,
+            onProgress: (Float?) -> Unit,
+        ): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                if (!response.isSuccessful) throw IOException("Download failed (HTTP ${response.code})")
+                val total = response.body.contentLength().takeIf { it > 0 }
+                response.body.byteStream().use { input ->
+                    target.outputStream().use { output -> copyHashing(input, output, digest, total, onProgress) }
+                }
+            }
+            return digest.digest().toHex()
+        }
+
+        /** Copies [input] to [output], feeding [digest] and reporting progress; stops when cancelled. */
+        private suspend fun copyHashing(
+            input: InputStream,
+            output: OutputStream,
+            digest: MessageDigest,
+            total: Long?,
+            onProgress: (Float?) -> Unit,
+        ) {
+            val buffer = ByteArray(BUFFER_BYTES)
+            var received = 0L
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val read = input.read(buffer)
+                if (read < 0) return
+                output.write(buffer, 0, read)
+                digest.update(buffer, 0, read)
+                received += read
+                onProgress(total?.let { received.toFloat() / it })
             }
         }
 

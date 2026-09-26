@@ -250,23 +250,6 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            // Offered once the reader can see the app: never over onboarding or the lock screen.
-            val appVisible = ready && settings.onboardingCompleted && (!shouldLock || unlocked)
-            val updateState by viewModel.updateState.collectAsStateWithLifecycle()
-            LaunchedEffect(appVisible) {
-                if (appVisible) viewModel.checkForUpdateOnLaunch(BuildConfig.VERSION_NAME)
-            }
-            val updateActions =
-                remember(viewModel) {
-                    UpdateDialogActions(
-                        onUpdate = viewModel::update,
-                        onDismiss = viewModel::dismissUpdate,
-                        onCancel = viewModel::cancelUpdate,
-                        onOpenSettings = viewModel::openInstallPermissionSettings,
-                        onInstall = viewModel::installUpdate,
-                    )
-                }
-
             AppContent(
                 settings = settings,
                 ready = ready,
@@ -282,7 +265,10 @@ class MainActivity : FragmentActivity() {
                     allowContinueWithoutLock = false
                     unlocked = true
                 },
-                updateDialog = { if (appVisible) UpdateDialog(updateState, updateActions) },
+                // Offered once the reader can see the app: never over onboarding or the lock screen.
+                updateDialog = {
+                    AppUpdateDialog(viewModel, visible = settings.onboardingCompleted && (!shouldLock || unlocked))
+                },
             )
         }
     }
@@ -464,6 +450,29 @@ private fun RequestNotificationPermissionWhenUnlocked(
     }
 }
 
+/** Runs the launch update check once the app is [visible], and shows the update dialog. */
+@Composable
+private fun AppUpdateDialog(
+    viewModel: MainViewModel,
+    visible: Boolean,
+) {
+    val state by viewModel.updateState.collectAsStateWithLifecycle()
+    LaunchedEffect(visible) {
+        if (visible) viewModel.checkForUpdateOnLaunch(BuildConfig.VERSION_NAME)
+    }
+    val actions =
+        remember(viewModel) {
+            UpdateDialogActions(
+                onUpdate = viewModel::update,
+                onDismiss = viewModel::dismissUpdate,
+                onCancel = viewModel::cancelUpdate,
+                onOpenSettings = viewModel::openInstallPermissionSettings,
+                onInstall = viewModel::installUpdate,
+            )
+        }
+    if (visible) UpdateDialog(state, actions)
+}
+
 @Composable
 private fun AppContent(
     settings: AppSettings,
@@ -519,7 +528,7 @@ private fun AppContent(
                 }
             }
 
-            updateDialog()
+            if (ready) updateDialog()
         }
     }
 }
