@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 
 /**
  * The settings iOS has, read and written through the same `SettingsStore` (`:storage`) and keys as
- * Android's: hiding NSFW boards, the theme and true black, and clearing what the app keeps.
+ * Android's: hiding NSFW boards, covering violent media, the theme and true black, and clearing
+ * what the app keeps.
  */
 class ReaderSettings(
     private val repository: SettingsRepository,
@@ -33,6 +34,8 @@ class ReaderSettings(
 
     fun setHideNsfwBoards(hide: Boolean): Job = scope.launch { repository.setHideNsfwBoards(hide) }
 
+    fun setCoverViolentMedia(cover: Boolean): Job = scope.launch { repository.setCoverViolentMedia(cover) }
+
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
@@ -44,6 +47,7 @@ class ReaderSettings(
 /** What the settings rows are called; the screen dispatches on these. */
 internal object SettingIds {
     const val HIDE_NSFW = "hideNsfw"
+    const val COVER_VIOLENT = "coverViolent"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
     const val APP_LOCK = "biometric"
@@ -65,6 +69,7 @@ internal fun settingsGroups(
         "" to
             listOf(
                 toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
+                toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
                 SettingItem(
                     id = SettingIds.THEME,
                     label = "Theme",

@@ -74,6 +74,24 @@ class RowsTest {
     }
 
     @Test
+    fun aSpoileredFileLeavesItsPostsTextReadable() {
+        val covered =
+            post(1, files = 1).let {
+                it.copy(
+                    attachments =
+                        it.attachments
+                            .map { a ->
+                                a.copy(isSpoiler = true)
+                            }.toPersistentList(),
+                )
+            }
+        val thread = Thread(key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)), originalPost = covered)
+
+        // The file is covered where it is drawn; the post's text stays as it is.
+        assertEquals(false, thread.toPosts(nowMillis = 0).single().spoiler)
+    }
+
+    @Test
     fun onlyHttpsLinksWithAHostMayBeOpened() {
         assertEquals("https://example.com/a", safeExternalLink(" https://example.com/a "))
         assertEquals("HTTPS://example.com", safeExternalLink("HTTPS://example.com"))

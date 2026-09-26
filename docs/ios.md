@@ -42,7 +42,9 @@ A reader, so far:
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
-  hide NSFW boards (from the boards list, the feed and search, as on Android), the theme
+  hide NSFW boards (from the boards list, the feed and search, as on Android), cover violent
+  media (on by default: a spoilered file, or one whose post is labelled as violent, waits behind a
+  cover in the feed, the catalog, the thread and the viewer until tapped), the theme
   (system, light or dark) and true black, the app lock, clearing the reading history (two taps,
   as on Android) and clearing the image cache;
 - the app lock, as on Android: with it on, the app is locked at launch and whenever it has been

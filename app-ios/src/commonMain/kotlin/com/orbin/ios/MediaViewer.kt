@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -50,6 +51,7 @@ import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_media_not_viewable
 import com.orbin.ios.resources.ios_media_open_in_browser
 import com.orbin.ios.resources.ios_media_position
+import com.orbin.ios.resources.ios_media_spoiler_reveal
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -100,6 +102,16 @@ private fun MediaPage(
     active: Boolean,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
+    // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
+    // until tapped, and nothing of it plays before then.
+    var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
+    if (!revealed) {
+        SpoilerCover(
+            modifier = Modifier.clickable { revealed = true },
+            text = stringResource(Res.string.ios_media_spoiler_reveal),
+        )
+        return
+    }
     when {
         file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
         // Below the top bar, so the player's own controls never sit under the close button.

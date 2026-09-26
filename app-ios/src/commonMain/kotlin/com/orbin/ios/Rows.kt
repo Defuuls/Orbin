@@ -123,7 +123,8 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> =
             body = post.comment.plainText(),
             hasMedia = post.attachments.isNotEmpty(),
             replies = post.backlinks.size,
-            spoiler = post.attachments.any { it.isSpoiler },
+            // A spoilered file is covered where it is drawn; `spoiler` here would hide the post's
+            // text instead, which is not what a spoilered file means.
         )
     }
 

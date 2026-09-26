@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -174,6 +175,7 @@ private fun SettingsDestination(
         onActivate = { item ->
             when (item.id) {
                 SettingIds.HIDE_NSFW -> browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+                SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
                 SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
                 SettingIds.THEME -> expanded = if (expanded == item.id) null else item.id
@@ -269,12 +271,15 @@ private fun CatalogThumbnail(
     modifier: Modifier,
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
-    AsyncImage(
-        model = attachment.thumbnailUrl,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier,
-    )
+    Box(modifier) {
+        AsyncImage(
+            model = attachment.thumbnailUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+    }
 }
 
 @Composable
@@ -328,12 +333,16 @@ private fun ThreadContent(
         },
         media = { post, modifier ->
             byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
-                AsyncImage(
-                    model = attachment.thumbnailUrl,
-                    contentDescription = attachment.originalFileName,
-                    contentScale = ContentScale.Crop,
-                    modifier = modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
-                )
+                Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
+                    AsyncImage(
+                        model = attachment.thumbnailUrl,
+                        contentDescription = attachment.originalFileName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    // Opening it still asks again in the viewer: the cover is lifted per file there.
+                    if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                }
             }
         },
     )
