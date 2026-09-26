@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [148 — Nectarine](https://github.com/Defuuls/Orbin/releases/tag/v148-Nectarine)
+**Current release:** [149 — Orange](https://github.com/Defuuls/Orbin/releases/tag/v149-Orange)
 
-**What's new in 148:** The feed is sorted by board, A–Z, under a heading for each board.
+**What's new in 149:** Orbin tells you about new releases and installs them from the app.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
