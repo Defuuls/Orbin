@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [152 — Raspberry](https://github.com/Defuuls/Orbin/releases/tag/v152-Raspberry)
+**Current release:** [153 — Strawberry](https://github.com/Defuuls/Orbin/releases/tag/v153-Strawberry)
 
-**What's new in 152:** Foldables and tablets can show the feed in more columns.
+**What's new in 153:** Media labelled as violent waits behind a spoiler cover.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

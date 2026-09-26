@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [153-Strawberry] - 2026-09-26
+
+### Added
+- **Cover violent media**, on by default in Settings. Images and videos in posts whose subject, text or filename mentions violence, accidents or graphic footage (fight, car crash, bodycam, nsfl and similar) show a spoiler cover until you open them, and never autoplay. When a thread's opening post is labelled, every file in the thread is covered. It reads text only; clearly labelled gore is still hidden outright.
+
+
 ## [152-Raspberry] - 2026-09-26
 
 ### Added
@@ -2404,7 +2410,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v152-Raspberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v153-Strawberry...HEAD
+[153-Strawberry]: https://github.com/Defuuls/Orbin/compare/v152-Raspberry...v153-Strawberry
 [152-Raspberry]: https://github.com/Defuuls/Orbin/compare/v151-Quince...v152-Raspberry
 [151-Quince]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...v151-Quince
 [150-Papaya]: https://github.com/Defuuls/Orbin/compare/v149-Orange...v150-Papaya
