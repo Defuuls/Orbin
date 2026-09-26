@@ -54,6 +54,21 @@ class AndroidThreadNotifier
                     ) == PackageManager.PERMISSION_GRANTED
             if (!hasPostNotificationsPermission) return
 
+            val publicNotification =
+                NotificationCompat
+                    .Builder(context, CHANNEL_ID)
+                    .setSmallIcon(android.R.drawable.stat_notify_chat)
+                    .setContentTitle(context.getString(R.string.notification_thread_watched_update))
+                    .setContentText(
+                        context.resources.getQuantityString(
+                            R.plurals.notification_thread_new_replies,
+                            newReplyCount,
+                            newReplyCount,
+                        ),
+                    ).setContentIntent(launchIntent())
+                    .setAutoCancel(true)
+                    .build()
+
             val notification =
                 NotificationCompat
                     .Builder(context, CHANNEL_ID)
@@ -67,6 +82,8 @@ class AndroidThreadNotifier
                         ),
                     ).setContentIntent(launchIntent())
                     .setAutoCancel(true)
+                    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                    .setPublicVersion(publicNotification)
                     .build()
 
             @Suppress("MissingPermission")

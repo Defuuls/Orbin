@@ -128,6 +128,8 @@ class SettingsViewModel
                 historyRepository.clear()
                 searchRepository.clearRecentQueries()
                 downloadRepository.clearHistory()
+                imageCacheRepository.clear()
+                _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
             }
 
         fun exportBackup(

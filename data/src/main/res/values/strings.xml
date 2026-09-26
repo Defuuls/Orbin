@@ -6,4 +6,5 @@
         <item quantity="one">%1$d new reply</item>
         <item quantity="other">%1$d new replies</item>
     </plurals>
+    <string name="notification_thread_watched_update">Watched thread update</string>
 </resources>

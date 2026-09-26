@@ -10,6 +10,8 @@ data class NetworkConfig(
     val dnsOverHttps: DohConfig = DohConfig.Cloudflare,
     /** When true, the app refuses cleartext HTTP entirely. */
     val httpsOnly: Boolean = true,
+    /** When true, DNS lookups must be encrypted via DoH and will fail rather than falling back to system DNS. */
+    val strictDoh: Boolean = false,
     val connectTimeoutSeconds: Long = 15,
     val readTimeoutSeconds: Long = 30,
     val enableHttpLogging: Boolean = false,

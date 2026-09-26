@@ -67,6 +67,7 @@ fi
 # 2. Gradle distribution (seed the wrapper cache from a reachable mirror)
 # ---------------------------------------------------------------------------
 DIST_URL="$(grep '^distributionUrl=' "$PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties" | cut -d= -f2- | sed 's/\\:/:/g')"
+EXPECTED_SHA="$(grep '^distributionSha256Sum=' "$PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties" | cut -d= -f2- | tr -d '\r' || true)"
 GRADLE_ZIP="${DIST_URL##*/}"                 # e.g. gradle-9.4.1-bin.zip
 DIST_NAME="${GRADLE_ZIP%.zip}"               # e.g. gradle-9.4.1-bin
 GRADLE_DIR_NAME="${DIST_NAME%-bin}"          # e.g. gradle-9.4.1
@@ -91,6 +92,14 @@ if [ ! -x "$DEST/$GRADLE_DIR_NAME/bin/gradle" ]; then
   mkdir -p "$DEST"
   rm -f "$DEST/$GRADLE_ZIP" "$DEST/$GRADLE_ZIP.part" "$DEST/$GRADLE_ZIP.lck"
   curl -fsSL --retry 3 --max-time 300 -o "$DEST/$GRADLE_ZIP" "$GRADLE_MIRROR_BASE/$GRADLE_ZIP"
+  if [ -n "$EXPECTED_SHA" ]; then
+    ACTUAL_SHA="$(sha256sum "$DEST/$GRADLE_ZIP" | cut -d' ' -f1)"
+    if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+      log "checksum mismatch for $GRADLE_ZIP: expected $EXPECTED_SHA, got $ACTUAL_SHA"
+      rm -f "$DEST/$GRADLE_ZIP"
+      exit 1
+    fi
+  fi
   (cd "$DEST" && unzip -q "$GRADLE_ZIP")
   touch "$DEST/$GRADLE_ZIP.ok"   # marker the wrapper checks to skip re-downloading
 else

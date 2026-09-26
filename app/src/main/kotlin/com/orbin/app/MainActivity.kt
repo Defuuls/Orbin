@@ -495,7 +495,7 @@ private fun AppContent(
             modifier = Modifier.fillMaxSize(),
             color = next.background,
         ) {
-            if (ready) {
+            if (ready && (!shouldLock || unlocked)) {
                 OrbinAppProviders {
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
