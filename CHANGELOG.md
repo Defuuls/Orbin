@@ -6,9 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Fixed
-- The Boards list is sorted A–Z by board. It showed boards in the order the site lists them, which isn't alphabetical.
-
 ## [148-Nectarine] - 2026-09-25
 
 ### Changed
