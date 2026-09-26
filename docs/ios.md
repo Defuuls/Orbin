@@ -72,7 +72,8 @@ longer offers saving a thread, so iOS has nothing to match there.)
 
 ## Building on a Mac
 
-You need a Mac with Apple silicon (the simulator build is arm64 only), Xcode 16 or newer, a JDK 17
+You need a Mac with Apple silicon (the simulator build is arm64 only), Xcode 26 or newer (App Store Connect
+rejects uploads built with an older SDK), a JDK 17
 on the `PATH`, and XcodeGen:
 
 ```bash
