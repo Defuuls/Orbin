@@ -6,9 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- Nothing plays in the feed any more. GIFs and videos show their thumbnail until you open the thread; the feed used to play the card it was centred on.
-
 ## [149-Orange] - 2026-09-26
 
 ### Added

@@ -1,26 +1,22 @@
-# Orbin 149 — Orange
+# Orbin 150 — Papaya
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 149
-codename     = "Orange"
-version_code = 167
+number       = 150
+codename     = "Papaya"
+version_code = 168
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Orbin tells you about new releases and installs them from the app."
+highlight = "Nothing plays in the feed; GIFs and videos wait until you open the thread."
 
 summary = [
-  "bump Orbin to 149-Orange / versionCode 167",
-  "offer and install new releases from inside the app",
-  "sort the Boards list A–Z by board",
+  "bump Orbin to 150-Papaya / versionCode 168",
+  "stop autoplaying media in the feed",
 ]
 
 [changelog]
-Added = [
-  "Orbin checks for a new release when it opens, at most once a day, and offers it in a popup. Update downloads the release, checks it against its published SHA-256 checksum and Orbin's signing key, and opens Android's installer to confirm. Settings → Check for updates offers the same, and \"Tell me about new releases\" turns the launch check off.",
-]
-Fixed = [
-  "The Boards list is sorted A–Z by board. It showed boards in the order the site lists them, which isn't alphabetical (#576).",
+Changed = [
+  "Nothing plays in the feed any more. GIFs and videos show their thumbnail until you open the thread; the feed used to play the card it was centred on (#579).",
 ]
