@@ -140,12 +140,14 @@ private fun FeedDestination(browser: Browser) {
 private fun BoardsDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
+    val unreachable by browser.unreachableSites.collectAsState()
     val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
     Loaded(boards, onRetry = browser::retry) { all ->
         // Hidden NSFW boards leave the list, as Android's boards list drops them.
         val list = remember(all, hideNsfw) { if (hideNsfw) all.filterNot { it.board.isNsfw } else all }
         val byTile = remember(list) { list.associateBy { it.tileId } }
         BoardsScreen(
+            subtitle = boardsSubtitle(list.size, unreachable),
             boards =
                 remember(list, followed) {
                     list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in followed) }
@@ -158,6 +160,19 @@ private fun BoardsDestination(browser: Browser) {
             onOpenSettings = { browser.open(Route.Settings) },
         )
     }
+}
+
+/**
+ * The Boards title's subtitle when a site could not be reached (a network blocking it, say), so it
+ * reads as missing rather than never having been there; null keeps the usual board count.
+ */
+internal fun boardsSubtitle(
+    boardCount: Int,
+    unreachable: List<String>,
+): String? {
+    if (unreachable.isEmpty()) return null
+    val count = if (boardCount == 1) "1 board" else "$boardCount boards"
+    return "$count · Couldn't reach ${unreachable.joinToString()}; tried again when you reopen Boards"
 }
 
 @Composable

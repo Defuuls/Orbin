@@ -6,6 +6,10 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- iOS: 4chan no longer disappears on networks that block it through DNS, such as some mobile carriers. The app now uses encrypted DNS (Cloudflare) for every request, as the Android app does.
+- iOS: a site that can't be reached is named under the Boards title instead of silently missing from the list, and is tried again when you reopen Boards.
+
 ## [155-Ugli] - 2026-09-26
 
 ### Changed
