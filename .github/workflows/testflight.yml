@@ -38,7 +38,7 @@ permissions:
 jobs:
   upload:
     name: Upload to TestFlight
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
