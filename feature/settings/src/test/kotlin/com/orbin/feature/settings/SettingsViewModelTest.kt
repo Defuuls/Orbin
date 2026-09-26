@@ -21,7 +21,6 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -166,7 +165,6 @@ class SettingsViewModelTest {
                 )
 
             viewModel.checkForUpdate("148-Nectarine")
-            advanceUntilIdle()
 
             assertThat(updater.state.value).isEqualTo(AppUpdateState.Available(release))
         }

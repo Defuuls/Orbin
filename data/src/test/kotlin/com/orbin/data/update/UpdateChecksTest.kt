@@ -27,7 +27,12 @@ class UpdateChecksTest {
 
         assertThat(shouldCheckOnLaunch(true, last, last + LAUNCH_CHECK_INTERVAL_MS - 1)).isFalse()
         assertThat(shouldCheckOnLaunch(true, last, last + LAUNCH_CHECK_INTERVAL_MS)).isTrue()
-        assertThat(shouldCheckOnLaunch(true, 0L, last)).isTrue()
+    }
+
+    /** Never checked (0) is a day's worth of milliseconds ago on any real clock. */
+    @Test
+    fun aFirstLaunchChecks() {
+        assertThat(shouldCheckOnLaunch(true, 0L, System.currentTimeMillis())).isTrue()
     }
 
     @Test
