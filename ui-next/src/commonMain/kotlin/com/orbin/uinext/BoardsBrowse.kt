@@ -53,6 +53,16 @@ data class BoardTile(
 )
 
 /**
+ * Boards A–Z by path ("/3/", "/a/", "/b/" …), whatever order the site lists them in; the title
+ * breaks ties, which matters where two sites share a path.
+ */
+internal fun List<BoardTile>.sortedAlphabetically(): List<BoardTile> =
+    sortedWith(
+        compareBy<BoardTile, String>(String.CASE_INSENSITIVE_ORDER) { it.path }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
+    )
+
+/**
  * Primary Boards destination: inset grouped list on the grouped ground (iOS Settings / Files
  * rhythm), with DestinationPill chrome when sibling destinations are wired.
  */
@@ -86,7 +96,7 @@ fun BoardsScreen(
                         ) ||
                             it.title.contains(query, true)
                     )
-            }
+            }.sortedAlphabetically()
         }
     val listState = rememberLazyListState()
     val railVisible =
