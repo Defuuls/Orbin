@@ -41,11 +41,17 @@ A reader, so far:
   a jump to the first reply you had not seen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
-Followed boards live in a DataStore file beside the database, read and written by the same
-`BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
+- settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
+  hide NSFW boards (from the boards list, the feed and search, as on Android), the theme
+  (system, light or dark) and true black, clearing the reading history (two taps, as on
+  Android) and clearing the image cache.
+
+Followed boards and settings live in a DataStore file beside the database, read and written by
+the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
+with the same keys.
 
 Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), WebM playback, settings and saved threads. These move over
+background refresh), WebM playback, saved threads, the app lock, and backup and restore. These move over
 in later steps.
 
 ## Building on a Mac

@@ -8,6 +8,7 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
+import com.orbin.data.settings.SettingsStore
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.MainScope
 import platform.Foundation.NSNotificationCenter
@@ -24,12 +25,15 @@ import platform.UIKit.UIViewController
 fun MainViewController(): UIViewController {
     val client = orbinHttpClient(Darwin.create())
     val database = openDatabase()
+    // One DataStore per file: board preferences and settings share it, as they do on Android.
+    val preferences = openPreferences()
     val browser =
         Browser(
             providers = orbinProviders(client),
             bookmarks = BookmarkRepositoryImpl(database.bookmarkDao()),
             history = HistoryRepositoryImpl(database.historyDao()),
-            boardPreferences = BoardPreferencesStore(openPreferences()),
+            boardPreferences = BoardPreferencesStore(preferences),
+            settings = SettingsStore(preferences),
             scope = MainScope(),
         )
     // The app lives as long as this controller, so the observer is never removed.

@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -14,7 +15,10 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.Thread
 import com.orbin.core.ui.post.PostCommentText
@@ -29,7 +33,13 @@ import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
+import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
@@ -46,11 +56,22 @@ fun OrbinApp(browser: Browser) {
         onBackCompleted = { browser.back() },
     )
 
-    NextTheme(platform = NextPlatform.IOS) {
+    val settings by browser.settings.current.collectAsState()
+    NextTheme(
+        darkTheme =
+            when (settings.themeMode) {
+                AppThemeMode.SYSTEM -> null
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.DARK -> true
+            },
+        amoled = settings.amoled,
+        platform = NextPlatform.IOS,
+    ) {
         when (val route = backStack.last()) {
             Route.Feed -> FeedDestination(browser)
             Route.Boards -> BoardsDestination(browser)
             Route.Search -> SearchDestination(browser)
+            Route.Settings -> SettingsDestination(browser)
             is Route.Catalog -> CatalogDestination(browser, route.board)
             is Route.ThreadPage -> ThreadDestination(browser)
             is Route.Media -> MediaDestination(browser, route)
@@ -71,6 +92,7 @@ private fun FeedDestination(browser: Browser) {
             onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
             thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
             onOpenBoards = { browser.openTab(Route.Boards) },
+            onSettings = { browser.open(Route.Settings) },
         )
     }
 }
@@ -79,7 +101,10 @@ private fun FeedDestination(browser: Browser) {
 private fun BoardsDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
-    Loaded(boards, onRetry = browser::retry) { list ->
+    val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
+    Loaded(boards, onRetry = browser::retry) { all ->
+        // Hidden NSFW boards leave the list, as Android's boards list drops them.
+        val list = remember(all, hideNsfw) { if (hideNsfw) all.filterNot { it.board.isNsfw } else all }
         val byTile = remember(list) { list.associateBy { it.tileId } }
         BoardsScreen(
             boards =
@@ -89,9 +114,54 @@ private fun BoardsDestination(browser: Browser) {
             onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
             onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
             onOpenFeed = { browser.openTab(Route.Feed) },
-            onOpenSearch = browser::openSearch,
+            onOpenSearch = { browser.open(Route.Search) },
+            onOpenSettings = { browser.open(Route.Settings) },
         )
     }
+}
+
+@Composable
+private fun SettingsDestination(browser: Browser) {
+    val settings by browser.settings.current.collectAsState()
+    val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
+    val scope = rememberCoroutineScope()
+    var expanded by remember { mutableStateOf<String?>(null) }
+    var clearArmed by remember { mutableStateOf(false) }
+    var imageCacheCleared by remember { mutableStateOf(false) }
+    SettingsScreen(
+        groups =
+            remember(
+                settings,
+                clearArmed,
+                imageCacheCleared,
+            ) { settingsGroups(settings, clearArmed, imageCacheCleared) },
+        expandedId = expanded,
+        showRail = false,
+        onActivate = { item ->
+            when (item.id) {
+                SettingIds.HIDE_NSFW -> browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+                SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
+                SettingIds.THEME -> expanded = if (expanded == item.id) null else item.id
+                SettingIds.CLEAR_ACTIVITY ->
+                    if (clearArmed) {
+                        clearArmed = false
+                        browser.settings.clearActivity()
+                    } else {
+                        clearArmed = true
+                    }
+                SettingIds.CLEAR_IMAGE_CACHE ->
+                    scope.launch {
+                        imageLoader.memoryCache?.clear()
+                        withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
+                        imageCacheCleared = true
+                    }
+            }
+        },
+        onSelectOption = { item, index ->
+            if (item.id == SettingIds.THEME) AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
+            expanded = null
+        },
+    )
 }
 
 @Composable
