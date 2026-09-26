@@ -12,6 +12,7 @@ encrypted.
 | Hide NSFW boards | Removes NSFW boards from the board list, the feed and All media. |
 | Theme | Light, dark, or follow the system. |
 | True black | Uses pure black surfaces in dark mode. |
+| Feed columns | Foldables and tablets only. How many columns the feed shows on a wide screen: 1–3 on an unfolded foldable ("Feed columns when unfolded"), 1–4 on a tablet. Starts at 2. A foldable's front screen, a phone, and any window narrower than 600dp always show one column. |
 | App lock | Requires device authentication before Orbin's content is shown. |
 | Tell me about new releases | When on (the default), Orbin checks for a new release at most once a day when it opens and offers to install it. |
 

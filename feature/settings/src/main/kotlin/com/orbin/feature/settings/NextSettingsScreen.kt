@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.UpdateStatus
+import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
@@ -51,6 +52,7 @@ fun NextSettingsScreen(
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
+    val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -99,7 +101,7 @@ fun NextSettingsScreen(
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
     val model =
-        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch) {
+        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor) {
             buildSettings(
                 settings,
                 viewModel,
@@ -107,6 +109,7 @@ fun NextSettingsScreen(
                 cacheLabel,
                 clearArmed,
                 checkUpdatesOnLaunch,
+                formFactor,
             )
         }
     val groups = model.groups

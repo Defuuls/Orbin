@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Foldables and tablets are detected automatically. A foldable's front screen shows the feed in one column; unfolded, Settings → **Feed columns when unfolded** picks 1–3 columns. Tablets get **Feed columns**, 1–4. Both start at 2, and the setting only appears on those devices.
+
 ## [150-Papaya] - 2026-09-26
 
 ### Changed

@@ -8,6 +8,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
@@ -173,6 +174,19 @@ class FakeSettingsRepository(
 
     override suspend fun setActiveProviderId(id: ProviderId) {
         update { copy(activeProviderId = id.value) }
+    }
+
+    override suspend fun setFeedColumns(
+        formFactor: FormFactor,
+        columns: Int,
+    ) {
+        update {
+            when (formFactor) {
+                FormFactor.PHONE -> this
+                FormFactor.FOLDABLE -> copy(unfoldedFeedColumns = columns)
+                FormFactor.TABLET -> copy(tabletFeedColumns = columns)
+            }
+        }
     }
 
     /** The settings as they stand now, for asserting that a screen wrote through. */

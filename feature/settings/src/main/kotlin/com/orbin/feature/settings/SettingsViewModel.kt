@@ -6,6 +6,7 @@ import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
@@ -97,6 +98,11 @@ class SettingsViewModel
         fun setHideNsfwBoards(enabled: Boolean) = update { repository.setHideNsfwBoards(enabled) }
 
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
+
+        fun setFeedColumns(
+            formFactor: FormFactor,
+            columns: Int,
+        ) = update { repository.setFeedColumns(formFactor, columns) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 

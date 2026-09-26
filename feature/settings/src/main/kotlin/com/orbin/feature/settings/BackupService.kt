@@ -7,6 +7,7 @@ import com.orbin.core.model.BackupDocument
 import com.orbin.core.model.BackupSavedSearch
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -108,6 +109,8 @@ class BackupService
                 setDeepMediaScan(settings.deepMediaScan)
                 setThemeMode(settings.themeMode)
                 setAmoled(settings.amoled)
+                setFeedColumns(FormFactor.FOLDABLE, settings.unfoldedFeedColumns)
+                setFeedColumns(FormFactor.TABLET, settings.tabletFeedColumns)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

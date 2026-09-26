@@ -5,6 +5,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -136,4 +137,15 @@ class FakeSettings : SettingsRepository {
         }
 
     override suspend fun setActiveProviderId(id: ProviderId) = settings.update { it.copy(activeProviderId = id.value) }
+
+    override suspend fun setFeedColumns(
+        formFactor: FormFactor,
+        columns: Int,
+    ) = settings.update {
+        when (formFactor) {
+            FormFactor.PHONE -> it
+            FormFactor.FOLDABLE -> it.copy(unfoldedFeedColumns = columns)
+            FormFactor.TABLET -> it.copy(tabletFeedColumns = columns)
+        }
+    }
 }
