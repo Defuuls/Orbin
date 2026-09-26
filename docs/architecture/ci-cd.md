@@ -80,9 +80,11 @@ A single job that produces a complete, verifiable release:
 2. On manual dispatch, creates and pushes the annotated tag itself.
 3. Decodes the signing keystore from `RELEASE_KEYSTORE_BASE64`.
 4. Builds a **signed** release APK (`assembleRelease`).
-5. Stages the APK and the R8 `mapping.txt`, computing **SHA-256** checksums for each.
-6. Generates release notes from the commit log since the previous tag.
-7. Publishes a GitHub Release with the APK, mapping file, and `.sha256` checksums attached.
+5. Stages the APK and computes its **SHA-256** checksum.
+6. Uploads the R8 `mapping.txt` as a private workflow artifact, `orbin-<tag>-mapping`, kept 90
+   days. It decodes crash stack traces and is not published with the release.
+7. Generates release notes from the commit log since the previous tag.
+8. Publishes a GitHub Release with the APK and its `.sha256` checksum attached.
 
 ### `wiki-sync.yml` — on push to `main` touching `docs/wiki/**` (or manual)
 Mirrors `docs/wiki/` onto the repository's GitHub wiki with `rsync --delete`. `docs/wiki` is the
@@ -136,7 +138,8 @@ manifest-driven cutter is the source of truth:
    `version_code`, changelog sections). See [`release/README.md`](../../release/README.md).
 2. Merge it. `cut-release.yml` opens `release/prep-v<tag>`.
 3. Merge the prep PR (after `validate_repo.py` / CI). The cutter then dispatches `release.yml`.
-4. Confirm the GitHub Release has the signed APK, mapping file, and `.sha256` checksums.
+4. Confirm the GitHub Release has the signed APK and its `.sha256` checksum, and the run has the
+   `orbin-<tag>-mapping` artifact.
 
 Manual `release.yml` / tag dispatch remains available as a fallback, but normal releases should
 go through `release/next.toml`. Developer walkthrough:

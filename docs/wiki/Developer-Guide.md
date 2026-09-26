@@ -175,9 +175,10 @@ The preferred release path is manifest-driven:
 3. Let the release PR pass required checks and merge it.
 4. The release automation creates/uses the `v<number>-<Codename>` tag and dispatches the signed
    build.
-5. `release.yml` builds the signed APK, stages mapping information, computes SHA-256 checksums,
-   generates notes, and publishes the GitHub Release.
-6. Verify the tag, release page, APK, mapping file, and checksums before declaring success.
+5. `release.yml` builds the signed APK, computes its SHA-256 checksum, generates notes, and
+   publishes the GitHub Release. The R8 mapping file is uploaded as a private workflow artifact
+   (`orbin-<tag>-mapping`, kept 90 days) for decoding crash stack traces.
+6. Verify the tag, release page, APK and checksum before declaring success.
 
 `release/README.md` is the implementation-level reference.
 

@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Releases attach only the APK and its checksum. The R8 mapping file, used to decode crash reports, is kept as a private build artifact for 90 days instead of a release download.
+
 ## [154-Tangerine] - 2026-09-26
 
 ### Changed

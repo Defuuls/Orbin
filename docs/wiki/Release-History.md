@@ -40,7 +40,8 @@ fruit-era tag: **v136 — Apple**, unless another unused pool name is chosen).
 
 Full Orbin releases use tags shaped like `v<number>-<Codename>`. Release metadata is prepared through
 `release/next.toml` and the Cut Release workflow, then the signed release workflow publishes the APK,
-R8 mapping file, SHA-256 checksums, and generated notes.
+its SHA-256 checksum, and generated notes. The R8 mapping file is kept as a private workflow
+artifact rather than a release download.
 
 Orbin Minimal is released independently under `minimal-v*` tags. A Minimal release does not imply a
 full Orbin release and vice versa.
