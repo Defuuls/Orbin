@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performScrollToNode
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeDnsPrivacyMonitor
@@ -96,6 +97,7 @@ class SettingsUserJourneyTest {
             "Theme",
             "True black",
             "App lock",
+            "Tell me about new releases",
             "Clear local activity",
             "Clear image cache",
             "Check for updates",
@@ -214,6 +216,7 @@ class SettingsUserJourneyTest {
                         FakeProviderRegistry(),
                     ),
                 updateRepository = FakeUpdateRepository(),
+                appUpdater = FakeAppUpdater(),
                 dnsPrivacyMonitor = FakeDnsPrivacyMonitor(),
                 registry = FakeProviderRegistry(),
                 imageCacheRepository = imageCache,

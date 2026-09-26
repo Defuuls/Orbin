@@ -67,14 +67,75 @@ class UpdateRepositoryParsingTest {
         assertThat((status as UpdateStatus.Available).name).isEqualTo("v62-Canopus")
     }
 
+    @Test
+    fun theReleaseApkAndItsChecksumAreFound() {
+        val status =
+            parseLatestRelease(
+                release(
+                    "v149-Orange",
+                    assets =
+                        listOf(
+                            "orbin-v149-Orange-mapping.txt",
+                            "orbin-v149-Orange-mapping.txt.sha256",
+                            "orbin-v149-Orange.apk",
+                            "orbin-v149-Orange.apk.sha256",
+                        ),
+                ),
+                "148-Nectarine",
+            ) as UpdateStatus.Available
+
+        assertThat(status.apkUrl).isEqualTo("$DOWNLOADS/v149-Orange/orbin-v149-Orange.apk")
+        assertThat(status.checksumUrl).isEqualTo("$DOWNLOADS/v149-Orange/orbin-v149-Orange.apk.sha256")
+        assertThat(status.installable).isTrue()
+    }
+
+    /** No checksum, no install: the reader is sent to the release page instead. */
+    @Test
+    fun anApkWithoutAChecksumIsNotInstallable() {
+        val status =
+            parseLatestRelease(release("v149-Orange", assets = listOf("orbin-v149-Orange.apk")), "148-Nectarine")
+                as UpdateStatus.Available
+
+        assertThat(status.apkUrl).isNotNull()
+        assertThat(status.installable).isFalse()
+    }
+
+    /** An asset list pointing anywhere but this repository's release downloads is ignored. */
+    @Test
+    fun downloadsFromElsewhereAreIgnored() {
+        val status =
+            parseLatestRelease(
+                release(
+                    "v149-Orange",
+                    assets = listOf("orbin-v149-Orange.apk", "orbin-v149-Orange.apk.sha256"),
+                    downloads = "https://example.invalid/releases/download",
+                ),
+                "148-Nectarine",
+            ) as UpdateStatus.Available
+
+        assertThat(status.apkUrl).isNull()
+        assertThat(status.installable).isFalse()
+    }
+
     private fun release(
         tag: String,
         name: String = "release",
-    ) = """
-        {
-          "tag_name": "$tag",
-          "name": "$name",
-          "html_url": "https://example.invalid/release"
-        }
-        """.trimIndent()
+        assets: List<String> = emptyList(),
+        downloads: String = DOWNLOADS,
+    ): String {
+        val assetJson =
+            assets.joinToString { "{\"name\": \"$it\", \"browser_download_url\": \"$downloads/$tag/$it\"}" }
+        return """
+            {
+              "tag_name": "$tag",
+              "name": "$name",
+              "html_url": "https://example.invalid/release",
+              "assets": [$assetJson]
+            }
+            """.trimIndent()
+    }
+
+    private companion object {
+        const val DOWNLOADS = "https://github.com/Defuuls/Orbin/releases/download"
+    }
 }

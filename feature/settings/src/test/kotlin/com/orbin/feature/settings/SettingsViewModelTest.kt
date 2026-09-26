@@ -5,8 +5,10 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppUpdateState
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.testing.MainDispatcherRule
+import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeDnsPrivacyMonitor
@@ -19,6 +21,7 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -151,6 +154,23 @@ class SettingsViewModelTest {
             }
         }
 
+    @Test
+    fun `a newer release found by checkForUpdate is offered in the update dialog`() =
+        runTest {
+            val release = UpdateStatus.Available(tag = "v149-Orange", name = "Orbin 149 - Orange", url = "https://x")
+            val updater = FakeAppUpdater()
+            val viewModel =
+                createViewModel(
+                    updateRepository = FakeUpdateRepository(OrbinResult.Success(release)),
+                    appUpdater = updater,
+                )
+
+            viewModel.checkForUpdate("148-Nectarine")
+            advanceUntilIdle()
+
+            assertThat(updater.state.value).isEqualTo(AppUpdateState.Available(release))
+        }
+
     private fun createViewModel(
         settings: FakeSettingsRepository = FakeSettingsRepository(),
         history: FakeHistoryRepository = FakeHistoryRepository(),
@@ -159,6 +179,7 @@ class SettingsViewModelTest {
         bookmarks: BookmarkRepository = FakeBookmarkRepository(),
         updateRepository: FakeUpdateRepository = FakeUpdateRepository(),
         registry: FakeProviderRegistry = FakeProviderRegistry(),
+        appUpdater: FakeAppUpdater = FakeAppUpdater(),
     ) = SettingsViewModel(
         repository = settings,
         historyRepository = history,
@@ -167,6 +188,7 @@ class SettingsViewModelTest {
         backupService =
             BackupService(settings, FakeBoardPreferencesRepository(), bookmarks, searches, registry),
         updateRepository = updateRepository,
+        appUpdater = appUpdater,
         dnsPrivacyMonitor = FakeDnsPrivacyMonitor(),
         registry = registry,
     )

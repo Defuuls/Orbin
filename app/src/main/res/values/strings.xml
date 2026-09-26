@@ -37,4 +37,20 @@
     <string name="offline_banner">You\'re offline</string>
 
     <string name="two_pane_pick_thread">Pick a thread from the catalog</string>
+    <!-- In-app update dialog -->
+    <string name="update_available_title">%1$s is available</string>
+    <string name="update_available_message">A new version of Orbin is ready. It downloads and installs from here.</string>
+    <string name="update_action_update">Update</string>
+    <string name="update_action_not_now">Not now</string>
+    <string name="update_downloading_title">Downloading %1$s</string>
+    <string name="update_downloading_progress">%1$d%%</string>
+    <string name="update_downloading_starting">Starting…</string>
+    <string name="update_action_cancel">Cancel</string>
+    <string name="update_permission_title">Allow Orbin to install updates</string>
+    <string name="update_permission_message">The update is downloaded and verified. Android needs your permission for Orbin to install it: turn on “Allow from this source”, come back, and tap Install.</string>
+    <string name="update_action_open_settings">Open settings</string>
+    <string name="update_action_install">Install</string>
+    <string name="update_failed_title">Update failed</string>
+    <string name="update_action_retry">Try again</string>
+    <string name="update_action_close">Close</string>
 </resources>

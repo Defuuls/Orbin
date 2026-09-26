@@ -38,6 +38,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
+import com.orbin.app.update.UpdateDialog
+import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
@@ -248,6 +250,23 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // Offered once the reader can see the app: never over onboarding or the lock screen.
+            val appVisible = ready && settings.onboardingCompleted && (!shouldLock || unlocked)
+            val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+            LaunchedEffect(appVisible) {
+                if (appVisible) viewModel.checkForUpdateOnLaunch(BuildConfig.VERSION_NAME)
+            }
+            val updateActions =
+                remember(viewModel) {
+                    UpdateDialogActions(
+                        onUpdate = viewModel::update,
+                        onDismiss = viewModel::dismissUpdate,
+                        onCancel = viewModel::cancelUpdate,
+                        onOpenSettings = viewModel::openInstallPermissionSettings,
+                        onInstall = viewModel::installUpdate,
+                    )
+                }
+
             AppContent(
                 settings = settings,
                 ready = ready,
@@ -263,6 +282,7 @@ class MainActivity : FragmentActivity() {
                     allowContinueWithoutLock = false
                     unlocked = true
                 },
+                updateDialog = { if (appVisible) UpdateDialog(updateState, updateActions) },
             )
         }
     }
@@ -456,6 +476,7 @@ private fun AppContent(
     authenticationInProgress: Boolean,
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
+    updateDialog: @Composable () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
     // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; nested
@@ -497,6 +518,8 @@ private fun AppContent(
                     )
                 }
             }
+
+            updateDialog()
         }
     }
 }

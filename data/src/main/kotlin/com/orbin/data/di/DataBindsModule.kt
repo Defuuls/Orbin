@@ -12,8 +12,10 @@ import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.SettingsRepositoryImpl
+import com.orbin.data.update.AppUpdaterImpl
 import com.orbin.data.version.VersionGuardRepositoryImpl
 import com.orbin.domain.notification.ThreadNotifier
+import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.CatalogRepository
@@ -77,6 +79,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsUpdateRepository(impl: UpdateRepositoryImpl): UpdateRepository
+
+    @Binds
+    @Singleton
+    fun bindsAppUpdater(impl: AppUpdaterImpl): AppUpdater
 
     @Binds
     @Singleton

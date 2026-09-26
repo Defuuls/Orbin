@@ -61,9 +61,11 @@ the notice clears after encrypted resolution succeeds again.
 
 ### How do I update Orbin?
 
-Signed APKs and SHA-256 checksums are published on the repository Releases page. The in-app update
-check retrieves release metadata and sends you to the release page; Orbin does not silently install
-an APK.
+When a new release is out, Orbin offers it when you open the app (or from **Settings → Check for
+updates**). Tap **Update** and Orbin downloads the release APK, checks it against the release's
+published SHA-256 checksum and Orbin's signing key, then opens Android's installer, which asks you
+to confirm. The first time, Android asks you to allow Orbin to install apps. Nothing installs
+silently. Signed APKs and checksums are also on the repository Releases page for manual installs.
 
 ## Privacy questions
 

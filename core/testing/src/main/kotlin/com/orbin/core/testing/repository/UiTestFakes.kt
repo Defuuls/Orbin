@@ -2,6 +2,7 @@ package com.orbin.core.testing.repository
 
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppUpdateState
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
@@ -9,6 +10,7 @@ import com.orbin.core.model.SavedThreadSummary
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.UpdateStatus
+import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -105,6 +107,39 @@ class FakeUpdateRepository(
     var status: OrbinResult<UpdateStatus> = OrbinResult.Success(UpdateStatus.UpToDate),
 ) : UpdateRepository {
     override suspend fun checkForUpdate(currentVersionName: String): OrbinResult<UpdateStatus> = status
+}
+
+/** Records what the app asked of the updater; downloads and installs nothing. */
+class FakeAppUpdater : AppUpdater {
+    override val state = MutableStateFlow<AppUpdateState>(AppUpdateState.Idle)
+    override val checkOnLaunch = MutableStateFlow(true)
+    val updated = mutableListOf<UpdateStatus.Available>()
+
+    override fun setCheckOnLaunch(enabled: Boolean) {
+        checkOnLaunch.value = enabled
+    }
+
+    override suspend fun checkOnLaunch(currentVersionName: String) = Unit
+
+    override fun offer(release: UpdateStatus.Available) {
+        state.value = AppUpdateState.Available(release)
+    }
+
+    override fun update(release: UpdateStatus.Available) {
+        updated += release
+    }
+
+    override fun cancel() {
+        state.value = AppUpdateState.Idle
+    }
+
+    override fun dismiss() {
+        state.value = AppUpdateState.Idle
+    }
+
+    override fun openInstallPermissionSettings() = Unit
+
+    override fun installDownloaded() = Unit
 }
 
 /** Keeps saved threads in memory, so a test can save one and read it back. */

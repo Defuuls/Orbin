@@ -23,11 +23,12 @@ internal fun buildSettings(
     updateState: String,
     imageCacheLabel: String = "Empty · Clear",
     clearArmed: Boolean = false,
+    checkUpdatesOnLaunch: Boolean = true,
 ): SettingsModel {
     val rows = Rows()
     val groups =
         listOf(
-            rows.preferences(settings, vm),
+            rows.preferences(settings, vm, checkUpdatesOnLaunch),
             rows.data(updateState, imageCacheLabel, clearArmed),
         ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
@@ -92,11 +93,13 @@ private class Rows {
     fun preferences(
         settings: AppSettings,
         vm: SettingsViewModel,
+        checkUpdatesOnLaunch: Boolean,
     ) = listOf(
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
+        toggle("updateOnLaunch", "Tell me about new releases", checkUpdatesOnLaunch, vm::setCheckUpdatesOnLaunch),
     )
 
     /** Only destructive actions carry a hint, and it says what goes. */

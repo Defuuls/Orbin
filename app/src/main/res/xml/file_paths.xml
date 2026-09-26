@@ -3,4 +3,8 @@
     <cache-path
         name="clipboard_images"
         path="clipboard_images/" />
+    <!-- Verified update APKs, handed to the system installer. See ApkInstaller. -->
+    <cache-path
+        name="updates"
+        path="updates/" />
 </paths>
