@@ -1,6 +1,8 @@
 package com.orbin.ios
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -10,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigationevent.NavigationEventInfo
@@ -27,6 +30,7 @@ import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -35,6 +39,7 @@ import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.next
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.map
@@ -48,7 +53,10 @@ import kotlin.time.Clock
  * which Compose Multiplatform delivers to [NavigationBackHandler] on iOS.
  */
 @Composable
-fun OrbinApp(browser: Browser) {
+fun OrbinApp(
+    browser: Browser,
+    lock: AppLock,
+) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -67,15 +75,38 @@ fun OrbinApp(browser: Browser) {
         amoled = settings.amoled,
         platform = NextPlatform.IOS,
     ) {
-        when (val route = backStack.last()) {
-            Route.Feed -> FeedDestination(browser)
-            Route.Boards -> BoardsDestination(browser)
-            Route.Search -> SearchDestination(browser)
-            Route.Settings -> SettingsDestination(browser)
-            is Route.Catalog -> CatalogDestination(browser, route.board)
-            is Route.ThreadPage -> ThreadDestination(browser)
-            is Route.Media -> MediaDestination(browser, route)
+        Box(Modifier.fillMaxSize()) {
+            Destination(browser, lock, backStack.last())
+            LockCover(lock)
         }
+    }
+}
+
+@Composable
+private fun Destination(
+    browser: Browser,
+    lock: AppLock,
+    route: Route,
+) {
+    when (route) {
+        Route.Feed -> FeedDestination(browser)
+        Route.Boards -> BoardsDestination(browser)
+        Route.Search -> SearchDestination(browser)
+        Route.Settings -> SettingsDestination(browser, lock)
+        is Route.Catalog -> CatalogDestination(browser, route.board)
+        is Route.ThreadPage -> ThreadDestination(browser)
+        is Route.Media -> MediaDestination(browser, route)
+    }
+}
+
+/** The app lock over everything: the lock screen while locked, a blank cover while hidden. */
+@Composable
+private fun LockCover(lock: AppLock) {
+    val state by lock.state.collectAsState()
+    if (!state.locked && !state.obscured) return
+    // Taps stop here rather than reaching the app underneath.
+    Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
+        if (state.locked) LockScreen(message = state.message, unlocking = state.unlocking, onUnlock = { lock.unlock() })
     }
 }
 
@@ -121,7 +152,10 @@ private fun BoardsDestination(browser: Browser) {
 }
 
 @Composable
-private fun SettingsDestination(browser: Browser) {
+private fun SettingsDestination(
+    browser: Browser,
+    lock: AppLock,
+) {
     val settings by browser.settings.current.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val scope = rememberCoroutineScope()
@@ -141,6 +175,7 @@ private fun SettingsDestination(browser: Browser) {
             when (item.id) {
                 SettingIds.HIDE_NSFW -> browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
+                SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
                 SettingIds.THEME -> expanded = if (expanded == item.id) null else item.id
                 SettingIds.CLEAR_ACTIVITY ->
                     if (clearArmed) {

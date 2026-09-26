@@ -14,6 +14,8 @@ import kotlinx.coroutines.MainScope
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
+import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIViewController
 
 /**
@@ -27,21 +29,26 @@ fun MainViewController(): UIViewController {
     val database = openDatabase()
     // One DataStore per file: board preferences and settings share it, as they do on Android.
     val preferences = openPreferences()
+    val settingsStore = SettingsStore(preferences)
+    val scope = MainScope()
     val browser =
         Browser(
             providers = orbinProviders(client),
             bookmarks = BookmarkRepositoryImpl(database.bookmarkDao()),
             history = HistoryRepositoryImpl(database.historyDao()),
             boardPreferences = BoardPreferencesStore(preferences),
-            settings = SettingsStore(preferences),
-            scope = MainScope(),
+            settings = settingsStore,
+            scope = scope,
         )
-    // The app lives as long as this controller, so the observer is never removed.
-    NSNotificationCenter.defaultCenter.addObserverForName(
-        name = UIApplicationDidBecomeActiveNotification,
-        `object` = null,
-        queue = NSOperationQueue.mainQueue,
-    ) { _ -> browser.watched.refresh() }
+    val lock =
+        AppLock(settingsStore.settings, settingsStore::setBiometricLockEnabled, DeviceOwnerAuthenticator(), scope)
+    // The app lives as long as this controller, so the observers are never removed.
+    observe(UIApplicationDidBecomeActiveNotification) {
+        lock.onForeground()
+        browser.watched.refresh()
+    }
+    observe(UIApplicationWillResignActiveNotification) { lock.onResignActive() }
+    observe(UIApplicationDidEnterBackgroundNotification) { lock.onBackground() }
     return ComposeUIViewController {
         setSingletonImageLoaderFactory { context ->
             ImageLoader
@@ -49,6 +56,19 @@ fun MainViewController(): UIViewController {
                 .components { add(KtorNetworkFetcherFactory(httpClient = { client })) }
                 .build()
         }
-        remember { browser }.let { OrbinApp(it) }
+        OrbinApp(remember { browser }, remember { lock })
+    }
+}
+
+private fun observe(
+    name: String?,
+    action: () -> Unit,
+) {
+    NSNotificationCenter.defaultCenter.addObserverForName(
+        name,
+        `object` = null,
+        queue = NSOperationQueue.mainQueue,
+    ) { _ ->
+        action()
     }
 }

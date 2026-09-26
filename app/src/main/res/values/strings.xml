@@ -21,11 +21,6 @@
     <string name="downgrade_blocked_close">Close</string>
 
     <!-- App lock. -->
-    <string name="lock_title">Orbin is locked</string>
-    <string name="lock_authenticate_hint">Authenticate to continue.</string>
-    <string name="lock_unlocking">Unlocking…</string>
-    <string name="lock_unlock">Unlock</string>
-    <string name="lock_continue_without">Continue without app lock</string>
     <string name="lock_biometric_unavailable">Biometric authentication is required but not available. Please enroll a biometric or reconfigure app lock in Settings.</string>
     <string name="lock_prompt_title">Unlock Orbin</string>
     <string name="lock_prompt_subtitle">Use fingerprint or face unlock</string>

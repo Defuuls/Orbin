@@ -43,15 +43,20 @@ A reader, so far:
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
   hide NSFW boards (from the boards list, the feed and search, as on Android), the theme
-  (system, light or dark) and true black, clearing the reading history (two taps, as on
-  Android) and clearing the image cache.
+  (system, light or dark) and true black, the app lock, clearing the reading history (two taps,
+  as on Android) and clearing the image cache;
+- the app lock, as on Android: with it on, the app is locked at launch and whenever it has been
+  in the background, and hidden in the app switcher. It unlocks with Face ID or Touch ID, or the
+  device passcode, where Android asks for strong biometrics only. Turning it on asks you to unlock
+  once first, so it cannot lock you out. The lock screen is the shared `ui-next` one Android uses.
 
 Followed boards and settings live in a DataStore file beside the database, read and written by
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
 with the same keys.
 
 Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), WebM playback, saved threads, the app lock, and backup and restore. These move over
+background refresh), WebM playback, and backup and restore. (Android no longer offers saving
+a thread, so iOS has nothing to match there.) These move over
 in later steps.
 
 ## Building on a Mac

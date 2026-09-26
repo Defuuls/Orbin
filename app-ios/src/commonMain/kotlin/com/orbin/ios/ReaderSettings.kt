@@ -46,13 +46,14 @@ internal object SettingIds {
     const val HIDE_NSFW = "hideNsfw"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
+    const val APP_LOCK = "biometric"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
 }
 
 /**
- * The rows, in Android's words and order: its preferences less the app lock and its data section
- * less updates and backup, which iOS does not have yet. Clearing activity takes two taps, as on
+ * The rows, in Android's words and order: its preferences, and its data section less updates and
+ * backup, which iOS does not have yet. Clearing activity takes two taps, as on
  * Android: the first arms the row ([clearArmed]).
  */
 internal fun settingsGroups(
@@ -73,6 +74,7 @@ internal fun settingsGroups(
                     selected = settings.themeMode.ordinal,
                 ),
                 toggle(SettingIds.AMOLED, "True black", settings.amoled),
+                toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
             ),
         "" to
             listOf(
