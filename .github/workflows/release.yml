@@ -1,8 +1,9 @@
 name: Release
 
 # Every git tag matching v* triggers a full release build of the main client: signs the APK,
-# generates release notes, and publishes a GitHub Release with the APK, the R8 mapping file,
-# and SHA-256 checksums.
+# generates release notes, and publishes a GitHub Release with the APK and its SHA-256 checksum.
+# The R8 mapping file is kept out of the release and uploaded as a private workflow artifact
+# instead: it is only needed to decode crash stack traces, not by anyone installing the app.
 #
 # Orbin Minimal is NOT released here. It is a separate app on its own version line and its own
 # cadence — see release-minimal.yml, which triggers on minimal-v* tags. Publishing it from both
@@ -101,12 +102,23 @@ jobs:
           MAPPING=$(find app/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
           cp "$APK" "release-staging/orbin-${VERSION}.apk"
           ( cd release-staging && sha256sum "orbin-${VERSION}.apk" > "orbin-${VERSION}.apk.sha256" )
+          # Staged apart from release-staging so the release's file globs cannot pick it up.
           if [ -n "$MAPPING" ]; then
-            cp "$MAPPING" "release-staging/orbin-${VERSION}-mapping.txt"
-            ( cd release-staging && sha256sum "orbin-${VERSION}-mapping.txt" > "orbin-${VERSION}-mapping.txt.sha256" )
+            mkdir -p mapping-staging
+            cp "$MAPPING" "mapping-staging/orbin-${VERSION}-mapping.txt"
           fi
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the R8 mapping file as a private artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: orbin-${{ env.RELEASE_TAG }}-mapping
+          path: mapping-staging/
+          # The longest a public repository keeps an artifact; decode crashes from a release
+          # within this window, or rebuild the tag to regenerate its mapping.
+          retention-days: 90
+          if-no-files-found: warn
 
       - name: Generate release notes
         id: notes
@@ -142,7 +154,6 @@ jobs:
           files: |
             release-staging/*.apk
             release-staging/*.sha256
-            release-staging/*-mapping.txt
           fail_on_unmatched_files: true
 
   # Upload the same release to TestFlight for the iOS app. It skips itself, with a notice, until

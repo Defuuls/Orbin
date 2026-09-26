@@ -1,22 +1,22 @@
-# Orbin 154 — Tangerine
+# Orbin 155 — Ugli
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 154
-codename     = "Tangerine"
-version_code = 172
+number       = 155
+codename     = "Ugli"
+version_code = 173
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Downloads takes the middle tab, where Media used to be."
+highlight = "Release pages carry just the app and its checksum."
 
 summary = [
-  "bump Orbin to 154-Tangerine / versionCode 172",
-  "make the middle tab Downloads instead of Media",
+  "bump Orbin to 155-Ugli / versionCode 173",
+  "keep the R8 mapping file out of releases",
 ]
 
 [changelog]
 Changed = [
-  "The middle tab is now **Downloads**, listing everything you saved with its progress and a retry for failed files. It replaces the Media tab and its All media wall; each board's own media wall stays, reached from its catalog, and its **Saved ›** opens Downloads.",
+  "Releases attach only the APK and its checksum. The R8 mapping file, used to decode crash reports, is kept as a private build artifact for 90 days instead of a release download.",
 ]
