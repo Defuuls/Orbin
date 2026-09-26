@@ -37,7 +37,9 @@ import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.MetaLine
 import com.orbin.uinext.NextConfirmDialog
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextLinearProgress
+import com.orbin.uinext.NextScaffold
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ScreenTitle
 import com.orbin.uinext.next
@@ -48,71 +50,37 @@ import com.orbin.uinext.tokens.NextType
  * Download history on the Next language. Transfer + notifications stay with the platform download
  * manager; this screen only lists what Orbin asked for.
  *
- * Hosted under [com.orbin.uinext.NextChromeHost] in the nav graph, which draws no bottom chrome —
- * Back / Clear live as inline actions under the large title rather than a Material TopAppBar.
+ * It is one of the three tabs, so passing [onDestination] draws the tab pill. Clear, and Back when
+ * [onBack] is given, live as inline actions above the large title rather than a Material TopAppBar.
  */
 @Composable
 fun DownloadsScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    onDestination: ((NextDestination) -> Unit)? = null,
     viewModel: DownloadsViewModel = hiltViewModel(),
 ) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
     val backLabel = stringResource(R.string.downloads_back)
     val clearLabel = stringResource(R.string.downloads_clear_action)
+    val title = stringResource(R.string.downloads_title)
 
     NextTheme {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ),
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                InlineAction(
-                    label = backLabel,
-                    onClick = onBack,
-                    modifier = Modifier.semantics { contentDescription = backLabel },
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                InlineAction(
-                    label = clearLabel,
-                    onClick = { showClearDialog = true },
-                    modifier = Modifier.semantics { contentDescription = clearLabel },
-                )
-            }
-            if (downloads.isEmpty()) {
-                ScreenTitle(
-                    text = stringResource(R.string.downloads_title),
-                    subtitle = stringResource(R.string.downloads_empty),
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 28.dp),
-                ) {
-                    item { ScreenTitle(text = stringResource(R.string.downloads_title)) }
-                    item {
-                        GroupedSection {
-                            downloads.forEachIndexed { index, record ->
-                                DownloadRow(
-                                    record = record,
-                                    onRetry = { viewModel.retry(record.id) },
-                                )
-                                if (index < downloads.lastIndex) GroupedDivider()
-                            }
-                        }
-                    }
-                }
-            }
+        NextScaffold(
+            where = title,
+            destination = NextDestination.DOWNLOADS.takeIf { onDestination != null },
+            onDestination = onDestination,
+        ) { bottomPad ->
+            DownloadsContent(
+                downloads = downloads,
+                title = title,
+                bottomPad = bottomPad,
+                backLabel = backLabel,
+                clearLabel = clearLabel,
+                onBack = onBack,
+                onClear = { showClearDialog = true },
+                onRetry = { viewModel.retry(it) },
+            )
         }
     }
 
@@ -126,6 +94,74 @@ fun DownloadsScreen(
             },
             onDismiss = { showClearDialog = false },
         )
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun DownloadsContent(
+    downloads: List<DownloadRecord>,
+    title: String,
+    bottomPad: PaddingValues,
+    backLabel: String,
+    clearLabel: String,
+    onBack: (() -> Unit)?,
+    onClear: () -> Unit,
+    onRetry: (Long) -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                ),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onBack != null) {
+                InlineAction(
+                    label = backLabel,
+                    onClick = onBack,
+                    modifier = Modifier.semantics { contentDescription = backLabel },
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            InlineAction(
+                label = clearLabel,
+                onClick = onClear,
+                modifier = Modifier.semantics { contentDescription = clearLabel },
+            )
+        }
+        if (downloads.isEmpty()) {
+            ScreenTitle(
+                text = title,
+                subtitle = stringResource(R.string.downloads_empty),
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = LIST_END_SPACE + bottomPad.calculateBottomPadding()),
+            ) {
+                item { ScreenTitle(text = title) }
+                item {
+                    GroupedSection {
+                        downloads.forEachIndexed { index, record ->
+                            DownloadRow(
+                                record = record,
+                                onRetry = { onRetry(record.id) },
+                            )
+                            if (index < downloads.lastIndex) GroupedDivider()
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -183,6 +219,9 @@ private fun DownloadProgress(record: DownloadRecord) {
         }
     }
 }
+
+/** Room under the last download, above the tab pill's own clearance. */
+private val LIST_END_SPACE = 28.dp
 
 private val ACTIVE_DOWNLOAD_STATUSES = setOf(DownloadStatus.QUEUED, DownloadStatus.RUNNING)
 

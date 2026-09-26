@@ -18,10 +18,7 @@ sealed interface Route {
     @Serializable
     data object Search : Route
 
-    @Serializable
-    data object AllMedia : Route
-
-    /** One board's media as a wall: the All media wall, swept for [board] alone. */
+    /** One board's media as a wall, opened from that board's catalog. */
     @Serializable
     data class BoardMedia(
         val board: String,
@@ -50,12 +47,13 @@ sealed interface Route {
         val startIndex: Int,
         /**
          * Which file to open at, when the caller knows the attachment but not its index in the
-         * thread. The all-media wall is such a caller: it holds a catalog's files, not the thread's
-         * full ordering, so it cannot supply a meaningful [startIndex].
+         * thread. A board's media wall is such a caller: it holds a catalog's files, not the
+         * thread's full ordering, so it cannot supply a meaningful [startIndex].
          */
         val attachmentId: String? = null,
     ) : Route
 
+    /** What you downloaded: the middle tab. */
     @Serializable
     data object Downloads : Route
 

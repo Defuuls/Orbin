@@ -30,22 +30,22 @@ class RailHidesOnScrollTest {
     @Test
     fun `the feed puts its tab pill away as the reader scrolls down`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, hideRailOnScroll = true) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, hideRailOnScroll = true) }
         }
-        composeRule.onNodeWithText(MEDIA_TAB).assertExists()
+        composeRule.onNodeWithText(DOWNLOADS_TAB).assertExists()
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(MEDIA_TAB).assertDoesNotExist()
+        composeRule.onNodeWithText(DOWNLOADS_TAB).assertDoesNotExist()
     }
 
     @Test
     fun `the feed keeps its tab pill when the setting is off`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenMedia = {}, hideRailOnScroll = false) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, hideRailOnScroll = false) }
         }
         composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(MEDIA_TAB).assertExists()
+        composeRule.onNodeWithText(DOWNLOADS_TAB).assertExists()
     }
 
     @Test
@@ -85,7 +85,7 @@ class RailHidesOnScrollTest {
     }
 
     private companion object {
-        const val MEDIA_TAB = "Media"
+        const val DOWNLOADS_TAB = "Downloads"
 
         val ROWS =
             (1..30).map { index ->

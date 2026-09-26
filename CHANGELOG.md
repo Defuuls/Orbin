@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- The middle tab is now **Downloads**, listing everything you saved with its progress and a retry for failed files. It replaces the Media tab and its All media wall; each board's own media wall stays, reached from its catalog, and its **Saved ›** opens Downloads.
+
 ## [153-Strawberry] - 2026-09-26
 
 ### Added

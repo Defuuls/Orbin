@@ -28,7 +28,7 @@ unfolded, it shows the number chosen in **Settings → Feed columns when unfolde
 2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). Any window
 narrower than 600dp, such as split screen, shows one column. Board catalogs keep their compact grid.
 
-For a media-first wall of every file from the boards you follow, open the **Media** tab.
+Everything you have saved is one tap away in the **Downloads** tab, between Feed and Boards.
 
 ### Feed behavior
 
@@ -85,8 +85,9 @@ so treat it like any other unencrypted note or text file.
 ### Downloads
 
 Long-press any image or video to save it, or use **Download all** above a thread's Files grid.
-Files go to `Downloads/Orbin`, in a folder per board and thread, and **Saved ›** under the All media
-title lists them.
+Files go to `Downloads/Orbin`, in a folder per board and thread, and the **Downloads** tab lists
+them, with their progress and a retry for any that failed. **Saved ›** on a board's media wall opens
+the same list.
 
 ## Gallery and media
 
@@ -104,15 +105,10 @@ seconds or the left half to skip back 5 seconds; keep double tapping to skip fur
 progress bar to scrub; the time you are dragging to shows above it.
 
 Pinch an image to zoom, or double tap the spot you want to look at. Long-press any image or video,
-in the viewer or on the All media wall, to save it, share its link or copy its link. Swipe up and
+in the viewer or on a board's media wall, to save it, share its link or copy its link. Swipe up and
 down to move between files, and keep pulling past the first or last one to close the viewer.
 
 A board's catalog has a **Media wall** action that shows every file on that board as one wall.
-
-### All media
-
-**All media** sweeps board catalogs and fills a single continuous wall of discovered images and
-videos. Failed boards are reported so a partial scan is not mistaken for a complete result.
 
 ### Deep scan
 

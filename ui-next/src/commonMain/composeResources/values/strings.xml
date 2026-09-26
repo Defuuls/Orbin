@@ -12,7 +12,7 @@
     <!-- Screens -->
     <string name="next_feed_title">Feed</string>
     <string name="next_all_media_title">All media</string>
-    <string name="next_media_tab">Media</string>
+    <string name="next_downloads_tab">Downloads</string>
     <string name="next_board_media">Media wall</string>
     <string name="next_media_saved">Saved ›</string>
     <string name="next_search_threads">Search threads ›</string>

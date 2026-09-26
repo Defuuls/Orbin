@@ -71,9 +71,6 @@ fun MediaWallScreen(
     title: String? = null,
     // What you saved from the wall and elsewhere: Downloads, reached from the media it came from.
     onOpenSaved: (() -> Unit)? = null,
-    onOpenFeed: (() -> Unit)? = null,
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenSettings: (() -> Unit)? = null,
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -90,21 +87,6 @@ fun MediaWallScreen(
             true
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-    val hasTabs = onOpenFeed != null || onOpenBoards != null || onOpenSettings != null
-    val onDestination: ((NextDestination) -> Unit)? =
-        if (hasTabs) {
-            { dest ->
-                when (dest) {
-                    NextDestination.FEED -> onOpenFeed?.invoke()
-                    NextDestination.BOARDS -> onOpenBoards?.invoke()
-                    NextDestination.MEDIA -> Unit
-                    NextDestination.SETTINGS -> onOpenSettings?.invoke()
-                }
-            }
-        } else {
-            null
-        }
-
     val mediaTitle = title ?: stringResource(Res.string.next_all_media_title)
     val showCompactTitle by remember {
         derivedStateOf {
@@ -118,8 +100,6 @@ fun MediaWallScreen(
             where = mediaTitle.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
             railVisible = railVisible,
-            destination = NextDestination.MEDIA.takeIf { showRail && hasTabs },
-            onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(imageCellMinSize),

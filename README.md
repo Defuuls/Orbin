@@ -68,7 +68,7 @@ does not post, reply, or create threads.
 - Coil 3 image loading and Media3 video playback with caching, progressive loading, zoom,
   swipe-gallery navigation, preloading, autoplay, mute controls (an unmute carries to the next
   video until Orbin closes), double-tap to skip 5 seconds, fullscreen playback, and native downloads.
-- **All media** provides one continuous wall of media discovered across board catalogs.
+- A **Downloads** tab lists everything you saved; each board also has a **media wall** of its files.
 - Optional **deep scan** follows threads to discover media attached to replies.
 - Download organization can be flat, by board, by thread, or board then thread.
 

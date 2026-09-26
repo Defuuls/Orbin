@@ -36,8 +36,8 @@ class WindowInsetsTest {
                 FeedScreen(
                     rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
                     subtitle = "1 thread",
-                    // Draws the tab pill; its "Media" tab is the only "Media" on the feed.
-                    onOpenMedia = {},
+                    // Draws the tab pill; its "Downloads" tab is the only "Downloads" on the feed.
+                    onOpenDownloads = {},
                 )
             }
         }
@@ -48,7 +48,7 @@ class WindowInsetsTest {
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
         // The pill is above the gesture handle rather than behind it.
-        val pill = composeRule.onNodeWithText("Media").getUnclippedBoundsInRoot()
+        val pill = composeRule.onNodeWithText("Downloads").getUnclippedBoundsInRoot()
         assertThat(pill.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 

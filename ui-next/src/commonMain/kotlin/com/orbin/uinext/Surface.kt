@@ -38,9 +38,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,9 +63,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_downloads_tab
 import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_launchpad_boards
-import com.orbin.uinext.resources.next_media_tab
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
@@ -74,19 +74,19 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Every destination the app can show.
  *
- * [FEED], [MEDIA] and [BOARDS] are the three places you live, so they are the tabs. [SETTINGS] is
- * somewhere you visit, opened from the Feed header, and like threads, Search and Downloads it
- * carries no bottom chrome.
+ * [FEED], [DOWNLOADS] and [BOARDS] are the three places you live, so they are the tabs. [SETTINGS]
+ * is somewhere you visit, opened from the Feed header, and like threads and Search it carries no
+ * bottom chrome.
  */
 enum class NextDestination {
     FEED,
     BOARDS,
-    MEDIA,
+    DOWNLOADS,
     SETTINGS,
 }
 
 /**
- * The permanent chrome: a floating pill with the three places you live — Feed, Media, Boards.
+ * The permanent chrome: a floating pill with the three places you live — Feed, Downloads, Boards.
  *
  * Settings is not a tab: it is visited, not lived in, so it opens from the Feed header instead of
  * taking a slot here.
@@ -124,10 +124,10 @@ fun DestinationPill(
                     onClick = { onSelect(NextDestination.FEED) },
                 )
                 DestinationTab(
-                    label = stringResource(Res.string.next_media_tab),
-                    icon = Icons.Outlined.PhotoLibrary,
-                    selected = selected == NextDestination.MEDIA,
-                    onClick = { onSelect(NextDestination.MEDIA) },
+                    label = stringResource(Res.string.next_downloads_tab),
+                    icon = Icons.Outlined.Download,
+                    selected = selected == NextDestination.DOWNLOADS,
+                    onClick = { onSelect(NextDestination.DOWNLOADS) },
                 )
                 DestinationTab(
                     label = stringResource(Res.string.next_launchpad_boards),
@@ -516,7 +516,7 @@ fun MediaTile(
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
  * Pass [destination] + [onDestination] for tab chrome. Only [NextDestination.FEED],
- * [NextDestination.MEDIA] and [NextDestination.BOARDS] draw it; every other screen draws no bottom
+ * [NextDestination.DOWNLOADS] and [NextDestination.BOARDS] draw it; every other screen draws no bottom
  * chrome, because its large title already says where you are and a floating name bar would only
  * repeat it over the content.
  * [where] names the screen for accessibility services as its pane title.
@@ -559,7 +559,7 @@ val GUTTER = NextSpace.gutter
 val RAIL_HEIGHT = 56.dp
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
-private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.MEDIA, NextDestination.BOARDS)
+private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
 
 /**
  * Whether this destination draws the permanent pill.

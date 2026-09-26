@@ -51,7 +51,7 @@ fun NextFeedScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
-    onOpenMedia: (() -> Unit)? = null,
+    onOpenDownloads: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
 ) {
@@ -75,7 +75,7 @@ fun NextFeedScreen(
         when (dest) {
             NextDestination.FEED -> Unit
             NextDestination.BOARDS -> onOpenBoards?.invoke()
-            NextDestination.MEDIA -> onOpenMedia?.invoke()
+            NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
             NextDestination.SETTINGS -> onOpenSettings()
         }
     }
@@ -186,7 +186,7 @@ fun NextFeedScreen(
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,
                             onSettings = onOpenSettings,
                             onOpenBoards = onOpenBoards,
-                            onOpenMedia = onOpenMedia,
+                            onOpenDownloads = onOpenDownloads,
                             onActivePreviewChanged = { activePreviewId = it },
                             activityText = { row ->
                                 byId[row.id]

@@ -35,7 +35,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -47,7 +47,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -59,7 +59,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -71,7 +71,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -83,7 +83,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -101,7 +101,7 @@ class ProposalScreenshotTest {
                 rows = feedRows(),
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onSettings = {},
             )
         }
@@ -167,7 +167,7 @@ class ProposalScreenshotTest {
                         BoardTile("wg", "/wg/", "Wallpapers/General"),
                     ),
                 onOpenFeed = {},
-                onOpenMedia = {},
+                onOpenDownloads = {},
                 onOpenSettings = {},
             )
         }
@@ -288,9 +288,6 @@ class ProposalScreenshotTest {
                 failed = 3,
                 scanning = true,
                 cells = mediaCells(),
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenSettings = {},
             )
         }
 
@@ -303,9 +300,6 @@ class ProposalScreenshotTest {
                 failed = 3,
                 scanning = true,
                 cells = mediaCells(),
-                onOpenFeed = {},
-                onOpenBoards = {},
-                onOpenSettings = {},
             )
         }
 

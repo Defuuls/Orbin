@@ -37,8 +37,8 @@ links, and media but does not post, reply, or create threads.
   media, collapsible posts, Files view, watch state, and persistent reading position.
 - **Save thread links.** External links are deduplicated and exported to a plain-text file in the
   configured saved-media folder, defaulting to `Downloads/Orbin`.
-- **All media + deep scan.** Browse media across board catalogs in one wall, with an optional
-  thread walk for reply attachments.
+- **Media walls + deep scan.** Browse a board's media in one wall, with an optional thread walk
+  for reply attachments. What you save is listed in the **Downloads** tab.
 - **Wide-screen two-pane layout.** On sufficiently wide displays, catalogs and threads remain
   visible together without losing navigation state.
 - **Privacy and security.** Encrypted local data, Android Keystore-backed app lock, HTTPS-only
