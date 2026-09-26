@@ -6,10 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- The feed is one column of full-width cards on a phone: each thread's image at full width, whole down to a 9:16 portrait, with up to eight lines of the opening post under it. It was a two-column grid with a two-line excerpt. Tablets fit more columns; board catalogs keep their grid.
-- The feed shows the opening post as readable text, with line breaks kept and characters such as apostrophes shown instead of HTML codes like `&#039;`.
-
 ## [150-Papaya] - 2026-09-26
 
 ### Changed

@@ -1,22 +1,23 @@
-# Orbin 150 — Papaya
+# Orbin 151 — Quince
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 150
-codename     = "Papaya"
-version_code = 168
+number       = 151
+codename     = "Quince"
+version_code = 169
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Nothing plays in the feed; GIFs and videos wait until you open the thread."
+highlight = "The feed is one column of full-width cards, with the opening post under each image."
 
 summary = [
-  "bump Orbin to 150-Papaya / versionCode 168",
-  "stop autoplaying media in the feed",
+  "bump Orbin to 151-Quince / versionCode 169",
+  "show the feed as one column of full-width cards",
 ]
 
 [changelog]
 Changed = [
-  "Nothing plays in the feed any more. GIFs and videos show their thumbnail until you open the thread; the feed used to play the card it was centred on (#579).",
+  "The feed is one column of full-width cards on a phone: each thread's image at full width, whole down to a 9:16 portrait, with up to eight lines of the opening post under it. It was a two-column grid with a two-line excerpt. Tablets fit more columns; board catalogs keep their grid (#581).",
+  "The feed shows the opening post as readable text, with line breaks kept and characters such as apostrophes shown instead of HTML codes like `&#039;` (#581).",
 ]
