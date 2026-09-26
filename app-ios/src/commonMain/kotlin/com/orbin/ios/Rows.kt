@@ -4,8 +4,6 @@ import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.PostComment
-import com.orbin.core.model.PostNode
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
 import com.orbin.core.ui.date.formatRelativeTime
@@ -128,28 +126,6 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> =
             spoiler = post.attachments.any { it.isSpoiler },
         )
     }
-
-/**
- * The comment as readable text: quotes as `>>123`, links as their text, line breaks kept. Styling
- * (greentext, spoilers, bold) is the rich renderer's job, which iOS does not have yet.
- */
-internal fun PostComment.plainText(): String = buildString { appendNodes(nodes) }.trim()
-
-private fun StringBuilder.appendNodes(nodes: List<PostNode>) {
-    nodes.forEach { node ->
-        when (node) {
-            is PostNode.Text -> append(node.text)
-            PostNode.LineBreak -> append('\n')
-            is PostNode.Styled -> appendNodes(node.children)
-            is PostNode.Link -> if (node.children.isEmpty()) append(node.url) else appendNodes(node.children)
-            is PostNode.QuoteLink -> {
-                append(">>")
-                node.board?.let { append(">/").append(it.value).append('/') }
-                append(node.target.value)
-            }
-        }
-    }
-}
 
 /** Every file in the thread, in reading order: what the viewer pages through. */
 internal val Thread.files: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }

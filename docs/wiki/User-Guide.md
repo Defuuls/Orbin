@@ -18,19 +18,13 @@ but it does not post, reply, or create threads.
 The Feed combines threads from subscribed boards and orders them by activity. Read state, filtering,
 provider errors, and refresh behavior are handled consistently with board catalogs.
 
-### Grid-first layout
+### One card per thread
 
-The normal feed is now an **adaptive grid**. The previous List option is no longer exposed.
-
-On compact phones, cards are prevented from shrinking into tiny columns. The grid prioritizes:
-
-1. the thread subject,
-2. board identity,
-3. recent activity,
-4. reply/media counts and preview imagery.
-
-Subjects use a stronger text hierarchy and can occupy several lines before truncating. Preview
-images use a consistent card proportion so text does not get squeezed unpredictably.
+On a phone the feed is a single column of full-width cards. Each shows the thread's image or
+video thumbnail at full width, whole down to a 9:16 portrait (taller media is letterboxed), and
+under it the board, subject, up to eight lines of the opening post, and the reply and file counts.
+Tablets and unfolded foldables fit two or more columns of the same card. Board catalogs keep
+their compact grid.
 
 For a media-first wall of every file from the boards you follow, open the **Media** tab.
 

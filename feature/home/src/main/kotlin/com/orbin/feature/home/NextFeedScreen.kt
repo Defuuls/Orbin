@@ -275,13 +275,8 @@ private fun CatalogThread.toEntry(
                 media = stats.imageCount,
                 hasPreview = originalPost.attachments.isNotEmpty(),
                 read = key in visited,
-                // Keep this mapping platform-independent: it is also used by JVM tests and does
-                // not need Android's styled-text implementation for a two-line feed preview.
-                excerpt =
-                    originalPost.comment.raw
-                        .replace(Regex("<[^>]*>"), "")
-                        .replace("&nbsp;", " ")
-                        .trim(),
+                // The parsed comment, not the raw markup: entities decoded, line breaks kept.
+                excerpt = originalPost.comment.plainText(),
                 threadNumber = key.thread.value.toString(),
                 mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
             ),

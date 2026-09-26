@@ -84,6 +84,11 @@ internal fun FeedGridCell(
     // Off wherever a heading above the card already names the board: a board's catalog, or a feed
     // grouped by board.
     showBoard: Boolean = true,
+    // How much of the opening post shows under the media.
+    excerptLines: Int = 2,
+    // A card as wide as the screen can show portrait media nearly whole, where a grid tile must
+    // letterbox it.
+    tallMedia: Boolean = false,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
@@ -100,7 +105,7 @@ internal fun FeedGridCell(
                     onClickLabel = stringResource(Res.string.next_open_thread),
                 ) { onClick(row) },
     ) {
-        val tile = Modifier.fillMaxWidth().mediaTileSize(row)
+        val tile = Modifier.fillMaxWidth().mediaTileSize(row, tallMedia)
         if (row.hasPreview && thumbnail != null) {
             thumbnail(row, tile)
         } else if (row.hasPreview) {
@@ -146,7 +151,7 @@ internal fun FeedGridCell(
             )
             Gap(6)
             if (row.excerpt.isNotBlank()) {
-                MetaLine(row.excerpt, maxLines = 2)
+                MetaLine(row.excerpt, maxLines = excerptLines)
                 Gap(6)
             }
             val threadInfo =
@@ -162,9 +167,13 @@ internal fun FeedGridCell(
  * centre-cropped into a fixed-height box. Extreme ratios are clamped to keep a single tile from
  * dwarfing the screen; the image inside still fits without cropping, letterboxed if needed.
  */
-private fun Modifier.mediaTileSize(row: FeedRow): Modifier =
+private fun Modifier.mediaTileSize(
+    row: FeedRow,
+    tallMedia: Boolean,
+): Modifier =
     if (row.hasPreview && row.mediaAspectRatio > 0f) {
-        aspectRatio(row.mediaAspectRatio.coerceIn(MIN_TILE_ASPECT, MAX_TILE_ASPECT))
+        val minAspect = if (tallMedia) MIN_TALL_TILE_ASPECT else MIN_TILE_ASPECT
+        aspectRatio(row.mediaAspectRatio.coerceIn(minAspect, MAX_TILE_ASPECT))
     } else {
         height(FALLBACK_TILE_HEIGHT)
     }
@@ -172,6 +181,10 @@ private fun Modifier.mediaTileSize(row: FeedRow): Modifier =
 // Tall media is letterboxed at 4:5 in a grid, so one portrait image cannot fill the screen; the
 // whole image is one tap away.
 private const val MIN_TILE_ASPECT = 0.8f
+
+// In a single column, portrait media shows whole down to 9:16, a phone screenshot; only taller is
+// letterboxed.
+private const val MIN_TALL_TILE_ASPECT = 0.5625f
 private const val MAX_TILE_ASPECT = 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 
