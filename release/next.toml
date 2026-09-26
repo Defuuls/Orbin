@@ -1,23 +1,22 @@
-# Orbin 151 — Quince
+# Orbin 152 — Raspberry
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 151
-codename     = "Quince"
-version_code = 169
+number       = 152
+codename     = "Raspberry"
+version_code = 170
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "The feed is one column of full-width cards, with the opening post under each image."
+highlight = "Foldables and tablets can show the feed in more columns."
 
 summary = [
-  "bump Orbin to 151-Quince / versionCode 169",
-  "show the feed as one column of full-width cards",
+  "bump Orbin to 152-Raspberry / versionCode 170",
+  "pick feed columns on foldables and tablets",
 ]
 
 [changelog]
-Changed = [
-  "The feed is one column of full-width cards on a phone: each thread's image at full width, whole down to a 9:16 portrait, with up to eight lines of the opening post under it. It was a two-column grid with a two-line excerpt. Tablets fit more columns; board catalogs keep their grid (#581).",
-  "The feed shows the opening post as readable text, with line breaks kept and characters such as apostrophes shown instead of HTML codes like `&#039;` (#581).",
+Added = [
+  "Foldables and tablets are detected automatically. A foldable's front screen shows the feed in one column; unfolded, Settings → **Feed columns when unfolded** picks 1–3 columns. Tablets get **Feed columns**, 1–4. Both start at 2, and the setting only appears on those devices (#583).",
 ]
