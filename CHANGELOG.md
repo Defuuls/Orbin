@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [151-Quince] - 2026-09-26
+
+### Changed
+- The feed is one column of full-width cards on a phone: each thread's image at full width, whole down to a 9:16 portrait, with up to eight lines of the opening post under it. It was a two-column grid with a two-line excerpt. Tablets fit more columns; board catalogs keep their grid (#581).
+- The feed shows the opening post as readable text, with line breaks kept and characters such as apostrophes shown instead of HTML codes like `&#039;` (#581).
+
+
 ## [150-Papaya] - 2026-09-26
 
 ### Changed
@@ -2391,7 +2398,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v151-Quince...HEAD
+[151-Quince]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...v151-Quince
 [150-Papaya]: https://github.com/Defuuls/Orbin/compare/v149-Orange...v150-Papaya
 [149-Orange]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...v149-Orange
 [148-Nectarine]: https://github.com/Defuuls/Orbin/compare/v147-Mango...v148-Nectarine

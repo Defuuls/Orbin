@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [150 — Papaya](https://github.com/Defuuls/Orbin/releases/tag/v150-Papaya)
+**Current release:** [151 — Quince](https://github.com/Defuuls/Orbin/releases/tag/v151-Quince)
 
-**What's new in 150:** Nothing plays in the feed; GIFs and videos wait until you open the thread.
+**What's new in 151:** The feed is one column of full-width cards, with the opening post under each image.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
