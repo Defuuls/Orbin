@@ -203,9 +203,9 @@ fun NextFeedScreen(
                                         attachment = attachment,
                                         fullResolution = true,
                                         contentScale = ContentScale.Fit,
+                                        // Nothing plays in the feed: GIFs and videos show their
+                                        // thumbnail until the thread is opened.
                                         modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
-                                        // One card at a time plays: the one the feed is centred on.
-                                        playing = row.id == activePreviewId,
                                     )
                                 }
                             },
