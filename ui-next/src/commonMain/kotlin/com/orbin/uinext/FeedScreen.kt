@@ -126,8 +126,9 @@ fun FeedScreen(
                     )
                 }
             LazyVerticalGrid(
-                // Two columns on a phone, more on wider screens: the same grid the catalog uses.
-                columns = GridCells.Adaptive(GRID_MIN_CELL),
+                // One full-width card per thread on a phone, its media whole and the opening post
+                // under it; wider screens fit more columns of the same card.
+                columns = GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
                 state = gridState,
                 modifier = insets,
                 contentPadding = gridPadding(bottomPad),
@@ -164,6 +165,8 @@ fun FeedScreen(
                             thumbnail,
                             activityText = activityText,
                             showBoard = !groupByBoard,
+                            excerptLines = FEED_EXCERPT_LINES,
+                            tallMedia = true,
                         )
                     }
                 }
@@ -171,6 +174,12 @@ fun FeedScreen(
         }
     }
 }
+
+/** Wide enough that every phone gets one column; a tablet or unfolded foldable gets two or more. */
+internal val FEED_CARD_MIN_WIDTH = 360.dp
+
+/** Lines of the opening post under each feed card. */
+internal const val FEED_EXCERPT_LINES = 8
 
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP

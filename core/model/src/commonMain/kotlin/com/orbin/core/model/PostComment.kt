@@ -24,8 +24,30 @@ data class PostComment(
     val externalLinks: List<String>
         get() = buildList { collectLinks(nodes, this) }
 
+    /**
+     * The comment as readable text: quotes as `>>123`, links as their text, line breaks kept.
+     * Styling (greentext, spoilers, bold) is dropped; that is the rich renderer's job.
+     */
+    fun plainText(): String = buildString { appendPlain(nodes) }.trim()
+
     companion object {
         val Empty = PostComment(raw = "", nodes = persistentListOf())
+
+        private fun StringBuilder.appendPlain(nodes: List<PostNode>) {
+            nodes.forEach { node ->
+                when (node) {
+                    is PostNode.Text -> append(node.text)
+                    PostNode.LineBreak -> append('\n')
+                    is PostNode.Styled -> appendPlain(node.children)
+                    is PostNode.Link -> if (node.children.isEmpty()) append(node.url) else appendPlain(node.children)
+                    is PostNode.QuoteLink -> {
+                        append(">>")
+                        node.board?.let { append(">/").append(it.value).append('/') }
+                        append(node.target.value)
+                    }
+                }
+            }
+        }
 
         private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
         private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
