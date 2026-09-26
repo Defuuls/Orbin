@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [150-Papaya] - 2026-09-26
+
+### Changed
+- Nothing plays in the feed any more. GIFs and videos show their thumbnail until you open the thread; the feed used to play the card it was centred on (#579).
+
+
 ## [149-Orange] - 2026-09-26
 
 ### Added
@@ -2385,7 +2391,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v149-Orange...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...HEAD
+[150-Papaya]: https://github.com/Defuuls/Orbin/compare/v149-Orange...v150-Papaya
 [149-Orange]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...v149-Orange
 [148-Nectarine]: https://github.com/Defuuls/Orbin/compare/v147-Mango...v148-Nectarine
 [147-Mango]: https://github.com/Defuuls/Orbin/compare/v146-Lemon...v147-Mango
