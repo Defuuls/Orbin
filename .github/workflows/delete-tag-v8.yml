@@ -1,0 +1,31 @@
+name: Delete the v8.0 tag (one-off)
+
+# Temporary: deletes the single git tag v8.0, whose release was already deleted. The commit it
+# pointed at stays in main's history. Removed again right after it runs.
+on:
+  push:
+    branches:
+      - claude/boards-alphabetical-sorting-2sepps
+    paths:
+      - .github/workflows/delete-tag-v8.yml
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete tag v8.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "Tag v8.0 points at:"
+          gh api "repos/$REPO/git/ref/tags/v8.0" --jq '.object.sha'
+          gh api -X DELETE "repos/$REPO/git/refs/tags/v8.0"
+          if gh api "repos/$REPO/git/ref/tags/v8.0" >/dev/null 2>&1; then
+            echo "Tag still present"; exit 1
+          fi
+          echo "Tag v8.0 deleted"
