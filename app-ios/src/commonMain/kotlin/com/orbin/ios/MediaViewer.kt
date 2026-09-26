@@ -60,8 +60,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The thread's files full screen, one per page: swipe between them, pinch or double-tap to zoom an
  * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
- * player handles play on their page ([NativePlayer]); the rest, WebM above all, show the thumbnail
- * and open in the browser.
+ * player handles play on their page ([NativePlayer]). WebM uses WebKit on iOS 17.4+; older
+ * systems offer the file in the browser.
  */
 @Composable
 internal fun MediaViewer(
@@ -134,6 +134,7 @@ private fun MediaPage(
     active: Boolean,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
+    val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
     var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
@@ -149,6 +150,8 @@ private fun MediaPage(
         // Below the top bar, so the player's own controls never sit under the close button.
         playable != null ->
             NativePlayer(playable, active, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
+        webm != null && supportsWebM && active ->
+            NativeWebMPlayer(webm, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
         else -> ExternalFile(file)
     }
 }

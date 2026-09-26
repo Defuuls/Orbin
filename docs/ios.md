@@ -29,8 +29,8 @@ A reader, so far:
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
   Video and audio play on their page in the system player (AVKit), with its controls and AirPlay,
   pausing when you swipe away. That covers MP4, QuickTime and the common audio
-  formats. iOS's player has no WebM, which much of 4chan's video is, so WebM still opens in the
-  browser;
+  formats. WebM plays inside the viewer through WebKit on iOS 17.4 and later; older iOS versions
+  offer the browser link;
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
@@ -57,7 +57,7 @@ the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's
 with the same keys.
 
 Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), WebM playback, and backup and restore. (Android no longer offers saving
+background refresh), and backup and restore. (Android no longer offers saving
 a thread, so iOS has nothing to match there.) These move over
 in later steps.
 
