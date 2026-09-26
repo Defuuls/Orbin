@@ -34,11 +34,21 @@ A reader, so far:
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
-- unread counts on watched threads in their board's catalog, as on Android. Android keeps them
-  current from a background worker. iOS does the same refresh while the app is open instead
-  (`WatchedThreads`): at launch, on switching tabs and when the app comes to the front, at most
-  once every five minutes. Opening a watched thread clears its count, and the thread screen offers
-  a jump to the first reply you had not seen;
+- unread counts on watched threads in their board's catalog, as on Android. `WatchedThreads`
+  refreshes them while the app is open (at launch, on switching tabs and when the app comes to the
+  front, at most once every five minutes), and iOS also wakes the app now and then in the
+  background (`BackgroundRefresh`, a `BGAppRefreshTask`) to do the same, as Android's watch worker
+  does. New replies are posted as a notification per thread; iOS asks to notify the first time you
+  watch a thread. Opening a watched thread clears its count, and the thread screen offers a jump to
+  the first reply you had not seen;
+- saving from the viewer (Save), and the **Downloads** tab listing every save with its progress, a
+  retry for failures and Clear. Photos, GIFs and the videos iOS plays go into the Photos library
+  (add-only access); everything else, WebM included, goes to Files › On My iPhone › Orbin, by board
+  then thread. The list is the shared `downloads` table; the rules are Android's (https only, and
+  nothing the permanent filter catches);
+- backup and restore (Settings › Export data / Import data) in Android's format, through the share
+  sheet and the document picker, so a file from either platform restores on the other. As on
+  Android, an import merges and never restores the app lock;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
@@ -56,10 +66,9 @@ Followed boards and settings live in a DataStore file beside the database, read 
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
 with the same keys.
 
-Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), and backup and restore. (Android no longer offers saving
-a thread, so iOS has nothing to match there.) These move over
-in later steps.
+iOS decides when the background refresh runs, from how often you use the app; it does not run in
+the simulator, and not at all if Background App Refresh is off in the system settings. (Android no
+longer offers saving a thread, so iOS has nothing to match there.)
 
 ## Building on a Mac
 

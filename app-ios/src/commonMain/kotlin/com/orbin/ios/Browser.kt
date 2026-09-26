@@ -11,6 +11,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -118,6 +119,8 @@ class Browser(
     settings: SettingsRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    notifier: ThreadNotifier? = null,
+    onWatch: () -> Unit = {},
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
@@ -132,7 +135,9 @@ class Browser(
 
     /** Watching threads, their unread counts, and keeping those counts current. */
     val watched =
-        WatchedThreads(bookmarks, scope, now) { key -> provider(key.provider).getThread(key.board, key.thread) }
+        WatchedThreads(bookmarks, scope, now, notifier, onWatch) { key ->
+            provider(key.provider).getThread(key.board, key.thread)
+        }
 
     private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Feed))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()

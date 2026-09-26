@@ -5,15 +5,6 @@ import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
-import com.orbin.data.repository.BookmarkRepositoryImpl
-import com.orbin.data.repository.HistoryRepositoryImpl
-import com.orbin.data.settings.BoardPreferencesStore
-import com.orbin.data.settings.SettingsStore
-import com.orbin.provider.api.ViolentMediaCoverProvider
-import io.ktor.client.engine.darwin.Darwin
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.first
-import platform.Foundation.NSBundle
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
@@ -22,70 +13,65 @@ import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIViewController
 
 /**
- * The app's root view controller, which the Swift side hosts full screen. One HTTP client serves
- * both the providers and image loading, so every request carries the same headers; one database
- * holds what the reader keeps.
+ * The app's root view controller, which the Swift side hosts full screen, built over [AppGraph]:
+ * one HTTP client for the providers, image loading and saves, and one database for what the reader
+ * keeps, shared with the background refresh.
  */
 @Suppress("FunctionName", "unused") // Called from Swift as MainViewControllerKt.MainViewController().
 fun MainViewController(): UIViewController {
-    val client = orbinHttpClient(Darwin.create())
-    val database = openDatabase()
-    // One DataStore per file: board preferences and settings share it, as they do on Android.
-    val preferences = openPreferences()
-    val settingsStore = SettingsStore(preferences)
-    val scope = MainScope()
-    // The same violent-media cover Android applies, following the same setting.
-    val providers =
-        orbinProviders(client).map { provider ->
-            ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
-        }
-    val bookmarks = BookmarkRepositoryImpl(database.bookmarkDao())
-    val boardPreferences = BoardPreferencesStore(preferences)
+    val graph = AppGraph
     val browser =
         Browser(
-            providers = providers,
-            bookmarks = bookmarks,
-            history = HistoryRepositoryImpl(database.historyDao()),
-            boardPreferences = boardPreferences,
-            settings = settingsStore,
-            scope = scope,
+            providers = graph.providers,
+            bookmarks = graph.bookmarks,
+            history = graph.history,
+            boardPreferences = graph.boardPreferences,
+            settings = graph.settingsStore,
+            scope = graph.scope,
+            notifier = graph.notifier,
+            onWatch = graph.notifier::requestPermission,
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
-    val downloads = MediaDownloads(database.downloadDao(), DeviceMediaStore(), ktorMediaFetch(client), scope)
+    val downloads = MediaDownloads(graph.downloadDao, DeviceMediaStore(), ktorMediaFetch(graph.client), graph.scope)
     // Export and import in Android's backup format, through the system share sheet and file picker.
     val backup =
         IosBackup(
-            settings = settingsStore,
-            boardPreferences = boardPreferences,
-            bookmarks = bookmarks,
-            providers = providers.map { it.metadata.id },
+            settings = graph.settingsStore,
+            boardPreferences = graph.boardPreferences,
+            bookmarks = graph.bookmarks,
+            providers = graph.providers.map { it.metadata.id },
             files = DeviceBackupFiles(),
-            scope = scope,
-            appVersion = appVersion(),
+            scope = graph.scope,
+            appVersion = graph.appVersion,
         )
     val lock =
-        AppLock(settingsStore.settings, settingsStore::setBiometricLockEnabled, DeviceOwnerAuthenticator(), scope)
+        AppLock(
+            graph.settingsStore.settings,
+            graph.settingsStore::setBiometricLockEnabled,
+            DeviceOwnerAuthenticator(),
+            graph.scope,
+        )
     // The app lives as long as this controller, so the observers are never removed.
     observe(UIApplicationDidBecomeActiveNotification) {
         lock.onForeground()
         browser.watched.refresh()
     }
     observe(UIApplicationWillResignActiveNotification) { lock.onResignActive() }
-    observe(UIApplicationDidEnterBackgroundNotification) { lock.onBackground() }
+    observe(UIApplicationDidEnterBackgroundNotification) {
+        lock.onBackground()
+        // Leaving the app is when a background refresh is worth asking for.
+        scheduleBackgroundRefresh()
+    }
     return ComposeUIViewController {
         setSingletonImageLoaderFactory { context ->
             ImageLoader
                 .Builder(context)
-                .components { add(KtorNetworkFetcherFactory(httpClient = { client })) }
+                .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
                 .build()
         }
         OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup })
     }
 }
-
-/** "155" for 155-Ugli: the release number TestFlight shows as the version. */
-private fun appVersion(): String =
-    NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: "ios"
 
 private fun observe(
     name: String?,
