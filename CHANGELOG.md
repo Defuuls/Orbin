@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [149-Orange] - 2026-09-26
+
+### Added
+- Orbin checks for a new release when it opens, at most once a day, and offers it in a popup. Update downloads the release, checks it against its published SHA-256 checksum and Orbin's signing key, and opens Android's installer to confirm. Settings → Check for updates offers the same, and "Tell me about new releases" turns the launch check off.
+
+### Fixed
+- The Boards list is sorted A–Z by board. It showed boards in the order the site lists them, which isn't alphabetical (#576).
+
+
 ## [148-Nectarine] - 2026-09-25
 
 ### Changed
@@ -2376,7 +2385,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v149-Orange...HEAD
+[149-Orange]: https://github.com/Defuuls/Orbin/compare/v148-Nectarine...v149-Orange
 [148-Nectarine]: https://github.com/Defuuls/Orbin/compare/v147-Mango...v148-Nectarine
 [147-Mango]: https://github.com/Defuuls/Orbin/compare/v146-Lemon...v147-Mango
 [146-Lemon]: https://github.com/Defuuls/Orbin/compare/v145-Kiwi...v146-Lemon
