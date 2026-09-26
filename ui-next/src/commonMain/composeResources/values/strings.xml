@@ -20,6 +20,11 @@
     <string name="next_search_query_label">Search the boards you follow</string>
     <string name="next_search_idle_hint">Type a word and press search.</string>
     <string name="next_search_no_matches">No matches</string>
+    <string name="next_lock_title">Orbin is locked</string>
+    <string name="next_lock_hint">Authenticate to continue.</string>
+    <string name="next_lock_unlocking">Unlocking…</string>
+    <string name="next_lock_unlock">Unlock</string>
+    <string name="next_lock_continue_without">Continue without app lock</string>
     <string name="next_board_media_subtitle">Every file on this board</string>
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>

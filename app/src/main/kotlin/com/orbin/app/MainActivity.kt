@@ -11,12 +11,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -25,11 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,12 +34,11 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
-import com.orbin.uinext.InlineAction
+import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.materialPalette
 import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -488,60 +479,14 @@ private fun AppContent(
                     modifier = Modifier.fillMaxSize(),
                     color = next.background,
                 ) {
-                    LockedScreen(
+                    LockScreen(
                         message = unlockMessage,
                         unlocking = authenticationInProgress,
-                        allowContinueWithoutLock = allowContinueWithoutLock,
-                        onRetry = onRetryUnlock,
-                        onContinueWithoutLock = onContinueWithoutLock,
+                        onUnlock = onRetryUnlock,
+                        onContinueWithoutLock = onContinueWithoutLock.takeIf { allowContinueWithoutLock },
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun LockedScreen(
-    message: String?,
-    unlocking: Boolean,
-    allowContinueWithoutLock: Boolean,
-    onRetry: () -> Unit,
-    onContinueWithoutLock: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(stringResource(R.string.lock_title), style = NextType.title2, color = next.ink)
-        Text(
-            text = message ?: stringResource(R.string.lock_authenticate_hint),
-            modifier = Modifier.padding(top = 8.dp),
-            color = next.muted,
-            style = NextType.body,
-            textAlign = TextAlign.Center,
-        )
-        if (!unlocking) {
-            InlineAction(
-                label = stringResource(R.string.lock_unlock),
-                accent = true,
-                onClick = onRetry,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        } else {
-            Text(
-                stringResource(R.string.lock_unlocking),
-                style = NextType.body,
-                color = next.muted,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
-        if (allowContinueWithoutLock) {
-            InlineAction(
-                label = stringResource(R.string.lock_continue_without),
-                onClick = onContinueWithoutLock,
-            )
         }
     }
 }

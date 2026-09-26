@@ -40,6 +40,8 @@ targets:
         CADisableMinimumFrameDurationOnPhone: true
         # HTTPS only, which is exempt from export compliance, so TestFlight does not ask each build.
         ITSAppUsesNonExemptEncryption: false
+        # Shown the first time the app lock asks for Face ID.
+        NSFaceIDUsageDescription: Orbin uses Face ID to unlock when App lock is on.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID)
