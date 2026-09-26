@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orbin — a modern image board client for Android</title>
+  <title>Orbin — a modern imageboard browser for Android</title>
   <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
   <meta name="theme-color" content="#3157B8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#15161B" media="(prefers-color-scheme: dark)">
@@ -163,13 +163,11 @@
   <h1>Orbin</h1>
   <p class="tagline">A modern, fast, and beautiful open-source imageboard client for Android — built with Kotlin, Jetpack Compose, and Material 3 Expressive.</p>
   <div class="cta">
-    <!-- Deliberately the releases list, not /releases/latest: two apps are tagged in this
-         repository and "latest" resolves by date across both, so it can point at Orbin Minimal. -->
-    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases">Download APK</a>
+    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download APK</a>
     <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
   </div>
   <p class="note">Free and AGPLv3-licensed, forever. Not available on Google Play — releases are signed and published on GitHub.</p>
-  <p class="note">Current full-client release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli">155 — Ugli</a></strong> (2026-09-26).</p>
+  <p class="note">Current release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli">155 — Ugli</a></strong> (2026-09-26).</p>
   <p class="note">What&rsquo;s new in 155: <em>Release pages carry just the app and its checksum.</em></p>
 </section>
 
@@ -211,10 +209,7 @@
         <h3>Content filter &amp; violent media cover</h3>
         <p>An always-on keyword filter removes gore, shock, and abuse across every board, feed, and search. Additionally, Cover violent media (on by default in Settings) places a spoiler cover over images and videos in posts referencing violence, accidents, or graphic footage until you choose to open them.</p>
       </div>
-      <div class="card">
-        <h3>Orbin Minimal &mdash; a second, smaller app</h3>
-        <p>A separate APK whose entire interface is your subscribed boards as one flat feed, newest first, with a preview, a board tag and a reply count per row. Tap to read, tap an image to view it. No bottom navigation, no settings hub, no search, downloads, or bookmarks &mdash; just the board picker. It shares the same providers, caching, encrypted storage, and content filters, installing alongside the full client.</p>
-      </div>
+
       <div class="card">
         <h3>Make it yours</h3>
         <p>Material 3 Expressive styling with flat matte surfaces, light/dark and true-black AMOLED modes, and Color themes (Yotsuba, Warosu, Miku, Lain, Apple, Banana, and more). Settings opens directly from the gear in the Feed header and is kept short and focused: only the options you need, with no cluttered menus.</p>
@@ -246,23 +241,15 @@
   <div class="wrap">
     <h2>Download</h2>
     <p class="section-lead">
-      Orbin requires <strong>Android 12 or newer</strong>. Signed APKs are published on
-      <a href="https://github.com/Defuuls/Orbin/releases">GitHub Releases</a> with SHA-256 checksums
-      for every artifact.
-    </p>
-    <p class="section-lead">
-      <strong>There are two apps here, on separate version lines.</strong> Orbin is the full
-      client, tagged <code>v…</code> and published as <code>orbin-v&lt;version&gt;.apk</code>.
-      Orbin Minimal is a much smaller, separate reader, tagged <code>minimal-v…</code> and
-      published as <code>orbin-minimal-…apk</code>. They install alongside each other, and each
-      releases on its own schedule — so pick by the filename rather than by whichever release sits
-      at the top of the list.
+      Orbin requires <strong>Android 12 or newer</strong>. Signed APKs (<code>orbin-v&lt;version&gt;.apk</code>) are published on
+      <a href="https://github.com/Defuuls/Orbin/releases/latest">GitHub Releases</a> with SHA-256 checksums
+      for every release.
     </p>
     <ol class="dl-steps">
       <li>
         <strong>Get the APK</strong> from the
-        <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>, checking the
-        filename matches the app you want, and allow installs from your browser when Android asks.
+        <a href="https://github.com/Defuuls/Orbin/releases/latest">latest release page</a>
+        and allow installs from your browser when Android asks.
         You can also track updates with <a href="https://github.com/ImranR98/Obtainium">Obtainium</a>
         using this repository&rsquo;s URL.
       </li>
