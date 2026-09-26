@@ -34,7 +34,8 @@ jobs:
           if [ "$MODE" = "delete" ]; then
             while read -r id tag name size; do
               echo "Deleting $name from $tag"
-              gh api -X DELETE "repos/$REPO/releases/assets/$id"
+              # Immutable releases refuse any change; report those and carry on.
+              gh api -X DELETE "repos/$REPO/releases/assets/$id" || echo "SKIPPED $name on $tag"
             done < assets.txt
             echo "REMAINING $(gh api --paginate "repos/$REPO/releases?per_page=100" --jq '.[] | .assets[] | select(.name | test("-mapping\\.txt(\\.sha256)?$")) | .name' | wc -l)"
           fi
