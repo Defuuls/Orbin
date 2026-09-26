@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -47,22 +48,27 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
+import com.orbin.ios.resources.ios_media_not_saved
 import com.orbin.ios.resources.ios_media_not_viewable
 import com.orbin.ios.resources.ios_media_open_in_browser
 import com.orbin.ios.resources.ios_media_position
+import com.orbin.ios.resources.ios_media_save
+import com.orbin.ios.resources.ios_media_saving
+import com.orbin.ios.resources.ios_media_spoiler_reveal
 import org.jetbrains.compose.resources.stringResource
 
 /**
  * The thread's files full screen, one per page: swipe between them, pinch or double-tap to zoom an
  * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
- * player handles play on their page ([NativePlayer]); the rest, WebM above all, show the thumbnail
- * and open in the browser.
+ * player handles play on their page ([NativePlayer]). WebM uses WebKit on iOS 17.4+; older
+ * systems offer the file in the browser.
  */
 @Composable
 internal fun MediaViewer(
     files: List<MediaAttachment>,
     startIndex: Int,
     onClose: () -> Unit,
+    onSave: (MediaAttachment) -> Boolean = { false },
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -83,14 +89,42 @@ internal fun MediaViewer(
                 color = Color.White,
                 modifier = Modifier.padding(start = 8.dp),
             )
-            IconButton(onClick = onClose) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = stringResource(Res.string.ios_media_close),
-                    tint = Color.White,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SaveButton(files[pager.currentPage], onSave)
+                IconButton(onClick = onClose) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(Res.string.ios_media_close),
+                        tint = Color.White,
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * Saves the file on screen. Once pressed it says so for that file, and says when a file cannot be
+ * saved at all (not https, or caught by the permanent filter); the Downloads tab has the rest.
+ */
+@Composable
+private fun SaveButton(
+    file: MediaAttachment,
+    onSave: (MediaAttachment) -> Boolean,
+) {
+    var result by remember(file) { mutableStateOf<Boolean?>(null) }
+    TextButton(onClick = { result = onSave(file) }, enabled = result == null) {
+        Text(
+            text =
+                stringResource(
+                    when (result) {
+                        null -> Res.string.ios_media_save
+                        true -> Res.string.ios_media_saving
+                        false -> Res.string.ios_media_not_saved
+                    },
+                ),
+            color = Color.White,
+        )
     }
 }
 
@@ -100,11 +134,24 @@ private fun MediaPage(
     active: Boolean,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
+    val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
+    // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
+    // until tapped, and nothing of it plays before then.
+    var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
+    if (!revealed) {
+        SpoilerCover(
+            modifier = Modifier.clickable { revealed = true },
+            text = stringResource(Res.string.ios_media_spoiler_reveal),
+        )
+        return
+    }
     when {
         file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
         // Below the top bar, so the player's own controls never sit under the close button.
         playable != null ->
             NativePlayer(playable, active, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
+        webm != null && supportsWebM && active ->
+            NativeWebMPlayer(webm, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
         else -> ExternalFile(file)
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,6 +32,7 @@ import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -56,6 +58,8 @@ import kotlin.time.Clock
 fun OrbinApp(
     browser: Browser,
     lock: AppLock,
+    downloads: MediaDownloads,
+    backup: IosBackup,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -76,7 +80,7 @@ fun OrbinApp(
         platform = NextPlatform.IOS,
     ) {
         Box(Modifier.fillMaxSize()) {
-            Destination(browser, lock, backStack.last())
+            Destination(browser, lock, downloads, backup, backStack.last())
             LockCover(lock)
         }
     }
@@ -86,16 +90,19 @@ fun OrbinApp(
 private fun Destination(
     browser: Browser,
     lock: AppLock,
+    downloads: MediaDownloads,
+    backup: IosBackup,
     route: Route,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser)
         Route.Boards -> BoardsDestination(browser)
+        Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock)
+        Route.Settings -> SettingsDestination(browser, lock, backup)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.ThreadPage -> ThreadDestination(browser)
-        is Route.Media -> MediaDestination(browser, route)
+        is Route.Media -> MediaDestination(browser, downloads, route)
     }
 }
 
@@ -123,6 +130,7 @@ private fun FeedDestination(browser: Browser) {
             onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
             thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
             onOpenBoards = { browser.openTab(Route.Boards) },
+            onOpenDownloads = { browser.openTab(Route.Downloads) },
             onSettings = { browser.open(Route.Settings) },
         )
     }
@@ -145,6 +153,7 @@ private fun BoardsDestination(browser: Browser) {
             onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
             onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
             onOpenFeed = { browser.openTab(Route.Feed) },
+            onOpenDownloads = { browser.openTab(Route.Downloads) },
             onOpenSearch = { browser.open(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
         )
@@ -152,11 +161,34 @@ private fun BoardsDestination(browser: Browser) {
 }
 
 @Composable
+private fun DownloadsDestination(
+    browser: Browser,
+    downloads: MediaDownloads,
+) {
+    val records by downloads.records.collectAsState()
+    DownloadsScreen(
+        records = records,
+        onRetry = downloads::retry,
+        onClear = downloads::clear,
+        onDestination = { destination ->
+            when (destination) {
+                NextDestination.FEED -> browser.openTab(Route.Feed)
+                NextDestination.BOARDS -> browser.openTab(Route.Boards)
+                NextDestination.DOWNLOADS -> Unit
+                NextDestination.SETTINGS -> browser.open(Route.Settings)
+            }
+        },
+    )
+}
+
+@Composable
 private fun SettingsDestination(
     browser: Browser,
     lock: AppLock,
+    backup: IosBackup,
 ) {
     val settings by browser.settings.current.collectAsState()
+    val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf<String?>(null) }
@@ -168,12 +200,14 @@ private fun SettingsDestination(
                 settings,
                 clearArmed,
                 imageCacheCleared,
-            ) { settingsGroups(settings, clearArmed, imageCacheCleared) },
+                backupState,
+            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState) },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
             when (item.id) {
                 SettingIds.HIDE_NSFW -> browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+                SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
                 SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
                 SettingIds.THEME -> expanded = if (expanded == item.id) null else item.id
@@ -184,6 +218,8 @@ private fun SettingsDestination(
                     } else {
                         clearArmed = true
                     }
+                SettingIds.EXPORT_BACKUP -> backup.export()
+                SettingIds.IMPORT_BACKUP -> backup.import()
                 SettingIds.CLEAR_IMAGE_CACHE ->
                     scope.launch {
                         imageLoader.memoryCache?.clear()
@@ -269,12 +305,15 @@ private fun CatalogThumbnail(
     modifier: Modifier,
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
-    AsyncImage(
-        model = attachment.thumbnailUrl,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier,
-    )
+    Box(modifier) {
+        AsyncImage(
+            model = attachment.thumbnailUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+    }
 }
 
 @Composable
@@ -328,12 +367,16 @@ private fun ThreadContent(
         },
         media = { post, modifier ->
             byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
-                AsyncImage(
-                    model = attachment.thumbnailUrl,
-                    contentDescription = attachment.originalFileName,
-                    contentScale = ContentScale.Crop,
-                    modifier = modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
-                )
+                Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
+                    AsyncImage(
+                        model = attachment.thumbnailUrl,
+                        contentDescription = attachment.originalFileName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    // Opening it still asks again in the viewer: the cover is lifted per file there.
+                    if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                }
             }
         },
     )
@@ -342,18 +385,18 @@ private fun ThreadContent(
 @Composable
 private fun MediaDestination(
     browser: Browser,
+    downloads: MediaDownloads,
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
-    val files =
-        remember(thread) {
-            (thread as? Load.Ready)
-                ?.value
-                ?.takeIf { it.key == route.thread }
-                ?.files
-                .orEmpty()
-        }
-    MediaViewer(files = files, startIndex = route.index, onClose = { browser.back() })
+    val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
+    val files = remember(open) { open?.files.orEmpty() }
+    MediaViewer(
+        files = files,
+        startIndex = route.index,
+        onClose = { browser.back() },
+        onSave = { file -> downloads.save(file, route.thread, open?.subject) },
+    )
 }
 
 @Composable

@@ -17,6 +17,8 @@ class PlayerTest {
     @Test
     fun webmAndImagesDoNot() {
         assertFalse(file("webm", MediaType.VIDEO).playsInApp, "AVFoundation has no WebM")
+        assertTrue(file(".WeBm", MediaType.VIDEO).isWebM, "WebKit handles WebM on supported iOS")
+        assertFalse(file("webm", MediaType.IMAGE).isWebM)
         assertFalse(file("mp4", MediaType.IMAGE).playsInApp, "only video and audio are played")
         assertFalse(file("swf", MediaType.UNKNOWN).playsInApp)
     }

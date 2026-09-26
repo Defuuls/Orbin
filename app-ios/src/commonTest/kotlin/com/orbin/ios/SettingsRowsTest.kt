@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingKind
 import kotlin.test.Test
@@ -18,11 +19,23 @@ class SettingsRowsTest {
             ).flatMap { it.second }.associateBy { it.id }
 
         assertEquals(ON_LABEL, rows.getValue(SettingIds.HIDE_NSFW).value)
+        // On by default, as on Android.
+        assertEquals(ON_LABEL, rows.getValue(SettingIds.COVER_VIOLENT).value)
         val theme = rows.getValue(SettingIds.THEME)
         assertEquals(SettingKind.CHOICE, theme.kind)
         assertEquals(listOf("System", "Light", "Dark"), theme.options)
         assertEquals("Dark", theme.value)
         assertEquals(2, theme.selected)
+    }
+
+    @Test
+    fun theViolentMediaCoverCanBeTurnedOff() {
+        val row =
+            settingsGroups(AppSettings(coverViolentMedia = false), clearArmed = false, imageCacheCleared = false)
+                .flatMap { it.second }
+                .single { it.id == SettingIds.COVER_VIOLENT }
+        assertEquals(OFF_LABEL, row.value)
+        assertEquals(SettingKind.TOGGLE, row.kind)
     }
 
     @Test

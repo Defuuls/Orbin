@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
+import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BookmarkRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -15,14 +16,19 @@ import kotlinx.coroutines.sync.withPermit
 /**
  * Watched threads on iOS, kept in the shared database through the repository Android uses.
  *
- * Android refreshes watched threads in the background. iOS has no such worker yet, so [refresh] does
- * the same work while the app is open: at launch, on returning to a tab and when the app comes to
- * the front. Opening a watched thread [reads][read] it, which clears its unread count.
+ * [refresh] runs while the app is open: at launch, on returning to a tab and when the app comes to
+ * the front. The system also wakes the app now and then to run [refreshNow] in the background, as
+ * Android's watch worker does; either way, new replies are handed to [notifier], which posts them as
+ * Android does. Opening a watched thread [reads][read] it, which clears its unread count.
+ *
+ * [onWatch] runs when the reader starts watching a thread: where iOS asks, once, to notify.
  */
 class WatchedThreads(
     private val bookmarks: BookmarkRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long,
+    private val notifier: ThreadNotifier? = null,
+    private val onWatch: () -> Unit = {},
     private val fetch: suspend (ThreadKey) -> Thread,
 ) {
     private var refreshing: Job? = null
@@ -38,6 +44,7 @@ class WatchedThreads(
                 bookmarks.removeBookmark(thread.key)
             } else {
                 bookmarks.addBookmark(thread.toBookmark(now()))
+                onWatch()
             }
         }
     }
@@ -63,31 +70,38 @@ class WatchedThreads(
         val tooSoon = refreshedAt?.let { at - it < WATCH_REFRESH_INTERVAL_MS } == true
         if (previous != null && (previous.isActive || tooSoon)) return previous
         refreshedAt = at
-        return scope
-            .launch {
-                val watched = runCatching { bookmarks.watchedBookmarks() }.getOrDefault(emptyList())
-                val gate = Semaphore(MAX_CONCURRENT_WATCH_REFRESHES)
-                coroutineScope {
-                    watched.forEach { bookmark ->
-                        launch {
-                            gate.withPermit {
-                                runCatching { fetch(bookmark.key) }.onSuccess { thread ->
-                                    val latest = thread.stats.replyCount
-                                    if (latest > bookmark.latestReplyCount) {
-                                        runCatching {
-                                            bookmarks.updateLatest(
-                                                bookmark.key,
-                                                latest,
-                                                thread.stats.isArchived,
-                                            )
-                                        }
-                                    }
+        return scope.launch { refreshNow() }.also { refreshing = it }
+    }
+
+    /**
+     * The refresh itself, now, whatever the interval: what the background task runs. A thread whose
+     * reply count grew is stored, and posted to [notifier] when it has replies the reader has not
+     * seen — the same rule as Android's watch worker.
+     */
+    suspend fun refreshNow() {
+        val watched = runCatching { bookmarks.watchedBookmarks() }.getOrDefault(emptyList())
+        val gate = Semaphore(MAX_CONCURRENT_WATCH_REFRESHES)
+        coroutineScope {
+            watched.forEach { bookmark ->
+                launch {
+                    gate.withPermit {
+                        runCatching { fetch(bookmark.key) }.onSuccess { thread ->
+                            val latest = thread.stats.replyCount
+                            if (latest > bookmark.latestReplyCount) {
+                                val stored =
+                                    runCatching {
+                                        bookmarks.updateLatest(bookmark.key, latest, thread.stats.isArchived)
+                                    }.isSuccess
+                                val unread = latest - bookmark.lastSeenReplyCount
+                                if (stored && unread > 0) {
+                                    runCatching { notifier?.notifyThreadUpdate(bookmark.key, bookmark.title, unread) }
                                 }
                             }
                         }
                     }
                 }
-            }.also { refreshing = it }
+            }
+        }
     }
 
     /**

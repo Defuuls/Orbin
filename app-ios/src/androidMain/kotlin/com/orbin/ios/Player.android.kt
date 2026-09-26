@@ -13,3 +13,13 @@ internal actual fun NativePlayer(
 ) {
     Box(modifier)
 }
+
+internal actual val supportsWebM: Boolean = false
+
+@Composable
+internal actual fun NativeWebMPlayer(
+    url: String,
+    modifier: Modifier,
+) {
+    Box(modifier)
+}

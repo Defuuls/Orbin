@@ -11,6 +11,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -66,12 +67,15 @@ data class FeedThread(
     val thread: CatalogThread,
 )
 
-/** Where the reader is. The back stack is a list of these, a tab (feed or boards) at the bottom. */
+/** Where the reader is. The back stack is a list of these, a tab (feed, downloads or boards) at the bottom. */
 sealed interface Route {
     /** The newest threads of every followed board, one list: the start screen, as on Android. */
     data object Feed : Route
 
     data object Boards : Route
+
+    /** What was saved from threads: the middle tab, as on Android. */
+    data object Downloads : Route
 
     /** Search over the followed boards, opened from the boards list. */
     data object Search : Route
@@ -115,6 +119,8 @@ class Browser(
     settings: SettingsRepository,
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    notifier: ThreadNotifier? = null,
+    onWatch: () -> Unit = {},
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
@@ -129,7 +135,9 @@ class Browser(
 
     /** Watching threads, their unread counts, and keeping those counts current. */
     val watched =
-        WatchedThreads(bookmarks, scope, now) { key -> provider(key.provider).getThread(key.board, key.thread) }
+        WatchedThreads(bookmarks, scope, now, notifier, onWatch) { key ->
+            provider(key.provider).getThread(key.board, key.thread)
+        }
 
     private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Feed))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
@@ -194,7 +202,7 @@ class Browser(
 
     /** Switches to a tab, leaving whatever was open on the other one. */
     fun openTab(tab: Route) {
-        require(tab == Route.Feed || tab == Route.Boards) { "Not a tab: $tab" }
+        require(tab == Route.Feed || tab == Route.Boards || tab == Route.Downloads) { "Not a tab: $tab" }
         _backStack.value = listOf(tab)
         if (tab == Route.Feed) loadFeed()
         watched.refresh()
@@ -274,7 +282,7 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Feed, Route.Boards, Route.Search, Route.Settings, is Route.Media -> Unit
+            Route.Feed, Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
             is Route.Catalog ->
                 if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
                     catalogShown = route.board

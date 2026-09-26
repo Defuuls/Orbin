@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 
 /**
  * The settings iOS has, read and written through the same `SettingsStore` (`:storage`) and keys as
- * Android's: hiding NSFW boards, the theme and true black, and clearing what the app keeps.
+ * Android's: hiding NSFW boards, covering violent media, the theme and true black, and clearing
+ * what the app keeps.
  */
 class ReaderSettings(
     private val repository: SettingsRepository,
@@ -33,6 +34,8 @@ class ReaderSettings(
 
     fun setHideNsfwBoards(hide: Boolean): Job = scope.launch { repository.setHideNsfwBoards(hide) }
 
+    fun setCoverViolentMedia(cover: Boolean): Job = scope.launch { repository.setCoverViolentMedia(cover) }
+
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
@@ -44,27 +47,32 @@ class ReaderSettings(
 /** What the settings rows are called; the screen dispatches on these. */
 internal object SettingIds {
     const val HIDE_NSFW = "hideNsfw"
+    const val COVER_VIOLENT = "coverViolent"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
     const val APP_LOCK = "biometric"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
+    const val EXPORT_BACKUP = "exportBackup"
+    const val IMPORT_BACKUP = "importBackup"
 }
 
 /**
- * The rows, in Android's words and order: its preferences, and its data section less updates and
- * backup, which iOS does not have yet. Clearing activity takes two taps, as on
- * Android: the first arms the row ([clearArmed]).
+ * The rows, in Android's words and order: its preferences, and its data section less updates,
+ * which the App Store handles on iOS. Clearing activity takes two taps, as on Android: the first
+ * arms the row ([clearArmed]). The backup rows say how the last export or import went ([backup]).
  */
 internal fun settingsGroups(
     settings: AppSettings,
     clearArmed: Boolean,
     imageCacheCleared: Boolean,
+    backup: BackupState = BackupState.Idle,
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
         "" to
             listOf(
                 toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
+                toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
                 SettingItem(
                     id = SettingIds.THEME,
                     label = "Theme",
@@ -89,6 +97,29 @@ internal fun settingsGroups(
                     id = SettingIds.CLEAR_IMAGE_CACHE,
                     label = "Clear image cache",
                     value = if (imageCacheCleared) "Cleared" else "Clear",
+                    kind = SettingKind.ACTION,
+                ),
+                SettingItem(
+                    id = SettingIds.EXPORT_BACKUP,
+                    label = "Export data",
+                    value =
+                        when (backup) {
+                            BackupState.Working -> "Working…"
+                            BackupState.Exported -> "Saved"
+                            else -> "Save"
+                        },
+                    kind = SettingKind.ACTION,
+                    hint = "Followed boards, watched threads and settings, as a file Android can restore too.",
+                ),
+                SettingItem(
+                    id = SettingIds.IMPORT_BACKUP,
+                    label = "Import data",
+                    value =
+                        when (backup) {
+                            is BackupState.Imported -> "Restored ${backup.boards} boards, ${backup.bookmarks} threads"
+                            is BackupState.Failed -> backup.message
+                            else -> "Restore"
+                        },
                     kind = SettingKind.ACTION,
                 ),
             ),

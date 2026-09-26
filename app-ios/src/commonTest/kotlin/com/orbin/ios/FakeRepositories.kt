@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 /** Bookmarks kept in memory. The Room-backed one is tested against real SQLite in `:storage`. */
-class FakeBookmarks : BookmarkRepository {
+open class FakeBookmarks : BookmarkRepository {
     val saved = MutableStateFlow<Map<ThreadKey, Bookmark>>(emptyMap())
 
     override fun observeBookmarks(): Flow<List<Bookmark>> = saved.map { it.values.toList() }

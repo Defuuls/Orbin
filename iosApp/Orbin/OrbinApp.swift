@@ -5,6 +5,11 @@ import SwiftUI
 /// lives in the shared Kotlin code (`:app-ios`, linked here as the OrbinKit framework).
 @main
 struct OrbinApp: App {
+    init() {
+        // iOS only runs a background task registered before launch finishes.
+        BackgroundRefreshKt.registerBackgroundRefresh()
+    }
+
     var body: some Scene {
         WindowGroup {
             ComposeView()

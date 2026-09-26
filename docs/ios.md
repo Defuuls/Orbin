@@ -29,20 +29,32 @@ A reader, so far:
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
   Video and audio play on their page in the system player (AVKit), with its controls and AirPlay,
   pausing when you swipe away. That covers MP4, QuickTime and the common audio
-  formats. iOS's player has no WebM, which much of 4chan's video is, so WebM still opens in the
-  browser;
+  formats. WebM plays inside the viewer through WebKit on iOS 17.4 and later; older iOS versions
+  offer the browser link;
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
-- unread counts on watched threads in their board's catalog, as on Android. Android keeps them
-  current from a background worker. iOS does the same refresh while the app is open instead
-  (`WatchedThreads`): at launch, on switching tabs and when the app comes to the front, at most
-  once every five minutes. Opening a watched thread clears its count, and the thread screen offers
-  a jump to the first reply you had not seen;
+- unread counts on watched threads in their board's catalog, as on Android. `WatchedThreads`
+  refreshes them while the app is open (at launch, on switching tabs and when the app comes to the
+  front, at most once every five minutes), and iOS also wakes the app now and then in the
+  background (`BackgroundRefresh`, a `BGAppRefreshTask`) to do the same, as Android's watch worker
+  does. New replies are posted as a notification per thread; iOS asks to notify the first time you
+  watch a thread. Opening a watched thread clears its count, and the thread screen offers a jump to
+  the first reply you had not seen;
+- saving from the viewer (Save), and the **Downloads** tab listing every save with its progress, a
+  retry for failures and Clear. Photos, GIFs and the videos iOS plays go into the Photos library
+  (add-only access); everything else, WebM included, goes to Files › On My iPhone › Orbin, by board
+  then thread. The list is the shared `downloads` table; the rules are Android's (https only, and
+  nothing the permanent filter catches);
+- backup and restore (Settings › Export data / Import data) in Android's format, through the share
+  sheet and the document picker, so a file from either platform restores on the other. As on
+  Android, an import merges and never restores the app lock;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
-  hide NSFW boards (from the boards list, the feed and search, as on Android), the theme
+  hide NSFW boards (from the boards list, the feed and search, as on Android), cover violent
+  media (on by default: a spoilered file, or one whose post is labelled as violent, waits behind a
+  cover in the feed, the catalog, the thread and the viewer until tapped), the theme
   (system, light or dark) and true black, the app lock, clearing the reading history (two taps,
   as on Android) and clearing the image cache;
 - the app lock, as on Android: with it on, the app is locked at launch and whenever it has been
@@ -54,10 +66,9 @@ Followed boards and settings live in a DataStore file beside the database, read 
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
 with the same keys.
 
-Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), WebM playback, and backup and restore. (Android no longer offers saving
-a thread, so iOS has nothing to match there.) These move over
-in later steps.
+iOS decides when the background refresh runs, from how often you use the app; it does not run in
+the simulator, and not at all if Background App Refresh is off in the system settings. (Android no
+longer offers saving a thread, so iOS has nothing to match there.)
 
 ## Building on a Mac
 

@@ -5,5 +5,21 @@
     <string name="ios_media_position">%1$d of %2$d</string>
     <string name="ios_media_open_in_browser">Open in browser</string>
     <string name="ios_media_not_viewable">This file plays in the browser.</string>
+    <string name="ios_media_spoiler">Spoiler</string>
+    <string name="ios_media_spoiler_reveal">Spoiler — tap to show</string>
     <string name="ios_search_follow_boards">Follow a few boards to search them</string>
+    <string name="ios_media_save">Save</string>
+    <string name="ios_media_saving">Added to Downloads</string>
+    <string name="ios_media_not_saved">Can’t save this file</string>
+    <string name="ios_downloads_title">Downloads</string>
+    <string name="ios_downloads_empty">Files you save from a thread appear here.</string>
+    <string name="ios_downloads_where">Photos and videos go to Photos; other files to Files › On My iPhone › Orbin.</string>
+    <string name="ios_downloads_clear">Clear</string>
+    <string name="ios_downloads_clear_title">Clear the list?</string>
+    <string name="ios_downloads_clear_message">The saved files stay where they are.</string>
+    <string name="ios_downloads_retry">Retry</string>
+    <string name="ios_downloads_status_queued">Waiting</string>
+    <string name="ios_downloads_status_running">Saving</string>
+    <string name="ios_downloads_status_completed">Saved</string>
+    <string name="ios_downloads_status_failed">Failed</string>
 </resources>

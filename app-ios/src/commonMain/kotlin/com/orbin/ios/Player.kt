@@ -15,6 +15,18 @@ internal expect fun NativePlayer(
     modifier: Modifier = Modifier,
 )
 
+/** WebKit plays WebM on iOS 17.4 and later. Older iOS versions open the file externally. */
+internal expect val supportsWebM: Boolean
+
+@Composable
+internal expect fun NativeWebMPlayer(
+    url: String,
+    modifier: Modifier = Modifier,
+)
+
+internal val MediaAttachment.isWebM: Boolean
+    get() = isPlayable && extension.lowercase().removePrefix(".") == "webm"
+
 /**
  * Whether the viewer can play this file itself. The system player (AVFoundation) handles MP4,
  * QuickTime and the common audio formats, but not WebM, which much of 4chan's video is; those
