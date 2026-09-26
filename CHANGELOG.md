@@ -2577,7 +2577,7 @@ included, so this is equally safe as a fresh install.
 [11.0]: https://github.com/Defuuls/Orbin/compare/v10.0-tiramisu...v11.0-coconut
 [10.0]: https://github.com/Defuuls/Orbin/compare/v9.0...v10.0-tiramisu
 [9.0]: https://github.com/Defuuls/Orbin/releases/tag/v9.0
-[8.0]: https://github.com/Defuuls/Orbin/releases/tag/v8.0
+[8.0]: https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md#80---2026-06-28
 [7.0]: https://github.com/Defuuls/Orbin/releases/tag/v7.0
 [6.0]: https://github.com/Defuuls/Orbin/releases/tag/v6.0
 [5.0]: https://github.com/Defuuls/Orbin/releases/tag/v5.0
