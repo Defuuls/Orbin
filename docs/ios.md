@@ -23,7 +23,10 @@ A reader, so far:
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
   that open in the browser when they pass the same https check Android uses;
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
-  Video and audio open in the browser, since there is no iOS player yet;
+  Video and audio play on their page in the system player (AVKit), with its controls and AirPlay,
+  pausing when you swipe away. That covers MP4, QuickTime and the common audio
+  formats. iOS's player has no WebM, which much of 4chan's video is, so WebM still opens in the
+  browser;
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
@@ -38,7 +41,7 @@ Followed boards live in a DataStore file beside the database, read and written b
 `BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
 
 Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), an in-app video player, search, settings and saved threads. These move over
+background refresh), WebM playback, search, settings and saved threads. These move over
 in later steps.
 
 ## Building on a Mac
