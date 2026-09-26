@@ -88,9 +88,12 @@ class WatchedThreads(
                         runCatching { fetch(bookmark.key) }.onSuccess { thread ->
                             val latest = thread.stats.replyCount
                             if (latest > bookmark.latestReplyCount) {
-                                runCatching { bookmarks.updateLatest(bookmark.key, latest, thread.stats.isArchived) }
+                                val stored =
+                                    runCatching {
+                                        bookmarks.updateLatest(bookmark.key, latest, thread.stats.isArchived)
+                                    }.isSuccess
                                 val unread = latest - bookmark.lastSeenReplyCount
-                                if (unread > 0) {
+                                if (stored && unread > 0) {
                                     runCatching { notifier?.notifyThreadUpdate(bookmark.key, bookmark.title, unread) }
                                 }
                             }
