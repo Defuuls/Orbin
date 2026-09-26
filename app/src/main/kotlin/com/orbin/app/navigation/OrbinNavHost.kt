@@ -25,7 +25,7 @@ import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
 import com.orbin.feature.onboarding.OnboardingScreen
-import com.orbin.feature.search.SearchScreen
+import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.NextChromeHost
@@ -86,7 +86,7 @@ fun OrbinNavHost(
                 where = "Search",
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
-                    SearchScreen(onOpenThread = openThread)
+                    NextSearchScreen(onOpenThread = openThread)
                 }
             }
         }

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="search_title">Search</string>
-    <string name="search_query_label">Search the boards you follow</string>
-    <string name="search_idle_hint">Type a word and press search.</string>
-    <string name="search_no_matches">No matches</string>
-</resources>

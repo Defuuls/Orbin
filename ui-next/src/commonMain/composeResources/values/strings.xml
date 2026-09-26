@@ -16,6 +16,10 @@
     <string name="next_board_media">Media wall</string>
     <string name="next_media_saved">Saved ›</string>
     <string name="next_search_threads">Search threads ›</string>
+    <string name="next_search_title">Search</string>
+    <string name="next_search_query_label">Search the boards you follow</string>
+    <string name="next_search_idle_hint">Type a word and press search.</string>
+    <string name="next_search_no_matches">No matches</string>
     <string name="next_board_media_subtitle">Every file on this board</string>
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>

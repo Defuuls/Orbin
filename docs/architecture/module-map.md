@@ -13,7 +13,7 @@ large repository locally understandable without tracing the whole dependency gra
 | `feature:thread` | thread reader state/adapters | reading, watch, save/export, scrolling or thread actions change |
 | `feature:gallery` | gallery + all-media experiences | media browsing/selection behavior changes |
 | `feature:settings` | settings/backup UI and adapters | a preference or backup surface changes |
-| `feature:search` | search feature state | search UX or results behavior changes |
+| `feature:search` | search state/adapters over `ui-next`'s search screen; matching is `core:model`'s `matchesSearch` | search UX or results behavior changes |
 | `feature:history` | history presentation | history interactions change |
 | `feature:downloads` | download management UI | download queue presentation changes |
 | `feature:onboarding` | first-run flow | onboarding/recovery entry changes |

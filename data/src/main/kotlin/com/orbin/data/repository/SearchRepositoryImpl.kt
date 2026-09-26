@@ -5,14 +5,13 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.CatalogRequest
-import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.MediaType
 import com.orbin.core.model.SavedSearch
-import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
 import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.core.model.matchesSearch
+import com.orbin.core.model.toSearchResult
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.entity.RecentSearchEntity
@@ -28,7 +27,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val RECENT_LIMIT = 20
-private const val SNIPPET_MAX = 160
 
 /**
  * Search over a board's catalog (client-side), with server-side search delegated to the provider
@@ -65,7 +63,7 @@ class SearchRepositoryImpl
                                 // way a reader reaches filtered content — including by searching
                                 // for a filtered term directly.
                                 .filterNot { it.isPermanentlyFiltered() }
-                                .filter { it.matches(query) }
+                                .filter { it.matchesSearch(query) }
                                 .map { it.toSearchResult() }
                         }
                         // Current-thread search is done in the thread feature over already-loaded posts.
@@ -96,40 +94,4 @@ class SearchRepositoryImpl
         override suspend fun deleteSearch(id: Long) {
             withContext(ioDispatcher) { savedSearchDao.deleteById(id) }
         }
-
-        private fun CatalogThread.matches(query: SearchQuery): Boolean {
-            val needle = query.text.trim().lowercase()
-            val subject = originalPost.subject?.lowercase().orEmpty()
-            val comment = originalPost.comment.raw.lowercase()
-            val textMatches = needle in subject || needle in comment
-            val filters = query.filters
-            val mediaMatches = !filters.mediaOnly || originalPost.attachments.isNotEmpty()
-            val contentMatches =
-                filters.contentTypes.isEmpty() ||
-                    filters.contentTypes.any { type -> matchesContentType(type) }
-            return needle.isEmpty() || (textMatches && mediaMatches && contentMatches)
-        }
-
-        private fun CatalogThread.matchesContentType(type: SearchContentType): Boolean =
-            when (type) {
-                SearchContentType.POST -> true
-                SearchContentType.IMAGE ->
-                    originalPost.attachments.any { it.type == MediaType.IMAGE || it.type == MediaType.ANIMATED_IMAGE }
-                SearchContentType.VIDEO -> originalPost.attachments.any { it.type == MediaType.VIDEO }
-                SearchContentType.AUDIO -> originalPost.attachments.any { it.type == MediaType.AUDIO }
-                SearchContentType.URL -> URL_PATTERN.containsMatchIn(originalPost.comment.raw)
-            }
-
-        private companion object {
-            val URL_PATTERN = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
-        }
-
-        private fun CatalogThread.toSearchResult(): SearchResult =
-            SearchResult(
-                key = key,
-                title = originalPost.subject ?: "/${key.board.value}/",
-                snippet = originalPost.comment.raw.take(SNIPPET_MAX),
-                matchedPost = originalPost.id,
-                thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
-            )
     }

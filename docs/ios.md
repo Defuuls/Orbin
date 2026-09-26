@@ -18,6 +18,10 @@ A reader, so far:
   the permanent filter applied as on Android. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), with one site being down never
   hiding the other's boards, and a switch on each to follow it;
+- search, from the boards list: one query over the catalogs of every board you follow, on every
+  site. It matches as Android's does (`matchesSearch` in `:core:model`, after the permanent filter),
+  on the same shared `ui-next` screen. A board that fails to load leaves the others, and the query
+  and results are still there when you come back from a thread;
 - a board's catalog, with thumbnails;
 - a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
@@ -41,7 +45,7 @@ Followed boards live in a DataStore file beside the database, read and written b
 `BoardPreferencesStore` (`:storage`) that Android's settings use, with the same keys.
 
 Not there yet: refreshing watched threads and notifying you while the app is closed (iOS
-background refresh), WebM playback, search, settings and saved threads. These move over
+background refresh), WebM playback, settings and saved threads. These move over
 in later steps.
 
 ## Building on a Mac
