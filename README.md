@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [153 — Strawberry](https://github.com/Defuuls/Orbin/releases/tag/v153-Strawberry)
+**Current release:** [154 — Tangerine](https://github.com/Defuuls/Orbin/releases/tag/v154-Tangerine)
 
-**What's new in 153:** Media labelled as violent waits behind a spoiler cover.
+**What's new in 154:** Downloads takes the middle tab, where Media used to be.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

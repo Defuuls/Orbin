@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [154-Tangerine] - 2026-09-26
+
+### Changed
+- The middle tab is now **Downloads**, listing everything you saved with its progress and a retry for failed files. It replaces the Media tab and its All media wall; each board's own media wall stays, reached from its catalog, and its **Saved ›** opens Downloads.
+
+
 ## [153-Strawberry] - 2026-09-26
 
 ### Added
@@ -2410,7 +2416,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v153-Strawberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v154-Tangerine...HEAD
+[154-Tangerine]: https://github.com/Defuuls/Orbin/compare/v153-Strawberry...v154-Tangerine
 [153-Strawberry]: https://github.com/Defuuls/Orbin/compare/v152-Raspberry...v153-Strawberry
 [152-Raspberry]: https://github.com/Defuuls/Orbin/compare/v151-Quince...v152-Raspberry
 [151-Quince]: https://github.com/Defuuls/Orbin/compare/v150-Papaya...v151-Quince
