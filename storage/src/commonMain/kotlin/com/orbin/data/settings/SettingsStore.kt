@@ -31,6 +31,10 @@ class SettingsStore(
         edit { it[Keys.hideNsfwBoards] = enabled }
     }
 
+    override suspend fun setCoverViolentMedia(enabled: Boolean) {
+        edit { it[Keys.coverViolentMedia] = enabled }
+    }
+
     override suspend fun setDeepMediaScan(enabled: Boolean) {
         edit { it[Keys.deepMediaScan] = enabled }
     }
@@ -76,6 +80,7 @@ class SettingsStore(
     private fun Preferences.toAppSettings(): AppSettings =
         AppSettings(
             hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
+            coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
             themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
             amoled = this[Keys.amoled] ?: false,
@@ -88,6 +93,7 @@ class SettingsStore(
 
     private object Keys {
         val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
+        val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
         val deepMediaScan = booleanPreferencesKey("deep_media_scan")
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")

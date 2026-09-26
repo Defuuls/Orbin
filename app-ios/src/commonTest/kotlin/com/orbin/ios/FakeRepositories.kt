@@ -120,6 +120,9 @@ class FakeSettings : SettingsRepository {
 
     override suspend fun setHideNsfwBoards(enabled: Boolean) = settings.update { it.copy(hideNsfwBoards = enabled) }
 
+    override suspend fun setCoverViolentMedia(enabled: Boolean) =
+        settings.update { it.copy(coverViolentMedia = enabled) }
+
     override suspend fun setDeepMediaScan(enabled: Boolean) = settings.update { it.copy(deepMediaScan = enabled) }
 
     override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }

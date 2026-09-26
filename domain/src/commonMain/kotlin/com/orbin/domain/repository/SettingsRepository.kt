@@ -13,6 +13,8 @@ interface SettingsRepository {
 
     suspend fun setHideNsfwBoards(enabled: Boolean)
 
+    suspend fun setCoverViolentMedia(enabled: Boolean)
+
     suspend fun setDeepMediaScan(enabled: Boolean)
 
     suspend fun setThemeMode(mode: AppThemeMode)

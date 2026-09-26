@@ -92,6 +92,8 @@ enum class ThumbnailSize(
 @Serializable
 data class AppSettings(
     val hideNsfwBoards: Boolean = false,
+    /** Spoiler-covers the media of posts labelled as violent; see [ViolentMediaCover]. On by default. */
+    val coverViolentMedia: Boolean = true,
     /**
      * Whether the all-media wall follows its catalog sweep with a slow pass through every thread
      * it found, pulling in the media attached to replies.

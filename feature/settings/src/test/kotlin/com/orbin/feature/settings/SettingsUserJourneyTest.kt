@@ -60,6 +60,7 @@ class SettingsUserJourneyTest {
         launch()
 
         toggle("Hide NSFW boards") { hideNsfwBoards }
+        toggle("Cover violent media") { coverViolentMedia }
         toggle("True black") { amoled }
         toggle("App lock") { biometricLockEnabled }
     }
@@ -94,6 +95,7 @@ class SettingsUserJourneyTest {
         }
         listOf(
             "Hide NSFW boards",
+            "Cover violent media",
             "Theme",
             "True black",
             "App lock",

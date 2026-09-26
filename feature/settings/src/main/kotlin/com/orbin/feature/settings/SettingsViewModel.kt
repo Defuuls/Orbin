@@ -99,6 +99,8 @@ class SettingsViewModel
 
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
 
+        fun setCoverViolentMedia(enabled: Boolean) = update { repository.setCoverViolentMedia(enabled) }
+
         fun setFeedColumns(
             formFactor: FormFactor,
             columns: Int,

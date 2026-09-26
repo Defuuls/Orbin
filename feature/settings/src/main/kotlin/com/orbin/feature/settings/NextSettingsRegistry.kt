@@ -100,6 +100,7 @@ private class Rows {
         formFactor: FormFactor,
     ) = listOfNotNull(
         toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
+        toggle("coverViolent", "Cover violent media", settings.coverViolentMedia, vm::setCoverViolentMedia),
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
         feedColumns(settings, vm, formFactor),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),

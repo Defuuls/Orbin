@@ -26,7 +26,7 @@ class SettingsIndexTest {
     fun `settings is a short list with nothing hidden behind it`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf("hideNsfw", "themeMode", "amoled", "biometric", "updateOnLaunch"),
+                listOf("hideNsfw", "coverViolent", "themeMode", "amoled", "biometric", "updateOnLaunch"),
                 listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
             ).inOrder()
     }
