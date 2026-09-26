@@ -34,7 +34,10 @@ class FakeBookmarks : BookmarkRepository {
         watched: Boolean,
     ) = saved.update { all -> all[key]?.let { all + (key to it.copy(isWatched = watched)) } ?: all }
 
-    override suspend fun markRead(key: ThreadKey) = Unit
+    override suspend fun markRead(key: ThreadKey) =
+        saved.update { all ->
+            all[key]?.let { all + (key to it.copy(lastSeenReplyCount = it.latestReplyCount)) } ?: all
+        }
 
     override suspend fun watchedBookmarks(): List<Bookmark> = saved.value.values.filter { it.isWatched }
 
@@ -42,7 +45,10 @@ class FakeBookmarks : BookmarkRepository {
         key: ThreadKey,
         latestReplyCount: Int,
         isThreadDead: Boolean,
-    ) = Unit
+    ) = saved.update { all ->
+        all[key]?.let { all + (key to it.copy(latestReplyCount = latestReplyCount, isThreadDead = isThreadDead)) }
+            ?: all
+    }
 }
 
 /** Reading history kept in memory. */

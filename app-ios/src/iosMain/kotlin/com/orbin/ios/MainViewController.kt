@@ -10,6 +10,9 @@ import com.orbin.data.repository.HistoryRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.MainScope
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
+import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIViewController
 
 /**
@@ -29,6 +32,12 @@ fun MainViewController(): UIViewController {
             boardPreferences = BoardPreferencesStore(openPreferences()),
             scope = MainScope(),
         )
+    // The app lives as long as this controller, so the observer is never removed.
+    NSNotificationCenter.defaultCenter.addObserverForName(
+        name = UIApplicationDidBecomeActiveNotification,
+        `object` = null,
+        queue = NSOperationQueue.mainQueue,
+    ) { _ -> browser.watched.refresh() }
     return ComposeUIViewController {
         setSingletonImageLoaderFactory { context ->
             ImageLoader
