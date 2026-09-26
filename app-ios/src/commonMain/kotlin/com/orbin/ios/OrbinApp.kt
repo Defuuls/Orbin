@@ -18,6 +18,8 @@ import coil3.compose.AsyncImage
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.Thread
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
@@ -25,7 +27,10 @@ import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.SearchScreen
+import com.orbin.uinext.SearchState
 import com.orbin.uinext.ThreadScreen
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 /**
@@ -45,6 +50,7 @@ fun OrbinApp(browser: Browser) {
         when (val route = backStack.last()) {
             Route.Feed -> FeedDestination(browser)
             Route.Boards -> BoardsDestination(browser)
+            Route.Search -> SearchDestination(browser)
             is Route.Catalog -> CatalogDestination(browser, route.board)
             is Route.ThreadPage -> ThreadDestination(browser)
             is Route.Media -> MediaDestination(browser, route)
@@ -83,8 +89,43 @@ private fun BoardsDestination(browser: Browser) {
             onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
             onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
             onOpenFeed = { browser.openTab(Route.Feed) },
+            onOpenSearch = browser::openSearch,
         )
     }
+}
+
+@Composable
+private fun SearchDestination(browser: Browser) {
+    val query by browser.search.query.collectAsState()
+    val results by browser.search.results.collectAsState()
+    val followed by browser.followed.collectAsState()
+    val followBoards = stringResource(Res.string.ios_search_follow_boards)
+    val threads = (results as? Load.Ready)?.value.orEmpty()
+    val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
+    val state =
+        remember(results, followed, followBoards) {
+            when (val load = results) {
+                null -> SearchState.Idle
+                Load.Loading -> SearchState.Loading
+                is Load.Failed -> SearchState.Error(load.message)
+                // Nothing followed is nothing to search, which Android says rather than "No matches".
+                is Load.Ready ->
+                    if (followed.isEmpty()) {
+                        SearchState.Error(
+                            followBoards,
+                        )
+                    } else {
+                        SearchState.Results(threads.map { it.toSearchRow() })
+                    }
+            }
+        }
+    SearchScreen(
+        query = query,
+        onQueryChange = browser.search::setQuery,
+        onSearch = { browser.search.run() },
+        state = state,
+        onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+    )
 }
 
 @Composable

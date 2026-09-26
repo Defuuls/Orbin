@@ -348,6 +348,52 @@ class BrowserTest {
             )
         }
 
+    @Test
+    fun searchMatchesTheFollowedBoardsOnEverySite() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.followed.first { it.size == 2 }
+
+            browser.openSearch()
+            assertEquals(Route.Search, browser.backStack.value.last())
+            browser.search.setQuery("  hi ")
+            browser.search.run()?.join()
+            val hits = assertIs<Load.Ready<List<FeedThread>>>(browser.search.results.value).value
+            assertEquals(listOf("b", "g"), hits.map { it.thread.key.board.value }, "board A–Z, across sites")
+
+            browser.search.setQuery("nothing like it")
+            browser.search.run()?.join()
+            assertEquals(Load.Ready(emptyList()), browser.search.results.value)
+        }
+
+    @Test
+    fun aBlankSearchDoesNothing() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            browser.search.setQuery("   ")
+
+            assertNull(browser.search.run())
+            assertNull(browser.search.results.value)
+        }
+
+    @Test
+    fun aBoardThatFailsLeavesTheOthersInTheResults() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            // The LynxChan /b/ catalog is not in the script, so it fails with a 404.
+            boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.followed.first { it.size == 2 }
+
+            browser.search.setQuery("hi")
+            browser.search.run()?.join()
+
+            val hits = assertIs<Load.Ready<List<FeedThread>>>(browser.search.results.value).value
+            assertEquals(listOf("g"), hits.map { it.thread.key.board.value })
+        }
+
     private suspend fun boardG(browser: Browser): SiteBoard =
         assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first { it.board.id.value == "g" }
 

@@ -151,6 +151,34 @@ class RowsTest {
         assertEquals(0, thread.toRow(nowMillis = 0L).unread, "unwatched threads show none")
     }
 
+    @Test
+    fun searchRowsShowTheOpeningPostAsPlainText() {
+        val thread =
+            CatalogThread(
+                key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(42)),
+                originalPost =
+                    post(42, files = 0).copy(
+                        comment =
+                            PostComment(
+                                raw = "<b>bold</b> words",
+                                nodes =
+                                    persistentListOf(
+                                        PostNode.Styled(InlineStyle.BOLD, persistentListOf(PostNode.Text("bold"))),
+                                        PostNode.Text(" words"),
+                                    ),
+                            ),
+                    ),
+                stats = ThreadStats(),
+            )
+
+        val row = FeedThread(ProviderId("site"), thread).toSearchRow()
+
+        assertEquals("site/g/42", row.id)
+        assertEquals("/g/", row.board)
+        assertEquals("/g/", row.title, "no subject: the board, as Android titles it")
+        assertEquals("bold words", row.snippet, "the text, not the engine's markup")
+    }
+
     private fun post(
         id: Long,
         files: Int,

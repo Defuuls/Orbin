@@ -5,4 +5,5 @@
     <string name="ios_media_position">%1$d of %2$d</string>
     <string name="ios_media_open_in_browser">Open in browser</string>
     <string name="ios_media_not_viewable">This file plays in the browser.</string>
+    <string name="ios_search_follow_boards">Follow a few boards to search them</string>
 </resources>

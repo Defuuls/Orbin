@@ -7,10 +7,12 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostNode
 import com.orbin.core.model.Thread
+import com.orbin.core.model.toSearchResult
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.provider.api.UriParts
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
+import com.orbin.uinext.SearchRow
 import com.orbin.uinext.Post as NextPost
 
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
@@ -44,6 +46,26 @@ internal fun FeedThread.toFeedRow(
 
 internal val FeedThread.feedRowId: String
     get() = "${provider.value}/${thread.key.board.value}/${thread.key.thread.value}"
+
+/**
+ * A search hit, titled as Android titles it (`toSearchResult` in `:core:model`), with the opening
+ * post as plain text rather than the engine's markup.
+ */
+internal fun FeedThread.toSearchRow(): SearchRow {
+    val result = thread.toSearchResult()
+    return SearchRow(
+        id = feedRowId,
+        title = result.title,
+        board = "/${thread.key.board.value}/",
+        snippet =
+            thread.originalPost.comment
+                .plainText()
+                .take(SEARCH_SNIPPET_LENGTH),
+    )
+}
+
+/** As long as Android's search snippet. */
+private const val SEARCH_SNIPPET_LENGTH = 160
 
 internal val SiteBoard.tileId: String get() = "${provider.value}/${board.id.value}"
 

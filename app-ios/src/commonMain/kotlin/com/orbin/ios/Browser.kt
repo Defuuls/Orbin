@@ -71,6 +71,9 @@ sealed interface Route {
 
     data object Boards : Route
 
+    /** Search over the followed boards, opened from the boards list. */
+    data object Search : Route
+
     data class Catalog(
         val board: SiteBoard,
     ) : Route
@@ -108,6 +111,12 @@ class Browser(
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
     private val byId = providers.associateBy { it.metadata.id }
+
+    /** Searching the followed boards' catalogs. */
+    val search =
+        ThreadSearch(scope, boards = ::searchableBoards) { board ->
+            provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board))
+        }
 
     /** Watching threads, their unread counts, and keeping those counts current. */
     val watched =
@@ -184,6 +193,10 @@ class Browser(
     /** Every thread the reader has opened, on any board, for the feed's read state. */
     fun visitedKeys(): Flow<Set<ThreadKey>> = history.observeVisitedKeys()
 
+    fun openSearch() {
+        _backStack.update { it + Route.Search }
+    }
+
     fun openBoard(board: SiteBoard) {
         _backStack.update { it + Route.Catalog(board) }
         loadCurrent()
@@ -216,6 +229,7 @@ class Browser(
         when (_backStack.value.last()) {
             Route.Boards -> loadBoards()
             Route.Feed -> loadFeed(force = true)
+            Route.Search -> search.run()
             else -> loadCurrent(force = true)
         }
     }
@@ -240,7 +254,7 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Feed, Route.Boards, is Route.Media -> Unit
+            Route.Feed, Route.Boards, Route.Search, is Route.Media -> Unit
             is Route.Catalog ->
                 if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
                     catalogShown = route.board
@@ -306,33 +320,19 @@ class Browser(
      * that fails to load leaves the others; only when every one fails is the feed an error.
      */
     private suspend fun feedOf(boards: Set<FollowedBoard>): Load<List<FeedThread>> {
-        // Board titles come from the boards list when it has loaded, for the permanent filter.
-        val boardInfo =
-            (_boards.value as? Load.Ready)?.value.orEmpty().associateBy { FollowedBoard(it.provider, it.board.id) }
-        val wanted = boards.filterNot { boardInfo[it]?.board?.isPermanentlyFiltered() == true }
+        val wanted = searchableBoards(boards)
         if (wanted.isEmpty()) return Load.Ready(emptyList())
         val limits =
             wanted.groupBy { it.provider }.mapValues { (provider, onSite) ->
                 boardPreferences.observeFeedThreadLimits(provider, onSite.map { it.board }.toSet()).first()
             }
-        val gate = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
         val results =
-            coroutineScope {
-                wanted
-                    .map { board ->
-                        async {
-                            gate.withPermit {
-                                runCatching {
-                                    val catalog =
-                                        provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board))
-                                    val limit = limits[board.provider]?.get(board.board)?.count
-                                    (limit?.let(catalog::take) ?: catalog)
-                                        .filterNot { it.matchesFilterTokens(emptySet()) }
-                                        .map { FeedThread(board.provider, it) }
-                                }
-                            }
-                        }
-                    }.awaitAll()
+            loadEach(wanted) { board ->
+                val catalog = provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board))
+                val limit = limits[board.provider]?.get(board.board)?.count
+                (limit?.let(catalog::take) ?: catalog)
+                    .filterNot { it.matchesFilterTokens(emptySet()) }
+                    .map { FeedThread(board.provider, it) }
             }
         val loaded = results.mapNotNull { it.getOrNull() }
         return if (loaded.isEmpty()) {
@@ -340,6 +340,16 @@ class Browser(
         } else {
             Load.Ready(loaded.flatten().sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }))
         }
+    }
+
+    /**
+     * The followed boards a feed or search covers: [boards], less those the permanent filter
+     * catches by title. Titles come from the boards list once it has loaded.
+     */
+    private fun searchableBoards(boards: Set<FollowedBoard> = followed.value): List<FollowedBoard> {
+        val boardInfo =
+            (_boards.value as? Load.Ready)?.value.orEmpty().associateBy { FollowedBoard(it.provider, it.board.id) }
+        return boards.filterNot { boardInfo[it]?.board?.isPermanentlyFiltered() == true }
     }
 
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
@@ -376,5 +386,19 @@ data class FollowedBoard(
     val board: BoardId,
 )
 
-/** Android loads at most this many followed catalogs at once; so does the iOS feed. */
+/**
+ * [load] over every board, at most [MAX_CONCURRENT_BOARD_LOADS] at a time, each board's outcome
+ * kept apart so one failing leaves the others.
+ */
+internal suspend fun <T> loadEach(
+    boards: List<FollowedBoard>,
+    load: suspend (FollowedBoard) -> T,
+): List<Result<T>> {
+    val gate = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
+    return coroutineScope {
+        boards.map { board -> async { gate.withPermit { runCatching { load(board) } } } }.awaitAll()
+    }
+}
+
+/** Android loads at most this many followed catalogs at once; so does iOS, for the feed and search. */
 private const val MAX_CONCURRENT_BOARD_LOADS = 4
