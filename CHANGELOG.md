@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [158-Yuzu] - 2026-09-27
+
+### Added
+- iOS: on iPad, a thread opens beside its board's catalog.
+- iOS: videos in board catalogs play as muted, looping previews.
+- iOS: the video player can loop and continue in picture-in-picture, with a loop toggle.
+- iOS: saving media keeps downloading in the background, and finished downloads are picked up when Orbin is relaunched.
+
+### Fixed
+- iOS: the app no longer crashes on launch after updating to 157. 157 moved the shared database to schema 8 (new indexes), and the iOS app had no step to upgrade the copy it already had, so it refused to open it. Both platforms now share the migration steps, so iOS upgrades its copy in place, keeping history, watched threads and downloads; a test fails if the schema changes again without a step.
+
+
 ## [157-Xigua] - 2026-09-27
 
 ### Added
@@ -2455,7 +2467,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v157-Xigua...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v158-Yuzu...HEAD
+[158-Yuzu]: https://github.com/Defuuls/Orbin/compare/v157-Xigua...v158-Yuzu
 [157-Xigua]: https://github.com/Defuuls/Orbin/compare/v156-Watermelon...v157-Xigua
 [156-Watermelon]: https://github.com/Defuuls/Orbin/compare/v155-Ugli...v156-Watermelon
 [155-Ugli]: https://github.com/Defuuls/Orbin/compare/v154-Tangerine...v155-Ugli
