@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- iOS: images in a thread are sharp too. They showed the site's small thumbnail stretched to the post's width, as the feed's cards did before 156.
+
 ## [156-Watermelon] - 2026-09-27
 
 ### Added
