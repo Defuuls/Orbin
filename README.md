@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [157 — Xigua](https://github.com/Defuuls/Orbin/releases/tag/v157-Xigua)
+**Current release:** [158 — Yuzu](https://github.com/Defuuls/Orbin/releases/tag/v158-Yuzu)
 
-**What's new in 157:** Launcher shortcuts and picture-in-picture video on Android.
+**What's new in 158:** Fixes the iOS app crashing on launch after updating to 157.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
