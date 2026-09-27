@@ -47,6 +47,7 @@ import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
+import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
@@ -82,6 +83,7 @@ fun OrbinApp(
     )
 
     val settings by browser.settings.current.collectAsState()
+    val lockState by lock.state.collectAsState()
     NextTheme(
         darkTheme =
             when (settings.themeMode) {
@@ -93,8 +95,10 @@ fun OrbinApp(
         platform = NextPlatform.IOS,
     ) {
         Box(Modifier.fillMaxSize()) {
-            Destination(browser, lock, downloads, backup, formFactor, backStack.last())
-            LockCover(lock)
+            if (!lockState.locked && !lockState.obscured) {
+                Destination(browser, lock, downloads, backup, formFactor, backStack.last())
+            }
+            LockCover(lock, lockState)
         }
     }
 }
@@ -122,8 +126,10 @@ private fun Destination(
 
 /** The app lock over everything: the lock screen while locked, a blank cover while hidden. */
 @Composable
-private fun LockCover(lock: AppLock) {
-    val state by lock.state.collectAsState()
+private fun LockCover(
+    lock: AppLock,
+    state: LockState,
+) {
     if (!state.locked && !state.obscured) return
     // Taps stop here rather than reaching the app underneath.
     Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
@@ -139,24 +145,31 @@ private fun FeedDestination(
     val feed by browser.feed.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.activeSite.collectAsState()
-    val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
-    Loaded(feed, onRetry = browser::retry) { threads ->
-        val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-        val rows = remember(threads, visited) { threads.map { it.toFeedRow(now, read = it.thread.key in visited) } }
-        val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
-        // Columns as on Android: one on a phone or a narrow window (split view), the reader's choice
-        // on an iPad's full width.
-        BoxWithConstraints {
-            FeedScreen(
-                rows = rows,
-                columns = feedColumns(formFactor, maxWidth.value.toInt(), settings),
-                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-                thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
-                onOpenBoards = { browser.openTab(Route.Boards) },
-                onOpenDownloads = { browser.openTab(Route.Downloads) },
-                onSettings = { browser.open(Route.Settings) },
-                headerContent = { SiteSwitcher(browser, site) },
-            )
+    NextPullToRefresh(
+        isRefreshing = feed is Load.Loading,
+        onRefresh = browser::retry,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Loaded(feed, onRetry = browser::retry) { threads ->
+            val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+            val rows = remember(threads, visited) { threads.map { it.toFeedRow(now, read = it.thread.key in visited) } }
+            val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
+            // Columns as on Android: one on a phone or a narrow window (split view), the reader's choice
+            // on an iPad's full width.
+            BoxWithConstraints {
+                FeedScreen(
+                    rows = rows,
+                    columns = feedColumns(formFactor, maxWidth.value.toInt(), settings),
+                    onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+                    thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
+                    onOpenBoards = { browser.openTab(Route.Boards) },
+                    onOpenDownloads = { browser.openTab(Route.Downloads) },
+                    onSettings = { browser.open(Route.Settings) },
+                    headerContent = { SiteSwitcher(browser, site) },
+                )
+            }
+        }
+    }
         }
     }
 }
@@ -270,30 +283,57 @@ private fun SettingsDestination(
         showRail = false,
         onActivate = { item ->
             when (item.id) {
-                SettingIds.HIDE_NSFW -> browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
-                SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
-                SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
-                SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
-                SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS ->
+                SettingIds.HIDE_NSFW -> {
+                    Haptics.light()
+                    browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+                }
+                SettingIds.COVER_VIOLENT -> {
+                    Haptics.light()
+                    browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
+                }
+                SettingIds.AMOLED -> {
+                    Haptics.light()
+                    browser.settings.setAmoled(!settings.amoled)
+                }
+                SettingIds.APP_LOCK -> {
+                    Haptics.light()
+                    lock.setLockEnabled(!settings.biometricLockEnabled)
+                }
+                SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS -> {
+                    Haptics.light()
                     expanded = if (expanded == item.id) null else item.id
+                }
                 SettingIds.CLEAR_ACTIVITY ->
                     if (clearArmed) {
                         clearArmed = false
-                        browser.settings.clearActivity()
+                        browser.settings.clearActivity {
+                            imageLoader.memoryCache?.clear()
+                            withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
+                        }
+                        Haptics.success()
                     } else {
+                        Haptics.light()
                         clearArmed = true
                     }
-                SettingIds.EXPORT_BACKUP -> backup.export()
-                SettingIds.IMPORT_BACKUP -> backup.import()
+                SettingIds.EXPORT_BACKUP -> {
+                    Haptics.light()
+                    backup.export()
+                }
+                SettingIds.IMPORT_BACKUP -> {
+                    Haptics.light()
+                    backup.import()
+                }
                 SettingIds.CLEAR_IMAGE_CACHE ->
                     scope.launch {
                         imageLoader.memoryCache?.clear()
                         withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
                         imageCacheCleared = true
+                        Haptics.success()
                     }
             }
         },
         onSelectOption = { item, index ->
+            Haptics.light()
             when (item.id) {
                 SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                 SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
@@ -350,31 +390,37 @@ private fun CatalogDestination(
     val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
-    Loaded(catalog, onRetry = browser::retry) { threads ->
-        val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-        val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
-        val rows =
-            remember(sorted, visited, unread) {
-                sorted.map { thread ->
-                    val number = thread.key.thread.value
-                    thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
+    NextPullToRefresh(
+        isRefreshing = catalog is Load.Loading,
+        onRefresh = browser::retry,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Loaded(catalog, onRetry = browser::retry) { threads ->
+            val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+            val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
+            val rows =
+                remember(sorted, visited, unread) {
+                    sorted.map { thread ->
+                        val number = thread.key.thread.value
+                        thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
+                    }
                 }
+            val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
+            // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
+            BoxWithConstraints {
+                BoardScreen(
+                    columns = catalogColumns(formFactor, maxWidth.value.toInt(), settings),
+                    board = "/${board.board.id.value}/",
+                    description = board.board.title,
+                    itemCount = rows.size,
+                    rowAt = { index -> rows.getOrNull(index) },
+                    sortLabel = sort.label,
+                    onSort = browser::cycleCatalogSort,
+                    showRail = false,
+                    onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                    thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
+                )
             }
-        val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
-        // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
-        BoxWithConstraints {
-            BoardScreen(
-                columns = catalogColumns(formFactor, maxWidth.value.toInt(), settings),
-                board = "/${board.board.id.value}/",
-                description = board.board.title,
-                itemCount = rows.size,
-                rowAt = { index -> rows.getOrNull(index) },
-                sortLabel = sort.label,
-                onSort = browser::cycleCatalogSort,
-                showRail = false,
-                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
-                thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
-            )
         }
     }
 }
@@ -412,15 +458,26 @@ private fun CatalogThumbnail(
 private fun ThreadDestination(browser: Browser) {
     val thread by browser.thread.collectAsState()
     val firstUnread by browser.firstUnreadPostId.collectAsState()
-    Loaded(thread, onRetry = browser::retry) { loaded ->
-        val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
-        ThreadContent(
-            thread = loaded,
-            watching = watching,
-            firstUnreadPostId = firstUnread,
-            onWatch = { browser.watched.toggle(loaded) },
-            onOpenFile = browser::openMedia,
-        )
+    NextPullToRefresh(
+        isRefreshing = thread is Load.Loading,
+        onRefresh = browser::retry,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Loaded(thread, onRetry = browser::retry) { loaded ->
+            val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
+            ThreadContent(
+                thread = loaded,
+                watching = watching,
+                firstUnreadPostId = firstUnread,
+                onWatch = { browser.watched.toggle(loaded) },
+                onOpenFile = browser::openMedia,
+                onShare = {
+                    val fallback = "/${loaded.key.board.value}/${loaded.key.thread.value}"
+                    val shareText = loaded.subject?.takeIf(String::isNotBlank) ?: fallback
+                    shareContent(text = shareText, url = browser.threadWebUrl(loaded.key))
+                },
+            )
+        }
     }
 }
 
@@ -431,6 +488,7 @@ private fun ThreadContent(
     firstUnreadPostId: String?,
     onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
+    onShare: () -> Unit = {},
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
@@ -444,6 +502,7 @@ private fun ThreadContent(
         posts = posts,
         watching = watching,
         onWatch = onWatch,
+        onShare = onShare,
         firstUnreadPostId = firstUnreadPostId,
         scrollToPostId = scrollTarget,
         onScrollConsumed = { scrollTarget = null },

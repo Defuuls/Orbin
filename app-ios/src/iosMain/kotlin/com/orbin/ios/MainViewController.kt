@@ -4,22 +4,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
+import coil3.disk.DiskCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
+import kotlinx.cinterop.ExperimentalForeignApi
+import okio.Path.Companion.toPath
+import platform.Foundation.NSCachesDirectory
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
+import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIDevice
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIViewController
+import platform.UserNotifications.UNUserNotificationCenter
 
 /**
  * The app's root view controller, which the Swift side hosts full screen, built over [AppGraph]:
  * one HTTP client for the providers, image loading and saves, and one database for what the reader
  * keeps, shared with the background refresh.
  */
+@OptIn(ExperimentalForeignApi::class)
 @Suppress("FunctionName", "unused") // Called from Swift as MainViewControllerKt.MainViewController().
 fun MainViewController(): UIViewController {
     val graph = AppGraph
@@ -32,6 +41,7 @@ fun MainViewController(): UIViewController {
             settings = graph.settingsStore,
             scope = graph.scope,
             notifier = graph.notifier,
+            downloadDao = graph.downloadDao,
             onWatch = graph.notifier::requestPermission,
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
@@ -54,10 +64,13 @@ fun MainViewController(): UIViewController {
             DeviceOwnerAuthenticator(),
             graph.scope,
         )
+    graph.notifier.attachNavigation(browser::openThread)
+
     // The app lives as long as this controller, so the observers are never removed.
     observe(UIApplicationDidBecomeActiveNotification) {
         lock.onForeground()
         browser.watched.refresh()
+        UNUserNotificationCenter.currentNotificationCenter().setBadgeCount(0, withCompletionHandler = null)
     }
     observe(UIApplicationWillResignActiveNotification) { lock.onResignActive() }
     observe(UIApplicationDidEnterBackgroundNotification) {
@@ -67,14 +80,33 @@ fun MainViewController(): UIViewController {
     }
     return ComposeUIViewController {
         setSingletonImageLoaderFactory { context ->
+            val cacheDirectory =
+                NSFileManager
+                    .defaultManager
+                    .URLForDirectory(
+                        directory = NSCachesDirectory,
+                        inDomain = NSUserDomainMask,
+                        appropriateForURL = null,
+                        create = true,
+                        error = null,
+                    )?.path ?: ""
             ImageLoader
                 .Builder(context)
                 .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
+                .diskCache {
+                    DiskCache
+                        .Builder()
+                        .directory("$cacheDirectory/image_cache".toPath())
+                        .maxSizeBytes(COIL_DISK_CACHE_BYTES)
+                        .build()
+                }.crossfade(false)
                 .build()
         }
         OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup }, formFactor())
     }
 }
+
+private const val COIL_DISK_CACHE_BYTES: Long = 250L * 1024 * 1024
 
 private fun observe(
     name: String?,

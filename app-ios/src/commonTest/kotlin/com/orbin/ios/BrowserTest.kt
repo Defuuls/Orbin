@@ -534,6 +534,33 @@ class BrowserTest {
             assertEquals(emptySet(), browser.visitedThreads(g).first())
         }
 
+    @Test
+    fun clearActivityInvokesCacheCallback() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            var cachesCleared = false
+            browser.settings.clearActivity { cachesCleared = true }.join()
+            assertTrue(cachesCleared)
+        }
+
+    @Test
+    fun threadWebUrlProducesCanonicalUrl() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val g = boardG(browser)
+            val key = ThreadKey(g.provider, g.board.id, ThreadId(7))
+            val url = browser.threadWebUrl(key)
+            assertEquals("https://boards.4chan.org/g/thread/7", url)
+        }
+
+    @Test
+    fun threadWebUrlReturnsNullForUnknownProvider() =
+        runTest {
+            val browser = browser(backgroundScope, emptyMap())
+            val key = ThreadKey(ProviderId("unknown"), BoardId("x"), ThreadId(1))
+            assertNull(browser.threadWebUrl(key))
+        }
+
     private suspend fun boardG(browser: Browser): SiteBoard =
         assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first { it.board.id.value == "g" }
 

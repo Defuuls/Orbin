@@ -39,6 +39,7 @@ class WatchedThreads(
 
     /** Watches [thread], or stops watching it: the thread screen's watch action, as on Android. */
     fun toggle(thread: Thread) {
+        Haptics.light()
         scope.launch {
             if (bookmarks.getBookmark(thread.key) != null) {
                 bookmarks.removeBookmark(thread.key)
