@@ -4,10 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -120,7 +122,15 @@ private fun Destination(
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
-        is Route.ThreadPage -> ThreadDestination(browser)
+        is Route.ThreadPage -> {
+            val backStack by browser.backStack.collectAsState()
+            val previous = backStack.getOrNull(backStack.lastIndex - 1)
+            if (formFactor == FormFactor.TABLET && previous is Route.Catalog) {
+                ThreadSplitDestination(browser, previous.board, formFactor)
+            } else {
+                ThreadDestination(browser)
+            }
+        }
         is Route.Media -> MediaDestination(browser, downloads, route)
     }
 }
@@ -425,6 +435,27 @@ private fun CatalogDestination(
     }
 }
 
+/**
+ * On iPad, keep the board catalog beside its selected thread. The browser stack still owns
+ * navigation, so the system back gesture returns to the catalog as it does on Android.
+ */
+@Composable
+private fun ThreadSplitDestination(
+    browser: Browser,
+    board: SiteBoard,
+    formFactor: FormFactor,
+) {
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxSize()) {
+            CatalogDestination(browser, board, formFactor)
+        }
+        Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
+        Box(Modifier.weight(1.4f).fillMaxSize()) {
+            ThreadDestination(browser)
+        }
+    }
+}
+
 @Composable
 private fun CatalogThumbnail(
     thread: CatalogThread,
@@ -433,6 +464,9 @@ private fun CatalogThumbnail(
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
         SharpImage(attachment, contentDescription = null, Modifier.fillMaxSize(), fill = Modifier.fillMaxSize())
+        if (attachment.isPlayable && (!attachment.isWebM || supportsWebM)) {
+            NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
+        }
         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }

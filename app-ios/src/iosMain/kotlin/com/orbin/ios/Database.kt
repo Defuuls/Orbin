@@ -4,8 +4,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import com.orbin.data.database.OrbinDatabase
+import com.orbin.data.database.OrbinSchemaMigrations
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -20,15 +24,24 @@ import platform.Foundation.NSUserDomainMask
  * driver, in Application Support, excluded from iCloud backup. iOS Data Protection encrypts it at
  * rest; Android, which has no equivalent guarantee, encrypts its copy with SQLCipher.
  *
- * Schema changes need migrations that run on both platforms: Room's `Migration.migrate(connection)`,
- * not the Android-only `SupportSQLiteDatabase` overload.
+ * Migrations use the same SQL statements as Android, adapted to Room's multiplatform
+ * `SQLiteConnection` callback.
  */
-internal fun openDatabase(): OrbinDatabase =
-    Room
-        .databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
-        .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .build()
+internal fun openDatabase(): OrbinDatabase {
+    val migrations =
+        OrbinSchemaMigrations.all.map { schemaMigration ->
+            object : Migration(schemaMigration.startVersion, schemaMigration.endVersion) {
+                override fun migrate(connection: SQLiteConnection) {
+                    schemaMigration.statements.forEach(connection::execSQL)
+                }
+            }
+        }
+    val builder = Room.databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
+    migrations.forEach { builder.addMigrations(it) }
+    builder.setDriver(BundledSQLiteDriver())
+    builder.setQueryCoroutineContext(Dispatchers.IO)
+    return builder.build()
+}
 
 /**
  * Board preferences (followed and favourite boards, feed limits) in a DataStore file beside the

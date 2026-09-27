@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 internal actual fun NativePlayer(
     url: String,
     active: Boolean,
+    loop: Boolean,
     modifier: Modifier,
 ) {
     Box(modifier)
@@ -18,6 +19,14 @@ internal actual val supportsWebM: Boolean = false
 
 @Composable
 internal actual fun NativeWebMPlayer(
+    url: String,
+    modifier: Modifier,
+) {
+    Box(modifier)
+}
+
+@Composable
+internal actual fun NativeInlineLoop(
     url: String,
     modifier: Modifier,
 ) {
