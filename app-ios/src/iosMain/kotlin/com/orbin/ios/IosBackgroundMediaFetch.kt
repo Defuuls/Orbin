@@ -20,8 +20,8 @@ import platform.Foundation.NSURLSessionDownloadDelegateProtocol
 import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
 import platform.Foundation.dataWithContentsOfURL
-import platform.Foundation.NSUserDomainMask
 import platform.Foundation.NSMutableURLRequest
+import platform.Foundation.NSUserDomainMask
 import platform.Foundation.getBytes
 import platform.Foundation.setValue
 import kotlin.coroutines.resume
@@ -41,7 +41,10 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
     private var backgroundEventsCompletion: (() -> Unit)? = null
 
     private val session: NSURLSession by lazy {
-        val configuration = NSURLSessionConfiguration.backgroundSessionConfigurationWithIdentifier(BACKGROUND_DOWNLOAD_SESSION)
+        val configuration =
+            NSURLSessionConfiguration.backgroundSessionConfigurationWithIdentifier(
+                BACKGROUND_DOWNLOAD_SESSION,
+            )
         configuration.setSessionSendsLaunchEvents(true)
         configuration.setDiscretionary(false)
         configuration.setAllowsCellularAccess(true)
@@ -147,7 +150,10 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         }
     }
 
-    internal fun onTaskCompleted(task: NSURLSessionTask, error: NSError?) {
+    internal fun onTaskCompleted(
+        task: NSURLSessionTask,
+        error: NSError?,
+    ) {
         if (error == null) return
         val key = task.taskDescription ?: return
         finish(key, Result.failure(IllegalStateException(error.localizedDescription)))
@@ -214,8 +220,8 @@ fun handleBackgroundMediaDownloadEvents(
     }
 }
 
-
-private class SessionDelegate : platform.darwin.NSObject(), NSURLSessionDownloadDelegateProtocol {
+private class SessionDelegate : platform.darwin.NSObject(),
+    NSURLSessionDownloadDelegateProtocol {
     override fun URLSession(
         session: NSURLSession,
         downloadTask: NSURLSessionDownloadTask,
