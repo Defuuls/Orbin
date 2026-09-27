@@ -30,7 +30,7 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
 import platform.UIKit.UIDevice
 import platform.UIKit.UIImpactFeedbackGenerator
-import platform.UIKit.UIImpactFeedbackStyleLight
+import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UITapGestureRecognizer
 import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
@@ -183,7 +183,7 @@ private class PlayerTapHandler(
         val current = CMTimeGetSeconds(player.currentTime()).takeIf { it.isFinite() } ?: 0.0
         val target = (current + if (forward) SEEK_SECONDS else -SEEK_SECONDS).coerceAtLeast(0.0)
         player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
-        UIImpactFeedbackGenerator(style = UIImpactFeedbackStyleLight).impactOccurred()
+        UIImpactFeedbackGenerator(style = UIImpactFeedbackStyle.UIImpactFeedbackStyleLight).impactOccurred()
     }
 }
 
