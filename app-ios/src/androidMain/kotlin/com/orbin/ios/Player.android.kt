@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 internal actual fun NativePlayer(
     url: String,
     active: Boolean,
+    loop: Boolean,
     modifier: Modifier,
 ) {
     Box(modifier)
