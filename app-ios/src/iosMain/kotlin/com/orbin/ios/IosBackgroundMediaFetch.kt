@@ -1,7 +1,5 @@
 package com.orbin.ios
 
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -26,6 +24,8 @@ import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.getBytes
 import platform.Foundation.setValue
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 private const val BACKGROUND_DOWNLOAD_SESSION = "io.github.defuuls.orbin.media-downloads"
 
