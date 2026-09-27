@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -31,7 +32,9 @@ internal fun MediaActionsSheet(
             listOf(
                 NextSheetAction(stringResource(R.string.gallery_download)) {
                     onSave(attachment)
-                    Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+                    }
                 },
                 NextSheetAction(stringResource(R.string.gallery_share)) { context.shareLink(attachment.sourceUrl) },
                 NextSheetAction(stringResource(R.string.gallery_copy_link)) { context.copyLink(attachment.sourceUrl) },
@@ -52,5 +55,7 @@ internal fun Context.shareLink(url: String) {
 internal fun Context.copyLink(url: String) {
     val clipboard = getSystemService(ClipboardManager::class.java) ?: return
     clipboard.setPrimaryClip(ClipData.newPlainText("Orbin link", url))
-    Toast.makeText(this, R.string.gallery_link_copied, Toast.LENGTH_SHORT).show()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(this, R.string.gallery_link_copied, Toast.LENGTH_SHORT).show()
+    }
 }

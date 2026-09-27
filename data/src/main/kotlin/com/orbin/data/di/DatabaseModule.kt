@@ -9,6 +9,7 @@ import com.orbin.data.database.MIGRATION_3_4
 import com.orbin.data.database.MIGRATION_4_5
 import com.orbin.data.database.MIGRATION_5_6
 import com.orbin.data.database.MIGRATION_6_7
+import com.orbin.data.database.MIGRATION_7_8
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.SelfHealingOpenHelperFactory
 import com.orbin.data.database.dao.BoardDao
@@ -66,7 +67,7 @@ object DatabaseModule {
                     delegate = SupportOpenHelperFactory(passphrase),
                     repair = DatabaseKeyRepair(context, passphrase)::repair,
                 ),
-            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
             // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
             // recreated. Every version from 2 on migrates: a missing migration now fails loudly
             // at open time instead of silently dropping the user's bookmarks and history.

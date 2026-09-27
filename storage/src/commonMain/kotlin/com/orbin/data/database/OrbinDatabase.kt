@@ -40,7 +40,7 @@ import com.orbin.data.database.entity.SavedThreadEntity
         SavedThreadEntity::class,
         SavedPostEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @ConstructedBy(OrbinDatabaseConstructor::class)

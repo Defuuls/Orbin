@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
+import com.orbin.app.navigation.navigateToTab
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextMotion
@@ -49,7 +51,18 @@ fun OrbinApp(
     navController: NavHostController = rememberNavController(),
     startWithOnboarding: Boolean = false,
     isOnline: Boolean = true,
+    pendingRoute: Route? = null,
+    onPendingRouteHandled: () -> Unit = {},
 ) {
+    LaunchedEffect(pendingRoute) {
+        val route = pendingRoute ?: return@LaunchedEffect
+        when (route) {
+            Route.NextFeed, Route.Downloads, Route.BoardGallery -> navController.navigateToTab(route)
+            else -> navController.navigate(route)
+        }
+        onPendingRouteHandled()
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = maxWidth >= TWO_PANE_MIN_WIDTH
         val backStackEntry by navController.currentBackStackEntryAsState()

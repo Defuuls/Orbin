@@ -32,9 +32,11 @@ class AndroidThreadNotifier
             val channel =
                 NotificationChannel(
                     CHANNEL_ID,
-                    "Watched threads",
+                    context.getString(R.string.notification_channel_watched_threads),
                     NotificationManager.IMPORTANCE_DEFAULT,
-                ).apply { description = "Updates for threads you are watching" }
+                ).apply {
+                    description = context.getString(R.string.notification_channel_watched_threads_desc)
+                }
             NotificationManagerCompat.from(context).createNotificationChannel(channel)
         }
 
@@ -54,10 +56,11 @@ class AndroidThreadNotifier
                     ) == PackageManager.PERMISSION_GRANTED
             if (!hasPostNotificationsPermission) return
 
+            val intent = launchIntent(key, title)
             val publicNotification =
                 NotificationCompat
                     .Builder(context, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.stat_notify_chat)
+                    .setSmallIcon(R.drawable.ic_stat_notify_thread)
                     .setContentTitle(context.getString(R.string.notification_thread_watched_update))
                     .setContentText(
                         context.resources.getQuantityString(
@@ -65,14 +68,14 @@ class AndroidThreadNotifier
                             newReplyCount,
                             newReplyCount,
                         ),
-                    ).setContentIntent(launchIntent())
+                    ).setContentIntent(intent)
                     .setAutoCancel(true)
                     .build()
 
             val notification =
                 NotificationCompat
                     .Builder(context, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.stat_notify_chat)
+                    .setSmallIcon(R.drawable.ic_stat_notify_thread)
                     .setContentTitle(title)
                     .setContentText(
                         context.resources.getQuantityString(
@@ -80,7 +83,7 @@ class AndroidThreadNotifier
                             newReplyCount,
                             newReplyCount,
                         ),
-                    ).setContentIntent(launchIntent())
+                    ).setContentIntent(intent)
                     .setAutoCancel(true)
                     .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                     .setPublicVersion(publicNotification)
@@ -91,22 +94,24 @@ class AndroidThreadNotifier
         }
 
         /**
-         * Opens the app when the notification is tapped.
-         *
-         * Without a content intent a tap only dismissed it, so a notification about a thread could
-         * not take a reader to the app at all. Resolved through the package manager rather than
-         * naming an activity, because this module cannot see either app's launcher — and the two
-         * apps have different ones.
+         * Opens the app when the notification is tapped, passing thread extras for deep linking.
          *
          * FLAG_IMMUTABLE because nothing here wants the receiver filling the intent in; it is also
          * required from API 31, which is this project's minimum.
          */
-        private fun launchIntent(): PendingIntent? {
+        private fun launchIntent(
+            key: ThreadKey,
+            title: String,
+        ): PendingIntent? {
             val launch =
                 context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+            launch.putExtra(EXTRA_PROVIDER, key.provider.value)
+            launch.putExtra(EXTRA_BOARD, key.board.value)
+            launch.putExtra(EXTRA_THREAD, key.thread.value)
+            launch.putExtra(EXTRA_TITLE, title)
             return PendingIntent.getActivity(
                 context,
-                0,
+                key.notificationId(),
                 launch,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
@@ -114,7 +119,11 @@ class AndroidThreadNotifier
 
         private fun ThreadKey.notificationId(): Int = (provider.value + board.value + thread.value).hashCode()
 
-        private companion object {
+        companion object {
             const val CHANNEL_ID = "orbin_watched_threads"
+            const val EXTRA_PROVIDER = "com.orbin.extra.PROVIDER"
+            const val EXTRA_BOARD = "com.orbin.extra.BOARD"
+            const val EXTRA_THREAD = "com.orbin.extra.THREAD"
+            const val EXTRA_TITLE = "com.orbin.extra.TITLE"
         }
     }

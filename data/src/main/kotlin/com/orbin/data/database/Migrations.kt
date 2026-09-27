@@ -118,3 +118,20 @@ internal val MIGRATION_6_7 =
             )
         }
     }
+
+internal val MIGRATION_7_8 =
+    object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v8 adds indices on frequently queried/sorted columns in bookmarks, history, and downloads.
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_bookmarks_createdAtMillis` ON `bookmarks` (`createdAtMillis`)",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_bookmarks_isWatched` ON `bookmarks` (`isWatched`)")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_history_lastVisitedMillis` ON `history` (`lastVisitedMillis`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_downloads_createdAtMillis` ON `downloads` (`createdAtMillis`)",
+            )
+        }
+    }

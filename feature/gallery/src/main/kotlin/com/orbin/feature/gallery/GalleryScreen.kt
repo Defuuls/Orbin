@@ -1,5 +1,6 @@
 package com.orbin.feature.gallery
 
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,11 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -108,13 +111,18 @@ fun GalleryScreen(
         val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
+        val haptics = LocalHapticFeedback.current
         val close = {
+            haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
             onMediaPageChanged(pagerState.settledPage)
             onClose()
         }
         val save: (MediaAttachment) -> Unit = { attachment ->
+            haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
             viewModel.download(attachment)
-            Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+            }
         }
         val closeThresholdPx = with(LocalDensity.current) { CLOSE_PULL_THRESHOLD.toPx() }
         val pullToClose = remember(closeThresholdPx) { PullPastEndToClose(closeThresholdPx) { close() } }
@@ -199,12 +207,15 @@ fun GalleryScreen(
                             onClick = {
                                 scope.launch {
                                     val result = viewModel.copyImage(currentItem.sourceUrl)
-                                    val message =
-                                        when (result) {
-                                            ImageCopyResult.IMAGE -> "Image copied"
-                                            ImageCopyResult.URL -> "Image unavailable; URL copied"
-                                        }
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                        val message =
+                                            when (result) {
+                                                ImageCopyResult.IMAGE -> "Image copied"
+                                                ImageCopyResult.URL -> "Image unavailable; URL copied"
+                                            }
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             },
                             modifier = Modifier.semantics { contentDescription = copyLabel },

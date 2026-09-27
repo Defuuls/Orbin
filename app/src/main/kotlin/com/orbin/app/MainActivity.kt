@@ -1,6 +1,8 @@
 package com.orbin.app
 
 import android.Manifest
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -30,10 +32,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
+import com.orbin.app.navigation.Route
 import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
+import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.LockScreen
@@ -83,6 +87,8 @@ class MainActivity : FragmentActivity() {
     private var safeMode by mutableStateOf(false)
 
     private var downgradeBlocked by mutableStateOf(false)
+
+    private var pendingRoute by mutableStateOf<Route?>(null)
 
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
@@ -148,6 +154,7 @@ class MainActivity : FragmentActivity() {
         // which is all safe mode needs.
         safeMode = diagnosticsRepository.isCrashLooping()
         downgradeBlocked = versionGuardRepository.isDowngrade()
+        handleIncomingIntent(intent)
 
         setContent {
             // Ahead of safe mode: a build that must not run must not run, and safe mode's recovery
@@ -256,6 +263,8 @@ class MainActivity : FragmentActivity() {
                     allowContinueWithoutLock = false
                     unlocked = true
                 },
+                pendingRoute = pendingRoute,
+                onPendingRouteHandled = { pendingRoute = null },
                 // Offered once the reader can see the app: never over onboarding or the lock screen.
                 updateDialog = {
                     AppUpdateDialog(viewModel, visible = settings.onboardingCompleted && (!shouldLock || unlocked))
@@ -264,10 +273,26 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (isInPictureInPictureMode) {
+            relockOnResume = false
+        }
+    }
+
     override fun onStop() {
         cancelActiveAuthentication()
         super.onStop()
-        if (biometricLockActive) {
+        if (biometricLockActive && !isInPictureInPictureMode) {
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave
             // authenticationInProgress stuck true, which would silently block every future
@@ -279,6 +304,36 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         cancelActiveAuthentication()
         super.onDestroy()
+    }
+
+    private fun handleIncomingIntent(intent: Intent?) {
+        intent ?: return
+        val route = intent.toPendingRoute() ?: return
+        pendingRoute = route
+    }
+
+    private fun Intent.toPendingRoute(): Route? {
+        if (hasExtra(AndroidThreadNotifier.EXTRA_THREAD)) {
+            val provider = getStringExtra(AndroidThreadNotifier.EXTRA_PROVIDER) ?: ""
+            val board = getStringExtra(AndroidThreadNotifier.EXTRA_BOARD) ?: ""
+            val thread = getLongExtra(AndroidThreadNotifier.EXTRA_THREAD, 0L)
+            val title = getStringExtra(AndroidThreadNotifier.EXTRA_TITLE) ?: ""
+            if (thread != 0L && board.isNotEmpty()) {
+                return Route.Thread(
+                    provider = provider,
+                    board = board,
+                    thread = thread,
+                    title = title,
+                )
+            }
+        }
+        val shortcut = getStringExtra("shortcut_destination") ?: action
+        return when (shortcut) {
+            "feed", "com.orbin.shortcut.FEED" -> Route.NextFeed
+            "downloads", "com.orbin.shortcut.DOWNLOADS" -> Route.Downloads
+            "boards", "com.orbin.shortcut.BOARDS" -> Route.BoardGallery
+            else -> null
+        }
     }
 
     private fun authenticateToUnlock(
@@ -476,6 +531,8 @@ private fun AppContent(
     authenticationInProgress: Boolean,
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
+    pendingRoute: Route?,
+    onPendingRouteHandled: () -> Unit,
     updateDialog: @Composable () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
@@ -500,6 +557,8 @@ private fun AppContent(
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
                         isOnline = isOnline,
+                        pendingRoute = pendingRoute,
+                        onPendingRouteHandled = onPendingRouteHandled,
                     )
                 }
             }

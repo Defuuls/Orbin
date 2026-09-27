@@ -46,7 +46,7 @@ class ThreadViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
-        observeThread: ObserveThreadUseCase,
+        private val observeThread: ObserveThreadUseCase,
         private val bookmarkRepository: BookmarkRepository,
         private val downloadRepository: DownloadRepository,
         private val historyRepository: HistoryRepository,
@@ -60,6 +60,9 @@ class ThreadViewModel
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val threadKey = ThreadKey(provider, board, threadId)
         private val key = ThreadKey(provider, board, threadId)
+
+        val threadWebUrl: String?
+            get() = observeThread.threadWebUrl(key)
 
         private var loadedThread: Thread? = null
 

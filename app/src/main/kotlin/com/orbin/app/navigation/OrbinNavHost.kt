@@ -227,7 +227,7 @@ internal val threadRouteSaver =
  * of whatever was open, so Back from Downloads or Boards always lands on the Feed and switching tabs
  * never piles screens up.
  */
-private fun NavHostController.navigateToTab(route: Route) {
+internal fun NavHostController.navigateToTab(route: Route) {
     navigate(route) {
         popUpTo(Route.NextFeed) { inclusive = false }
         launchSingleTop = true

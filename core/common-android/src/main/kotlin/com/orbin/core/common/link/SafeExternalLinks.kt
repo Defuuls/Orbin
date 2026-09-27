@@ -56,7 +56,12 @@ object SafeExternalLinks {
         val safe = sanitizeHttps(url) ?: return false
         val uri = Uri.parse(safe)
         return runCatching {
-            CustomTabsIntent.Builder().build().launchUrl(context, uri)
+            CustomTabsIntent
+                .Builder()
+                .setShowTitle(true)
+                .setShareState(CustomTabsIntent.SHARE_STATE_ON)
+                .build()
+                .launchUrl(context, uri)
             true
         }.recoverCatching {
             val intent =
