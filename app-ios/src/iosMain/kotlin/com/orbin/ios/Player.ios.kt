@@ -15,8 +15,10 @@ import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
+import platform.AVFoundation.currentTime
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
+import platform.AVFoundation.seekToTime
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
 import platform.CoreMedia.CMTimeGetSeconds
