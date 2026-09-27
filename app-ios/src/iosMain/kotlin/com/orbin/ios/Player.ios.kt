@@ -83,3 +83,38 @@ internal actual fun NativeWebMPlayer(
     }
     UIKitView(factory = { webView }, modifier = modifier)
 }
+
+/** Muted inline preview for a catalog video; the thumbnail remains visible underneath until loaded. */
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+internal actual fun NativeInlineLoop(
+    url: String,
+    modifier: Modifier,
+) {
+    val webView =
+        remember(url) {
+            val configuration =
+                WKWebViewConfiguration().apply {
+                    allowsInlineMediaPlayback = true
+                    mediaTypesRequiringUserActionForPlayback = 0uL
+                }
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
+                scrollView.scrollEnabled = false
+                scrollView.bounces = false
+                val escapedUrl =
+                    url.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+                val html =
+                    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">" +
+                        "<style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}video{width:100%;height:100%;object-fit:contain}</style>" +
+                        "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline></video></body></html>"
+                loadHTMLString(htmlString = html, baseURL = null)
+            }
+        }
+    DisposableEffect(webView) {
+        onDispose {
+            webView.stopLoading()
+            webView.loadHTMLString("", baseURL = null)
+        }
+    }
+    UIKitView(factory = { webView }, modifier = modifier)
+}
