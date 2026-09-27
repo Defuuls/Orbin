@@ -52,6 +52,22 @@ fun interface MediaStore {
 typealias MediaFetch = suspend (url: String, onProgress: (received: Long, total: Long?) -> Unit) -> ByteArray
 
 /**
+ * iOS background-session adapter. A transfer task survives app suspension, and completed files
+ * remain in Application Support until the Photos/Files save succeeds.
+ */
+interface DurableMediaFetch {
+    suspend fun fetch(
+        id: Long,
+        url: String,
+        onProgress: (received: Long, total: Long?) -> Unit,
+    ): ByteArray
+
+    suspend fun hasPendingTransfer(id: Long, url: String): Boolean
+
+    fun didSave(id: Long)
+}
+
+/**
  * Saving files from threads, and the list the Downloads tab shows: the iOS counterpart of Android's
  * `DownloadRepositoryImpl`, over the same `downloads` table in the shared database.
  *
@@ -65,6 +81,7 @@ class MediaDownloads(
     private val fetch: MediaFetch,
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    private val durableFetch: DurableMediaFetch? = null,
 ) {
     // Bytes so far of the saves in flight, by record id.
     private val progress = MutableStateFlow<Map<Long, Pair<Long, Long?>>>(emptyMap())
@@ -77,9 +94,17 @@ class MediaDownloads(
     private var lastId = 0L
 
     init {
-        // A save still running when the app last closed never finished: offer it for retry.
+        // Reattach to background URLSession tasks, or consume a file that completed while the
+        // app was suspended. Only records without a surviving transfer need a manual retry.
         scope.launch {
-            dao.all().filter { it.status in UNFINISHED }.forEach { dao.updateStatus(it.id, DownloadStatus.FAILED.name) }
+            dao.all().filter { it.status in UNFINISHED }.forEach { entry ->
+                if (durableFetch?.hasPendingTransfer(entry.id, entry.url) == true) {
+                    dao.updateStatus(entry.id, DownloadStatus.RUNNING.name)
+                    transfer(entry.id, entry.url, entry.fileName, entry.relativeDir)
+                } else {
+                    dao.updateStatus(entry.id, DownloadStatus.FAILED.name)
+                }
+            }
         }
     }
 
@@ -135,8 +160,12 @@ class MediaDownloads(
     ) {
         val saved =
             runCatching {
-                val bytes = fetch(url) { received, total -> progress.update { it + (id to (received to total)) } }
+                val onProgress: (Long, Long?) -> Unit = { received, total ->
+                    progress.update { it + (id to (received to total)) }
+                }
+                val bytes = durableFetch?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
                 store.save(bytes, name, folder, saveTargetOf(name))
+                durableFetch?.didSave(id)
             }.onFailure { if (it is CancellationException) throw it }
         progress.update { it - id }
         dao.updateStatus(id, if (saved.isSuccess) DownloadStatus.COMPLETED.name else DownloadStatus.FAILED.name)
