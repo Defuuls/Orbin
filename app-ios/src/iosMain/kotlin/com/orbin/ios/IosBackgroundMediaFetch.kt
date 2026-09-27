@@ -21,7 +21,9 @@ import platform.Foundation.NSURLSessionTask
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.getBytes
+import platform.Foundation.setValue
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -40,8 +42,9 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
 
     private val session: NSURLSession by lazy {
         val configuration = NSURLSessionConfiguration.backgroundSessionConfigurationWithIdentifier(BACKGROUND_DOWNLOAD_SESSION)
-        configuration.sessionSendsLaunchEvents = true
-        configuration.discretionary = false
+        configuration.setSessionSendsLaunchEvents(true)
+        configuration.setDiscretionary(false)
+        configuration.setAllowsCellularAccess(true)
         NSURLSession.sessionWithConfiguration(
             configuration = configuration,
             delegate = SessionDelegate(),
@@ -79,7 +82,9 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
                 if (existing != null) {
                     existing.resume()
                 } else {
-                    val task = session.downloadTaskWithRequest(NSURLRequest.requestWithURL(source))
+                    val request = NSMutableURLRequest(uRL = source)
+                    request.setValue(ORBIN_USER_AGENT, forHTTPHeaderField = "User-Agent")
+                    val task = session.downloadTaskWithRequest(request)
                     task.taskDescription = key
                     task.resume()
                 }
@@ -123,7 +128,7 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         temporaryUrl: NSURL,
     ) {
         val key = downloadTask.taskDescription ?: return
-        val statusCode = (downloadTask.response as? NSHTTPURLResponse)?.statusCode
+        val statusCode = (downloadTask.response as? NSHTTPURLResponse)?.statusCode?.toInt()
         if (statusCode == null || statusCode !in 200..299) {
             finish(key, Result.failure(IllegalStateException("HTTP ${statusCode ?: "unknown"}")))
             return
