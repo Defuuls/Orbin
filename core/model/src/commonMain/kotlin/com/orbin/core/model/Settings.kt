@@ -113,6 +113,8 @@ data class AppSettings(
     val unfoldedFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
     /** Feed columns on a tablet, 1–4. */
     val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
+    /** Board catalog columns on a tablet, 2–8; everywhere else the catalog fits its tiles itself. */
+    val tabletCatalogColumns: Int = DEFAULT_TABLET_CATALOG_COLUMNS,
 ) {
     companion object {
         val Default = AppSettings()
@@ -121,6 +123,9 @@ data class AppSettings(
 
 /** Two columns until the reader picks otherwise: a wide screen's first step up from a phone. */
 const val DEFAULT_WIDE_FEED_COLUMNS = 2
+
+/** A tablet catalog's columns until the reader picks otherwise: tiles about a phone's half width. */
+const val DEFAULT_TABLET_CATALOG_COLUMNS = 4
 
 /**
  * How fast media preloading is allowed to hit the CDN. The throttled modes trade speed for

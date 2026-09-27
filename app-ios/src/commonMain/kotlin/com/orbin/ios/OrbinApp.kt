@@ -31,7 +31,9 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.Thread
+import com.orbin.core.model.catalogColumns
 import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.post.PostCommentText
@@ -112,7 +114,7 @@ private fun Destination(
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
-        is Route.Catalog -> CatalogDestination(browser, route.board)
+        is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> ThreadDestination(browser)
         is Route.Media -> MediaDestination(browser, downloads, route)
     }
@@ -272,7 +274,8 @@ private fun SettingsDestination(
                 SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
                 SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
-                SettingIds.THEME, SettingIds.FEED_COLUMNS -> expanded = if (expanded == item.id) null else item.id
+                SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS ->
+                    expanded = if (expanded == item.id) null else item.id
                 SettingIds.CLEAR_ACTIVITY ->
                     if (clearArmed) {
                         clearArmed = false
@@ -294,6 +297,8 @@ private fun SettingsDestination(
             when (item.id) {
                 SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                 SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
+                SettingIds.CATALOG_COLUMNS ->
+                    browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
             }
             expanded = null
         },
@@ -338,8 +343,10 @@ private fun SearchDestination(browser: Browser) {
 private fun CatalogDestination(
     browser: Browser,
     board: SiteBoard,
+    formFactor: FormFactor,
 ) {
     val catalog by browser.catalog.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
@@ -354,17 +361,21 @@ private fun CatalogDestination(
                 }
             }
         val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
-        BoardScreen(
-            board = "/${board.board.id.value}/",
-            description = board.board.title,
-            itemCount = rows.size,
-            rowAt = { index -> rows.getOrNull(index) },
-            sortLabel = sort.label,
-            onSort = browser::cycleCatalogSort,
-            showRail = false,
-            onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
-            thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
-        )
+        // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
+        BoxWithConstraints {
+            BoardScreen(
+                columns = catalogColumns(formFactor, maxWidth.value.toInt(), settings),
+                board = "/${board.board.id.value}/",
+                description = board.board.title,
+                itemCount = rows.size,
+                rowAt = { index -> rows.getOrNull(index) },
+                sortLabel = sort.label,
+                onSort = browser::cycleCatalogSort,
+                showRail = false,
+                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
+            )
+        }
     }
 }
 

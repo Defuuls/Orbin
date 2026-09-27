@@ -7,6 +7,7 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Tablets (iPad and Android): Settings → **Catalog columns** picks how many columns a board's catalog shows, 2–8, starting at 4. Elsewhere, and in a narrow split-screen window, the catalog still fits its tiles to the width. Carried in backups.
 - iOS: board catalogs have Android's sort control (Bump, Created, Replies, Images, Latest, A-Z), starting in bump order on each board.
 - iOS: the feed and the Boards list show one site at a time with Android's site switcher (4chan | BBW Chan) at the top, instead of every site's boards and threads mixed together. The choice is shared by both screens and remembered, in the same setting Android uses.
 - iOS: the app runs natively on iPad (it was an iPhone app shown at iPhone size) in every orientation, Split View and Stage Manager. The feed shows 1–4 columns on an iPad's full width, chosen in Settings → **Feed columns** as on Android tablets, and one column in a narrow window.

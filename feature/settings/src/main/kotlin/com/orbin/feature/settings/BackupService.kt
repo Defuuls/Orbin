@@ -112,6 +112,7 @@ class BackupService
                 setAmoled(settings.amoled)
                 setFeedColumns(FormFactor.FOLDABLE, settings.unfoldedFeedColumns)
                 setFeedColumns(FormFactor.TABLET, settings.tabletFeedColumns)
+                setTabletCatalogColumns(settings.tabletCatalogColumns)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

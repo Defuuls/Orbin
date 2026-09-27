@@ -106,6 +106,8 @@ class SettingsViewModel
             columns: Int,
         ) = update { repository.setFeedColumns(formFactor, columns) }
 
+        fun setTabletCatalogColumns(columns: Int) = update { repository.setTabletCatalogColumns(columns) }
+
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }

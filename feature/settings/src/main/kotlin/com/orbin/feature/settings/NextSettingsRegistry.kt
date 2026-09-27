@@ -3,6 +3,8 @@ package com.orbin.feature.settings
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
+import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumnsFor
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
@@ -103,6 +105,7 @@ private class Rows {
         toggle("coverViolent", "Cover violent media", settings.coverViolentMedia, vm::setCoverViolentMedia),
         choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
         feedColumns(settings, vm, formFactor),
+        catalogColumns(settings, vm, formFactor),
         toggle("amoled", "True black", settings.amoled, vm::setAmoled),
         toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
         toggle("updateOnLaunch", "Tell me about new releases", checkUpdatesOnLaunch, vm::setCheckUpdatesOnLaunch),
@@ -126,6 +129,23 @@ private class Rows {
             selected = settings.feedColumnsFor(formFactor),
             text = { if (it == 1) "1 column" else "$it columns" },
             onChange = { vm.setFeedColumns(formFactor, it) },
+        )
+    }
+
+    /** A board catalog's columns: a tablet's choice; everywhere else the catalog fits its tiles. */
+    private fun catalogColumns(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+        formFactor: FormFactor,
+    ): SettingItem? {
+        if (formFactor != FormFactor.TABLET) return null
+        return choice(
+            id = "catalogColumns",
+            label = "Catalog columns",
+            values = (TABLET_MIN_CATALOG_COLUMNS..TABLET_MAX_CATALOG_COLUMNS).toList(),
+            selected = settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS),
+            text = { "$it columns" },
+            onChange = vm::setTabletCatalogColumns,
         )
     }
 

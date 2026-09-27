@@ -166,6 +166,7 @@ class IosBackup(
             setAmoled(restored.amoled)
             setFeedColumns(FormFactor.FOLDABLE, restored.unfoldedFeedColumns)
             setFeedColumns(FormFactor.TABLET, restored.tabletFeedColumns)
+            setTabletCatalogColumns(restored.tabletCatalogColumns)
             if (restored.activeProviderId.isNotBlank()) setActiveProviderId(ProviderId(restored.activeProviderId))
             setOnboardingCompleted(restored.onboardingCompleted)
         }

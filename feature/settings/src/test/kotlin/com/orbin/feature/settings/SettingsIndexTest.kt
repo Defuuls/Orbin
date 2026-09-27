@@ -68,6 +68,21 @@ class SettingsIndexTest {
         }
     }
 
+    /** A board catalog's column count is a tablet's alone: a foldable's catalog fits itself. */
+    @Test
+    fun `catalog columns show only on tablets`() {
+        fun columnsRow(formFactor: FormFactor) =
+            buildModel(formFactor).groups.flatMap { it.second }.firstOrNull { it.id == "catalogColumns" }
+
+        assertThat(columnsRow(FormFactor.PHONE)).isNull()
+        assertThat(columnsRow(FormFactor.FOLDABLE)).isNull()
+        with(checkNotNull(columnsRow(FormFactor.TABLET))) {
+            assertThat(label).isEqualTo("Catalog columns")
+            assertThat(options).containsExactlyElementsIn((2..8).map { "$it columns" }).inOrder()
+            assertThat(value).isEqualTo("4 columns")
+        }
+    }
+
     private fun allRows() = buildModel().groups.flatMap { it.second }
 
     /**
