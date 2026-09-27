@@ -123,7 +123,8 @@ private fun Destination(
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
-            val previous = browser.backStack.value.getOrNull(browser.backStack.value.lastIndex - 1)
+            val backStack by browser.backStack.collectAsState()
+            val previous = backStack.getOrNull(backStack.lastIndex - 1)
             if (formFactor == FormFactor.TABLET && previous is Route.Catalog) {
                 ThreadSplitDestination(browser, previous.board, formFactor)
             } else {
