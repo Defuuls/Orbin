@@ -38,7 +38,8 @@ internal fun openDatabase(): OrbinDatabase =
                             schemaMigration.statements.forEach(connection::execSQL)
                         }
                     }
-                }.toTypedArray(),
+                }
+                .toTypedArray(),
         )
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
