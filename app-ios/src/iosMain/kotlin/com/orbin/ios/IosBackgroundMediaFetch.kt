@@ -1,6 +1,5 @@
 package com.orbin.ios
 
-import com.orbin.core.common.link.SafeExternalLinks
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -21,9 +20,7 @@ import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.NSOperationQueue
-import platform.Foundation.NSBundle
-import platform.Foundation.setValue
-import platform.UIKit.UIApplication
+import platform.Foundation.getBytes
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -169,7 +166,7 @@ internal object IosBackgroundMediaFetch : platform.Foundation.NSObject(), NSURLS
     ) {
         val continuation = continuations.remove(key) ?: return
         progressCallbacks.remove(key)
-        result.fold(continuation::resume, continuation::resumeWithException)
+        result.fold({ continuation.resume(it) }, { continuation.resumeWithException(it) })
     }
 
     private fun downloadedFile(key: String): NSURL {
