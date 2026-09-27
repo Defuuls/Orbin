@@ -32,6 +32,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
+import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
@@ -339,13 +340,15 @@ private fun CatalogDestination(
     board: SiteBoard,
 ) {
     val catalog by browser.catalog.collectAsState()
+    val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
     Loaded(catalog, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+        val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
         val rows =
-            remember(threads, visited, unread) {
-                threads.map { thread ->
+            remember(sorted, visited, unread) {
+                sorted.map { thread ->
                     val number = thread.key.thread.value
                     thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
                 }
@@ -356,6 +359,8 @@ private fun CatalogDestination(
             description = board.board.title,
             itemCount = rows.size,
             rowAt = { index -> rows.getOrNull(index) },
+            sortLabel = sort.label,
+            onSort = browser::cycleCatalogSort,
             showRail = false,
             onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
             thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
@@ -370,12 +375,24 @@ private fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
+        // The site's thumbnail first, so the card fills at once; a card is far wider than a
+        // thumbnail (about 250 pixels), so the full image replaces it where there is one, as
+        // Android's cards load full resolution.
         AsyncImage(
             model = attachment.thumbnailUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        val sharp = attachment.cardImageUrl()
+        if (sharp != attachment.thumbnailUrl) {
+            AsyncImage(
+                model = sharp,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }

@@ -3,6 +3,7 @@ package com.orbin.ios
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
@@ -174,6 +175,17 @@ class Browser(
     private val _catalog = MutableStateFlow<Load<List<CatalogThread>>>(Load.Loading)
     val catalog: StateFlow<Load<List<CatalogThread>>> = _catalog.asStateFlow()
 
+    private val _catalogSort = MutableStateFlow(CatalogSort.BUMP_ORDER)
+
+    /** How the open catalog is ordered: bump order for each board opened, as on Android. */
+    val catalogSort: StateFlow<CatalogSort> = _catalogSort.asStateFlow()
+
+    /** The catalog's next order, as Android's sort chip steps through them. */
+    fun cycleCatalogSort() {
+        val orders = CatalogSort.entries
+        _catalogSort.update { orders[(orders.indexOf(it) + 1) % orders.size] }
+    }
+
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
 
@@ -257,6 +269,7 @@ class Browser(
     }
 
     fun openBoard(board: SiteBoard) {
+        if (board != catalogShown) _catalogSort.value = CatalogSort.BUMP_ORDER
         _backStack.update { it + Route.Catalog(board) }
         loadCurrent()
     }

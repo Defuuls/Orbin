@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
@@ -131,6 +132,25 @@ class BrowserTest {
 
             assertEquals("bbwchan", browser.activeSite.first { it.value == "bbwchan" }.value)
             assertEquals("bbwchan", settings.settings.value.activeProviderId)
+        }
+
+    @Test
+    fun theCatalogSortStepsThroughTheOrdersAndStartsOverOnAnotherBoard() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.openBoard(boards.first { it.board.id.value == "g" })
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value)
+
+            browser.cycleCatalogSort()
+            assertEquals(CatalogSort.CREATION_DATE, browser.catalogSort.value)
+            repeat(CatalogSort.entries.size - 1) { browser.cycleCatalogSort() }
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value, "it wraps round")
+
+            browser.cycleCatalogSort()
+            browser.back()
+            browser.openBoard(boards.first { it.board.id.value == "b" })
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value)
         }
 
     @Test

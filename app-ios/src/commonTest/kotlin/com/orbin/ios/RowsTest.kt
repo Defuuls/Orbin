@@ -198,6 +198,14 @@ class RowsTest {
         assertEquals("bold words", row.snippet, "the text, not the engine's markup")
     }
 
+    @Test
+    fun cardsShowAStillImageAtFullSizeAndEverythingElseAsItsThumbnail() {
+        val image = post(1, files = 1).attachments.single()
+        assertEquals("https://i.example/1-0.jpg", image.cardImageUrl())
+        assertEquals(image.thumbnailUrl, image.copy(type = MediaType.ANIMATED_IMAGE).cardImageUrl())
+        assertEquals(image.thumbnailUrl, image.copy(type = MediaType.VIDEO).cardImageUrl())
+    }
+
     private fun post(
         id: Long,
         files: Int,

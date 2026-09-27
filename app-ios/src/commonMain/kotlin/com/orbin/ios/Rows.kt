@@ -4,6 +4,7 @@ import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
 import com.orbin.core.ui.date.formatRelativeTime
@@ -15,6 +16,14 @@ import com.orbin.uinext.Post as NextPost
 
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
 // adapters do. Kept free of Compose so they are unit-tested on both platforms.
+
+/**
+ * The image a feed or catalog card shows: the full picture for a still image, which a card is
+ * too big for a thumbnail to fill sharply; the thumbnail for anything else (a GIF can run to many
+ * megabytes, and a video has no picture of its own).
+ */
+internal fun MediaAttachment.cardImageUrl(): String =
+    if (type == MediaType.IMAGE && sourceUrl.isNotBlank()) sourceUrl else thumbnailUrl
 
 internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
     BoardTile(
