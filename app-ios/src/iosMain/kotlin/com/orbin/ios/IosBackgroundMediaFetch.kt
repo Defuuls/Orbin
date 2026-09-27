@@ -27,6 +27,8 @@ import platform.Foundation.setValue
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+private const val HTTP_SUCCESS_MIN = 200
+private const val HTTP_SUCCESS_MAX = 299
 private const val BACKGROUND_DOWNLOAD_SESSION = "io.github.defuuls.orbin.media-downloads"
 
 /**
@@ -137,7 +139,7 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
     ) {
         val key = downloadTask.taskDescription ?: return
         val statusCode = (downloadTask.response as? NSHTTPURLResponse)?.statusCode?.toInt()
-        if (statusCode == null || statusCode !in 200..299) {
+        if (statusCode == null || statusCode !in HTTP_SUCCESS_MIN..HTTP_SUCCESS_MAX) {
             finish(key, Result.failure(IllegalStateException("HTTP ${statusCode ?: "unknown"}")))
             return
         }
