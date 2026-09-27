@@ -145,6 +145,7 @@ private fun FeedDestination(
     val feed by browser.feed.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.activeSite.collectAsState()
+    val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
     NextPullToRefresh(
         isRefreshing = feed is Load.Loading,
         onRefresh = browser::retry,
@@ -168,8 +169,6 @@ private fun FeedDestination(
                     headerContent = { SiteSwitcher(browser, site) },
                 )
             }
-        }
-    }
         }
     }
 }
