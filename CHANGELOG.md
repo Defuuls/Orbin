@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [157-Xigua] - 2026-09-27
+
+### Added
+- Android: launcher shortcuts. Long-press the Orbin icon to jump straight to Feed, Boards or Downloads.
+- Android: videos can keep playing in picture-in-picture when you leave the app, and otherwise pause when it goes to the background.
+- Android: watched-thread alerts have their own **Watched threads** notification channel, and tapping one opens the thread.
+- Android: a download that finishes while Orbin is in the background still updates its entry in Downloads.
+
+### Changed
+- Android: refined haptic feedback on controls, and database indexes (a migration to schema 8) for quicker lookups.
+
+### Fixed
+- TestFlight build numbers always increase: they are the version code and the upload's date and time in Chicago time. A manual build used the workflow's own run count, which is far below a release's, so TestFlight listed an older release build as the latest (174.189 above 174.11).
+- TestFlight uploads no longer create an Apple Development certificate on every run; after a dozen builds Apple's certificate limit stopped them. The archive is built unsigned and signed once at upload with the cloud-managed distribution certificate.
+- iOS: images in a thread are sharp too. They showed the site's small thumbnail stretched to the post's width, as the feed's cards did before 156.
+
+
 ## [156-Watermelon] - 2026-09-27
 
 ### Added
@@ -2438,7 +2455,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v156-Watermelon...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v157-Xigua...HEAD
+[157-Xigua]: https://github.com/Defuuls/Orbin/compare/v156-Watermelon...v157-Xigua
 [156-Watermelon]: https://github.com/Defuuls/Orbin/compare/v155-Ugli...v156-Watermelon
 [155-Ugli]: https://github.com/Defuuls/Orbin/compare/v154-Tangerine...v155-Ugli
 [154-Tangerine]: https://github.com/Defuuls/Orbin/compare/v153-Strawberry...v154-Tangerine
