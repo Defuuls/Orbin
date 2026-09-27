@@ -12,11 +12,13 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import kotlinx.coroutines.CancellationException
@@ -122,11 +124,12 @@ class Browser(
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     notifier: ThreadNotifier? = null,
     onWatch: () -> Unit = {},
+    downloadDao: DownloadDao? = null,
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
-    val settings = ReaderSettings(settings, history, scope)
+    val settings = ReaderSettings(settings, history, scope, downloadDao)
 
     /** Every site, in the order the app registers them: the site switcher's segments. */
     val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
@@ -256,6 +259,7 @@ class Browser(
         board: SiteBoard,
         follow: Boolean,
     ) {
+        Haptics.light()
         scope.launch { boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow) }
     }
 
@@ -297,7 +301,19 @@ class Browser(
         return true
     }
 
+    /** The canonical web URL for a thread, or null if the provider is unknown. */
+    fun threadWebUrl(key: ThreadKey): String? {
+        val meta = byId[key.provider]?.metadata ?: return null
+        val base = meta.baseUrl.trimEnd('/')
+        return when {
+            meta.engine == EngineKind.FOURCHAN || key.provider.value == "fourchan" ->
+                "$base/${key.board.value}/thread/${key.thread.value}"
+            else -> "$base/${key.board.value}/res/${key.thread.value}.html"
+        }
+    }
+
     fun retry() {
+        Haptics.light()
         when (_backStack.value.last()) {
             Route.Boards -> loadBoards()
             Route.Feed -> loadFeed(force = true)

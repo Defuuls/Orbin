@@ -63,7 +63,14 @@ internal actual fun NativeWebMPlayer(
 ) {
     val webView =
         remember(url) {
-            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = WKWebViewConfiguration()).apply {
+            val configuration =
+                WKWebViewConfiguration().apply {
+                    allowsInlineMediaPlayback = true
+                    mediaTypesRequiringUserActionForPlayback = 0uL
+                }
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
+                scrollView.scrollEnabled = false
+                scrollView.bounces = false
                 NSURL.URLWithString(url)?.let { loadRequest(NSURLRequest(uRL = it)) }
             }
         }

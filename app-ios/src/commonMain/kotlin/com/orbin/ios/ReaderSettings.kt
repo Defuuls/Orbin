@@ -7,6 +7,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumnsFor
+import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.uinext.OFF_LABEL
@@ -29,6 +30,7 @@ class ReaderSettings(
     private val repository: SettingsRepository,
     private val history: HistoryRepository,
     private val scope: CoroutineScope,
+    private val downloadDao: DownloadDao? = null,
 ) {
     val current: StateFlow<AppSettings> =
         repository.settings.stateIn(
@@ -54,8 +56,13 @@ class ReaderSettings(
         columns: Int,
     ): Job = scope.launch { repository.setFeedColumns(formFactor, columns) }
 
-    /** Deletes the reading history, which is all the local activity iOS keeps so far. */
-    fun clearActivity(): Job = scope.launch { history.clear() }
+    /** Deletes the reading history, download records, and invokes cache clearance. */
+    fun clearActivity(onClearCaches: (suspend () -> Unit)? = null): Job =
+        scope.launch {
+            history.clear()
+            downloadDao?.clear()
+            onClearCaches?.invoke()
+        }
 }
 
 /** What the settings rows are called; the screen dispatches on these. */

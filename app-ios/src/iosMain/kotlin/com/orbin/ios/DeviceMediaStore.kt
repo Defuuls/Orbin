@@ -39,6 +39,7 @@ class DeviceMediaStore : MediaStore {
     ) {
         val savedToPhotos = target != SaveTarget.FILE && saveToPhotos(bytes, fileName, target)
         if (!savedToPhotos) saveToFiles(bytes, fileName, folder)
+        Haptics.success()
     }
 
     private suspend fun saveToPhotos(
@@ -90,7 +91,9 @@ class DeviceMediaStore : MediaStore {
                 create = true,
                 error = null,
             )
-        val directory = checkNotNull(documents?.URLByAppendingPathComponent("Orbin/$folder")) { "No Documents folder" }
+        val basePath = checkNotNull(documents?.path) { "No Documents folder" }
+        val cleanFolder = folder.trim('/')
+        val directory = NSURL.fileURLWithPath("$basePath/Orbin/$cleanFolder", isDirectory = true)
         manager.createDirectoryAtURL(directory, withIntermediateDirectories = true, attributes = null, error = null)
         val destination = checkNotNull(freeName(directory, fileName)) { "No file name free for $fileName" }
         check(bytes.toNSData().writeToURL(destination, atomically = true)) { "Could not write $fileName" }
