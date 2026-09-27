@@ -37,7 +37,7 @@ internal fun openDatabase(): OrbinDatabase {
             }
         }
     val builder = Room.databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
-    builder.addMigrations(*migrations.toTypedArray())
+    migrations.forEach { builder.addMigrations(it) }
     builder.setDriver(BundledSQLiteDriver())
     builder.setQueryCoroutineContext(Dispatchers.IO)
     return builder.build()
