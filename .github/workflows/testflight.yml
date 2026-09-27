@@ -86,8 +86,8 @@ jobs:
           xcodegen --spec iosApp/project.yml
 
       # The Android release's number, so both platforms report the same version: "148" from
-      # "148-Nectarine", built as <versionCode>.<UTC yyyyMMddHHmm> so every upload is a new, higher
-      # build. Not the run number: a manual run and one called from release.yml count separately
+      # "148-Nectarine", built as <versionCode>.<yyyyMMddHHmm> in Chicago time so every upload is a new,
+      # higher build. Not the run number: a manual run and one called from release.yml count separately
       # (11 against 189), so a newer manual build sorted below the release's and TestFlight
       # offered the older one as the latest.
       - name: Work out the version
@@ -97,7 +97,7 @@ jobs:
           name=$(sed -n 's/^orbin.versionName=//p' gradle.properties)
           code=$(sed -n 's/^orbin.versionCode=//p' gradle.properties)
           echo "marketing=${name%%-*}" >> "$GITHUB_OUTPUT"
-          echo "build=${code}.$(date -u +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+          echo "build=${code}.$(TZ=America/Chicago date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
 
       # Unsigned: signing here takes an Apple Development certificate, and each fresh runner asked
       # the account for a new one until Apple's limit refused the next build. The upload step signs
