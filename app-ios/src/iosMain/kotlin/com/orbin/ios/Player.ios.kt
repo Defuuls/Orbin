@@ -160,9 +160,11 @@ internal actual fun NativeInlineLoop(
                         .replace(">", "&gt;")
                 val html =
                     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">" +
-                        "<style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}" +
+                        "<style>html,body{margin:0;width:100%;height:100%;" +
+                        "background:transparent;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
-                        "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline></video></body></html>"
+                        "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline>" +
+                        "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
         }
