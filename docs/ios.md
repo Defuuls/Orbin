@@ -16,8 +16,9 @@ A reader, so far:
 - the feed, the start screen as on Android: the newest threads of every board you follow, on
   every site, sorted board A–Z and newest first within a board, with per-board thread limits and
   the permanent filter applied as on Android. A board that fails to load leaves the others;
-- boards from every site (the same two the Android app ships), with one site being down never
-  hiding the other's boards, and a switch on each to follow it. A site that could not be reached
+- boards from every site (the same two the Android app ships), one site at a time behind
+  Android's site switcher (remembered in the same `activeProviderId` setting), with one site
+  being down never hiding the other's boards, and a switch on each to follow it. A site that could not be reached
   is named under the Boards title and tried again when you reopen Boards;
 - search, from the boards list: one query over the catalogs of every board you follow, on every
   site. It matches as Android's does (`matchesSearch` in `:core:model`, after the permanent filter),

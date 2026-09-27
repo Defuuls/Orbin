@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -26,6 +29,7 @@ import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.post.PostCommentText
@@ -40,6 +44,7 @@ import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
@@ -155,10 +160,14 @@ private fun BoardsDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
+    val site by browser.activeSite.collectAsState()
     val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
     Loaded(boards, onRetry = browser::retry) { all ->
-        // Hidden NSFW boards leave the list, as Android's boards list drops them.
-        val list = remember(all, hideNsfw) { if (hideNsfw) all.filterNot { it.board.isNsfw } else all }
+        // One site at a time, as Android's boards list; hidden NSFW boards leave it, as there.
+        val list =
+            remember(all, site, hideNsfw) {
+                all.filter { it.provider == site && !(hideNsfw && it.board.isNsfw) }
+            }
         val byTile = remember(list) { list.associateBy { it.tileId } }
         BoardsScreen(
             subtitle = boardsSubtitle(list.size, unreachable),
@@ -172,8 +181,24 @@ private fun BoardsDestination(browser: Browser) {
             onOpenDownloads = { browser.openTab(Route.Downloads) },
             onOpenSearch = { browser.open(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
+            headerContent = { SiteSwitcher(browser, site) },
         )
     }
+}
+
+/** Android's site switcher: a segment per site, shown when there is more than one. */
+@Composable
+private fun SiteSwitcher(
+    browser: Browser,
+    active: ProviderId,
+) {
+    if (browser.sites.size < 2) return
+    PlatformSegments(
+        labels = browser.sites.map { it.name },
+        selected = browser.sites.indexOfFirst { it.id == active },
+        onSelect = { browser.selectSite(browser.sites[it].id) },
+    )
+    Spacer(Modifier.height(12.dp))
 }
 
 /**

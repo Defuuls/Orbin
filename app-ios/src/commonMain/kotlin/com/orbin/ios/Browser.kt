@@ -127,6 +127,24 @@ class Browser(
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
     val settings = ReaderSettings(settings, history, scope)
 
+    /** Every site, in the order the app registers them: the Boards switcher's segments. */
+    val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
+
+    /**
+     * The site the Boards list shows, as Android's site switcher picks it: the saved choice (the
+     * same `activeProviderId` Android keeps, so a backup carries it), else the first site.
+     */
+    val activeSite: StateFlow<ProviderId> =
+        this.settings.current
+            .map { current -> sites.firstOrNull { it.id.value == current.activeProviderId }?.id ?: sites.first().id }
+            .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.Eagerly, sites.first().id)
+
+    /** Shows [site]'s boards, and remembers it. */
+    fun selectSite(site: ProviderId) {
+        if (site != activeSite.value) this.settings.setActiveProviderId(site)
+    }
+
     /** Searching the followed boards' catalogs. */
     val search =
         ThreadSearch(scope, boards = ::searchableBoards) { board ->
@@ -433,6 +451,12 @@ class Browser(
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")
+
+/** A site the app reads: its provider id and the name it goes by. */
+data class Site(
+    val id: ProviderId,
+    val name: String,
+)
 
 /** A board someone follows: its site and its id. */
 data class FollowedBoard(

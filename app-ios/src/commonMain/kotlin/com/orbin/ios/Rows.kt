@@ -20,8 +20,8 @@ internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
     BoardTile(
         id = tileId,
         path = "/${board.id.value}/",
-        // Two sites can both have a /b/, so every title says which site it is on.
-        title = "${board.title} · $siteName",
+        // The Boards list shows one site at a time, as Android's does, so the title is the board's.
+        title = board.title,
         nsfw = board.isNsfw,
         followed = followed,
         site = provider.value,

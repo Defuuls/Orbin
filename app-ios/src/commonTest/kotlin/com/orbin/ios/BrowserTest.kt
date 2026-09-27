@@ -118,6 +118,19 @@ class BrowserTest {
         }
 
     @Test
+    fun theBoardsListShowsTheFirstSiteUntilAnotherIsPickedAndRemembersIt() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            assertEquals(listOf("fourchan", "bbwchan"), browser.sites.map { it.id.value })
+            assertEquals("fourchan", browser.activeSite.value.value)
+
+            browser.selectSite(ProviderId("bbwchan"))
+
+            assertEquals("bbwchan", browser.activeSite.first { it.value == "bbwchan" }.value)
+            assertEquals("bbwchan", settings.settings.value.activeProviderId)
+        }
+
+    @Test
     fun aSiteWithNoBoardsCountsAsUnreachable() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES + ("a.4cdn.org/boards.json" to "{}"))

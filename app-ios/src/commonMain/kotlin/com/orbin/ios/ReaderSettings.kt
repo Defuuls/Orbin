@@ -3,6 +3,7 @@ package com.orbin.ios
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.ProviderId
 import com.orbin.core.model.feedColumnsFor
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -41,6 +42,8 @@ class ReaderSettings(
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
+
+    fun setActiveProviderId(site: ProviderId): Job = scope.launch { repository.setActiveProviderId(site) }
 
     fun setFeedColumns(
         formFactor: FormFactor,
