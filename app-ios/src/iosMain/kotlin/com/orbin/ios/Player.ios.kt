@@ -173,7 +173,7 @@ internal actual fun NativeInlineLoop(
 @OptIn(ExperimentalForeignApi::class)
 private class PlayerTapHandler(
     private val player: AVPlayer,
-) : platform.Foundation.NSObject() {
+) : platform.darwin.NSObject() {
     @ObjCAction
     fun onDoubleTap(gesture: UITapGestureRecognizer) {
         val view = gesture.view ?: return
