@@ -17,7 +17,7 @@ private fun androidMigration(
         }
     return object : Migration(startVersion, endVersion) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            schemaMigration.statements.forEach(db::execSQL)
+            schemaMigration.statements.forEach { statement -> db.execSQL(statement) }
         }
     }
 }
