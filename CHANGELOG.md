@@ -6,19 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- Tablets (iPad and Android): Settings → **Catalog columns** picks how many columns a board's catalog shows, 2–8, starting at 4. Elsewhere, and in a narrow split-screen window, the catalog still fits its tiles to the width. Carried in backups.
-- iOS: board catalogs have Android's sort control (Bump, Created, Replies, Images, Latest, A-Z), starting in bump order on each board.
-- iOS: the feed and the Boards list show one site at a time with Android's site switcher (4chan | BBW Chan) at the top, instead of every site's boards and threads mixed together. The choice is shared by both screens and remembered, in the same setting Android uses.
-- iOS: the app runs natively on iPad (it was an iPhone app shown at iPhone size) in every orientation, Split View and Stage Manager. The feed shows 1–4 columns on an iPad's full width, chosen in Settings → **Feed columns** as on Android tablets, and one column in a narrow window.
-- BBW Chan's boards show a symbol for their topic in the Boards list (a camera for BBW Real, a brush for BBW Drawn, a paw for BB Furries and so on), with the board's path moved to the line under its name. Other boards keep their path on the tile.
-
-### Fixed
-- iOS: feed and catalog cards show still images at full resolution instead of stretching the site's small thumbnail, which looked blurry on big cards (one or two feed columns on iPad).
-- iOS: a site that answers with no boards at all now counts as unreachable instead of silently vanishing, and the Boards title gives the reason each site couldn't be reached (an HTTP status or network error).
-- iOS: 4chan no longer disappears on networks that block it through DNS, such as some mobile carriers. The app now uses encrypted DNS (Cloudflare) for every request, as the Android app does.
-- iOS: a site that can't be reached is named under the Boards title instead of silently missing from the list, and is tried again when you reopen Boards.
-
 ## [155-Ugli] - 2026-09-26
 
 ### Changed
