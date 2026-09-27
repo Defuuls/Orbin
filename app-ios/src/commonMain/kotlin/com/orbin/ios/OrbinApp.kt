@@ -3,8 +3,8 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -434,7 +434,6 @@ private fun CatalogDestination(
     }
 }
 
-@Composable
 /**
  * On iPad, keep the board catalog beside its selected thread. The browser stack still owns
  * navigation, so the system back gesture returns to the catalog as it does on Android.
@@ -456,6 +455,7 @@ private fun ThreadSplitDestination(
     }
 }
 
+@Composable
 private fun CatalogThumbnail(
     thread: CatalogThread,
     modifier: Modifier,
