@@ -58,6 +58,10 @@ class ImageProbeTest {
                         log += "${t()}ms start ${request.data}"
                     }
 
+                    override fun resolveSizeEnd(request: ImageRequest, size: Size) {
+                        log += "${t()}ms size ${request.data} $size"
+                    }
+
                     override fun onSuccess(request: ImageRequest, result: SuccessResult) {
                         log += "${t()}ms OK ${request.data} ${result.image.width}x${result.image.height} " +
                             "src=${result.dataSource} sampled=${result.isSampled}"
@@ -91,8 +95,9 @@ class ImageProbeTest {
         }
         composeRule.waitUntil(30_000) { log.any { it.contains("OK $FULL") || it.contains("ERROR $FULL") } }
         composeRule.waitForIdle()
-        val message = "PROBE3 density=${composeRule.density.density}\n" + log.joinToString("\n")
-        Log.w("OrbinProbe", message)
+        val message = "PROBE3 density=${composeRule.density.density} || " + log.joinToString(" || ")
+        log.forEach { Log.w("OrbinProbe", it) }
+        Log.w("OrbinProbe", "density=${composeRule.density.density}")
         throw AssertionError(message)
     }
 
