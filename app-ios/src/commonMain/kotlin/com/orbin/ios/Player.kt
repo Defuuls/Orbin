@@ -12,6 +12,7 @@ import com.orbin.core.model.MediaAttachment
 internal expect fun NativePlayer(
     url: String,
     active: Boolean,
+    loop: Boolean,
     modifier: Modifier = Modifier,
 )
 
