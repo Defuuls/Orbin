@@ -7,7 +7,7 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
-- iOS: the Boards list shows one site at a time with Android's site switcher (4chan | BBW Chan) above the search field, instead of every site's boards mixed together. The choice is remembered, in the same setting Android uses.
+- iOS: the feed and the Boards list show one site at a time with Android's site switcher (4chan | BBW Chan) at the top, instead of every site's boards and threads mixed together. The choice is shared by both screens and remembered, in the same setting Android uses.
 - iOS: the app runs natively on iPad (it was an iPhone app shown at iPhone size) in every orientation, Split View and Stage Manager. The feed shows 1–4 columns on an iPad's full width, chosen in Settings → **Feed columns** as on Android tablets, and one column in a narrow window.
 - BBW Chan's boards show a symbol for their topic in the Boards list (a camera for BBW Real, a brush for BBW Drawn, a paw for BB Furries and so on), with the board's path moved to the line under its name. Other boards keep their path on the tile.
 

@@ -13,8 +13,8 @@ design system and every `ui-next` screen. What is iOS-only is small:
 
 A reader, so far:
 
-- the feed, the start screen as on Android: the newest threads of every board you follow, on
-  every site, sorted board A–Z and newest first within a board, with per-board thread limits and
+- the feed, the start screen as on Android: the newest threads of every board you follow on the
+  site picked in the site switcher at its top (the same switcher Boards has), sorted board A–Z and newest first within a board, with per-board thread limits and
   the permanent filter applied as on Android. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), one site at a time behind
   Android's site switcher (remembered in the same `activeProviderId` setting), with one site

@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -134,6 +135,7 @@ private fun FeedDestination(
 ) {
     val feed by browser.feed.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val site by browser.activeSite.collectAsState()
     val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
     Loaded(feed, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
@@ -150,6 +152,7 @@ private fun FeedDestination(
                 onOpenBoards = { browser.openTab(Route.Boards) },
                 onOpenDownloads = { browser.openTab(Route.Downloads) },
                 onSettings = { browser.open(Route.Settings) },
+                headerContent = { SiteSwitcher(browser, site) },
             )
         }
     }
@@ -181,16 +184,18 @@ private fun BoardsDestination(browser: Browser) {
             onOpenDownloads = { browser.openTab(Route.Downloads) },
             onOpenSearch = { browser.open(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
-            headerContent = { SiteSwitcher(browser, site) },
+            headerContent = { SiteSwitcher(browser, site, gapAfter = 12.dp) },
         )
     }
 }
 
-/** Android's site switcher: a segment per site, shown when there is more than one. */
+/** Android's site switcher, on the feed and Boards: a segment per site, shown when there is more than one. */
 @Composable
 private fun SiteSwitcher(
     browser: Browser,
     active: ProviderId,
+    // Boards puts its search field straight under its header; the feed spaces its own.
+    gapAfter: Dp = 0.dp,
 ) {
     if (browser.sites.size < 2) return
     PlatformSegments(
@@ -198,7 +203,7 @@ private fun SiteSwitcher(
         selected = browser.sites.indexOfFirst { it.id == active },
         onSelect = { browser.selectSite(browser.sites[it].id) },
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(gapAfter))
 }
 
 /**

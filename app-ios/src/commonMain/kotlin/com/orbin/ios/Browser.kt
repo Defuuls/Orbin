@@ -127,11 +127,11 @@ class Browser(
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
     val settings = ReaderSettings(settings, history, scope)
 
-    /** Every site, in the order the app registers them: the Boards switcher's segments. */
+    /** Every site, in the order the app registers them: the site switcher's segments. */
     val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
 
     /**
-     * The site the Boards list shows, as Android's site switcher picks it: the saved choice (the
+     * The site the feed and the Boards list show, as Android's site switcher picks it: the saved choice (the
      * same `activeProviderId` Android keeps, so a backup carries it), else the first site.
      */
     val activeSite: StateFlow<ProviderId> =
@@ -140,7 +140,7 @@ class Browser(
             .distinctUntilChanged()
             .stateIn(scope, SharingStarted.Eagerly, sites.first().id)
 
-    /** Shows [site]'s boards, and remembers it. */
+    /** Shows [site]'s feed and boards, and remembers it. */
     fun selectSite(site: ProviderId) {
         if (site != activeSite.value) this.settings.setActiveProviderId(site)
     }
@@ -221,6 +221,9 @@ class Browser(
                 .distinctUntilChanged()
                 .drop(1)
                 .collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+        }
+        scope.launch {
+            activeSite.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
         loadFeed()
         watched.refresh()
@@ -360,7 +363,9 @@ class Browser(
      * the feed tab shows it as it was, as Android's feed does.
      */
     private fun loadFeed(force: Boolean = false) {
-        val boards = followed.value
+        // The active site's followed boards, as Android's feed follows its site switcher.
+        val site = activeSite.value
+        val boards = followed.value.filterTo(mutableSetOf()) { it.provider == site }
         val shown = boards to settings.current.value.hideNsfwBoards
         if (!force && shown == feedFor && _feed.value is Load.Ready) return
         feedFor = shown
