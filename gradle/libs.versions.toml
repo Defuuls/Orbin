@@ -13,7 +13,7 @@ minSdk = "31"
 targetSdk = "36"
 
 # AndroidX core
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 splashscreen = "1.2.0"
@@ -28,7 +28,7 @@ composeBom = "2026.09.00"
 composeMultiplatform = "1.12.1"
 composeMultiplatformMaterial3 = "1.9.0"
 composeMultiplatformIcons = "1.7.3"
-navigationCompose = "2.10.1"
+navigationCompose = "2.10.2"
 paging = "3.5.1"
 pagingCompose = "3.5.1"
 
@@ -58,7 +58,7 @@ coil = "3.6.2"
 media3 = "1.11.1"
 
 # Work
-work = "2.11.2"
+work = "2.12.0"
 hiltWork = "1.4.0"
 
 # Testing
