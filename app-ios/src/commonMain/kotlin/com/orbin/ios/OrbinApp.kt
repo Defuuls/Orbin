@@ -462,6 +462,9 @@ private fun CatalogThumbnail(
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
         SharpImage(attachment, contentDescription = null, Modifier.fillMaxSize(), fill = Modifier.fillMaxSize())
+        if (attachment.isPlayable && (!attachment.isWebM || supportsWebM)) {
+            NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
+        }
         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }
