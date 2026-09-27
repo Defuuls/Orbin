@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
@@ -11,10 +12,14 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
+import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
+import platform.CoreMedia.CMTimeMake
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
 import platform.UIKit.UIDevice
@@ -27,10 +32,33 @@ import platform.WebKit.WKWebViewConfiguration
 internal actual fun NativePlayer(
     url: String,
     active: Boolean,
+    loop: Boolean,
     modifier: Modifier,
 ) {
     val player = remember(url) { NSURL.URLWithString(url)?.let { AVPlayer(uRL = it) } } ?: return
-    val controller = remember(player) { AVPlayerViewController().apply { this.player = player } }
+    val controller =
+        remember(player) {
+            AVPlayerViewController().apply {
+                this.player = player
+                allowsPictureInPicturePlayback = true
+                canStartPictureInPictureAutomaticallyFromInline = true
+            }
+        }
+    val currentLoop = rememberUpdatedState(loop)
+    DisposableEffect(player) {
+        val observer =
+            NSNotificationCenter.defaultCenter.addObserverForName(
+                name = AVPlayerItemDidPlayToEndTimeNotification,
+                `object` = player.currentItem,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                if (currentLoop.value) {
+                    player.seekToTime(CMTimeMake(value = 0, timescale = 1))
+                    player.play()
+                }
+            }
+        onDispose { NSNotificationCenter.defaultCenter.removeObserver(observer) }
+    }
     LaunchedEffect(player, active) {
         if (active) {
             // Plays with the ringer switch on silent, as video in Safari and Photos does.
