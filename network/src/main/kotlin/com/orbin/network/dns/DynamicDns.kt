@@ -31,13 +31,15 @@ internal class DynamicDns(
 
     @Throws(UnknownHostException::class)
     override fun lookup(hostname: String): List<InetAddress> {
-        val doh = configProvider.current().dnsOverHttps
+        val config = configProvider.current()
+        val doh = config.dnsOverHttps
         return try {
             encryptedDnsCache
                 .getOrPut(doh) { encryptedDnsFactory(doh) }
                 .lookup(hostname)
                 .also { fallbackTracker.recordEncrypted() }
         } catch (e: UnknownHostException) {
+            if (config.strictDoh) throw e
             val viaSystem =
                 try {
                     systemDns.lookup(hostname)

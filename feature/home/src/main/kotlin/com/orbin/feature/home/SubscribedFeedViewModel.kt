@@ -304,7 +304,7 @@ class SubscribedFeedViewModel
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                Log.w(TAG, "Failed to load catalog for /${board.id.value}/", error)
+                Log.w(TAG, "Failed to load catalog", error)
                 BoardLoadResult(
                     feed = SubscribedBoardFeed(board, persistentListOf(), override),
                     failed = true,

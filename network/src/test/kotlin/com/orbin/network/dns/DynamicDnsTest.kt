@@ -35,6 +35,25 @@ class DynamicDnsTest {
         assertThat(tracker.usingSystemFallback.value).isTrue()
     }
 
+    @Test
+    fun whenStrictDohIsEnabledABlockedResolverFailsWithoutFallback() {
+        val dns =
+            DynamicDns(
+                configProvider = { NetworkConfig(strictDoh = true) },
+                fallbackTracker = tracker,
+                systemDns = working(),
+                encryptedDnsFactory = { failing() },
+            )
+
+        try {
+            dns.lookup("example.com")
+            error("expected UnknownHostException")
+        } catch (e: UnknownHostException) {
+            assertThat(e).hasMessageThat().contains("doh")
+        }
+        assertThat(tracker.usingSystemFallback.value).isFalse()
+    }
+
     /**
      * A hostname that does not exist fails over DoH exactly as a blocked resolver does. Reporting
      * that as a privacy downgrade would fire the warning on every dead link, so the system resolver

@@ -12,12 +12,13 @@ import kotlinx.coroutines.IO
 import okio.Path.Companion.toPath
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUserDomainMask
 
 /**
  * The shared database (`:storage`), opened the iOS way: SQLite bundled into the app through Room's
- * driver, in Application Support, which is backed up but not shown to the user. iOS Data Protection
- * encrypts it at rest; Android, which has no equivalent guarantee, encrypts its copy with SQLCipher.
+ * driver, in Application Support, excluded from iCloud backup. iOS Data Protection encrypts it at
+ * rest; Android, which has no equivalent guarantee, encrypts its copy with SQLCipher.
  *
  * Schema changes need migrations that run on both platforms: Room's `Migration.migrate(connection)`,
  * not the Android-only `SupportSQLiteDatabase` overload.
@@ -48,5 +49,7 @@ private fun applicationSupportPath(file: String): String {
             create = true,
             error = null,
         )
+    // Exclude application support data (history, bookmarks, followed boards) from iCloud backup.
+    directory?.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
     return requireNotNull(directory?.path) { "No Application Support directory" } + "/" + file
 }

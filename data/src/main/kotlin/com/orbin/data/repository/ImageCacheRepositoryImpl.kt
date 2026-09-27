@@ -18,17 +18,24 @@ class ImageCacheRepositoryImpl
         @ApplicationContext context: Context,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : ImageCacheRepository {
-        private val directory = context.cacheDir.resolve(IMAGE_CACHE_DIRECTORY)
+        private val cacheDirectories =
+            listOf(
+                context.cacheDir.resolve(IMAGE_CACHE_DIRECTORY),
+                context.cacheDir.resolve(HTTP_CACHE_DIRECTORY),
+                context.cacheDir.resolve(VIDEO_CACHE_DIRECTORY),
+                context.cacheDir.resolve(CLIPBOARD_CACHE_DIRECTORY),
+            )
 
         override suspend fun usageBytes(): Long =
             withContext(ioDispatcher) {
-                directory.totalSize()
+                cacheDirectories.sumOf { it.totalSize() }
             }
 
         override suspend fun clear() =
             withContext(ioDispatcher) {
-                directory.listFiles()?.forEach(File::deleteRecursively)
-                Unit
+                cacheDirectories.forEach { dir ->
+                    dir.listFiles()?.forEach(File::deleteRecursively)
+                }
             }
 
         private fun File.totalSize(): Long =
@@ -40,5 +47,8 @@ class ImageCacheRepositoryImpl
 
         private companion object {
             const val IMAGE_CACHE_DIRECTORY = "image_cache"
+            const val HTTP_CACHE_DIRECTORY = "http-cache"
+            const val VIDEO_CACHE_DIRECTORY = "media3-video-cache"
+            const val CLIPBOARD_CACHE_DIRECTORY = "clipboard_images"
         }
     }

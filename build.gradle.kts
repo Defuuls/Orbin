@@ -128,7 +128,9 @@ subprojects {
         ignoreFailures.set(false)
         filter {
             // Exclude generated sources.
-            exclude { it.file.path.contains("/build/") }
+            exclude("**/build/**")
+            exclude("**/generated/**")
+            exclude { it.file.path.replace('\\', '/').contains("/build/") }
         }
     }
 
