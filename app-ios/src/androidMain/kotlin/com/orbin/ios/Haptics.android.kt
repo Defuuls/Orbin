@@ -1,10 +1,10 @@
 package com.orbin.ios
 
 @Suppress("EmptyFunctionBlock")
-internal actual object Haptics {
-    actual fun light() {}
+internal actual fun triggerLightHaptic() {}
 
-    actual fun medium() {}
+@Suppress("EmptyFunctionBlock")
+internal actual fun triggerMediumHaptic() {}
 
-    actual fun success() {}
-}
+@Suppress("EmptyFunctionBlock")
+internal actual fun triggerSuccessHaptic() {}

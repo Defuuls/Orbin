@@ -1,10 +1,16 @@
 package com.orbin.ios
 
+internal expect fun triggerLightHaptic()
+
+internal expect fun triggerMediumHaptic()
+
+internal expect fun triggerSuccessHaptic()
+
 /** Tactile feedback for key user interactions. */
-internal expect object Haptics {
-    fun light()
+internal object Haptics {
+    fun light() = triggerLightHaptic()
 
-    fun medium()
+    fun medium() = triggerMediumHaptic()
 
-    fun success()
+    fun success() = triggerSuccessHaptic()
 }
