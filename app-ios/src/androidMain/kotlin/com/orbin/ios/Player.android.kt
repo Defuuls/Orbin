@@ -24,3 +24,11 @@ internal actual fun NativeWebMPlayer(
 ) {
     Box(modifier)
 }
+
+@Composable
+internal actual fun NativeInlineLoop(
+    url: String,
+    modifier: Modifier,
+) {
+    Box(modifier)
+}
