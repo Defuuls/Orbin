@@ -20,6 +20,7 @@ import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.NSOperationQueue
+import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.getBytes
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -32,7 +33,7 @@ private const val BACKGROUND_DOWNLOAD_SESSION = "io.github.defuuls.orbin.media-d
  * URLSession file expires. The database record ID reconnects the result after process recreation.
  */
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
-internal object IosBackgroundMediaFetch : platform.Foundation.NSObject(), NSURLSessionDownloadDelegateProtocol, DurableMediaFetch {
+internal object IosBackgroundMediaFetch : DurableMediaFetch {
     private val continuations = mutableMapOf<String, CancellableContinuation<ByteArray>>()
     private val progressCallbacks = mutableMapOf<String, (Long, Long?) -> Unit>()
     private var backgroundEventsCompletion: (() -> Unit)? = null
@@ -43,7 +44,7 @@ internal object IosBackgroundMediaFetch : platform.Foundation.NSObject(), NSURLS
         configuration.discretionary = false
         NSURLSession.sessionWithConfiguration(
             configuration = configuration,
-            delegate = this,
+            delegate = SessionDelegate(),
             delegateQueue = NSOperationQueue.mainQueue,
         )
     }
@@ -108,30 +109,29 @@ internal object IosBackgroundMediaFetch : platform.Foundation.NSObject(), NSURLS
         NSFileManager.defaultManager.removeItemAtURL(downloadedFile(id.toString()), error = null)
     }
 
-    override fun URLSession(
-        session: NSURLSession,
+    internal fun onProgress(
         downloadTask: NSURLSessionDownloadTask,
-        didWriteData: Long,
         totalBytesWritten: Long,
         totalBytesExpectedToWrite: Long,
     ) {
         val key = downloadTask.taskDescription ?: return
-        progressCallbacks[key]?.invoke(
-            totalBytesWritten,
-            totalBytesExpectedToWrite.takeIf { it >= 0L },
-        )
+        progressCallbacks[key]?.invoke(totalBytesWritten, totalBytesExpectedToWrite.takeIf { it >= 0L })
     }
 
-    override fun URLSession(
-        session: NSURLSession,
+    internal fun onDownloaded(
         downloadTask: NSURLSessionDownloadTask,
-        didFinishDownloadingToURL: NSURL,
+        temporaryUrl: NSURL,
     ) {
         val key = downloadTask.taskDescription ?: return
+        val statusCode = (downloadTask.response as? NSHTTPURLResponse)?.statusCode
+        if (statusCode == null || statusCode !in 200..299) {
+            finish(key, Result.failure(IllegalStateException("HTTP ${statusCode ?: "unknown"}")))
+            return
+        }
         val destination = downloadedFile(key)
         val manager = NSFileManager.defaultManager
         manager.removeItemAtURL(destination, error = null)
-        val moved = manager.moveItemAtURL(atURL = didFinishDownloadingToURL, toURL = destination, error = null)
+        val moved = manager.moveItemAtURL(atURL = temporaryUrl, toURL = destination, error = null)
         if (!moved) {
             finish(key, Result.failure(IllegalStateException("Could not preserve the completed download")))
         } else {
@@ -139,17 +139,13 @@ internal object IosBackgroundMediaFetch : platform.Foundation.NSObject(), NSURLS
         }
     }
 
-    override fun URLSession(
-        session: NSURLSession,
-        task: NSURLSessionTask,
-        didCompleteWithError: NSError?,
-    ) {
-        if (didCompleteWithError == null) return
+    internal fun onTaskCompleted(task: NSURLSessionTask, error: NSError?) {
+        if (error == null) return
         val key = task.taskDescription ?: return
-        finish(key, Result.failure(IllegalStateException(didCompleteWithError.localizedDescription)))
+        finish(key, Result.failure(IllegalStateException(error.localizedDescription)))
     }
 
-    override fun URLSessionDidFinishEventsForBackgroundURLSession(session: NSURLSession) {
+    internal fun onSessionEventsFinished() {
         val completion = backgroundEventsCompletion
         backgroundEventsCompletion = null
         completion?.invoke()
@@ -207,5 +203,38 @@ fun handleBackgroundMediaDownloadEvents(
         IosBackgroundMediaFetch.handleBackgroundEvents(completionHandler)
     } else {
         completionHandler()
+    }
+}
+
+
+private class SessionDelegate : platform.Foundation.NSObject(), NSURLSessionDownloadDelegateProtocol {
+    override fun URLSession(
+        session: NSURLSession,
+        downloadTask: NSURLSessionDownloadTask,
+        didWriteData: Long,
+        totalBytesWritten: Long,
+        totalBytesExpectedToWrite: Long,
+    ) {
+        IosBackgroundMediaFetch.onProgress(downloadTask, totalBytesWritten, totalBytesExpectedToWrite)
+    }
+
+    override fun URLSession(
+        session: NSURLSession,
+        downloadTask: NSURLSessionDownloadTask,
+        didFinishDownloadingToURL: NSURL,
+    ) {
+        IosBackgroundMediaFetch.onDownloaded(downloadTask, didFinishDownloadingToURL)
+    }
+
+    override fun URLSession(
+        session: NSURLSession,
+        task: NSURLSessionTask,
+        didCompleteWithError: NSError?,
+    ) {
+        IosBackgroundMediaFetch.onTaskCompleted(task, didCompleteWithError)
+    }
+
+    override fun URLSessionDidFinishEventsForBackgroundURLSession(session: NSURLSession) {
+        IosBackgroundMediaFetch.onSessionEventsFinished()
     }
 }
