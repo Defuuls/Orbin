@@ -14,9 +14,16 @@ highlight = "Fixes the iOS app crashing on launch after updating to 157."
 summary = [
   "bump Orbin to 158-Yuzu / versionCode 176",
   "iOS: migrate the shared database to schema 8 instead of crashing on launch",
+  "iOS: iPad threads beside their catalog, looping catalog video previews, loop and picture-in-picture in the player, background downloads",
 ]
 
 [changelog]
+Added = [
+  "iOS: on iPad, a thread opens beside its board's catalog.",
+  "iOS: videos in board catalogs play as muted, looping previews.",
+  "iOS: the video player can loop and continue in picture-in-picture, with a loop toggle.",
+  "iOS: saving media keeps downloading in the background, and finished downloads are picked up when Orbin is relaunched.",
+]
 Fixed = [
-  "iOS: the app no longer crashes on launch after updating to 157. 157 moved the shared database to schema 8 (new indexes), and the iOS app had no step to upgrade the copy it already had, so it refused to open it. It now upgrades it in place, keeping history, watched threads and downloads, and a test fails if the schema changes again without an iOS step.",
+  "iOS: the app no longer crashes on launch after updating to 157. 157 moved the shared database to schema 8 (new indexes), and the iOS app had no step to upgrade the copy it already had, so it refused to open it. Both platforms now share the migration steps, so iOS upgrades its copy in place, keeping history, watched threads and downloads; a test fails if the schema changes again without a step.",
 ]

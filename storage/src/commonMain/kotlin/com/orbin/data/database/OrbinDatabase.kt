@@ -62,7 +62,7 @@ abstract class OrbinDatabase : RoomDatabase() {
     companion object {
         const val NAME = "orbin.db"
 
-        /** A bump needs a migration on both platforms: `data`'s for Android, [CONNECTION_MIGRATIONS] for iOS. */
+        /** A bump needs a step in [OrbinSchemaMigrations], which both platforms open the database with. */
         const val VERSION = 8
     }
 }

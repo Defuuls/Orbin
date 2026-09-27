@@ -3,6 +3,7 @@ package com.orbin.data.database
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.room.useReaderConnection
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import com.orbin.core.model.BoardId
@@ -57,7 +58,7 @@ class ConnectionMigrationsIosTest {
                 close()
             }
 
-            val migrated = open(*CONNECTION_MIGRATIONS)
+            val migrated = open(*migrations())
             assertEquals(entry, HistoryRepositoryImpl(migrated.historyDao()).getEntry(key))
             val indices =
                 migrated.useReaderConnection { connection ->
@@ -77,10 +78,27 @@ class ConnectionMigrationsIosTest {
             .addMigrations(*migrations)
             .build()
 
+    /** The shared steps adapted to the connection API, as the iOS app's `openDatabase` does. */
+    private fun migrations(): Array<Migration> =
+        OrbinSchemaMigrations.all
+            .map { step ->
+                object : Migration(step.startVersion, step.endVersion) {
+                    override fun migrate(connection: SQLiteConnection) {
+                        step.statements.forEach { connection.execSQL(it) }
+                    }
+                }
+            }.toTypedArray()
+
     private companion object {
         /** From `storage/schemas/.../7.json`. */
         const val SCHEMA_7_IDENTITY = "fe1533596a57805d02d3102fd81b0b24"
 
-        val SCHEMA_8_INDEX_NAMES = SCHEMA_8_INDICES.map { it.substringAfter("EXISTS `").substringBefore('`') }
+        val SCHEMA_8_INDEX_NAMES =
+            listOf(
+                "index_bookmarks_createdAtMillis",
+                "index_bookmarks_isWatched",
+                "index_history_lastVisitedMillis",
+                "index_downloads_createdAtMillis",
+            )
     }
 }

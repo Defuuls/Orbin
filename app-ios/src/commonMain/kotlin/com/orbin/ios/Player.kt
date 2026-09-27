@@ -12,6 +12,7 @@ import com.orbin.core.model.MediaAttachment
 internal expect fun NativePlayer(
     url: String,
     active: Boolean,
+    loop: Boolean,
     modifier: Modifier = Modifier,
 )
 
@@ -36,3 +37,10 @@ internal val MediaAttachment.playsInApp: Boolean
     get() = isPlayable && extension.lowercase().removePrefix(".") in NATIVE_PLAYER_EXTENSIONS
 
 private val NATIVE_PLAYER_EXTENSIONS = setOf("mp4", "m4v", "mov", "mp3", "m4a", "aac", "wav")
+
+/** Muted, looping preview used in board catalog thumbnails when WebKit supports the format. */
+@Composable
+internal expect fun NativeInlineLoop(
+    url: String,
+    modifier: Modifier = Modifier,
+)

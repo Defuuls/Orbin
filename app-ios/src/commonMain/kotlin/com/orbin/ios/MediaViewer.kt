@@ -138,6 +138,7 @@ private fun MediaPage(
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
     var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
+    var looping by remember(file) { mutableStateOf(true) }
     if (!revealed) {
         SpoilerCover(
             modifier = Modifier.clickable { revealed = true },
@@ -149,7 +150,24 @@ private fun MediaPage(
         file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
         // Below the top bar, so the player's own controls never sit under the close button.
         playable != null ->
-            NativePlayer(playable, active, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
+            Box(Modifier.fillMaxSize()) {
+                NativePlayer(
+                    url = playable,
+                    active = active,
+                    loop = looping,
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
+                )
+                TextButton(
+                    onClick = { looping = !looping },
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .safeDrawingPadding()
+                            .padding(top = PLAYER_TOP_INSET, start = 8.dp),
+                ) {
+                    Text(if (looping) "Loop: On" else "Loop: Off", color = Color.White)
+                }
+            }
         webm != null && supportsWebM && active ->
             NativeWebMPlayer(webm, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
         else -> ExternalFile(file)

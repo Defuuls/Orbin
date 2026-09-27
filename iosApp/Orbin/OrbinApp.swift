@@ -1,11 +1,14 @@
 import Network
 import OrbinKit
 import SwiftUI
+import UIKit
 
 /// The iOS app is a single full-screen Compose view: every screen, and navigation between them,
 /// lives in the shared Kotlin code (`:app-ios`, linked here as the OrbinKit framework).
 @main
 struct OrbinApp: App {
+    @UIApplicationDelegateAdaptor(OrbinBackgroundSessionAppDelegate.self) private var backgroundSessionDelegate
+
     init() {
         requireEncryptedDns()
         // iOS only runs a background task registered before launch finishes.
@@ -40,4 +43,19 @@ private struct ComposeView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+
+/// Reconnects background URLSession when iOS relaunches Orbin to deliver transfer events.
+private final class OrbinBackgroundSessionAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        IosBackgroundMediaFetchKt.handleBackgroundMediaDownloadEvents(
+            identifier: identifier,
+            completionHandler: completionHandler
+        )
+    }
 }
