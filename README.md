@@ -23,12 +23,6 @@ does not post, reply, or create threads.
 > local persistence, provider contract validation, and a UI designed to remain readable from
 > compact phones through tablets and foldables.
 
-![Orbin feed on a compact phone](docs/assets/orbin-hero-screenshot.svg)
-
-![Orbin thread viewer](docs/assets/orbin-thread-screenshot.svg)
-
-![Orbin settings](docs/assets/orbin-settings-screenshot.svg)
-
 ---
 
 ## What Orbin does
