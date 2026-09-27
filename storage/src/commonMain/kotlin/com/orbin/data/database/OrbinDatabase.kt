@@ -40,7 +40,7 @@ import com.orbin.data.database.entity.SavedThreadEntity
         SavedThreadEntity::class,
         SavedPostEntity::class,
     ],
-    version = 8,
+    version = OrbinDatabase.VERSION,
     exportSchema = true,
 )
 @ConstructedBy(OrbinDatabaseConstructor::class)
@@ -61,6 +61,9 @@ abstract class OrbinDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "orbin.db"
+
+        /** A bump needs a migration on both platforms: `data`'s for Android, [CONNECTION_MIGRATIONS] for iOS. */
+        const val VERSION = 8
     }
 }
 

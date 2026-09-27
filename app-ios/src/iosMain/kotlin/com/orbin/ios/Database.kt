@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.orbin.data.database.CONNECTION_MIGRATIONS
 import com.orbin.data.database.OrbinDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
@@ -20,14 +21,16 @@ import platform.Foundation.NSUserDomainMask
  * driver, in Application Support, excluded from iCloud backup. iOS Data Protection encrypts it at
  * rest; Android, which has no equivalent guarantee, encrypts its copy with SQLCipher.
  *
- * Schema changes need migrations that run on both platforms: Room's `Migration.migrate(connection)`,
- * not the Android-only `SupportSQLiteDatabase` overload.
+ * Schema changes need a step in [CONNECTION_MIGRATIONS] (Room's `Migration.migrate(connection)`, not
+ * the Android-only `SupportSQLiteDatabase` overload): without one the app crashes on launch.
  */
+@Suppress("SpreadOperator") // one small array, once per launch
 internal fun openDatabase(): OrbinDatabase =
     Room
         .databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
+        .addMigrations(*CONNECTION_MIGRATIONS)
         .build()
 
 /**
