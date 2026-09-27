@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -97,9 +99,16 @@ fun OrbinApp(
         amoled = settings.amoled,
         platform = NextPlatform.IOS,
     ) {
+        // Each screen's scroll position outlives it being covered or left, as on Android.
+        val stateHolder = rememberSaveableStateHolder()
+        val routeStates = remember { RouteStates() }
+        LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
         Box(Modifier.fillMaxSize()) {
             if (!lockState.locked && !lockState.obscured) {
-                Destination(browser, lock, downloads, backup, formFactor, backStack.last())
+                val route = backStack.last()
+                stateHolder.SaveableStateProvider(route.stateKey) {
+                    Destination(browser, lock, downloads, backup, formFactor, route)
+                }
             }
             LockCover(lock, lockState)
         }
