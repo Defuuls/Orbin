@@ -71,8 +71,8 @@ interface DurableMediaFetch {
  * Saving files from threads, and the list the Downloads tab shows: the iOS counterpart of Android's
  * `DownloadRepositoryImpl`, over the same `downloads` table in the shared database.
  *
- * Android hands a file to the system download manager; iOS has none, so the file is fetched here
- * through the app's own client and handed to [store]. The rules are Android's: https only, nothing
+ * Android hands a file to the system download manager; iOS uses a device-managed background
+ * URLSession and hands the completed file to [store]. The rules are Android's: https only, nothing
  * the permanent filter catches is saved, and a remote file name can never leave its folder.
  */
 class MediaDownloads(
