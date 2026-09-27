@@ -1,5 +1,7 @@
 package com.orbin.ios
 
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -11,6 +13,7 @@ import platform.Foundation.NSData
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLIsExcludedFromBackupKey
@@ -19,13 +22,10 @@ import platform.Foundation.NSURLSessionConfiguration
 import platform.Foundation.NSURLSessionDownloadDelegateProtocol
 import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
-import platform.Foundation.dataWithContentsOfURL
-import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSUserDomainMask
+import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.getBytes
 import platform.Foundation.setValue
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 private const val BACKGROUND_DOWNLOAD_SESSION = "io.github.defuuls.orbin.media-downloads"
 
@@ -83,7 +83,8 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
                     return@getAllTasksWithCompletionHandler
                 }
                 val existing =
-                    (tasks ?: emptyList<Any>()).asSequence()
+                    (tasks ?: emptyList<Any>())
+                        .asSequence()
                         .mapNotNull { it as? NSURLSessionDownloadTask }
                         .firstOrNull { it.taskDescription == key }
                 if (existing != null) {
@@ -108,7 +109,8 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         return suspendCancellableCoroutine { continuation ->
             session.getAllTasksWithCompletionHandler { tasks ->
                 val found =
-                    (tasks ?: emptyList<Any>()).asSequence()
+                    (tasks ?: emptyList<Any>())
+                        .asSequence()
                         .mapNotNull { it as? NSURLSessionDownloadTask }
                         .any { it.taskDescription == key }
                 if (continuation.isActive) continuation.resume(found)
@@ -220,7 +222,8 @@ fun handleBackgroundMediaDownloadEvents(
     }
 }
 
-private class SessionDelegate : platform.darwin.NSObject(),
+private class SessionDelegate :
+    platform.darwin.NSObject(),
     NSURLSessionDownloadDelegateProtocol {
     override fun URLSession(
         session: NSURLSession,
