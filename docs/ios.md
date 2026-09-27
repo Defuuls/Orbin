@@ -156,5 +156,5 @@ no Developer Mode. You do this once:
 
 After that, every release uploads a build automatically. The version shown in TestFlight is the
 Android release number (`148` for `148-Nectarine`), and the build number is
-`<versionCode>.<workflow run>`. TestFlight builds expire after 90 days, so a new release (or a
+`<versionCode>.<UTC date and time>` (`175.202609270245`), so a later upload is always a higher build. TestFlight builds expire after 90 days, so a new release (or a
 manual run) keeps the app installable.
