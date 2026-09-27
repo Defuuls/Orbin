@@ -48,12 +48,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Velocity
@@ -216,6 +218,7 @@ fun NextPullToRefresh(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
     val thresholdPx = with(density) { PULL_THRESHOLD.toPx() }
     var pullPx by remember { mutableFloatStateOf(0f) }
     val animatedPull = remember { Animatable(0f) }
@@ -235,7 +238,7 @@ fun NextPullToRefresh(
     }
 
     val connection =
-        remember(isRefreshing, thresholdPx, onRefresh) {
+        remember(isRefreshing, thresholdPx, onRefresh, haptics) {
             object : NestedScrollConnection {
                 override fun onPreScroll(
                     available: Offset,
@@ -256,9 +259,13 @@ fun NextPullToRefresh(
                 ): Offset {
                     if (isRefreshing || source != NestedScrollSource.UserInput) return Offset.Zero
                     if (available.y <= 0f) return Offset.Zero
+                    val wasOver = pullPx >= thresholdPx
                     val next = (pullPx + available.y * PULL_RESISTANCE).coerceAtMost(thresholdPx * 1.35f)
                     val consumedY = next - pullPx
                     pullPx = next
+                    if (!wasOver && next >= thresholdPx) {
+                        haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    }
                     return Offset(0f, consumedY)
                 }
 
@@ -269,7 +276,10 @@ fun NextPullToRefresh(
                     }
                     val trigger = pullPx >= thresholdPx
                     pullPx = 0f
-                    if (trigger) onRefresh()
+                    if (trigger) {
+                        haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                        onRefresh()
+                    }
                     return Velocity.Zero
                 }
             }

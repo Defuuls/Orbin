@@ -110,6 +110,9 @@ interface ThreadRepository {
         thread: ThreadId,
         forceRefresh: Boolean = false,
     ): OrbinResult<Thread>
+
+    /** Returns the canonical web URL for [key], or null if unavailable. */
+    fun threadWebUrl(key: ThreadKey): String? = null
 }
 
 interface BookmarkRepository {

@@ -48,4 +48,12 @@
     <string name="update_failed_title">Update failed</string>
     <string name="update_action_retry">Try again</string>
     <string name="update_action_close">Close</string>
+
+    <!-- Launcher shortcuts -->
+    <string name="shortcut_feed_short">Feed</string>
+    <string name="shortcut_feed_long">Your Feed</string>
+    <string name="shortcut_downloads_short">Downloads</string>
+    <string name="shortcut_downloads_long">Saved Media</string>
+    <string name="shortcut_boards_short">Boards</string>
+    <string name="shortcut_boards_long">Browse Boards</string>
 </resources>

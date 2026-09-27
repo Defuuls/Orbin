@@ -1,6 +1,8 @@
 package com.orbin.app
 
 import android.Manifest
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -30,10 +32,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
+import com.orbin.app.navigation.Route
 import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
+import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.LockScreen
@@ -83,6 +87,8 @@ class MainActivity : FragmentActivity() {
     private var safeMode by mutableStateOf(false)
 
     private var downgradeBlocked by mutableStateOf(false)
+
+    private var pendingRoute by mutableStateOf<Route?>(null)
 
     private var relockOnResume by mutableStateOf(false)
     private var biometricLockActive = false
@@ -148,126 +154,150 @@ class MainActivity : FragmentActivity() {
         // which is all safe mode needs.
         safeMode = diagnosticsRepository.isCrashLooping()
         downgradeBlocked = versionGuardRepository.isDowngrade()
+        handleIncomingIntent(intent)
 
         setContent {
-            // Ahead of safe mode: a build that must not run must not run, and safe mode's recovery
-            // actions (resetting local data) would be the wrong thing to offer for a problem that
-            // is not about local state at all.
-            if (downgradeBlocked) {
-                DowngradeBlocked()
-                return@setContent
-            }
+            ActivityRoot()
+        }
+    }
 
-            // Before the view model, the theme or anything else that reads local state: a crash
-            // loop is most likely caused by that state, so safe mode must not depend on it.
-            if (safeMode) {
-                SafeMode()
-                return@setContent
-            }
+    @Composable
+    private fun ActivityRoot() {
+        // Ahead of safe mode: a build that must not run must not run, and safe mode's recovery
+        // actions (resetting local data) would be the wrong thing to offer for a problem that
+        // is not about local state at all.
+        if (downgradeBlocked) {
+            DowngradeBlocked()
+            return
+        }
 
-            MarkLaunchSucceededAfterDelay()
+        // Before the view model, the theme or anything else that reads local state: a crash
+        // loop is most likely caused by that state, so safe mode must not depend on it.
+        if (safeMode) {
+            SafeMode()
+            return
+        }
 
-            val viewModel: MainViewModel = hiltViewModel()
-            val settings by viewModel.settings.collectAsStateWithLifecycle()
-            val ready by viewModel.ready.collectAsStateWithLifecycle()
-            val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
-            val shouldLock = ready && settings.biometricLockEnabled && settings.onboardingCompleted
-            var unlocked by remember { mutableStateOf(false) }
-            var unlockMessage by remember { mutableStateOf<String?>(null) }
-            var allowContinueWithoutLock by remember { mutableStateOf(false) }
+        MarkLaunchSucceededAfterDelay()
 
-            fun requestUnlock() {
-                if (!shouldLock || authenticationInProgress) return
-                allowContinueWithoutLock = false
-                authenticateToUnlock(
-                    onUnlocked = {
-                        unlockMessage = null
-                        allowContinueWithoutLock = false
-                        unlocked = true
-                    },
-                    onAuthenticationError = { message ->
-                        unlockMessage = message
-                    },
-                    onAuthenticationFailed = {
-                        unlockMessage = getString(R.string.lock_error_not_recognized)
-                    },
-                )
-            }
+        val viewModel: MainViewModel = hiltViewModel()
+        val settings by viewModel.settings.collectAsStateWithLifecycle()
+        val ready by viewModel.ready.collectAsStateWithLifecycle()
+        val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+        val shouldLock = ready && settings.biometricLockEnabled && settings.onboardingCompleted
+        var unlocked by remember { mutableStateOf(false) }
+        var unlockMessage by remember { mutableStateOf<String?>(null) }
+        var allowContinueWithoutLock by remember { mutableStateOf(false) }
 
-            RequestNotificationPermissionWhenUnlocked(
-                ready = ready,
-                shouldLock = shouldLock,
-                unlocked = unlocked,
+        fun requestUnlock() {
+            if (!shouldLock || authenticationInProgress) return
+            allowContinueWithoutLock = false
+            authenticateToUnlock(
+                onUnlocked = {
+                    unlockMessage = null
+                    allowContinueWithoutLock = false
+                    unlocked = true
+                },
+                onAuthenticationError = { message ->
+                    unlockMessage = message
+                },
+                onAuthenticationFailed = {
+                    unlockMessage = getString(R.string.lock_error_not_recognized)
+                },
             )
-            SideEffect {
-                biometricLockActive = shouldLock
-            }
+        }
 
-            // A "lock now" request from anywhere in the UI (e.g. the feed's failsafe button)
-            // reuses the exact same re-lock path a background/foreground cycle takes: requesting
-            // it when biometric lock isn't enabled is a no-op, same as it would be on resume.
-            LaunchedEffect(Unit) {
-                appLockController.lockRequests.collect { relockOnResume = true }
-            }
+        RequestNotificationPermissionWhenUnlocked(
+            ready = ready,
+            shouldLock = shouldLock,
+            unlocked = unlocked,
+        )
+        SideEffect {
+            biometricLockActive = shouldLock
+        }
 
-            // BiometricPrompt silently fails to appear (no callback, no exception - just no
-            // dialog) if authenticate() is called before the activity is genuinely RESUMED, which
-            // a plain LaunchedEffect can't guarantee since Compose's first composition can run
-            // before onResume finishes. Track the real lifecycle state so the prompt is only ever
-            // requested once the activity has actually reached RESUMED.
-            val lifecycleOwner = LocalLifecycleOwner.current
-            val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+        // A "lock now" request from anywhere in the UI (e.g. the feed's failsafe button)
+        // reuses the exact same re-lock path a background/foreground cycle takes: requesting
+        // it when biometric lock isn't enabled is a no-op, same as it would be on resume.
+        LaunchedEffect(Unit) {
+            appLockController.lockRequests.collect { relockOnResume = true }
+        }
 
-            LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
-                if (!ready) return@LaunchedEffect
+        // BiometricPrompt silently fails to appear (no callback, no exception - just no
+        // dialog) if authenticate() is called before the activity is genuinely RESUMED, which
+        // a plain LaunchedEffect can't guarantee since Compose's first composition can run
+        // before onResume finishes. Track the real lifecycle state so the prompt is only ever
+        // requested once the activity has actually reached RESUMED.
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
 
-                if (shouldLock) {
-                    setSecureContent(enabled = true)
-                    if (relockOnResume) {
-                        relockOnResume = false
-                        unlocked = false
-                        unlockMessage = null
-                        allowContinueWithoutLock = false
-                    }
-                    if (!unlocked && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
-                        requestUnlock()
-                    }
-                } else {
-                    setSecureContent(enabled = false)
+        LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
+            if (!ready) return@LaunchedEffect
+
+            if (shouldLock) {
+                setSecureContent(enabled = true)
+                if (relockOnResume) {
                     relockOnResume = false
                     unlocked = false
                     unlockMessage = null
                     allowContinueWithoutLock = false
                 }
+                if (!unlocked && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    requestUnlock()
+                }
+            } else {
+                setSecureContent(enabled = false)
+                relockOnResume = false
+                unlocked = false
+                unlockMessage = null
+                allowContinueWithoutLock = false
             }
+        }
 
-            AppContent(
-                settings = settings,
-                ready = ready,
-                isOnline = isOnline,
-                shouldLock = shouldLock,
-                unlocked = unlocked,
-                unlockMessage = unlockMessage,
-                allowContinueWithoutLock = allowContinueWithoutLock,
-                authenticationInProgress = authenticationInProgress,
-                onRetryUnlock = { requestUnlock() },
-                onContinueWithoutLock = {
-                    unlockMessage = null
-                    allowContinueWithoutLock = false
-                    unlocked = true
-                },
-                // Offered once the reader can see the app: never over onboarding or the lock screen.
-                updateDialog = {
-                    AppUpdateDialog(viewModel, visible = settings.onboardingCompleted && (!shouldLock || unlocked))
-                },
-            )
+        AppContent(
+            settings = settings,
+            ready = ready,
+            isOnline = isOnline,
+            shouldLock = shouldLock,
+            unlocked = unlocked,
+            unlockMessage = unlockMessage,
+            allowContinueWithoutLock = allowContinueWithoutLock,
+            authenticationInProgress = authenticationInProgress,
+            onRetryUnlock = { requestUnlock() },
+            onContinueWithoutLock = {
+                unlockMessage = null
+                allowContinueWithoutLock = false
+                unlocked = true
+            },
+            pendingRoute = pendingRoute,
+            onPendingRouteHandled = { pendingRoute = null },
+            // Offered once the reader can see the app: never over onboarding or the lock screen.
+            updateDialog = {
+                AppUpdateDialog(viewModel, visible = settings.onboardingCompleted && (!shouldLock || unlocked))
+            },
+        )
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (isInPictureInPictureMode) {
+            relockOnResume = false
         }
     }
 
     override fun onStop() {
         cancelActiveAuthentication()
         super.onStop()
-        if (biometricLockActive) {
+        if (biometricLockActive && !isInPictureInPictureMode) {
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave
             // authenticationInProgress stuck true, which would silently block every future
@@ -279,6 +309,36 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         cancelActiveAuthentication()
         super.onDestroy()
+    }
+
+    private fun handleIncomingIntent(intent: Intent?) {
+        intent ?: return
+        val route = intent.toPendingRoute() ?: return
+        pendingRoute = route
+    }
+
+    private fun Intent.toPendingRoute(): Route? {
+        if (hasExtra(AndroidThreadNotifier.EXTRA_THREAD)) {
+            val provider = getStringExtra(AndroidThreadNotifier.EXTRA_PROVIDER) ?: ""
+            val board = getStringExtra(AndroidThreadNotifier.EXTRA_BOARD) ?: ""
+            val thread = getLongExtra(AndroidThreadNotifier.EXTRA_THREAD, 0L)
+            val title = getStringExtra(AndroidThreadNotifier.EXTRA_TITLE) ?: ""
+            if (thread != 0L && board.isNotEmpty()) {
+                return Route.Thread(
+                    provider = provider,
+                    board = board,
+                    thread = thread,
+                    title = title,
+                )
+            }
+        }
+        val shortcut = getStringExtra("shortcut_destination") ?: action
+        return when (shortcut) {
+            "feed", "com.orbin.shortcut.FEED" -> Route.NextFeed
+            "downloads", "com.orbin.shortcut.DOWNLOADS" -> Route.Downloads
+            "boards", "com.orbin.shortcut.BOARDS" -> Route.BoardGallery
+            else -> null
+        }
     }
 
     private fun authenticateToUnlock(
@@ -476,6 +536,8 @@ private fun AppContent(
     authenticationInProgress: Boolean,
     onRetryUnlock: () -> Unit,
     onContinueWithoutLock: () -> Unit,
+    pendingRoute: Route?,
+    onPendingRouteHandled: () -> Unit,
     updateDialog: @Composable () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
@@ -500,6 +562,8 @@ private fun AppContent(
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
                         isOnline = isOnline,
+                        pendingRoute = pendingRoute,
+                        onPendingRouteHandled = onPendingRouteHandled,
                     )
                 }
             }

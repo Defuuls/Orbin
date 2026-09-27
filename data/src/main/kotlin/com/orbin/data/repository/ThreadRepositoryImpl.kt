@@ -101,6 +101,16 @@ class ThreadRepositoryImpl
                 }
             }
 
+        override fun threadWebUrl(key: ThreadKey): String? {
+            val meta = registry.get(key.provider)?.metadata ?: return null
+            val base = meta.baseUrl.trimEnd('/')
+            return when {
+                meta.engine == com.orbin.provider.api.EngineKind.FOURCHAN || key.provider.value == "fourchan" ->
+                    "$base/${key.board.value}/thread/${key.thread.value}"
+                else -> "$base/${key.board.value}/res/${key.thread.value}.html"
+            }
+        }
+
         private companion object {
             const val CACHE_TTL_MILLIS = 30 * 60 * 1000L // 30 minutes
             const val MAX_CACHED_THREADS = 12

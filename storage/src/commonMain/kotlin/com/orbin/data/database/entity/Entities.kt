@@ -1,6 +1,7 @@
 package com.orbin.data.database.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 
 /**
  * Room entities for locally-persisted state. Threads are keyed by the (provider, board, thread)
@@ -8,7 +9,14 @@ import androidx.room.Entity
  * and work offline.
  */
 
-@Entity(tableName = "bookmarks", primaryKeys = ["provider", "board", "thread"])
+@Entity(
+    tableName = "bookmarks",
+    primaryKeys = ["provider", "board", "thread"],
+    indices = [
+        Index("createdAtMillis"),
+        Index("isWatched"),
+    ],
+)
 data class BookmarkEntity(
     val provider: String,
     val board: String,
@@ -22,7 +30,13 @@ data class BookmarkEntity(
     val isThreadDead: Boolean,
 )
 
-@Entity(tableName = "history", primaryKeys = ["provider", "board", "thread"])
+@Entity(
+    tableName = "history",
+    primaryKeys = ["provider", "board", "thread"],
+    indices = [
+        Index("lastVisitedMillis"),
+    ],
+)
 data class HistoryEntity(
     val provider: String,
     val board: String,
@@ -117,7 +131,13 @@ data class RecentSearchEntity(
     val lastUsedMillis: Long,
 )
 
-@Entity(tableName = "downloads", primaryKeys = ["id"])
+@Entity(
+    tableName = "downloads",
+    primaryKeys = ["id"],
+    indices = [
+        Index("createdAtMillis"),
+    ],
+)
 data class DownloadEntity(
     /** Platform download manager id. */
     val id: Long,

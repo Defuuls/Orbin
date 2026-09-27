@@ -1,5 +1,6 @@
 package com.orbin.feature.thread
 
+import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,9 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,6 +139,7 @@ private fun LoadedThread(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val thread = state.thread
     val listState = rememberLazyListState()
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
@@ -235,15 +239,40 @@ private fun LoadedThread(
                 },
                 collapsed = collapsed.toSet(),
                 onToggleCollapse = { post ->
+                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
                     if (!collapsed.remove(post.id)) collapsed.add(post.id)
                 },
                 listState = listState,
                 scrollToPostId = scrollTarget,
                 firstUnreadPostId = firstUnreadPostId?.value?.toString(),
                 onScrollConsumed = { scrollTarget = null },
-                onWatch = viewModel::toggleBookmark,
-                onDownloadAll = viewModel::downloadAllMedia,
-                onShare = viewModel::exportLinks,
+                onWatch = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    viewModel.toggleBookmark()
+                },
+                onDownloadAll = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    viewModel.downloadAllMedia()
+                },
+                onShare = {
+                    val shareUrl = viewModel.threadWebUrl
+                    val shareSubject = thread.subject ?: viewModel.title
+                    val shareText =
+                        if (shareSubject.isNotBlank() && shareUrl != null) {
+                            "$shareSubject\n$shareUrl"
+                        } else {
+                            shareUrl ?: shareSubject
+                        }
+                    val sendIntent =
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        }
+                    context.startActivity(
+                        Intent.createChooser(sendIntent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                },
                 body = { row ->
                     presentation.rowsById[row.id]?.let { entry ->
                         PostCommentText(

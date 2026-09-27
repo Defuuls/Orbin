@@ -1,10 +1,12 @@
 package com.orbin.media.video
 
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.util.Log
+import android.util.Rational
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -43,9 +45,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -56,6 +60,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -131,13 +140,61 @@ fun VideoPlayer(
             ExoPlayer
                 .Builder(context)
                 .setMediaSourceFactory(mediaSourceFactory)
-                .build()
+                .setAudioAttributes(
+                    AudioAttributes
+                        .Builder()
+                        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                        .setUsage(C.USAGE_MEDIA)
+                        .build(),
+                    // handleAudioFocus =
+                    true,
+                ).build()
                 .apply {
                     repeatMode = repeatModeFor(shouldLoop(0L))
                     volume = if (muted) 0f else 1f
                     playWhenReady = active && autoPlay
                 }
         }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, exoPlayer) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                        if (activity?.isInPictureInPictureMode != true) {
+                            exoPlayer.pause()
+                        }
+                    }
+                    Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
+                        if (active && autoPlay && playbackError == null) {
+                            exoPlayer.play()
+                        }
+                    }
+                    else -> {}
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(exoPlayer, isPlaying, active) {
+        if (activity != null) {
+            val enabled = active && isPlaying
+            val width = exoPlayer.videoSize.width
+            val height = exoPlayer.videoSize.height
+            val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(enabled)
+            if (width > 0 && height > 0) {
+                val ratio = width.toFloat() / height.toFloat()
+                if (ratio in 0.42f..2.38f) {
+                    builder.setAspectRatio(Rational(width, height))
+                }
+            }
+            runCatching { activity.setPictureInPictureParams(builder.build()) }
+        }
+    }
 
     LaunchedEffect(url) {
         playbackError = null
@@ -260,7 +317,9 @@ fun VideoPlayer(
         skipSeconds = 0
     }
 
+    val haptics = LocalHapticFeedback.current
     val skip: (Boolean) -> Unit = { forward ->
+        haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
         exoPlayer.seekTo(
             seekTargetMs(
                 currentMs = exoPlayer.currentPosition,

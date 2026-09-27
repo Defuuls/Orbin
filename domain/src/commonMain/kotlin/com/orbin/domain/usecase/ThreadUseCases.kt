@@ -26,6 +26,8 @@ class ObserveThreadUseCase(
         thread: ThreadId,
         forceRefresh: Boolean = false,
     ): Flow<OrbinResult<Thread>> = threadRepository.observeThread(ThreadKey(provider, board, thread), forceRefresh)
+
+    fun threadWebUrl(key: ThreadKey): String? = threadRepository.threadWebUrl(key)
 }
 
 /**

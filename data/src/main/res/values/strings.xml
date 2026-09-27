@@ -7,4 +7,6 @@
         <item quantity="other">%1$d new replies</item>
     </plurals>
     <string name="notification_thread_watched_update">Watched thread update</string>
+    <string name="notification_channel_watched_threads">Watched threads</string>
+    <string name="notification_channel_watched_threads_desc">Updates for threads you are watching</string>
 </resources>

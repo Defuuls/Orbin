@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="feed"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_feed"
+        android:shortcutShortLabel="@string/shortcut_feed_short"
+        android:shortcutLongLabel="@string/shortcut_feed_long">
+        <intent
+            android:action="com.orbin.shortcut.FEED"
+            android:targetPackage="com.orbin.app.debug"
+            android:targetClass="com.orbin.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="downloads"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_downloads"
+        android:shortcutShortLabel="@string/shortcut_downloads_short"
+        android:shortcutLongLabel="@string/shortcut_downloads_long">
+        <intent
+            android:action="com.orbin.shortcut.DOWNLOADS"
+            android:targetPackage="com.orbin.app.debug"
+            android:targetClass="com.orbin.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="boards"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_boards"
+        android:shortcutShortLabel="@string/shortcut_boards_short"
+        android:shortcutLongLabel="@string/shortcut_boards_long">
+        <intent
+            android:action="com.orbin.shortcut.BOARDS"
+            android:targetPackage="com.orbin.app.debug"
+            android:targetClass="com.orbin.app.MainActivity" />
+    </shortcut>
+</shortcuts>

@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":ui-next"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     // Named directly rather than leaned on transitively: this module builds requests itself,
     // through the shared client :network provides.
     implementation(libs.okhttp)

@@ -79,9 +79,13 @@ fun PlatformSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     Switch(
         checked = checked,
-        onCheckedChange = onCheckedChange,
+        onCheckedChange = {
+            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
+            onCheckedChange(it)
+        },
         modifier = modifier,
         colors =
             SwitchDefaults.colors(
@@ -101,6 +105,7 @@ fun PlatformSegments(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier
@@ -120,8 +125,18 @@ fun PlatformSegments(
                     .clip(RoundedCornerShape(17.dp))
                     .background(
                         if (isSelected) next.accentSoft else Color.Transparent,
-                    ).selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(index) })
-                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                    ).selectable(
+                        selected = isSelected,
+                        role = Role.Tab,
+                        onClick = {
+                            if (!isSelected) {
+                                haptics.performHapticFeedback(
+                                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
+                                )
+                            }
+                            onSelect(index)
+                        },
+                    ).padding(horizontal = 6.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
