@@ -113,7 +113,19 @@ class BrowserTest {
 
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             assertEquals(listOf("g"), boards.map { it.board.id.value })
-            assertEquals(listOf("BBW Chan"), browser.unreachableSites.value)
+            val unreachable = browser.unreachableSites.value.single()
+            assertTrue(unreachable.startsWith("BBW Chan ("), unreachable)
+        }
+
+    @Test
+    fun aSiteWithNoBoardsCountsAsUnreachable() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + ("a.4cdn.org/boards.json" to "{}"))
+
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            assertEquals(listOf("b"), boards.map { it.board.id.value })
+            val unreachable = browser.unreachableSites.value.single()
+            assertTrue("no boards returned" in unreachable, unreachable)
         }
 
     @Test

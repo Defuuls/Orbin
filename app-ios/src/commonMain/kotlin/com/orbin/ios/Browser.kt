@@ -148,8 +148,8 @@ class Browser(
     private val _unreachableSites = MutableStateFlow<List<String>>(emptyList())
 
     /**
-     * The sites whose boards failed to load while others loaded, so the Boards screen can say so
-     * rather than the site silently missing from the list.
+     * The sites whose boards failed to load while others loaded, each with the reason, so the
+     * Boards screen can say so rather than the site silently missing from the list.
      */
     val unreachableSites: StateFlow<List<String>> = _unreachableSites.asStateFlow()
 
@@ -278,12 +278,18 @@ class Browser(
             // One site being down should not hide the others' boards.
             val perSite =
                 providers
-                    .map { provider -> async { runCatching { provider.siteBoards() } } }
-                    .awaitAll()
+                    .map { provider ->
+                        async {
+                            // A site answering with no boards at all (an error page that happens to
+                            // be JSON, say) is as unreachable as one that fails outright.
+                            runCatching { provider.siteBoards().ifEmpty { error("no boards returned") } }
+                        }
+                    }.awaitAll()
             val loaded = perSite.mapNotNull { it.getOrNull() }.flatten()
+            // Each with why, so a blocked or broken site can be told from the screen alone.
             _unreachableSites.value =
-                providers.zip(perSite).filter { (_, result) -> result.isFailure }.map { (provider, _) ->
-                    provider.metadata.displayName
+                providers.zip(perSite).mapNotNull { (provider, result) ->
+                    result.exceptionOrNull()?.let { "${provider.metadata.displayName} (${it.readable()})" }
                 }
             _boards.value =
                 if (loaded.isEmpty() && perSite.any { it.isFailure }) {
