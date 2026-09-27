@@ -80,9 +80,8 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
                     return@getAllTasksWithCompletionHandler
                 }
                 val existing =
-                    (0 until (tasks?.count?.toInt() ?: 0))
-                        .asSequence()
-                        .mapNotNull { tasks?.objectAtIndex(it) as? NSURLSessionDownloadTask }
+                    (tasks ?: emptyList<Any>()).asSequence()
+                        .mapNotNull { it as? NSURLSessionDownloadTask }
                         .firstOrNull { it.taskDescription == key }
                 if (existing != null) {
                     existing.resume()
@@ -106,9 +105,8 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         return suspendCancellableCoroutine { continuation ->
             session.getAllTasksWithCompletionHandler { tasks ->
                 val found =
-                    (0 until (tasks?.count?.toInt() ?: 0))
-                        .asSequence()
-                        .mapNotNull { tasks?.objectAtIndex(it) as? NSURLSessionDownloadTask }
+                    (tasks ?: emptyList<Any>()).asSequence()
+                        .mapNotNull { it as? NSURLSessionDownloadTask }
                         .any { it.taskDescription == key }
                 if (continuation.isActive) continuation.resume(found)
             }
@@ -141,7 +139,7 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         val destination = downloadedFile(key)
         val manager = NSFileManager.defaultManager
         manager.removeItemAtURL(destination, error = null)
-        val moved = manager.moveItemAtURL(atURL = temporaryUrl, toURL = destination, error = null)
+        val moved = manager.moveItemAtURL(srcURL = temporaryUrl, toURL = destination, error = null)
         if (!moved) {
             finish(key, Result.failure(IllegalStateException("Could not preserve the completed download")))
         } else {
