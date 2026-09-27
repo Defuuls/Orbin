@@ -73,6 +73,11 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
             }
             session.getAllTasksWithCompletionHandler { tasks ->
                 if (!continuation.isActive) return@getAllTasksWithCompletionHandler
+                // The background task may finish between the first file check and this callback.
+                if (NSFileManager.defaultManager.fileExistsAtPath(checkNotNull(destination.path))) {
+                    finish(key, runCatching { readBytes(destination) })
+                    return@getAllTasksWithCompletionHandler
+                }
                 val existing =
                     (0 until (tasks?.count?.toInt() ?: 0))
                         .asSequence()
