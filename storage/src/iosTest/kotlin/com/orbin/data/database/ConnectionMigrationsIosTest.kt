@@ -12,6 +12,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.data.repository.HistoryRepositoryImpl
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,7 @@ class ConnectionMigrationsIosTest {
     private val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".db"
     private val key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(7))
 
+    @OptIn(ExperimentalForeignApi::class)
     @AfterTest
     fun delete() {
         listOf("", "-wal", "-shm").forEach { suffix ->
