@@ -13,8 +13,9 @@ name: TestFlight
 #   APP_STORE_CONNECT_KEY         ...and the contents of its .p8 file
 #
 # and optionally the IOS_BUNDLE_ID repository variable (default io.github.defuuls.orbin).
-# Signing is Xcode's cloud-managed signing through the API key: no certificates or provisioning
-# profiles to export or store.
+# Signing is Xcode's cloud-managed signing through the API key, at export: the archive is built
+# unsigned, so no certificates or provisioning profiles to export or store, and no development
+# certificate made per run.
 #
 # The release runs it as a called workflow rather than this one listening for the release: a
 # release is published with GITHUB_TOKEN, which starts no other workflow, and the alternative
@@ -95,6 +96,10 @@ jobs:
           echo "marketing=${name%%-*}" >> "$GITHUB_OUTPUT"
           echo "build=${code}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
+      # Unsigned: signing here takes an Apple Development certificate, and each fresh runner asked
+      # the account for a new one until Apple's limit refused the next build. The upload step signs
+      # the archive with the team's cloud-managed distribution certificate instead, which lives
+      # with Apple and is reused. The app has no entitlements file, so nothing is lost unsigned.
       - name: Archive
         if: steps.config.outputs.configured == 'true'
         run: |
@@ -106,10 +111,8 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Orbin.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$key" \
-            -authenticationKeyID "$KEY_ID" \
-            -authenticationKeyIssuerID "$ISSUER_ID" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             ORBIN_TEAM_ID="$TEAM_ID" \
             ORBIN_BUNDLE_ID="$BUNDLE_ID" \
             MARKETING_VERSION="${{ steps.version.outputs.marketing }}" \

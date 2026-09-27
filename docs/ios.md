@@ -143,7 +143,12 @@ no Developer Mode. You do this once:
    | `APP_STORE_CONNECT_KEY` | the whole contents of the `.p8` file, including the `BEGIN`/`END` lines |
 
 7. **Run the workflow:** Actions → TestFlight → Run workflow. Signing is Xcode's cloud-managed
-   signing through the API key, so there are no certificates or profiles to create or store.
+   signing through the API key, so there are no certificates or profiles to create or store. The
+   archive is built unsigned and signed only at export, with the team's cloud-managed distribution
+   certificate: signing the archive took a new Apple Development certificate on every run (each
+   runner starts empty) until Apple's per-account limit refused the build. Any "Created via API"
+   development certificates left from before can be revoked in Certificates, Identifiers &
+   Profiles; nothing uses them.
 8. **Add testers.** Once App Store Connect has processed the build (usually 5–15 minutes), open
    the app → TestFlight → Internal Testing, create a group and add yourself (anyone on your App
    Store Connect team can be an internal tester). Install the TestFlight app on the iPhone and
