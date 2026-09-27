@@ -182,7 +182,7 @@ fun VideoPlayer(
     }
 
     LaunchedEffect(exoPlayer, isPlaying, active) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && activity != null) {
+        if (activity != null) {
             val enabled = active && isPlaying
             val width = exoPlayer.videoSize.width
             val height = exoPlayer.videoSize.height
