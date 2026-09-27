@@ -22,6 +22,7 @@ import com.orbin.core.model.ThreadStats
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
+import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.CatalogRepository
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.Flow
@@ -189,6 +190,7 @@ class BoardViewModelTest {
         catalogRepository = catalogRepository,
         bookmarkRepository = bookmarkRepository,
         historyRepository = historyRepository,
+        settingsRepository = FakeSettingsRepository(),
     )
 
     private fun presentation(

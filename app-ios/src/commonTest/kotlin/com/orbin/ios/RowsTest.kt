@@ -54,7 +54,7 @@ class RowsTest {
 
         assertNotEquals(one.id, two.id)
         assertEquals("/b/", one.path)
-        assertEquals("Random · One", one.title)
+        assertEquals("Random", one.title)
         assertEquals("one", one.site)
     }
 
@@ -196,6 +196,14 @@ class RowsTest {
         assertEquals("/g/", row.board)
         assertEquals("/g/", row.title, "no subject: the board, as Android titles it")
         assertEquals("bold words", row.snippet, "the text, not the engine's markup")
+    }
+
+    @Test
+    fun cardsShowAStillImageAtFullSizeAndEverythingElseAsItsThumbnail() {
+        val image = post(1, files = 1).attachments.single()
+        assertEquals("https://i.example/1-0.jpg", image.cardImageUrl())
+        assertEquals(image.thumbnailUrl, image.copy(type = MediaType.ANIMATED_IMAGE).cardImageUrl())
+        assertEquals(image.thumbnailUrl, image.copy(type = MediaType.VIDEO).cardImageUrl())
     }
 
     private fun post(

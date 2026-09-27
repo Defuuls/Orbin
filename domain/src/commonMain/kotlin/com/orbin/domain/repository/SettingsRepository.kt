@@ -32,4 +32,7 @@ interface SettingsRepository {
         formFactor: FormFactor,
         columns: Int,
     )
+
+    /** Saves a tablet's board catalog column count. */
+    suspend fun setTabletCatalogColumns(columns: Int)
 }

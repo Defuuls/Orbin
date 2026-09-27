@@ -46,6 +46,9 @@ fun BoardScreen(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    // A fixed column count the caller chose for this device and window (a tablet's setting);
+    // null fits as many tiles as the window allows.
+    columns: Int? = null,
 ) {
     val gridState = rememberLazyGridState()
     val railVisible =
@@ -110,7 +113,7 @@ fun BoardScreen(
             }
             val insets = Modifier.fillMaxSize().contentInsets()
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(GRID_MIN_CELL),
+                columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(GRID_MIN_CELL),
                 state = gridState,
                 modifier = insets,
                 contentPadding =

@@ -31,7 +31,7 @@ class SettingsRowsTest {
     }
 
     @Test
-    fun anIpadChoosesItsFeedColumnsAndAnIphoneDoesNot() {
+    fun anIpadChoosesItsFeedAndCatalogColumnsAndAnIphoneDoesNot() {
         fun rows(formFactor: FormFactor) =
             settingsGroups(
                 AppSettings(tabletFeedColumns = 3),
@@ -46,6 +46,12 @@ class SettingsRowsTest {
         assertEquals("3", columns.value)
         assertEquals(2, columns.selected)
         assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.FEED_COLUMNS })
+
+        val catalog = rows(FormFactor.TABLET).single { it.id == SettingIds.CATALOG_COLUMNS }
+        assertEquals((2..8).map { it.toString() }, catalog.options)
+        assertEquals("4", catalog.value)
+        assertEquals(2, catalog.selected)
+        assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.CATALOG_COLUMNS })
     }
 
     @Test

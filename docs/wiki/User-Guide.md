@@ -26,7 +26,8 @@ under it the board, subject, up to eight lines of the opening post, and the repl
 Foldables and tablets are detected automatically. A foldable's front screen shows one column;
 unfolded, it shows the number chosen in **Settings → Feed columns when unfolded** (1–3, starting at
 2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). Any window
-narrower than 600dp, such as split screen, shows one column. Board catalogs keep their compact grid.
+narrower than 600dp, such as split screen, shows one column. Board catalogs keep their compact grid,
+except on a tablet, where **Settings → Catalog columns** sets it (2–8, starting at 4).
 
 Everything you have saved is one tap away in the **Downloads** tab, between Feed and Boards.
 

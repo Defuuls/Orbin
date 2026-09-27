@@ -84,6 +84,8 @@ fun BoardsScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     // Search reads threads on the boards you follow, so it lives with the boards.
     onOpenSearch: (() -> Unit)? = null,
+    // Above the search field: where a platform lists more than one site, its site switcher.
+    headerContent: @Composable () -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var following by rememberSaveable { mutableStateOf(false) }
@@ -163,6 +165,7 @@ fun BoardsScreen(
                                     ),
                         )
                         Column(Modifier.padding(horizontal = GUTTER)) {
+                            headerContent()
                             SchematicSearch(query, { query = it }, "Search boards")
                             if (onOpenSearch != null) {
                                 Box(modifier = Modifier.padding(top = 4.dp).offset(x = (-4).dp)) {

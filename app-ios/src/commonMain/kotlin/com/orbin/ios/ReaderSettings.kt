@@ -3,6 +3,9 @@ package com.orbin.ios
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.ProviderId
+import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
+import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumnsFor
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -42,6 +45,10 @@ class ReaderSettings(
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
 
+    fun setActiveProviderId(site: ProviderId): Job = scope.launch { repository.setActiveProviderId(site) }
+
+    fun setTabletCatalogColumns(columns: Int): Job = scope.launch { repository.setTabletCatalogColumns(columns) }
+
     fun setFeedColumns(
         formFactor: FormFactor,
         columns: Int,
@@ -58,6 +65,7 @@ internal object SettingIds {
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
     const val FEED_COLUMNS = "feedColumns"
+    const val CATALOG_COLUMNS = "catalogColumns"
     const val APP_LOCK = "biometric"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
@@ -92,6 +100,7 @@ internal fun settingsGroups(
                 ),
                 toggle(SettingIds.AMOLED, "True black", settings.amoled),
                 feedColumns(settings, formFactor),
+                catalogColumns(settings, formFactor),
                 toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
             ),
         "" to
@@ -149,6 +158,24 @@ private fun feedColumns(
         kind = SettingKind.CHOICE,
         options = (1..formFactor.maxFeedColumns).map { it.toString() },
         selected = columns - 1,
+    )
+}
+
+/** An iPad's board catalog column count, as Android's tablet row. */
+private fun catalogColumns(
+    settings: AppSettings,
+    formFactor: FormFactor,
+): SettingItem? {
+    if (formFactor != FormFactor.TABLET) return null
+    val choices = (TABLET_MIN_CATALOG_COLUMNS..TABLET_MAX_CATALOG_COLUMNS).toList()
+    val columns = settings.tabletCatalogColumns.coerceIn(choices.first(), choices.last())
+    return SettingItem(
+        id = SettingIds.CATALOG_COLUMNS,
+        label = "Catalog columns",
+        value = columns.toString(),
+        kind = SettingKind.CHOICE,
+        options = choices.map { it.toString() },
+        selected = choices.indexOf(columns),
     )
 }
 

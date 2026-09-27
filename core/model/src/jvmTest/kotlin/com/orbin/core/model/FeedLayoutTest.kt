@@ -37,4 +37,17 @@ class FeedLayoutTest {
 
         assertThat(feedColumns(FormFactor.FOLDABLE, windowWidthDp = 673, tooMany)).isEqualTo(3)
     }
+
+    @Test
+    fun `a tablet catalog shows its chosen columns, capped, and fits itself anywhere else`() {
+        val six = AppSettings(tabletCatalogColumns = 6)
+
+        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 1366, six)).isEqualTo(6)
+        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 1366, AppSettings.Default)).isEqualTo(4)
+        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 1366, AppSettings(tabletCatalogColumns = 20)))
+            .isEqualTo(8)
+        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 400, six)).isNull()
+        assertThat(catalogColumns(FormFactor.FOLDABLE, windowWidthDp = 673, six)).isNull()
+        assertThat(catalogColumns(FormFactor.PHONE, windowWidthDp = 915, six)).isNull()
+    }
 }

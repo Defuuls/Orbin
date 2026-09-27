@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -26,7 +30,11 @@ import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.ProviderId
+import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.Thread
+import com.orbin.core.model.catalogColumns
+import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
@@ -40,6 +48,7 @@ import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
@@ -105,7 +114,7 @@ private fun Destination(
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
-        is Route.Catalog -> CatalogDestination(browser, route.board)
+        is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> ThreadDestination(browser)
         is Route.Media -> MediaDestination(browser, downloads, route)
     }
@@ -129,6 +138,7 @@ private fun FeedDestination(
 ) {
     val feed by browser.feed.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val site by browser.activeSite.collectAsState()
     val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
     Loaded(feed, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
@@ -145,6 +155,7 @@ private fun FeedDestination(
                 onOpenBoards = { browser.openTab(Route.Boards) },
                 onOpenDownloads = { browser.openTab(Route.Downloads) },
                 onSettings = { browser.open(Route.Settings) },
+                headerContent = { SiteSwitcher(browser, site) },
             )
         }
     }
@@ -155,10 +166,14 @@ private fun BoardsDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
+    val site by browser.activeSite.collectAsState()
     val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
     Loaded(boards, onRetry = browser::retry) { all ->
-        // Hidden NSFW boards leave the list, as Android's boards list drops them.
-        val list = remember(all, hideNsfw) { if (hideNsfw) all.filterNot { it.board.isNsfw } else all }
+        // One site at a time, as Android's boards list; hidden NSFW boards leave it, as there.
+        val list =
+            remember(all, site, hideNsfw) {
+                all.filter { it.provider == site && !(hideNsfw && it.board.isNsfw) }
+            }
         val byTile = remember(list) { list.associateBy { it.tileId } }
         BoardsScreen(
             subtitle = boardsSubtitle(list.size, unreachable),
@@ -172,8 +187,26 @@ private fun BoardsDestination(browser: Browser) {
             onOpenDownloads = { browser.openTab(Route.Downloads) },
             onOpenSearch = { browser.open(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
+            headerContent = { SiteSwitcher(browser, site, gapAfter = 12.dp) },
         )
     }
+}
+
+/** Android's site switcher, on the feed and Boards: a segment per site, shown when there is more than one. */
+@Composable
+private fun SiteSwitcher(
+    browser: Browser,
+    active: ProviderId,
+    // Boards puts its search field straight under its header; the feed spaces its own.
+    gapAfter: Dp = 0.dp,
+) {
+    if (browser.sites.size < 2) return
+    PlatformSegments(
+        labels = browser.sites.map { it.name },
+        selected = browser.sites.indexOfFirst { it.id == active },
+        onSelect = { browser.selectSite(browser.sites[it].id) },
+    )
+    Spacer(Modifier.height(gapAfter))
 }
 
 /**
@@ -241,7 +274,8 @@ private fun SettingsDestination(
                 SettingIds.COVER_VIOLENT -> browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
                 SettingIds.AMOLED -> browser.settings.setAmoled(!settings.amoled)
                 SettingIds.APP_LOCK -> lock.setLockEnabled(!settings.biometricLockEnabled)
-                SettingIds.THEME, SettingIds.FEED_COLUMNS -> expanded = if (expanded == item.id) null else item.id
+                SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS ->
+                    expanded = if (expanded == item.id) null else item.id
                 SettingIds.CLEAR_ACTIVITY ->
                     if (clearArmed) {
                         clearArmed = false
@@ -263,6 +297,8 @@ private fun SettingsDestination(
             when (item.id) {
                 SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                 SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
+                SettingIds.CATALOG_COLUMNS ->
+                    browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
             }
             expanded = null
         },
@@ -307,29 +343,39 @@ private fun SearchDestination(browser: Browser) {
 private fun CatalogDestination(
     browser: Browser,
     board: SiteBoard,
+    formFactor: FormFactor,
 ) {
     val catalog by browser.catalog.collectAsState()
+    val settings by browser.settings.current.collectAsState()
+    val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
     Loaded(catalog, onRetry = browser::retry) { threads ->
         val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+        val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
         val rows =
-            remember(threads, visited, unread) {
-                threads.map { thread ->
+            remember(sorted, visited, unread) {
+                sorted.map { thread ->
                     val number = thread.key.thread.value
                     thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
                 }
             }
         val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
-        BoardScreen(
-            board = "/${board.board.id.value}/",
-            description = board.board.title,
-            itemCount = rows.size,
-            rowAt = { index -> rows.getOrNull(index) },
-            showRail = false,
-            onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
-            thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
-        )
+        // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
+        BoxWithConstraints {
+            BoardScreen(
+                columns = catalogColumns(formFactor, maxWidth.value.toInt(), settings),
+                board = "/${board.board.id.value}/",
+                description = board.board.title,
+                itemCount = rows.size,
+                rowAt = { index -> rows.getOrNull(index) },
+                sortLabel = sort.label,
+                onSort = browser::cycleCatalogSort,
+                showRail = false,
+                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
+            )
+        }
     }
 }
 
@@ -340,12 +386,24 @@ private fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
+        // The site's thumbnail first, so the card fills at once; a card is far wider than a
+        // thumbnail (about 250 pixels), so the full image replaces it where there is one, as
+        // Android's cards load full resolution.
         AsyncImage(
             model = attachment.thumbnailUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        val sharp = attachment.cardImageUrl()
+        if (sharp != attachment.thumbnailUrl) {
+            AsyncImage(
+                model = sharp,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }

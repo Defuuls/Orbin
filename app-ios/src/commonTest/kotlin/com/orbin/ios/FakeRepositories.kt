@@ -151,4 +151,7 @@ class FakeSettings : SettingsRepository {
             FormFactor.TABLET -> it.copy(tabletFeedColumns = columns)
         }
     }
+
+    override suspend fun setTabletCatalogColumns(columns: Int) =
+        settings.update { it.copy(tabletCatalogColumns = columns) }
 }

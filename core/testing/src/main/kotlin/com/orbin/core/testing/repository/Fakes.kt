@@ -193,6 +193,10 @@ class FakeSettingsRepository(
         }
     }
 
+    override suspend fun setTabletCatalogColumns(columns: Int) {
+        update { copy(tabletCatalogColumns = columns) }
+    }
+
     /** The settings as they stand now, for asserting that a screen wrote through. */
     val current: AppSettings get() = state.value
 

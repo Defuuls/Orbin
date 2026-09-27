@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -15,7 +16,9 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.catalogColumns
 import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.FeedRow
@@ -44,6 +47,8 @@ fun NextBoardScreen(
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val formFactor = rememberFormFactor()
 
     val board = "/${viewModel.boardId}/"
     val snapshot = threads.itemSnapshotList
@@ -126,6 +131,7 @@ fun NextBoardScreen(
                 },
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
+                columns = catalogColumns(formFactor, LocalConfiguration.current.screenWidthDp, settings),
                 thumbnail = { row, tileModifier ->
                     row.threadId()?.let { id ->
                         byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->

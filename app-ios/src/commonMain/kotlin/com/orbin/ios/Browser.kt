@@ -3,6 +3,7 @@ package com.orbin.ios
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.ProviderId
@@ -127,6 +128,24 @@ class Browser(
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
     val settings = ReaderSettings(settings, history, scope)
 
+    /** Every site, in the order the app registers them: the site switcher's segments. */
+    val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
+
+    /**
+     * The site the feed and the Boards list show, as Android's site switcher picks it: the saved choice (the
+     * same `activeProviderId` Android keeps, so a backup carries it), else the first site.
+     */
+    val activeSite: StateFlow<ProviderId> =
+        this.settings.current
+            .map { current -> sites.firstOrNull { it.id.value == current.activeProviderId }?.id ?: sites.first().id }
+            .distinctUntilChanged()
+            .stateIn(scope, SharingStarted.Eagerly, sites.first().id)
+
+    /** Shows [site]'s feed and boards, and remembers it. */
+    fun selectSite(site: ProviderId) {
+        if (site != activeSite.value) this.settings.setActiveProviderId(site)
+    }
+
     /** Searching the followed boards' catalogs. */
     val search =
         ThreadSearch(scope, boards = ::searchableBoards) { board ->
@@ -155,6 +174,17 @@ class Browser(
 
     private val _catalog = MutableStateFlow<Load<List<CatalogThread>>>(Load.Loading)
     val catalog: StateFlow<Load<List<CatalogThread>>> = _catalog.asStateFlow()
+
+    private val _catalogSort = MutableStateFlow(CatalogSort.BUMP_ORDER)
+
+    /** How the open catalog is ordered: bump order for each board opened, as on Android. */
+    val catalogSort: StateFlow<CatalogSort> = _catalogSort.asStateFlow()
+
+    /** The catalog's next order, as Android's sort chip steps through them. */
+    fun cycleCatalogSort() {
+        val orders = CatalogSort.entries
+        _catalogSort.update { orders[(orders.indexOf(it) + 1) % orders.size] }
+    }
 
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
@@ -204,6 +234,9 @@ class Browser(
                 .drop(1)
                 .collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
+        scope.launch {
+            activeSite.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+        }
         loadFeed()
         watched.refresh()
     }
@@ -236,6 +269,7 @@ class Browser(
     }
 
     fun openBoard(board: SiteBoard) {
+        if (board != catalogShown) _catalogSort.value = CatalogSort.BUMP_ORDER
         _backStack.update { it + Route.Catalog(board) }
         loadCurrent()
     }
@@ -342,7 +376,9 @@ class Browser(
      * the feed tab shows it as it was, as Android's feed does.
      */
     private fun loadFeed(force: Boolean = false) {
-        val boards = followed.value
+        // The active site's followed boards, as Android's feed follows its site switcher.
+        val site = activeSite.value
+        val boards = followed.value.filterTo(mutableSetOf()) { it.provider == site }
         val shown = boards to settings.current.value.hideNsfwBoards
         if (!force && shown == feedFor && _feed.value is Load.Ready) return
         feedFor = shown
@@ -433,6 +469,12 @@ class Browser(
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")
+
+/** A site the app reads: its provider id and the name it goes by. */
+data class Site(
+    val id: ProviderId,
+    val name: String,
+)
 
 /** A board someone follows: its site and its id. */
 data class FollowedBoard(

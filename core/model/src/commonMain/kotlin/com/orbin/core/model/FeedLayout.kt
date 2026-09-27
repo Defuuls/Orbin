@@ -41,3 +41,23 @@ fun AppSettings.feedColumnsFor(formFactor: FormFactor): Int =
         FormFactor.FOLDABLE -> unfoldedFeedColumns
         FormFactor.TABLET -> tabletFeedColumns
     }
+
+/** The fewest board catalog columns a tablet may choose. */
+const val TABLET_MIN_CATALOG_COLUMNS = 2
+
+/** The most board catalog columns a tablet may choose. */
+const val TABLET_MAX_CATALOG_COLUMNS = 8
+
+/**
+ * How many columns a board catalog shows: the reader's choice on a tablet's wide window, within
+ * what it allows; null elsewhere (a phone, a foldable, split screen), where the catalog fits as
+ * many tiles as the window takes.
+ */
+fun catalogColumns(
+    formFactor: FormFactor,
+    windowWidthDp: Int,
+    settings: AppSettings,
+): Int? {
+    if (formFactor != FormFactor.TABLET || windowWidthDp < WIDE_SCREEN_MIN_DP) return null
+    return settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS)
+}

@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
@@ -78,6 +79,9 @@ class BrowserTest {
 
     private suspend fun <T> StateFlow<Load<T>>.settled(): Load<T> = first { it !is Load.Loading }
 
+    private fun Load<List<FeedThread>>.boardIds(): List<String> =
+        assertIs<Load.Ready<List<FeedThread>>>(this).value.map { it.thread.key.board.value }
+
     @Test
     fun boardsFromEverySiteAreListedAndAThreadOpensThroughTheCatalog() =
         runTest {
@@ -115,6 +119,38 @@ class BrowserTest {
             assertEquals(listOf("g"), boards.map { it.board.id.value })
             val unreachable = browser.unreachableSites.value.single()
             assertTrue(unreachable.startsWith("BBW Chan ("), unreachable)
+        }
+
+    @Test
+    fun theBoardsListShowsTheFirstSiteUntilAnotherIsPickedAndRemembersIt() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            assertEquals(listOf("fourchan", "bbwchan"), browser.sites.map { it.id.value })
+            assertEquals("fourchan", browser.activeSite.value.value)
+
+            browser.selectSite(ProviderId("bbwchan"))
+
+            assertEquals("bbwchan", browser.activeSite.first { it.value == "bbwchan" }.value)
+            assertEquals("bbwchan", settings.settings.value.activeProviderId)
+        }
+
+    @Test
+    fun theCatalogSortStepsThroughTheOrdersAndStartsOverOnAnotherBoard() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.openBoard(boards.first { it.board.id.value == "g" })
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value)
+
+            browser.cycleCatalogSort()
+            assertEquals(CatalogSort.CREATION_DATE, browser.catalogSort.value)
+            repeat(CatalogSort.entries.size - 1) { browser.cycleCatalogSort() }
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value, "it wraps round")
+
+            browser.cycleCatalogSort()
+            browser.back()
+            browser.openBoard(boards.first { it.board.id.value == "b" })
+            assertEquals(CatalogSort.BUMP_ORDER, browser.catalogSort.value)
         }
 
     @Test
@@ -272,25 +308,32 @@ class BrowserTest {
         }
 
     @Test
-    fun followedBoardsOnEverySiteMakeOneFeedSortedByBoard() =
+    fun theFeedShowsTheActiveSitesFollowedBoardsAndFollowsTheSwitcher() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             boards.forEach { browser.setFollowed(it, follow = true) }
 
-            val feed = browser.feed.first { it is Load.Ready && it.value.size == 2 }
-            val threads = assertIs<Load.Ready<List<FeedThread>>>(feed).value
-            assertEquals(listOf("b", "g"), threads.map { it.thread.key.board.value }, "board A–Z, across sites")
-            assertEquals(2, threads.map { it.provider }.toSet().size)
+            val first = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(listOf("g"), first.boardIds())
             assertEquals(Route.Feed, browser.backStack.value.single(), "the feed is the start screen")
+
+            browser.selectSite(ProviderId("bbwchan"))
+
+            val second =
+                browser.feed.first { load ->
+                    load is Load.Ready && load.value.isNotEmpty() && load.value.all { it.provider.value == "bbwchan" }
+                }
+            assertEquals(listOf("b"), second.boardIds())
         }
 
     @Test
     fun aFollowedBoardThatFailsLeavesTheOthersInTheFeed() =
         runTest {
-            val browser = browser(backgroundScope, BOTH_SITES)
+            val boardsJson = """{"boards":[{"board":"g","title":"Tech"},{"board":"v","title":"Games"}]}"""
+            val browser = browser(backgroundScope, BOTH_SITES + ("a.4cdn.org/boards.json" to boardsJson))
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
-            // The LynxChan /b/ catalog is not in the script, so it fails with a 404.
+            // The /v/ catalog is not in the script, so it fails with a 404.
             boards.forEach { browser.setFollowed(it, follow = true) }
 
             val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
@@ -452,10 +495,13 @@ class BrowserTest {
     @Test
     fun hidingNsfwBoardsTakesThemOutOfTheFeedAndSearch() =
         runTest {
-            // 4chan's /g/ says it is work-safe; BBW Chan's boards are NSFW by default.
+            // 4chan's /g/ says it is work-safe and its /b/ that it is not.
+            val boardsJson =
+                """{"boards":[{"board":"g","title":"Technology","ws_board":1},{"board":"b","title":"Random","ws_board":0}]}"""
             val routes =
-                BOTH_SITES + LYNXCHAN_CATALOG +
-                    ("a.4cdn.org/boards.json" to """{"boards":[{"board":"g","title":"Technology","ws_board":1}]}""")
+                BOTH_SITES +
+                    ("a.4cdn.org/boards.json" to boardsJson) +
+                    ("a.4cdn.org/b/catalog.json" to """[{"page":1,"threads":[{"no":9,"sub":"Hi","time":2}]}]""")
             val browser = browser(backgroundScope, routes)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             boards.forEach { browser.setFollowed(it, follow = true) }
