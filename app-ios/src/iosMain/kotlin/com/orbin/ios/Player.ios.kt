@@ -71,11 +71,11 @@ internal actual fun NativePlayer(
         val observer =
             NSNotificationCenter.defaultCenter.addObserverForName(
                 name = AVPlayerItemDidPlayToEndTimeNotification,
-                `object` = player.currentItem,
+                `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
                 if (currentLoop.value && currentActive.value) {
-                    player.seekToTime(CMTimeMake(value = 0, timescale = 1))
+                    player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
                     player.play()
                 }
             }
@@ -158,7 +158,7 @@ internal actual fun NativeInlineLoop(
                     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\">" +
                         "<style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}video{width:100%;height:100%;object-fit:contain}</style>" +
                         "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline></video></body></html>"
-                loadHTMLString(htmlString = html, baseURL = null)
+                loadHTMLString(string = html, baseURL = null)
             }
         }
     DisposableEffect(webView) {
@@ -180,7 +180,7 @@ private class PlayerTapHandler(
         val view = gesture.view ?: return
         val width = view.bounds.useContents { size.width }
         if (width <= 0.0) return
-        val forward = gesture.locationInView(view).x >= width / 2.0
+        val forward = gesture.locationInView(view).useContents { x } >= width / 2.0
         val current = CMTimeGetSeconds(player.currentTime()).takeIf { it.isFinite() } ?: 0.0
         val target = (current + if (forward) SEEK_SECONDS else -SEEK_SECONDS).coerceAtLeast(0.0)
         player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
