@@ -27,23 +27,21 @@ import platform.Foundation.NSUserDomainMask
  * Migrations use the same SQL statements as Android, adapted to Room's multiplatform
  * `SQLiteConnection` callback.
  */
-internal fun openDatabase(): OrbinDatabase =
-    Room
-        .databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
-        .addMigrations(
-            *OrbinSchemaMigrations.all
-                .map { schemaMigration ->
-                    object : Migration(schemaMigration.startVersion, schemaMigration.endVersion) {
-                        override fun migrate(connection: SQLiteConnection) {
-                            schemaMigration.statements.forEach(connection::execSQL)
-                        }
-                    }
+internal fun openDatabase(): OrbinDatabase {
+    val migrations =
+        OrbinSchemaMigrations.all.map { schemaMigration ->
+            object : Migration(schemaMigration.startVersion, schemaMigration.endVersion) {
+                override fun migrate(connection: SQLiteConnection) {
+                    schemaMigration.statements.forEach(connection::execSQL)
                 }
-                .toTypedArray(),
-        )
-        .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .build()
+            }
+        }
+    val builder = Room.databaseBuilder<OrbinDatabase>(name = applicationSupportPath(OrbinDatabase.NAME))
+    builder.addMigrations(*migrations.toTypedArray())
+    builder.setDriver(BundledSQLiteDriver())
+    builder.setQueryCoroutineContext(Dispatchers.IO)
+    return builder.build()
+}
 
 /**
  * Board preferences (followed and favourite boards, feed limits) in a DataStore file beside the
