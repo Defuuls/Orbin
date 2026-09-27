@@ -3,6 +3,7 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -120,7 +121,14 @@ private fun Destination(
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
-        is Route.ThreadPage -> ThreadDestination(browser)
+        is Route.ThreadPage -> {
+            val previous = browser.backStack.value.getOrNull(browser.backStack.value.lastIndex - 1)
+            if (formFactor == FormFactor.TABLET && previous is Route.Catalog) {
+                ThreadSplitDestination(browser, previous.board, formFactor)
+            } else {
+                ThreadDestination(browser)
+            }
+        }
         is Route.Media -> MediaDestination(browser, downloads, route)
     }
 }
@@ -426,6 +434,27 @@ private fun CatalogDestination(
 }
 
 @Composable
+/**
+ * On iPad, keep the board catalog beside its selected thread. The browser stack still owns
+ * navigation, so the system back gesture returns to the catalog as it does on Android.
+ */
+@Composable
+private fun ThreadSplitDestination(
+    browser: Browser,
+    board: SiteBoard,
+    formFactor: FormFactor,
+) {
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxSize()) {
+            CatalogDestination(browser, board, formFactor)
+        }
+        Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
+        Box(Modifier.weight(1.4f).fillMaxSize()) {
+            ThreadDestination(browser)
+        }
+    }
+}
+
 private fun CatalogThumbnail(
     thread: CatalogThread,
     modifier: Modifier,
