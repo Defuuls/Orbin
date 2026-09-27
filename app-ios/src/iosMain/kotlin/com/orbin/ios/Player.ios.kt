@@ -54,6 +54,7 @@ internal actual fun NativePlayer(
             }
         }
     val currentLoop = rememberUpdatedState(loop)
+    val currentActive = rememberUpdatedState(active)
     val tapHandler = remember(player) { PlayerTapHandler(player) }
     DisposableEffect(controller, tapHandler) {
         val doubleTap =
@@ -73,7 +74,7 @@ internal actual fun NativePlayer(
                 `object` = player.currentItem,
                 queue = NSOperationQueue.mainQueue,
             ) {
-                if (currentLoop.value) {
+                if (currentLoop.value && currentActive.value) {
                     player.seekToTime(CMTimeMake(value = 0, timescale = 1))
                     player.play()
                 }
