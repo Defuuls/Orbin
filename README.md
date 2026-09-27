@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [155 — Ugli](https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli)
+**Current release:** [156 — Watermelon](https://github.com/Defuuls/Orbin/releases/tag/v156-Watermelon)
 
-**What's new in 155:** Release pages carry just the app and its checksum.
+**What's new in 156:** Tablets choose how many columns a board's catalog shows.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
