@@ -216,7 +216,7 @@ fun handleBackgroundMediaDownloadEvents(
 }
 
 
-private class SessionDelegate : platform.Foundation.NSObject(), NSURLSessionDownloadDelegateProtocol {
+private class SessionDelegate : platform.darwin.NSObject(), NSURLSessionDownloadDelegateProtocol {
     override fun URLSession(
         session: NSURLSession,
         downloadTask: NSURLSessionDownloadTask,
