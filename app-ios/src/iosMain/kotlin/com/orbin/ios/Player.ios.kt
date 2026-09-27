@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.useContents
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
@@ -17,12 +19,17 @@ import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
-import platform.CoreMedia.CMTimeMake
+import platform.CoreMedia.CMTimeGetSeconds
+import platform.CoreMedia.CMTimeMakeWithSeconds
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
+import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
 import platform.UIKit.UIDevice
+import platform.UIKit.UIImpactFeedbackGenerator
+import platform.UIKit.UIImpactFeedbackStyleLight
+import platform.UIKit.UITapGestureRecognizer
 import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
 
@@ -45,6 +52,18 @@ internal actual fun NativePlayer(
             }
         }
     val currentLoop = rememberUpdatedState(loop)
+    val tapHandler = remember(player) { PlayerTapHandler(player) }
+    DisposableEffect(controller, tapHandler) {
+        val doubleTap =
+            UITapGestureRecognizer(target = tapHandler, action = NSSelectorFromString("onDoubleTap:")).apply {
+                numberOfTapsRequired = 2uL
+                cancelsTouchesInView = false
+                delaysTouchesBegan = false
+                delaysTouchesEnded = false
+            }
+        controller.view.addGestureRecognizer(doubleTap)
+        onDispose { controller.view.removeGestureRecognizer(doubleTap) }
+    }
     DisposableEffect(player) {
         val observer =
             NSNotificationCenter.defaultCenter.addObserverForName(
@@ -147,3 +166,24 @@ internal actual fun NativeInlineLoop(
     }
     UIKitView(factory = { webView }, modifier = modifier)
 }
+
+/** Adds Android's 10-second double-tap seek gesture to AVKit without intercepting its controls. */
+@OptIn(ExperimentalForeignApi::class)
+private class PlayerTapHandler(
+    private val player: AVPlayer,
+) : platform.Foundation.NSObject() {
+    @ObjCAction
+    fun onDoubleTap(gesture: UITapGestureRecognizer) {
+        val view = gesture.view ?: return
+        val width = view.bounds.useContents { size.width }
+        if (width <= 0.0) return
+        val forward = gesture.locationInView(view).x >= width / 2.0
+        val current = CMTimeGetSeconds(player.currentTime()).takeIf { it.isFinite() } ?: 0.0
+        val target = (current + if (forward) SEEK_SECONDS else -SEEK_SECONDS).coerceAtLeast(0.0)
+        player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
+        UIImpactFeedbackGenerator(style = UIImpactFeedbackStyleLight).impactOccurred()
+    }
+}
+
+private const val SEEK_SECONDS = 10.0
+private const val SEEK_TIMESCALE = 600
