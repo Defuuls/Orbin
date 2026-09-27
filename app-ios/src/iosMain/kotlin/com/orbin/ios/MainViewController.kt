@@ -45,7 +45,13 @@ fun MainViewController(): UIViewController {
             onWatch = graph.notifier::requestPermission,
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
-    val downloads = MediaDownloads(graph.downloadDao, DeviceMediaStore(), ktorMediaFetch(graph.client), graph.scope)
+    val downloads = MediaDownloads(
+        graph.downloadDao,
+        DeviceMediaStore(),
+        ktorMediaFetch(graph.client),
+        graph.scope,
+        durableFetch = IosBackgroundMediaFetch,
+    )
     // Export and import in Android's backup format, through the system share sheet and file picker.
     val backup =
         IosBackup(
