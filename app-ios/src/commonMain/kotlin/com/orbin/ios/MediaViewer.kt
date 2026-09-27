@@ -159,7 +159,11 @@ private fun MediaPage(
                 )
                 TextButton(
                     onClick = { looping = !looping },
-                    modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(top = PLAYER_TOP_INSET, start = 8.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .safeDrawingPadding()
+                            .padding(top = PLAYER_TOP_INSET, start = 8.dp),
                 ) {
                     Text(if (looping) "Loop: On" else "Loop: Off", color = Color.White)
                 }
