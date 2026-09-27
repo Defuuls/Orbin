@@ -62,7 +62,10 @@ interface DurableMediaFetch {
         onProgress: (received: Long, total: Long?) -> Unit,
     ): ByteArray
 
-    suspend fun hasPendingTransfer(id: Long, url: String): Boolean
+    suspend fun hasPendingTransfer(
+        id: Long,
+        url: String,
+    ): Boolean
 
     fun didSave(id: Long)
 }
