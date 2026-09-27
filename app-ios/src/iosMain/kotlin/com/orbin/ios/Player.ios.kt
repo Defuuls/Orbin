@@ -101,6 +101,7 @@ internal actual fun NativeInlineLoop(
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
                 scrollView.scrollEnabled = false
                 scrollView.bounces = false
+                userInteractionEnabled = false
                 val escapedUrl =
                     url.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
                 val html =
