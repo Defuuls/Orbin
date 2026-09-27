@@ -19,6 +19,7 @@ import platform.Foundation.NSURLSessionConfiguration
 import platform.Foundation.NSURLSessionDownloadDelegateProtocol
 import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
+import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.getBytes
