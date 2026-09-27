@@ -6,6 +6,10 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- TestFlight uploads no longer create an Apple Development certificate on every run; after a dozen builds Apple's certificate limit stopped them. The archive is built unsigned and signed once at upload with the cloud-managed distribution certificate.
+- iOS: images in a thread are sharp too. They showed the site's small thumbnail stretched to the post's width, as the feed's cards did before 156.
+
 ## [156-Watermelon] - 2026-09-27
 
 ### Added

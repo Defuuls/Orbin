@@ -30,6 +30,7 @@ import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.Thread
@@ -431,14 +432,32 @@ private fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
-        // The site's thumbnail first, so the card fills at once; a card is far wider than a
-        // thumbnail (about 250 pixels), so the full image replaces it where there is one, as
-        // Android's cards load full resolution.
+        SharpImage(attachment, contentDescription = null, Modifier.fillMaxSize(), fill = Modifier.fillMaxSize())
+        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+    }
+}
+
+/**
+ * A file's picture at the size it is shown: the site's thumbnail first, so the space fills at
+ * once, then, for a still image, the full picture over it. A card or a post's image is far wider
+ * than a thumbnail (about 250 pixels), which stretched looks blurry; Android loads full resolution
+ * there too. The thumbnail sets the size, so the full picture only ever sharpens it.
+ */
+@Composable
+private fun SharpImage(
+    attachment: MediaAttachment,
+    contentDescription: String?,
+    modifier: Modifier,
+    // How the thumbnail takes the space: a card's whole fixed box, or a post's width at the
+    // picture's own proportions.
+    fill: Modifier = Modifier.fillMaxWidth(),
+) {
+    Box(modifier) {
         AsyncImage(
             model = attachment.thumbnailUrl,
-            contentDescription = null,
+            contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
+            modifier = fill,
         )
         val sharp = attachment.cardImageUrl()
         if (sharp != attachment.thumbnailUrl) {
@@ -446,10 +465,9 @@ private fun CatalogThumbnail(
                 model = sharp,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.matchParentSize(),
             )
         }
-        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }
 
@@ -518,12 +536,7 @@ private fun ThreadContent(
         media = { post, modifier ->
             byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
                 Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
-                    AsyncImage(
-                        model = attachment.thumbnailUrl,
-                        contentDescription = attachment.originalFileName,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    SharpImage(attachment, attachment.originalFileName, Modifier.fillMaxWidth())
                     // Opening it still asks again in the viewer: the cover is lifted per file there.
                     if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                 }
