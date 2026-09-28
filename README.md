@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [158 — Yuzu](https://github.com/Defuuls/Orbin/releases/tag/v158-Yuzu)
+**Current release:** [159 — Apricot](https://github.com/Defuuls/Orbin/releases/tag/v159-Apricot)
 
-**What's new in 158:** Fixes the iOS app crashing on launch after updating to 157.
+**What's new in 159:** Galaxy Z Fold8 and Fold8 Ultra layouts, and iOS keeps your place in the feed and threads.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
