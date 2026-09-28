@@ -1,47 +1,98 @@
 # Orbin brand
 
-![Orbin brand showcase](assets/orbin-brand-showcase.png)
+Orbin's identity is a **night theater** for imageboards: immersive, media-first, and night-mode native. The product dims the room and lets the board fill the frame.
 
-Orbin's identity is built around an orbital mark: a planetary sphere and trajectory ring that suggests motion and navigation. The mark works cleanly across Android adaptive icons, monochrome themed icons, splash screens, documentation, and UI surfaces.
+This document replaces the prior orbital / aubergine system. Until production launcher assets are swapped, treat the aperture mark and void palette below as the source of truth for new UI and brand work.
 
 ## Core idea
 
-**Built to browse. Not to perform.**
+**Dim the room. Let the board fill the frame.**
 
-Orbin is a privacy-focused, read-only imageboard browser. The brand should feel observant, precise, quiet, and fast rather than social, expressive, or noisy.
+Orbin is a privacy-focused, read-only imageboard browser. The brand should feel cinematic, precise, and calm under pressure — not social, playful, or loud.
 
-## Mark anatomy
+Voice is short and direct, slightly filmic: product copy speaks like a projectionist, not a social app.
 
-- **Trajectory wedge:** adds forward direction and speed to the orbital path.
-- **Broken orbit:** establishes the readable O silhouette while keeping the form open.
-- **Satellite node:** creates an ownable detail that helps the icon remain recognizable at small sizes.
-- **Open counter:** protects legibility as the mark scales down.
+## Mark
 
-The production Android vector lives at `app/src/main/res/drawable/ic_launcher_orbit_foreground.xml`.
+**Aperture / lens iris.** An open circle formed by geometric iris blades with a clear central counter. White on void black. Ownable at launcher scale without planets, stars, orbits, or literal camera hardware chrome.
+
+### Mark principles
+
+- Keep the silhouette simple enough to read at 24dp.
+- Prefer pure white `#E8E4DC` (or `#FFFFFF`) on Void; monochrome adaptive icons may be tinted by the system.
+- Do not add gradients, inner shadows, outlines, or decorative rings.
+- Retire the orbital / planetary mark for new first-party surfaces.
+
+Production vector path (to be updated when the icon lands): `app/src/main/res/drawable/ic_launcher_orbit_foreground.xml` (rename when the asset is swapped).
 
 ## Color system
 
+Dark is the default identity, not an alternate theme.
+
 | Role | Value | Usage |
 | --- | --- | --- |
-| Aubergine | `#4B2E63` | Deep primary identity and dark surfaces |
-| Mauve | `#B776A7` | Warm tonal accents and secondary surfaces |
-| Blush | `#F6E8E6` | Light background and high-contrast fields |
-| Lilac | `#C9B4E6` | Interactive chips and soft containers |
-| Plum | `#8A5C8F` | Active states and board accents |
-| Eggplant | `#2E1B42` | Primary brand ground and splash surface |
+| Void | `#0A0A0C` | Primary ground, splash, chrome |
+| Stage | `#12141A` | Elevated surfaces under media / captions |
+| Fog | `#8B919C` | Secondary text, meta, board tags |
+| Beam | `#E8E4DC` | Primary text and light accents |
+| Ember | `#C45C26` | Rare focus: unread, new, subscribed |
+| Soft key | `#3D5A80` | Selection, active nav, quote links |
 
-The logo should remain white on dark in first-party brand material. Android may tint the monochrome source automatically for themed icons.
+Aubergine, mauve, blush, lilac, plum, and eggplant are **retired** as identity colors. Dynamic color and optional user themes may still recolor the shell, but first-party brand material stays on this palette.
+
+## Typography
+
+- UI: tight geometric sans (Inter / Roboto Flex or platform equivalent).
+- Titles: slightly condensed; section labels may use generous tracking.
+- High contrast Beam on Void; Fog for secondary lines.
+- Prefer smaller, denser type over large decorative titles.
+
+## Surfaces and chrome
+
+- Near-flat matte. Soft tonal lifts instead of shadowed cards.
+- Media bleeds; chrome shrinks. Favor edge-to-edge imagery over boxed chrome.
+- Selection is a quiet Soft key or Ember signal — never loud fills.
+- Bottom navigation is recessed and preferably icon-only on compact widths.
+
+## Screen implications
+
+### Feed
+
+- Two-column adaptive catalog; tight gutters.
+- Mark-only (or mark + sparse) header; minimize wordmark and actions.
+- Cards are media-first with a compact caption strip (title, `/board`, Ember unread).
+- Uncropped previews retain aspect character inside the grid.
+
+### Thread reader
+
+- Continuous reel on Void; thin separators instead of post cards.
+- OP media leads full-width; replies are text-first with small thumbs.
+- Greentext: classic green with `>` prefix.
+- Quote links (`>>NN`): Soft key, clearly interactive (underline or chip).
+- Ember reserved for "new" / watched signals.
+
+### Media / Downloads
+
+- Dense multi-column wall; captions off thumbs by default.
+- Downloads | Wall switch with Soft key active indicator.
+- Archive energy: more image, less chrome.
+
+### Boards
+
+- Search-forward header with the aperture mark.
+- Dense `/board` list rows: code, title, Fog description; Ember for subscribed.
+- Thin separators; no heavy cards.
 
 ## Usage principles
 
-1. **Quiet confidence.** Favor strong contrast, spacious layouts, and restrained typography over decorative effects.
-2. **Motion without chaos.** Orbit-inspired lines and directional cuts can support the identity, but avoid stars, galaxies, rockets, or literal planet illustrations.
-3. **Privacy by posture.** The brand observes rather than broadcasts. Copy should be direct, calm, and product-led.
-4. **Keep the silhouette intact.** Do not remove the trajectory wedge or satellite node when using the full mark.
-5. **Protect small-size clarity.** Avoid outlines, gradients, shadows inside the logo, or added details that disappear at launcher scale.
+1. **Immersion first.** If chrome and content compete, content wins.
+2. **Night by default.** Design for Void ground; light mode is a concession, not the brand face.
+3. **Rare heat.** Ember is scarce; Soft key handles everyday interactivity.
+4. **No cosmic clutter.** Avoid stars, galaxies, rockets, and literal planets.
+5. **Privacy by posture.** Observe; don't broadcast. Copy stays calm and product-led.
 
-## Recommended lockups
+## Lockups
 
-For repository and product surfaces, pair the icon with a plain **Orbin** wordmark rather than inventing a decorative type treatment. Use bold or semibold sans-serif typography and let the symbol carry the distinctive character.
+Pair the aperture mark with a plain **Orbin** wordmark (semibold sans) only when space and context need the name. In immersive product chrome, the mark alone is preferred.
 
-The primary showcase asset is `docs/assets/orbin-brand-showcase.svg`.
+Showcase assets for the prior orbital system remain under `docs/assets/` until replaced; do not treat them as the current identity.
