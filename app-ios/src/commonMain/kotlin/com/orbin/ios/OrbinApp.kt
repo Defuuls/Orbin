@@ -9,7 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -41,6 +49,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.catalogColumns
 import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
+import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_search_follow_boards
@@ -134,10 +143,16 @@ private fun Destination(
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
             val previous = backStack.getOrNull(backStack.lastIndex - 1)
-            if (formFactor == FormFactor.TABLET && previous is Route.Catalog) {
-                ThreadSplitDestination(browser, previous.board, formFactor)
-            } else {
-                ThreadDestination(browser)
+            // The catalog stays beside the thread only in a window with room for both: an iPad Pro
+            // 11-inch full screen either way up (834 x 1210pt), not a narrow Stage Manager, Split
+            // View or Slide Over window, which gets the thread alone as a phone does.
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
+                if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
+                    ThreadSplitDestination(browser, previous.board, formFactor)
+                } else {
+                    ThreadDestination(browser)
+                }
             }
         }
         is Route.Media -> MediaDestination(browser, downloads, route)
@@ -182,7 +197,11 @@ private fun FeedDestination(
                     rows = rows,
                     columns = feedColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-                    thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
+                    // Nothing plays in the feed, as on Android: a video shows its picture and a
+                    // play badge until its thread is opened. Catalogs keep their looping previews.
+                    thumbnail = { row, modifier ->
+                        byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier, playsPreview = false) }
+                    },
                     onOpenBoards = { browser.openTab(Route.Boards) },
                     onOpenDownloads = { browser.openTab(Route.Downloads) },
                     onSettings = { browser.open(Route.Settings) },
@@ -469,16 +488,40 @@ private fun ThreadSplitDestination(
 private fun CatalogThumbnail(
     thread: CatalogThread,
     modifier: Modifier,
+    // Whether a video or GIF loops in place, muted; otherwise it shows its picture and a play badge.
+    playsPreview: Boolean = true,
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
         SharpImage(attachment, contentDescription = null, Modifier.fillMaxSize(), fill = Modifier.fillMaxSize())
-        if (attachment.isPlayable && (!attachment.isWebM || supportsWebM)) {
-            NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
+        val loops = playsPreview && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        if (loops) NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
+        if (attachment.isSpoiler) {
+            SpoilerCover(Modifier.matchParentSize())
+        } else if (!loops && attachment.isPlayable) {
+            PlayBadge(Modifier.align(Alignment.Center))
         }
-        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
     }
 }
+
+/** The mark on a video that is not playing: white on a dark disc, readable over any picture. */
+@Composable
+private fun PlayBadge(modifier: Modifier) {
+    Icon(
+        imageVector = Icons.Filled.PlayArrow,
+        contentDescription = null,
+        tint = Color.White,
+        modifier =
+            modifier
+                .size(PLAY_BADGE_SIZE)
+                .background(Color.Black.copy(alpha = PLAY_BADGE_SCRIM), CircleShape)
+                .padding(PLAY_BADGE_PADDING),
+    )
+}
+
+private val PLAY_BADGE_SIZE = 40.dp
+private val PLAY_BADGE_PADDING = 6.dp
+private const val PLAY_BADGE_SCRIM = 0.5f
 
 /**
  * A file's picture at the size it is shown: the site's thumbnail first, so the space fills at

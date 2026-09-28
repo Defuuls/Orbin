@@ -59,9 +59,14 @@ A reader, so far:
 - iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
   screens size themselves to the window: board catalogs fit more columns, and the feed follows
   Android's tablet rule (`feedColumns` in `:core:model`): one column on an iPhone or a window
-  narrower than 600 points, otherwise Settings › **Feed columns** (1–4, from 2), a row only an iPad
-  shows. Board catalogs take Settings › **Catalog columns** (2–8, from 4) on an iPad's full width,
-  as Android tablets do (`catalogColumns` in `:core:model`), and sort with Android's sort chip. The share sheet opens as a popover in the middle of an iPad's screen;
+  narrower or shorter than 600 points, otherwise Settings › **Feed columns** (1–4, from 2), a row
+  only an iPad shows. Board catalogs take Settings › **Catalog columns** (2–8, from 4) on an iPad's
+  full width, as Android tablets do (`catalogColumns` in `:core:model`), and sort with Android's
+  sort chip. A thread opened from a catalog sits beside it in a window at least 800 x 600 points
+  (`showsTwoPanes`): an iPad Pro 11-inch (M4, 834 x 1210pt) full screen either way up, but not a
+  narrow Split View, Slide Over or Stage Manager window. The app is native arm64 code on every
+  Apple-silicon iPad, and ProMotion iPads run it at up to 120Hz. The share sheet opens as a
+  popover in the middle of an iPad's screen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
 - settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
