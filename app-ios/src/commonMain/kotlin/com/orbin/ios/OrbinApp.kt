@@ -180,7 +180,7 @@ private fun FeedDestination(
             BoxWithConstraints {
                 FeedScreen(
                     rows = rows,
-                    columns = feedColumns(formFactor, maxWidth.value.toInt(), settings),
+                    columns = feedColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
                     thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier) } },
                     onOpenBoards = { browser.openTab(Route.Boards) },
@@ -428,7 +428,7 @@ private fun CatalogDestination(
             // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
             BoxWithConstraints {
                 BoardScreen(
-                    columns = catalogColumns(formFactor, maxWidth.value.toInt(), settings),
+                    columns = catalogColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
                     board = "/${board.board.id.value}/",
                     description = board.board.title,
                     itemCount = rows.size,

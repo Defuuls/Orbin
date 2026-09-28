@@ -180,7 +180,13 @@ fun NextFeedScreen(
                             // Boards A–Z under their own headings, newest activity first within each.
                             groupByBoard = true,
                             // One column on a phone or folded; the reader's choice unfolded or on a tablet.
-                            columns = feedColumns(formFactor, LocalConfiguration.current.screenWidthDp, settings),
+                            columns =
+                                feedColumns(
+                                    formFactor,
+                                    LocalConfiguration.current.screenWidthDp,
+                                    LocalConfiguration.current.screenHeightDp,
+                                    settings,
+                                ),
                             hideRailOnScroll = hideRailOnScroll,
                             onChromeVisibleChange = onChromeVisibleChange,
                             onCompactTitleVisibleChange = onCompactTitleVisibleChange,

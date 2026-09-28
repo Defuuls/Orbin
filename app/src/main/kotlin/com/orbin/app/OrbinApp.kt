@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.navigateToTab
+import com.orbin.core.model.showsTwoPanes
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextMotion
@@ -64,7 +65,7 @@ fun OrbinApp(
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val twoPaneBoardDetail = maxWidth >= TWO_PANE_MIN_WIDTH
+        val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = backStackEntry?.destination
         val snackbarHostState = LocalOrbinSnackbarHostState.current
@@ -139,4 +140,3 @@ private tailrec fun Context.findActivity(): Activity? =
  *
  * Material's expanded breakpoint: 840dp is enough to split into two readable columns.
  */
-private val TWO_PANE_MIN_WIDTH = 840.dp

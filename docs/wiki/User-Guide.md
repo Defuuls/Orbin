@@ -25,8 +25,9 @@ video thumbnail at full width, whole down to a 9:16 portrait (taller media is le
 under it the board, subject, up to eight lines of the opening post, and the reply and file counts.
 Foldables and tablets are detected automatically. A foldable's front screen shows one column;
 unfolded, it shows the number chosen in **Settings → Feed columns when unfolded** (1–3, starting at
-2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). Any window
-narrower than 600dp, such as split screen, shows one column. Board catalogs keep their compact grid,
+2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). A window
+shorter or narrower than 600dp shows one column: split screen, or a front screen turned sideways
+(a Galaxy Z Fold8's or Fold8 Ultra's cover in landscape stays one column). Board catalogs keep their compact grid,
 except on a tablet, where **Settings → Catalog columns** sets it (2–8, starting at 4).
 
 Everything you have saved is one tap away in the **Downloads** tab, between Feed and Boards.
@@ -47,8 +48,9 @@ Board catalogs use the same grid-first presentation and readability rules as the
 Sorting and paging remain available. Each card shows the OP media uncropped, at its own aspect
 ratio, so a board can be browsed by its media without switching layouts.
 
-On screens at least 840dp wide, opening a thread from a catalog can keep the catalog visible in a
-two-pane layout. Moving across the width threshold preserves the open thread rather than resetting
+On screens at least 800dp wide and 600dp tall, opening a thread from a catalog can keep the catalog
+visible in a two-pane layout: an unfolded Galaxy Z Fold8 held landscape, an unfolded Fold8 Ultra
+either way up, or a tablet. Moving across the width threshold preserves the open thread rather than resetting
 your place.
 
 ## Thread reader
