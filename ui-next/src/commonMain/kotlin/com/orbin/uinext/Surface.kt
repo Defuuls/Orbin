@@ -199,7 +199,7 @@ object NextTitleTags {
 }
 
 /**
- * Compact frosted title that appears once the large in-content [ScreenTitle] has scrolled away.
+ * Compact matte title that appears once the large in-content [ScreenTitle] has scrolled away.
  * Uses a distinct test tag so scroll-away assertions still target the large title only.
  */
 @Composable

@@ -65,7 +65,7 @@ import kotlin.math.abs
 
 /**
  * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
- * play with Media3. Chrome is Orbin Next frosted overlay actions — Close / Copy / Download — rather
+ * play with Media3. Chrome is Orbin Next matte overlay actions — Close / Copy / Download — rather
  * than a Material TopAppBar. The download action is provided by the host (wired to the download
  * manager).
  */

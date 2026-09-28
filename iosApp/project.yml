@@ -35,9 +35,11 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         OrbinVersionName: $(ORBIN_VERSION_NAME)
-        # Solid brand ground while Kotlin/Compose loads — light eggplant surface / true black in dark mode.
+        # Solid brand ground + centered app mark while Kotlin/Compose loads.
+        # LaunchMark is derived from AppIcon (no separate designer artwork); regenerate Xcode with xcodegen.
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
+          UIImageName: LaunchMark
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

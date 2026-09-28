@@ -366,7 +366,13 @@ class NextSnackbarData internal constructor(
     }
 }
 
-/** Frosted bottom toast host — replaces Material [androidx.compose.material3.SnackbarHost]. */
+/**
+ * Matte bottom toast host — replaces Material [androidx.compose.material3.SnackbarHost].
+ *
+ * Opaque [next.elevated] fill + hairline — not frosted glass. CMP has no portable UIBlurEffect
+ * / RenderEffect blur path that is safe on both Android and iOS for this chrome, so the toast
+ * stays solid matte (same vocabulary as [nextElevatedSurface]) rather than faking translucency.
+ */
 @Composable
 fun NextSnackbarHost(
     hostState: NextSnackbarHostState,
@@ -408,7 +414,7 @@ private fun NextSnackbarToast(data: NextSnackbarData) {
             Modifier
                 .widthIn(max = 480.dp)
                 .clip(shape)
-                .background(next.raised.copy(alpha = if (next.dark) 0.92f else 0.94f))
+                .background(next.elevated)
                 .border(0.5.dp, next.hairline, shape)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
                 .semantics { contentDescription = data.message },
