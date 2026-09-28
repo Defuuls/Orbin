@@ -75,4 +75,30 @@ class SettingsRowsTest {
         assertEquals("Delete", clearRow(armed = false))
         assertEquals("Tap again to delete", clearRow(armed = true))
     }
+
+    @Test
+    fun theVersionRowNamesTheAndroidReleaseAndTheTestFlightBuild() {
+        val rows =
+            settingsGroups(
+                AppSettings.Default,
+                clearArmed = false,
+                imageCacheCleared = false,
+                version = AppVersion(name = "158-Yuzu", build = "176.202609262351"),
+            ).flatMap { it.second }.associateBy { it.id }
+
+        val version = rows.getValue(SettingIds.VERSION)
+        assertEquals(SettingKind.INFO, version.kind)
+        assertEquals("158-Yuzu", version.value)
+        assertEquals("Build 176.202609262351", version.hint)
+    }
+
+    @Test
+    fun aBuildWithNoVersionShowsNoVersionRow() {
+        val ids =
+            settingsGroups(AppSettings.Default, clearArmed = false, imageCacheCleared = false)
+                .flatMap { it.second }
+                .map { it.id }
+
+        assertTrue(SettingIds.VERSION !in ids)
+    }
 }

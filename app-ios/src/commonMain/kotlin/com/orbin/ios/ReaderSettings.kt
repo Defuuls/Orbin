@@ -78,7 +78,17 @@ internal object SettingIds {
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
     const val EXPORT_BACKUP = "exportBackup"
     const val IMPORT_BACKUP = "importBackup"
+    const val VERSION = "version"
 }
+
+/**
+ * Which release this is: the Android release it was cut from ([name], "158-Yuzu", or the bare
+ * number from a build made in Xcode) and TestFlight's build number ([build]).
+ */
+data class AppVersion(
+    val name: String = "",
+    val build: String = "",
+)
 
 /**
  * The rows, in Android's words and order: its preferences, and its data section less updates,
@@ -91,6 +101,7 @@ internal fun settingsGroups(
     imageCacheCleared: Boolean,
     backup: BackupState = BackupState.Idle,
     formFactor: FormFactor = FormFactor.PHONE,
+    version: AppVersion = AppVersion(),
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
         "" to
@@ -148,8 +159,21 @@ internal fun settingsGroups(
                         },
                     kind = SettingKind.ACTION,
                 ),
-            ),
+                versionRow(version),
+            ).filterNotNull(),
     )
+
+/** The release, as Android's settings name it, and the TestFlight build under it. */
+private fun versionRow(version: AppVersion): SettingItem? {
+    if (version.name.isBlank()) return null
+    return SettingItem(
+        id = SettingIds.VERSION,
+        label = "Version",
+        value = version.name,
+        kind = SettingKind.INFO,
+        hint = version.build.takeUnless { it.isBlank() }?.let { "Build $it" },
+    )
+}
 
 /** An iPad's feed column count, as Android's tablet row: only where the device has a choice. */
 private fun feedColumns(
