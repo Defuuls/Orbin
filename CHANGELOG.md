@@ -6,21 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- Android: Galaxy Z Fold8 and Fold8 Ultra layouts. Unfolded, the Fold8's 4:3 screen held landscape and the Ultra's near-square screen either way up show a board's catalog beside the open thread (two panes from 800dp wide, down from 840dp).
-
-### Changed
-- Feed and catalog column choices apply only to a window at least 600dp both ways. A foldable's cover screen turned sideways (a Fold8's is about 751 x 475dp, a Fold8 Ultra's about 960 x 411dp) now stays one column instead of taking the unfolded column count.
-- iOS: videos in the feed no longer play by themselves; they show their picture and a play badge until the thread is opened, as on Android. Board catalogs keep their looping previews.
-- iOS: on iPad, a thread sits beside its catalog only in a window with room for both (at least 800 x 600 points), such as an iPad Pro 11-inch (M4) full screen either way up; a narrow Split View, Slide Over or Stage Manager window shows the thread alone.
-
-- iOS: Settings shows a **Version** row with the whole release name, as Android names it ("158-Yuzu"), and the TestFlight build number under it. TestFlight's own version field only takes numbers ("158").
-- TestFlight builds come with **What to Test** filled in from the changelog: the release's own notes, or what is not yet released for a build made between releases.
-
-### Fixed
-- Android: folding or unfolding no longer restarts the screen when the cover and inner displays use different densities; the app lays itself out again in place.
-- iOS: the feed, catalogs and threads keep their scroll position when you go into a thread or the media viewer and come back, and a recently read thread reopens where you left it.
-
 ## [158-Yuzu] - 2026-09-27
 
 ### Added
