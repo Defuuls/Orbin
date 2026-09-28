@@ -14,6 +14,9 @@ settings:
     # same release number.
     MARKETING_VERSION: "1"
     CURRENT_PROJECT_VERSION: "1"
+    # The whole Android release name ("158-Yuzu"), which MARKETING_VERSION cannot hold: Apple takes
+    # only numbers there. The TestFlight workflow sets it; Settings › Version shows it.
+    ORBIN_VERSION_NAME: ""
     # Bundle ids are unique across the whole App Store; pass your own with
     # `xcodebuild ... ORBIN_BUNDLE_ID=...` or change it here.
     ORBIN_BUNDLE_ID: io.github.defuuls.orbin
@@ -31,6 +34,7 @@ targets:
         CFBundleDisplayName: Orbin
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        OrbinVersionName: $(ORBIN_VERSION_NAME)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

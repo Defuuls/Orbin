@@ -88,6 +88,7 @@ fun OrbinApp(
     downloads: MediaDownloads,
     backup: IosBackup,
     formFactor: FormFactor = FormFactor.PHONE,
+    version: AppVersion = AppVersion(),
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -116,7 +117,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, route)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route)
                 }
             }
             LockCover(lock, lockState)
@@ -131,6 +132,7 @@ private fun Destination(
     downloads: MediaDownloads,
     backup: IosBackup,
     formFactor: FormFactor,
+    version: AppVersion,
     route: Route,
 ) {
     when (route) {
@@ -138,7 +140,7 @@ private fun Destination(
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -300,6 +302,7 @@ private fun SettingsDestination(
     lock: AppLock,
     backup: IosBackup,
     formFactor: FormFactor,
+    version: AppVersion,
 ) {
     val settings by browser.settings.current.collectAsState()
     val backupState by backup.state.collectAsState()
@@ -316,7 +319,8 @@ private fun SettingsDestination(
                 imageCacheCleared,
                 backupState,
                 formFactor,
-            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor) },
+                version,
+            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version) },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->

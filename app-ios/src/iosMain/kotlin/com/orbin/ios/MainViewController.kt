@@ -3,6 +3,7 @@ package com.orbin.ios
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
+import coil3.PlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
@@ -86,31 +87,45 @@ fun MainViewController(): UIViewController {
         scheduleBackgroundRefresh()
     }
     return ComposeUIViewController {
-        setSingletonImageLoaderFactory { context ->
-            val cacheDirectory =
-                NSFileManager
-                    .defaultManager
-                    .URLForDirectory(
-                        directory = NSCachesDirectory,
-                        inDomain = NSUserDomainMask,
-                        appropriateForURL = null,
-                        create = true,
-                        error = null,
-                    )?.path ?: ""
-            ImageLoader
-                .Builder(context)
-                .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
-                .diskCache {
-                    DiskCache
-                        .Builder()
-                        .directory("$cacheDirectory/image_cache".toPath())
-                        .maxSizeBytes(COIL_DISK_CACHE_BYTES)
-                        .build()
-                }.crossfade(false)
-                .build()
-        }
-        OrbinApp(remember { browser }, remember { lock }, remember { downloads }, remember { backup }, formFactor())
+        setSingletonImageLoaderFactory { context -> imageLoader(context, graph) }
+        OrbinApp(
+            remember { browser },
+            remember { lock },
+            remember { downloads },
+            remember { backup },
+            formFactor(),
+            AppVersion(graph.appVersion, graph.appBuild),
+        )
     }
+}
+
+/** Coil over the app's Ktor client (encrypted DNS included), with its disk cache in Caches. */
+@OptIn(ExperimentalForeignApi::class)
+private fun imageLoader(
+    context: PlatformContext,
+    graph: AppGraph,
+): ImageLoader {
+    val cacheDirectory =
+        NSFileManager
+            .defaultManager
+            .URLForDirectory(
+                directory = NSCachesDirectory,
+                inDomain = NSUserDomainMask,
+                appropriateForURL = null,
+                create = true,
+                error = null,
+            )?.path ?: ""
+    return ImageLoader
+        .Builder(context)
+        .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
+        .diskCache {
+            DiskCache
+                .Builder()
+                .directory("$cacheDirectory/image_cache".toPath())
+                .maxSizeBytes(COIL_DISK_CACHE_BYTES)
+                .build()
+        }.crossfade(false)
+        .build()
 }
 
 private const val COIL_DISK_CACHE_BYTES: Long = 250L * 1024 * 1024

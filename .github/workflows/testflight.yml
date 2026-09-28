@@ -96,6 +96,7 @@ jobs:
         run: |
           name=$(sed -n 's/^orbin.versionName=//p' gradle.properties)
           code=$(sed -n 's/^orbin.versionCode=//p' gradle.properties)
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
           echo "marketing=${name%%-*}" >> "$GITHUB_OUTPUT"
           echo "build=${code}.$(TZ=America/Chicago date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
 
@@ -119,6 +120,7 @@ jobs:
             ORBIN_TEAM_ID="$TEAM_ID" \
             ORBIN_BUNDLE_ID="$BUNDLE_ID" \
             MARKETING_VERSION="${{ steps.version.outputs.marketing }}" \
+            ORBIN_VERSION_NAME="${{ steps.version.outputs.name }}" \
             CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build }}"
 
       - name: Upload to App Store Connect
@@ -148,6 +150,24 @@ jobs:
             -authenticationKeyID "$KEY_ID" \
             -authenticationKeyIssuerID "$ISSUER_ID"
           echo "Uploaded build ${{ steps.version.outputs.build }} (version ${{ steps.version.outputs.marketing }})." >> "$GITHUB_STEP_SUMMARY"
+
+      # Testers read what changed in the TestFlight app: this release's changelog section, or
+      # what is unreleased for a manual build between releases. Apple takes a few minutes to
+      # register a new build, so this waits for it. A failure here leaves the build uploaded,
+      # only without notes, so it warns rather than failing the upload.
+      - name: Set What to Test from the changelog
+        if: steps.config.outputs.configured == 'true'
+        continue-on-error: true
+        timeout-minutes: 35
+        run: |
+          export API_KEY_PATH="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
+          python3 -m venv "$RUNNER_TEMP/notes-venv"
+          "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
+          "$RUNNER_TEMP/notes-venv/bin/python" scripts/testflight_notes.py \
+            --version-name "${{ steps.version.outputs.name }}" \
+            --marketing "${{ steps.version.outputs.marketing }}" \
+            --build "${{ steps.version.outputs.build }}" \
+            --bundle-id "$BUNDLE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the API key
         if: always()

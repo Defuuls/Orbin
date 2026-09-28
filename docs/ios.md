@@ -161,5 +161,10 @@ no Developer Mode. You do this once:
 
 After that, every release uploads a build automatically. The version shown in TestFlight is the
 Android release number (`148` for `148-Nectarine`), and the build number is
-`<versionCode>.<Chicago date and time>` (`175.202609262145`), so a later upload is always a higher build. TestFlight builds expire after 90 days, so a new release (or a
-manual run) keeps the app installable.
+`<versionCode>.<Chicago date and time>` (`175.202609262145`), so a later upload is always a higher
+build. Apple takes only numbers there, so the whole release name (`158-Yuzu`) goes into the app as
+`OrbinVersionName` and shows in Settings › **Version**, with the build number under it. Each upload
+also fills the build's **What to Test** from `CHANGELOG.md` (`scripts/testflight_notes.py`): the
+release's own section, or what is unreleased for a manual build between releases. Preview it with
+`python3 scripts/testflight_notes.py --version-name 158-Yuzu --print`. TestFlight builds expire
+after 90 days, so a new release (or a manual run) keeps the app installable.

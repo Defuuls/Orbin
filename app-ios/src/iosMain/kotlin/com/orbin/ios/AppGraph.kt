@@ -41,7 +41,18 @@ internal object AppGraph {
     /** Posts new replies on watched threads, and asks to once the reader first watches one. */
     val notifier = IosThreadNotifier()
 
-    /** "155" for 155-Ugli: the release number TestFlight shows as the version. */
+    /**
+     * The Android release this build was cut from, "158-Yuzu", which TestFlight's numbers-only
+     * version cannot hold; the build writes it into Info.plist as OrbinVersionName. A build made in
+     * Xcode without it falls back to the numeric version, "158".
+     */
     val appVersion: String =
-        NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: "ios"
+        infoString("OrbinVersionName")?.takeUnless { it.isBlank() }
+            ?: infoString("CFBundleShortVersionString")
+            ?: "ios"
+
+    /** TestFlight's build number, "176.202609262351": the version code and the upload time. */
+    val appBuild: String = infoString("CFBundleVersion").orEmpty()
+
+    private fun infoString(key: String): String? = NSBundle.mainBundle.objectForInfoDictionaryKey(key) as? String
 }
