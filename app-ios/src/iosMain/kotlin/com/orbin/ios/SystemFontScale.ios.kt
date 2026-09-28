@@ -49,21 +49,26 @@ internal actual fun rememberSystemFontScale(): Float {
     return scale
 }
 
-private fun iosContentSizeScale(): Float {
-    val category = UIApplication.sharedApplication.preferredContentSizeCategory
-    return when (category) {
-        UIContentSizeCategoryExtraSmall -> 0.82f
-        UIContentSizeCategorySmall -> 0.88f
-        UIContentSizeCategoryMedium -> 0.94f
-        UIContentSizeCategoryLarge, UIContentSizeCategoryUnspecified -> 1f
-        UIContentSizeCategoryExtraLarge -> 1.12f
-        UIContentSizeCategoryExtraExtraLarge -> 1.23f
-        UIContentSizeCategoryExtraExtraExtraLarge -> 1.35f
-        UIContentSizeCategoryAccessibilityMedium -> 1.64f
-        UIContentSizeCategoryAccessibilityLarge -> 1.95f
-        UIContentSizeCategoryAccessibilityExtraLarge -> 2.35f
-        UIContentSizeCategoryAccessibilityExtraExtraLarge -> 2.76f
-        UIContentSizeCategoryAccessibilityExtraExtraExtraLarge -> 3.12f
-        else -> 1f
-    }
-}
+private fun iosContentSizeScale(): Float =
+    CONTENT_SIZE_SCALES[UIApplication.sharedApplication.preferredContentSizeCategory] ?: 1f
+
+/**
+ * Each Dynamic Type size's scale against Large, the system default. Unspecified, and any size a
+ * later iOS adds, read as Large.
+ */
+private val CONTENT_SIZE_SCALES: Map<String?, Float> =
+    mapOf(
+        UIContentSizeCategoryExtraSmall to 0.82f,
+        UIContentSizeCategorySmall to 0.88f,
+        UIContentSizeCategoryMedium to 0.94f,
+        UIContentSizeCategoryLarge to 1f,
+        UIContentSizeCategoryUnspecified to 1f,
+        UIContentSizeCategoryExtraLarge to 1.12f,
+        UIContentSizeCategoryExtraExtraLarge to 1.23f,
+        UIContentSizeCategoryExtraExtraExtraLarge to 1.35f,
+        UIContentSizeCategoryAccessibilityMedium to 1.64f,
+        UIContentSizeCategoryAccessibilityLarge to 1.95f,
+        UIContentSizeCategoryAccessibilityExtraLarge to 2.35f,
+        UIContentSizeCategoryAccessibilityExtraExtraLarge to 2.76f,
+        UIContentSizeCategoryAccessibilityExtraExtraExtraLarge to 3.12f,
+    )
