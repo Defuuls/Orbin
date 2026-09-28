@@ -77,6 +77,12 @@ val next: NextPalette
  * The palette is derived from the resolved [MaterialTheme.colorScheme] via [nextPaletteFromM3],
  * so dynamic color and the static eggplant scheme both flow through identical code paths.
  *
+ * Brand accent is eggplant on every platform ([NextPalette.accent]). When [platform] is
+ * [NextPlatform.IOS], control chrome adapts to iOS: [NextHighlightIndication] for press,
+ * UISwitch-like [PlatformSwitch] metrics/colors, and [FontFamily.SansSerif] (SF on Apple).
+ * Android keeps Material ripple and Material Switch. The eggplant brand color is intentional
+ * on iOS — not system blue — so both apps share one identity while controls feel native.
+ *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits
  * and inherits — no recomposition cost, no parameter compounding.
@@ -160,9 +166,15 @@ fun NextTheme(
             typography = orbinTypography(1f),
             shapes = OrbinShapes,
         ) {
-            // M3 ripple — platform-native Android indication, eggplant-tinted when pressed
+            // Press: highlight flash on iOS (HIG list-row feel); Material ripple on Android.
+            val indication =
+                if (LocalNextPlatform.current == NextPlatform.IOS) {
+                    NextHighlightIndication
+                } else {
+                    ripple(color = resolvedPalette.accent)
+                }
             CompositionLocalProvider(
-                LocalIndication provides ripple(color = resolvedPalette.accent),
+                LocalIndication provides indication,
             ) {
                 content()
             }

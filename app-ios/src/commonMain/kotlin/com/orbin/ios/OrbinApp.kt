@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -20,13 +21,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -52,11 +58,13 @@ import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.MediaCell
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
@@ -67,6 +75,7 @@ import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
+import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.next
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +108,7 @@ fun OrbinApp(
 
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
+    val fontScale = rememberSystemFontScale()
     NextTheme(
         darkTheme =
             when (settings.themeMode) {
@@ -107,6 +117,7 @@ fun OrbinApp(
                 AppThemeMode.DARK -> true
             },
         amoled = settings.amoled,
+        fontScale = fontScale,
         platform = NextPlatform.IOS,
     ) {
         // Each screen's scroll position outlives it being covered or left, as on Android.
@@ -151,9 +162,9 @@ private fun Destination(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
                 if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
-                    ThreadSplitDestination(browser, previous.board, formFactor)
+                    ThreadSplitDestination(browser, previous.board, formFactor, downloads)
                 } else {
-                    ThreadDestination(browser)
+                    ThreadDestination(browser, downloads)
                 }
             }
         }
@@ -476,6 +487,7 @@ private fun ThreadSplitDestination(
     browser: Browser,
     board: SiteBoard,
     formFactor: FormFactor,
+    downloads: MediaDownloads,
 ) {
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxSize()) {
@@ -483,7 +495,7 @@ private fun ThreadSplitDestination(
         }
         Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
         Box(Modifier.weight(1.4f).fillMaxSize()) {
-            ThreadDestination(browser)
+            ThreadDestination(browser, downloads)
         }
     }
 }
@@ -513,7 +525,7 @@ private fun CatalogThumbnail(
 private fun PlayBadge(modifier: Modifier) {
     Icon(
         imageVector = Icons.Filled.PlayArrow,
-        contentDescription = null,
+        contentDescription = stringResource(Res.string.ios_media_play_video),
         tint = Color.White,
         modifier =
             modifier
@@ -562,7 +574,10 @@ private fun SharpImage(
 }
 
 @Composable
-private fun ThreadDestination(browser: Browser) {
+private fun ThreadDestination(
+    browser: Browser,
+    downloads: MediaDownloads,
+) {
     val thread by browser.thread.collectAsState()
     val firstUnread by browser.firstUnreadPostId.collectAsState()
     NextPullToRefresh(
@@ -578,6 +593,9 @@ private fun ThreadDestination(browser: Browser) {
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
                 onOpenFile = browser::openMedia,
+                onDownloadAll = {
+                    loaded.files.forEach { file -> downloads.save(file, loaded.key, loaded.subject) }
+                },
                 onShare = {
                     val fallback = "/${loaded.key.board.value}/${loaded.key.thread.value}"
                     val shareText = loaded.subject?.takeIf(String::isNotBlank) ?: fallback
@@ -595,20 +613,60 @@ private fun ThreadContent(
     firstUnreadPostId: String?,
     onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
+    onDownloadAll: () -> Unit = {},
     onShare: () -> Unit = {},
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
     val byId = remember(thread) { thread.allPosts.associateBy { it.id.value.toString() } }
+    val attachments = remember(thread) { thread.files }
+    val boardLabel = "/${thread.key.board.value}/"
+    val fileCells =
+        remember(attachments, boardLabel) {
+            attachments.map { MediaCell(id = it.id, board = boardLabel) }
+        }
+    val attachmentsById = remember(attachments) { attachments.associateBy { it.id } }
     val uriHandler = LocalUriHandler.current
     // Where a tapped quote asks the list to scroll; cleared once the screen has scrolled there.
     var scrollTarget by remember(thread) { mutableStateOf<String?>(null) }
+    // Posts / Files chrome and collapse state — same wiring as Android's NextThreadScreen.
+    var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
+    val collapsed =
+        rememberSaveable(
+            thread.key,
+            saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
+        ) { mutableStateListOf<String>() }
     ThreadScreen(
         subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
-        board = "/${thread.key.board.value}/",
+        board = boardLabel,
         posts = posts,
         watching = watching,
+        layout = layout,
+        onLayoutChange = { layout = it },
+        files = fileCells,
+        onOpenFile = { cell ->
+            val index = attachments.indexOfFirst { it.id == cell.id }
+            if (index >= 0) onOpenFile(index)
+        },
+        fileTile = { cell, tileModifier ->
+            attachmentsById[cell.id]?.let { attachment ->
+                Box(tileModifier.clip(RoundedCornerShape(10.dp))) {
+                    SharpImage(
+                        attachment,
+                        attachment.originalFileName,
+                        Modifier.fillMaxSize(),
+                        fill = Modifier.fillMaxSize(),
+                    )
+                    if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                }
+            }
+        },
+        collapsed = collapsed.toSet(),
+        onToggleCollapse = { post ->
+            if (!collapsed.remove(post.id)) collapsed.add(post.id)
+        },
         onWatch = onWatch,
+        onDownloadAll = onDownloadAll,
         onShare = onShare,
         firstUnreadPostId = firstUnreadPostId,
         scrollToPostId = scrollTarget,

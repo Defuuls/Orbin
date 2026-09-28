@@ -19,8 +19,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,6 +46,8 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
+import com.orbin.ios.resources.ios_media_loop_off
+import com.orbin.ios.resources.ios_media_loop_on
 import com.orbin.ios.resources.ios_media_not_saved
 import com.orbin.ios.resources.ios_media_not_viewable
 import com.orbin.ios.resources.ios_media_open_in_browser
@@ -55,6 +55,7 @@ import com.orbin.ios.resources.ios_media_position
 import com.orbin.ios.resources.ios_media_save
 import com.orbin.ios.resources.ios_media_saving
 import com.orbin.ios.resources.ios_media_spoiler_reveal
+import com.orbin.uinext.NextIconAction
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -91,13 +92,12 @@ internal fun MediaViewer(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SaveButton(files[pager.currentPage], onSave)
-                IconButton(onClick = onClose) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = stringResource(Res.string.ios_media_close),
-                        tint = Color.White,
-                    )
-                }
+                NextIconAction(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(Res.string.ios_media_close),
+                    onClick = onClose,
+                    tint = Color.White,
+                )
             }
         }
     }
@@ -165,7 +165,12 @@ private fun MediaPage(
                             .safeDrawingPadding()
                             .padding(top = PLAYER_TOP_INSET, start = 8.dp),
                 ) {
-                    Text(if (looping) "Loop: On" else "Loop: Off", color = Color.White)
+                    Text(
+                        stringResource(
+                            if (looping) Res.string.ios_media_loop_on else Res.string.ios_media_loop_off,
+                        ),
+                        color = Color.White,
+                    )
                 }
             }
         webm != null && supportsWebM && active ->

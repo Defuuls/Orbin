@@ -31,6 +31,12 @@
     <string name="next_settings_title">Settings</string>
 
     <string name="next_launchpad_boards">Boards</string>
+    <string name="next_boards_search">Search boards</string>
+    <string name="next_boards_discover">Discover</string>
+    <string name="next_boards_following_tab">Following (%1$d)</string>
+    <string name="next_boards_following">Following</string>
+    <string name="next_boards_tap_to_follow">Tap to follow</string>
+    <string name="next_boards_no_match">No boards match your selection</string>
     <string name="next_boards_random">Surprise me</string>
     <string name="next_boards_nsfw">NSFW</string>
     <plurals name="next_boards_count">

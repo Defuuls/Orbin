@@ -93,7 +93,8 @@ private class Rows {
         label: String,
         value: String,
         hint: String? = null,
-    ): SettingItem = SettingItem(id, label, value, SettingKind.ACTION, hint = hint)
+        destructive: Boolean = false,
+    ): SettingItem = SettingItem(id, label, value, SettingKind.ACTION, hint = hint, destructive = destructive)
 
     fun preferences(
         settings: AppSettings,
@@ -161,8 +162,9 @@ private class Rows {
             // Confirmed in place: the first tap arms the row, a second tap deletes.
             if (clearArmed) "Tap again to delete" else "Delete",
             "Deletes browsing history, recent searches and download history on this device.",
+            destructive = true,
         ),
-        action("clearImageCache", "Clear image cache", imageCacheLabel),
+        action("clearImageCache", "Clear image cache", imageCacheLabel, destructive = true),
         action("checkUpdates", "Check for updates", updateState),
         action("exportBackup", "Export data", "Save"),
         action("importBackup", "Import data", "Restore"),

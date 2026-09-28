@@ -50,6 +50,8 @@ data class SettingItem(
     val selected: Int = -1,
     val text: String = "",
     val hint: String? = null,
+    /** When true, the trailing value uses [nextDestructiveRed] (Delete / Clear rows). */
+    val destructive: Boolean = false,
 )
 
 enum class SettingKind {
@@ -184,7 +186,12 @@ private fun SettingRow(
                         text = item.value,
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (item.isOn()) next.accent else next.muted,
+                        color =
+                            when {
+                                item.destructive -> nextDestructiveRed
+                                item.isOn() -> next.accent
+                                else -> next.muted
+                            },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

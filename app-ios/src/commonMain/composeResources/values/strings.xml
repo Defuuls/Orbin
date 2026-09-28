@@ -7,6 +7,9 @@
     <string name="ios_media_not_viewable">This file plays in the browser.</string>
     <string name="ios_media_spoiler">Spoiler</string>
     <string name="ios_media_spoiler_reveal">Spoiler — tap to show</string>
+    <string name="ios_media_loop_on">Loop: On</string>
+    <string name="ios_media_loop_off">Loop: Off</string>
+    <string name="ios_media_play_video">Play video</string>
     <string name="ios_search_follow_boards">Follow a few boards to search them</string>
     <string name="ios_media_save">Save</string>
     <string name="ios_media_saving">Added to Downloads</string>

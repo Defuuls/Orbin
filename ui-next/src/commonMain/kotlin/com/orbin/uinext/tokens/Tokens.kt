@@ -81,12 +81,12 @@ object NextMaterials {
 }
 
 /**
- * M3 typography scale — Roboto (platform default SansSerif), M3 type roles.
+ * M3 typography scale — platform default [FontFamily.SansSerif], M3 type roles.
  *
- * Replaced the Apple SF-adjacent ramp (aggressive negative tracking, iOS size names)
- * with M3 type role names and letterspacing values tuned for Roboto rather than SF Pro.
- * Display/Headline roles use slightly negative tracking at large sizes (Roboto's optical
- * recommendation); Body and Label are at default 0sp.
+ * On Android SansSerif resolves to Roboto; on iOS Compose Multiplatform maps it to the
+ * system sans (San Francisco). Type role names and letterspacing follow M3 rather than
+ * the old Apple-named ramp. Display/Headline use slightly negative tracking at large sizes;
+ * Body and Label stay at default 0sp.
  */
 @Immutable
 object NextType {

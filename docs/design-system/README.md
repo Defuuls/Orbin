@@ -8,11 +8,15 @@ shell (`MaterialOrbinTheme` was removed after Next replaced nested Material chro
 below this line describes the remaining Material token layer.
 
 `ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings, media
-wall, search, downloads, gallery, onboarding, and the startup chrome screens. It defines its own palette and type rather than reading `MaterialTheme`, because the visual
-style is part of what it replaced: Apple-inspired calm neutrals with one system-blue accent, OLED
-dark surfaces, DestinationPill chrome, and inset grouped Settings. See [the ui-next section](#ui-next)
-below before changing anything in that module. Orbin Minimal draws from this layer too: it is the
-same screens over the same layers, not a second, smaller interface.
+wall, search, downloads, gallery, onboarding, and the startup chrome screens. It defines its own
+palette and type rather than reading `MaterialTheme` for those tokens: a shared **M3-expressive /
+eggplant** Next shell on Android and iOS (eggplant primary, tonal matte surfaces, DestinationPill
+chrome, inset grouped Settings, OLED / true-black option). When `NextPlatform.IOS` is installed,
+control chrome adapts — highlight press instead of Material ripple, UISwitch-like toggles, and
+system sans (SF) via `FontFamily.SansSerif` — while the eggplant brand accent stays intentional
+(not system blue). See [the ui-next section](#ui-next) below before changing anything in that
+module. Orbin Minimal draws from this layer too: it is the same screens over the same layers, not
+a second, smaller interface.
 
 ## Color
 
@@ -84,7 +88,7 @@ separators — not Material elevation theatre. `InlineAction` is how an action i
 with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
 away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
 
-**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is `NextHighlightIndication` / `nextClickable` / `NextIconAction` (installed by `NextTheme`) — never a Material ripple. Progress uses thin `NextLinearProgress` / `NextCircularProgress` rather than Material bars; density uses `NextSlider`; lists refresh with `NextPullToRefresh`; toasts use `NextSnackbarHost`.
+**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is platform-aware inside `NextTheme`: `NextHighlightIndication` / highlight `nextClickable` on iOS, eggplant Material ripple on Android; `NextIconAction` for icon targets. Progress uses thin `NextLinearProgress` / `NextCircularProgress` rather than Material bars; density uses `NextSlider`; lists refresh with `NextPullToRefresh`; toasts use `NextSnackbarHost`. `PlatformSwitch` is Material on Android and UISwitch-like on iOS.
 
 
 **A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
@@ -107,6 +111,10 @@ setting, for the same reason it takes rows rather than threads. Three settings a
 | Theme (System / Light / Dark) | `darkTheme` — which of the two palettes |
 | AMOLED black | `amoled` — true black behind the same ink and accent; dark themes only |
 | Font size | `fontScale` — multiplied onto the density, which is what scales the literal `sp` |
+
+There is no in-app Font size preference row anymore: Android's shell leaves `fontScale` at `1f` so
+Compose density already carries the system setting, and iOS maps UIKit Dynamic Type
+(`preferredContentSizeCategory`) into `NextTheme(fontScale = …)`.
 
 `fontScale` multiplies the scale already in force rather than replacing it, and only the *change*
 is applied: a nested theme inherits an already-scaled density, so re-applying the factor there

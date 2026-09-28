@@ -88,12 +88,16 @@ fun NextConfirmDialog(
     }
 }
 
+/** System red for irreversible actions — same hue as [DestructiveConfirm] trailing labels. */
+val nextDestructiveRed: Color
+    @Composable get() = if (next.dark) Color(0xFFFF453A) else Color(0xFFFF3B30)
+
 @Composable
 private fun DestructiveConfirm(
     label: String,
     onClick: () -> Unit,
 ) {
-    val red = if (next.dark) Color(0xFFFF453A) else Color(0xFFFF3B30)
+    val red = nextDestructiveRed
     val shape = RoundedCornerShape(NextRadius.control)
     Box(
         modifier =
