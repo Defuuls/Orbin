@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Android: reopening a thread now loads its latest replies. It showed the copy kept from the last visit, up to half an hour old, until pulled to refresh; that copy now only fills the screen while the thread loads. Watched-thread checks always ask the site too, so a copy held while the app was open can no longer hide new replies from them.
+
 ## [159-Apricot] - 2026-09-28
 
 ### Added
