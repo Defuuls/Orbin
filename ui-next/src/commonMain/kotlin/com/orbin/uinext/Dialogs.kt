@@ -6,13 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -130,6 +132,12 @@ data class NextSheetAction(
 /**
  * A short list of things to do with what was long-pressed.
  *
+ * Uses Material3 [ModalBottomSheet] on every platform. Compose Multiplatform does not yet expose
+ * UIKit sheet detents, so there is no native `.medium` / `.large` API to wire here. Setting
+ * [rememberModalBottomSheetState] `skipPartiallyExpanded = true` opens the sheet fully (closer to a
+ * UIKit action sheet) instead of stopping at a half-height detent. When CMP gains detent APIs,
+ * prefer mapping them behind [LocalNextPlatform] rather than forking the sheet body.
+ *
  * Every action closes the sheet after it runs, so a sheet is never left open behind its result.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,12 +147,27 @@ fun NextActionSheet(
     actions: List<NextSheetAction>,
     onDismiss: () -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val ios = LocalNextPlatform.current == NextPlatform.IOS
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = next.raised,
+        sheetState = sheetState,
+        // Elevated tonal fill — flat matte, no Material tonalElevation lift.
+        containerColor = next.elevated,
         contentColor = next.ink,
+        tonalElevation = 0.dp,
         shape = RoundedCornerShape(topStart = NextRadius.sheet, topEnd = NextRadius.sheet),
-        dragHandle = { BottomSheetDefaults.DragHandle() },
+        dragHandle = {
+            // Capsule grabber; slightly shorter on iOS to read closer to a UISheetPresentation grabber.
+            Box(
+                Modifier
+                    .padding(top = NextSpace.sheetHandleTop, bottom = 8.dp)
+                    .width(if (ios) 36.dp else 32.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(next.hairline),
+            )
+        },
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),

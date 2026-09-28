@@ -120,10 +120,15 @@ Compose density already carries the system setting, and iOS maps UIKit Dynamic T
 is applied: a nested theme inherits an already-scaled density, so re-applying the factor there
 would compound it once per screen.
 
-Dynamic color and the ported imageboard skins deliberately do **not** arrive. This module's palette
-is the argument it makes, and recolouring it from the wallpaper would be the old interface wearing
-this one's layout. Those two still map into Next palettes at the shell; gallery, onboarding, dialogs, and snackbars
-draw through Next controls rather than a separate Material destination shell.
+Dynamic color and the ported imageboard skins deliberately do **not** arrive in ui-next. This
+module's palette is the argument it makes, and recolouring it from the wallpaper would be the old
+interface wearing this one's layout. On Android the Material shell may still resolve wallpaper
+colors when Dynamic color is on; on iOS `dynamicColorScheme` is an intentional null stub, so the
+eggplant brand always applies. Gallery, onboarding, dialogs, and snackbars draw through Next
+controls (`NextSnackbarHost` is opaque matte elevated — not frosted glass).
+
+iOS launch chrome (`iosApp/project.yml` `UILaunchScreen`) uses `LaunchScreenBackground` plus the
+`LaunchMark` imageset (resized from `AppIcon`) while Compose loads.
 
 Colours come from `next`, not `MaterialTheme`. `boardHue()` gives a board its colour; a merged feed
 is otherwise four grey characters per row. `placeholderArt()` stands in for a thumbnail that has

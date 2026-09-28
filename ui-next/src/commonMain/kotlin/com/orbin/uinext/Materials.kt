@@ -47,7 +47,10 @@ fun Modifier.nextAccentSurface(shape: Shape): Modifier =
         .background(next.accentContainer)
 
 /**
- * Backwards-compatible chrome fill: maps to flat matte [nextElevatedSurface].
+ * Backwards-compatible alias for [nextElevatedSurface].
+ *
+ * Name is historical — this is **not** frosted glass / blur. Prefer [nextElevatedSurface] at new
+ * call sites so naming matches the matte M3 surface vocabulary.
  */
 @Composable
 fun Modifier.nextFrosted(shape: Shape): Modifier = nextElevatedSurface(shape)

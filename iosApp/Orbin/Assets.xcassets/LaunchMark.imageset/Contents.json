@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "LaunchMark.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "wendy.h@example.net",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "aaron.s@example.org",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
