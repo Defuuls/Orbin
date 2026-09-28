@@ -22,8 +22,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Thread repository. Loads threads through the active provider with in-memory caching for
- * fast repeat loads (500ms-2s faster thread reopening). Cache is keyed by ThreadKey, expires
+ * Thread repository. Loads threads through the active provider, with an in-memory copy of each
+ * recent thread to show while the fresh one loads (500ms-2s faster thread reopening). Cache is keyed by ThreadKey, expires
  * after 30 minutes of inactivity, and is capped so long browsing sessions cannot retain an
  * unbounded number of complete threads.
  */
@@ -53,12 +53,29 @@ class ThreadRepositoryImpl
             }
         private val cacheMutex = Mutex()
 
+        /**
+         * The thread as it is now. A copy cached from an earlier visit paints it at once, but a
+         * thread gains replies all the time, so the network always follows: opening a thread
+         * once served the cached copy alone for up to [CACHE_TTL_MILLIS], without the replies
+         * posted since. When the network fails after a cached copy, the cached copy stays rather
+         * than giving way to an error.
+         */
         override fun observeThread(
             key: ThreadKey,
             forceRefresh: Boolean,
         ): Flow<OrbinResult<Thread>> =
             flow {
-                emit(refreshThread(key.provider, key.board, key.thread, forceRefresh))
+                val cached = if (forceRefresh) null else cachedThread(key)
+                if (cached != null) emit(OrbinResult.Success(cached))
+                val fresh = refreshThread(key.provider, key.board, key.thread, forceRefresh = true)
+                if (cached == null || fresh is OrbinResult.Success) emit(fresh)
+            }
+
+        private suspend fun cachedThread(key: ThreadKey): Thread? =
+            cacheMutex.withLock {
+                val now = System.currentTimeMillis()
+                threadCache.entries.removeAll { it.value.isStale(now) }
+                threadCache[key]?.thread
             }
 
         override suspend fun refreshThread(
