@@ -45,7 +45,9 @@ class ThreadUpdateWorker
                             permits.withPermit {
                                 val key = bookmark.key
                                 threadRepository
-                                    .refreshThread(key.provider, key.board, key.thread)
+                                    // Always the network: a copy cached while the app was
+                                    // open would hide the replies the check exists to find.
+                                    .refreshThread(key.provider, key.board, key.thread, forceRefresh = true)
                                     .onSuccess { thread ->
                                         val latest = thread.stats.replyCount
                                         if (latest > bookmark.latestReplyCount) {
