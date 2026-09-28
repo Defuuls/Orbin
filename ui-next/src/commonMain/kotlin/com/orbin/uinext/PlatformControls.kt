@@ -1,15 +1,21 @@
 package com.orbin.uinext
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -23,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -80,23 +87,67 @@ fun PlatformSwitch(
     modifier: Modifier = Modifier,
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    Switch(
-        checked = checked,
-        onCheckedChange = {
-            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
-            onCheckedChange(it)
-        },
-        modifier = modifier,
-        colors =
-            SwitchDefaults.colors(
-                checkedThumbColor = next.onAccent,
-                checkedTrackColor = next.accent,
-                uncheckedThumbColor = next.muted,
-                uncheckedTrackColor = next.faint,
-                uncheckedBorderColor = next.hairline,
-            ),
-    )
+    val toggle: (Boolean) -> Unit = {
+        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
+        onCheckedChange(it)
+    }
+    if (LocalNextPlatform.current == NextPlatform.IOS) {
+        IosSwitch(checked = checked, onCheckedChange = toggle, modifier = modifier)
+    } else {
+        Switch(
+            checked = checked,
+            onCheckedChange = toggle,
+            modifier = modifier,
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = next.onAccent,
+                    checkedTrackColor = next.accent,
+                    uncheckedThumbColor = next.muted,
+                    uncheckedTrackColor = next.faint,
+                    uncheckedBorderColor = next.hairline,
+                ),
+        )
+    }
 }
+
+/**
+ * UISwitch-like metrics and colors for iOS. Brand eggplant stays elsewhere in the shell;
+ * the switch itself uses system green / grey chrome so it reads as a native control.
+ */
+@Composable
+private fun IosSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val trackOn = Color(0xFF34C759)
+    val trackOff = if (next.dark) Color(0xFF39393D) else Color(0xFFE9E9EA)
+    val trackColor = animateColorAsState(if (checked) trackOn else trackOff, label = "ios-switch-track")
+    val thumbOffset = animateDpAsState(if (checked) 20.dp else 0.dp, label = "ios-switch-thumb")
+    Box(
+        modifier =
+            modifier
+                .width(IOS_SWITCH_WIDTH)
+                .height(IOS_SWITCH_HEIGHT)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(trackColor.value)
+                .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
+                .padding(2.dp),
+    ) {
+        Box(
+            Modifier
+                .offset(x = thumbOffset.value)
+                .size(IOS_SWITCH_THUMB)
+                .shadow(2.dp, CircleShape)
+                .clip(CircleShape)
+                .background(Color.White),
+        )
+    }
+}
+
+private val IOS_SWITCH_WIDTH = 51.dp
+private val IOS_SWITCH_HEIGHT = 31.dp
+private val IOS_SWITCH_THUMB = 27.dp
 
 @Composable
 fun PlatformSegments(

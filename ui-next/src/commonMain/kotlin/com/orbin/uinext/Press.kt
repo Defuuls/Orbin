@@ -75,7 +75,7 @@ private class NextHighlightNode(
 }
 
 /**
- * Clickable with the Material 3 ripple indication tinted by current accent color.
+ * Clickable with platform press feedback: [NextHighlightIndication] on iOS, eggplant ripple on Android.
  */
 @Composable
 fun Modifier.nextClickable(
@@ -87,9 +87,15 @@ fun Modifier.nextClickable(
     onClick: () -> Unit,
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
+    val indication =
+        if (LocalNextPlatform.current == NextPlatform.IOS) {
+            NextHighlightIndication
+        } else {
+            androidx.compose.material3.ripple(color = next.accent)
+        }
     return combinedClickable(
         interactionSource = interaction,
-        indication = androidx.compose.material3.ripple(color = next.accent),
+        indication = indication,
         enabled = enabled,
         onClickLabel = onClickLabel,
         role = role,

@@ -35,7 +35,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         OrbinVersionName: $(ORBIN_VERSION_NAME)
-        UILaunchScreen: {}
+        # Solid brand ground while Kotlin/Compose loads — light eggplant surface / true black in dark mode.
+        UILaunchScreen:
+          UIColorName: LaunchScreenBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

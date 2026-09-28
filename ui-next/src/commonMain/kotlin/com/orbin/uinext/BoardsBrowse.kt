@@ -33,8 +33,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_boards_count
+import com.orbin.uinext.resources.next_boards_discover
+import com.orbin.uinext.resources.next_boards_following
+import com.orbin.uinext.resources.next_boards_following_tab
+import com.orbin.uinext.resources.next_boards_no_match
 import com.orbin.uinext.resources.next_boards_nsfw
 import com.orbin.uinext.resources.next_boards_random
+import com.orbin.uinext.resources.next_boards_search
+import com.orbin.uinext.resources.next_boards_tap_to_follow
 import com.orbin.uinext.resources.next_launchpad_boards
 import com.orbin.uinext.resources.next_search_threads
 import com.orbin.uinext.tokens.NextRadius
@@ -166,7 +172,7 @@ fun BoardsScreen(
                         )
                         Column(Modifier.padding(horizontal = GUTTER)) {
                             headerContent()
-                            SchematicSearch(query, { query = it }, "Search boards")
+                            SchematicSearch(query, { query = it }, stringResource(Res.string.next_boards_search))
                             if (onOpenSearch != null) {
                                 Box(modifier = Modifier.padding(top = 4.dp).offset(x = (-4).dp)) {
                                     InlineAction(stringResource(Res.string.next_search_threads), onClick = onOpenSearch)
@@ -175,8 +181,11 @@ fun BoardsScreen(
                             Gap(12)
                             PlatformSegments(
                                 listOf(
-                                    "Discover",
-                                    "Following (${boards.count { it.followed }})",
+                                    stringResource(Res.string.next_boards_discover),
+                                    stringResource(
+                                        Res.string.next_boards_following_tab,
+                                        boards.count { it.followed },
+                                    ),
                                 ),
                                 if (following) 1 else 0,
                                 {
@@ -200,7 +209,10 @@ fun BoardsScreen(
                 item(key = "boards-group") {
                     GroupedSection {
                         if (visibleBoards.isEmpty()) {
-                            MetaLine("No boards match your selection", modifier = Modifier.padding(16.dp))
+                            MetaLine(
+                                stringResource(Res.string.next_boards_no_match),
+                                modifier = Modifier.padding(16.dp),
+                            )
                         }
                         visibleBoards.forEachIndexed { index, board ->
                             BoardListRow(
@@ -291,10 +303,15 @@ private fun BoardListRow(
             }
             Text(
                 text =
-                    buildString {
+                    run {
+                        val followLabel =
+                            if (board.followed) {
+                                stringResource(Res.string.next_boards_following)
+                            } else {
+                                stringResource(Res.string.next_boards_tap_to_follow)
+                            }
                         // A symbol takes the path's place on the tile, so the path moves here.
-                        if (symbol != null) append("${board.path} · ")
-                        append(if (board.followed) "Following" else "Tap to follow")
+                        if (symbol != null) "${board.path} · $followLabel" else followLabel
                     },
                 style = NextType.footnote,
                 color = next.muted,
@@ -303,12 +320,16 @@ private fun BoardListRow(
             )
         }
         WidthSpacer(8)
-        if (onFollow != null) PlatformSwitch(board.followed, onFollow)
-        Icon(
-            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-            contentDescription = null,
-            tint = next.faint,
-            modifier = Modifier.size(22.dp),
-        )
+        if (onFollow != null) {
+            // Switch owns follow; the row click opens the board — no competing chevron.
+            PlatformSwitch(board.followed, onFollow)
+        } else {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = next.faint,
+                modifier = Modifier.size(22.dp),
+            )
+        }
     }
 }

@@ -101,4 +101,15 @@ class SettingsRowsTest {
 
         assertTrue(SettingIds.VERSION !in ids)
     }
+
+    @Test
+    fun destructiveRowsUseTheDestructiveFlag() {
+        val rows =
+            settingsGroups(AppSettings.Default, clearArmed = false, imageCacheCleared = false)
+                .flatMap { it.second }
+                .associateBy { it.id }
+        assertTrue(rows.getValue(SettingIds.CLEAR_ACTIVITY).destructive)
+        assertTrue(rows.getValue(SettingIds.CLEAR_IMAGE_CACHE).destructive)
+        assertTrue(!rows.getValue(SettingIds.EXPORT_BACKUP).destructive)
+    }
 }

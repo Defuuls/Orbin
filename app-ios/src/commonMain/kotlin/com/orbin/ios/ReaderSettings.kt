@@ -129,12 +129,14 @@ internal fun settingsGroups(
                     value = if (clearArmed) "Tap again to delete" else "Delete",
                     kind = SettingKind.ACTION,
                     hint = "Deletes browsing history on this device.",
+                    destructive = true,
                 ),
                 SettingItem(
                     id = SettingIds.CLEAR_IMAGE_CACHE,
                     label = "Clear image cache",
                     value = if (imageCacheCleared) "Cleared" else "Clear",
                     kind = SettingKind.ACTION,
+                    destructive = true,
                 ),
                 SettingItem(
                     id = SettingIds.EXPORT_BACKUP,
