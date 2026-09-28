@@ -42,7 +42,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        # Compose drives ProMotion displays at their full rate only with this set.
+        # Compose drives ProMotion displays at their full rate only with this set: 120Hz on an iPhone
+        # Pro; an iPad Pro (the M4 11-inch included) runs at its full rate regardless.
         CADisableMinimumFrameDurationOnPhone: true
         # HTTPS only, which is exempt from export compliance, so TestFlight does not ask each build.
         ITSAppUsesNonExemptEncryption: false

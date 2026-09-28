@@ -18,19 +18,47 @@ enum class FormFactor(
 private const val FOLDABLE_MAX_FEED_COLUMNS = 3
 private const val TABLET_MAX_FEED_COLUMNS = 4
 
-/** Below this window width the feed is one column on any device: a folded phone, split screen. */
+/**
+ * A window is wide, and takes the reader's column choices, only when both its sides are at least
+ * this long: Android's own line for a tablet's screen.
+ *
+ * Both sides, not just the width, because a foldable's cover screen turned sideways is wide but
+ * short. A Galaxy Z Fold8's 10:16 cover is about 751 x 475dp in landscape and a Fold8 Ultra's
+ * 21:9 cover about 960 x 411dp; neither is the unfolded screen the column setting is for. Their
+ * inner screens, a 4:3 Fold8 (about 933 x 696dp) and a near-square Ultra (about 859 x 954dp), are
+ * wide either way up.
+ */
 const val WIDE_SCREEN_MIN_DP = 600
 
+/** Whether a [windowWidthDp] by [windowHeightDp] window is wide: see [WIDE_SCREEN_MIN_DP]. */
+fun isWideWindow(
+    windowWidthDp: Int,
+    windowHeightDp: Int,
+): Boolean = windowWidthDp >= WIDE_SCREEN_MIN_DP && windowHeightDp >= WIDE_SCREEN_MIN_DP
+
 /**
- * How many columns the feed shows: one on any window narrower than [WIDE_SCREEN_MIN_DP], and on a
+ * A wide window at least this wide shows a board's catalog and the open thread side by side. Low
+ * enough for both unfolded Fold8 screens: the Fold8's held landscape and the Ultra's either way up.
+ */
+const val TWO_PANE_MIN_WIDTH_DP = 800
+
+/** Whether a board's catalog and its open thread share the window rather than taking turns. */
+fun showsTwoPanes(
+    windowWidthDp: Int,
+    windowHeightDp: Int,
+): Boolean = isWideWindow(windowWidthDp, windowHeightDp) && windowWidthDp >= TWO_PANE_MIN_WIDTH_DP
+
+/**
+ * How many columns the feed shows: one on a window that is not wide ([isWideWindow]) and on a
  * phone; otherwise the reader's choice for this kind of device, within what it allows.
  */
 fun feedColumns(
     formFactor: FormFactor,
     windowWidthDp: Int,
+    windowHeightDp: Int,
     settings: AppSettings,
 ): Int {
-    if (windowWidthDp < WIDE_SCREEN_MIN_DP) return 1
+    if (!isWideWindow(windowWidthDp, windowHeightDp)) return 1
     return settings.feedColumnsFor(formFactor).coerceIn(1, formFactor.maxFeedColumns)
 }
 
@@ -56,8 +84,9 @@ const val TABLET_MAX_CATALOG_COLUMNS = 8
 fun catalogColumns(
     formFactor: FormFactor,
     windowWidthDp: Int,
+    windowHeightDp: Int,
     settings: AppSettings,
 ): Int? {
-    if (formFactor != FormFactor.TABLET || windowWidthDp < WIDE_SCREEN_MIN_DP) return null
+    if (formFactor != FormFactor.TABLET || !isWideWindow(windowWidthDp, windowHeightDp)) return null
     return settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS)
 }

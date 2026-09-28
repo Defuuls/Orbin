@@ -13,8 +13,8 @@ encrypted.
 | Cover violent media | On by default. Puts a spoiler cover over the images and videos of posts whose subject, text or filename mentions violence, accidents or graphic footage (for example *fight*, *car crash*, *bodycam*, *nsfl*). If a thread's opening post does, every file in the thread is covered. Open the post to see the media. It reads text only, so unlabelled media is not covered. Clearly labelled gore is hidden outright by a filter that cannot be turned off. |
 | Theme | Light, dark, or follow the system. |
 | True black | Uses pure black surfaces in dark mode. |
-| Feed columns | Foldables and tablets only. How many columns the feed shows on a wide screen: 1–3 on an unfolded foldable ("Feed columns when unfolded"), 1–4 on a tablet. Starts at 2. A foldable's front screen, a phone, and any window narrower than 600dp always show one column. |
-| Catalog columns | Tablets only. How many columns a board's catalog shows on the tablet's full width, 2–8. Starts at 4. Everywhere else, and in a window narrower than 600dp, the catalog fits its tiles to the width. |
+| Feed columns | Foldables and tablets only. How many columns the feed shows on a wide screen: 1–3 on an unfolded foldable ("Feed columns when unfolded"), 1–4 on a tablet. Starts at 2. A foldable's front screen (either way up), a phone, and any window narrower or shorter than 600dp always show one column. |
+| Catalog columns | Tablets only. How many columns a board's catalog shows on the tablet's full width, 2–8. Starts at 4. Everywhere else, and in a window narrower or shorter than 600dp, the catalog fits its tiles to the width. |
 | App lock | Requires device authentication before Orbin's content is shown. |
 | Tell me about new releases | When on (the default), Orbin checks for a new release at most once a day when it opens and offers to install it. |
 

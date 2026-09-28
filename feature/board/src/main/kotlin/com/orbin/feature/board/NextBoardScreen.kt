@@ -131,7 +131,13 @@ fun NextBoardScreen(
                 },
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
-                columns = catalogColumns(formFactor, LocalConfiguration.current.screenWidthDp, settings),
+                columns =
+                    catalogColumns(
+                        formFactor,
+                        LocalConfiguration.current.screenWidthDp,
+                        LocalConfiguration.current.screenHeightDp,
+                        settings,
+                    ),
                 thumbnail = { row, tileModifier ->
                     row.threadId()?.let { id ->
                         byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
