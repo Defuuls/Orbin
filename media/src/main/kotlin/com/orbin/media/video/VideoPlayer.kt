@@ -122,6 +122,8 @@ fun VideoPlayer(
     var playbackError by remember(url) { mutableStateOf<String?>(null) }
     var isRateLimited by remember(url) { mutableStateOf(false) }
     var rateLimitCooldownSeconds by remember { mutableLongStateOf(0L) }
+    // Bumped when a rate-limit cooldown ends so the player loads the video again by itself.
+    var loadAttempt by remember(url) { mutableIntStateOf(0) }
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var bufferedProgress by remember { mutableFloatStateOf(0f) }
@@ -196,7 +198,7 @@ fun VideoPlayer(
         }
     }
 
-    LaunchedEffect(url) {
+    LaunchedEffect(url, loadAttempt) {
         playbackError = null
         isRateLimited = false
         rateLimitCooldownSeconds = 0L
@@ -205,7 +207,7 @@ fun VideoPlayer(
         bufferedProgress = 0f
         // Skip network hit if the CDN host is still in cooldown.
         val host = runCatching { url.toHttpUrl().host }.getOrNull()
-        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it) }
+        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it, url) }
         if (blockedUntil != null) {
             isRateLimited = true
             rateLimitCooldownSeconds = ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
@@ -229,6 +231,7 @@ fun VideoPlayer(
         }
         isRateLimited = false
         playbackError = null
+        loadAttempt++
     }
 
     // Pause as soon as this page is no longer active so audio never plays over the next video.
@@ -287,7 +290,7 @@ fun VideoPlayer(
                     isRateLimited = rateLimited
                     if (rateLimited) {
                         val host = runCatching { url.toHttpUrl().host }.getOrNull()
-                        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it) }
+                        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it, url) }
                         rateLimitCooldownSeconds =
                             if (blockedUntil != null) {
                                 ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)

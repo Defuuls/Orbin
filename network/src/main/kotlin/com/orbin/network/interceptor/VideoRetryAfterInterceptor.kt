@@ -5,7 +5,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 
 private const val HTTP_TOO_MANY_REQUESTS = 429
-private const val DEFAULT_RETRY_AFTER_SECONDS = 300L
+private const val DEFAULT_RETRY_AFTER_SECONDS = 15L
 
 /**
  * OkHttp interceptor for video requests. On a 429 response it reads the `Retry-After` header
@@ -16,8 +16,9 @@ class VideoRetryAfterInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val host = request.url.host
+        val url = request.url.toString()
 
-        val blockedUntil = RetryAfterTracker.blockedUntilMs(host)
+        val blockedUntil = RetryAfterTracker.blockedUntilMs(host, url)
         if (blockedUntil != null) {
             val remainingSeconds = (blockedUntil - System.currentTimeMillis()) / 1_000L
             // Return a synthetic 429 body immediately so ExoPlayer surfaces an error fast.
@@ -36,7 +37,7 @@ class VideoRetryAfterInterceptor : Interceptor {
             val retryAfter =
                 response.header("Retry-After")?.toLongOrNull()
                     ?: DEFAULT_RETRY_AFTER_SECONDS
-            RetryAfterTracker.record(host, retryAfter)
+            RetryAfterTracker.record(host, url, retryAfter)
         }
         return response
     }
