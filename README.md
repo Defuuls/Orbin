@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [159 — Apricot](https://github.com/Defuuls/Orbin/releases/tag/v159-Apricot)
+**Current release:** [160 — Blackberry](https://github.com/Defuuls/Orbin/releases/tag/v160-Blackberry)
 
-**What's new in 159:** Galaxy Z Fold8 and Fold8 Ultra layouts, and iOS keeps your place in the feed and threads.
+**What's new in 160:** Videos recover from CDN rate limits on their own, and threads open on their latest replies.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

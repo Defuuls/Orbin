@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [160-Blackberry] - 2026-09-29
+
+### Fixed
+- Android: one video refused by the media CDN (HTTP 429) no longer blocks every video. Only that video waits, and only for 15 seconds unless the server asks for longer (at most a minute); the whole server is held back only when several videos are refused within 30 seconds. When the wait ends the video loads again on its own. Before, returning to the app after a while could leave every video showing "rate limited" for five minutes.
+- Android: reopening a thread now loads its latest replies. It showed the copy kept from the last visit, up to half an hour old, until pulled to refresh; that copy now only fills the screen while the thread loads. Watched-thread checks always ask the site too, so a copy held while the app was open can no longer hide new replies from them.
+
+
 ## [159-Apricot] - 2026-09-28
 
 ### Added
@@ -2484,7 +2491,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v159-Apricot...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...HEAD
+[160-Blackberry]: https://github.com/Defuuls/Orbin/compare/v159-Apricot...v160-Blackberry
 [159-Apricot]: https://github.com/Defuuls/Orbin/compare/v158-Yuzu...v159-Apricot
 [158-Yuzu]: https://github.com/Defuuls/Orbin/compare/v157-Xigua...v158-Yuzu
 [157-Xigua]: https://github.com/Defuuls/Orbin/compare/v156-Watermelon...v157-Xigua
