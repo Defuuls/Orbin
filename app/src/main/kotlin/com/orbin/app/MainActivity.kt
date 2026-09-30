@@ -33,11 +33,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.lifecycleScope
 import com.orbin.app.navigation.Route
+import com.orbin.app.routing.IntentRoute
+import com.orbin.app.routing.parseRoute
 import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
-import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.LockScreen
@@ -313,32 +314,16 @@ class MainActivity : FragmentActivity() {
 
     private fun handleIncomingIntent(intent: Intent?) {
         intent ?: return
-        val route = intent.toPendingRoute() ?: return
-        pendingRoute = route
-    }
-
-    private fun Intent.toPendingRoute(): Route? {
-        if (hasExtra(AndroidThreadNotifier.EXTRA_THREAD)) {
-            val provider = getStringExtra(AndroidThreadNotifier.EXTRA_PROVIDER) ?: ""
-            val board = getStringExtra(AndroidThreadNotifier.EXTRA_BOARD) ?: ""
-            val thread = getLongExtra(AndroidThreadNotifier.EXTRA_THREAD, 0L)
-            val title = getStringExtra(AndroidThreadNotifier.EXTRA_TITLE) ?: ""
-            if (thread != 0L && board.isNotEmpty()) {
-                return Route.Thread(
-                    provider = provider,
-                    board = board,
-                    thread = thread,
-                    title = title,
-                )
+        val route = intent.parseRoute()
+        pendingRoute =
+            when (route) {
+                is IntentRoute.Thread ->
+                    Route.Thread(route.provider, route.board, route.thread, route.title)
+                IntentRoute.FeedShortcut -> Route.NextFeed
+                IntentRoute.DownloadsShortcut -> Route.Downloads
+                IntentRoute.BoardsShortcut -> Route.BoardGallery
+                IntentRoute.Unknown -> return
             }
-        }
-        val shortcut = getStringExtra("shortcut_destination") ?: action
-        return when (shortcut) {
-            "feed", "com.orbin.shortcut.FEED" -> Route.NextFeed
-            "downloads", "com.orbin.shortcut.DOWNLOADS" -> Route.Downloads
-            "boards", "com.orbin.shortcut.BOARDS" -> Route.BoardGallery
-            else -> null
-        }
     }
 
     private fun authenticateToUnlock(

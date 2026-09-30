@@ -61,13 +61,6 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <receiver
-            android:name="com.orbin.data.receiver.DownloadCompleteReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
-            </intent-filter>
-        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

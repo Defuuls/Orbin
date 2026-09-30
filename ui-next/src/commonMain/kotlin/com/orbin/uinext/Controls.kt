@@ -56,8 +56,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
@@ -87,6 +91,8 @@ fun NextSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
     steps: Int = 0,
+    /** Accessibility label announced by TalkBack when focus lands on the slider. */
+    contentDescription: String = "",
     /** True while a finger is dragging the thumb, so a caller can show what the drag points at. */
     onDragStateChange: (Boolean) -> Unit = {},
 ) {
@@ -112,7 +118,29 @@ fun NextSlider(
         modifier =
             modifier
                 .height(SLIDER_TOUCH_HEIGHT)
-                .onSizeChanged { widthPx = it.width.toFloat() }
+                .semantics {
+                    if (contentDescription.isNotEmpty()) this.contentDescription = contentDescription
+                    val pct =
+                        (
+                            (value - valueRange.start) /
+                                (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f) *
+                                100
+                        ).toInt()
+                    stateDescription = "$pct%"
+                    progressBarRangeInfo =
+                        ProgressBarRangeInfo(
+                            current = value,
+                            range = valueRange,
+                            steps = steps,
+                        )
+                    setProgress { targetFraction ->
+                        val span = valueRange.endInclusive - valueRange.start
+                        val newValue =
+                            (valueRange.start + targetFraction * span).coerceIn(valueRange)
+                        onValueChange(newValue)
+                        true
+                    }
+                }.onSizeChanged { widthPx = it.width.toFloat() }
                 .pointerInput(valueRange, steps, widthPx) {
                     detectTapGestures { offset -> onValueChange(valueAt(offset.x)) }
                 }.pointerInput(valueRange, steps, widthPx) {

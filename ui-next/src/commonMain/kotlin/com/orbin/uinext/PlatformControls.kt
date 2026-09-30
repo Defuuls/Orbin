@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -34,7 +33,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_clear_search
 import com.orbin.uinext.tokens.NextType
+import org.jetbrains.compose.resources.stringResource
 
 private val DarkBackground = Color(0xFF141218)
 private val DarkRaised = Color(0xFF211F26)
@@ -73,7 +75,7 @@ fun materialPalette(
             elevated = LightElevated,
             ink = LightInk,
             muted = LightMuted,
-            faint = LightMuted,
+            faint = LightMuted.copy(alpha = 0.60f),
             hairline = LightHairline,
             accent = LightAccent,
             accentSoft = LightAccentSoft,
@@ -223,14 +225,13 @@ fun SchematicSearch(
         },
         trailing = {
             if (value.isNotEmpty()) {
-                IconButton(onClick = { onValueChange("") }, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Clear search",
-                        tint = next.muted,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
+                NextIconAction(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(Res.string.next_clear_search),
+                    onClick = { onValueChange("") },
+                    tint = next.muted,
+                    modifier = Modifier.size(24.dp),
+                )
             }
         },
     )

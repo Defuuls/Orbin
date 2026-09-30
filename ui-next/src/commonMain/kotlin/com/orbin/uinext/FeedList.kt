@@ -11,7 +11,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_threads_count
 import com.orbin.uinext.tokens.NextType
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 internal fun FeedGroupHeading(
@@ -29,6 +32,6 @@ internal fun FeedGroupHeading(
             modifier = Modifier.weight(1f).semantics { heading() },
         )
         WidthSpacer(8)
-        MetaLine("$count threads")
+        MetaLine(pluralStringResource(Res.plurals.next_threads_count, count, count))
     }
 }

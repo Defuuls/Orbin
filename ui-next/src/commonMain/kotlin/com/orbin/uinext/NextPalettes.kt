@@ -1,50 +1,6 @@
 package com.orbin.uinext
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-
-/**
- * Builds a [NextPalette] from the current M3 [MaterialTheme.colorScheme].
- *
- * Called from [NextTheme] after the color scheme is resolved so that dynamic color and the
- * eggplant static scheme both flow through here — one palette builder, no hardcoded hex values
- * at the shell level.
- */
-@Composable
-internal fun nextPaletteFromM3(
-    dark: Boolean,
-    amoled: Boolean,
-): NextPalette {
-    val cs = MaterialTheme.colorScheme
-    return NextPalette(
-        // Flat matte background — M3 surface/background, no iOS grey
-        background = cs.background,
-        // Raised card surface — surfaceContainerLow gives a barely-tinted matte card
-        raised = cs.surfaceContainerLow,
-        // Elevated surface one step above raised — surfaceContainer
-        elevated = cs.surfaceContainer,
-        // Primary text — onBackground (high contrast on background)
-        ink = cs.onBackground,
-        // Secondary text — onSurfaceVariant (M3 muted role)
-        muted = cs.onSurfaceVariant,
-        // Tertiary / hint text — onSurfaceVariant at reduced alpha
-        faint = cs.onSurfaceVariant.copy(alpha = if (dark) 0.68f else 0.60f),
-        // Separator — outlineVariant (very soft, no strong border)
-        hairline = cs.outlineVariant,
-        // Accent — M3 primary (eggplant)
-        accent = cs.primary,
-        // Soft accent fill — primaryContainer tint
-        accentSoft = cs.primaryContainer,
-        // Text/icons on solid accent fill
-        onAccent = cs.onPrimary,
-        // Tonal container for selected/active states
-        accentContainer = cs.primaryContainer,
-        onAccentContainer = cs.onPrimaryContainer,
-        dark = dark,
-        amoled = amoled,
-    )
-}
 
 /** The one palette family used by ui-next application chrome. */
 fun canonicalNextPalette(
@@ -98,5 +54,3 @@ internal val DarkPalette =
     )
 
 internal val AmoledPalette = DarkPalette.copy(amoled = true)
-
-internal val DarkAmoledPalette = AmoledPalette

@@ -2,12 +2,13 @@
 
 package com.orbin.data.repository
 
-import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.DownloadOrganization
@@ -16,29 +17,21 @@ import com.orbin.core.model.DownloadStatus
 import com.orbin.core.model.PermanentContentFilter
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
+import com.orbin.data.worker.DownloadWorker
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.network.NetworkConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import okhttp3.Request
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Downloads media via the platform [DownloadManager], which provides notifications, resume and
- * retry natively, saving into the public Downloads/Orbin directory. A lightweight Room table keeps
- * download history for the in-app downloads screen; active transfers are enriched with byte-level
- * progress so the UI can report useful live state instead of only queued/running/completed.
+ * Downloads media via WorkManager, saving into the public Downloads/Orbin directory.
+ * A lightweight Room table keeps download history for the in-app downloads screen.
  */
 @Singleton
 class DownloadRepositoryImpl
@@ -48,35 +41,13 @@ class DownloadRepositoryImpl
         private val dao: DownloadDao,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : DownloadRepository {
-        private val downloadManager: DownloadManager
-            get() = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-
-        /** Progress for custom SAF downloads, which bypass the platform DownloadManager. */
-        private val directProgress = MutableStateFlow<Map<Long, TransferSnapshot>>(emptyMap())
+        private val workManager: WorkManager
+            get() = WorkManager.getInstance(context)
 
         override fun observeDownloads(): Flow<List<DownloadRecord>> =
-            combine(dao.observeAll(), directProgress) { entities, direct -> entities to direct }
-                .flatMapLatest { (entities, direct) ->
-                    flow {
-                        do {
-                            val records =
-                                withContext(ioDispatcher) {
-                                    entities.map { entity ->
-                                        val snapshot =
-                                            if (entity.id >= 0L) queryTransferSnapshot(entity.id) else direct[entity.id]
-                                        entity.toDomain(snapshot)
-                                    }
-                                }
-                            emit(records)
-                            val hasActive =
-                                records.any {
-                                    it.status == DownloadStatus.QUEUED ||
-                                        it.status == DownloadStatus.RUNNING
-                                }
-                            if (hasActive) delay(PROGRESS_POLL_MS)
-                        } while (hasActive && currentCoroutineContext().isActive)
-                    }
-                }
+            dao.observeAll().map { entities ->
+                entities.map { it.toDomain() }
+            }
 
         override suspend fun enqueue(
             url: String,
@@ -86,48 +57,44 @@ class DownloadRepositoryImpl
             threadTitle: String?,
         ): Long =
             withContext(ioDispatcher) {
-                val uri = Uri.parse(url)
-                // Defence in depth: only ever hand encrypted media URLs to the platform DownloadManager.
+                val uri = URI(url)
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
-                // Nothing the permanent filter catches is written to the user's storage, whether it
-                // was reached one file at a time or through a bulk "download all media".
                 if (PermanentContentFilter.matchesAny(listOf(fileName, threadTitle))) {
                     return@withContext SKIPPED_ID
                 }
-                // The file name comes from the remote post; sanitise it so it can never escape the
-                // Orbin downloads folder (path traversal) or carry separators/control characters.
                 val safeName = sanitizeFileName(fileName)
                 val relativeDir =
                     buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
 
-                val request =
-                    DownloadManager
-                        .Request(uri)
-                        .setTitle(safeName)
-                        .setDescription("Orbin download")
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(
-                            Environment.DIRECTORY_DOWNLOADS,
-                            "Orbin/$relativeDir$safeName",
-                        ).setAllowedOverMetered(true)
-                        .setAllowedOverRoaming(true)
-                        .apply {
-                            downloadRequestHeaders(url).forEach { (name, value) ->
-                                addRequestHeader(name, value)
-                            }
-                        }
+                val id = System.currentTimeMillis()
 
-                val id = downloadManager.enqueue(request)
                 dao.upsert(
                     DownloadEntity(
                         id = id,
                         url = url,
                         fileName = safeName,
                         status = DownloadStatus.QUEUED.name,
-                        createdAtMillis = System.currentTimeMillis(),
+                        createdAtMillis = id,
                         relativeDir = relativeDir,
                     ),
                 )
+
+                val inputData =
+                    Data
+                        .Builder()
+                        .putLong(DownloadWorker.KEY_ID, id)
+                        .putString(DownloadWorker.KEY_URL, url)
+                        .putString(DownloadWorker.KEY_FILE_NAME, safeName)
+                        .putString(DownloadWorker.KEY_RELATIVE_DIR, relativeDir)
+                        .build()
+
+                val workRequest =
+                    OneTimeWorkRequestBuilder<DownloadWorker>()
+                        .setInputData(inputData)
+                        .build()
+
+                workManager.enqueue(workRequest)
+
                 id
             }
 
@@ -144,56 +111,35 @@ class DownloadRepositoryImpl
             return cleaned.ifBlank { "download" }
         }
 
-        override suspend fun refreshStatuses() =
-            withContext(ioDispatcher) {
-                // Negative ids are direct SAF transfers whose status is maintained by this repository.
-                dao.all().filter { it.id >= 0L }.forEach { entity ->
-                    val status = queryTransferSnapshot(entity.id)?.status ?: DownloadStatus.FAILED
-                    if (status.name != entity.status) dao.updateStatus(entity.id, status.name)
-                }
-            }
+        override suspend fun refreshStatuses() = Unit // WorkManager handles statuses natively
 
         override suspend fun clearHistory() = dao.clear()
 
         override suspend fun retry(id: Long): Long =
             withContext(ioDispatcher) {
                 val entity = dao.getById(id) ?: return@withContext SKIPPED_ID
-                val uri = Uri.parse(entity.url)
+                val uri = URI(entity.url)
                 if (uri.scheme?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
                 dao.updateStatus(id, DownloadStatus.QUEUED.name)
 
-                val request =
-                    DownloadManager
-                        .Request(uri)
-                        .setTitle(entity.fileName)
-                        .setDescription("Orbin download")
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setDestinationInExternalPublicDir(
-                            Environment.DIRECTORY_DOWNLOADS,
-                            "Orbin/${entity.relativeDir}${entity.fileName}",
-                        ).setAllowedOverMetered(true)
-                        .setAllowedOverRoaming(true)
-                        .apply {
-                            downloadRequestHeaders(entity.url)
-                                .forEach { (name, value) -> addRequestHeader(name, value) }
-                        }
+                val inputData =
+                    Data
+                        .Builder()
+                        .putLong(DownloadWorker.KEY_ID, id)
+                        .putString(DownloadWorker.KEY_URL, entity.url)
+                        .putString(DownloadWorker.KEY_FILE_NAME, entity.fileName)
+                        .putString(DownloadWorker.KEY_RELATIVE_DIR, entity.relativeDir)
+                        .build()
 
-                val newId = downloadManager.enqueue(request)
-                if (newId != id) {
-                    dao.delete(id)
-                    dao.upsert(
-                        DownloadEntity(
-                            id = newId,
-                            url = entity.url,
-                            fileName = entity.fileName,
-                            status = DownloadStatus.QUEUED.name,
-                            createdAtMillis = entity.createdAtMillis,
-                            relativeDir = entity.relativeDir,
-                        ),
-                    )
-                }
-                newId
+                val workRequest =
+                    OneTimeWorkRequestBuilder<DownloadWorker>()
+                        .setInputData(inputData)
+                        .build()
+
+                workManager.enqueue(workRequest)
+
+                id
             }
 
         override suspend fun writeTextFile(
@@ -230,39 +176,15 @@ class DownloadRepositoryImpl
             }.isSuccess
         }
 
-        private fun queryTransferSnapshot(id: Long): TransferSnapshot? {
-            downloadManager.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
-                if (!cursor.moveToFirst()) return null
-                val status =
-                    when (cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))) {
-                        DownloadManager.STATUS_SUCCESSFUL -> DownloadStatus.COMPLETED
-                        DownloadManager.STATUS_RUNNING -> DownloadStatus.RUNNING
-                        DownloadManager.STATUS_PAUSED, DownloadManager.STATUS_PENDING -> DownloadStatus.QUEUED
-                        else -> DownloadStatus.FAILED
-                    }
-                val downloaded =
-                    cursor
-                        .getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-                        .coerceAtLeast(0L)
-                val total =
-                    cursor
-                        .getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                        .takeIf { it > 0L }
-                return TransferSnapshot(status, downloaded, total)
-            }
-        }
-
-        private fun DownloadEntity.toDomain(snapshot: TransferSnapshot? = null): DownloadRecord =
+        private fun DownloadEntity.toDomain(): DownloadRecord =
             DownloadRecord(
                 id = id,
                 url = url,
                 fileName = fileName,
-                status =
-                    snapshot?.status
-                        ?: runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
+                status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.QUEUED),
                 createdAtMillis = createdAtMillis,
-                downloadedBytes = snapshot?.downloadedBytes ?: 0L,
-                totalBytes = snapshot?.totalBytes,
+                downloadedBytes = 0L,
+                totalBytes = null,
             )
 
         private companion object {
@@ -275,12 +197,6 @@ class DownloadRepositoryImpl
             val ALLOWED_SCHEMES = setOf("https")
         }
     }
-
-private data class TransferSnapshot(
-    val status: DownloadStatus,
-    val downloadedBytes: Long,
-    val totalBytes: Long?,
-)
 
 /**
  * Headers required by imageboard CDNs for direct media requests.

@@ -22,12 +22,12 @@ import androidx.compose.ui.unit.sp
 @Immutable
 object NextSpace {
     val gutter: Dp = 16.dp
-    val gutterTight: Dp = 16.dp
+    val gutterTight: Dp = 12.dp
     val section: Dp = 24.dp
     val groupGap: Dp = 16.dp
     val rowY: Dp = 14.dp
     val rowX: Dp = 16.dp
-    val titleTop: Dp = 8.dp
+    val titleTop: Dp = 22.dp
     val titleBottom: Dp = 16.dp
     val chromeInset: Dp = 16.dp
     val chromeBottom: Dp = 12.dp
@@ -257,6 +257,44 @@ object NextType {
 
     /** Headline row text (maps to titleMedium). */
     val headline = titleMedium
+
+    /**
+     * Dense list primary text — between bodyLarge and bodyMedium (15sp).
+     * Maps to a custom 15sp/22sp style used by feed cards and settings rows
+     * where bodyLarge (16sp) is too large but bodyMedium (14sp) too small.
+     */
+    val bodyDense =
+        TextStyle(
+            fontFamily = sans,
+            fontSize = 15.sp,
+            lineHeight = 22.sp,
+            letterSpacing = 0.25.sp,
+        )
+
+    /**
+     * Dense secondary text — between bodySmall and labelLarge (13sp).
+     * Used by feed post meta-lines and thread reply counts.
+     */
+    val footnoteDense =
+        TextStyle(
+            fontFamily = sans,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            letterSpacing = 0.25.sp,
+        )
+
+    /**
+     * Extra-small caption — between labelMedium and labelSmall (12sp, medium weight).
+     * Used by media badges and compact board cell subtitles.
+     */
+    val captionDense =
+        TextStyle(
+            fontFamily = sans,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.4.sp,
+        )
 }
 
 /**
@@ -300,7 +338,7 @@ object NextMotion {
         )
 
     // Legacy numeric constants — kept for call sites that haven't migrated to SpringSpec yet.
-    // TODO: remove once all animation calls use spec directly.
+    // Remove these once Controls.kt and all callers use the spring specs above directly.
     const val PUSH_MS = 350
     const val TAB_MS = 200
     const val CHROME_MS = 180

@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_open_thread
@@ -32,6 +31,7 @@ import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -58,7 +58,7 @@ internal fun FeedHeader(
                     contentDescription = stringResource(Res.string.next_settings_title),
                     onClick = onSettings,
                     tint = next.muted,
-                    modifier = Modifier.padding(top = NextSpace.titleTop + 14.dp),
+                    modifier = Modifier.padding(top = NextSpace.titleTop),
                 )
             }
         }
@@ -130,7 +130,7 @@ internal fun FeedGridCell(
                     WidthSpacer(6)
                     Text(
                         text = row.board,
-                        fontSize = 12.5.sp,
+                        style = NextType.captionDense,
                         fontWeight = FontWeight.SemiBold,
                         color = if (row.read) next.muted else boardHue(row.board),
                     )
@@ -141,9 +141,7 @@ internal fun FeedGridCell(
             Gap(6)
             Text(
                 text = row.subject,
-                fontSize = 15.5.sp,
-                lineHeight = 20.sp,
-                letterSpacing = (-0.15).sp,
+                style = NextType.bodyDense,
                 fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
                 color = if (row.read) next.muted else next.ink,
                 maxLines = 2,
@@ -213,7 +211,7 @@ private fun CollapsedFeedRow(
             WidthSpacer(7)
             Text(
                 text = row.board,
-                fontSize = 12.sp,
+                style = NextType.captionDense,
                 fontWeight = FontWeight.SemiBold,
                 color = next.muted,
             )
@@ -222,8 +220,7 @@ private fun CollapsedFeedRow(
         Text(
             text = row.subject,
             modifier = Modifier.weight(1f),
-            fontSize = 13.5.sp,
-            lineHeight = 17.sp,
+            style = NextType.footnoteDense,
             fontWeight = FontWeight.Normal,
             color = next.muted,
             maxLines = 1,
