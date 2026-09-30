@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -98,13 +100,23 @@ class DownloadWorker
                     }
 
                     if (success) Result.success() else Result.failure()
-                } catch (e: Exception) {
+                } catch (e: IOException) {
+                    Log.e(TAG, "Download failed for id=$id", e)
+                    dao.updateStatus(id, DownloadStatus.FAILED.name)
+                    Result.failure()
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Invalid download request for id=$id", e)
+                    dao.updateStatus(id, DownloadStatus.FAILED.name)
+                    Result.failure()
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "Missing storage permission for download id=$id", e)
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 }
             }
 
         companion object {
+            private const val TAG = "DownloadWorker"
             const val KEY_ID = "id"
             const val KEY_URL = "url"
             const val KEY_FILE_NAME = "fileName"

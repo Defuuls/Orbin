@@ -451,7 +451,6 @@ class MainActivity : FragmentActivity() {
     }
 
     private companion object {
-        private const val EXTRA_SHORTCUT_DESTINATION = "com.orbin.extra.SHORTCUT_DESTINATION"
         private const val AUTHENTICATION_TIMEOUT_MS = 30_000L
         private const val DIAGNOSTICS_FILE_NAME = "orbin-diagnostics.txt"
 
