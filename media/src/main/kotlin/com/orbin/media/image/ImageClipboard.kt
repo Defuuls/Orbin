@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import androidx.core.content.FileProvider
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
@@ -46,14 +45,12 @@ class ImageClipboard
 
             return if (imageUri != null) {
                 clipboard.setPrimaryClip(ClipData.newUri(context.contentResolver, "Image", imageUri))
-                // On Android 13+ clear the clipboard after a short window so the image URI
-                // doesn't linger indefinitely. Background clipboard reads are blocked by the OS
-                // on API 33+, but the URI grant remains — clearing removes it proactively.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    withContext(ioDispatcher) {
-                        kotlinx.coroutines.delay(CLIPBOARD_CLEAR_DELAY_MS)
-                        clipboard.clearPrimaryClip()
-                    }
+                // Clear after a short window so the image URI grant doesn't linger indefinitely.
+                // Background clipboard reads are blocked by the OS on API 33+, but clearing
+                // removes the grant proactively on all supported API levels (minSdk 31).
+                withContext(ioDispatcher) {
+                    kotlinx.coroutines.delay(CLIPBOARD_CLEAR_DELAY_MS)
+                    clipboard.clearPrimaryClip()
                 }
                 ImageCopyResult.IMAGE
             } else {

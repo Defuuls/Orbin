@@ -2,11 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Restricts who can send launcher shortcut intents (FEED/DOWNLOADS/BOARDS) to the OS launcher or apps signed with the same key. -->
-    <permission
-        android:name="com.orbin.permission.SHORTCUT_INTENT"
-        android:protectionLevel="signature" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -55,7 +50,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter android:permission="com.orbin.permission.SHORTCUT_INTENT">
+            <intent-filter>
                 <action android:name="com.orbin.shortcut.FEED" />
                 <action android:name="com.orbin.shortcut.DOWNLOADS" />
                 <action android:name="com.orbin.shortcut.BOARDS" />
