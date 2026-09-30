@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [160 — Blackberry](https://github.com/Defuuls/Orbin/releases/tag/v160-Blackberry)
+**Current release:** [161 — Blueberry](https://github.com/Defuuls/Orbin/releases/tag/v161-Blueberry)
 
-**What's new in 160:** Videos recover from CDN rate limits on their own, and threads open on their latest replies.
+**What's new in 161:** Downloads keep going through WorkManager, and copied images leave the clipboard after a minute.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
