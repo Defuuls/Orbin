@@ -10,6 +10,7 @@ import androidx.work.WorkerParameters
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.repository.downloadRequestHeaders
+import com.orbin.network.di.BaseOkHttp
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ class DownloadWorker
         @Assisted private val context: Context,
         @Assisted workerParams: WorkerParameters,
         private val dao: DownloadDao,
-        private val okHttpClient: OkHttpClient,
+        @BaseOkHttp private val okHttpClient: OkHttpClient,
     ) : CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result =
             withContext(Dispatchers.IO) {

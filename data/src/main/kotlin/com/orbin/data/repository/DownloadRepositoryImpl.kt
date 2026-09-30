@@ -39,9 +39,11 @@ class DownloadRepositoryImpl
     constructor(
         @ApplicationContext private val context: Context,
         private val dao: DownloadDao,
-        private val workManager: WorkManager,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : DownloadRepository {
+        private val workManager: WorkManager
+            get() = WorkManager.getInstance(context)
+
         override fun observeDownloads(): Flow<List<DownloadRecord>> =
             dao.observeAll().map { entities ->
                 entities.map { it.toDomain() }
