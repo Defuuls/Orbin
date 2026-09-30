@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [161-Blueberry] - 2026-09-30
+
+### Changed
+- Android: media downloads run through WorkManager instead of the system DownloadManager. They keep going when Orbin is backgrounded or restarted, write into Downloads/Orbin as before, and no longer need a broadcast receiver for completion.
+- Android: feed, boards and thread text use denser type and spacing tokens (tighter gutters, denser body and footnote sizes), so list rows and cards pack a little closer without changing the layout structure.
+- Android: feed and boards empty states, search, and thread counts use localized strings in the ui-next design system instead of hard-coded English.
+- Android: sliders announce their value and percent to TalkBack, and support the accessibility set-progress action.
+
+### Fixed
+- Android: copying an image to the clipboard clears it after one minute, so the temporary URI grant does not linger. Background clipboard reads are already blocked by the OS on newer Android; this clears the grant on every supported version (minSdk 31).
+- Android: notification and shortcut deep links are parsed through a typed IntentRoute with length limits on provider, board and title extras, instead of reading those strings unbound.
+
+
 ## [160-Blackberry] - 2026-09-29
 
 ### Fixed
@@ -2491,7 +2504,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...HEAD
+[161-Blueberry]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...v161-Blueberry
 [160-Blackberry]: https://github.com/Defuuls/Orbin/compare/v159-Apricot...v160-Blackberry
 [159-Apricot]: https://github.com/Defuuls/Orbin/compare/v158-Yuzu...v159-Apricot
 [158-Yuzu]: https://github.com/Defuuls/Orbin/compare/v157-Xigua...v158-Yuzu
