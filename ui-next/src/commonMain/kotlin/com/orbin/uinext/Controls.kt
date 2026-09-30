@@ -57,7 +57,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
@@ -122,20 +121,27 @@ fun NextSlider(
                 .height(SLIDER_TOUCH_HEIGHT)
                 .semantics {
                     if (contentDescription.isNotEmpty()) this.contentDescription = contentDescription
-                    stateDescription = "${((value - valueRange.start) / (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f) * 100).toInt()}%"
-                    progressBarRangeInfo = ProgressBarRangeInfo(
-                        current = value,
-                        range = valueRange,
-                        steps = steps,
-                    )
+                    val pct =
+                        (
+                            (value - valueRange.start) /
+                                (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f) *
+                                100
+                        ).toInt()
+                    stateDescription = "$pct%"
+                    progressBarRangeInfo =
+                        ProgressBarRangeInfo(
+                            current = value,
+                            range = valueRange,
+                            steps = steps,
+                        )
                     setProgress { targetFraction ->
-                        val newValue = (valueRange.start + targetFraction * (valueRange.endInclusive - valueRange.start))
-                            .coerceIn(valueRange)
+                        val span = valueRange.endInclusive - valueRange.start
+                        val newValue =
+                            (valueRange.start + targetFraction * span).coerceIn(valueRange)
                         onValueChange(newValue)
                         true
                     }
-                }
-                .onSizeChanged { widthPx = it.width.toFloat() }
+                }.onSizeChanged { widthPx = it.width.toFloat() }
                 .pointerInput(valueRange, steps, widthPx) {
                     detectTapGestures { offset -> onValueChange(valueAt(offset.x)) }
                 }.pointerInput(valueRange, steps, widthPx) {

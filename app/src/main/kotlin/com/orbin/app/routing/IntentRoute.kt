@@ -4,10 +4,19 @@ import android.content.Intent
 import com.orbin.data.notification.AndroidThreadNotifier
 
 sealed interface IntentRoute {
-    data class Thread(val provider: String, val board: String, val thread: Long, val title: String) : IntentRoute
+    data class Thread(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val title: String,
+    ) : IntentRoute
+
     data object FeedShortcut : IntentRoute
+
     data object DownloadsShortcut : IntentRoute
+
     data object BoardsShortcut : IntentRoute
+
     data object Unknown : IntentRoute
 }
 
@@ -26,7 +35,7 @@ fun Intent.parseRoute(): IntentRoute {
             )
         }
     }
-    
+
     val shortcut = getStringExtra("com.orbin.extra.SHORTCUT_DESTINATION") ?: action
     return when (shortcut) {
         "feed", "com.orbin.shortcut.FEED" -> IntentRoute.FeedShortcut

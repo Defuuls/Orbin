@@ -20,11 +20,11 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_explore_boards
 import com.orbin.uinext.resources.next_feed_thread_count
 import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_nothing_here_yet
 import com.orbin.uinext.resources.next_try_different_search
-import com.orbin.uinext.resources.next_explore_boards
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -148,7 +148,13 @@ fun FeedScreen(
                                 subtitle = stringResource(Res.string.next_try_different_search),
                                 size = 22,
                             )
-                            onOpenBoards?.let { InlineAction(stringResource(Res.string.next_explore_boards), accent = true, onClick = it) }
+                            onOpenBoards?.let {
+                                InlineAction(
+                                    stringResource(Res.string.next_explore_boards),
+                                    accent = true,
+                                    onClick = it,
+                                )
+                            }
                         }
                     }
                 }

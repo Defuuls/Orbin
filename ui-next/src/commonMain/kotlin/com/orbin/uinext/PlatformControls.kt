@@ -33,9 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 private val DarkBackground = Color(0xFF141218)

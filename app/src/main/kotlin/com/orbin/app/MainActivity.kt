@@ -39,7 +39,6 @@ import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
-import com.orbin.data.notification.AndroidThreadNotifier
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.uinext.LockScreen
@@ -316,13 +315,15 @@ class MainActivity : FragmentActivity() {
     private fun handleIncomingIntent(intent: Intent?) {
         intent ?: return
         val route = intent.parseRoute()
-        pendingRoute = when (route) {
-            is IntentRoute.Thread -> Route.Thread(route.provider, route.board, route.thread, route.title)
-            IntentRoute.FeedShortcut -> Route.NextFeed
-            IntentRoute.DownloadsShortcut -> Route.Downloads
-            IntentRoute.BoardsShortcut -> Route.BoardGallery
-            IntentRoute.Unknown -> return
-        }
+        pendingRoute =
+            when (route) {
+                is IntentRoute.Thread ->
+                    Route.Thread(route.provider, route.board, route.thread, route.title)
+                IntentRoute.FeedShortcut -> Route.NextFeed
+                IntentRoute.DownloadsShortcut -> Route.Downloads
+                IntentRoute.BoardsShortcut -> Route.BoardGallery
+                IntentRoute.Unknown -> return
+            }
     }
 
     private fun authenticateToUnlock(

@@ -1,10 +1,6 @@
 package com.orbin.uinext
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-
-
 
 /** The one palette family used by ui-next application chrome. */
 fun canonicalNextPalette(

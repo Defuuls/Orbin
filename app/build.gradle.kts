@@ -84,6 +84,7 @@ dependencies {
 
     // Applies the baseline profile on devices without Play's profile delivery.
     implementation(libs.androidx.profileinstaller)
+    implementation(libs.timber)
     baselineProfile(project(":benchmark"))
 
     debugImplementation(libs.compose.ui.tooling)

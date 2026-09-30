@@ -2,14 +2,13 @@
 
 package com.orbin.data.repository
 
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import com.orbin.data.worker.DownloadWorker
 import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.DownloadOrganization
@@ -18,6 +17,7 @@ import com.orbin.core.model.DownloadStatus
 import com.orbin.core.model.PermanentContentFilter
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
+import com.orbin.data.worker.DownloadWorker
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.network.NetworkConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,7 +42,6 @@ class DownloadRepositoryImpl
         private val workManager: WorkManager,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) : DownloadRepository {
-
         override fun observeDownloads(): Flow<List<DownloadRecord>> =
             dao.observeAll().map { entities ->
                 entities.map { it.toDomain() }
@@ -66,7 +65,7 @@ class DownloadRepositoryImpl
                     buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
 
                 val id = System.currentTimeMillis()
-                
+
                 dao.upsert(
                     DownloadEntity(
                         id = id,
@@ -78,16 +77,19 @@ class DownloadRepositoryImpl
                     ),
                 )
 
-                val inputData = Data.Builder()
-                    .putLong(DownloadWorker.KEY_ID, id)
-                    .putString(DownloadWorker.KEY_URL, url)
-                    .putString(DownloadWorker.KEY_FILE_NAME, safeName)
-                    .putString(DownloadWorker.KEY_RELATIVE_DIR, relativeDir)
-                    .build()
+                val inputData =
+                    Data
+                        .Builder()
+                        .putLong(DownloadWorker.KEY_ID, id)
+                        .putString(DownloadWorker.KEY_URL, url)
+                        .putString(DownloadWorker.KEY_FILE_NAME, safeName)
+                        .putString(DownloadWorker.KEY_RELATIVE_DIR, relativeDir)
+                        .build()
 
-                val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                    .setInputData(inputData)
-                    .build()
+                val workRequest =
+                    OneTimeWorkRequestBuilder<DownloadWorker>()
+                        .setInputData(inputData)
+                        .build()
 
                 workManager.enqueue(workRequest)
 
@@ -119,16 +121,19 @@ class DownloadRepositoryImpl
 
                 dao.updateStatus(id, DownloadStatus.QUEUED.name)
 
-                val inputData = Data.Builder()
-                    .putLong(DownloadWorker.KEY_ID, id)
-                    .putString(DownloadWorker.KEY_URL, entity.url)
-                    .putString(DownloadWorker.KEY_FILE_NAME, entity.fileName)
-                    .putString(DownloadWorker.KEY_RELATIVE_DIR, entity.relativeDir)
-                    .build()
+                val inputData =
+                    Data
+                        .Builder()
+                        .putLong(DownloadWorker.KEY_ID, id)
+                        .putString(DownloadWorker.KEY_URL, entity.url)
+                        .putString(DownloadWorker.KEY_FILE_NAME, entity.fileName)
+                        .putString(DownloadWorker.KEY_RELATIVE_DIR, entity.relativeDir)
+                        .build()
 
-                val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                    .setInputData(inputData)
-                    .build()
+                val workRequest =
+                    OneTimeWorkRequestBuilder<DownloadWorker>()
+                        .setInputData(inputData)
+                        .build()
 
                 workManager.enqueue(workRequest)
 
@@ -190,8 +195,6 @@ class DownloadRepositoryImpl
             val ALLOWED_SCHEMES = setOf("https")
         }
     }
-
-
 
 /**
  * Headers required by imageboard CDNs for direct media requests.

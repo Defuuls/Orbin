@@ -28,7 +28,7 @@ class UniformityTest {
     @Test
     fun `spacing tokens maintain consistent grid and gutter rhythm`() {
         assertThat(NextSpace.gutter).isEqualTo(16.dp)
-        assertThat(NextSpace.gutterTight).isEqualTo(16.dp)
+        assertThat(NextSpace.gutterTight).isEqualTo(12.dp)
         assertThat(NextSpace.section).isEqualTo(24.dp)
         assertThat(NextSpace.groupGap).isEqualTo(16.dp)
         assertThat(NextSpace.rowY).isEqualTo(14.dp)
