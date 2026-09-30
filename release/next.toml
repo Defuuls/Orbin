@@ -1,24 +1,30 @@
-# Orbin 160 — Blackberry
+# Orbin 161 — Blueberry
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 160
-codename     = "Blackberry"
-version_code = 178
+number       = 161
+codename     = "Blueberry"
+version_code = 179
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Videos recover from CDN rate limits on their own, and threads open on their latest replies."
+highlight = "Downloads keep going through WorkManager, and copied images leave the clipboard after a minute."
 
 summary = [
-  "bump Orbin to 160-Blackberry / versionCode 178",
-  "Android: one rate-limited video no longer blocks every video; playback retries on its own",
-  "Android: reopening a thread loads its latest replies",
+  "bump Orbin to 161-Blueberry / versionCode 179",
+  "Android: media downloads run through WorkManager instead of DownloadManager",
+  "Android: copied images clear from the clipboard after a minute; denser UI type and spacing; TalkBack-aware sliders",
 ]
 
 [changelog]
+Changed = [
+  "Android: media downloads run through WorkManager instead of the system DownloadManager. They keep going when Orbin is backgrounded or restarted, write into Downloads/Orbin as before, and no longer need a broadcast receiver for completion.",
+  "Android: feed, boards and thread text use denser type and spacing tokens (tighter gutters, denser body and footnote sizes), so list rows and cards pack a little closer without changing the layout structure.",
+  "Android: feed and boards empty states, search, and thread counts use localized strings in the ui-next design system instead of hard-coded English.",
+  "Android: sliders announce their value and percent to TalkBack, and support the accessibility set-progress action.",
+]
 Fixed = [
-  "Android: one video refused by the media CDN (HTTP 429) no longer blocks every video. Only that video waits, and only for 15 seconds unless the server asks for longer (at most a minute); the whole server is held back only when several videos are refused within 30 seconds. When the wait ends the video loads again on its own. Before, returning to the app after a while could leave every video showing \"rate limited\" for five minutes.",
-  "Android: reopening a thread now loads its latest replies. It showed the copy kept from the last visit, up to half an hour old, until pulled to refresh; that copy now only fills the screen while the thread loads. Watched-thread checks always ask the site too, so a copy held while the app was open can no longer hide new replies from them.",
+  "Android: copying an image to the clipboard clears it after one minute, so the temporary URI grant does not linger. Background clipboard reads are already blocked by the OS on newer Android; this clears the grant on every supported version (minSdk 31).",
+  "Android: notification and shortcut deep links are parsed through a typed IntentRoute with length limits on provider, board and title extras, instead of reading those strings unbound.",
 ]
