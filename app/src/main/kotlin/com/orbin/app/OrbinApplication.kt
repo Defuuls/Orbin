@@ -12,6 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -46,6 +47,11 @@ class OrbinApplication :
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+        // Release builds do not plant a tree (logs are silently dropped).
+
         // Before anything else that could throw: an uncaught exception during startup is exactly
         // the case this records, and a handler installed later would miss it.
         diagnosticsRepository.install()

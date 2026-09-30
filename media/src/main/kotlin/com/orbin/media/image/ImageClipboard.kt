@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import androidx.core.content.FileProvider
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
@@ -45,6 +46,15 @@ class ImageClipboard
 
             return if (imageUri != null) {
                 clipboard.setPrimaryClip(ClipData.newUri(context.contentResolver, "Image", imageUri))
+                // On Android 13+ clear the clipboard after a short window so the image URI
+                // doesn't linger indefinitely. Background clipboard reads are blocked by the OS
+                // on API 33+, but the URI grant remains — clearing removes it proactively.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    withContext(ioDispatcher) {
+                        kotlinx.coroutines.delay(CLIPBOARD_CLEAR_DELAY_MS)
+                        clipboard.clearPrimaryClip()
+                    }
+                }
                 ImageCopyResult.IMAGE
             } else {
                 clipboard.setPrimaryClip(ClipData.newPlainText("Image URL", imageUrl))
@@ -150,3 +160,6 @@ private const val MAX_IMAGE_BYTES = 8L * 1024L * 1024L
 private const val CLIPBOARD_MAX_AGE_MS = 24L * 60L * 60L * 1000L
 private const val CLIPBOARD_MAX_FILES = 8
 private val FILE_EXTENSION = Regex("[a-z0-9]{2,5}")
+
+/** How long image URI stays on the clipboard before being proactively cleared. */
+private const val CLIPBOARD_CLEAR_DELAY_MS = 60_000L

@@ -104,4 +104,19 @@
     <string name="next_status_retry">Retry</string>
     <string name="next_status_loading">Loading</string>
     <string name="next_snackbar_dismiss">Dismiss</string>
+
+    <!-- Feed/Boards -->
+    <string name="next_search_boards">Search boards</string>
+    <string name="next_discover">Discover</string>
+    <string name="next_no_boards_match">No boards match your selection</string>
+    <string name="next_following">Following</string>
+    <string name="next_tap_to_follow">Tap to follow</string>
+    <string name="next_nothing_here_yet">Nothing here yet</string>
+    <string name="next_try_different_search">Try a different search, or follow a few more boards.</string>
+    <string name="next_explore_boards">Explore boards</string>
+    <string name="next_clear_search">Clear search</string>
+    <plurals name="next_threads_count">
+        <item quantity="one">%d thread</item>
+        <item quantity="other">%d threads</item>
+    </plurals>
 </resources>

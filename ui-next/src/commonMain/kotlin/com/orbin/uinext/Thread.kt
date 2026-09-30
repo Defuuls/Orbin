@@ -220,7 +220,7 @@ fun ThreadScreen(
                                         Modifier
                                             .weight(1f)
                                             .padding(2.5.dp)
-                                            .clip(RoundedCornerShape(14.dp))
+                                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
                                             .nextClickable(onClick = { onOpenFile(cell) }),
                                 ) {
                                     val shape = Modifier.fillMaxWidth().aspectRatio(1f)
@@ -292,7 +292,7 @@ private fun PostView(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = GUTTER, vertical = 5.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(REPLY_CORNER))
                 .background(next.raised)
                 .nextClickable(onClick = { onClick(post) }),
     ) {
@@ -340,7 +340,7 @@ private fun PostView(
                         Modifier
                             .fillMaxWidth()
                             .height(44.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
                             .background(Color.Black.copy(alpha = SPOILER_SCRIM)),
                     contentAlignment = Alignment.CenterStart,
                 ) {
@@ -372,7 +372,7 @@ private fun PostView(
                     MediaTile(
                         modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
                         seed = seed + 1,
-                        radius = 16.dp,
+                        radius = GRID_TILE_RADIUS,
                     )
                 }
             }
@@ -399,3 +399,4 @@ private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_DEPTH_BAR_WIDTH = 2.dp
+private val REPLY_CORNER = 16.dp

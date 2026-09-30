@@ -264,7 +264,7 @@ fun ScreenTitle(
             modifier.padding(
                 start = inset,
                 end = inset,
-                top = NextSpace.titleTop + 14.dp,
+                top = NextSpace.titleTop,
                 bottom = NextSpace.titleBottom,
             ),
     ) {
@@ -318,7 +318,7 @@ fun GroupedSection(
                 color = next.accent,
                 modifier =
                     Modifier
-                        .padding(start = 16.dp, end = 16.dp, bottom = 6.dp, top = 2.dp)
+                        .padding(start = NextSpace.rowX, end = NextSpace.rowX, bottom = 6.dp, top = 2.dp)
                         .semantics { heading() },
             )
         }
@@ -334,7 +334,7 @@ fun GroupedSection(
                 text = footer,
                 style = NextType.bodySmall,
                 color = next.muted,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                modifier = Modifier.padding(start = NextSpace.rowX, end = NextSpace.rowX, top = 8.dp),
             )
         }
     }
@@ -348,7 +348,7 @@ fun GroupedDivider(modifier: Modifier = Modifier) {
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = NextSpace.rowX)
-                .height(1.dp)
+                .height(0.5.dp)
                 .background(next.hairline),
     )
 }

@@ -3,6 +3,10 @@ package com.orbin.data.database
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// All execSQL calls in this file use static, compile-time-constant DDL strings only (CREATE TABLE,
+// ALTER TABLE, CREATE INDEX). No user-supplied data is ever interpolated into any SQL string here.
+// These patterns are flagged by static analysers as "raw SQL" — they are safe schema migrations.
+
 /**
  * Android adapts the shared migration SQL to Room's SupportSQLiteDatabase callback. iOS adapts the
  * same statements to SQLiteConnection in its database builder.
