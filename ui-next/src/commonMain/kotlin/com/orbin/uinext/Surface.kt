@@ -41,7 +41,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -98,7 +106,6 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    // Flat matte nav bar — solid elevated surface, no gradient scrim, no frosted glass.
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Row(
             modifier =
@@ -108,83 +115,59 @@ fun DestinationPill(
                     .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
+            NavigationBar(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .heightIn(min = RAIL_HEIGHT)
-                        .nextElevatedSurface(RoundedCornerShape(NextRadius.pill))
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                        .height(RAIL_HEIGHT)
+                        .clip(RoundedCornerShape(NextRadius.pill)),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                windowInsets = WindowInsets(0, 0, 0, 0),
             ) {
-                DestinationTab(
-                    label = stringResource(Res.string.next_feed_title),
-                    icon = Icons.Outlined.Home,
+                NavigationBarItem(
                     selected = selected == NextDestination.FEED,
                     onClick = { onSelect(NextDestination.FEED) },
+                    icon = { Icon(Icons.Outlined.Home, contentDescription = null) },
+                    label = { Text(stringResource(Res.string.next_feed_title)) },
+                    colors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 )
-                DestinationTab(
-                    label = stringResource(Res.string.next_downloads_tab),
-                    icon = Icons.Outlined.Download,
+                NavigationBarItem(
                     selected = selected == NextDestination.DOWNLOADS,
                     onClick = { onSelect(NextDestination.DOWNLOADS) },
+                    icon = { Icon(Icons.Outlined.Download, contentDescription = null) },
+                    label = { Text(stringResource(Res.string.next_downloads_tab)) },
+                    colors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 )
-                DestinationTab(
-                    label = stringResource(Res.string.next_launchpad_boards),
-                    icon = Icons.Outlined.GridView,
+                NavigationBarItem(
                     selected = selected == NextDestination.BOARDS,
                     onClick = { onSelect(NextDestination.BOARDS) },
+                    icon = { Icon(Icons.Outlined.GridView, contentDescription = null) },
+                    label = { Text(stringResource(Res.string.next_launchpad_boards)) },
+                    colors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.DestinationTab(
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val fill by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
-        label = "tabFill",
-    )
-    // M3 nav bar: primaryContainer fill for selected indicator, transparent otherwise
-    val indicatorFill = next.accentContainer.copy(alpha = fill)
-    val iconTint = if (selected) next.onAccentContainer else next.muted
-    val labelTint = if (selected) next.onAccentContainer else next.muted
-    Box(
-        modifier =
-            Modifier
-                .weight(1f)
-                .sizeIn(minHeight = MIN_TOUCH_TARGET)
-                .clip(RoundedCornerShape(NextRadius.pill))
-                .background(indicatorFill)
-                .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-                .semantics { this.selected = selected },
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(24.dp), // M3 nav bar icon spec
-            )
-            Text(
-                text = label,
-                style = NextType.labelMedium,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                color = labelTint,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
@@ -291,13 +274,13 @@ fun Hairline(
     modifier: Modifier = Modifier,
     inset: Boolean = false,
 ) {
-    Box(
+    HorizontalDivider(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(start = if (inset) NextSpace.gutter else 0.dp)
-                .height(0.5.dp)
-                .background(next.hairline),
+                .padding(start = if (inset) NextSpace.gutter else 0.dp),
+        thickness = 0.5.dp,
+        color = next.hairline,
     )
 }
 
@@ -322,11 +305,15 @@ fun GroupedSection(
                         .semantics { heading() },
             )
         }
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .nextSurface(RoundedCornerShape(NextRadius.card)),
+        ElevatedCard(
+            shape = RoundedCornerShape(NextRadius.card),
+            colors =
+                CardDefaults.elevatedCardColors(
+                    containerColor = next.raised,
+                    contentColor = next.ink,
+                ),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+            modifier = Modifier.fillMaxWidth(),
             content = content,
         )
         if (footer != null) {
@@ -343,13 +330,13 @@ fun GroupedSection(
 /** Divider drawn inside a [GroupedSection]. */
 @Composable
 fun GroupedDivider(modifier: Modifier = Modifier) {
-    Box(
+    HorizontalDivider(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = NextSpace.rowX)
-                .height(0.5.dp)
-                .background(next.hairline),
+                .padding(horizontal = NextSpace.rowX),
+        thickness = 0.5.dp,
+        color = next.hairline,
     )
 }
 
@@ -390,7 +377,7 @@ fun BoardDot(
 /**
  * An action rendered as a word rather than an icon in a bar.
  *
- * Gentle highlight fill when selected/accented — no Material ripple theatre.
+ * M3 chip-aligned action with tonal/accent fill and proper touch target.
  */
 @Composable
 fun InlineAction(
@@ -407,7 +394,7 @@ fun InlineAction(
         @Composable {
             Text(
                 text = label,
-                style = NextType.footnote,
+                style = NextType.callout,
                 fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (filled) next.onAccent else next.muted,
                 modifier =
@@ -515,10 +502,10 @@ fun MediaTile(
 /**
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
- * Pass [destination] + [onDestination] for tab chrome. Only [NextDestination.FEED],
- * [NextDestination.DOWNLOADS] and [NextDestination.BOARDS] draw it; every other screen draws no bottom
- * chrome, because its large title already says where you are and a floating name bar would only
- * repeat it over the content.
+ * Wrapped around [androidx.compose.material3.Scaffold]. Pass [destination] + [onDestination]
+ * for tab chrome. Only [NextDestination.FEED], [NextDestination.DOWNLOADS] and [NextDestination.BOARDS]
+ * draw it; every other screen draws no bottom chrome, because its large title already says where you
+ * are and a floating name bar would only repeat it over the content.
  * [where] names the screen for accessibility services as its pane title.
  */
 @Composable
@@ -532,12 +519,17 @@ fun NextScaffold(
 ) {
     val pillDestination = destination?.takeIf { it.drawsPill() }?.takeIf { onDestination != null }
     val bottom = (if (pillDestination != null) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
-    Surface {
+    Scaffold(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .then(if (where != null) Modifier.semantics { paneTitle = where } else Modifier),
+        containerColor = next.background,
+        contentColor = next.ink,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { _ ->
         Box(
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .then(if (where != null) Modifier.semantics { paneTitle = where } else Modifier),
+            modifier = Modifier.fillMaxSize(),
         ) {
             content(PaddingValues(bottom = bottom))
             if (pillDestination != null && onDestination != null) {

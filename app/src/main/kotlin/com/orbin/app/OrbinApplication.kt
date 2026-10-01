@@ -12,7 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import android.util.Log
 import javax.inject.Inject
 
 /**
@@ -48,7 +48,7 @@ class OrbinApplication :
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
+            Log.d("OrbinApplication", "Debug build initialized")
         }
         // Release builds do not plant a tree (logs are silently dropped).
 
@@ -63,3 +63,20 @@ class OrbinApplication :
 
     override fun newImageLoader(context: PlatformContext): ImageLoader = imageLoader
 }
+
+@dagger.Module
+@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
+object OrbinApplicationModule {
+    @dagger.Provides
+    @javax.inject.Singleton
+    fun provideWorkManager(
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context,
+    ): androidx.work.WorkManager = androidx.work.WorkManager.getInstance(context)
+
+    @dagger.Provides
+    @javax.inject.Singleton
+    fun provideOkHttpClient(
+        @com.orbin.network.di.BaseOkHttp client: okhttp3.OkHttpClient,
+    ): okhttp3.OkHttpClient = client
+}
+

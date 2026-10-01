@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 @Immutable
 object NextSpace {
     val gutter: Dp = 16.dp
-    val gutterTight: Dp = 12.dp
+    val gutterTight: Dp = 16.dp
     val section: Dp = 24.dp
     val groupGap: Dp = 16.dp
     val rowY: Dp = 14.dp
@@ -38,10 +38,14 @@ object NextSpace {
 }
 
 /**
- * M3 Expressive corner radii — large, open, no sharp edges.
+ * M3 Expressive corner radii — aligned with [OrbinShapes] / [MaterialTheme.shapes].
  *
- * M3 Expressive pushes corners significantly larger than the original M3 baseline.
- * Cards use [card]; interactive chips/pills use [pill]; sheets use [sheet].
+ * - [tight] (8.dp) aligns with [Shapes.extraSmall]
+ * - [control] (12.dp) aligns with [Shapes.small]
+ * - [tile] (20.dp) rounded tile
+ * - [card] (24.dp) aligns with [Shapes.large]
+ * - [sheet] (28.dp) and [continuous] (28.dp) modal surface
+ * - [pill] (100.dp) full round pill
  */
 @Immutable
 object NextRadius {
@@ -259,42 +263,19 @@ object NextType {
     val headline = titleMedium
 
     /**
-     * Dense list primary text — between bodyLarge and bodyMedium (15sp).
-     * Maps to a custom 15sp/22sp style used by feed cards and settings rows
-     * where bodyLarge (16sp) is too large but bodyMedium (14sp) too small.
+     * Dense list primary text — mapped to standard M3 bodyMedium (14sp).
      */
-    val bodyDense =
-        TextStyle(
-            fontFamily = sans,
-            fontSize = 15.sp,
-            lineHeight = 22.sp,
-            letterSpacing = 0.25.sp,
-        )
+    val bodyDense = bodyMedium
 
     /**
-     * Dense secondary text — between bodySmall and labelLarge (13sp).
-     * Used by feed post meta-lines and thread reply counts.
+     * Dense secondary text — mapped to standard M3 bodySmall (12sp).
      */
-    val footnoteDense =
-        TextStyle(
-            fontFamily = sans,
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            letterSpacing = 0.25.sp,
-        )
+    val footnoteDense = bodySmall
 
     /**
-     * Extra-small caption — between labelMedium and labelSmall (12sp, medium weight).
-     * Used by media badges and compact board cell subtitles.
+     * Extra-small caption — mapped to standard M3 labelSmall (11sp).
      */
-    val captionDense =
-        TextStyle(
-            fontFamily = sans,
-            fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
-            letterSpacing = 0.4.sp,
-        )
+    val captionDense = labelSmall
 }
 
 /**

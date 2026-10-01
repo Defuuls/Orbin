@@ -30,7 +30,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,8 +62,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
@@ -79,10 +86,7 @@ import kotlin.coroutines.resume
 import kotlin.math.roundToInt
 
 /**
- * Thin continuous slider — Feed / media density.
- *
- * Replaces Material [androidx.compose.material3.Slider] so size controls match
- * [NextLinearProgress] (hairline track, accent fill, soft circular thumb) instead of an M3 track.
+ * Modern Material 3 slider — Feed / media density.
  */
 @Composable
 fun NextSlider(
@@ -96,140 +100,47 @@ fun NextSlider(
     /** True while a finger is dragging the thumb, so a caller can show what the drag points at. */
     onDragStateChange: (Boolean) -> Unit = {},
 ) {
-    val range = (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f)
-    var widthPx by remember { mutableFloatStateOf(0f) }
-    val fraction = ((value - valueRange.start) / range).coerceIn(0f, 1f)
-    val trackColor = next.hairline
-    val fillColor = next.accent
-    val thumbFill = next.raised
-    val hairline = next.hairline
-
-    fun valueAt(x: Float): Float {
-        if (widthPx <= 0f) return value
-        val raw = (x / widthPx).coerceIn(0f, 1f)
-        val continuous = valueRange.start + raw * range
-        if (steps <= 0) return continuous
-        val stepSize = range / (steps + 1)
-        val stepped = ((continuous - valueRange.start) / stepSize).roundToInt() * stepSize
-        return (valueRange.start + stepped).coerceIn(valueRange.start, valueRange.endInclusive)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isDragged by interactionSource.collectIsDraggedAsState()
+    LaunchedEffect(isDragged) {
+        onDragStateChange(isDragged)
     }
 
-    Box(
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        valueRange = valueRange,
+        steps = steps,
+        interactionSource = interactionSource,
+        colors =
+            SliderDefaults.colors(
+                thumbColor = next.accent,
+                activeTrackColor = next.accent,
+                inactiveTrackColor = next.hairline,
+            ),
         modifier =
-            modifier
-                .height(SLIDER_TOUCH_HEIGHT)
-                .semantics {
-                    if (contentDescription.isNotEmpty()) this.contentDescription = contentDescription
-                    val pct =
-                        (
-                            (value - valueRange.start) /
-                                (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f) *
-                                100
-                        ).toInt()
-                    stateDescription = "$pct%"
-                    progressBarRangeInfo =
-                        ProgressBarRangeInfo(
-                            current = value,
-                            range = valueRange,
-                            steps = steps,
-                        )
-                    setProgress { targetFraction ->
-                        val span = valueRange.endInclusive - valueRange.start
-                        val newValue =
-                            (valueRange.start + targetFraction * span).coerceIn(valueRange)
-                        onValueChange(newValue)
-                        true
-                    }
-                }.onSizeChanged { widthPx = it.width.toFloat() }
-                .pointerInput(valueRange, steps, widthPx) {
-                    detectTapGestures { offset -> onValueChange(valueAt(offset.x)) }
-                }.pointerInput(valueRange, steps, widthPx) {
-                    detectDragGestures(
-                        onDragStart = { onDragStateChange(true) },
-                        onDragEnd = { onDragStateChange(false) },
-                        onDragCancel = { onDragStateChange(false) },
-                    ) { change, _ ->
-                        change.consume()
-                        onValueChange(valueAt(change.position.x))
-                    }
-                },
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(SLIDER_TRACK_HEIGHT)) {
-            val trackY = size.height / 2f
-            val radius = size.height / 2f
-            drawRoundRect(
-                color = trackColor,
-                topLeft = Offset(0f, 0f),
-                size = size,
-                cornerRadius = CornerRadius(radius, radius),
-            )
-            val filled = size.width * fraction
-            if (filled > 0f) {
-                drawRoundRect(
-                    color = fillColor,
-                    topLeft = Offset(0f, 0f),
-                    size = Size(filled, size.height),
-                    cornerRadius = CornerRadius(radius, radius),
-                )
-            }
-            val thumbRadius = SLIDER_THUMB.toPx() / 2f
-            val cx = (size.width * fraction).coerceIn(thumbRadius, size.width - thumbRadius)
-            drawCircle(color = thumbFill, radius = thumbRadius, center = Offset(cx, trackY))
-            drawCircle(
-                color = hairline,
-                radius = thumbRadius,
-                center = Offset(cx, trackY),
-                style = Stroke(width = 1.dp.toPx()),
-            )
-        }
-    }
+            modifier.semantics {
+                if (contentDescription.isNotEmpty()) {
+                    this.contentDescription = contentDescription
+                }
+            },
+    )
 }
 
 /**
- * Thin arc spinner — matches [NextLinearProgress] stroke weight rather than a thick M3 indicator.
+ * Standard M3 circular loading indicator.
  */
 @Composable
 fun NextCircularProgress(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 28.dp,
 ) {
-    val transition = rememberInfiniteTransition(label = "nextCircular")
-    val sweep by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = 1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "nextCircularSweep",
+    CircularProgressIndicator(
+        modifier = modifier.size(size),
+        color = next.accent,
+        trackColor = next.hairline,
+        strokeWidth = 2.5.dp,
     )
-    val accent = next.accent
-    val track = next.hairline
-    Canvas(modifier = modifier.size(size)) {
-        val stroke = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
-        val inset = stroke.width / 2f
-        val arcSize = Size(this.size.width - stroke.width, this.size.height - stroke.width)
-        drawArc(
-            color = track,
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = Offset(inset, inset),
-            size = arcSize,
-            style = stroke,
-        )
-        drawArc(
-            color = accent,
-            startAngle = sweep - 90f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(inset, inset),
-            size = arcSize,
-            style = stroke,
-        )
-    }
 }
 
 /**
@@ -471,9 +382,6 @@ private fun NextSnackbarToast(data: NextSnackbarData) {
     }
 }
 
-private val SLIDER_TRACK_HEIGHT = 3.dp
-private val SLIDER_THUMB = 22.dp
-private val SLIDER_TOUCH_HEIGHT = 40.dp
 private val PULL_THRESHOLD = 64.dp
 private const val PULL_RESISTANCE = 0.45f
 private const val SNACKBAR_MS = 4_000L
