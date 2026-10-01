@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [161 — Blueberry](https://github.com/Defuuls/Orbin/releases/tag/v161-Blueberry)
+**Current release:** [162 — Cantaloupe](https://github.com/Defuuls/Orbin/releases/tag/v162-Cantaloupe)
 
-**What's new in 161:** Downloads keep going through WorkManager, and copied images leave the clipboard after a minute.
+**What's new in 162:** The whole interface now follows Material Design 3.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
