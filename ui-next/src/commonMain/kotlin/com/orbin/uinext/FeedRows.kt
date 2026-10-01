@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_feed_title
-import com.orbin.uinext.resources.next_open_thread
 import com.orbin.uinext.resources.next_row_counts
 import com.orbin.uinext.resources.next_row_counts_unread
 import com.orbin.uinext.resources.next_row_files

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +21,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsNone
@@ -243,7 +243,8 @@ fun ThreadScreen(
                                     Text(
                                         text = label,
                                         style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (index == selectedSegment) FontWeight.Bold else FontWeight.Medium,
+                                        fontWeight =
+                                            if (index == selectedSegment) FontWeight.Bold else FontWeight.Medium,
                                     )
                                 },
                             )
@@ -463,4 +464,3 @@ private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_DEPTH_BAR_WIDTH = 2.dp
 private val REPLY_CORNER = 16.dp
-

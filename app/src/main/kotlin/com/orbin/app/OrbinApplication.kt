@@ -1,6 +1,7 @@
 package com.orbin.app
 
 import android.app.Application
+import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil3.ImageLoader
@@ -12,7 +13,6 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.util.Log
 import javax.inject.Inject
 
 /**
@@ -79,4 +79,3 @@ object OrbinApplicationModule {
         @com.orbin.network.di.BaseOkHttp client: okhttp3.OkHttpClient,
     ): okhttp3.OkHttpClient = client
 }
-

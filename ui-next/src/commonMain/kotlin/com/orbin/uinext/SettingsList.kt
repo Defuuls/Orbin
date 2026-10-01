@@ -285,4 +285,3 @@ private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value !=
 
 const val ON_LABEL = "On"
 const val OFF_LABEL = "Off"
-
