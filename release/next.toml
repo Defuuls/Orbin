@@ -1,30 +1,22 @@
-# Orbin 161 — Blueberry
+# Orbin 162 — Cantaloupe
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 161
-codename     = "Blueberry"
-version_code = 179
+number       = 162
+codename     = "Cantaloupe"
+version_code = 180
 
 # One line for the README's "What's new in <number>:" highlight. Optional —
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Downloads keep going through WorkManager, and copied images leave the clipboard after a minute."
+highlight = "The whole interface now follows Material Design 3."
 
 summary = [
-  "bump Orbin to 161-Blueberry / versionCode 179",
-  "Android: media downloads run through WorkManager instead of DownloadManager",
-  "Android: copied images clear from the clipboard after a minute; denser UI type and spacing; TalkBack-aware sliders",
+  "bump Orbin to 162-Cantaloupe / versionCode 180",
+  "Android: entire UI migrated to Material Design 3",
 ]
 
 [changelog]
 Changed = [
-  "Android: media downloads run through WorkManager instead of the system DownloadManager. They keep going when Orbin is backgrounded or restarted, write into Downloads/Orbin as before, and no longer need a broadcast receiver for completion.",
-  "Android: feed, boards and thread text use denser type and spacing tokens (tighter gutters, denser body and footnote sizes), so list rows and cards pack a little closer without changing the layout structure.",
-  "Android: feed and boards empty states, search, and thread counts use localized strings in the ui-next design system instead of hard-coded English.",
-  "Android: sliders announce their value and percent to TalkBack, and support the accessibility set-progress action.",
-]
-Fixed = [
-  "Android: copying an image to the clipboard clears it after one minute, so the temporary URI grant does not linger. Background clipboard reads are already blocked by the OS on newer Android; this clears the grant on every supported version (minSdk 31).",
-  "Android: notification and shortcut deep links are parsed through a typed IntentRoute with length limits on provider, board and title extras, instead of reading those strings unbound.",
+  "Android: the entire UI is migrated to Material Design 3 — screens, scaffolds, buttons, controls and color, type and spacing tokens now follow M3 components and guidelines.",
 ]
