@@ -14,7 +14,7 @@ links, and media but does not post, reply, or create threads.
 
 | | |
 | --- | --- |
-| Current release | **v161 — Blueberry** (2026-09-30) |
+| Current release | **v162 — Cantaloupe** (2026-10-01) |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |

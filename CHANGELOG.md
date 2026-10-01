@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [162-Cantaloupe] - 2026-10-01
+
+### Changed
+- Android: the entire UI is migrated to Material Design 3 — screens, scaffolds, buttons, controls and color, type and spacing tokens now follow M3 components and guidelines.
+
+
 ## [161-Blueberry] - 2026-09-30
 
 ### Changed
@@ -2504,7 +2510,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...HEAD
+[162-Cantaloupe]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...v162-Cantaloupe
 [161-Blueberry]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...v161-Blueberry
 [160-Blackberry]: https://github.com/Defuuls/Orbin/compare/v159-Apricot...v160-Blackberry
 [159-Apricot]: https://github.com/Defuuls/Orbin/compare/v158-Yuzu...v159-Apricot
