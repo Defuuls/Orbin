@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +19,21 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +47,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -52,7 +63,6 @@ import com.orbin.uinext.resources.next_thread_posts
 import com.orbin.uinext.resources.next_thread_share
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
-import com.orbin.uinext.tokens.NextRadius
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -72,6 +82,7 @@ data class Post(
     val id: String = number,
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThreadScreen(
     subject: String,
@@ -109,163 +120,204 @@ fun ThreadScreen(
             onScrollConsumed()
         }
     }
-    Surface {
-        Box(modifier = modifier.fillMaxSize()) {
-            LazyColumn(
-                state = state,
-                modifier = Modifier.contentInsets(),
-                contentPadding =
-                    PaddingValues(
-                        // Room for the jump pill plus a margin, so the last post can scroll fully clear.
-                        bottom = THREAD_JUMP_CLEARANCE + bottomInset(),
-                    ),
-            ) {
-                item {
-                    Row(
-                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        BoardDot(board, size = 6.dp)
-                        WidthSpacer(7)
-                        Text(
-                            text = board,
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.2.sp,
-                            color = boardHue(board),
-                        )
-                        WidthSpacer(8)
-                        MetaLine(subtitle ?: "${posts.size} posts", color = next.faint)
-                    }
-                    ScreenTitle(text = subject, size = 26)
-                    // Two things only: how to read the thread, and whether to be told when it moves.
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        PlatformSegments(
-                            labels =
-                                listOf(
-                                    stringResource(Res.string.next_thread_posts),
-                                    stringResource(Res.string.next_thread_files),
-                                ),
-                            selected = if (layout == ThreadLayout.FILES) 1 else 0,
-                            onSelect = { index ->
-                                onLayoutChange(
-                                    if (index ==
-                                        1
-                                    ) {
-                                        ThreadLayout.FILES
-                                    } else {
-                                        ThreadLayout.POSTS
-                                    },
-                                )
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        WidthSpacer(8)
-                        NextIconAction(
-                            imageVector =
-                                if (watching) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone,
-                            contentDescription =
-                                if (watching) {
-                                    stringResource(Res.string.next_thread_watching)
-                                } else {
-                                    stringResource(Res.string.next_thread_watch)
-                                },
-                            onClick = onWatch,
-                            tint = if (watching) next.accent else next.muted,
-                        )
-                    }
-                    if (layout == ThreadLayout.FILES) {
-                        // What you do with every file belongs with the files, not above the posts.
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, top = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            InlineAction(
-                                label = stringResource(Res.string.next_thread_download_all),
-                                onClick = onDownloadAll,
-                            )
-                            InlineAction(stringResource(Res.string.next_thread_share), onClick = onShare)
-                        }
-                    }
-                    Gap(18)
-                    Hairline()
-                }
-                if (layout == ThreadLayout.POSTS) {
-                    itemsIndexed(posts, key = { _, post -> post.id }) { index, post ->
-                        PostView(
-                            post = post,
-                            board = board,
-                            seed = index,
-                            collapsed = post.id in collapsed,
-                            onToggleCollapse = onToggleCollapse,
-                            onClick = onPostClick,
-                            body = body,
-                            media = media,
-                        )
-                        if (index < posts.lastIndex) Hairline(inset = true)
-                    }
-                } else {
-                    items(
-                        fileRows,
-                        key = { row -> row.joinToString(separator = "|") { it.id } },
-                        contentType = { "thread-files-row" },
-                    ) { rowOfFiles ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp)) {
-                            rowOfFiles.forEach { cell ->
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .weight(1f)
-                                            .padding(2.5.dp)
-                                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                                            .nextClickable(onClick = { onOpenFile(cell) }),
-                                ) {
-                                    val shape = Modifier.fillMaxWidth().aspectRatio(1f)
-                                    if (fileTile != null) fileTile(cell, shape) else MediaTile(modifier = shape)
-                                }
-                            }
-                            repeat(fileColumns - rowOfFiles.size) {
-                                Box(modifier = Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = next.background,
+        contentColor = next.ink,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        floatingActionButton = {
             if (layout == ThreadLayout.POSTS && posts.size > 1) {
                 Row(
                     modifier =
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(
-                                end = GUTTER,
-                                bottom = 12.dp + bottomInset(),
-                            )
-                            // A solid pill, so the jumps stay legible over the posts they float on.
-                            .nextElevatedSurface(RoundedCornerShape(NextRadius.pill))
-                            .padding(horizontal = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        Modifier.padding(
+                            end = 4.dp,
+                            bottom = 12.dp + bottomInset(),
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    InlineAction(
-                        label = stringResource(Res.string.next_thread_jump_top),
+                    ExtendedFloatingActionButton(
                         onClick = { scope.launch { state.animateScrollToItem(0) } },
-                    )
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.next_thread_jump_top),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     if (firstUnreadPostId != null) {
-                        InlineAction(
-                            label = stringResource(Res.string.next_thread_jump_unread),
-                            accent = true,
+                        ExtendedFloatingActionButton(
                             onClick = {
                                 val target = posts.indexOfFirst { it.id == firstUnreadPostId }
                                 if (target >= 0) scope.launch { state.animateScrollToItem(target + 1) }
                             },
+                            shape = CircleShape,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.next_thread_jump_unread),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                    ExtendedFloatingActionButton(
+                        onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.next_thread_jump_bottom),
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    InlineAction(
-                        label = stringResource(Res.string.next_thread_jump_bottom),
-                        onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
+                }
+            }
+        },
+    ) { scaffoldPadding ->
+        LazyColumn(
+            state = state,
+            modifier = Modifier.padding(scaffoldPadding).contentInsets(),
+            contentPadding =
+                PaddingValues(
+                    // Room for the jump pill plus a margin, so the last post can scroll fully clear.
+                    bottom = THREAD_JUMP_CLEARANCE + bottomInset(),
+                ),
+        ) {
+            item {
+                Row(
+                    modifier = Modifier.padding(start = GUTTER, top = 26.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BoardDot(board, size = 6.dp)
+                    WidthSpacer(7)
+                    Text(
+                        text = board,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = boardHue(board),
                     )
+                    WidthSpacer(8)
+                    MetaLine(subtitle ?: "${posts.size} posts", color = next.faint)
+                }
+                ScreenTitle(text = subject, size = 26)
+                // Two things only: how to read the thread, and whether to be told when it moves.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val threadSegments =
+                        listOf(
+                            stringResource(Res.string.next_thread_posts),
+                            stringResource(Res.string.next_thread_files),
+                        )
+                    val selectedSegment = if (layout == ThreadLayout.FILES) 1 else 0
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        threadSegments.forEachIndexed { index, label ->
+                            SegmentedButton(
+                                selected = index == selectedSegment,
+                                onClick = {
+                                    onLayoutChange(
+                                        if (index == 1) ThreadLayout.FILES else ThreadLayout.POSTS,
+                                    )
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = threadSegments.size),
+                                colors =
+                                    SegmentedButtonDefaults.colors(
+                                        activeContainerColor = next.accentSoft,
+                                        activeContentColor = next.accent,
+                                        inactiveContainerColor = next.elevated,
+                                        inactiveContentColor = next.ink,
+                                        activeBorderColor = next.hairline,
+                                        inactiveBorderColor = next.hairline,
+                                    ),
+                                label = {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight =
+                                            if (index == selectedSegment) FontWeight.Bold else FontWeight.Medium,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                    WidthSpacer(8)
+                    NextIconAction(
+                        imageVector =
+                            if (watching) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone,
+                        contentDescription =
+                            if (watching) {
+                                stringResource(Res.string.next_thread_watching)
+                            } else {
+                                stringResource(Res.string.next_thread_watch)
+                            },
+                        onClick = onWatch,
+                        tint = if (watching) next.accent else next.muted,
+                    )
+                }
+                if (layout == ThreadLayout.FILES) {
+                    // What you do with every file belongs with the files, not above the posts.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        InlineAction(
+                            label = stringResource(Res.string.next_thread_download_all),
+                            onClick = onDownloadAll,
+                        )
+                        InlineAction(stringResource(Res.string.next_thread_share), onClick = onShare)
+                    }
+                }
+                Gap(18)
+                Hairline()
+            }
+            if (layout == ThreadLayout.POSTS) {
+                itemsIndexed(posts, key = { _, post -> post.id }) { index, post ->
+                    PostView(
+                        post = post,
+                        board = board,
+                        seed = index,
+                        collapsed = post.id in collapsed,
+                        onToggleCollapse = onToggleCollapse,
+                        onClick = onPostClick,
+                        body = body,
+                        media = media,
+                    )
+                    if (index < posts.lastIndex) Hairline(inset = true)
+                }
+            } else {
+                items(
+                    fileRows,
+                    key = { row -> row.joinToString(separator = "|") { it.id } },
+                    contentType = { "thread-files-row" },
+                ) { rowOfFiles ->
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp)) {
+                        rowOfFiles.forEach { cell ->
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(2.5.dp)
+                                        .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                                        .nextClickable(onClick = { onOpenFile(cell) }),
+                            ) {
+                                val shape = Modifier.fillMaxWidth().aspectRatio(1f)
+                                if (fileTile != null) fileTile(cell, shape) else MediaTile(modifier = shape)
+                            }
+                        }
+                        repeat(fileColumns - rowOfFiles.size) {
+                            Box(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -287,108 +339,120 @@ private fun PostView(
 ) {
     val depthCount = post.depth.coerceAtMost(MAX_REPLY_DEPTH)
     val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
-    Box(
+    ElevatedCard(
+        onClick = { onClick(post) },
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = GUTTER, vertical = 5.dp)
-                .clip(RoundedCornerShape(REPLY_CORNER))
-                .background(next.raised)
-                .nextClickable(onClick = { onClick(post) }),
+                .padding(horizontal = GUTTER, vertical = 5.dp),
+        shape = RoundedCornerShape(REPLY_CORNER),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = next.raised,
+                contentColor = next.ink,
+            ),
+        elevation =
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 1.dp,
+                pressedElevation = 3.dp,
+                focusedElevation = 2.dp,
+                hoveredElevation = 2.dp,
+            ),
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
-                        end = GUTTER,
-                        top = 15.dp,
-                        bottom = 15.dp,
-                    ),
-        ) {
-            val expandLabel = stringResource(Res.string.next_post_expand)
-            val collapseLabel = stringResource(Res.string.next_post_collapse)
-            val collapsedState = stringResource(Res.string.next_post_collapsed_state)
-            val expandedState = stringResource(Res.string.next_post_expanded_state)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier =
                     Modifier
-                        .nextClickable(
-                            onClickLabel = if (collapsed) expandLabel else collapseLabel,
-                            onClick = { onToggleCollapse(post) },
-                        ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
+                        .fillMaxWidth()
+                        .padding(
+                            start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
+                            end = GUTTER,
+                            top = 15.dp,
+                            bottom = 15.dp,
+                        ),
             ) {
-                MetaLine(post.number, color = next.faint)
-                WidthSpacer(8)
-                MetaLine(post.time, color = next.faint)
-                if (post.replies > 0) {
-                    WidthSpacer(8)
-                    Pill("${post.replies} replies", tint = next.muted)
-                }
-                if (collapsed) {
-                    WidthSpacer(8)
-                    MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
-                }
-            }
-            if (collapsed) return@Column
-            Gap(8)
-            if (post.spoiler) {
-                Box(
+                val expandLabel = stringResource(Res.string.next_post_expand)
+                val collapseLabel = stringResource(Res.string.next_post_collapse)
+                val collapsedState = stringResource(Res.string.next_post_collapsed_state)
+                val expandedState = stringResource(Res.string.next_post_expanded_state)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                            .background(Color.Black.copy(alpha = SPOILER_SCRIM)),
-                    contentAlignment = Alignment.CenterStart,
+                            .nextClickable(
+                                onClickLabel = if (collapsed) expandLabel else collapseLabel,
+                                onClick = { onToggleCollapse(post) },
+                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
                 ) {
-                    Text(
-                        text = stringResource(Res.string.next_spoiler_reveal),
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.72f),
-                        modifier = Modifier.padding(horizontal = 14.dp),
-                    )
+                    MetaLine(post.number, color = next.faint)
+                    WidthSpacer(8)
+                    MetaLine(post.time, color = next.faint)
+                    if (post.replies > 0) {
+                        WidthSpacer(8)
+                        Pill("${post.replies} replies", tint = next.muted)
+                    }
+                    if (collapsed) {
+                        WidthSpacer(8)
+                        MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
+                    }
                 }
-            } else if (body != null) {
-                body(post)
-            } else {
-                Text(
-                    text = post.body,
-                    fontSize = 15.5.sp,
-                    lineHeight = 23.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = next.ink.copy(alpha = 0.90f),
-                )
-            }
-            if (post.hasMedia) {
-                Gap(12)
-                val tile = Modifier.fillMaxWidth()
-                if (media != null) {
-                    media(post, tile)
-                } else {
-                    MediaTile(
-                        modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
-                        seed = seed + 1,
-                        radius = GRID_TILE_RADIUS,
-                    )
-                }
-            }
-        }
-        if (depthCount > 0) {
-            Row(modifier = Modifier.matchParentSize().padding(top = 14.dp, bottom = 14.dp)) {
-                repeat(depthCount) {
+                if (collapsed) return@Column
+                Gap(8)
+                if (post.spoiler) {
                     Box(
                         modifier =
                             Modifier
-                                .padding(start = GUTTER)
-                                .fillMaxHeight()
-                                .width(REPLY_DEPTH_BAR_WIDTH)
-                                .clip(RoundedCornerShape(1.dp))
-                                .background(boardHue(board).copy(alpha = 0.30f)),
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                                .background(Color.Black.copy(alpha = SPOILER_SCRIM)),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.next_spoiler_reveal),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.72f),
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                        )
+                    }
+                } else if (body != null) {
+                    body(post)
+                } else {
+                    Text(
+                        text = post.body,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Normal,
+                        color = next.ink.copy(alpha = 0.90f),
                     )
+                }
+                if (post.hasMedia) {
+                    Gap(12)
+                    val tile = Modifier.fillMaxWidth()
+                    if (media != null) {
+                        media(post, tile)
+                    } else {
+                        MediaTile(
+                            modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
+                            seed = seed + 1,
+                            radius = GRID_TILE_RADIUS,
+                        )
+                    }
+                }
+            }
+            if (depthCount > 0) {
+                Row(modifier = Modifier.matchParentSize().padding(top = 14.dp, bottom = 14.dp)) {
+                    repeat(depthCount) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .padding(start = GUTTER)
+                                    .fillMaxHeight()
+                                    .width(REPLY_DEPTH_BAR_WIDTH)
+                                    .clip(RoundedCornerShape(1.dp))
+                                    .background(boardHue(board).copy(alpha = 0.30f)),
+                        )
+                    }
                 }
             }
         }

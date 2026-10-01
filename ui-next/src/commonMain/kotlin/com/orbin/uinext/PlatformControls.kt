@@ -3,29 +3,27 @@ package com.orbin.uinext
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -151,6 +149,7 @@ private val IOS_SWITCH_WIDTH = 51.dp
 private val IOS_SWITCH_HEIGHT = 31.dp
 private val IOS_SWITCH_THUMB = 27.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlatformSegments(
     labels: List<String>,
@@ -159,46 +158,38 @@ fun PlatformSegments(
     modifier: Modifier = Modifier,
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .border(1.dp, next.hairline, shape)
-            .background(next.elevated)
-            .selectableGroup()
-            .padding(3.dp),
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier.fillMaxWidth(),
     ) {
         labels.forEachIndexed { index, label ->
-            val isSelected = index == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 44.dp)
-                    .clip(RoundedCornerShape(17.dp))
-                    .background(
-                        if (isSelected) next.accentSoft else Color.Transparent,
-                    ).selectable(
-                        selected = isSelected,
-                        role = Role.Tab,
-                        onClick = {
-                            if (!isSelected) {
-                                haptics.performHapticFeedback(
-                                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
-                                )
-                            }
-                            onSelect(index)
-                        },
-                    ).padding(horizontal = 6.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label,
-                    style = NextType.footnote,
-                    color = if (isSelected) next.accent else next.ink,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                )
-            }
+            SegmentedButton(
+                selected = index == selected,
+                onClick = {
+                    if (index != selected) {
+                        haptics.performHapticFeedback(
+                            androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
+                        )
+                    }
+                    onSelect(index)
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = labels.size),
+                colors =
+                    SegmentedButtonDefaults.colors(
+                        activeContainerColor = next.accentSoft,
+                        activeContentColor = next.accent,
+                        inactiveContainerColor = next.elevated,
+                        inactiveContentColor = next.ink,
+                        activeBorderColor = next.hairline,
+                        inactiveBorderColor = next.hairline,
+                    ),
+                label = {
+                    Text(
+                        text = label,
+                        style = NextType.callout,
+                        fontWeight = if (index == selected) FontWeight.Bold else FontWeight.Medium,
+                    )
+                },
+            )
         }
     }
 }

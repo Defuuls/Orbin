@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 
 /** The one palette family used by ui-next application chrome. */
@@ -12,6 +13,38 @@ fun canonicalNextPalette(
         dark -> DarkPalette
         else -> LightPalette
     }
+
+private val AmoledRaised = Color(0xFF1D1B1E)
+private val AmoledElevated = Color(0xFF221F24)
+private const val FAINT_ALPHA_DARK = 0.60f
+private const val FAINT_ALPHA_LIGHT = 0.62f
+
+/**
+ * Derives a [NextPalette] directly from an active Material 3 [ColorScheme].
+ *
+ * Preserves AMOLED true-black behavior, WCAG AA contrast floor, and dynamic color.
+ */
+fun nextPaletteFromColorScheme(
+    colorScheme: ColorScheme,
+    dark: Boolean,
+    amoled: Boolean = false,
+): NextPalette =
+    NextPalette(
+        background = if (dark && amoled) Color.Black else colorScheme.background,
+        raised = if (dark && amoled) AmoledRaised else colorScheme.surfaceContainerLow,
+        elevated = if (dark && amoled) AmoledElevated else colorScheme.surfaceContainer,
+        ink = colorScheme.onSurface,
+        muted = colorScheme.onSurfaceVariant,
+        faint = colorScheme.onSurface.copy(alpha = if (dark) FAINT_ALPHA_DARK else FAINT_ALPHA_LIGHT),
+        hairline = colorScheme.outlineVariant,
+        accent = colorScheme.primary,
+        accentSoft = colorScheme.primaryContainer,
+        onAccent = colorScheme.onPrimary,
+        accentContainer = colorScheme.primaryContainer,
+        onAccentContainer = colorScheme.onPrimaryContainer,
+        dark = dark,
+        amoled = dark && amoled,
+    )
 
 /**
  * Fallback static palette (used when M3 color scheme is not yet available, e.g. preview context).

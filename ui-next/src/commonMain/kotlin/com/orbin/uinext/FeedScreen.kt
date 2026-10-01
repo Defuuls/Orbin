@@ -9,14 +9,24 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
@@ -24,8 +34,11 @@ import com.orbin.uinext.resources.next_explore_boards
 import com.orbin.uinext.resources.next_feed_thread_count
 import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_nothing_here_yet
+import com.orbin.uinext.resources.next_thread_jump_top
 import com.orbin.uinext.resources.next_try_different_search
+import com.orbin.uinext.tokens.NextSpace
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -54,6 +67,7 @@ fun FeedScreen(
     columns: Int? = null,
 ) {
     val gridState = rememberLazyGridState()
+    val scope = rememberCoroutineScope()
 
     val railVisible =
         if (!hideRailOnScroll) {
@@ -131,56 +145,89 @@ fun FeedScreen(
                         ("" to "") to visibleRows,
                     )
                 }
-            LazyVerticalGrid(
-                // One full-width card per thread on a phone, its media whole and the opening post
-                // under it; wider screens fit more columns of the same card.
-                columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
-                state = gridState,
-                modifier = insets,
-                contentPadding = gridPadding(bottomPad),
-            ) {
-                fullWidthItem { header() }
-                if (visibleRows.isEmpty()) {
-                    item(key = "feed-empty", span = { GridItemSpan(maxLineSpan) }) {
-                        Column(Modifier.padding(vertical = 24.dp)) {
-                            ScreenTitle(
-                                stringResource(Res.string.next_nothing_here_yet),
-                                subtitle = stringResource(Res.string.next_try_different_search),
-                                size = 22,
-                            )
-                            onOpenBoards?.let {
-                                InlineAction(
-                                    stringResource(Res.string.next_explore_boards),
-                                    accent = true,
-                                    onClick = it,
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyVerticalGrid(
+                    // One full-width card per thread on a phone, its media whole and the opening post
+                    // under it; wider screens fit more columns of the same card.
+                    columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
+                    state = gridState,
+                    modifier = insets,
+                    contentPadding = gridPadding(bottomPad),
+                ) {
+                    fullWidthItem { header() }
+                    if (visibleRows.isEmpty()) {
+                        item(key = "feed-empty", span = { GridItemSpan(maxLineSpan) }) {
+                            Column(Modifier.padding(vertical = 24.dp)) {
+                                ScreenTitle(
+                                    stringResource(Res.string.next_nothing_here_yet),
+                                    subtitle = stringResource(Res.string.next_try_different_search),
+                                    size = 22,
                                 )
+                                onOpenBoards?.let {
+                                    InlineAction(
+                                        stringResource(Res.string.next_explore_boards),
+                                        accent = true,
+                                        onClick = it,
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                groups.forEach { (board, group) ->
-                    if (groupByBoard) {
-                        item(key = "board:${board.second}", span = { GridItemSpan(maxLineSpan) }) {
-                            FeedGroupHeading(board.first, board.second, group.size)
+                    groups.forEach { (board, group) ->
+                        if (groupByBoard) {
+                            item(key = "board:${board.second}", span = { GridItemSpan(maxLineSpan) }) {
+                                FeedGroupHeading(board.first, board.second, group.size)
+                            }
+                        }
+                        itemsIndexed(group, key = {
+                            _,
+                            row,
+                            ->
+                            row.id
+                        }, contentType = { _, _ -> "feed-grid" }) { index, row ->
+                            FeedGridCell(
+                                row,
+                                index,
+                                onOpenRow,
+                                thumbnail,
+                                activityText = activityText,
+                                showBoard = !groupByBoard,
+                                excerptLines = FEED_EXCERPT_LINES,
+                                tallMedia = true,
+                            )
                         }
                     }
-                    itemsIndexed(group, key = {
-                        _,
-                        row,
-                        ->
-                        row.id
-                    }, contentType = { _, _ -> "feed-grid" }) { index, row ->
-                        FeedGridCell(
-                            row,
-                            index,
-                            onOpenRow,
-                            thumbnail,
-                            activityText = activityText,
-                            showBoard = !groupByBoard,
-                            excerptLines = FEED_EXCERPT_LINES,
-                            tallMedia = true,
-                        )
-                    }
+                }
+                if (rows.isNotEmpty()) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            scope.launch { gridState.animateScrollToItem(0) }
+                        },
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                        expanded = showCompactTitle,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowUpward,
+                                contentDescription = "Jump to top",
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(Res.string.next_thread_jump_top),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(
+                                    end = NextSpace.gutter,
+                                    bottom = bottomPad.calculateBottomPadding() + 16.dp,
+                                ),
+                    )
                 }
             }
         }

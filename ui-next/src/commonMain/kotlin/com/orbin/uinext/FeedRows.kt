@@ -11,18 +11,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_feed_title
-import com.orbin.uinext.resources.next_open_thread
 import com.orbin.uinext.resources.next_row_counts
 import com.orbin.uinext.resources.next_row_counts_unread
 import com.orbin.uinext.resources.next_row_files
@@ -31,7 +35,6 @@ import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -94,69 +97,80 @@ internal fun FeedGridCell(
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
         return
     }
-    Column(
+    ElevatedCard(
+        onClick = { onClick(row) },
         modifier =
             modifier
                 .padding(GRID_CELL_PADDING)
-                .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                .background(next.raised)
-                .nextClickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(Res.string.next_open_thread),
-                ) { onClick(row) },
+                .semantics { role = Role.Button },
+        shape = RoundedCornerShape(GRID_TILE_RADIUS),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = next.raised,
+                contentColor = next.ink,
+            ),
+        elevation =
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 1.dp,
+                pressedElevation = 3.dp,
+                focusedElevation = 2.dp,
+                hoveredElevation = 2.dp,
+            ),
     ) {
-        val tile = Modifier.fillMaxWidth().mediaTileSize(row, tallMedia)
-        if (row.hasPreview && thumbnail != null) {
-            thumbnail(row, tile)
-        } else if (row.hasPreview) {
-            MediaTile(modifier = tile, seed = seed, radius = GRID_TILE_RADIUS)
-        } else {
-            Box(
-                modifier =
-                    tile
-                        .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                        .background(next.ink.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
-            }
-        }
-        // One inset for every line of text, so the board, subject and counts share a left edge.
-        Column(modifier = Modifier.padding(horizontal = GRID_TEXT_INSET)) {
-            Gap(10)
-            if (showBoard) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BoardDot(row.board, size = 7.dp)
-                    WidthSpacer(6)
-                    Text(
-                        text = row.board,
-                        style = NextType.captionDense,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (row.read) next.muted else boardHue(row.board),
-                    )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            val tile = Modifier.fillMaxWidth().mediaTileSize(row, tallMedia)
+            if (row.hasPreview && thumbnail != null) {
+                thumbnail(row, tile)
+            } else if (row.hasPreview) {
+                MediaTile(modifier = tile, seed = seed, radius = GRID_TILE_RADIUS)
+            } else {
+                Box(
+                    modifier =
+                        tile
+                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                            .background(next.ink.copy(alpha = 0.05f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
                 }
-                Gap(3)
             }
-            MetaLine(activityText(row), color = next.faint)
-            Gap(6)
-            Text(
-                text = row.subject,
-                style = NextType.bodyDense,
-                fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
-                color = if (row.read) next.muted else next.ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Gap(6)
-            if (row.excerpt.isNotBlank()) {
-                MetaLine(row.excerpt, maxLines = excerptLines)
+            // One inset for every line of text, so the board, subject and counts share a left edge.
+            Column(modifier = Modifier.padding(horizontal = GRID_TEXT_INSET)) {
+                Gap(10)
+                if (showBoard) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        BoardDot(row.board, size = 7.dp)
+                        WidthSpacer(6)
+                        Text(
+                            text = row.board,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (row.read) next.muted else boardHue(row.board),
+                        )
+                    }
+                    Gap(3)
+                }
+                MetaLine(activityText(row), color = next.faint)
                 Gap(6)
+                Text(
+                    text = row.subject,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
+                    color = if (row.read) next.muted else next.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Gap(6)
+                if (row.excerpt.isNotBlank()) {
+                    MetaLine(row.excerpt, maxLines = excerptLines)
+                    Gap(6)
+                }
+                val threadInfo =
+                    if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
+                MetaLine(threadInfo, maxLines = 2)
             }
-            val threadInfo =
-                if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-            MetaLine(threadInfo, maxLines = 2)
+            Gap(12)
         }
-        Gap(12)
     }
 }
 
@@ -194,38 +208,45 @@ private fun CollapsedFeedRow(
     showBoard: Boolean = true,
     onClick: (FeedRow) -> Unit,
 ) {
-    Row(
+    ElevatedCard(
+        onClick = { onClick(row) },
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(NextRadius.tight))
-                .nextClickable(
-                    role = Role.Button,
-                    onClickLabel = stringResource(Res.string.next_open_thread),
-                ) { onClick(row) }
-                .padding(horizontal = GUTTER, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                .semantics { role = Role.Button },
+        shape = RoundedCornerShape(NextRadius.tight),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = next.raised,
+                contentColor = next.ink,
+            ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
     ) {
-        if (showBoard) {
-            BoardDot(row.board, size = 5.dp)
-            WidthSpacer(7)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showBoard) {
+                BoardDot(row.board, size = 5.dp)
+                WidthSpacer(7)
+                Text(
+                    text = row.board,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = next.muted,
+                )
+                WidthSpacer(9)
+            }
             Text(
-                text = row.board,
-                style = NextType.captionDense,
-                fontWeight = FontWeight.SemiBold,
+                text = row.subject,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Normal,
                 color = next.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            WidthSpacer(9)
         }
-        Text(
-            text = row.subject,
-            modifier = Modifier.weight(1f),
-            style = NextType.footnoteDense,
-            fontWeight = FontWeight.Normal,
-            color = next.muted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

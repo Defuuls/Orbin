@@ -109,49 +109,54 @@ fun NextTheme(
     val black = amoled ?: (inherited?.amoled ?: false)
     val scale = fontScale ?: inheritedScale
 
+    val fallbackPalette =
+        palette ?: when {
+            dark && black -> AmoledPalette
+            dark -> DarkPalette
+            else -> LightPalette
+        }
+
     // Build the M3 color scheme for this dark/light mode
     val m3Scheme =
         if (dark) {
             darkColorScheme(
-                primary = (palette ?: DarkPalette).accent,
-                background = (palette ?: DarkPalette).background,
-                surface = (palette ?: DarkPalette).raised,
-                onBackground = (palette ?: DarkPalette).ink,
-                onSurface = (palette ?: DarkPalette).ink,
-                surfaceContainerLow = (palette ?: DarkPalette).raised,
-                surfaceContainer = (palette ?: DarkPalette).elevated,
-                primaryContainer = (palette ?: DarkPalette).accentContainer,
-                onPrimary = (palette ?: DarkPalette).onAccent,
-                onPrimaryContainer = (palette ?: DarkPalette).onAccentContainer,
-                outlineVariant = (palette ?: DarkPalette).hairline,
-                onSurfaceVariant = (palette ?: DarkPalette).muted,
+                primary = fallbackPalette.accent,
+                background = if (black) Color.Black else fallbackPalette.background,
+                surface = fallbackPalette.raised,
+                onBackground = fallbackPalette.ink,
+                onSurface = fallbackPalette.ink,
+                surfaceContainerLow = fallbackPalette.raised,
+                surfaceContainer = fallbackPalette.elevated,
+                primaryContainer = fallbackPalette.accentContainer,
+                onPrimary = fallbackPalette.onAccent,
+                onPrimaryContainer = fallbackPalette.onAccentContainer,
+                outlineVariant = fallbackPalette.hairline,
+                onSurfaceVariant = fallbackPalette.muted,
             )
         } else {
             lightColorScheme(
-                primary = (palette ?: LightPalette).accent,
-                background = (palette ?: LightPalette).background,
-                surface = (palette ?: LightPalette).raised,
-                onBackground = (palette ?: LightPalette).ink,
-                onSurface = (palette ?: LightPalette).ink,
-                surfaceContainerLow = (palette ?: LightPalette).raised,
-                surfaceContainer = (palette ?: LightPalette).elevated,
-                primaryContainer = (palette ?: LightPalette).accentContainer,
-                onPrimary = (palette ?: LightPalette).onAccent,
-                onPrimaryContainer = (palette ?: LightPalette).onAccentContainer,
-                outlineVariant = (palette ?: LightPalette).hairline,
-                onSurfaceVariant = (palette ?: LightPalette).muted,
+                primary = fallbackPalette.accent,
+                background = fallbackPalette.background,
+                surface = fallbackPalette.raised,
+                onBackground = fallbackPalette.ink,
+                onSurface = fallbackPalette.ink,
+                surfaceContainerLow = fallbackPalette.raised,
+                surfaceContainer = fallbackPalette.elevated,
+                primaryContainer = fallbackPalette.accentContainer,
+                onPrimary = fallbackPalette.onAccent,
+                onPrimaryContainer = fallbackPalette.onAccentContainer,
+                outlineVariant = fallbackPalette.hairline,
+                onSurfaceVariant = fallbackPalette.muted,
             )
         }
 
     // Derive the NextPalette from the M3 scheme (dynamic color flows through here too)
     val resolvedPalette =
-        palette ?: run {
-            when {
-                dark && black -> AmoledPalette
-                dark -> DarkPalette
-                else -> LightPalette
-            }
-        }
+        palette ?: nextPaletteFromColorScheme(
+            colorScheme = m3Scheme,
+            dark = dark,
+            amoled = dark && black,
+        )
 
     val density = LocalDensity.current
     CompositionLocalProvider(

@@ -16,6 +16,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,14 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
 import com.orbin.uinext.resources.next_settings_title
@@ -147,7 +149,52 @@ private fun SettingRow(
     onCommitText: (SettingItem, String) -> Unit,
 ) {
     Column {
-        Row(
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = item.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = next.ink,
+                )
+            },
+            supportingContent =
+                if (item.hint != null && item.kind != SettingKind.TEXT) {
+                    {
+                        Text(
+                            text = item.hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = next.muted,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
+                } else {
+                    null
+                },
+            trailingContent = {
+                if (item.kind == SettingKind.TOGGLE) {
+                    NextToggle(checked = item.isOn(), onCheckedChange = { onActivate(item) })
+                } else {
+                    SelectionContainer {
+                        Text(
+                            text = item.value,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color =
+                                when {
+                                    item.destructive -> nextDestructiveRed
+                                    item.isOn() -> next.accent
+                                    else -> next.muted
+                                },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = Color.Transparent,
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -157,52 +204,13 @@ private fun SettingRow(
                         } else {
                             Modifier.nextClickable(role = Role.Button, onClick = { onActivate(item) })
                         },
-                    ).padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.label,
-                    fontSize = 15.5.sp,
-                    letterSpacing = (-0.1).sp,
-                    color = next.ink,
-                )
-                if (item.hint != null && item.kind != SettingKind.TEXT) {
-                    Text(
-                        text = item.hint,
-                        fontSize = 12.5.sp,
-                        color = next.muted,
-                        // Large text must wrap mid-sentence rather than clip.
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
-                }
-            }
-            WidthSpacer(12)
-            if (item.kind == SettingKind.TOGGLE) {
-                NextToggle(checked = item.isOn(), onCheckedChange = { onActivate(item) })
-            } else {
-                SelectionContainer {
-                    Text(
-                        text = item.value,
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color =
-                            when {
-                                item.destructive -> nextDestructiveRed
-                                item.isOn() -> next.accent
-                                else -> next.muted
-                            },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-        }
+                    ),
+        )
         if (!expanded) return@Column
         if (item.kind == SettingKind.TEXT && item.hint != null) {
             Text(
                 text = item.hint,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = next.muted,
                 modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 10.dp),
             )
@@ -243,7 +251,12 @@ private fun SettingTextEditor(
     ) {
         Box(modifier = Modifier.weight(1f)) {
             if (draft.isEmpty()) {
-                Text(text = item.value, fontSize = 15.sp, color = next.faint, maxLines = 1)
+                Text(
+                    text = item.value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = next.faint,
+                    maxLines = 1,
+                )
             }
             // BasicTextField already supports selection; the value Text above keeps
             // SelectionContainer for long-press copy of the committed value.
@@ -251,7 +264,7 @@ private fun SettingTextEditor(
                 value = draft,
                 onValueChange = { draft = it },
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 15.sp, color = next.ink),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = next.ink),
                 cursorBrush = SolidColor(next.accent),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { commit() }),
