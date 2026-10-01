@@ -523,9 +523,9 @@ fun NextScaffold(
         containerColor = next.background,
         contentColor = next.ink,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-    ) { _ ->
+    ) { scaffoldPadding ->
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(scaffoldPadding),
         ) {
             content(PaddingValues(bottom = bottom))
             if (pillDestination != null && onDestination != null) {
