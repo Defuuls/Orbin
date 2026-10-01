@@ -180,10 +180,10 @@ fun ThreadScreen(
                 }
             }
         },
-    ) { _ ->
+    ) { scaffoldPadding ->
         LazyColumn(
             state = state,
-            modifier = Modifier.contentInsets(),
+            modifier = Modifier.padding(scaffoldPadding).contentInsets(),
             contentPadding =
                 PaddingValues(
                     // Room for the jump pill plus a margin, so the last post can scroll fully clear.
