@@ -64,5 +64,6 @@ private fun applicationSupportPath(file: String): String {
         )
     // Exclude application support data (history, bookmarks, followed boards) from iCloud backup.
     directory?.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
+    directory?.setResourceValue(value = platform.Foundation.NSFileProtectionComplete, forKey = platform.Foundation.NSFileProtectionKey, error = null)
     return requireNotNull(directory?.path) { "No Application Support directory" } + "/" + file
 }
