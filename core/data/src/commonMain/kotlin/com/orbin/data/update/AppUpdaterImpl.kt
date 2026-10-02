@@ -25,8 +25,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.net.SocketTimeoutException
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 import kotlin.math.roundToInt
 
 /**
@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
  * *and* [ApkInstaller.verify] has confirmed it is a newer Orbin signed with the running build's
  * key. The installer still asks the reader to confirm; nothing installs silently.
  */
-@Singleton
+@AppScope
 class AppUpdaterImpl
     @Inject
     constructor(

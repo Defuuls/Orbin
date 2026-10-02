@@ -2,8 +2,8 @@ package com.orbin.data.settings
 
 import com.orbin.network.NetworkConfig
 import com.orbin.network.NetworkConfigProvider
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * The network configuration, which is fixed: HTTPS only, DNS over HTTPS through Cloudflare, the
@@ -12,7 +12,7 @@ import javax.inject.Singleton
  * Kept apart from [SettingsRepositoryImpl] on purpose: the HTTP client is built from this, and the
  * settings stores come from the shared graph, which is built from the HTTP client.
  */
-@Singleton
+@AppScope
 class FixedNetworkConfigProvider
     @Inject
     constructor() : NetworkConfigProvider {

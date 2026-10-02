@@ -11,7 +11,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
+import me.tatarka.inject.annotations.Inject
 
 /**
  * Downloads a release APK and checks it against the release's published SHA-256.

@@ -26,14 +26,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.net.URI
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * Downloads media via WorkManager, saving into the public Downloads/Orbin directory.
  * A lightweight Room table keeps download history for the in-app downloads screen.
  */
-@Singleton
+@AppScope
 class DownloadRepositoryImpl
     @Inject
     constructor(

@@ -9,7 +9,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
-import javax.inject.Inject
+import me.tatarka.inject.annotations.Inject
 
 /**
  * The Android side of installing an update: the checks only the package manager can make, and the

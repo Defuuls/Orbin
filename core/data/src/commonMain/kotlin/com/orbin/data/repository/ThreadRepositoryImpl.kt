@@ -18,8 +18,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.LinkedHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * Thread repository. Loads threads through the active provider, with an in-memory copy of each
@@ -27,7 +27,7 @@ import javax.inject.Singleton
  * after 30 minutes of inactivity, and is capped so long browsing sessions cannot retain an
  * unbounded number of complete threads.
  */
-@Singleton
+@AppScope
 class ThreadRepositoryImpl
     @Inject
     constructor(

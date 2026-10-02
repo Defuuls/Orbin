@@ -60,3 +60,4 @@ include(":feature:downloads")
 include(":feature:onboarding")
 
 include(":ui-next")
+include(":core:data")

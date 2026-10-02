@@ -23,8 +23,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 private const val RECENT_LIMIT = 20
 
@@ -33,7 +33,7 @@ private const val RECENT_LIMIT = 20
  * when it advertises the capability. Recent queries are persisted in Room. Designed so adding a
  * server-side search provider is a matter of the provider returning results for [SearchScope.REMOTE].
  */
-@Singleton
+@AppScope
 class SearchRepositoryImpl
     @Inject
     constructor(

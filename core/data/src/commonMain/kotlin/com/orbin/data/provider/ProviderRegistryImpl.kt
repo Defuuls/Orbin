@@ -8,8 +8,8 @@ import com.orbin.provider.api.ProviderDiagnostics
 import com.orbin.provider.api.ProviderRegistry
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import kotlinx.coroutines.flow.first
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * [ProviderRegistry] backed by the set of providers contributed via Hilt multibinding. Provider
@@ -21,11 +21,11 @@ import javax.inject.Singleton
  * and repositories therefore get the same behavior without engine-specific
  * instrumentation code.
  */
-@Singleton
+@AppScope
 class ProviderRegistryImpl
     @Inject
     constructor(
-        providers: Set<@JvmSuppressWildcards ImageBoardProvider>,
+        providers: Set<ImageBoardProvider>,
         diagnostics: ProviderDiagnostics,
         settingsRepository: SettingsRepository,
     ) : ProviderRegistry {

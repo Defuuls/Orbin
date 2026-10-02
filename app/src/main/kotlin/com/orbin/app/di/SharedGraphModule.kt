@@ -55,6 +55,17 @@ object SharedGraphModule {
 
     @Provides
     fun providesHistoryRepository(graph: SharedGraph): HistoryRepository = graph.history
+    @Provides
+    fun providesBoardRepository(graph: SharedGraph): com.orbin.domain.repository.BoardRepository = graph.boardRepository
+
+    @Provides
+    fun providesCatalogRepository(graph: SharedGraph): com.orbin.domain.repository.CatalogRepository = graph.catalogRepository
+
+    @Provides
+    fun providesThreadRepository(graph: SharedGraph): com.orbin.domain.repository.ThreadRepository = graph.threadRepository
+
+    @Provides
+    fun providesProviderRegistry(graph: SharedGraph): com.orbin.provider.api.ProviderRegistry = graph.providerRegistry
 
     @Provides
     @ElementsIntoSet

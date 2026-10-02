@@ -15,8 +15,8 @@ import com.orbin.domain.repository.CatalogRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 private const val PAGE_SIZE = 100
 private const val INITIAL_LOAD_SIZE = 500
@@ -26,7 +26,7 @@ private const val INITIAL_LOAD_SIZE = 500
  * whole catalog in one response, so [CatalogPagingSource] fetches it once and pages over the
  * in-memory list — giving the UI incremental rendering and prefetch without extra requests.
  */
-@Singleton
+@AppScope
 class CatalogRepositoryImpl
     @Inject
     constructor(

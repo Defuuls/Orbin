@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * Board repository backed by Room, so a provider's board list survives process death and is
@@ -30,7 +30,7 @@ import javax.inject.Singleton
  * older than [BOARD_CACHE_TTL_MILLIS]. A failed refresh leaves the cached rows in place: stale
  * boards are worth more than none, and boards change on the order of months.
  */
-@Singleton
+@AppScope
 class BoardRepositoryImpl
     @Inject
     constructor(

@@ -17,7 +17,7 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import javax.inject.Inject
+import me.tatarka.inject.annotations.Inject
 
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/Defuuls/Orbin/releases/latest"
 

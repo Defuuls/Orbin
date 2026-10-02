@@ -63,6 +63,9 @@ abstract class SharedGraph(
     abstract val boardPreferences: BoardPreferencesStore
     abstract val bookmarks: BookmarkRepository
     abstract val history: HistoryRepository
+    abstract val boardRepository: com.orbin.domain.repository.BoardRepository
+    abstract val catalogRepository: com.orbin.domain.repository.CatalogRepository
+    abstract val threadRepository: com.orbin.domain.repository.ThreadRepository
 
     /**
      * The sites the app reads, undecorated. Each platform wraps them in the violent-media cover,
@@ -91,6 +94,21 @@ abstract class SharedGraph(
     @AppScope
     @Provides
     protected fun history(database: OrbinDatabase): HistoryRepository = HistoryRepositoryImpl(database.historyDao())
+    @Provides
+    @AppScope
+    protected fun boardRepository(impl: com.orbin.data.repository.BoardRepositoryImpl): com.orbin.domain.repository.BoardRepository = impl
+    
+    @Provides
+    @AppScope
+    protected fun catalogRepository(impl: com.orbin.data.repository.CatalogRepositoryImpl): com.orbin.domain.repository.CatalogRepository = impl
+
+    @Provides
+    @AppScope
+    protected fun threadRepository(impl: com.orbin.data.repository.ThreadRepositoryImpl): com.orbin.domain.repository.ThreadRepository = impl
+
+    @Provides
+    @AppScope
+    protected fun providerRegistry(impl: com.orbin.data.provider.ProviderRegistryImpl): com.orbin.provider.api.ProviderRegistry = impl
 
     @AppScope
     @Provides

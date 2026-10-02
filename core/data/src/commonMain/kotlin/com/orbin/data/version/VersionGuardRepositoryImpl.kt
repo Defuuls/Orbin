@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.core.content.pm.PackageInfoCompat
 import com.orbin.domain.repository.VersionGuardRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * Stores the high-water mark in its own [android.content.SharedPreferences] file rather than in
@@ -17,7 +17,7 @@ import javax.inject.Singleton
  * keeping it out of [com.orbin.core.model.AppSettings] keeps it out of backup export and restore,
  * so restoring an old backup cannot quietly roll the mark backwards.
  */
-@Singleton
+@AppScope
 class VersionGuardRepositoryImpl
     @Inject
     constructor(

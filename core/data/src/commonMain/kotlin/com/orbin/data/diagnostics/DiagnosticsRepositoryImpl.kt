@@ -18,15 +18,15 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
+import me.tatarka.inject.annotations.Inject
+import com.orbin.graph.AppScope
 
 /**
  * Records uncaught exceptions locally and detects a startup crash loop. Provider diagnostics are
  * kept in memory and contain only provider id, operation, duration and outcome, never board/thread
  * identifiers or URLs.
  */
-@Singleton
+@AppScope
 class DiagnosticsRepositoryImpl
     @Inject
     constructor(
