@@ -116,7 +116,7 @@
     <string name="next_explore_boards">Explore boards</string>
     <string name="next_clear_search">Clear search</string>
     <plurals name="next_threads_count">
-        <item quantity="one">%d thread</item>
-        <item quantity="other">%d threads</item>
+        <item quantity="one">%1$d thread</item>
+        <item quantity="other">%1$d threads</item>
     </plurals>
 </resources>
