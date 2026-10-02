@@ -8,50 +8,9 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Test
-import java.security.MessageDigest
 
-class PowBlockTest {
-    @Test
-    fun `parses challenge markers`() {
-        val challenge = PowBlock.parse(interstitial(TOKEN, difficulty = 12))
-        assertThat(challenge).isNotNull()
-        assertThat(challenge!!.token).isEqualTo(TOKEN)
-        assertThat(challenge.difficulty).isEqualTo(12)
-        assertThat(challenge.algorithm).isEqualTo("SHA-256")
-    }
-
-    @Test
-    fun `isChallenge only matches powblock interstitials`() {
-        assertThat(PowBlock.isChallenge(interstitial(TOKEN, difficulty = 8))).isTrue()
-        assertThat(PowBlock.isChallenge("""{"status":"ok"}""")).isFalse()
-    }
-
-    @Test
-    fun `solved nonce satisfies the difficulty`() {
-        val difficulty = 10
-        val challenge = PowBlock.parse(interstitial(TOKEN, difficulty))!!
-        val nonce = PowBlock.solve(challenge)
-        assertThat(nonce).isNotNull()
-
-        val hash = MessageDigest.getInstance("SHA-256").digest((TOKEN + nonce).toByteArray())
-        assertThat(leadingZeroBits(hash)).isAtLeast(difficulty)
-    }
-
-    @Test
-    fun `solve returns null when the worker thread is interrupted`() {
-        val challenge = PowBlock.Challenge(token = TOKEN, difficulty = 40, algorithm = "SHA-256")
-        val worker =
-            Thread {
-                assertThat(PowBlock.solve(challenge, maxIterations = Long.MAX_VALUE)).isNull()
-            }
-        worker.start()
-        // Give the miner a moment to enter the loop, then cancel it.
-        Thread.sleep(20)
-        worker.interrupt()
-        worker.join(5_000)
-        assertThat(worker.isAlive).isFalse()
-    }
-
+/** OkHttp's adapter for the shared gate; the gate's own logic is tested in :core:network. */
+class PowBlockInterceptorTest {
     @Test
     fun `interceptor clears pow gate then tos gate and returns real content`() {
         MockWebServer().use { server ->
@@ -118,23 +77,5 @@ class PowBlockTest {
             <pre id=h style=display:none>256</pre>
             </body></html>
             """.trimIndent()
-
-        fun leadingZeroBits(hash: ByteArray): Int {
-            var bits = 0
-            for (byte in hash) {
-                val value = byte.toInt() and 0xFF
-                if (value == 0) {
-                    bits += 8
-                    continue
-                }
-                var mask = 0x80
-                while (mask != 0 && (value and mask) == 0) {
-                    bits++
-                    mask = mask shr 1
-                }
-                break
-            }
-            return bits
-        }
     }
 }

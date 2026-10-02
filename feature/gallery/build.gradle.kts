@@ -28,6 +28,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    implementation(libs.kermit)
     implementation(project(":ui-next"))
     implementation(project(":media"))
 

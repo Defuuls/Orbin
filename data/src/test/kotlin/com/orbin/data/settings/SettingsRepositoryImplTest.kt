@@ -72,6 +72,6 @@ class SettingsRepositoryImplTest {
             PreferenceDataStoreFactory.create(scope = backgroundScope) {
                 context.preferencesDataStoreFile("settings-${UUID.randomUUID()}")
             }
-        return SettingsRepositoryImpl(dataStore)
+        return SettingsRepositoryImpl(SettingsStore(dataStore), BoardPreferencesStore(dataStore))
     }
 }

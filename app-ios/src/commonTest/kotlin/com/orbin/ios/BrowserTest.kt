@@ -8,6 +8,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.graph.orbinProviders
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
@@ -55,7 +56,7 @@ class BrowserTest {
                 reply(request, routes)
             }
         return Browser(
-            orbinProviders(orbinHttpClient(engine)),
+            orbinProviders(iosHttpClient(engine)),
             bookmarks,
             history,
             boardPreferences,
@@ -171,7 +172,7 @@ class BrowserTest {
             val engine = MockEngine { request -> reply(request, routes) }
             val browser =
                 Browser(
-                    orbinProviders(orbinHttpClient(engine)),
+                    orbinProviders(iosHttpClient(engine)),
                     bookmarks,
                     history,
                     boardPreferences,
@@ -205,7 +206,7 @@ class BrowserTest {
                 MockEngine { request -> reply(request, routes) }
             val browser =
                 Browser(
-                    orbinProviders(orbinHttpClient(engine)),
+                    orbinProviders(iosHttpClient(engine)),
                     bookmarks,
                     history,
                     boardPreferences,

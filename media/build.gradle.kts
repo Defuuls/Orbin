@@ -15,6 +15,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.kermit)
     implementation(project(":core:model"))
     implementation(project(":core:common-android"))
     implementation(project(":domain"))

@@ -1,6 +1,7 @@
 package com.orbin.network.interceptor
 
 import com.orbin.network.NetworkConfigProvider
+import com.orbin.network.policy.RequestPolicy
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
@@ -15,7 +16,7 @@ class HttpsOnlyInterceptor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
-        if (configProvider.current().httpsOnly && !request.isHttps) {
+        if (!RequestPolicy.allows(configProvider.current(), request.url.scheme)) {
             throw IOException("Blocked cleartext request to ${request.url.host}; HTTPS-only is enabled")
         }
         return chain.proceed(request)

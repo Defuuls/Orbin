@@ -13,6 +13,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.kermit)
     implementation(project(":media"))
     implementation(project(":ui-next"))
 

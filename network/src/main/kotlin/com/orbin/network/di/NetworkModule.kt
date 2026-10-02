@@ -9,6 +9,7 @@ import com.orbin.network.interceptor.HttpsOnlyInterceptor
 import com.orbin.network.interceptor.InMemoryCookieJar
 import com.orbin.network.interceptor.PowBlockInterceptor
 import com.orbin.network.interceptor.VideoRetryAfterInterceptor
+import com.orbin.network.ktor.orbinHttpClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,7 +17,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -40,7 +40,7 @@ private const val BYTES_PER_KB = 1024L
 private const val KB_PER_MB = 1024L
 
 /**
- * Provides the shared networking primitives: the lenient [Json] parser, and an [OkHttpClient]
+ * Provides the shared networking primitives: an [OkHttpClient]
  * configured for secure defaults (HTTPS-only, modern TLS, always-on DNS-over-HTTPS), the
  * user-agent interceptor and opt-in logging.
  *
@@ -51,16 +51,6 @@ private const val KB_PER_MB = 1024L
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    @Provides
-    @Singleton
-    fun providesJson(): Json =
-        Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-            isLenient = true
-            explicitNulls = false
-        }
-
     @Provides
     @Singleton
     @BaseOkHttp
@@ -124,18 +114,22 @@ object NetworkModule {
     }
 
     /**
-     * The Ktor client the shared providers use, running on the same [BaseOkHttp] client so DoH,
-     * the HTTPS-only interceptor, cookies, headers and the cache apply exactly as before. Ktor
-     * follows redirects itself and refuses an HTTPS-to-HTTP downgrade.
+     * The Ktor client the shared providers use, made by the same factory as iOS's, running on the
+     * [BaseOkHttp] client. Its interceptors apply the shared request policy and POWBlock gate (and
+     * DoH, cookies and the cache), so the Ktor plugins stay off. Ktor follows redirects itself and
+     * refuses an HTTPS-to-HTTP downgrade.
      */
     @Provides
     @Singleton
     fun providesHttpClient(
         @BaseOkHttp client: OkHttpClient,
+        configProvider: NetworkConfigProvider,
     ): HttpClient =
-        HttpClient(OkHttp) {
-            engine { preconfigured = client }
-        }
+        orbinHttpClient(
+            engine = OkHttp.create { preconfigured = client },
+            configProvider = configProvider,
+            engineAppliesPolicy = true,
+        )
 
     @Provides
     @Singleton

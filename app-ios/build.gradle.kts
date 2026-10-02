@@ -29,6 +29,8 @@ kotlin {
             implementation(project(":ui-next"))
             implementation(project(":core:ui"))
             implementation(project(":storage"))
+            implementation(project(":core:graph"))
+            implementation(project(":core:network"))
             implementation(project(":core:model"))
             implementation(project(":provider:api"))
             implementation(project(":provider:vichan"))

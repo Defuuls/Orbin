@@ -1,62 +1,22 @@
 package com.orbin.ios
 
-import com.orbin.provider.api.ImageBoardProvider
-import com.orbin.provider.lynxchan.LynxChanProvider
-import com.orbin.provider.lynxchan.LynxChanSite
-import com.orbin.provider.lynxchan.api.KtorLynxChanApi
-import com.orbin.provider.vichan.VichanProvider
-import com.orbin.provider.vichan.VichanSite
-import com.orbin.provider.vichan.api.KtorVichanApi
+import com.orbin.network.NetworkConfig
+import com.orbin.network.NetworkConfigProvider
+import com.orbin.network.ktor.orbinHttpClient
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.json.Json
-
-/** The lenient parser the providers expect: the same settings as Android's `NetworkModule`. */
-val OrbinJson: Json =
-    Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-        isLenient = true
-        explicitNulls = false
-    }
 
 /** Identifies the app to the sites it reads, as the Android app does with its own platform name. */
 const val ORBIN_USER_AGENT: String = "Orbin/1.0 (iOS; +https://github.com/defuuls/orbin)"
 
+/** iOS's network settings: the shared defaults (HTTPS only, the same timeouts) under its own user agent. */
+val IosNetworkConfig: NetworkConfigProvider = NetworkConfigProvider { IOS_NETWORK_CONFIG }
+
+private val IOS_NETWORK_CONFIG = NetworkConfig(userAgent = ORBIN_USER_AGENT)
+
 /**
- * The client every request goes through. iOS passes the Darwin engine, which uses the system's
- * URL loading stack — so App Transport Security refuses plain HTTP, as Android's HTTPS-only
- * interceptor does.
+ * The client every request goes through: the shared factory, with the shared request policy and
+ * POWBlock gate installed as Ktor plugins. iOS passes the Darwin engine, which uses the system's URL
+ * loading stack and cookie store, so App Transport Security also refuses plain HTTP.
  */
-fun orbinHttpClient(engine: HttpClientEngine): HttpClient =
-    HttpClient(engine) {
-        install(HttpTimeout) {
-            connectTimeoutMillis = CONNECT_TIMEOUT_MS
-            requestTimeoutMillis = REQUEST_TIMEOUT_MS
-            socketTimeoutMillis = REQUEST_TIMEOUT_MS
-        }
-        defaultRequest { header(HttpHeaders.UserAgent, ORBIN_USER_AGENT) }
-    }
-
-private const val CONNECT_TIMEOUT_MS: Long = 15_000
-private const val REQUEST_TIMEOUT_MS: Long = 30_000
-
-/** The sites the app reads. The Android app registers the same two in `ProvidersModule`. */
-fun orbinProviders(
-    client: HttpClient,
-    json: Json = OrbinJson,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default,
-): List<ImageBoardProvider> {
-    val vichan = VichanSite.Example
-    val lynxChan = LynxChanSite.BbwChan
-    return listOf(
-        VichanProvider(vichan, KtorVichanApi(client, vichan.apiBaseUrl, json), dispatcher),
-        LynxChanProvider(lynxChan, KtorLynxChanApi(client, lynxChan.apiBaseUrl, json), dispatcher),
-    )
-}
+fun iosHttpClient(engine: HttpClientEngine): HttpClient = orbinHttpClient(engine, IosNetworkConfig)

@@ -8,6 +8,9 @@ kotlin = "2.4.20"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
 ksp = "2.3.12"
+kotlinInject = "0.9.0"
+kermit = "2.2.0"
+kotlincrypto = "0.8.0"
 compileSdk = "37"
 minSdk = "31"
 targetSdk = "36"
@@ -75,7 +78,6 @@ robolectric = "4.17"
 benchmark = "1.5.0"
 uiautomator = "2.4.0"
 profileinstaller = "1.4.1"
-timber = "5.0.1"
 roborazzi = "1.74.0"
 
 # Quality
@@ -148,7 +150,10 @@ androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", versi
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
-timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+kotlin-inject-runtime = { module = "me.tatarka.inject:kotlin-inject-runtime-kmp", version.ref = "kotlinInject" }
+kotlin-inject-compiler = { module = "me.tatarka.inject:kotlin-inject-compiler-ksp", version.ref = "kotlinInject" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kotlincrypto-sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlincrypto" }
 
 # DataStore & Security
 # The multiplatform core of DataStore Preferences, for settings shared with iOS (`:storage`).

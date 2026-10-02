@@ -5,7 +5,6 @@ import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.Configuration
-import android.util.Log
 import android.util.Rational
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -73,6 +72,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
+import co.touchlab.kermit.Logger
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
 import com.orbin.media.di.VideoMediaDataSource
@@ -285,7 +285,7 @@ fun VideoPlayer(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Log.w(TAG, "Video failed to load", error)
+                    Logger.w(error, TAG) { "Video failed to load" }
                     val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
                     isRateLimited = rateLimited
                     if (rateLimited) {

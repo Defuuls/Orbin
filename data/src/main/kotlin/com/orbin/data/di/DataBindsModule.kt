@@ -11,6 +11,7 @@ import com.orbin.data.repository.SavedThreadRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
 import com.orbin.data.repository.UpdateRepositoryImpl
+import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.update.AppUpdaterImpl
 import com.orbin.data.version.VersionGuardRepositoryImpl
@@ -98,7 +99,7 @@ interface DataBindsModule {
 
     @Binds
     @Singleton
-    fun bindsNetworkConfigProvider(impl: SettingsRepositoryImpl): NetworkConfigProvider
+    fun bindsNetworkConfigProvider(impl: FixedNetworkConfigProvider): NetworkConfigProvider
 
     @Binds
     @Singleton

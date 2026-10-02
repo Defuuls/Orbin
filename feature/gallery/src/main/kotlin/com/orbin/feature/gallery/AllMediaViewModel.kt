@@ -1,9 +1,9 @@
 package com.orbin.feature.gallery
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogRequest
@@ -273,7 +273,7 @@ class AllMediaViewModel
                 val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
                 sweepBoard(board, catalog, scanSettings.hiddenTokens)
             } catch (e: ProviderException) {
-                Log.w(TAG, "Failed to sweep board", e)
+                Logger.w(e, TAG) { "Failed to sweep board" }
                 _uiState.update { it.copy(failedBoards = it.failedBoards + 1) }
                 null
             }
@@ -328,7 +328,7 @@ class AllMediaViewModel
                 val thread = context.provider.getThread(target.key.board, target.key.thread)
                 thread.allPosts.mediaItemsFor(target, context.scanSettings.hiddenTokens)
             } catch (e: ProviderException) {
-                Log.w(TAG, "Deep scan skipped thread", e)
+                Logger.w(e, TAG) { "Deep scan skipped thread" }
                 null
             }
 

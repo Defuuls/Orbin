@@ -2,9 +2,9 @@
 
 package com.orbin.feature.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
@@ -195,7 +195,7 @@ class SubscribedFeedViewModel
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                Log.w(TAG, "Failed to refresh subscribed feed", error)
+                Logger.w(error, TAG) { "Failed to refresh subscribed feed" }
                 lastLoad?.state?.copy(stale = true)
                     ?: SubscribedFeedUiState.Error(error.message ?: "Feed refresh failed")
             }
@@ -213,7 +213,7 @@ class SubscribedFeedViewModel
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    Log.w(TAG, "Failed to refresh board index", error)
+                    Logger.w(error, TAG) { "Failed to refresh board index" }
                 } finally {
                     // Always trigger the catalog pass. If board-index refresh failed, the existing
                     // board list can still refresh and stale content remains available on failure.
@@ -304,7 +304,7 @@ class SubscribedFeedViewModel
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                Log.w(TAG, "Failed to load catalog", error)
+                Logger.w(error, TAG) { "Failed to load catalog" }
                 BoardLoadResult(
                     feed = SubscribedBoardFeed(board, persistentListOf(), override),
                     failed = true,
