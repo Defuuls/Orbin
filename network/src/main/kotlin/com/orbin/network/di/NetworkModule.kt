@@ -16,7 +16,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -40,7 +39,7 @@ private const val BYTES_PER_KB = 1024L
 private const val KB_PER_MB = 1024L
 
 /**
- * Provides the shared networking primitives: the lenient [Json] parser, and an [OkHttpClient]
+ * Provides the shared networking primitives: an [OkHttpClient]
  * configured for secure defaults (HTTPS-only, modern TLS, always-on DNS-over-HTTPS), the
  * user-agent interceptor and opt-in logging.
  *
@@ -51,16 +50,6 @@ private const val KB_PER_MB = 1024L
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    @Provides
-    @Singleton
-    fun providesJson(): Json =
-        Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-            isLenient = true
-            explicitNulls = false
-        }
-
     @Provides
     @Singleton
     @BaseOkHttp

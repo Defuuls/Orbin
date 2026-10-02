@@ -20,6 +20,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.kermit)
     api(project(":domain"))
     // The shared Room schema, DAOs and database-only repositories. This module opens that database
     // (encrypted, with its migrations) and wires everything into Hilt.

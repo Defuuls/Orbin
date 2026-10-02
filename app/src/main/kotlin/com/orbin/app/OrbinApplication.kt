@@ -1,9 +1,9 @@
 package com.orbin.app
 
 import android.app.Application
-import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import co.touchlab.kermit.Logger
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -48,9 +48,8 @@ class OrbinApplication :
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) {
-            Log.d("OrbinApplication", "Debug build initialized")
+            Logger.d(tag = "OrbinApplication") { "Debug build initialized" }
         }
-        // Release builds do not plant a tree (logs are silently dropped).
 
         // Before anything else that could throw: an uncaught exception during startup is exactly
         // the case this records, and a handler installed later would miss it.

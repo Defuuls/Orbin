@@ -91,7 +91,7 @@ lacks, so the driver substitutes as little as possible:
 
 - **SQLCipher has no JVM native lib.** The real `DatabaseModule` throws
   `UnsatisfiedLinkError: no sqlcipher`. The driver `@UninstallModules(DatabaseModule)` and binds
-  `DriveDatabaseModule`: the same Room schema, DAOs and repositories, but in memory and unencrypted.
+  `DriveDatabaseModule`: the same Room schema and DAOs, but in memory and unencrypted. The repositories still come from the shared graph.
   Bugs specific to DB encryption or migrations can't be reproduced here.
 - **No `AndroidKeyStore`.** Settings and the DB passphrase are encrypted by `LocalDataCipher` with a
   Keystore key. Without one, clicking "Start browsing" fails with

@@ -4,10 +4,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import co.touchlab.kermit.Logger
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.repository.downloadRequestHeaders
@@ -101,15 +101,15 @@ class DownloadWorker
 
                     if (success) Result.success() else Result.failure()
                 } catch (e: IOException) {
-                    Log.e(TAG, "Download failed for id=$id", e)
+                    Logger.e(e, TAG) { "Download failed for id=$id" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, "Invalid download request for id=$id", e)
+                    Logger.e(e, TAG) { "Invalid download request for id=$id" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 } catch (e: SecurityException) {
-                    Log.e(TAG, "Missing storage permission for download id=$id", e)
+                    Logger.e(e, TAG) { "Missing storage permission for download id=$id" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 }

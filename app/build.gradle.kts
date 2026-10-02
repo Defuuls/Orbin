@@ -41,9 +41,11 @@ android {
 }
 
 dependencies {
+    implementation(libs.kermit)
     // Architecture layers
     implementation(project(":domain"))
     implementation(project(":data"))
+    implementation(project(":core:graph"))
     implementation(project(":network"))
     implementation(project(":media"))
     implementation(project(":core:common-android"))
@@ -52,8 +54,6 @@ dependencies {
     implementation(project(":core:designsystem"))
 
     // Providers (registered via Hilt @IntoSet)
-    implementation(project(":provider:vichan"))
-    implementation(project(":provider:lynxchan"))
 
     // Feature modules
     implementation(project(":ui-next"))
@@ -84,7 +84,6 @@ dependencies {
 
     // Applies the baseline profile on devices without Play's profile delivery.
     implementation(libs.androidx.profileinstaller)
-    implementation(libs.timber)
     baselineProfile(project(":benchmark"))
 
     debugImplementation(libs.compose.ui.tooling)

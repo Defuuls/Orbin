@@ -1,11 +1,9 @@
 package com.orbin.ios
 
-import com.orbin.data.repository.BookmarkRepositoryImpl
-import com.orbin.data.repository.HistoryRepositoryImpl
-import com.orbin.data.settings.BoardPreferencesStore
-import com.orbin.data.settings.SettingsStore
+import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
 import platform.Foundation.NSBundle
@@ -23,18 +21,21 @@ internal object AppGraph {
 
     private val database = openDatabase()
 
-    // One DataStore per file: board preferences and settings share it, as they do on Android.
-    private val preferences = openPreferences()
+    /**
+     * The sites, stores and repositories, built by the same kotlin-inject graph Android uses. One
+     * DataStore file holds both settings and board preferences, as on Android.
+     */
+    private val shared = createSharedGraph(client, database, openPreferences(), Dispatchers.Default)
 
-    val settingsStore = SettingsStore(preferences)
-    val boardPreferences = BoardPreferencesStore(preferences)
-    val bookmarks = BookmarkRepositoryImpl(database.bookmarkDao())
-    val history = HistoryRepositoryImpl(database.historyDao())
+    val settingsStore = shared.settingsStore
+    val boardPreferences = shared.boardPreferences
+    val bookmarks = shared.bookmarks
+    val history = shared.history
     val downloadDao = database.downloadDao()
 
     /** The sites, with the same violent-media cover Android applies, following the same setting. */
     val providers =
-        orbinProviders(client).map { provider ->
+        shared.providers.map { provider ->
             ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
         }
 

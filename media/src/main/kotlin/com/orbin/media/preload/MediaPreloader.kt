@@ -2,7 +2,7 @@ package com.orbin.media.preload
 
 import android.app.ActivityManager
 import android.content.Context
-import android.util.Log
+import co.touchlab.kermit.Logger
 import coil3.ImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ErrorResult
@@ -122,10 +122,10 @@ class MediaPreloader
             runCatching { imageLoader.execute(request) }
                 .onSuccess { result ->
                     if (result is ErrorResult) {
-                        Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", result.throwable)
+                        Logger.w(result.throwable, TAG) { "Failed to preload image: ${url.redactForLog()}" }
                     }
                 }.onFailure { error ->
-                    Log.w(TAG, "Failed to preload image: ${url.redactForLog()}", error)
+                    Logger.w(error, TAG) { "Failed to preload image: ${url.redactForLog()}" }
                 }
         }
 
@@ -146,9 +146,9 @@ class MediaPreloader
                         throttler.recordResponse(response.code, response.header(RETRY_AFTER_HEADER))
                     }
             }.onSuccess { _ ->
-                Log.d(TAG, "Preloaded video metadata: ${url.redactForLog()}")
+                Logger.d(tag = TAG) { "Preloaded video metadata: ${url.redactForLog()}" }
             }.onFailure { error ->
-                Log.w(TAG, "Failed to preload video: ${url.redactForLog()}", error)
+                Logger.w(error, TAG) { "Failed to preload video: ${url.redactForLog()}" }
             }
         }
 

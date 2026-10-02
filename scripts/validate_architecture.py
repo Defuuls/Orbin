@@ -142,6 +142,15 @@ def main() -> int:
         if dep.startswith(":feature:") or dep in android_only:
             fail(errors, f":app-ios depends on Android-only module {dep}")
 
+    # :core:graph is the composition shared by both apps (kotlin-inject). It builds for iOS, so it
+    # may use only shared modules; and only the two composition roots may depend on it, or wiring
+    # would leak inward into domain, data or features.
+    for dep in sorted(deps.get(":core:graph", set())):
+        if dep.startswith(":feature:") or dep in android_only or dep == ":app-ios":
+            fail(errors, f":core:graph depends on Android-only or app module {dep}")
+    for module in sorted(m for m in modules if ":core:graph" in deps[m] and m not in {":app", ":app-ios"}):
+        fail(errors, f"{module} depends on :core:graph; only :app and :app-ios may")
+
     # :storage is the local database shared with iOS: it builds only on the domain contracts and the
     # model, never on networking, providers or anything Android-only.
     for dep in sorted(deps.get(":storage", set())):

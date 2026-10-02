@@ -13,16 +13,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.printToString
-import androidx.test.core.app.ApplicationProvider
-import com.github.takahirom.roborazzi.captureRoboImage
-import com.orbin.app.MainActivity
 import androidx.room.Room
-import coil3.ImageLoader
-import coil3.SingletonImageLoader
-import coil3.imageDecoderEnabled
+import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.testing.SynchronousExecutor
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.imageDecoderEnabled
+import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.app.MainActivity
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.dao.BookmarkDao
@@ -32,10 +32,6 @@ import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.dao.SavedThreadDao
 import com.orbin.data.di.DatabaseModule
-import com.orbin.data.repository.BookmarkRepositoryImpl
-import com.orbin.data.repository.HistoryRepositoryImpl
-import com.orbin.domain.repository.BookmarkRepository
-import com.orbin.domain.repository.HistoryRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,14 +44,14 @@ import dagger.hilt.components.SingletonComponent
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
-import javax.inject.Inject
-import javax.inject.Singleton
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Agent driver: launches the real MainActivity (real OrbinApplication, Hilt graph, DataStore,
@@ -89,25 +85,27 @@ class DriveOrbin {
     /** The manifest removes WorkManager's auto-initializer (OrbinApplication provides it), and
      *  HiltTestApplication stands in for OrbinApplication here, so initialize it before launch. */
     @get:Rule(order = 1)
-    val workManager = TestRule { base, _ ->
-        object : org.junit.runners.model.Statement() {
-            override fun evaluate() {
-                FakeAndroidKeyStore.install()
-                val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-                WorkManager.initialize(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
-                hilt.inject()
-                // Robolectric's native graphics implements BitmapFactory but not ImageDecoder,
-                // which Coil prefers on API 28+ ("DecodeException: Only supported on Android").
-                SingletonImageLoader.setUnsafe(imageLoader.newBuilder().imageDecoderEnabled(false).build())
-                if (System.getProperty("orbin.dark") == "true") {
-                    org.robolectric.RuntimeEnvironment.setQualifiers("+night")
+    val workManager =
+        TestRule { base, _ ->
+            object : org.junit.runners.model.Statement() {
+                override fun evaluate() {
+                    FakeAndroidKeyStore.install()
+                    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+                    WorkManager.initialize(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
+                    hilt.inject()
+                    // Robolectric's native graphics implements BitmapFactory but not ImageDecoder,
+                    // which Coil prefers on API 28+ ("DecodeException: Only supported on Android").
+                    SingletonImageLoader.setUnsafe(imageLoader.newBuilder().imageDecoderEnabled(false).build())
+                    if (System.getProperty("orbin.dark") == "true") {
+                        org.robolectric.RuntimeEnvironment.setQualifiers("+night")
+                    }
+                    Shadows
+                        .shadowOf(context as android.app.Application)
+                        .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+                    base.evaluate()
                 }
-                Shadows.shadowOf(context as android.app.Application)
-                    .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-                base.evaluate()
             }
         }
-    }
 
     @get:Rule(order = 2)
     val rule = createAndroidComposeRule<MainActivity>()
@@ -115,20 +113,35 @@ class DriveOrbin {
     @Test
     fun drive() {
         val out = File(System.getProperty("orbin.out") ?: "build/orbin-drive").apply { mkdirs() }
-        val steps = (System.getProperty("orbin.steps") ?: "idle:2000;shot:launch;tree")
-            .split(';').map { it.trim() }.filter { it.isNotEmpty() }
+        val steps =
+            (System.getProperty("orbin.steps") ?: "idle:2000;shot:launch;tree")
+                .split(';')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
         for (step in steps) {
             val verb = step.substringBefore(':')
             val arg = step.substringAfter(':', "")
             println("[drive] $step")
             when (verb) {
                 "wait" -> rule.waitUntil(20_000) { node(arg).let { runCatching { it.fetchSemanticsNode() }.isSuccess } }
-                "gone" -> rule.waitUntil(60_000) {
-                    rule.onAllNodesWithText(arg, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
-                }
+                "gone" ->
+                    rule.waitUntil(60_000) {
+                        rule
+                            .onAllNodesWithText(
+                                arg,
+                                substring = true,
+                                useUnmergedTree = true,
+                            ).fetchSemanticsNodes()
+                            .isEmpty()
+                    }
                 "click" -> node(arg).performClick()
                 "type" -> rule.onAllNodes(hasSetTextAction()).onFirst().performTextInput(arg)
-                "scroll" -> rule.onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasText(arg, substring = true))
+                "scroll" ->
+                    rule
+                        .onAllNodes(
+                            hasScrollAction(),
+                        ).onFirst()
+                        .performScrollToNode(hasText(arg, substring = true))
                 "idle" -> rule.mainClock.advanceTimeBy(arg.toLong())
                 "sleep" -> Thread.sleep(arg.toLong())
                 "shot" -> {
@@ -149,7 +162,7 @@ class DriveOrbin {
 }
 
 /**
- * Stands in for [DatabaseModule]: same schema, DAOs and repositories, but an in-memory,
+ * Stands in for [DatabaseModule]: same schema and DAOs, but an in-memory,
  * unencrypted Room database. SQLCipher's native library has no JVM build, so the real module
  * throws UnsatisfiedLinkError under Robolectric. Every other binding is the app's real graph.
  */
@@ -158,20 +171,21 @@ class DriveOrbin {
 object DriveDatabaseModule {
     @Provides
     @Singleton
-    fun database(@ApplicationContext context: android.content.Context): OrbinDatabase =
-        Room.inMemoryDatabaseBuilder(context, OrbinDatabase::class.java).allowMainThreadQueries().build()
+    fun database(
+        @ApplicationContext context: android.content.Context,
+    ): OrbinDatabase = Room.inMemoryDatabaseBuilder(context, OrbinDatabase::class.java).allowMainThreadQueries().build()
 
     @Provides fun boardDao(db: OrbinDatabase): BoardDao = db.boardDao()
+
     @Provides fun savedThreadDao(db: OrbinDatabase): SavedThreadDao = db.savedThreadDao()
+
     @Provides fun bookmarkDao(db: OrbinDatabase): BookmarkDao = db.bookmarkDao()
+
     @Provides fun historyDao(db: OrbinDatabase): HistoryDao = db.historyDao()
+
     @Provides fun recentSearchDao(db: OrbinDatabase): RecentSearchDao = db.recentSearchDao()
+
     @Provides fun downloadDao(db: OrbinDatabase): DownloadDao = db.downloadDao()
+
     @Provides fun savedSearchDao(db: OrbinDatabase): SavedSearchDao = db.savedSearchDao()
-
-    @Provides @Singleton
-    fun bookmarkRepository(dao: BookmarkDao): BookmarkRepository = BookmarkRepositoryImpl(dao)
-
-    @Provides @Singleton
-    fun historyRepository(dao: HistoryDao): HistoryRepository = HistoryRepositoryImpl(dao)
 }

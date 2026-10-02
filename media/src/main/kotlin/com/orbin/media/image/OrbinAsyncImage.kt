@@ -1,6 +1,5 @@
 package com.orbin.media.image
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -30,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -94,7 +94,7 @@ fun OrbinAsyncImage(
                 },
                 onError = { state ->
                     val throwable = state.result.throwable
-                    Log.w(TAG, "Image failed to load", throwable)
+                    Logger.w(throwable, TAG) { "Image failed to load" }
                     loadFailed = true
                     failureMessage = throwable.mediaLoadMessage()
                 },
