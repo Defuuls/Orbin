@@ -1,0 +1,33 @@
+// Injected with `-I`: adds the skill's DriveOrbin test to :app's JVM test source set and the
+// Robolectric/Roborazzi/Compose-test dependencies it needs, without editing app/build.gradle.kts.
+def skillDir = new File(gradle.startParameter.initScripts.find { it.name == 'drive.init.gradle' }.parentFile.absolutePath)
+
+allprojects { p ->
+    if (p.path != ':app') return
+    p.pluginManager.withPlugin('com.android.application') {
+        p.android.sourceSets.test.kotlin.srcDir(new File(skillDir, 'src'))
+        // :app's convention (unlike the library ones) leaves this off; without it Robolectric runs
+        // with a stub manifest and cannot resolve MainActivity.
+        p.android.testOptions.unitTests.includeAndroidResources = true
+        def libs = p.extensions.getByType(VersionCatalogsExtension).named('libs')
+        ['robolectric', 'roborazzi', 'roborazzi-compose', 'compose-ui-test-junit4', 'hilt-android-testing', 'room-runtime', 'junit'].each {
+            p.dependencies.add('testImplementation', libs.findLibrary(it).get())
+        }
+        // Not in the version catalog; same release train as androidx-work-runtime.
+        def work = libs.findVersion('work').get().requiredVersion
+        p.dependencies.add('testImplementation', "androidx.work:work-testing:${work}")
+        // Hilt's test components for @HiltAndroidTest / @UninstallModules.
+        // KSP creates kspTest after AGP applies, so attach when it appears.
+        def hiltCompiler = libs.findLibrary('hilt-compiler').get()
+        p.configurations.matching { it.name == 'kspTest' }.configureEach { p.dependencies.add('kspTest', hiltCompiler) }
+        p.tasks.withType(Test).configureEach { t ->
+            ['orbin.steps', 'orbin.out', 'orbin.dark'].each { k ->
+                def v = p.providers.gradleProperty(k).orNull
+                if (v != null) t.systemProperty(k, v)
+            }
+            t.systemProperty('roborazzi.test.record', 'true')
+            t.outputs.upToDateWhen { false }
+            t.testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+        }
+    }
+}
