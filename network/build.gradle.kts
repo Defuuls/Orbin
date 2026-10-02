@@ -10,6 +10,7 @@ android {
 
 dependencies {
     api(project(":core:common-android"))
+    api(project(":core:network"))
 
     api(libs.okhttp)
     api(libs.ktor.client.okhttp)

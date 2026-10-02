@@ -1,5 +1,7 @@
 package com.orbin.network.interceptor
 
+import com.orbin.network.policy.PowBlock
+import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -21,9 +23,9 @@ import java.io.IOException
  * Cleared cookies live in the client's [InMemoryCookieJar], so once a session is unlocked the
  * layers are skipped. On sites without POWBlock none of the detection matches and this is a no-op.
  *
- * Mining never runs on OkHttp's shared dispatcher: the interceptor only parses, waits on the
- * dedicated solver with a timeout, and submits the clearance request. Timeouts and cancels fail
- * closed so a pathological challenge cannot stall API and Coil traffic forever.
+ * Mining never runs on OkHttp's shared dispatcher threads: [PowBlock.mine] runs it on a small
+ * dedicated pool while this call waits, with a hard timeout. Timeouts fail closed so a
+ * pathological challenge cannot stall API and Coil traffic forever.
  */
 class PowBlockInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -58,14 +60,16 @@ class PowBlockInterceptor : Interceptor {
     ): Boolean {
         val body = response.peekBody(MAX_INTERSTITIAL_BYTES).string()
         val challenge = PowBlock.parse(body) ?: return false
-        val nonce = sharedSolver.solve(challenge) ?: return false
+        val nonce = runBlocking { PowBlock.mine(challenge) } ?: return false
         val submitUrl =
             response.request.url
                 .newBuilder()
                 .query(null)
-                .addQueryParameter("powblock", nonce.toString())
-                .addQueryParameter("pbchal", challenge.token)
-                .build()
+                .apply {
+                    PowBlock.submitQuery(challenge, nonce).forEach { (key, value) ->
+                        addQueryParameter(key, value)
+                    }
+                }.build()
         return runGate(
             chain,
             Request
@@ -124,12 +128,9 @@ class PowBlockInterceptor : Interceptor {
     private fun Response.isTosRedirect(): Boolean = request.url.encodedPath.endsWith(DISCLAIMER_PATH)
 
     private companion object {
-        const val MAX_ROUNDS = 4
-        const val MAX_INTERSTITIAL_BYTES = 64L * 1024L
-        const val DISCLAIMER_PATH = "/.static/pages/disclaimer.html"
-        const val CONFIRM_PATH = "/.static/pages/confirmed.html"
-
-        // Shared across clients so Coil and API share one limited mining pool.
-        private val sharedSolver = PowBlockSolver()
+        const val MAX_ROUNDS = PowBlock.MAX_ROUNDS
+        const val MAX_INTERSTITIAL_BYTES = PowBlock.MAX_INTERSTITIAL_BYTES
+        const val DISCLAIMER_PATH = PowBlock.DISCLAIMER_PATH
+        const val CONFIRM_PATH = PowBlock.CONFIRM_PATH
     }
 }

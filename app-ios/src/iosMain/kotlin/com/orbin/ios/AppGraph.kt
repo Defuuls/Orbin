@@ -17,7 +17,7 @@ internal object AppGraph {
     val scope = MainScope()
 
     /** One HTTP client for the providers, image loading and saves, so every request looks the same. */
-    val client = orbinHttpClient(Darwin.create())
+    val client = iosHttpClient(Darwin.create())
 
     private val database = openDatabase()
 

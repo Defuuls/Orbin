@@ -1,6 +1,14 @@
-package com.orbin.network.interceptor
+package com.orbin.network.policy
 
-import java.security.MessageDigest
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import org.kotlincrypto.hash.sha2.SHA256
+import org.kotlincrypto.hash.sha2.SHA512
 
 /**
  * POWBlock is the Cloudflare-style proof-of-work gate that some LynxChan sites (notably
@@ -9,10 +17,29 @@ import java.security.MessageDigest
  * zero bits, then re-requests the same URL with `?powblock=<nonce>&pbchal=<token>` to obtain the
  * `POW_TOKEN` / `POW_ID` clearance cookies.
  *
- * This object holds the pure, dispatcher-free logic (challenge parsing + mining) so it can be unit
- * tested without any network; [PowBlockInterceptor] wires it into OkHttp.
+ * This object holds the gate's logic (challenge parsing, mining, and the paths of the terms page it
+ * redirects to next), shared by Android and iOS. Android's `PowBlockInterceptor` wires it into
+ * OkHttp; [com.orbin.network.ktor.installPowBlockGate] wires it into Ktor.
  */
-internal object PowBlock {
+object PowBlock {
+    /** The terms-of-service page the gate redirects to once the proof of work is accepted. */
+    const val DISCLAIMER_PATH = "/.static/pages/disclaimer.html"
+
+    /** Fetched (with the disclaimer as referer) to accept the terms. */
+    const val CONFIRM_PATH = "/.static/pages/confirmed.html"
+
+    /** How many gate layers one request may clear before giving up and returning what it has. */
+    const val MAX_ROUNDS = 4
+
+    /** How much of an HTML response is read to look for a challenge. */
+    const val MAX_INTERSTITIAL_BYTES = 64L * 1024L
+
+    private const val MINING_TIMEOUT_MS = 30_000L
+
+    /** Mining is CPU-bound: two at a time, off whatever thread is waiting for the response. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val miningDispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(2)
+
     /** A parsed POWBlock challenge extracted from an interstitial HTML body. */
     data class Challenge(
         val token: String,
@@ -66,20 +93,43 @@ internal object PowBlock {
     fun solve(
         challenge: Challenge,
         maxIterations: Long = DEFAULT_MAX_ITERATIONS,
+        isCancelled: () -> Boolean = { false },
     ): Long? {
-        val digest = MessageDigest.getInstance(challenge.algorithm)
+        val digest = if (challenge.algorithm == "SHA-512") SHA512() else SHA256()
         val prefix = challenge.token
         var nonce = 0L
         while (nonce < maxIterations) {
-            // Honour cancel from PowBlockSolver timeouts so a stuck mine cannot outlive its wait.
-            if (Thread.currentThread().isInterrupted) return null
+            // Checked every few thousand hashes so a stuck mine cannot outlive its timeout.
+            if (nonce % CANCEL_CHECK_INTERVAL == 0L && isCancelled()) return null
             digest.reset()
-            val hash = digest.digest((prefix + nonce).toByteArray(Charsets.UTF_8))
+            val hash = digest.digest((prefix + nonce).encodeToByteArray())
             if (leadingZeroBits(hash) >= challenge.difficulty) return nonce
             nonce++
         }
         return null
     }
+
+    /**
+     * Mines [challenge] off the caller's thread, giving up after [timeoutMs]. Returns null on
+     * timeout, cancellation or an unsolvable challenge, so a gate fails closed rather than
+     * stalling every request waiting behind it.
+     */
+    suspend fun mine(
+        challenge: Challenge,
+        timeoutMs: Long = MINING_TIMEOUT_MS,
+    ): Long? =
+        withTimeoutOrNull(timeoutMs) {
+            withContext(miningDispatcher) {
+                val context = currentCoroutineContext()
+                solve(challenge) { !context.isActive }
+            }
+        }
+
+    /** The query that submits a solved challenge on the interstitial's own URL. */
+    fun submitQuery(
+        challenge: Challenge,
+        nonce: Long,
+    ): List<Pair<String, String>> = listOf("powblock" to nonce.toString(), "pbchal" to challenge.token)
 
     /** Counts leading zero bits until the first set bit, as the reference JS solver does. */
     private fun leadingZeroBits(hash: ByteArray): Int {
@@ -110,4 +160,5 @@ internal object PowBlock {
     // 2^24 nonces is comfortably above the ~2^18 expected work for 8chan's difficulty 18 while
     // still bounding a pathological challenge.
     private const val DEFAULT_MAX_ITERATIONS = 16_777_216L
+    private const val CANCEL_CHECK_INTERVAL = 4_096L
 }

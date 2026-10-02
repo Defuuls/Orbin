@@ -56,7 +56,7 @@ class BrowserTest {
                 reply(request, routes)
             }
         return Browser(
-            orbinProviders(orbinHttpClient(engine)),
+            orbinProviders(iosHttpClient(engine)),
             bookmarks,
             history,
             boardPreferences,
@@ -172,7 +172,7 @@ class BrowserTest {
             val engine = MockEngine { request -> reply(request, routes) }
             val browser =
                 Browser(
-                    orbinProviders(orbinHttpClient(engine)),
+                    orbinProviders(iosHttpClient(engine)),
                     bookmarks,
                     history,
                     boardPreferences,
@@ -206,7 +206,7 @@ class BrowserTest {
                 MockEngine { request -> reply(request, routes) }
             val browser =
                 Browser(
-                    orbinProviders(orbinHttpClient(engine)),
+                    orbinProviders(iosHttpClient(engine)),
                     bookmarks,
                     history,
                     boardPreferences,
