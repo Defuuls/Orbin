@@ -65,6 +65,8 @@ fun FeedScreen(
     // A fixed column count the caller chose for this device and window; null fits as many
     // full-width cards as the window allows.
     columns: Int? = null,
+    // Every card the same size instead of following its media's shape.
+    uniformCards: Boolean = false,
 ) {
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
@@ -194,6 +196,7 @@ fun FeedScreen(
                                 showBoard = !groupByBoard,
                                 excerptLines = FEED_EXCERPT_LINES,
                                 tallMedia = true,
+                                uniform = uniformCards,
                             )
                         }
                     }

@@ -219,6 +219,7 @@ private fun FeedDestination(
                     onOpenDownloads = { browser.openTab(Route.Downloads) },
                     onSettings = { browser.open(Route.Settings) },
                     headerContent = { SiteSwitcher(browser, site) },
+                    uniformCards = true,
                 )
             }
         }
