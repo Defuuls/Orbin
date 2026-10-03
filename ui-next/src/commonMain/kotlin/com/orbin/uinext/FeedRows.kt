@@ -92,6 +92,9 @@ internal fun FeedGridCell(
     // A card as wide as the screen can show portrait media nearly whole, where a grid tile must
     // letterbox it.
     tallMedia: Boolean = false,
+    // Every card the same height: media in a fixed frame (centre-cropped) and each line of text
+    // reserving its space, so a feed of mixed portrait and landscape posts lines up evenly.
+    uniform: Boolean = false,
 ) {
     if (row.muted) {
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
@@ -118,7 +121,9 @@ internal fun FeedGridCell(
             ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            val tile = Modifier.fillMaxWidth().mediaTileSize(row, tallMedia)
+            val tile = Modifier.fillMaxWidth().let {
+                    if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
+                }
             if (row.hasPreview && thumbnail != null) {
                 thumbnail(row, tile)
             } else if (row.hasPreview) {
@@ -158,16 +163,20 @@ internal fun FeedGridCell(
                     fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
                     color = if (row.read) next.muted else next.ink,
                     maxLines = 2,
+                    minLines = if (uniform) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Gap(6)
-                if (row.excerpt.isNotBlank()) {
+                if (uniform) {
+                    MetaLine(row.excerpt, maxLines = excerptLines, minLines = excerptLines)
+                    Gap(6)
+                } else if (row.excerpt.isNotBlank()) {
                     MetaLine(row.excerpt, maxLines = excerptLines)
                     Gap(6)
                 }
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                MetaLine(threadInfo, maxLines = 2)
+                MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
             }
             Gap(12)
         }
@@ -198,6 +207,9 @@ private const val MIN_TILE_ASPECT = 0.8f
 // letterboxed.
 private const val MIN_TALL_TILE_ASPECT = 0.5625f
 private const val MAX_TILE_ASPECT = 3f
+
+// The one frame every card's media fills when cards are uniform.
+private const val UNIFORM_TILE_ASPECT = 4f / 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 
 /** A muted thread stays reachable, but loses its preview and metadata until the reader opens it. */

@@ -343,12 +343,14 @@ fun MetaLine(
     modifier: Modifier = Modifier,
     color: Color? = null,
     maxLines: Int = 1,
+    minLines: Int = 1,
 ) {
     Text(
         text = text,
         style = NextType.footnote,
         color = color ?: next.muted,
         maxLines = maxLines,
+        minLines = minLines,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
