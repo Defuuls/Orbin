@@ -121,7 +121,8 @@ internal fun FeedGridCell(
             ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            val tile = Modifier.fillMaxWidth().let {
+            val tile =
+                Modifier.fillMaxWidth().let {
                     if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
                 }
             if (row.hasPreview && thumbnail != null) {
