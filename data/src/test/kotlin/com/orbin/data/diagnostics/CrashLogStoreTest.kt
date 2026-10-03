@@ -1,6 +1,7 @@
 package com.orbin.data.diagnostics
 
 import com.google.common.truth.Truth.assertThat
+import okio.Path.Companion.toPath
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -18,7 +19,7 @@ class CrashLogStoreTest {
 
     private fun store(directory: File = temporaryFolder.root) =
         CrashLogStore(
-            directory = directory,
+            directory = directory.absolutePath.toPath(),
             encrypt = { bytes -> bytes.map { (it + 1).toByte() }.toByteArray() },
             decrypt = { bytes -> bytes.map { (it - 1).toByte() }.toByteArray() },
             now = { clock++ },

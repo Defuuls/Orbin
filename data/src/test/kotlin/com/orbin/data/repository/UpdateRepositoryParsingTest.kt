@@ -3,22 +3,14 @@ package com.orbin.data.repository
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.UpdateStatus
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-
-/** Newest SDK Robolectric 4.16 ships an image for; the app's target SDK is ahead of it. */
-private const val ROBOLECTRIC_SDK = 35
 
 /**
  * Covers the release comparison, which is the part of the update check that can be quietly wrong.
  *
  * Orbin's tags are `v<number>-<Codename>` where the codename is a themed label — stars up to v90,
  * pasta from v91 — and never a version component, so neither string ordering nor semver parsing
- * applies. Robolectric is here only to supply a real `org.json` — the JVM stub throws on every call.
+ * applies. Migrated to kotlinx.serialization so pure JVM/KMP tests run directly without Robolectric.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [ROBOLECTRIC_SDK])
 class UpdateRepositoryParsingTest {
     @Test
     fun aHigherReleaseNumberIsOfferedAsAnUpdate() {

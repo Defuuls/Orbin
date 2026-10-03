@@ -16,6 +16,8 @@ import kotlinx.coroutines.IO
 import okio.Path.Companion.toPath
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileProtectionComplete
+import platform.Foundation.NSFileProtectionKey
 import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUserDomainMask
 
@@ -64,5 +66,22 @@ private fun applicationSupportPath(file: String): String {
         )
     // Exclude application support data (history, bookmarks, followed boards) from iCloud backup.
     directory?.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
-    return requireNotNull(directory?.path) { "No Application Support directory" } + "/" + file
+    val dirPath = requireNotNull(directory?.path) { "No Application Support directory" }
+    // Encrypt at rest on iOS using NSFileProtectionComplete instead of SQLCipher to avoid custom C-interop.
+    NSFileManager.defaultManager.setAttributes(
+        attributes = mapOf(NSFileProtectionKey to NSFileProtectionComplete),
+        ofItemAtPath = dirPath,
+        error = null,
+    )
+    val filePath = "$dirPath/$file"
+    listOf(filePath, "$filePath-wal", "$filePath-shm").forEach { path ->
+        if (NSFileManager.defaultManager.fileExistsAtPath(path)) {
+            NSFileManager.defaultManager.setAttributes(
+                attributes = mapOf(NSFileProtectionKey to NSFileProtectionComplete),
+                ofItemAtPath = path,
+                error = null,
+            )
+        }
+    }
+    return filePath
 }
