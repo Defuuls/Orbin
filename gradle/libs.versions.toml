@@ -57,7 +57,7 @@ okhttp = "5.5.0"
 ktor = "3.6.0"
 
 # Media
-coil = "3.6.2"
+coil = "3.6.3"
 media3 = "1.11.1"
 
 # Work
