@@ -21,7 +21,7 @@ kotlin {
             api(libs.kotlinx.serialization.json)
             api(libs.ktor.client.core)
             api(libs.androidx.datastore.preferences.core)
-            api("com.squareup.okio:okio:3.9.0")
+            api(libs.okio)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
