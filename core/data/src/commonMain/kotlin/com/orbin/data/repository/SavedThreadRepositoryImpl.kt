@@ -10,13 +10,13 @@ import com.orbin.data.database.dao.SavedThreadDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toSavedEntities
 import com.orbin.domain.repository.SavedThreadRepository
-import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 class SavedThreadRepositoryImpl(
     private val savedThreadDao: SavedThreadDao,
@@ -39,8 +39,7 @@ class SavedThreadRepositoryImpl(
             }
         }
 
-    override fun isSaved(key: ThreadKey): Flow<Boolean> =
-        observeSaved().map { saved -> saved.any { it.key == key } }
+    override fun isSaved(key: ThreadKey): Flow<Boolean> = observeSaved().map { saved -> saved.any { it.key == key } }
 
     override suspend fun save(thread: Thread) {
         withContext(ioDispatcher) {

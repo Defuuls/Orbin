@@ -1,8 +1,8 @@
 package com.orbin.data.diagnostics
 
-import kotlin.time.Clock
 import okio.FileSystem
 import okio.Path
+import kotlin.time.Clock
 
 /**
  * Stores crash reports as individual encrypted files, newest kept and oldest pruned.
@@ -55,7 +55,8 @@ class CrashLogStore(
     }
 
     private fun reportFiles(): List<Path> =
-        fileSystem.listOrNull(directory)
+        fileSystem
+            .listOrNull(directory)
             ?.filter { it.name.startsWith(FILE_PREFIX) && it.name.endsWith(FILE_SUFFIX) }
             ?.sortedByDescending { it.name }
             .orEmpty()

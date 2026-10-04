@@ -84,7 +84,8 @@ object SharedGraphModule {
     fun providesSettingsRepository(graph: SharedGraph): SettingsRepository = graph.settings
 
     @Provides
-    fun providesBoardPreferencesRepository(graph: SharedGraph): BoardPreferencesRepository = graph.boardPreferencesRepository
+    fun providesBoardPreferencesRepository(graph: SharedGraph): BoardPreferencesRepository =
+        graph.boardPreferencesRepository
 
     @Provides
     fun providesProviderRegistry(graph: SharedGraph): ProviderRegistry = graph.providerRegistry

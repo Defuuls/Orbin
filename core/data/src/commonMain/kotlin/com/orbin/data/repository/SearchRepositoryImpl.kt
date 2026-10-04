@@ -17,13 +17,13 @@ import com.orbin.data.database.entity.toEntity
 import com.orbin.data.util.runCatchingProvider
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.provider.api.ProviderRegistry
-import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 private const val RECENT_LIMIT = 20
 
@@ -65,7 +65,11 @@ class SearchRepositoryImpl(
         if (trimmed.isEmpty()) return
         withContext(ioDispatcher) {
             recentSearchDao.upsert(
-                RecentSearchEntity(provider = "", query = trimmed, lastUsedMillis = Clock.System.now().toEpochMilliseconds()),
+                RecentSearchEntity(
+                    provider = "",
+                    query = trimmed,
+                    lastUsedMillis = Clock.System.now().toEpochMilliseconds(),
+                ),
             )
         }
     }

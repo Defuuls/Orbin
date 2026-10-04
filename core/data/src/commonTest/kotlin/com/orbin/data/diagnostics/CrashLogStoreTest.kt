@@ -33,7 +33,11 @@ class CrashLogStoreTest {
         CrashLogStore(
             directory = directory,
             encrypt = { bytes -> bytes.map { (it + 1).toByte() }.toByteArray() },
-            decrypt = { bytes -> bytes.map { (it - 1).toByte() }.toByteArray() },
+            // Like the real cipher, which needs at least its IV, an empty file cannot be decrypted.
+            decrypt = { bytes ->
+                require(bytes.isNotEmpty()) { "no ciphertext" }
+                bytes.map { (it - 1).toByte() }.toByteArray()
+            },
             fileSystem = FileSystem.SYSTEM,
             now = { clock++ },
         )

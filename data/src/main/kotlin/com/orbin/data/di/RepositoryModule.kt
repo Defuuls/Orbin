@@ -43,10 +43,22 @@ object RepositoryModule {
     ): ImageCacheRepository {
         val cacheDirectories =
             listOf(
-                context.cacheDir.resolve("image_cache").absolutePath.toPath(),
-                context.cacheDir.resolve("http-cache").absolutePath.toPath(),
-                context.cacheDir.resolve("media3-video-cache").absolutePath.toPath(),
-                context.cacheDir.resolve("clipboard_images").absolutePath.toPath(),
+                context.cacheDir
+                    .resolve("image_cache")
+                    .absolutePath
+                    .toPath(),
+                context.cacheDir
+                    .resolve("http-cache")
+                    .absolutePath
+                    .toPath(),
+                context.cacheDir
+                    .resolve("media3-video-cache")
+                    .absolutePath
+                    .toPath(),
+                context.cacheDir
+                    .resolve("clipboard_images")
+                    .absolutePath
+                    .toPath(),
             )
         return ImageCacheRepositoryImpl(cacheDirectories, ioDispatcher)
     }

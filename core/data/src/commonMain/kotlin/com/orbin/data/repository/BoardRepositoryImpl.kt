@@ -12,7 +12,6 @@ import com.orbin.data.database.toEntity
 import com.orbin.data.util.runCatchingProvider
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.provider.api.ProviderRegistry
-import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 class BoardRepositoryImpl(
     private val registry: ProviderRegistry,
@@ -49,8 +49,7 @@ class BoardRepositoryImpl(
                         provider = provider.value,
                         boards = boards.mapIndexed { index, board -> board.toEntity(provider, index, now) },
                     )
-                }
-                .map { boards -> boards.filterNot { board -> board.isPermanentlyFiltered() } }
+                }.map { boards -> boards.filterNot { board -> board.isPermanentlyFiltered() } }
         }
 
     private suspend fun isStale(provider: ProviderId): Boolean =

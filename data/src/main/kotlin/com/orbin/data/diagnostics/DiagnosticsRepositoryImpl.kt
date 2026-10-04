@@ -39,7 +39,11 @@ class DiagnosticsRepositoryImpl
 
         private val store =
             CrashLogStore(
-                directory = context.filesDir.resolve(DIAGNOSTICS_DIR).absolutePath.toPath(),
+                directory =
+                    context.filesDir
+                        .resolve(DIAGNOSTICS_DIR)
+                        .absolutePath
+                        .toPath(),
                 encrypt = LocalDataCipher::encrypt,
                 decrypt = LocalDataCipher::decrypt,
             )

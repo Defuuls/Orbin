@@ -153,8 +153,7 @@ abstract class SharedGraph(
 
     @AppScope
     @Provides
-    protected fun catalogRepository(registry: ProviderRegistry): CatalogRepository =
-        CatalogRepositoryImpl(registry)
+    protected fun catalogRepository(registry: ProviderRegistry): CatalogRepository = CatalogRepositoryImpl(registry)
 
     @AppScope
     @Provides
@@ -176,7 +175,8 @@ abstract class SharedGraph(
         registry: ProviderRegistry,
         database: OrbinDatabase,
         dispatcher: CoroutineDispatcher,
-    ): SearchRepository = SearchRepositoryImpl(registry, database.recentSearchDao(), database.savedSearchDao(), dispatcher)
+    ): SearchRepository =
+        SearchRepositoryImpl(registry, database.recentSearchDao(), database.savedSearchDao(), dispatcher)
 
     @AppScope
     @Provides

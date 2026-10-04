@@ -53,7 +53,12 @@ class UpdateRepositoryImpl(
                 val msg = message.orEmpty().lowercase()
                 if ("timeout" in msg) {
                     DataError.Timeout(this)
-                } else if ("network" in msg || "connect" in msg || "unresolved" in msg || "offline" in msg || "unknownhost" in msg) {
+                } else if ("network" in msg ||
+                    "connect" in msg ||
+                    "unresolved" in msg ||
+                    "offline" in msg ||
+                    "unknownhost" in msg
+                ) {
                     DataError.Offline(this)
                 } else {
                     DataError.Unknown(this)

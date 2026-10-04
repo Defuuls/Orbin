@@ -9,7 +9,6 @@ import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.network.NetworkConfig
 import io.ktor.http.Url
-import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -18,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 interface DownloadPlatformQueue {
     fun enqueue(

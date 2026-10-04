@@ -60,8 +60,7 @@ class SearchRepositoryTest {
 
         override fun observeAll(): Flow<List<SavedSearchEntity>> = saved
 
-        override suspend fun getById(id: Long): SavedSearchEntity? =
-            saved.value.firstOrNull { it.id == id }
+        override suspend fun getById(id: Long): SavedSearchEntity? = saved.value.firstOrNull { it.id == id }
 
         override suspend fun save(entity: SavedSearchEntity): Long {
             val id = if (entity.id == 0L) nextId++ else entity.id
@@ -93,8 +92,14 @@ class SearchRepositoryTest {
         override val capabilities = ProviderCapabilities(supportsSearch = true)
 
         override suspend fun getBoards() = emptyList<com.orbin.core.model.Board>()
+
         override suspend fun getCatalog(request: CatalogRequest) = emptyList<CatalogThread>()
-        override suspend fun getThread(board: BoardId, thread: ThreadId): Thread = error("Not supported")
+
+        override suspend fun getThread(
+            board: BoardId,
+            thread: ThreadId,
+        ): Thread = error("Not supported")
+
         override suspend fun search(query: SearchQuery): List<SearchResult> = results
     }
 
@@ -102,9 +107,10 @@ class SearchRepositoryTest {
         private val providers: Map<ProviderId, ImageBoardProvider> = emptyMap(),
     ) : ProviderRegistry {
         override fun all(): List<ImageBoardProvider> = providers.values.toList()
+
         override fun get(id: ProviderId): ImageBoardProvider? = providers[id]
-        override fun default(): ImageBoardProvider =
-            providers.values.firstOrNull() ?: error("No providers")
+
+        override fun default(): ImageBoardProvider = providers.values.firstOrNull() ?: error("No providers")
     }
 
     @Test
@@ -153,25 +159,28 @@ class SearchRepositoryTest {
             val recentDao = TestRecentSearchDao()
             val savedDao = TestSavedSearchDao()
             val providerId = ProviderId("test")
-            val safeResult = SearchResult(
-                key = ThreadKey(providerId, BoardId("g"), ThreadId(1L)),
-                title = "Technology Discussion",
-                snippet = "Computers and programming",
-                matchedPost = PostId(1L),
-            )
-            val blockedResult = SearchResult(
-                key = ThreadKey(providerId, BoardId("g"), ThreadId(2L)),
-                title = "illegal content gore",
-                snippet = "violent text",
-                matchedPost = PostId(2L),
-            )
+            val safeResult =
+                SearchResult(
+                    key = ThreadKey(providerId, BoardId("g"), ThreadId(1L)),
+                    title = "Technology Discussion",
+                    snippet = "Computers and programming",
+                    matchedPost = PostId(1L),
+                )
+            val blockedResult =
+                SearchResult(
+                    key = ThreadKey(providerId, BoardId("g"), ThreadId(2L)),
+                    title = "illegal content gore",
+                    snippet = "violent text",
+                    matchedPost = PostId(2L),
+                )
             val provider = TestProvider("test", listOf(safeResult, blockedResult))
-            val repository = SearchRepositoryImpl(
-                TestRegistry(mapOf(providerId to provider)),
-                recentDao,
-                savedDao,
-                dispatcher,
-            )
+            val repository =
+                SearchRepositoryImpl(
+                    TestRegistry(mapOf(providerId to provider)),
+                    recentDao,
+                    savedDao,
+                    dispatcher,
+                )
 
             val result = repository.search(SearchQuery(providerId, "tech", SearchScope.REMOTE))
             assertIs<OrbinResult.Success<List<SearchResult>>>(result)
@@ -186,12 +195,13 @@ class SearchRepositoryTest {
             val savedDao = TestSavedSearchDao()
             val repository = SearchRepositoryImpl(TestRegistry(), recentDao, savedDao, dispatcher)
 
-            val savedSearch = SavedSearch(
-                id = 0L,
-                text = "kotlin",
-                board = BoardId("g"),
-                createdAtMillis = 1000L,
-            )
+            val savedSearch =
+                SavedSearch(
+                    id = 0L,
+                    text = "kotlin",
+                    board = BoardId("g"),
+                    createdAtMillis = 1000L,
+                )
 
             val generatedId = repository.saveSearch(savedSearch)
             assertEquals(1L, generatedId)

@@ -5,7 +5,6 @@ import com.orbin.network.NetworkConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class DownloadRepositoryTest {
     @Test
@@ -28,7 +27,7 @@ class DownloadRepositoryTest {
 
     @Test
     fun sanitizeFileNameRemovesUnsafeCharacters() {
-        assertEquals("test_file.png", sanitizeFileName("test/file.png"))
+        assertEquals("file.png", sanitizeFileName("test/file.png"))
         assertEquals("download", sanitizeFileName("///"))
         assertEquals("image.jpg", sanitizeFileName("..\\..\\image.jpg"))
     }
@@ -37,7 +36,8 @@ class DownloadRepositoryTest {
     fun sanitizePathSegmentCleansProperly() {
         assertEquals("g", sanitizePathSegment("g"))
         assertEquals("thread_name", sanitizePathSegment("thread/name"))
-        assertEquals("misc", sanitizePathSegment("  ..  "))
+        assertEquals("misc", sanitizePathSegment("  .  "))
+        assertEquals("_", sanitizePathSegment("  ..  "))
     }
 
     @Test

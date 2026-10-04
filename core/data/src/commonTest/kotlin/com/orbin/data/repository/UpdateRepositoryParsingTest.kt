@@ -167,8 +167,14 @@ class UpdateRepositoryParsingTest {
         assertEquals("v150-Peach", status.tag)
         assertEquals("v150-Peach", status.name)
         assertEquals("https://github.com/Defuuls/Orbin/releases/tag/v150-Peach", status.url)
-        assertEquals("https://github.com/Defuuls/Orbin/releases/download/v150-Peach/orbin-v150-Peach.apk", status.apkUrl)
-        assertEquals("https://github.com/Defuuls/Orbin/releases/download/v150-Peach/orbin-v150-Peach.apk.sha256", status.checksumUrl)
+        assertEquals(
+            "https://github.com/Defuuls/Orbin/releases/download/v150-Peach/orbin-v150-Peach.apk",
+            status.apkUrl,
+        )
+        assertEquals(
+            "https://github.com/Defuuls/Orbin/releases/download/v150-Peach/orbin-v150-Peach.apk.sha256",
+            status.checksumUrl,
+        )
         assertTrue(status.installable)
     }
 
