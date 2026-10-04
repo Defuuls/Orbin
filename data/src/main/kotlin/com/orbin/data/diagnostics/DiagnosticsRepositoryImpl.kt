@@ -12,7 +12,7 @@ import com.orbin.provider.api.ProviderDiagnostics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import java.io.File
+import okio.Path.Companion.toPath
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -39,7 +39,11 @@ class DiagnosticsRepositoryImpl
 
         private val store =
             CrashLogStore(
-                directory = File(context.filesDir, DIAGNOSTICS_DIR),
+                directory =
+                    context.filesDir
+                        .resolve(DIAGNOSTICS_DIR)
+                        .absolutePath
+                        .toPath(),
                 encrypt = LocalDataCipher::encrypt,
                 decrypt = LocalDataCipher::decrypt,
             )

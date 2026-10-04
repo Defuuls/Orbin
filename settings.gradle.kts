@@ -33,6 +33,7 @@ include(":benchmark")
 
 include(":core:common")
 include(":core:common-android")
+include(":core:data")
 include(":core:model")
 include(":core:graph")
 include(":core:network")

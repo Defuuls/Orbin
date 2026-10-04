@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.kermit)
     // Architecture layers
     implementation(project(":domain"))
+    implementation(project(":core:data"))
     implementation(project(":data"))
     implementation(project(":core:graph"))
     implementation(project(":network"))

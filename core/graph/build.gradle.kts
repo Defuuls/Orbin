@@ -14,6 +14,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:data"))
             api(project(":storage"))
             api(project(":provider:api"))
             implementation(project(":provider:vichan"))

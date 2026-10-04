@@ -3,13 +3,33 @@ package com.orbin.graph
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.orbin.data.database.OrbinDatabase
+import com.orbin.data.provider.ProviderRegistryImpl
+import com.orbin.data.repository.BoardRepositoryImpl
 import com.orbin.data.repository.BookmarkRepositoryImpl
+import com.orbin.data.repository.CatalogRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
+import com.orbin.data.repository.SavedThreadRepositoryImpl
+import com.orbin.data.repository.SearchRepositoryImpl
+import com.orbin.data.repository.ThreadRepositoryImpl
+import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
+import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
+import com.orbin.domain.repository.BoardPreferencesRepository
+import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.SavedThreadRepository
+import com.orbin.domain.repository.SearchRepository
+import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadRepository
+import com.orbin.domain.repository.UpdateRepository
+import com.orbin.domain.usecase.BuildReplyGraphUseCase
 import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.provider.api.InMemoryProviderDiagnostics
+import com.orbin.provider.api.ProviderDiagnostics
+import com.orbin.provider.api.ProviderRegistry
 import com.orbin.provider.lynxchan.LynxChanProvider
 import com.orbin.provider.lynxchan.LynxChanSite
 import com.orbin.provider.lynxchan.api.KtorLynxChanApi
@@ -63,12 +83,17 @@ abstract class SharedGraph(
     abstract val boardPreferences: BoardPreferencesStore
     abstract val bookmarks: BookmarkRepository
     abstract val history: HistoryRepository
-
-    /**
-     * The sites the app reads, undecorated. Each platform wraps them in the violent-media cover,
-     * which follows a setting it reads its own way.
-     */
     abstract val providers: Set<ImageBoardProvider>
+
+    abstract val boards: BoardRepository
+    abstract val catalog: CatalogRepository
+    abstract val threads: ThreadRepository
+    abstract val savedThreads: SavedThreadRepository
+    abstract val search: SearchRepository
+    abstract val settings: SettingsRepository
+    abstract val boardPreferencesRepository: BoardPreferencesRepository
+    abstract val providerRegistry: ProviderRegistry
+    abstract val updates: UpdateRepository
 
     @Provides
     protected fun json(): Json = OrbinJson
@@ -91,6 +116,74 @@ abstract class SharedGraph(
     @AppScope
     @Provides
     protected fun history(database: OrbinDatabase): HistoryRepository = HistoryRepositoryImpl(database.historyDao())
+
+    @AppScope
+    @Provides
+    protected fun providerDiagnostics(): ProviderDiagnostics = InMemoryProviderDiagnostics()
+
+    @AppScope
+    @Provides
+    protected fun settingsRepository(
+        settingsStore: SettingsStore,
+        boardPreferences: BoardPreferencesStore,
+    ): SettingsRepository = SettingsRepositoryImpl(settingsStore, boardPreferences)
+
+    @AppScope
+    @Provides
+    protected fun boardPreferencesRepository(
+        settingsStore: SettingsStore,
+        boardPreferences: BoardPreferencesStore,
+    ): BoardPreferencesRepository = SettingsRepositoryImpl(settingsStore, boardPreferences)
+
+    @AppScope
+    @Provides
+    protected fun providerRegistry(
+        providers: Set<ImageBoardProvider>,
+        diagnostics: ProviderDiagnostics,
+        settings: SettingsRepository,
+    ): ProviderRegistry = ProviderRegistryImpl(providers, diagnostics, settings)
+
+    @AppScope
+    @Provides
+    protected fun boardRepository(
+        registry: ProviderRegistry,
+        database: OrbinDatabase,
+        dispatcher: CoroutineDispatcher,
+    ): BoardRepository = BoardRepositoryImpl(registry, database.boardDao(), dispatcher)
+
+    @AppScope
+    @Provides
+    protected fun catalogRepository(registry: ProviderRegistry): CatalogRepository = CatalogRepositoryImpl(registry)
+
+    @AppScope
+    @Provides
+    protected fun threadRepository(
+        registry: ProviderRegistry,
+        dispatcher: CoroutineDispatcher,
+    ): ThreadRepository = ThreadRepositoryImpl(registry, BuildReplyGraphUseCase(), dispatcher)
+
+    @AppScope
+    @Provides
+    protected fun savedThreadRepository(
+        database: OrbinDatabase,
+        dispatcher: CoroutineDispatcher,
+    ): SavedThreadRepository = SavedThreadRepositoryImpl(database.savedThreadDao(), dispatcher)
+
+    @AppScope
+    @Provides
+    protected fun searchRepository(
+        registry: ProviderRegistry,
+        database: OrbinDatabase,
+        dispatcher: CoroutineDispatcher,
+    ): SearchRepository =
+        SearchRepositoryImpl(registry, database.recentSearchDao(), database.savedSearchDao(), dispatcher)
+
+    @AppScope
+    @Provides
+    protected fun updateRepository(
+        client: HttpClient,
+        dispatcher: CoroutineDispatcher,
+    ): UpdateRepository = UpdateRepositoryImpl(client, dispatcher)
 
     @AppScope
     @Provides
