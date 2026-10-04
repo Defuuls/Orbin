@@ -137,10 +137,11 @@ fun downloadRequestHeaders(url: String): Map<String, String> =
 private fun downloadOriginReferer(url: String): String? {
     val uri = runCatching { Url(url) }.getOrNull() ?: return null
     if (!uri.protocol.name.equals("https", ignoreCase = true) || uri.host.isBlank()) return null
-    val portSuffix = if (uri.port == 443 || uri.port == DEFAULT_HTTPS_PORT) "" else ":${uri.port}"
+    val portSuffix = if (uri.port == HTTPS_PORT || uri.port == DEFAULT_HTTPS_PORT) "" else ":${uri.port}"
     return "https://${uri.host}$portSuffix/"
 }
 
+private const val HTTPS_PORT = 443
 private const val DEFAULT_HTTPS_PORT = -1
 private const val DOWNLOAD_ACCEPT = "image/avif,image/webp,image/*,video/*,audio/*,*/*;q=0.8"
 private const val MAX_PATH_SEGMENT_LENGTH = 80

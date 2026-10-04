@@ -40,7 +40,10 @@ class UpdateRepositoryImpl(
                 OrbinResult.Success(parseLatestRelease(body, currentVersionName))
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
+            } catch (
+                // Ktor and the engines throw their own unrelated types; any of them is a failed check.
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
                 OrbinResult.Failure(e.toDataError())
             }
         }
@@ -53,12 +56,7 @@ class UpdateRepositoryImpl(
                 val msg = message.orEmpty().lowercase()
                 if ("timeout" in msg) {
                     DataError.Timeout(this)
-                } else if ("network" in msg ||
-                    "connect" in msg ||
-                    "unresolved" in msg ||
-                    "offline" in msg ||
-                    "unknownhost" in msg
-                ) {
+                } else if (OFFLINE_HINTS.any { it in msg }) {
                     DataError.Offline(this)
                 } else {
                     DataError.Unknown(this)
@@ -66,6 +64,8 @@ class UpdateRepositoryImpl(
             }
         }
 }
+
+private val OFFLINE_HINTS = listOf("network", "connect", "unresolved", "offline", "unknownhost")
 
 class HttpStatusException(
     val code: Int,

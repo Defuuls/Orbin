@@ -95,6 +95,8 @@ class UpdateRepositoryParsingTest {
         assertFalse(status.installable)
     }
 
+    // Most of its length is the verbatim GitHub payload.
+    @Suppress("LongMethod")
     @Test
     fun realWorldGitHubPayloadWithExtraFieldsDeserializesCorrectly() {
         val realPayload =
