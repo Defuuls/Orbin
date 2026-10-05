@@ -342,7 +342,7 @@ private fun PostView(
     Surface(
         onClick = { onClick(post) },
         modifier = Modifier.fillMaxWidth(),
-        color = next.void,
+        color = next.background,
         contentColor = next.ink,
     ) {
         HorizontalDivider(color = next.hairline, thickness = 1.dp)
