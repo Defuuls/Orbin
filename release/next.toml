@@ -1,22 +1,25 @@
-# Orbin 162 — Cantaloupe
+# Orbin 163 - Jabuticaba
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 162
-codename     = "Cantaloupe"
-version_code = 180
+number       = 163
+codename     = "Jabuticaba"
+version_code = 181
 
-# One line for the README's "What's new in <number>:" highlight. Optional —
+# One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "The whole interface now follows Material Design 3."
+highlight = "Gallery top bar auto-hide and brand showcase redesign."
 
 summary = [
-  "bump Orbin to 162-Cantaloupe / versionCode 180",
-  "Android: entire UI migrated to Material Design 3",
+  "bump Orbin to 163-Jabuticaba / versionCode 181",
+  "Gallery top bar auto-hide and brand showcase redesign",
 ]
 
 [changelog]
+Added = [
+  "Gallery top bar auto-hide after 3 seconds of inactivity, for fully uninterrupted media viewing.",
+]
 Changed = [
-  "Android: the entire UI is migrated to Material Design 3 — screens, scaffolds, buttons, controls and color, type and spacing tokens now follow M3 components and guidelines.",
+  "New cinematic night theater brand showcase SVG for the app redesign.",
 ]
