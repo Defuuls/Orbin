@@ -1,25 +1,22 @@
-# Orbin 163 - Jabuticaba
+# Orbin 164 - Cranberry
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 163
-codename     = "Jabuticaba"
-version_code = 181
+number       = 164
+codename     = "Cranberry"
+version_code = 182
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Gallery top bar auto-hide and brand showcase redesign."
+highlight = "Dark mode returns to a deep aubergine instead of plain black."
 
 summary = [
-  "bump Orbin to 163-Jabuticaba / versionCode 181",
-  "Gallery top bar auto-hide and brand showcase redesign",
+  "bump Orbin to 164-Cranberry / versionCode 182",
+  "dark theme on a deep aubergine ground; AMOLED stays true black",
 ]
 
 [changelog]
-Added = [
-  "Gallery top bar auto-hide after 3 seconds of inactivity, for fully uninterrupted media viewing.",
-]
 Changed = [
-  "New cinematic night theater brand showcase SVG for the app redesign.",
+  "Dark mode now sits on a deep aubergine background with matching tinted surfaces instead of plain black; the AMOLED option still uses true black.",
 ]
