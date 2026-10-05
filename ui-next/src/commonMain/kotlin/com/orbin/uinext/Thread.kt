@@ -450,4 +450,4 @@ private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_DEPTH_BAR_WIDTH = 2.dp
-private val REPLY_CORNER = 16.dp
+
