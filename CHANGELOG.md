@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [163-Jabuticaba] - 2026-10-05
+
+### Added
+- Gallery top bar auto-hide after 3 seconds of inactivity, for fully uninterrupted media viewing.
+
+### Changed
+- New cinematic night theater brand showcase SVG for the app redesign.
+
+
 ## [162-Cantaloupe] - 2026-10-01
 
 ### Changed
@@ -2510,7 +2519,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...HEAD
+[163-Jabuticaba]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...v163-Jabuticaba
 [162-Cantaloupe]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...v162-Cantaloupe
 [161-Blueberry]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...v161-Blueberry
 [160-Blackberry]: https://github.com/Defuuls/Orbin/compare/v159-Apricot...v160-Blackberry

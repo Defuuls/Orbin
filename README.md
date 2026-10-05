@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [162 — Cantaloupe](https://github.com/Defuuls/Orbin/releases/tag/v162-Cantaloupe)
+**Current release:** [163 — Jabuticaba](https://github.com/Defuuls/Orbin/releases/tag/v163-Jabuticaba)
 
-**What's new in 162:** The whole interface now follows Material Design 3.
+**What's new in 163:** Gallery top bar auto-hide and brand showcase redesign.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
