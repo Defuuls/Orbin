@@ -109,6 +109,7 @@ fun VideoPlayer(
     muted: Boolean = SessionAudio.muted,
     active: Boolean = true,
     onFullscreenChange: (Boolean) -> Unit = {},
+    onControlsToggle: ((Boolean) -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -342,13 +343,17 @@ fun VideoPlayer(
     Box(
         modifier =
             modifier
-                .pointerInput(playbackError, exoPlayer, onLongPress) {
+                .pointerInput(playbackError, exoPlayer, onLongPress, onControlsToggle) {
                     detectTapGestures(
                         onLongPress = onLongPress?.let { handler -> { handler() } },
                         // Toggle on release rather than waiting out the double-tap timeout: a double
                         // tap toggles twice, which leaves the controls as they were, and then seeks.
                         onPress = {
-                            if (tryAwaitRelease() && playbackError == null) controlsVisible = !controlsVisible
+                            if (tryAwaitRelease() && playbackError == null) {
+                                val newVisible = !controlsVisible
+                                controlsVisible = newVisible
+                                onControlsToggle?.invoke(newVisible)
+                            }
                         },
                         // Left half goes back, right half goes forward, as in most video players.
                         onDoubleTap = { offset ->
@@ -443,7 +448,10 @@ fun VideoPlayer(
                 durationMs = durationMs,
                 onPlayPause = {
                     exoPlayer.playWhenReady = !isPlaying
-                    if (!isPlaying) controlsVisible = false
+                    if (!isPlaying) {
+                        controlsVisible = false
+                        onControlsToggle?.invoke(false)
+                    }
                 },
                 onMuteToggle = {
                     isMuted = !isMuted

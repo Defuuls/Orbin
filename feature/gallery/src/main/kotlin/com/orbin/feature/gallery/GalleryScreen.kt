@@ -2,6 +2,11 @@ package com.orbin.feature.gallery
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +64,7 @@ import com.orbin.uinext.next
 import com.orbin.uinext.nextFrosted
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -98,19 +104,33 @@ fun GalleryScreen(
                 .collect(onMediaPageChanged)
         }
 
+        // Top bar auto-hides after a period of inactivity for uninterrupted media viewing,
+        // and reveals upon tapping media or switching pages.
+        var chromeVisible by remember { mutableStateOf(true) }
+
         // Hide the gallery chrome while a video plays in fullscreen; reset on every page change so a
         // swipe away always brings the top bar back.
         var videoFullscreen by remember { mutableStateOf(false) }
-        LaunchedEffect(pagerState.settledPage) { videoFullscreen = false }
-
-        LaunchedEffect(pagerState.settledPage, media) {
-            viewModel.prefetchAround(pagerState.settledPage, media)
+        LaunchedEffect(pagerState.settledPage) {
+            videoFullscreen = false
+            chromeVisible = true
         }
 
         val closeLabel = stringResource(R.string.gallery_close)
         val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
+
+        LaunchedEffect(chromeVisible, pagerState.settledPage, actionsFor != null, downloadState.isBusy) {
+            if (chromeVisible && actionsFor == null && !downloadState.isBusy) {
+                delay(AUTO_HIDE_DELAY_MS)
+                chromeVisible = false
+            }
+        }
+
+        LaunchedEffect(pagerState.settledPage, media) {
+            viewModel.prefetchAround(pagerState.settledPage, media)
+        }
         val haptics = LocalHapticFeedback.current
         val close = {
             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
@@ -156,6 +176,7 @@ fun GalleryScreen(
                             active = isActive,
                             // Only the active page controls the gallery chrome.
                             onFullscreenChange = { if (isActive) videoFullscreen = it },
+                            onControlsToggle = { if (isActive) chromeVisible = it },
                             onLongPress = { actionsFor = item },
                         )
                     } else {
@@ -166,17 +187,22 @@ fun GalleryScreen(
                             placeholderUrl = item.thumbnailUrl,
                             // Drop full decodes more than one page away from the settled item.
                             active = isNear,
+                            onTap = { chromeVisible = !chromeVisible },
                             onLongPress = { actionsFor = item },
                         )
                     }
                 }
             }
 
-            if (!videoFullscreen) {
+            AnimatedVisibility(
+                visible = chromeVisible && !videoFullscreen,
+                enter = slideInVertically { -it } + fadeIn(),
+                exit = slideOutVertically { -it } + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+            ) {
                 Row(
                     modifier =
                         Modifier
-                            .align(Alignment.TopCenter)
                             .fillMaxWidth()
                             .windowInsetsPadding(
                                 WindowInsets.safeDrawing.only(
@@ -291,3 +317,4 @@ private class PullPastEndToClose(
 }
 
 private val CLOSE_PULL_THRESHOLD = 96.dp
+private const val AUTO_HIDE_DELAY_MS = 3_000L
