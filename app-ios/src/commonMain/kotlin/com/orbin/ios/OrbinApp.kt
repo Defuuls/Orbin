@@ -49,6 +49,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.Thread
@@ -510,8 +511,15 @@ private fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
-        SharpImage(attachment, contentDescription = null, Modifier.fillMaxSize(), fill = Modifier.fillMaxSize())
         val loops = playsPreview && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        SharpImage(
+            attachment,
+            contentDescription = null,
+            Modifier.fillMaxSize(),
+            fill = Modifier.fillMaxSize(),
+            // A looping preview covers the picture anyway, so it needs no still frame under it.
+            videoFrame = !loops,
+        )
         if (loops) NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
         if (attachment.isSpoiler) {
             SpoilerCover(Modifier.matchParentSize())
@@ -554,6 +562,7 @@ private fun SharpImage(
     // How the thumbnail takes the space: a card's whole fixed box, or a post's width at the
     // picture's own proportions.
     fill: Modifier = Modifier.fillMaxWidth(),
+    videoFrame: Boolean = true,
 ) {
     Box(modifier) {
         AsyncImage(
@@ -570,6 +579,10 @@ private fun SharpImage(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize(),
             )
+        }
+        // A video has no full-size picture of its own: show its first frame, decoded from the file.
+        if (videoFrame && attachment.type == MediaType.VIDEO && (!attachment.isWebM || supportsWebM)) {
+            NativeVideoFrame(attachment.sourceUrl, Modifier.matchParentSize())
         }
     }
 }

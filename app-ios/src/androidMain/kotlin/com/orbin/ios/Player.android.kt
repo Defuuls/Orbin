@@ -32,3 +32,11 @@ internal actual fun NativeInlineLoop(
 ) {
     Box(modifier)
 }
+
+@Composable
+internal actual fun NativeVideoFrame(
+    url: String,
+    modifier: Modifier,
+) {
+    Box(modifier)
+}
