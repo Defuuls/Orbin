@@ -70,9 +70,9 @@ internal val LightPalette =
 
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF000000),
-        raised = Color(0xFF1D1B1E),
-        elevated = Color(0xFF221F24),
+        background = Color(0xFF1A1320),
+        raised = Color(0xFF221A28),
+        elevated = Color(0xFF2A2131),
         ink = Color(0xFFE8E0E9),
         muted = Color(0xFFE8E0E9).copy(alpha = 0.75f),
         faint = Color(0xFFE8E0E9).copy(alpha = 0.60f),
@@ -86,4 +86,11 @@ internal val DarkPalette =
         amoled = false,
     )
 
-internal val AmoledPalette = DarkPalette.copy(amoled = true)
+// Dark mode is aubergine; only the AMOLED option keeps a true-black ground.
+internal val AmoledPalette =
+    DarkPalette.copy(
+        background = Color.Black,
+        raised = AmoledRaised,
+        elevated = AmoledElevated,
+        amoled = true,
+    )

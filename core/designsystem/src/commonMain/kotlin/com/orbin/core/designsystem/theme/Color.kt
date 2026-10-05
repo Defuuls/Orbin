@@ -77,9 +77,9 @@ internal val EggplantDarkOnError = Color(0xFF690005)
 internal val EggplantDarkErrorContainer = Color(0xFF93000A)
 internal val EggplantDarkOnErrorContainer = Color(0xFFFFDAD6)
 
-internal val EggplantDarkBackground = Color(0xFF000000)
+internal val EggplantDarkBackground = Color(0xFF1A1320)
 internal val EggplantDarkOnBackground = Color(0xFFE8E0E9)
-internal val EggplantDarkSurface = Color(0xFF000000)
+internal val EggplantDarkSurface = Color(0xFF1A1320)
 internal val EggplantDarkOnSurface = Color(0xFFE8E0E9)
 internal val EggplantDarkSurfaceVariant = Color(0xFF4D4050)
 internal val EggplantDarkOnSurfaceVariant = Color(0xFFCFC2CF)
@@ -89,12 +89,13 @@ internal val EggplantDarkInverseSurface = Color(0xFFE8E0E9)
 internal val EggplantDarkInverseOnSurface = Color(0xFF323033)
 internal val EggplantDarkInversePrimary = Color(0xFF7B4F8A)
 
-// ── Dark surface containers — deep, matte, no blur ────────────────────────
-internal val EggplantDarkSurfaceContainerLowest = Color(0xFF0F0D11)
-internal val EggplantDarkSurfaceContainerLow = Color(0xFF1D1B1E)
-internal val EggplantDarkSurfaceContainer = Color(0xFF221F24)
-internal val EggplantDarkSurfaceContainerHigh = Color(0xFF2D2A2E)
-internal val EggplantDarkSurfaceContainerHighest = Color(0xFF383439)
+// ── Dark surface containers — deep aubergine, matte, no blur ──────────────
+// The ground is a dark aubergine, not black: true black is the AMOLED option below.
+internal val EggplantDarkSurfaceContainerLowest = Color(0xFF140E19)
+internal val EggplantDarkSurfaceContainerLow = Color(0xFF221A28)
+internal val EggplantDarkSurfaceContainer = Color(0xFF2A2131)
+internal val EggplantDarkSurfaceContainerHigh = Color(0xFF33293A)
+internal val EggplantDarkSurfaceContainerHighest = Color(0xFF3D3244)
 
 // ── AMOLED override (true black ground) ───────────────────────────────────
 internal val AmoledBackground = Color(0xFF000000)
