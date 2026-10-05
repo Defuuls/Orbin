@@ -28,6 +28,7 @@ import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
+import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
@@ -152,12 +153,7 @@ internal actual fun NativeInlineLoop(
                 scrollView.scrollEnabled = false
                 scrollView.bounces = false
                 userInteractionEnabled = false
-                val escapedUrl =
-                    url
-                        .replace("&", "&amp;")
-                        .replace("\"", "&quot;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
+                val escapedUrl = url.escapeHtmlAttribute()
                 val html =
                     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width," +
                         "initial-scale=1,maximum-scale=1\">" +
@@ -198,3 +194,52 @@ private class PlayerTapHandler(
 
 private const val SEEK_SECONDS = 10.0
 private const val SEEK_TIMESCALE = 600
+
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+internal actual fun NativeVideoFrame(
+    url: String,
+    modifier: Modifier,
+) {
+    val webView =
+        remember(url) {
+            val configuration =
+                WKWebViewConfiguration().apply {
+                    allowsInlineMediaPlayback = true
+                }
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
+                // See-through until the frame arrives, so the thumbnail underneath fills the space.
+                opaque = false
+                backgroundColor = UIColor.clearColor
+                scrollView.backgroundColor = UIColor.clearColor
+                scrollView.scrollEnabled = false
+                scrollView.bounces = false
+                userInteractionEnabled = false
+                // The media fragment seeks just past zero, which makes WebKit decode and show the
+                // first frame without playing; preload stops it fetching much beyond that.
+                val src = "${url.escapeHtmlAttribute()}#t=0.001"
+                val html =
+                    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width," +
+                        "initial-scale=1,maximum-scale=1\">" +
+                        "<style>html,body{margin:0;width:100%;height:100%;" +
+                        "background:transparent;overflow:hidden}" +
+                        "video{width:100%;height:100%;object-fit:cover}</style>" +
+                        "</head><body><video src=\"$src\" muted playsinline preload=\"metadata\">" +
+                        "</video></body></html>"
+                loadHTMLString(string = html, baseURL = null)
+            }
+        }
+    DisposableEffect(webView) {
+        onDispose {
+            webView.stopLoading()
+            webView.loadHTMLString("", baseURL = null)
+        }
+    }
+    UIKitView(factory = { webView }, modifier = modifier)
+}
+
+private fun String.escapeHtmlAttribute(): String =
+    replace("&", "&amp;")
+        .replace("\"", "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")

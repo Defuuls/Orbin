@@ -44,3 +44,13 @@ internal expect fun NativeInlineLoop(
     url: String,
     modifier: Modifier = Modifier,
 )
+
+/**
+ * A video's opening frame at full resolution, drawn over its blurry ~250px thumbnail. Transparent
+ * until the frame decodes, so the thumbnail shows meanwhile. Nothing plays and nothing is heard.
+ */
+@Composable
+internal expect fun NativeVideoFrame(
+    url: String,
+    modifier: Modifier = Modifier,
+)
