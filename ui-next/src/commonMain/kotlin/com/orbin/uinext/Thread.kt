@@ -24,16 +24,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsNone
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -339,26 +339,13 @@ private fun PostView(
 ) {
     val depthCount = post.depth.coerceAtMost(MAX_REPLY_DEPTH)
     val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
-    ElevatedCard(
+    Surface(
         onClick = { onClick(post) },
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = GUTTER, vertical = 5.dp),
-        shape = RoundedCornerShape(REPLY_CORNER),
-        colors =
-            CardDefaults.elevatedCardColors(
-                containerColor = next.raised,
-                contentColor = next.ink,
-            ),
-        elevation =
-            CardDefaults.elevatedCardElevation(
-                defaultElevation = 1.dp,
-                pressedElevation = 3.dp,
-                focusedElevation = 2.dp,
-                hoveredElevation = 2.dp,
-            ),
+        modifier = Modifier.fillMaxWidth(),
+        color = next.void,
+        contentColor = next.ink,
     ) {
+        HorizontalDivider(color = next.hairline, thickness = 1.dp)
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier =

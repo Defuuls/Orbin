@@ -38,8 +38,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -301,14 +301,14 @@ fun GroupedSection(
                         .semantics { heading() },
             )
         }
-        ElevatedCard(
+        Card(
             shape = RoundedCornerShape(NextRadius.card),
             colors =
-                CardDefaults.elevatedCardColors(
+                CardDefaults.cardColors(
                     containerColor = next.raised,
                     contentColor = next.ink,
                 ),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+            elevation = CardDefaults.cardElevation(0.dp),
             modifier = Modifier.fillMaxWidth(),
             content = content,
         )

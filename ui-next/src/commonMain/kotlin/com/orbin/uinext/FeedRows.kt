@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -100,7 +100,7 @@ internal fun FeedGridCell(
         CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
         return
     }
-    ElevatedCard(
+    Card(
         onClick = { onClick(row) },
         modifier =
             modifier
@@ -108,17 +108,11 @@ internal fun FeedGridCell(
                 .semantics { role = Role.Button },
         shape = RoundedCornerShape(GRID_TILE_RADIUS),
         colors =
-            CardDefaults.elevatedCardColors(
+            CardDefaults.cardColors(
                 containerColor = next.raised,
                 contentColor = next.ink,
             ),
-        elevation =
-            CardDefaults.elevatedCardElevation(
-                defaultElevation = 1.dp,
-                pressedElevation = 3.dp,
-                focusedElevation = 2.dp,
-                hoveredElevation = 2.dp,
-            ),
+        elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             val tile =
@@ -221,7 +215,7 @@ private fun CollapsedFeedRow(
     showBoard: Boolean = true,
     onClick: (FeedRow) -> Unit,
 ) {
-    ElevatedCard(
+    Card(
         onClick = { onClick(row) },
         modifier =
             modifier
@@ -229,11 +223,11 @@ private fun CollapsedFeedRow(
                 .semantics { role = Role.Button },
         shape = RoundedCornerShape(NextRadius.tight),
         colors =
-            CardDefaults.elevatedCardColors(
+            CardDefaults.cardColors(
                 containerColor = next.raised,
                 contentColor = next.ink,
             ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 10.dp),
