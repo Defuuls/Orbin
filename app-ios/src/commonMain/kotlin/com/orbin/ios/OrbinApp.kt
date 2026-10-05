@@ -529,6 +529,10 @@ private fun CatalogThumbnail(
     }
 }
 
+/** A video whose frames this device can decode: WebM needs iOS 17.4, MP4 and MOV play anywhere. */
+private val MediaAttachment.hasDecodableVideo: Boolean
+    get() = type == MediaType.VIDEO && (!isWebM || supportsWebM)
+
 /** The mark on a video that is not playing: white on a dark disc, readable over any picture. */
 @Composable
 private fun PlayBadge(modifier: Modifier) {
@@ -581,7 +585,7 @@ private fun SharpImage(
             )
         }
         // A video has no full-size picture of its own: show its first frame, decoded from the file.
-        if (videoFrame && attachment.type == MediaType.VIDEO && (!attachment.isWebM || supportsWebM)) {
+        if (videoFrame && attachment.hasDecodableVideo) {
             NativeVideoFrame(attachment.sourceUrl, Modifier.matchParentSize())
         }
     }
