@@ -5,7 +5,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -171,7 +173,8 @@ internal actual fun NativeInlineLoop(
             webView.loadHTMLString("", baseURL = null)
         }
     }
-    UIKitView(factory = { webView }, modifier = modifier)
+    // Display only: taps must reach the card or post underneath, which opens the player.
+    UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
 }
 
 /** Adds Android's 10-second double-tap seek gesture to AVKit without intercepting its controls. */
@@ -235,8 +238,13 @@ internal actual fun NativeVideoFrame(
             webView.loadHTMLString("", baseURL = null)
         }
     }
-    UIKitView(factory = { webView }, modifier = modifier)
+    // Display only: taps must reach the card or post underneath, which opens the player.
+    UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
 }
+
+/** A native view that only draws; touches fall through to the Compose content behind it. */
+@OptIn(ExperimentalComposeUiApi::class)
+private val PASS_THROUGH = UIKitInteropProperties(interactionMode = null)
 
 private fun String.escapeHtmlAttribute(): String =
     replace("&", "&amp;")
