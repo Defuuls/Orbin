@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -242,7 +243,8 @@ internal actual fun NativeVideoFrame(
 }
 
 /** A native view that only draws; touches fall through to the Compose content behind it. */
-private val PASS_THROUGH = UIKitInteropProperties(isInteractive = false)
+@OptIn(ExperimentalComposeUiApi::class)
+private val PASS_THROUGH = UIKitInteropProperties(interactionMode = null)
 
 private fun String.escapeHtmlAttribute(): String =
     replace("&", "&amp;")
