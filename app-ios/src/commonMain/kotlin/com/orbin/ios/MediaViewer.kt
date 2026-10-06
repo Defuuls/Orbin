@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -59,7 +59,7 @@ import com.orbin.uinext.NextIconAction
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The thread's files full screen, one per page: swipe between them, pinch or double-tap to zoom an
+ * The thread's files full screen, one per page: swipe up or down between them, pinch or double-tap to zoom an
  * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
  * player handles play on their page ([NativePlayer]). WebM uses WebKit on iOS 17.4+; older
  * systems offer the file in the browser.
@@ -77,7 +77,8 @@ internal fun MediaViewer(
     }
     val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, files.lastIndex)) { files.size }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        HorizontalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
+        // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
+        VerticalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
             MediaPage(files[page], active = page == pager.currentPage)
         }
         Row(
