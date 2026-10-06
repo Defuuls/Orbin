@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [164-Cranberry] - 2026-10-05
+
+### Changed
+- Dark mode now sits on a deep aubergine background with matching tinted surfaces instead of plain black; the AMOLED option still uses true black.
+
+
 ## [163-Jabuticaba] - 2026-10-05
 
 ### Added
@@ -2519,7 +2525,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...HEAD
+[164-Cranberry]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...v164-Cranberry
 [163-Jabuticaba]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...v163-Jabuticaba
 [162-Cantaloupe]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...v162-Cantaloupe
 [161-Blueberry]: https://github.com/Defuuls/Orbin/compare/v160-Blackberry...v161-Blueberry

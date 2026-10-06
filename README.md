@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [163 — Jabuticaba](https://github.com/Defuuls/Orbin/releases/tag/v163-Jabuticaba)
+**Current release:** [164 — Cranberry](https://github.com/Defuuls/Orbin/releases/tag/v164-Cranberry)
 
-**What's new in 163:** Gallery top bar auto-hide and brand showcase redesign.
+**What's new in 164:** Dark mode returns to a deep aubergine instead of plain black.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
