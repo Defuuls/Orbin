@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,10 @@ import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
+import com.orbin.ios.resources.ios_pencil_download_all
+import com.orbin.ios.resources.ios_pencil_share
+import com.orbin.ios.resources.ios_pencil_unwatch
+import com.orbin.ios.resources.ios_pencil_watch
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.BoardsScreen
@@ -568,7 +575,8 @@ private fun SharpImage(
     fill: Modifier = Modifier.fillMaxWidth(),
     videoFrame: Boolean = true,
 ) {
-    Box(modifier) {
+    // Hovering the Apple Pencil over a picture shows it larger, without opening it.
+    PencilHoverPreview(attachment, modifier) {
         AsyncImage(
             model = attachment.thumbnailUrl,
             contentDescription = contentDescription,
@@ -654,62 +662,92 @@ private fun ThreadContent(
             thread.key,
             saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
         ) { mutableStateListOf<String>() }
-    ThreadScreen(
-        subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
-        board = boardLabel,
-        posts = posts,
-        watching = watching,
-        layout = layout,
-        onLayoutChange = { layout = it },
-        files = fileCells,
-        onOpenFile = { cell ->
-            val index = attachments.indexOfFirst { it.id == cell.id }
-            if (index >= 0) onOpenFile(index)
-        },
-        fileTile = { cell, tileModifier ->
-            attachmentsById[cell.id]?.let { attachment ->
-                Box(tileModifier.clip(RoundedCornerShape(10.dp))) {
-                    SharpImage(
-                        attachment,
-                        attachment.originalFileName,
-                        Modifier.fillMaxSize(),
-                        fill = Modifier.fillMaxSize(),
+    val listState = rememberLazyListState()
+    var pencilMenu by remember { mutableStateOf(false) }
+    val rollScroll = with(LocalDensity.current) { PENCIL_ROLL_SCROLL.toPx() }
+    // Apple Pencil: a double-tap steps to the next post, turning the barrel scrolls, and a squeeze
+    // offers what can be done with the whole thread.
+    OnPencilGesture { gesture ->
+        when (gesture) {
+            PencilGesture.DOUBLE_TAP -> listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            PencilGesture.SQUEEZE -> pencilMenu = true
+        }
+    }
+    OnPencilRoll { turn -> listState.scrollBy(turn * rollScroll) }
+    Box(Modifier.fillMaxSize()) {
+        ThreadScreen(
+            listState = listState,
+            subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
+            board = boardLabel,
+            posts = posts,
+            watching = watching,
+            layout = layout,
+            onLayoutChange = { layout = it },
+            files = fileCells,
+            onOpenFile = { cell ->
+                val index = attachments.indexOfFirst { it.id == cell.id }
+                if (index >= 0) onOpenFile(index)
+            },
+            fileTile = { cell, tileModifier ->
+                attachmentsById[cell.id]?.let { attachment ->
+                    Box(tileModifier.clip(RoundedCornerShape(10.dp))) {
+                        SharpImage(
+                            attachment,
+                            attachment.originalFileName,
+                            Modifier.fillMaxSize(),
+                            fill = Modifier.fillMaxSize(),
+                        )
+                        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                    }
+                }
+            },
+            collapsed = collapsed.toSet(),
+            onToggleCollapse = { post ->
+                if (!collapsed.remove(post.id)) collapsed.add(post.id)
+            },
+            onWatch = onWatch,
+            onDownloadAll = onDownloadAll,
+            onShare = onShare,
+            firstUnreadPostId = firstUnreadPostId,
+            scrollToPostId = scrollTarget,
+            onScrollConsumed = { scrollTarget = null },
+            body = { post ->
+                byId[post.id]?.let { entry ->
+                    PostCommentText(
+                        comment = entry.comment,
+                        selectable = true,
+                        onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                        onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
                     )
-                    if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                 }
-            }
-        },
-        collapsed = collapsed.toSet(),
-        onToggleCollapse = { post ->
-            if (!collapsed.remove(post.id)) collapsed.add(post.id)
-        },
-        onWatch = onWatch,
-        onDownloadAll = onDownloadAll,
-        onShare = onShare,
-        firstUnreadPostId = firstUnreadPostId,
-        scrollToPostId = scrollTarget,
-        onScrollConsumed = { scrollTarget = null },
-        body = { post ->
-            byId[post.id]?.let { entry ->
-                PostCommentText(
-                    comment = entry.comment,
-                    selectable = true,
-                    onQuoteClick = { target -> scrollTarget = target.value.toString() },
-                    onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
-                )
-            }
-        },
-        media = { post, modifier ->
-            byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
-                Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
-                    SharpImage(attachment, attachment.originalFileName, Modifier.fillMaxWidth())
-                    // Opening it still asks again in the viewer: the cover is lifted per file there.
-                    if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+            },
+            media = { post, modifier ->
+                byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
+                    Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
+                        SharpImage(attachment, attachment.originalFileName, Modifier.fillMaxWidth())
+                        // Opening it still asks again in the viewer: the cover is lifted per file there.
+                        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                    }
                 }
-            }
-        },
-    )
+            },
+        )
+        val watchLabel = if (watching) Res.string.ios_pencil_unwatch else Res.string.ios_pencil_watch
+        PencilMenu(
+            expanded = pencilMenu,
+            onDismiss = { pencilMenu = false },
+            actions =
+                listOf<Pair<String, () -> Unit>>(
+                    stringResource(Res.string.ios_pencil_download_all) to onDownloadAll,
+                    stringResource(watchLabel) to onWatch,
+                    stringResource(Res.string.ios_pencil_share) to onShare,
+                ),
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
 }
+
+/** How far one radian of barrel roll scrolls a thread. */
+private val PENCIL_ROLL_SCROLL = 400.dp
 
 @Composable
 private fun MediaDestination(
