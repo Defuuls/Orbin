@@ -1,22 +1,22 @@
-# Orbin 164 - Cranberry
+# Orbin 165 - Currant
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 164
-codename     = "Cranberry"
-version_code = 182
+number       = 165
+codename     = "Currant"
+version_code = 183
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Dark mode returns to a deep aubergine instead of plain black."
+highlight = "Thread progress syncs between Android and iOS through your own WebDAV folder."
 
 summary = [
-  "bump Orbin to 164-Cranberry / versionCode 182",
-  "dark theme on a deep aubergine ground; AMOLED stays true black",
+  "bump Orbin to 165-Currant / versionCode 183",
+  "sync read threads, last-read post and bookmarks over WebDAV",
 ]
 
 [changelog]
-Changed = [
-  "Dark mode now sits on a deep aubergine background with matching tinted surfaces instead of plain black; the AMOLED option still uses true black.",
+Added = [
+  "Sync thread progress between devices: set a WebDAV folder, username and password under Settings > Sync, and read threads, where you stopped reading, and bookmarks (with watch state) follow you across Android and iOS.",
 ]
