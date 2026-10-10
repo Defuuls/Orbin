@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [165-Currant] - 2026-10-10
+
+### Added
+- Sync thread progress between devices: set a WebDAV folder, username and password under Settings > Sync, and read threads, where you stopped reading, and bookmarks (with watch state) follow you across Android and iOS.
+
+
 ## [164-Cranberry] - 2026-10-05
 
 ### Changed
@@ -2525,7 +2531,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v165-Currant...HEAD
+[165-Currant]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...v165-Currant
 [164-Cranberry]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...v164-Cranberry
 [163-Jabuticaba]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...v163-Jabuticaba
 [162-Cantaloupe]: https://github.com/Defuuls/Orbin/compare/v161-Blueberry...v162-Cantaloupe
