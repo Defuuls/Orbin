@@ -31,6 +31,9 @@ internal object AppGraph {
     val boardPreferences = shared.boardPreferences
     val bookmarks = shared.bookmarks
     val history = shared.history
+
+    /** Thread progress kept in step with the reader's other devices through their WebDAV folder. */
+    val threadSync = shared.threadSync
     val downloadDao = database.downloadDao()
 
     /** The sites, with the same violent-media cover Android applies, following the same setting. */

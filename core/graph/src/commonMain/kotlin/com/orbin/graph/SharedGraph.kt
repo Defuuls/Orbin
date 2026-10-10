@@ -15,6 +15,8 @@ import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.ThreadSync
+import com.orbin.data.sync.WebDavSyncFile
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -94,6 +96,7 @@ abstract class SharedGraph(
     abstract val boardPreferencesRepository: BoardPreferencesRepository
     abstract val providerRegistry: ProviderRegistry
     abstract val updates: UpdateRepository
+    abstract val threadSync: ThreadSync
 
     @Provides
     protected fun json(): Json = OrbinJson
@@ -184,6 +187,15 @@ abstract class SharedGraph(
         client: HttpClient,
         dispatcher: CoroutineDispatcher,
     ): UpdateRepository = UpdateRepositoryImpl(client, dispatcher)
+
+    // Thread progress kept the same across devices through the reader's WebDAV folder.
+    @AppScope
+    @Provides
+    protected fun threadSync(
+        database: OrbinDatabase,
+        preferences: DataStore<Preferences>,
+        client: HttpClient,
+    ): ThreadSync = ThreadSync(database.historyDao(), database.bookmarkDao(), preferences, WebDavSyncFile(client))
 
     @AppScope
     @Provides

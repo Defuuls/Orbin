@@ -36,6 +36,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
@@ -54,6 +57,8 @@ data class SettingItem(
     val hint: String? = null,
     /** When true, the trailing value uses [nextDestructiveRed] (Delete / Clear rows). */
     val destructive: Boolean = false,
+    /** A [SettingKind.TEXT] row whose text is hidden as typed, and never pre-filled (a password). */
+    val secret: Boolean = false,
 )
 
 enum class SettingKind {
@@ -266,7 +271,13 @@ private fun SettingTextEditor(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = next.ink),
                 cursorBrush = SolidColor(next.accent),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = if (item.secret) KeyboardType.Password else KeyboardType.Unspecified,
+                        imeAction = ImeAction.Done,
+                    ),
+                visualTransformation =
+                    if (item.secret) PasswordVisualTransformation() else VisualTransformation.None,
                 keyboardActions = KeyboardActions(onDone = { commit() }),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus),
             )

@@ -6,10 +6,13 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumnsFor
+import com.orbin.domain.repository.ThreadSyncState
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
+import com.orbin.uinext.SyncSettingIds
+import com.orbin.uinext.syncSettingRows
 
 /**
  * The whole settings surface: a handful of rows in two untitled cards.
@@ -29,11 +32,14 @@ internal fun buildSettings(
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
     formFactor: FormFactor = FormFactor.PHONE,
+    sync: ThreadSyncState = ThreadSyncState(),
+    nowMillis: Long = 0L,
 ): SettingsModel {
     val rows = Rows()
     val groups =
         listOf(
             rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor),
+            rows.sync(sync, vm, nowMillis),
             rows.data(updateState, imageCacheLabel, clearArmed),
         ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
@@ -147,6 +153,25 @@ private class Rows {
             selected = settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS),
             text = { "$it columns" },
             onChange = vm::setTabletCatalogColumns,
+        )
+    }
+
+    /** Thread sync, the same rows as iOS shows; "Sync now" is dispatched by id in the screen. */
+    fun sync(
+        state: ThreadSyncState,
+        vm: SettingsViewModel,
+        nowMillis: Long,
+    ): List<SettingItem> {
+        texts[SyncSettingIds.FOLDER] = vm::setSyncFolder
+        texts[SyncSettingIds.USERNAME] = vm::setSyncUsername
+        texts[SyncSettingIds.PASSWORD] = vm::setSyncPassword
+        return syncSettingRows(
+            folderUrl = state.folderUrl,
+            username = state.username,
+            hasPassword = state.hasPassword,
+            lastSyncedMillis = state.lastSyncedMillis,
+            error = state.error,
+            nowMillis = nowMillis,
         )
     }
 
