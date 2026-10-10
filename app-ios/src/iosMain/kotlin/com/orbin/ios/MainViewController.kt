@@ -101,6 +101,7 @@ fun MainViewController(): UIViewController {
             formFactor(),
             AppVersion(graph.appVersion, graph.appBuild),
             graph.threadSync,
+            graph.whatsNew,
         )
     }.also { controller -> attachPencil(controller.view) }
 }
