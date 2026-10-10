@@ -23,14 +23,23 @@ import platform.darwin.NSObject
  */
 @OptIn(ExperimentalForeignApi::class)
 internal fun attachPencil(view: UIView) {
-    view.addInteraction(UIPencilInteraction().apply { delegate = PencilListener })
+    view.addInteraction(UIPencilInteraction().apply { delegate = pencilListener })
     view.addGestureRecognizer(
-        UIHoverGestureRecognizer(target = PencilListener, action = NSSelectorFromString("onHover:")),
+        UIHoverGestureRecognizer(target = pencilListener, action = NSSelectorFromString("onHover:")),
     )
 }
 
+/**
+ * The one listener, held here for the app's lifetime: UIKit keeps only weak references to an
+ * interaction's delegate and a gesture's target. (Kotlin/Native cannot make an Objective-C
+ * subclass an `object`, so it is a class with a single instance.)
+ */
+private val pencilListener = PencilListener()
+
 @OptIn(ExperimentalForeignApi::class)
-private object PencilListener : NSObject(), UIPencilInteractionDelegateProtocol {
+private class PencilListener :
+    NSObject(),
+    UIPencilInteractionDelegateProtocol {
     /** The double-tap before iOS 17.5. */
     override fun pencilInteractionDidTap(interaction: UIPencilInteraction) {
         Pencil.gesture(PencilGesture.DOUBLE_TAP)
