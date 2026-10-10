@@ -17,6 +17,7 @@ import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
 import com.orbin.data.sync.ThreadSync
 import com.orbin.data.sync.WebDavSyncFile
+import com.orbin.data.whatsnew.WhatsNewStore
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -97,6 +98,7 @@ abstract class SharedGraph(
     abstract val providerRegistry: ProviderRegistry
     abstract val updates: UpdateRepository
     abstract val threadSync: ThreadSync
+    abstract val whatsNew: WhatsNewStore
 
     @Provides
     protected fun json(): Json = OrbinJson
@@ -196,6 +198,10 @@ abstract class SharedGraph(
         preferences: DataStore<Preferences>,
         client: HttpClient,
     ): ThreadSync = ThreadSync(database.historyDao(), database.bookmarkDao(), preferences, WebDavSyncFile(client))
+
+    @AppScope
+    @Provides
+    protected fun whatsNew(preferences: DataStore<Preferences>): WhatsNewStore = WhatsNewStore(preferences)
 
     @AppScope
     @Provides

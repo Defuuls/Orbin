@@ -43,9 +43,11 @@ import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.VersionGuardRepository
+import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.materialPalette
 import com.orbin.uinext.next
 import dagger.hilt.android.AndroidEntryPoint
@@ -73,6 +75,9 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var threadSync: ThreadSyncRepository
+
+    @Inject
+    lateinit var whatsNew: WhatsNewRepository
 
     @Inject
     @ApplicationScope
@@ -284,7 +289,9 @@ class MainActivity : FragmentActivity() {
             onPendingRouteHandled = { pendingRoute = null },
             // Offered once the reader can see the app: never over onboarding or the lock screen.
             updateDialog = {
-                AppUpdateDialog(viewModel, visible = settings.onboardingCompleted && (!shouldLock || unlocked))
+                val visible = settings.onboardingCompleted && (!shouldLock || unlocked)
+                AppUpdateDialog(viewModel, visible)
+                WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible)
             },
         )
     }
