@@ -62,6 +62,7 @@ import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.domain.repository.ThreadSyncRepository
+import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.ios.resources.ios_pencil_download_all
@@ -87,6 +88,7 @@ import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.SyncSettingIds
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.next
 import com.orbin.uinext.syncSettingRows
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +113,7 @@ fun OrbinApp(
     formFactor: FormFactor = FormFactor.PHONE,
     version: AppVersion = AppVersion(),
     sync: ThreadSyncRepository? = null,
+    whatsNew: WhatsNewRepository? = null,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -145,6 +148,10 @@ fun OrbinApp(
                 }
             }
             LockCover(lock, lockState)
+        }
+        // This release's notes, once after an update, never over the lock.
+        if (whatsNew != null) {
+            WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible = !lockState.locked && !lockState.obscured)
         }
     }
 }

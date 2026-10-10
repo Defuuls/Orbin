@@ -34,6 +34,7 @@ internal object AppGraph {
 
     /** Thread progress kept in step with the reader's other devices through their WebDAV folder. */
     val threadSync = shared.threadSync
+    val whatsNew = shared.whatsNew
     val downloadDao = database.downloadDao()
 
     /** The sites, with the same violent-media cover Android applies, following the same setting. */
