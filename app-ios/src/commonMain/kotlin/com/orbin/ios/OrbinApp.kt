@@ -141,7 +141,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync)
                 }
             }
             LockCover(lock, lockState)
@@ -158,6 +158,7 @@ private fun Destination(
     formFactor: FormFactor,
     version: AppVersion,
     route: Route,
+    sync: ThreadSyncRepository?,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser, formFactor)
