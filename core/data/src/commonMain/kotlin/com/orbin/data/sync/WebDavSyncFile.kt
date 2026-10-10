@@ -88,11 +88,12 @@ class WebDavSyncFile(
     private suspend fun request(block: suspend () -> HttpResponse): HttpResponse =
         try {
             block()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
         } catch (
             // Ktor and the engines throw their own unrelated types; any of them is an unreachable server.
             @Suppress("TooGenericExceptionCaught") error: Exception,
         ) {
-            if (error is kotlinx.coroutines.CancellationException) throw error
             throw SyncException("Couldn't reach the sync server", error)
         }
 
