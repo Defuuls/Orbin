@@ -96,7 +96,7 @@ fun MainViewController(): UIViewController {
             formFactor(),
             AppVersion(graph.appVersion, graph.appBuild),
         )
-    }
+    }.also { controller -> attachPencil(controller.view) }
 }
 
 /** Coil over the app's Ktor client (encrypted DNS included), with its disk cache in Caches. */

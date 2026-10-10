@@ -25,4 +25,8 @@
     <string name="ios_downloads_status_running">Saving</string>
     <string name="ios_downloads_status_completed">Saved</string>
     <string name="ios_downloads_status_failed">Failed</string>
+    <string name="ios_pencil_download_all">Download all</string>
+    <string name="ios_pencil_watch">Watch thread</string>
+    <string name="ios_pencil_unwatch">Stop watching</string>
+    <string name="ios_pencil_share">Share</string>
 </resources>

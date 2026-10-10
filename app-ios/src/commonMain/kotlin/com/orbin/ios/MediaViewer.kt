@@ -57,6 +57,7 @@ import com.orbin.ios.resources.ios_media_saving
 import com.orbin.ios.resources.ios_media_spoiler_reveal
 import com.orbin.uinext.NextIconAction
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.exp
 
 /**
  * The thread's files full screen, one per page: swipe between them, pinch or double-tap to zoom an
@@ -76,6 +77,15 @@ internal fun MediaViewer(
         return
     }
     val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, files.lastIndex)) { files.size }
+    var pencilMenu by remember { mutableStateOf(false) }
+    // Apple Pencil: a double-tap moves to the next file, and a squeeze offers save and close.
+    OnPencilGesture { gesture ->
+        when (gesture) {
+            PencilGesture.DOUBLE_TAP ->
+                if (pager.currentPage < files.lastIndex) pager.animateScrollToPage(pager.currentPage + 1)
+            PencilGesture.SQUEEZE -> pencilMenu = true
+        }
+    }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         HorizontalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
             MediaPage(files[page], active = page == pager.currentPage)
@@ -100,6 +110,17 @@ internal fun MediaViewer(
                 )
             }
         }
+        val current = files[pager.currentPage]
+        PencilMenu(
+            expanded = pencilMenu,
+            onDismiss = { pencilMenu = false },
+            actions =
+                listOf<Pair<String, () -> Unit>>(
+                    stringResource(Res.string.ios_media_save) to { onSave(current) },
+                    stringResource(Res.string.ios_media_close) to onClose,
+                ),
+            modifier = Modifier.align(Alignment.Center),
+        )
     }
 }
 
@@ -147,7 +168,7 @@ private fun MediaPage(
         return
     }
     when {
-        file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file)
+        file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file, active)
         // Below the top bar, so the player's own controls never sit under the close button.
         playable != null ->
             Box(Modifier.fillMaxSize()) {
@@ -180,10 +201,20 @@ private fun MediaPage(
 }
 
 @Composable
-private fun ZoomableImage(file: MediaAttachment) {
+private fun ZoomableImage(
+    file: MediaAttachment,
+    active: Boolean,
+) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var size by remember { mutableStateOf(IntSize.Zero) }
+    // Turning an Apple Pencil Pro's barrel while it hovers zooms the image on screen.
+    if (active) {
+        OnPencilRoll { turn ->
+            scale = (scale * exp(turn)).coerceIn(1f, MAX_SCALE)
+            offset = zoomedOffset(offset, scale, size)
+        }
+    }
     Box(
         modifier =
             Modifier
