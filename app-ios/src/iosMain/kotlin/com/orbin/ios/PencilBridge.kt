@@ -4,7 +4,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.useContents
 import platform.Foundation.NSSelectorFromString
-import platform.UIKit.UIGestureRecognizerState
+import platform.UIKit.UIGestureRecognizerStateBegan
+import platform.UIKit.UIGestureRecognizerStateChanged
 import platform.UIKit.UIHoverGestureRecognizer
 import platform.UIKit.UIPencilInteraction
 import platform.UIKit.UIPencilInteractionDelegateProtocol
@@ -12,6 +13,7 @@ import platform.UIKit.UIPencilInteractionPhase
 import platform.UIKit.UIPencilInteractionSqueeze
 import platform.UIKit.UIPencilInteractionTap
 import platform.UIKit.UIView
+import platform.UIKit.addInteraction
 import platform.darwin.NSObject
 
 /**
@@ -19,6 +21,7 @@ import platform.darwin.NSObject
  * squeeze, and the tip hovering over the screen with its roll. Each arrives at [Pencil]. On an
  * iPhone, or an iPad with no Pencil, none of these ever fire.
  */
+@OptIn(ExperimentalForeignApi::class)
 internal fun attachPencil(view: UIView) {
     view.addInteraction(UIPencilInteraction().apply { delegate = PencilListener })
     view.addGestureRecognizer(
@@ -54,8 +57,8 @@ private object PencilListener : NSObject(), UIPencilInteractionDelegateProtocol 
     @ObjCAction
     fun onHover(recognizer: UIHoverGestureRecognizer) {
         when (recognizer.state) {
-            UIGestureRecognizerState.UIGestureRecognizerStateBegan,
-            UIGestureRecognizerState.UIGestureRecognizerStateChanged,
+            UIGestureRecognizerStateBegan,
+            UIGestureRecognizerStateChanged,
             -> {
                 // The roll is only on the Pro, from iOS 17.5; asking an older system would crash.
                 val roll =
