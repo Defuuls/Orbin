@@ -23,6 +23,7 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
+import com.orbin.uinext.SyncSettingIds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ fun NextSettingsScreen(
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -101,7 +103,7 @@ fun NextSettingsScreen(
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
     val model =
-        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor) {
+        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor, syncState) {
             buildSettings(
                 settings,
                 viewModel,
@@ -110,6 +112,8 @@ fun NextSettingsScreen(
                 clearArmed,
                 checkUpdatesOnLaunch,
                 formFactor,
+                syncState,
+                System.currentTimeMillis(),
             )
         }
     val groups = model.groups
@@ -124,26 +128,30 @@ fun NextSettingsScreen(
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
-                        dispatch(
-                            item = item,
-                            onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                            onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                            onClear = {
-                                if (clearArmed) {
-                                    clearArmed = false
-                                    viewModel.clearLocalActivity()
-                                    scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
-                                } else {
-                                    clearArmed = true
-                                }
-                            },
-                            onClearImageCache = viewModel::clearImageCache,
-                            onCheckUpdates = {
-                                if (updateCheck != UpdateCheckState.Checking) {
-                                    viewModel.checkForUpdate(appVersionName(context))
-                                }
-                            },
-                        )
+                        if (item.id == SyncSettingIds.SYNC_NOW) {
+                            viewModel.syncNow()
+                        } else {
+                            dispatch(
+                                item = item,
+                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                                onClear = {
+                                    if (clearArmed) {
+                                        clearArmed = false
+                                        viewModel.clearLocalActivity()
+                                        scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
+                                    } else {
+                                        clearArmed = true
+                                    }
+                                },
+                                onClearImageCache = viewModel::clearImageCache,
+                                onCheckUpdates = {
+                                    if (updateCheck != UpdateCheckState.Checking) {
+                                        viewModel.checkForUpdate(appVersionName(context))
+                                    }
+                                },
+                            )
+                        }
                     SettingKind.INFO -> Unit
                 }
             },

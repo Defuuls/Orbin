@@ -16,6 +16,7 @@ import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
+import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.graph.SharedGraph
 import com.orbin.graph.createSharedGraph
@@ -92,6 +93,9 @@ object SharedGraphModule {
 
     @Provides
     fun providesUpdateRepository(graph: SharedGraph): UpdateRepository = graph.updates
+
+    @Provides
+    fun providesThreadSyncRepository(graph: SharedGraph): ThreadSyncRepository = graph.threadSync
 
     @Provides
     @ElementsIntoSet

@@ -87,4 +87,8 @@ interface BookmarkDao {
 
     @Query("SELECT * FROM bookmarks WHERE isWatched = 1")
     suspend fun watchedBookmarks(): List<BookmarkEntity>
+
+    /** Every bookmark, watched or not, for sync. */
+    @Query("SELECT * FROM bookmarks")
+    suspend fun all(): List<BookmarkEntity>
 }

@@ -21,12 +21,13 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
-    /** The whole surface: preferences, then data, with nothing else on it. */
+    /** The whole surface: preferences, thread sync, then data, with nothing else on it. */
     @Test
     fun `settings is a short list with nothing hidden behind it`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
                 listOf("hideNsfw", "coverViolent", "themeMode", "amoled", "biometric", "updateOnLaunch"),
+                listOf("syncFolder", "syncUsername", "syncPassword", "syncNow"),
                 listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
             ).inOrder()
     }

@@ -10,11 +10,14 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
+import com.orbin.domain.repository.DisabledThreadSync
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadSyncRepository
+import com.orbin.domain.repository.ThreadSyncState
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
@@ -46,7 +49,30 @@ class SettingsViewModel
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
+        private val threadSync: ThreadSyncRepository = DisabledThreadSync,
     ) : ViewModel() {
+        /** Thread sync's account and last result, for its rows. */
+        val syncState: StateFlow<ThreadSyncState> =
+            threadSync.state.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadSyncState())
+
+        fun setSyncFolder(url: String) = updateSyncAccount { threadSync.setAccount(folderUrl = url) }
+
+        fun setSyncUsername(name: String) = updateSyncAccount { threadSync.setAccount(username = name) }
+
+        fun setSyncPassword(password: String) = updateSyncAccount { threadSync.setAccount(password = password) }
+
+        fun syncNow() {
+            viewModelScope.launch { threadSync.sync() }
+        }
+
+        // Each change is tried at once, so a wrong folder or login shows on the row straight away.
+        private fun updateSyncAccount(change: suspend () -> Unit) {
+            viewModelScope.launch {
+                change()
+                threadSync.sync()
+            }
+        }
+
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
         private val _imageCacheUsageBytes = MutableStateFlow(0L)

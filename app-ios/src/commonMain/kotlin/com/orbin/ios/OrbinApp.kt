@@ -61,6 +61,7 @@ import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.ios.resources.ios_pencil_download_all
@@ -83,11 +84,14 @@ import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
+import com.orbin.uinext.SyncSettingIds
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.next
+import com.orbin.uinext.syncSettingRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,6 +110,7 @@ fun OrbinApp(
     backup: IosBackup,
     formFactor: FormFactor = FormFactor.PHONE,
     version: AppVersion = AppVersion(),
+    sync: ThreadSyncRepository? = null,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -136,7 +141,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync)
                 }
             }
             LockCover(lock, lockState)
@@ -153,13 +158,14 @@ private fun Destination(
     formFactor: FormFactor,
     version: AppVersion,
     route: Route,
+    sync: ThreadSyncRepository?,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser, formFactor)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, sync)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -323,8 +329,10 @@ private fun SettingsDestination(
     backup: IosBackup,
     formFactor: FormFactor,
     version: AppVersion,
+    sync: ThreadSyncRepository?,
 ) {
     val settings by browser.settings.current.collectAsState()
+    val syncStatus by remember(sync) { sync?.state ?: flowOf(null) }.collectAsState(null)
     val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val scope = rememberCoroutineScope()
@@ -340,7 +348,25 @@ private fun SettingsDestination(
                 backupState,
                 formFactor,
                 version,
-            ) { settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version) },
+                syncStatus,
+            ) {
+                val groups = settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version)
+                if (sync == null) {
+                    groups
+                } else {
+                    // Thread sync, the same rows as Android, between the preferences and the data rows.
+                    val rows =
+                        syncSettingRows(
+                            folderUrl = syncStatus?.folderUrl.orEmpty(),
+                            username = syncStatus?.username.orEmpty(),
+                            hasPassword = syncStatus?.hasPassword == true,
+                            lastSyncedMillis = syncStatus?.lastSyncedMillis,
+                            error = syncStatus?.error,
+                            nowMillis = Clock.System.now().toEpochMilliseconds(),
+                        )
+                    groups.take(1) + ("" to rows) + groups.drop(1)
+                }
+            },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
@@ -385,6 +411,15 @@ private fun SettingsDestination(
                     Haptics.light()
                     backup.import()
                 }
+                SyncSettingIds.FOLDER, SyncSettingIds.USERNAME, SyncSettingIds.PASSWORD -> {
+                    Haptics.light()
+                    expanded = if (expanded == item.id) null else item.id
+                }
+                SyncSettingIds.SYNC_NOW ->
+                    sync?.let {
+                        Haptics.light()
+                        scope.launch { it.sync() }
+                    }
                 SettingIds.CLEAR_IMAGE_CACHE ->
                     scope.launch {
                         imageLoader.memoryCache?.clear()
@@ -403,6 +438,19 @@ private fun SettingsDestination(
                     browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
             }
             expanded = null
+        },
+        onCommitText = { item, text ->
+            Haptics.light()
+            expanded = null
+            val engine = sync ?: return@SettingsScreen
+            scope.launch {
+                when (item.id) {
+                    SyncSettingIds.FOLDER -> engine.setAccount(folderUrl = text)
+                    SyncSettingIds.USERNAME -> engine.setAccount(username = text)
+                    SyncSettingIds.PASSWORD -> engine.setAccount(password = text)
+                }
+                engine.sync()
+            }
         },
     )
 }
