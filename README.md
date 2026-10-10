@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [164 — Cranberry](https://github.com/Defuuls/Orbin/releases/tag/v164-Cranberry)
+**Current release:** [165 — Currant](https://github.com/Defuuls/Orbin/releases/tag/v165-Currant)
 
-**What's new in 164:** Dark mode returns to a deep aubergine instead of plain black.
+**What's new in 165:** Thread progress syncs between Android and iOS through your own WebDAV folder.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
