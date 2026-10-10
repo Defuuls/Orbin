@@ -108,13 +108,13 @@ internal fun clock(seconds: Double): String {
 
 /** "playing,position,duration" as the WebM page's state script reports it, or null if the page is not ready. */
 internal fun parseWebMState(text: String): VideoState? {
-    val parts = text.split(',')
-    if (parts.size != 3) return null
-    val position = parts[1].toDoubleOrNull() ?: return null
-    val duration = parts[2].toDoubleOrNull()?.takeIf { it.isFinite() } ?: 0.0
-    return VideoState(playing = parts[0] == "1", position = position, duration = duration)
+    val (playing, positionText, durationText) = text.split(',').takeIf { it.size == WEBM_STATE_FIELDS } ?: return null
+    val position = positionText.toDoubleOrNull() ?: return null
+    val duration = durationText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: 0.0
+    return VideoState(playing = playing == "1", position = position, duration = duration)
 }
 
+private const val WEBM_STATE_FIELDS = 3
 private const val SKIP_SECONDS = 10.0
 private const val SECONDS_PER_MINUTE = 60
 private const val SCRIM = 0.4f
