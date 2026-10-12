@@ -150,34 +150,37 @@ private fun StringBuilder.appendNodes(nodes: List<PostNode>) {
                 appendNodes(node.children)
                 append(close)
             }
-            is PostNode.QuoteLink -> {
-                val label =
-                    buildString {
-                        append("&gt;&gt;")
-                        node.board?.let { append("&gt;/").appendEscaped(it.value).append('/') }
-                        append(node.target.value)
-                        if (node.isOp) append(" (OP)")
-                    }
-                if (node.board == null) {
-                    append(
-                        "<a class=\"quote\" href=\"#p",
-                    ).append(node.target.value).append("\">").append(label).append("</a>")
-                } else {
-                    append("<span class=\"quote\">").append(label).append("</span>")
-                }
-            }
-            is PostNode.Link -> {
-                val safe = node.url.takeIf { it.startsWith("https://", true) || it.startsWith("http://", true) }
-                if (safe == null) {
-                    if (node.children.isEmpty()) appendEscaped(node.url) else appendNodes(node.children)
-                } else {
-                    append("<a href=\"").appendEscaped(safe).append("\" rel=\"noopener noreferrer\">")
-                    if (node.children.isEmpty()) appendEscaped(node.url) else appendNodes(node.children)
-                    append("</a>")
-                }
-            }
+            is PostNode.QuoteLink -> appendQuote(node)
+            is PostNode.Link -> appendLink(node)
         }
     }
+}
+
+private fun StringBuilder.appendQuote(node: PostNode.QuoteLink) {
+    val label =
+        buildString {
+            append("&gt;&gt;")
+            node.board?.let { append("&gt;/").appendEscaped(it.value).append('/') }
+            append(node.target.value)
+            if (node.isOp) append(" (OP)")
+        }
+    if (node.board == null) {
+        append("<a class=\"quote\" href=\"#p")
+            .append(node.target.value)
+            .append("\">")
+            .append(label)
+            .append("</a>")
+    } else {
+        append("<span class=\"quote\">").append(label).append("</span>")
+    }
+}
+
+/** A link only for http(s); anything else (javascript:, data:) is kept as text. */
+private fun StringBuilder.appendLink(node: PostNode.Link) {
+    val safe = node.url.startsWith("https://", true) || node.url.startsWith("http://", true)
+    if (safe) append("<a href=\"").appendEscaped(node.url).append("\" rel=\"noopener noreferrer\">")
+    if (node.children.isEmpty()) appendEscaped(node.url) else appendNodes(node.children)
+    if (safe) append("</a>")
 }
 
 private fun tagsFor(style: InlineStyle): Pair<String, String> =
