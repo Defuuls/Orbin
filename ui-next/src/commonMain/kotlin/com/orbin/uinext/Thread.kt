@@ -60,6 +60,7 @@ import com.orbin.uinext.resources.next_thread_jump_bottom
 import com.orbin.uinext.resources.next_thread_jump_top
 import com.orbin.uinext.resources.next_thread_jump_unread
 import com.orbin.uinext.resources.next_thread_posts
+import com.orbin.uinext.resources.next_thread_save_page
 import com.orbin.uinext.resources.next_thread_share
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
@@ -101,6 +102,7 @@ fun ThreadScreen(
     onToggleCollapse: (Post) -> Unit = {},
     onWatch: () -> Unit = {},
     onDownloadAll: () -> Unit = {},
+    onSavePage: (() -> Unit)? = null,
     onShare: () -> Unit = {},
     onPostClick: (Post) -> Unit = {},
     listState: LazyListState? = null,
@@ -274,6 +276,10 @@ fun ThreadScreen(
                             label = stringResource(Res.string.next_thread_download_all),
                             onClick = onDownloadAll,
                         )
+                        // The whole thread, posts and files, as a page that opens in any browser.
+                        onSavePage?.let {
+                            InlineAction(stringResource(Res.string.next_thread_save_page), onClick = it)
+                        }
                         InlineAction(stringResource(Res.string.next_thread_share), onClick = onShare)
                     }
                 }

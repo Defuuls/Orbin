@@ -31,6 +31,12 @@ interface DownloadPlatformQueue {
         fileName: String,
         content: String,
     ): Boolean
+
+    fun saveFile(
+        path: String,
+        fileName: String,
+        mimeType: String,
+    ): Boolean = false
 }
 
 class DownloadRepositoryImpl(
@@ -108,6 +114,15 @@ class DownloadRepositoryImpl(
     ): Boolean =
         withContext(ioDispatcher) {
             queue?.writeTextFile(fileName, content) ?: false
+        }
+
+    override suspend fun saveFile(
+        path: String,
+        fileName: String,
+        mimeType: String,
+    ): Boolean =
+        withContext(ioDispatcher) {
+            queue?.saveFile(path, fileName, mimeType) ?: false
         }
 
     private fun DownloadEntity.toDomain(): DownloadRecord =

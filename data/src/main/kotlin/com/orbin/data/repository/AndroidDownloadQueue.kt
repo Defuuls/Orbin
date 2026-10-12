@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.orbin.data.worker.DownloadWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,6 +62,32 @@ class AndroidDownloadQueue
             return runCatching {
                 resolver.openOutputStream(target)?.use { output ->
                     output.write(content.toByteArray())
+                } ?: error("Unable to open default downloads folder")
+                ContentValues()
+                    .apply { put(MediaStore.Downloads.IS_PENDING, 0) }
+                    .also { resolver.update(target, it, null, null) }
+            }.onFailure {
+                resolver.delete(target, null, null)
+            }.isSuccess
+        }
+
+        override fun saveFile(
+            path: String,
+            fileName: String,
+            mimeType: String,
+        ): Boolean {
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, sanitizeFileName(fileName))
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/Orbin")
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+            val resolver = context.contentResolver
+            val target = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+            return runCatching {
+                resolver.openOutputStream(target)?.use { output ->
+                    File(path).inputStream().use { it.copyTo(output) }
                 } ?: error("Unable to open default downloads folder")
                 ContentValues()
                     .apply { put(MediaStore.Downloads.IS_PENDING, 0) }

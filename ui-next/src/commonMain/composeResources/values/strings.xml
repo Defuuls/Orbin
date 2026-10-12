@@ -84,6 +84,7 @@
     <string name="next_thread_posts">Posts</string>
     <string name="next_thread_files">Files</string>
     <string name="next_thread_download_all">Download all</string>
+    <string name="next_thread_save_page">Save page</string>
     <string name="next_thread_share">Save links as text</string>
     <string name="next_thread_jump_top">Top</string>
     <string name="next_thread_jump_unread">Unread</string>

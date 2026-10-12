@@ -43,4 +43,14 @@ interface DownloadRepository {
         fileName: String,
         content: String,
     ): Boolean
+
+    /**
+     * Copies the file at [path] into the downloads folder as [fileName] ([mimeType]), as
+     * [writeTextFile] does for text. Returns false if the copy fails or the platform has no folder.
+     */
+    suspend fun saveFile(
+        path: String,
+        fileName: String,
+        mimeType: String,
+    ): Boolean = false
 }

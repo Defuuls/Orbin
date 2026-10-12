@@ -114,6 +114,7 @@ fun OrbinApp(
     version: AppVersion = AppVersion(),
     sync: ThreadSyncRepository? = null,
     whatsNew: WhatsNewRepository? = null,
+    pages: ThreadPages? = null,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -144,7 +145,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync, pages)
                 }
             }
             LockCover(lock, lockState)
@@ -166,6 +167,7 @@ private fun Destination(
     version: AppVersion,
     route: Route,
     sync: ThreadSyncRepository?,
+    pages: ThreadPages?,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser, formFactor)
@@ -183,9 +185,9 @@ private fun Destination(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
                 if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
-                    ThreadSplitDestination(browser, previous.board, formFactor, downloads)
+                    ThreadSplitDestination(browser, previous.board, formFactor, downloads, pages)
                 } else {
-                    ThreadDestination(browser, downloads)
+                    ThreadDestination(browser, downloads, pages)
                 }
             }
         }
@@ -552,6 +554,7 @@ private fun ThreadSplitDestination(
     board: SiteBoard,
     formFactor: FormFactor,
     downloads: MediaDownloads,
+    pages: ThreadPages?,
 ) {
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxSize()) {
@@ -559,7 +562,7 @@ private fun ThreadSplitDestination(
         }
         Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
         Box(Modifier.weight(1.4f).fillMaxSize()) {
-            ThreadDestination(browser, downloads)
+            ThreadDestination(browser, downloads, pages)
         }
     }
 }
@@ -658,7 +661,9 @@ private fun SharpImage(
 private fun ThreadDestination(
     browser: Browser,
     downloads: MediaDownloads,
+    pages: ThreadPages?,
 ) {
+    val scope = rememberCoroutineScope()
     val thread by browser.thread.collectAsState()
     val firstUnread by browser.firstUnreadPostId.collectAsState()
     NextPullToRefresh(
@@ -677,6 +682,7 @@ private fun ThreadDestination(
                 onDownloadAll = {
                     loaded.files.forEach { file -> downloads.save(file, loaded.key, loaded.subject) }
                 },
+                onSavePage = pages?.let { { scope.launch { it.save(loaded) } } },
                 onShare = {
                     val fallback = "/${loaded.key.board.value}/${loaded.key.thread.value}"
                     val shareText = loaded.subject?.takeIf(String::isNotBlank) ?: fallback
@@ -695,6 +701,7 @@ private fun ThreadContent(
     onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
     onDownloadAll: () -> Unit = {},
+    onSavePage: (() -> Unit)? = null,
     onShare: () -> Unit = {},
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
@@ -762,6 +769,7 @@ private fun ThreadContent(
             },
             onWatch = onWatch,
             onDownloadAll = onDownloadAll,
+            onSavePage = onSavePage,
             onShare = onShare,
             firstUnreadPostId = firstUnreadPostId,
             scrollToPostId = scrollTarget,

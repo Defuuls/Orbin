@@ -2,6 +2,7 @@ package com.orbin.graph
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.orbin.data.archive.ThreadArchiver
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.provider.ProviderRegistryImpl
 import com.orbin.data.repository.BoardRepositoryImpl
@@ -99,6 +100,7 @@ abstract class SharedGraph(
     abstract val updates: UpdateRepository
     abstract val threadSync: ThreadSync
     abstract val whatsNew: WhatsNewStore
+    abstract val threadArchive: ThreadArchiver
 
     @Provides
     protected fun json(): Json = OrbinJson
@@ -198,6 +200,14 @@ abstract class SharedGraph(
         preferences: DataStore<Preferences>,
         client: HttpClient,
     ): ThreadSync = ThreadSync(database.historyDao(), database.bookmarkDao(), preferences, WebDavSyncFile(client))
+
+    // Whole threads saved as a page with their files, for keeps.
+    @AppScope
+    @Provides
+    protected fun threadArchive(
+        client: HttpClient,
+        dispatcher: CoroutineDispatcher,
+    ): ThreadArchiver = ThreadArchiver(client, dispatcher)
 
     @AppScope
     @Provides
