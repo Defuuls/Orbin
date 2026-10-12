@@ -85,7 +85,7 @@ class ThreadArchiveTest {
 
     @Test
     fun namesCannotLeaveTheirFolder() {
-        assertEquals("______etc", safeName("../.etc"))
+        assertEquals("____etc", safeName("../.etc"))
         assertEquals(".webm", extensionOf(".webm", ""))
         assertEquals(".png", extensionOf("", "https://x/y/z.PNG?x=1"))
         assertEquals("", extensionOf("", "https://x/y/z"))
