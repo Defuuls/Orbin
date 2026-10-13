@@ -1,22 +1,22 @@
-# Orbin 165 - Currant
+# Orbin 166 - Dragon Fruit
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 165
-codename     = "Currant"
-version_code = 183
+number       = 166
+codename     = "Dragon Fruit"
+version_code = 184
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Thread progress syncs between Android and iOS through your own WebDAV folder."
+highlight = "Save a whole thread as a page, with every image and video, to read offline in any browser."
 
 summary = [
-  "bump Orbin to 165-Currant / versionCode 183",
-  "sync read threads, last-read post and bookmarks over WebDAV",
+  "bump Orbin to 166-Dragon-Fruit / versionCode 184",
+  "save a whole thread as an HTML page with its media",
 ]
 
 [changelog]
 Added = [
-  "Sync thread progress between devices: set a WebDAV folder, username and password under Settings > Sync, and read threads, where you stopped reading, and bookmarks (with watch state) follow you across Android and iOS.",
+  "Save a whole thread as a page: \"Save page\" in a thread's Files view writes a .zip with an index.html that opens in any browser, its stylesheet, and every image, video and thumbnail in the thread (Downloads/Orbin on Android, the share sheet and Orbin's folder in Files on iOS).",
 ]

@@ -6,9 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- Save a whole thread as a page: "Save page" in a thread's Files view writes a .zip with an index.html that opens in any browser, its stylesheet, and every image, video and thumbnail in the thread (Downloads/Orbin on Android, the share sheet and Orbin's folder in Files on iOS).
-
 ## [165-Currant] - 2026-10-10
 
 ### Added
