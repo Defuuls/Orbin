@@ -16,10 +16,12 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.DisabledThreadArchive
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadArchiveRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -37,6 +39,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /** Observes a thread, records reading history, and owns reader actions/state. */
@@ -52,6 +55,7 @@ class ThreadViewModel
         private val historyRepository: HistoryRepository,
         private val settingsRepository: SettingsRepository,
         private val savedThreadRepository: SavedThreadRepository,
+        private val threadArchive: ThreadArchiveRepository = DisabledThreadArchive,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -194,6 +198,37 @@ class ThreadViewModel
             }
         }
 
+        private val _archiving = MutableStateFlow(false)
+
+        /** True while the whole thread is being saved as a page, so the action can't run twice. */
+        val archiving: StateFlow<Boolean> = _archiving.asStateFlow()
+
+        /**
+         * Saves the whole thread to Downloads/Orbin as a .zip: an `index.html` that opens in any
+         * browser, its stylesheet, and every file and thumbnail in the thread.
+         */
+        fun saveThreadPage() {
+            val thread = (uiState.value as? ThreadUiState.Success)?.thread ?: return
+            if (_archiving.value) return
+            _archiving.value = true
+            viewModelScope.launch {
+                _exportMessage.value = "Saving the thread page…"
+                val result = runCatching { threadArchive.archive(thread) }
+                val archive = result.getOrNull()
+                _exportMessage.value =
+                    when {
+                        archive == null -> "Couldn't save the thread page"
+                        !downloadRepository.saveFile(archive.path, archive.fileName, ZIP_MIME_TYPE) ->
+                            "Couldn't save the thread page to Downloads"
+                        archive.savedMedia < archive.totalMedia ->
+                            "Saved ${archive.fileName} (${archive.savedMedia} of ${archive.totalMedia} files)"
+                        else -> "Saved ${archive.fileName} to Downloads/Orbin"
+                    }
+                archive?.let { runCatching { File(it.path).delete() } }
+                _archiving.value = false
+            }
+        }
+
         val isSaved: StateFlow<Boolean> =
             savedThreadRepository
                 .isSaved(threadKey)
@@ -313,6 +348,7 @@ class ThreadViewModel
             val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
             const val STOP_TIMEOUT_MS = 5_000L
             const val SCROLL_PERSIST_DEBOUNCE_MS = 650L
+            const val ZIP_MIME_TYPE = "application/zip"
         }
     }
 

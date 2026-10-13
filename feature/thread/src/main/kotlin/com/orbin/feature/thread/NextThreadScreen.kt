@@ -254,6 +254,10 @@ private fun LoadedThread(
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
                     viewModel.downloadAllMedia()
                 },
+                onSavePage = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    viewModel.saveThreadPage()
+                },
                 onShare = {
                     val shareUrl = viewModel.threadWebUrl
                     val shareSubject = thread.subject ?: viewModel.title

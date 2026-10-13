@@ -7,6 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
 import platform.Foundation.NSBundle
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSUserDomainMask
 
 /**
  * Everything the app is built from, made once per process: the screens (`MainViewController`) and
@@ -35,6 +38,14 @@ internal object AppGraph {
     /** Thread progress kept in step with the reader's other devices through their WebDAV folder. */
     val threadSync = shared.threadSync
     val whatsNew = shared.whatsNew
+
+    // Whole threads saved as pages go beside saved files, in Orbin's folder in the Files app.
+    val pages =
+        ThreadPages(
+            shared.threadArchive,
+            (NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).first() as String) +
+                "/Orbin/Threads",
+        )
     val downloadDao = database.downloadDao()
 
     /** The sites, with the same violent-media cover Android applies, following the same setting. */
