@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [166-Dragon-Fruit] - 2026-10-13
+
+### Added
+- Save a whole thread as a page: "Save page" in a thread's Files view writes a .zip with an index.html that opens in any browser, its stylesheet, and every image, video and thumbnail in the thread (Downloads/Orbin on Android, the share sheet and Orbin's folder in Files on iOS).
+
+
 ## [165-Currant] - 2026-10-10
 
 ### Added
@@ -2531,7 +2537,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v165-Currant...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...HEAD
+[166-Dragon-Fruit]: https://github.com/Defuuls/Orbin/compare/v165-Currant...v166-Dragon-Fruit
 [165-Currant]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...v165-Currant
 [164-Cranberry]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...v164-Cranberry
 [163-Jabuticaba]: https://github.com/Defuuls/Orbin/compare/v162-Cantaloupe...v163-Jabuticaba
