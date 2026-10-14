@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -12,6 +13,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
@@ -249,48 +251,23 @@ internal actual fun NativeInlineLoop(
 private const val SEEK_TIMESCALE = 600
 private const val CONTROLS_REFRESH_MS = 250L
 
-@OptIn(ExperimentalForeignApi::class)
+/**
+ * The first frame comes from AVFoundation, not a web view: a WKWebView per card started a web
+ * process and a video decoder for every video in view, which is what made long feeds and catalogs
+ * crawl. Frames are decoded off the main thread, a few at a time, at card size, and kept in
+ * [VideoFrames] so scrolling back is free. WebM, which AVFoundation can't open, keeps its thumbnail.
+ */
 @Composable
 internal actual fun NativeVideoFrame(
     url: String,
     modifier: Modifier,
 ) {
-    val webView =
-        remember(url) {
-            val configuration =
-                WKWebViewConfiguration().apply {
-                    allowsInlineMediaPlayback = true
-                }
-            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
-                // See-through until the frame arrives, so the thumbnail underneath fills the space.
-                opaque = false
-                backgroundColor = UIColor.clearColor
-                scrollView.backgroundColor = UIColor.clearColor
-                scrollView.scrollEnabled = false
-                scrollView.bounces = false
-                userInteractionEnabled = false
-                // The media fragment seeks just past zero, which makes WebKit decode and show the
-                // first frame without playing; preload stops it fetching much beyond that.
-                val src = "${url.escapeHtmlAttribute()}#t=0.001"
-                val html =
-                    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width," +
-                        "initial-scale=1,maximum-scale=1\">" +
-                        "<style>html,body{margin:0;width:100%;height:100%;" +
-                        "background:transparent;overflow:hidden}" +
-                        "video{width:100%;height:100%;object-fit:cover}</style>" +
-                        "</head><body><video src=\"$src\" muted playsinline preload=\"metadata\">" +
-                        "</video></body></html>"
-                loadHTMLString(string = html, baseURL = null)
-            }
-        }
-    DisposableEffect(webView) {
-        onDispose {
-            webView.stopLoading()
-            webView.loadHTMLString("", baseURL = null)
-        }
+    if (isWebMUrl(url)) return
+    var frame by remember(url) { mutableStateOf(VideoFrames.cached(url)) }
+    LaunchedEffect(url) {
+        if (frame == null) frame = VideoFrames.load(url)
     }
-    // Display only: taps must reach the card or post underneath, which opens the player.
-    UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
+    frame?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = modifier) }
 }
 
 /** A native view that only draws; touches fall through to the Compose content behind it. */

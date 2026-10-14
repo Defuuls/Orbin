@@ -9,7 +9,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +34,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlin.math.PI
 import kotlin.math.abs
 
@@ -119,16 +121,22 @@ internal fun PencilHoverPreview(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val hover by Pencil.hover.collectAsState()
     val density = LocalDensity.current.density
-    var bounds by remember { mutableStateOf(Rect.Zero) }
-    val over = hover?.let { bounds.contains(Offset(it.x * density, it.y * density)) } == true
+    // Where the picture is, kept out of Compose state: written on every layout pass while a list
+    // scrolls, as state it recomposed every picture on screen every frame.
+    val bounds = remember { BoundsHolder() }
     var showing by remember { mutableStateOf(false) }
-    LaunchedEffect(over) {
-        if (over) delay(HOVER_PREVIEW_DELAY_MS)
-        showing = over
+    // Only the Pencil's hover drives this, and nothing recomposes until it is over this picture.
+    LaunchedEffect(Unit) {
+        Pencil.hover
+            .map { point -> point != null && bounds.rect.contains(Offset(point.x * density, point.y * density)) }
+            .distinctUntilChanged()
+            .collectLatest { over ->
+                if (over) delay(HOVER_PREVIEW_DELAY_MS)
+                showing = over
+            }
     }
-    Box(modifier.onGloballyPositioned { bounds = it.boundsInRoot() }) {
+    Box(modifier.onGloballyPositioned { bounds.rect = it.boundsInRoot() }) {
         content()
         // A spoiler stays covered: hovering must not show what a tap would still ask about.
         if (showing && !attachment.isSpoiler) {
@@ -143,6 +151,10 @@ internal fun PencilHoverPreview(
             }
         }
     }
+}
+
+private class BoundsHolder {
+    var rect: Rect = Rect.Zero
 }
 
 /**
