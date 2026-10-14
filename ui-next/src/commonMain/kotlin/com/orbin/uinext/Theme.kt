@@ -20,7 +20,7 @@ import com.orbin.core.designsystem.theme.orbinTypography
 /**
  * The palette the entire interface is drawn from.
  *
- * Derived from the M3 eggplant color scheme — all fields map to named M3 color roles.
+ * Derived from the M3 forest green color scheme — all fields map to named M3 color roles.
  * Flat, matte: no alpha fills, no frosted chrome, no gradient scrims. Surface hierarchy
  * is expressed through tonal fills (raised/elevated) rather than transparency or shadows.
  *
@@ -44,7 +44,7 @@ data class NextPalette(
     val faint: Color,
     /** Separator line — M3 `outlineVariant`. Very soft, no hard border. */
     val hairline: Color,
-    /** Interactive accent — M3 `primary` (eggplant). */
+    /** Interactive accent — M3 `primary` (forest green). */
     val accent: Color,
     /** Soft accent fill for chips / selected rows — M3 `primaryContainer`. */
     val accentSoft: Color,
@@ -72,15 +72,15 @@ val next: NextPalette
     @Composable get() = LocalNext.current
 
 /**
- * Installs the M3 eggplant design system as [LocalNext] and wires it into [MaterialTheme].
+ * Installs the M3 forest green design system as [LocalNext] and wires it into [MaterialTheme].
  *
  * The palette is derived from the resolved [MaterialTheme.colorScheme] via [nextPaletteFromM3],
- * so dynamic color and the static eggplant scheme both flow through identical code paths.
+ * so dynamic color and the static forest green scheme both flow through identical code paths.
  *
- * Brand accent is eggplant on every platform ([NextPalette.accent]). When [platform] is
+ * Brand accent is forest green on every platform ([NextPalette.accent]). When [platform] is
  * [NextPlatform.IOS], control chrome adapts to iOS: [NextHighlightIndication] for press,
  * UISwitch-like [PlatformSwitch] metrics/colors, and [FontFamily.SansSerif] (SF on Apple).
- * Android keeps Material ripple and Material Switch. The eggplant brand color is intentional
+ * Android keeps Material ripple and Material Switch. The forest green brand color is intentional
  * on iOS — not system blue — so both apps share one identity while controls feel native.
  *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
@@ -229,8 +229,8 @@ fun boardHue(board: String): Color {
 /**
  * Placeholder artwork for unloaded thumbnails.
  *
- * Soft two-stop gradients varied by position. Light gradients use eggplant-adjacent
- * tints (lavender/mauve/rose); dark gradients are deep muted fills matching the dark surface.
+ * Soft two-stop gradients varied by position. Light gradients use forest-adjacent
+ * tints (mint/sage/moss); dark gradients are deep muted fills matching the dark surface.
  */
 @Composable
 fun placeholderArt(seed: Int): Brush {
@@ -238,18 +238,18 @@ fun placeholderArt(seed: Int): Brush {
     val pairs =
         if (dark) {
             listOf(
-                Color(0xFF3D2B47) to Color(0xFF241832),
-                Color(0xFF3B2A3A) to Color(0xFF231829),
+                Color(0xFF1F3A28) to Color(0xFF142018),
+                Color(0xFF243526) to Color(0xFF152019),
                 Color(0xFF2A3545) to Color(0xFF192130),
-                Color(0xFF3A2A44) to Color(0xFF22182A),
+                Color(0xFF2E3A22) to Color(0xFF1C2714),
                 Color(0xFF2E3520) to Color(0xFF1C2113),
             )
         } else {
             listOf(
-                Color(0xFFEFDAFF) to Color(0xFFDEC3F2), // lavender
-                Color(0xFFFFD9E1) to Color(0xFFF2C4CF), // rose
-                Color(0xFFDFE3FF) to Color(0xFFC8CDF5), // periwinkle
-                Color(0xFFE8F5E9) to Color(0xFFCAE6CB), // sage
+                Color(0xFFC8EAD4) to Color(0xFFA8D8B8), // mint
+                Color(0xFFD4E8D6) to Color(0xFFB8D4BA), // sage
+                Color(0xFFE8F5E9) to Color(0xFFCAE6CB), // soft green
+                Color(0xFFDCE5DB) to Color(0xFFC0C9BF), // moss
                 Color(0xFFFFEDD5) to Color(0xFFF2D8BA), // warm cream
             )
         }

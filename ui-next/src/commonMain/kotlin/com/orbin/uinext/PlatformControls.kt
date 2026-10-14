@@ -111,7 +111,7 @@ fun PlatformSwitch(
 }
 
 /**
- * UISwitch-like metrics and colors for iOS. Brand eggplant stays elsewhere in the shell;
+ * UISwitch-like metrics and colors for iOS. Brand forest green stays elsewhere in the shell;
  * the switch itself uses system green / grey chrome so it reads as a native control.
  */
 @Composable

@@ -35,7 +35,7 @@
 
     <!-- Segmented control (Posts | Files) + Bell icon -->
     <rect x="444" y="118" width="260" height="36" rx="18" fill="#F0F2F7"/>
-    <rect x="446" y="120" width="128" height="32" rx="16" fill="#E8DCF8"/>
+    <rect x="446" y="120" width="128" height="32" rx="16" fill="#C8EAD4"/>
     <text x="510" y="141" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#202431">Posts</text>
     <text x="640" y="141" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="500" fill="#5A6272">Files</text>
 
@@ -54,7 +54,7 @@
     <text x="456" y="228" font-family="Arial,sans-serif" font-size="12" fill="#202431">for about eight months now. Idle draw is under</text>
     <text x="456" y="244" font-family="Arial,sans-serif" font-size="12" fill="#202431">four watts and it has not fallen over once.</text>
     <!-- Media preview in soft pink -->
-    <rect x="456" y="256" width="288" height="144" rx="10" fill="#FAD1D8"/>
+    <rect x="456" y="256" width="288" height="144" rx="10" fill="#FFDDB6"/>
 
     <!-- Reply Card 1 -->
     <rect x="440" y="428" width="320" height="88" rx="14" fill="#FFFFFF" stroke="#E9EDF6"/>
@@ -79,8 +79,8 @@
 
     <!-- Floating Top/Bottom pill -->
     <rect x="670" y="654" width="82" height="32" rx="16" fill="#EDE4F4" stroke="#D8C8E8"/>
-    <text x="688" y="674" font-family="Arial,sans-serif" font-size="10.5" font-weight="600" fill="#3D3050">Top</text>
-    <text x="724" y="674" font-family="Arial,sans-serif" font-size="10.5" font-weight="600" fill="#3D3050">Bottom</text>
+    <text x="688" y="674" font-family="Arial,sans-serif" font-size="10.5" font-weight="600" fill="#1F5D3A">Top</text>
+    <text x="724" y="674" font-family="Arial,sans-serif" font-size="10.5" font-weight="600" fill="#1F5D3A">Bottom</text>
   </g>
 
   <!-- Right callouts -->

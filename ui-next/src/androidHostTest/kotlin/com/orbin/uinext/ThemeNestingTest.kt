@@ -55,7 +55,7 @@ class ThemeNestingTest {
         assertTrue(paletteUnder { it() }.dark)
     }
 
-    /** AMOLED blackens the ground; plain dark keeps its aubergine ground and surfaces. */
+    /** AMOLED blackens the ground; plain dark keeps its forest green ground and surfaces. */
     @Test
     fun `amoled reaches a nested screen and blackens the ground`() {
         lateinit var amoled: NextPalette

@@ -6,7 +6,7 @@
     <color name="orbinx_navigation_bar">#212121</color>
     <color name="orbinx_window_background">#212121</color>
 
-    <!-- Orbin cosmic eggplant launcher and splash theme -->
-    <color name="ic_launcher_background">#24172E</color>
-    <color name="splash_background">#24172E</color>
+    <!-- Orbin forest green launcher and splash theme -->
+    <color name="ic_launcher_background">#142018</color>
+    <color name="splash_background">#142018</color>
 </resources>
