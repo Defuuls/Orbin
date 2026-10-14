@@ -52,23 +52,23 @@
 
     <!-- Single Column Card -->
     <rect x="394" y="238" width="272" height="268" rx="16" fill="#FFFFFF" stroke="#E5EAF3" stroke-width="1"/>
-    <!-- Uncropped media preview in soft lavender -->
-    <rect x="394" y="238" width="272" height="156" rx="16" fill="#E8DCF8"/>
+    <!-- Uncropped media preview in soft mint -->
+    <rect x="394" y="238" width="272" height="156" rx="16" fill="#C8EAD4"/>
     <rect x="394" y="378" width="272" height="16" fill="#FFFFFF"/>
     <!-- Post text and metadata -->
     <text x="408" y="412" font-family="Arial,sans-serif" font-size="10" fill="#778092">4m</text>
     <text x="408" y="430" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#1D2233">Anyone else running a home server on ARM?</text>
-    <text x="408" y="448" font-family="Arial,sans-serif" font-size="10" fill="#778092">#8834912 · 218 replies · 31 files</text>
+    <text x="408" y="448" font-family="Arial,sans-serif" font-size="10" fill="#778092">#276A3C2 · 218 replies · 31 files</text>
     <text x="408" y="472" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">Been running a small NAS on an ARM board for about</text>
     <text x="408" y="488" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">8 months now. Idle draw is under four watts...</text>
 
     <!-- Peeking second card -->
-    <rect x="394" y="516" width="272" height="40" rx="16" fill="#FAD1D8"/>
+    <rect x="394" y="516" width="272" height="40" rx="16" fill="#FFDDB6"/>
 
     <!-- Bottom Navigation Bar (Feed · Downloads · Boards) -->
     <rect x="376" y="556" width="308" height="60" fill="#F4F5F9" stroke="#E6E9F0" stroke-width="1"/>
     <!-- Active Feed tab pill -->
-    <rect x="388" y="562" width="86" height="34" rx="17" fill="#E8DCF8"/>
+    <rect x="388" y="562" width="86" height="34" rx="17" fill="#C8EAD4"/>
     <path d="M431 568l6 5v7h-4v-4h-4v4h-4v-7z" fill="#202431"/>
     <text x="431" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" font-weight="700" fill="#202431">Feed</text>
     <!-- Downloads tab -->

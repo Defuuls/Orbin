@@ -38,7 +38,7 @@ fun Modifier.nextElevatedSurface(shape: Shape): Modifier =
  * Accent container surface — M3 primaryContainer fill.
  *
  * Used for selected/active state fills: selected nav indicator, active chip background,
- * highlighted feed rows. The tonal eggplant fill communicates selection without a border.
+ * highlighted feed rows. The tonal forest green fill communicates selection without a border.
  */
 @Composable
 fun Modifier.nextAccentSurface(shape: Shape): Modifier =

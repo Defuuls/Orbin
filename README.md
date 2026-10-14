@@ -69,8 +69,8 @@ does not post, reply, or create threads.
 ### Personalization and accessibility
 
 - **Material 3 Expressive redesign.** Flat, matte surfaces, tonal selection containers (`primaryContainer`),
-  expressive shape scale (24dp cards, 28dp sheets), and `SpringSpec` physics seeded from a soft eggplant
-  palette (`#7B4F8A`).
+  expressive shape scale (24dp cards, 28dp sheets), and `SpringSpec` physics seeded from a forest green
+  palette (`#276A3C`).
 - Dynamic color, light/dark/AMOLED modes, global font scaling, and Color themes
   (Yotsuba, Warosu, Miku, Lain, and more) that recolor the Next shell including Feed.
 - **Cosmic orbit app icon.** Stylized planetary orbit mark with deep space hues and monochrome

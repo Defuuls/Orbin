@@ -48,45 +48,45 @@ fun nextPaletteFromColorScheme(
 
 /**
  * Fallback static palette (used when M3 color scheme is not yet available, e.g. preview context).
- * These mirror the eggplant static scheme values from Color.kt.
+ * These mirror the forest green static scheme values from Color.kt.
  */
 internal val LightPalette =
     NextPalette(
-        background = Color(0xFFFFFBFF),
-        raised = Color(0xFFF9F3F9),
-        elevated = Color(0xFFF3EDF3),
-        ink = Color(0xFF1D1B1E),
-        muted = Color(0xFF1D1B1E).copy(alpha = 0.75f),
-        faint = Color(0xFF1D1B1E).copy(alpha = 0.62f),
-        hairline = Color(0xFFCEC2CF),
-        accent = Color(0xFF7B4F8A),
-        accentSoft = Color(0xFFF3DAFF),
+        background = Color(0xFFF7FBF7),
+        raised = Color(0xFFF1F7F1),
+        elevated = Color(0xFFECF2EC),
+        ink = Color(0xFF191C19),
+        muted = Color(0xFF191C19).copy(alpha = 0.75f),
+        faint = Color(0xFF191C19).copy(alpha = 0.62f),
+        hairline = Color(0xFFC0C9BF),
+        accent = Color(0xFF276A3C),
+        accentSoft = Color(0xFFC8EAD4),
         onAccent = Color(0xFFFFFFFF),
-        accentContainer = Color(0xFFF3DAFF),
-        onAccentContainer = Color(0xFF2E0042),
+        accentContainer = Color(0xFFC8EAD4),
+        onAccentContainer = Color(0xFF00210E),
         dark = false,
         amoled = false,
     )
 
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF1A1320),
-        raised = Color(0xFF221A28),
-        elevated = Color(0xFF2A2131),
-        ink = Color(0xFFE8E0E9),
-        muted = Color(0xFFE8E0E9).copy(alpha = 0.75f),
-        faint = Color(0xFFE8E0E9).copy(alpha = 0.60f),
-        hairline = Color(0xFF4D4050),
-        accent = Color(0xFFDFACF0),
-        accentSoft = Color(0xFF613472),
-        onAccent = Color(0xFF481A5A),
-        accentContainer = Color(0xFF613472),
-        onAccentContainer = Color(0xFFF3DAFF),
+        background = Color(0xFF101A12),
+        raised = Color(0xFF182019),
+        elevated = Color(0xFF1C271E),
+        ink = Color(0xFFE0E8E0),
+        muted = Color(0xFFE0E8E0).copy(alpha = 0.75f),
+        faint = Color(0xFFE0E8E0).copy(alpha = 0.60f),
+        hairline = Color(0xFF404941),
+        accent = Color(0xFFA3D4AF),
+        accentSoft = Color(0xFF1F5D3A),
+        onAccent = Color(0xFF00391A),
+        accentContainer = Color(0xFF1F5D3A),
+        onAccentContainer = Color(0xFFC8EAD4),
         dark = true,
         amoled = false,
     )
 
-// Dark mode is aubergine; only the AMOLED option keeps a true-black ground.
+// Dark mode is deep forest; only the AMOLED option keeps a true-black ground.
 internal val AmoledPalette =
     DarkPalette.copy(
         background = Color.Black,
