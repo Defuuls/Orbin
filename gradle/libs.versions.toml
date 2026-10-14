@@ -32,8 +32,8 @@ composeMultiplatform = "1.12.1"
 composeMultiplatformMaterial3 = "1.9.0"
 composeMultiplatformIcons = "1.7.3"
 navigationCompose = "2.10.2"
-paging = "3.5.1"
-pagingCompose = "3.5.1"
+paging = "3.5.2"
+pagingCompose = "3.5.2"
 
 # DI
 # 2.59 is the first Hilt release whose Gradle plugin supports (and requires) AGP 9;
@@ -45,7 +45,7 @@ hiltNavigationCompose = "1.4.0"
 room = "2.8.5"
 sqlite = "2.7.0"
 datastore = "1.2.1"
-okio = "3.9.0"
+okio = "3.18.2"
 securityCrypto = "1.1.0"
 sqlcipher = "4.19.1"
 

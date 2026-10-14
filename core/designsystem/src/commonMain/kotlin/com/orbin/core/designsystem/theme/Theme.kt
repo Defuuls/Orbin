@@ -10,86 +10,86 @@ import androidx.compose.ui.graphics.Color
 /** Whether the app follows the system theme or is forced light/dark. */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-// ── Static M3 light scheme (eggplant seed) ────────────────────────────────
+// ── Static M3 light scheme (forest green seed) ────────────────────────────────
 private val LightColors =
     lightColorScheme(
-        primary = EggplantPrimary,
-        onPrimary = EggplantOnPrimary,
-        primaryContainer = EggplantPrimaryContainer,
-        onPrimaryContainer = EggplantOnPrimaryContainer,
-        secondary = EggplantSecondary,
-        onSecondary = EggplantOnSecondary,
-        secondaryContainer = EggplantSecondaryContainer,
-        onSecondaryContainer = EggplantOnSecondaryContainer,
-        tertiary = EggplantTertiary,
-        onTertiary = EggplantOnTertiary,
-        tertiaryContainer = EggplantTertiaryContainer,
-        onTertiaryContainer = EggplantOnTertiaryContainer,
-        error = EggplantError,
-        onError = EggplantOnError,
-        errorContainer = EggplantErrorContainer,
-        onErrorContainer = EggplantOnErrorContainer,
-        background = EggplantBackground,
-        onBackground = EggplantOnBackground,
-        surface = EggplantSurface,
-        onSurface = EggplantOnSurface,
-        surfaceVariant = EggplantSurfaceVariant,
-        onSurfaceVariant = EggplantOnSurfaceVariant,
-        surfaceTint = EggplantPrimary,
-        inverseSurface = EggplantInverseSurface,
-        inverseOnSurface = EggplantInverseOnSurface,
-        inversePrimary = EggplantInversePrimary,
-        outline = EggplantOutline,
-        outlineVariant = EggplantOutlineVariant,
-        scrim = EggplantScrim,
-        surfaceContainerLowest = EggplantSurfaceContainerLowest,
-        surfaceContainerLow = EggplantSurfaceContainerLow,
-        surfaceContainer = EggplantSurfaceContainer,
-        surfaceContainerHigh = EggplantSurfaceContainerHigh,
-        surfaceContainerHighest = EggplantSurfaceContainerHighest,
+        primary = ForestPrimary,
+        onPrimary = ForestOnPrimary,
+        primaryContainer = ForestPrimaryContainer,
+        onPrimaryContainer = ForestOnPrimaryContainer,
+        secondary = ForestSecondary,
+        onSecondary = ForestOnSecondary,
+        secondaryContainer = ForestSecondaryContainer,
+        onSecondaryContainer = ForestOnSecondaryContainer,
+        tertiary = ForestTertiary,
+        onTertiary = ForestOnTertiary,
+        tertiaryContainer = ForestTertiaryContainer,
+        onTertiaryContainer = ForestOnTertiaryContainer,
+        error = ForestError,
+        onError = ForestOnError,
+        errorContainer = ForestErrorContainer,
+        onErrorContainer = ForestOnErrorContainer,
+        background = ForestBackground,
+        onBackground = ForestOnBackground,
+        surface = ForestSurface,
+        onSurface = ForestOnSurface,
+        surfaceVariant = ForestSurfaceVariant,
+        onSurfaceVariant = ForestOnSurfaceVariant,
+        surfaceTint = ForestPrimary,
+        inverseSurface = ForestInverseSurface,
+        inverseOnSurface = ForestInverseOnSurface,
+        inversePrimary = ForestInversePrimary,
+        outline = ForestOutline,
+        outlineVariant = ForestOutlineVariant,
+        scrim = ForestScrim,
+        surfaceContainerLowest = ForestSurfaceContainerLowest,
+        surfaceContainerLow = ForestSurfaceContainerLow,
+        surfaceContainer = ForestSurfaceContainer,
+        surfaceContainerHigh = ForestSurfaceContainerHigh,
+        surfaceContainerHighest = ForestSurfaceContainerHighest,
     )
 
-// ── Static M3 dark scheme (eggplant seed) ─────────────────────────────────
+// ── Static M3 dark scheme (forest green seed) ─────────────────────────────────
 private val DarkColors =
     darkColorScheme(
-        primary = EggplantDarkPrimary,
-        onPrimary = EggplantDarkOnPrimary,
-        primaryContainer = EggplantDarkPrimaryContainer,
-        onPrimaryContainer = EggplantDarkOnPrimaryContainer,
-        secondary = EggplantDarkSecondary,
-        onSecondary = EggplantDarkOnSecondary,
-        secondaryContainer = EggplantDarkSecondaryContainer,
-        onSecondaryContainer = EggplantDarkOnSecondaryContainer,
-        tertiary = EggplantDarkTertiary,
-        onTertiary = EggplantDarkOnTertiary,
-        tertiaryContainer = EggplantDarkTertiaryContainer,
-        onTertiaryContainer = EggplantDarkOnTertiaryContainer,
-        error = EggplantDarkError,
-        onError = EggplantDarkOnError,
-        errorContainer = EggplantDarkErrorContainer,
-        onErrorContainer = EggplantDarkOnErrorContainer,
-        background = EggplantDarkBackground,
-        onBackground = EggplantDarkOnBackground,
-        surface = EggplantDarkSurface,
-        onSurface = EggplantDarkOnSurface,
-        surfaceVariant = EggplantDarkSurfaceVariant,
-        onSurfaceVariant = EggplantDarkOnSurfaceVariant,
-        surfaceTint = EggplantDarkPrimary,
-        inverseSurface = EggplantDarkInverseSurface,
-        inverseOnSurface = EggplantDarkInverseOnSurface,
-        inversePrimary = EggplantDarkInversePrimary,
-        outline = EggplantDarkOutline,
-        outlineVariant = EggplantDarkOutlineVariant,
-        scrim = EggplantScrim,
-        surfaceContainerLowest = EggplantDarkSurfaceContainerLowest,
-        surfaceContainerLow = EggplantDarkSurfaceContainerLow,
-        surfaceContainer = EggplantDarkSurfaceContainer,
-        surfaceContainerHigh = EggplantDarkSurfaceContainerHigh,
-        surfaceContainerHighest = EggplantDarkSurfaceContainerHighest,
+        primary = ForestDarkPrimary,
+        onPrimary = ForestDarkOnPrimary,
+        primaryContainer = ForestDarkPrimaryContainer,
+        onPrimaryContainer = ForestDarkOnPrimaryContainer,
+        secondary = ForestDarkSecondary,
+        onSecondary = ForestDarkOnSecondary,
+        secondaryContainer = ForestDarkSecondaryContainer,
+        onSecondaryContainer = ForestDarkOnSecondaryContainer,
+        tertiary = ForestDarkTertiary,
+        onTertiary = ForestDarkOnTertiary,
+        tertiaryContainer = ForestDarkTertiaryContainer,
+        onTertiaryContainer = ForestDarkOnTertiaryContainer,
+        error = ForestDarkError,
+        onError = ForestDarkOnError,
+        errorContainer = ForestDarkErrorContainer,
+        onErrorContainer = ForestDarkOnErrorContainer,
+        background = ForestDarkBackground,
+        onBackground = ForestDarkOnBackground,
+        surface = ForestDarkSurface,
+        onSurface = ForestDarkOnSurface,
+        surfaceVariant = ForestDarkSurfaceVariant,
+        onSurfaceVariant = ForestDarkOnSurfaceVariant,
+        surfaceTint = ForestDarkPrimary,
+        inverseSurface = ForestDarkInverseSurface,
+        inverseOnSurface = ForestDarkInverseOnSurface,
+        inversePrimary = ForestDarkInversePrimary,
+        outline = ForestDarkOutline,
+        outlineVariant = ForestDarkOutlineVariant,
+        scrim = ForestScrim,
+        surfaceContainerLowest = ForestDarkSurfaceContainerLowest,
+        surfaceContainerLow = ForestDarkSurfaceContainerLow,
+        surfaceContainer = ForestDarkSurfaceContainer,
+        surfaceContainerHigh = ForestDarkSurfaceContainerHigh,
+        surfaceContainerHighest = ForestDarkSurfaceContainerHighest,
     )
 
 /**
- * Color scheme variant. [ORBIN] is the eggplant M3 scheme (static or dynamic).
+ * Color scheme variant. [ORBIN] is the forest green M3 scheme (static or dynamic).
  * Imageboard skins continue to work via their [ChanThemeSeeds], applied only to
  * content surfaces — the app shell always uses [ORBIN].
  */
@@ -410,10 +410,10 @@ private val YukkuriSeeds =
     )
 
 /**
- * The Orbin Material 3 theme — eggplant-seeded, flat, matte.
+ * The Orbin Material 3 theme — forest green-seeded, flat, matte.
  *
  * Where the platform offers dynamic color (Android 12+, which `minSdk` 31 guarantees) it is
- * preferred when [dynamicColor] is on; otherwise — and always on iOS — the static eggplant scheme
+ * preferred when [dynamicColor] is on; otherwise — and always on iOS — the static forest green scheme
  * applies. Imageboard skin [colorSchemeVariant]s apply only to the
  * content-level color scheme (post renderer, board surfaces) — the app shell reads M3 roles.
  *
@@ -471,7 +471,7 @@ fun OrbinTheme(
     )
 }
 
-/** Convenience for previews — non-dynamic eggplant light/dark. */
+/** Convenience for previews — non-dynamic forest green light/dark. */
 @Composable
 fun OrbinPreviewTheme(
     darkTheme: Boolean = false,
