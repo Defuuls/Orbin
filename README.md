@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [165 — Currant](https://github.com/Defuuls/Orbin/releases/tag/v165-Currant)
+**Current release:** [166 — Dragon Fruit](https://github.com/Defuuls/Orbin/releases/tag/v166-Dragon-Fruit)
 
-**What's new in 165:** Thread progress syncs between Android and iOS through your own WebDAV folder.
+**What's new in 166:** Save a whole thread as a page, with every image and video, to read offline in any browser.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
