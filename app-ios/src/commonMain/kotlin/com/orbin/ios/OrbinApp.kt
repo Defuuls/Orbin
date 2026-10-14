@@ -576,7 +576,9 @@ private fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
-        val loops = playsPreview && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        val canLoop = playsPreview && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        // One preview loops at a time, as on Android: each is a web view and a video decoder.
+        val loops = rememberInlineLoopSlot(thread.key.toString(), canLoop)
         SharpImage(
             attachment,
             contentDescription = null,
