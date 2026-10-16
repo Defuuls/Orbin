@@ -68,6 +68,8 @@ class ReaderSettings(
 /** What the settings rows are called; the screen dispatches on these. */
 internal object SettingIds {
     const val HIDE_NSFW = "hideNsfw"
+    const val PRIVACY = "privacy"
+    const val CONTACT = "contact"
     const val COVER_VIOLENT = "coverViolent"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
@@ -161,6 +163,18 @@ internal fun settingsGroups(
                         },
                     kind = SettingKind.ACTION,
                 ),
+                SettingItem(
+                    id = SettingIds.PRIVACY,
+                    label = "Privacy policy",
+                    value = "Open",
+                    kind = SettingKind.ACTION,
+                ),
+                SettingItem(
+                    id = SettingIds.CONTACT,
+                    label = "Contact and feedback",
+                    value = "GitHub",
+                    kind = SettingKind.ACTION,
+                ),
                 versionRow(version),
             ).filterNotNull(),
     )
@@ -220,3 +234,7 @@ private fun toggle(
 
 /** SYSTEM -> "System", as Android labels it. */
 private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar(Char::uppercase)
+
+/** Where the privacy policy and the contact address live: the project's own repository. */
+internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
+internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin/issues"

@@ -344,6 +344,7 @@ private fun SettingsDestination(
     val syncStatus by remember(sync) { sync?.state ?: flowOf(null) }.collectAsState(null)
     val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
+    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
@@ -420,6 +421,8 @@ private fun SettingsDestination(
                     Haptics.light()
                     backup.import()
                 }
+                SettingIds.PRIVACY -> uriHandler.openUri(PRIVACY_POLICY_URL)
+                SettingIds.CONTACT -> uriHandler.openUri(CONTACT_URL)
                 SyncSettingIds.FOLDER, SyncSettingIds.USERNAME, SyncSettingIds.PASSWORD -> {
                     Haptics.light()
                     expanded = if (expanded == item.id) null else item.id

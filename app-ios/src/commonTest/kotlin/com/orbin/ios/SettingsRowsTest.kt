@@ -31,6 +31,19 @@ class SettingsRowsTest {
     }
 
     @Test
+    fun thePrivacyPolicyAndContactAreReachableFromSettings() {
+        val rows =
+            settingsGroups(AppSettings(), clearArmed = false, imageCacheCleared = false)
+                .flatMap { it.second }
+                .associateBy { it.id }
+
+        assertEquals(SettingKind.ACTION, rows.getValue(SettingIds.PRIVACY).kind)
+        assertEquals(SettingKind.ACTION, rows.getValue(SettingIds.CONTACT).kind)
+        assertTrue(PRIVACY_POLICY_URL.startsWith("https://"))
+        assertTrue(CONTACT_URL.startsWith("https://"))
+    }
+
+    @Test
     fun anIpadChoosesItsFeedAndCatalogColumnsAndAnIphoneDoesNot() {
         fun rows(formFactor: FormFactor) =
             settingsGroups(
