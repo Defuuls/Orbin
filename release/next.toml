@@ -1,29 +1,23 @@
-# Orbin 167 - Guava
+# Orbin 168 - Romanesco
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 167
-codename     = "Guava"
-version_code = 185
+number       = 168
+codename     = "Romanesco"
+version_code = 186
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Smoother scrolling on iOS, pull to refresh that fetches fresh pages, and updated libraries."
+highlight = "One forest-green palette and one type scale across Android and iOS."
 
 summary = [
-  "bump Orbin to 167-Guava / versionCode 185",
-  "iOS scrolling performance, fresh pull to refresh, privacy policy, dependency updates",
+  "bump Orbin to 168-Romanesco / versionCode 186",
+  "uniform colours and type across Android and iOS",
 ]
 
 [changelog]
-Added = [
-  "iOS: Settings links to Orbin's privacy policy and to the project's issues page for contact and feedback.",
-]
-Changed = [
-  "Updated Kotlin to 2.4.21, Okio to 3.18.2, the Gradle wrapper to 9.8.1 and the AndroidX libraries.",
-]
 Fixed = [
-  "iOS: lists scroll smoothly again. Video thumbnails are read natively instead of through a web view each, only one catalog preview loops at a time, and pictures no longer redraw on every frame while scrolling.",
-  "iOS: pulling to refresh fetches the page from the site instead of a copy up to a minute old.",
+  "Android and iOS now draw with the same forest-green palette. Android had kept Material's default purple for its accents and bars while its containers were green, so screens mixed the two; every Material control now takes its colour from Orbin's palette.",
+  "One type scale everywhere: Material controls and Orbin's own text use the same fonts, sizes and weights (the platform's system font on each), and the last hand-sized labels use it too.",
 ]
