@@ -1,13 +1,26 @@
 name: Deploy Pages
 
-# Publishes the static landing page in site/ to GitHub Pages whenever it changes on main.
+# Publishes the landing page to GitHub Pages. site/index.html is a template that
+# scripts/build_site.py fills from CHANGELOG.md (current release, What's new), so the page is
+# rebuilt whenever the site, the changelog or the version changes on main, after every Release
+# run (which can't trigger a push event itself), and weekly as a safety net.
 on:
   push:
     branches:
       - main
     paths:
       - 'site/**'
+      - 'CHANGELOG.md'
+      - 'docs/assets/**'
+      - 'gradle.properties'
+      - 'scripts/build_site.py'
       - '.github/workflows/pages.yml'
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +41,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Build site from the changelog
+        run: python3 scripts/build_site.py --out _site
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
@@ -37,7 +55,7 @@ jobs:
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: site
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

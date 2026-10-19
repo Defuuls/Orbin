@@ -162,6 +162,10 @@ jobs:
             gh pr create --base main --head "$BRANCH" \
               --title "chore: Prepare v${VERSION_NAME} release" --body-file /tmp/pr-body.md
           fi
+          # Merges itself once its required checks pass, so a release needs no hand-off. With
+          # GITHUB_TOKEN those checks never start (see above), so this only completes on its own
+          # when RELEASE_BOT_TOKEN is set. A repo without auto-merge enabled just skips it.
+          gh pr merge "$BRANCH" --auto --squash || echo "::warning::Could not enable auto-merge on the release PR"
 
       - name: Verify the merged release metadata
         if: steps.phase.outputs.mode == 'publish'

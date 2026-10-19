@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orbin — a modern imageboard browser for Android</title>
-  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
+  <title>Orbin — a modern imageboard browser for Android and iOS</title>
+  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
   <meta name="theme-color" content="#276A3C" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#15161B" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Orbin — a modern imageboard client for Android">
-  <meta property="og:description" content="A modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
+  <meta property="og:title" content="Orbin — a modern imageboard reader for Android and iOS">
+  <meta property="og:description" content="A modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
   <meta property="og:url" content="https://defuuls.github.io/Orbin/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Orbin — a modern imageboard client for Android">
-  <meta name="twitter:description" content="A modern, fast, and beautiful open-source imageboard client for Android, built with Kotlin, Jetpack Compose, and Material 3 Expressive.">
+  <meta name="twitter:title" content="Orbin — a modern imageboard reader for Android and iOS">
+  <meta name="twitter:description" content="A modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23276A3C'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%23F7FBF7'/%3E%3Ccircle cx='49' cy='19' r='6' fill='%23C8EAD4'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -70,6 +70,10 @@
     nav { margin-left: auto; display: flex; gap: 1rem; flex-wrap: wrap; }
     nav a { color: var(--text-muted); text-decoration: none; font-size: .95rem; }
     nav a:hover { color: var(--accent); }
+    @media (max-width: 640px) {
+      nav { flex-wrap: nowrap; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+      nav a { white-space: nowrap; }
+    }
 
     .hero { text-align: center; padding: 4.5rem 0 3rem; }
     .hero h1 { font-size: clamp(2.4rem, 6vw, 3.4rem); letter-spacing: -.02em; }
@@ -131,6 +135,12 @@
     ul.links { list-style: none; display: grid; gap: .5rem; margin-top: .75rem; }
     ul.links li::before { content: "→ "; color: var(--accent); }
 
+    .release { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.4rem; margin-bottom: 1rem; }
+    .release h3 { font-size: 1.1rem; }
+    .release time { color: var(--text-muted); font-size: .9rem; font-weight: 400; margin-left: .4rem; }
+    .release h4 { font-size: .9rem; margin-top: .6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .release ul { padding-left: 1.2rem; margin-top: .25rem; }
+    .release li { font-size: .95rem; margin: .2rem 0; }
     footer {
       border-top: 1px solid var(--border);
       padding: 2rem 0 2.5rem; color: var(--text-muted); font-size: .9rem;
@@ -150,8 +160,10 @@
     </a>
     <nav>
       <a href="#about">About</a>
+      <a href="#whats-new">What&rsquo;s new</a>
       <a href="#screenshots">Screenshots</a>
-      <a href="#download">Download</a>
+      <a href="#download">Android</a>
+      <a href="#ios">iOS</a>
       <a href="#privacy">Privacy</a>
       <a href="#development">Development</a>
       <a href="https://github.com/Defuuls/Orbin">GitHub</a>
@@ -161,14 +173,15 @@
 
 <section class="hero wrap">
   <h1>Orbin</h1>
-  <p class="tagline">A modern, fast, and beautiful open-source imageboard client for Android — built with Kotlin, Jetpack Compose, and Material 3 Expressive.</p>
+  <p class="tagline">A fast, private, open-source imageboard reader for Android and iOS — one shared Kotlin codebase, native on both.</p>
   <div class="cta">
-    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download APK</a>
+    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download for Android</a>
+    <a class="btn btn-secondary" href="#ios">iOS beta</a>
     <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
   </div>
-  <p class="note">Free and AGPLv3-licensed, forever. Not available on Google Play — releases are signed and published on GitHub.</p>
-  <p class="note">Current release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/v155-Ugli">155 — Ugli</a></strong> (2026-09-26).</p>
-  <p class="note">What&rsquo;s new in 155: <em>Release pages carry just the app and its checksum.</em></p>
+  <p class="note">Free and AGPLv3-licensed. Not on Google Play or the App Store — Android releases are signed and published on GitHub.</p>
+  <p class="note">Current release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/{{RELEASE_TAG}}">{{RELEASE_NUMBER}} — {{RELEASE_CODENAME}}</a></strong>{{RELEASE_DATE}}.</p>
+  {{RELEASE_HIGHLIGHT}}
 </section>
 
 <section id="about" class="alt">
@@ -183,65 +196,68 @@
     <div class="grid">
       <div class="card">
         <h3>Subscribed feed</h3>
-        <p>Followed boards grouped A–Z with the most recently active threads first within each board. On phones, the feed displays as a single column of full-width cards with uncropped media down to 9:16 and up to eight lines of readable post text (with HTML entities decoded and line breaks kept). Automatically detects foldables and tablets with customizable column counts. Pull down to refresh; media stays quiet until opened.</p>
+        <p>Follow boards and read their most active threads in one feed, grouped by board. Phones show full-width cards; tablets and foldables get adjustable columns. Pull down to refresh.</p>
       </div>
       <div class="card">
-        <h3>Readable grid-first catalogs</h3>
-        <p>Board catalogs use an adaptive card grid where the opening post&rsquo;s media is shown uncropped at its true aspect ratio instead of a center crop. Wide screens (840dp+) can keep catalog and thread side by side in a two-pane layout without losing navigation state.</p>
+        <h3>Catalogs and two-pane reading</h3>
+        <p>Board catalogs are an adaptive grid of every thread. On a wide screen the catalog stays beside the open thread.</p>
       </div>
       <div class="card">
-        <h3>Rich thread viewer</h3>
-        <p>Native post markup with greentext, quote links, inline quote previews, backlinks, relative timestamps (just now, 5m, 2h), collapsible replies, tap-to-reveal spoilers, persistent reading position, and thread-watching notifications. Plus, deduplicate and save external thread links as a clean text file to <code>Downloads/Orbin</code>.</p>
+        <h3>Thread reader</h3>
+        <p>Greentext, quote links with previews, backlinks, spoilers, collapsible posts, relative times, a Files view of every attachment, and a remembered reading position. Watch a thread to be told about new replies.</p>
       </div>
       <div class="card">
-        <h3>Downloads tab</h3>
-        <p>The dedicated middle tab lists everything you&rsquo;ve saved, complete with real-time download progress and one-tap retry for failed files. Media files are neatly organized in <code>Downloads/Orbin</code> by board and thread.</p>
+        <h3>Save a whole thread</h3>
+        <p><strong>Save page</strong> writes a thread as a .zip: an <code>index.html</code> that opens in any browser, its stylesheet, and every image, video and thumbnail. <strong>Download all</strong> saves just the files.</p>
       </div>
       <div class="card">
-        <h3>Board media walls &amp; deep scan</h3>
-        <p>Every board catalog includes a dedicated Media wall to sweep all files on that board. An opt-in deep scan walks threads to discover reply attachments too &mdash; slower, and far more thorough than a catalog sweep alone.</p>
+        <h3>Sync between devices</h3>
+        <p>Point Orbin at your own WebDAV folder (Nextcloud, Synology, …) and read threads, where you stopped reading, and bookmarks follow you between Android and iOS. Nothing goes through a server of ours.</p>
       </div>
       <div class="card">
-        <h3>Media done right</h3>
-        <p>Hardware-accelerated Media3 playback with background preloading, pinch-to-zoom, and double-tap zoom on spot. Double-tap left or right to skip 5 seconds (+15s cumulative), drag to scrub with a timestamp bubble, auto-resume longer videos, and swipe up/down to navigate or dismiss. Videos start muted, and unmuting carries over until Orbin closes.</p>
+        <h3>Media</h3>
+        <p>Images and video in the app, with zoom, swipe between files, and video controls. Each board has a media wall of its files, with an optional deep scan that finds files in replies too.</p>
       </div>
       <div class="card">
-        <h3>Content filter &amp; violent media cover</h3>
-        <p>An always-on keyword filter removes gore, shock, and abuse across every board, feed, and search. Additionally, Cover violent media (on by default in Settings) places a spoiler cover over images and videos in posts referencing violence, accidents, or graphic footage until you choose to open them.</p>
-      </div>
-
-      <div class="card">
-        <h3>Make it yours</h3>
-        <p>Material 3 Expressive styling with flat matte surfaces, light/dark and true-black AMOLED modes, and Color themes (Yotsuba, Warosu, Miku, Lain, Apple, Banana, and more). Settings opens directly from the gear in the Feed header and is kept short and focused: only the options you need, with no cluttered menus.</p>
+        <h3>Content filter</h3>
+        <p>An always-on filter removes gore, shock and abuse from every board, feed and search. <em>Cover violent media</em> (on by default) hides pictures in posts about violence until you open them.</p>
       </div>
       <div class="card">
-        <h3>In-app updates</h3>
-        <p>Orbin checks for new releases on launch (at most once a day) or on demand via Settings &rarr; Check for updates. It downloads the signed APK, validates it against its published SHA-256 checksum and Orbin&rsquo;s signing key, and hands off to Android&rsquo;s installer with one tap.</p>
+        <h3>Looks and comfort</h3>
+        <p>Material 3 with dynamic colour on Android, light, dark and true-black modes, system font scaling, and screen-reader support. A <em>What&rsquo;s new</em> card after each update says what changed.</p>
       </div>
       <div class="card">
-        <h3>Private by default</h3>
-        <p>Everything local is encrypted at rest: Room database content with SQLCipher and preferences via encrypted DataStore with Android Keystore material. HTTPS-only networking with DNS-over-HTTPS (and automatic system resolver fallback), biometric app lock with FLAG_SECURE recents protection, disabled cloud backup, and user-controlled JSON backup export and import.</p>
+        <h3>Private by design</h3>
+        <p>No accounts, analytics or ads. Local data is encrypted at rest, every request is HTTPS with encrypted DNS, and an optional app lock keeps it closed. See the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a>.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="screenshots">
+<section id="whats-new">
+  <div class="wrap">
+    <h2>What&rsquo;s new</h2>
+    <p class="section-lead">The latest releases, straight from the <a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">changelog</a>.</p>
+    {{CHANGELOG}}
+  </div>
+</section>
+
+<section id="screenshots" class="alt">
   <div class="wrap">
     <h2>Screenshots</h2>
     <div class="shots">
-      <img src="assets/orbin-hero-screenshot.svg?v=155" alt="Orbin 155 Ugli feed on a compact phone with single-column cards, Color themes, and Downloads tab" loading="lazy">
-      <img src="assets/orbin-thread-screenshot.svg?v=155" alt="Orbin 155 Ugli thread viewer with Posts and Files switcher, watch notifications, and reply cards" loading="lazy">
-      <img src="assets/orbin-settings-screenshot.svg?v=155" alt="Orbin 155 Ugli settings with streamlined controls, true black, app lock, and in-app updates" loading="lazy">
+      <img src="assets/orbin-hero-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin feed on a phone with single-column cards" loading="lazy">
+      <img src="assets/orbin-thread-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin thread reader with the Posts and Files switcher and reply cards" loading="lazy">
+      <img src="assets/orbin-settings-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin settings with theme, true black and app lock" loading="lazy">
     </div>
   </div>
 </section>
 
-<section id="download" class="alt">
+<section id="download">
   <div class="wrap">
-    <h2>Download</h2>
+    <h2>Android</h2>
     <p class="section-lead">
-      Orbin requires <strong>Android 12 or newer</strong>. Signed APKs (<code>orbin-v&lt;version&gt;.apk</code>) are published on
+      Orbin for Android needs <strong>Android 12 or newer</strong>. Signed APKs (<code>orbin-v&lt;version&gt;.apk</code>) are published on
       <a href="https://github.com/Defuuls/Orbin/releases/latest">GitHub Releases</a> with SHA-256 checksums
       for every release.
     </p>
@@ -272,6 +288,22 @@
   </div>
 </section>
 
+<section id="ios" class="alt">
+  <div class="wrap">
+    <h2>iOS</h2>
+    <p class="section-lead">
+      Orbin for iPhone and iPad shares its sites, filters, settings and screens with Android through Kotlin
+      Multiplatform, with native video, the share sheet, Files and Photos, and Apple Pencil support on iPad.
+      It needs <strong>iOS 16 or newer</strong>.
+    </p>
+    <ol class="dl-steps">
+      <li><strong>It&rsquo;s in beta on TestFlight.</strong> Builds go to TestFlight testers with each release; Orbin isn&rsquo;t on the App Store.</li>
+      <li><strong>Same releases as Android.</strong> The iOS build carries the Android release&rsquo;s version and changelog, currently {{RELEASE_NUMBER}} — {{RELEASE_CODENAME}}.</li>
+      <li><strong>Build it yourself.</strong> The <a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS guide</a> covers building in Xcode and setting up your own TestFlight.</li>
+    </ol>
+  </div>
+</section>
+
 <section id="privacy">
   <div class="wrap">
     <h2>Privacy &amp; security</h2>
@@ -279,15 +311,15 @@
     <div class="grid">
       <div class="card">
         <h3>Encrypted at rest</h3>
-        <p>History, bookmarks, downloads, and searches live in a SQLCipher-encrypted database; settings in an encrypted DataStore. Keys are hardware-backed and never leave the TEE/StrongBox.</p>
+        <p>History, bookmarks, downloads and searches live in an encrypted database, and settings in encrypted storage. On Android the keys are hardware-backed.</p>
       </div>
       <div class="card">
         <h3>Locked down</h3>
-        <p>Biometric app-lock gated on a real Keystore cryptographic operation, with FLAG_SECURE keeping locked content out of the recents preview.</p>
+        <p>An optional biometric app lock, with locked content kept out of the app switcher.</p>
       </div>
       <div class="card">
         <h3>Quiet on the wire</h3>
-        <p>HTTPS-only networking enforced end-to-end, encrypted DNS (DNS-over-HTTPS with automatic system resolver fallback), and no cloud backup of local data.</p>
+        <p>HTTPS only, encrypted DNS, no analytics, and no cloud backup of local data.</p>
       </div>
     </div>
   </div>
@@ -298,14 +330,15 @@
     <h2>Development</h2>
     <p class="section-lead">
       Orbin is open source under the AGPLv3 license, built as a strict multi-module Clean Architecture
-      Kotlin project with Kotlin Multiplatform sharing code with an iOS client. Contributions are welcome.
+      Kotlin Multiplatform project: Android and iOS share the models, sites, storage and screens. Contributions are welcome.
     </p>
     <ul class="links">
       <li><a href="https://github.com/Defuuls/Orbin">Source code</a> — the main repository</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> — user guide, settings guide, release history, troubleshooting</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki/Developer-Guide">Developer guide</a> — building, toolchain, CI, and releases</li>
       <li><a href="https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules">Architecture</a> — layers, modules, and design decisions</li>
-      <li><a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS documentation</a> — building and testing the iOS application via TestFlight</li>
+      <li><a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS guide</a> — building and testing the iOS app, and TestFlight</li>
+      <li><a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy policy</a> — what Orbin keeps and who it talks to</li>
       <li><a href="https://github.com/Defuuls/Orbin/blob/main/CONTRIBUTING.md">Contributing guide</a> — how to get a change merged</li>
       <li><a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">Changelog</a> — what shipped, release by release</li>
     </ul>
@@ -314,11 +347,12 @@
 
 <footer>
   <div class="wrap">
-    <span>Orbin — AGPLv3 licensed, free forever.</span>
+    <span>Orbin — AGPLv3 licensed, free forever. Page built {{BUILT}}.</span>
     <span>
       <a href="https://github.com/Defuuls/Orbin">GitHub</a> ·
       <a href="https://github.com/Defuuls/Orbin/releases">Releases</a> ·
       <a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> ·
+      <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy</a> ·
       <a href="https://github.com/Defuuls/Orbin/blob/main/LICENSE">License</a>
     </span>
   </div>
