@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import com.orbin.data.sync.MigratingSyncPasswordStore
+import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
@@ -50,6 +51,7 @@ internal object AppGraph {
             preferences,
             Dispatchers.Default,
             MigratingSyncPasswordStore(preferences, KeychainSyncPasswordStore()),
+            NearbySyncSecrets(KeychainSyncPasswordStore(serviceName = "io.github.defuuls.orbin.nearby")),
         )
 
     val settingsStore = shared.settingsStore
@@ -59,6 +61,7 @@ internal object AppGraph {
 
     /** Thread progress kept in step with the reader's other devices through their WebDAV folder. */
     val threadSync = shared.threadSync
+    val nearbySync = shared.nearbySync
     val whatsNew = shared.whatsNew
 
     // Whole threads saved as pages go beside saved files, in Orbin's folder in the Files app.

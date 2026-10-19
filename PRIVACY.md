@@ -6,7 +6,7 @@ tracking, and the developer runs no server that receives your data.
 ## What stays on your device
 
 Your followed boards, bookmarks and watched threads, reading history and read positions, saved
-threads and pages, downloads and settings are stored only on your device. The app's database and
+threads and pages, downloads and settings are stored on your device unless you enable optional sync below. The app's database and
 settings are encrypted at rest. You can delete them at any time from Settings (Clear local
 activity, Clear image cache), or by uninstalling the app.
 
@@ -19,6 +19,12 @@ activity, Clear image cache), or by uninstalling the app.
 - **Thread sync (optional, off unless you set it up).** If you enter a WebDAV folder, your read
   threads, read positions and bookmarks are written as a file to that folder on the server you
   chose, over HTTPS, with the username and password you gave. The password is kept on your device.
+- **Nearby device sync (optional, off by default).** Paired devices exchange reading history,
+  read positions, bookmarks and watched threads directly over your local network, encrypted with
+  per-pair keys. There is no relay, account or developer server. Both apps must be open and
+  unlocked. Pairing codes expire after ten minutes and should be shared privately. Removing a
+  device revokes its future access; it does not erase copies it already received. Pair keys are
+  kept in encrypted settings on Android and device-only Keychain on iOS.
 - **Updates (Android only).** The Android app checks GitHub for new releases.
 
 Nothing is shared with the developer or any other third party.

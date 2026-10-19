@@ -53,10 +53,11 @@ targets:
         # Compose drives ProMotion displays at their full rate only with this set: 120Hz on an iPhone
         # Pro; an iPad Pro (the M4 11-inch included) runs at its full rate regardless.
         CADisableMinimumFrameDurationOnPhone: true
-        # HTTPS only, which is exempt from export compliance, so TestFlight does not ask each build.
+        # Networking and nearby encryption use operating-system cryptography providers.
         ITSAppUsesNonExemptEncryption: false
         # Shown the first time the app lock asks for Face ID.
         NSFaceIDUsageDescription: Orbin uses Face ID to unlock when App lock is on.
+        NSLocalNetworkUsageDescription: Orbin syncs reading progress and bookmarks directly with devices you pair on the same Wi-Fi.
         # Asked the first time a photo or video is saved from a thread; add-only, never read.
         # A background refresh of watched threads, as Android's watch worker; the Kotlin side
         # registers REFRESH_TASK in BackgroundRefresh.kt.

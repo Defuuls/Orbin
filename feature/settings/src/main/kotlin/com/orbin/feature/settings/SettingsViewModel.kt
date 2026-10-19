@@ -14,6 +14,8 @@ import com.orbin.domain.repository.DisabledThreadSync
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.domain.repository.NearbySyncRepository
+import com.orbin.domain.repository.NearbySyncState
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.SyncAccountStorageException
@@ -51,7 +53,30 @@ class SettingsViewModel
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
         private val threadSync: ThreadSyncRepository = DisabledThreadSync,
+        private val nearbySync: NearbySyncRepository? = null,
     ) : ViewModel() {
+        val nearbyState: StateFlow<NearbySyncState> = nearbySync?.state ?: MutableStateFlow(NearbySyncState())
+
+        fun setNearbyEnabled(enabled: Boolean) {
+            viewModelScope.launch { nearbySync?.setEnabled(enabled) }
+        }
+
+        fun createNearbyCode() {
+            viewModelScope.launch { nearbySync?.createPairingCode() }
+        }
+
+        fun joinNearby(code: String) {
+            viewModelScope.launch { nearbySync?.join(code) }
+        }
+
+        fun syncNearby() {
+            viewModelScope.launch { nearbySync?.syncNow() }
+        }
+
+        fun forgetNearby(device: String) {
+            viewModelScope.launch { nearbySync?.forget(device) }
+        }
+
         /** Thread sync's account and last result, for its rows. */
         val syncState: StateFlow<ThreadSyncState> =
             threadSync.state.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadSyncState())

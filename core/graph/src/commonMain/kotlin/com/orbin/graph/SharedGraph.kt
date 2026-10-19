@@ -16,6 +16,8 @@ import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.NearbySync
+import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.data.sync.SyncPasswordStore
 import com.orbin.data.sync.ThreadSync
 import com.orbin.data.sync.WebDavSyncFile
@@ -83,6 +85,7 @@ abstract class SharedGraph(
     @get:Provides protected val preferences: DataStore<Preferences>,
     @get:Provides protected val dispatcher: CoroutineDispatcher,
     @get:Provides protected val syncPasswords: SyncPasswordStore,
+    @get:Provides protected val nearbySecrets: NearbySyncSecrets,
 ) {
     abstract val json: Json
     abstract val settingsStore: SettingsStore
@@ -101,6 +104,7 @@ abstract class SharedGraph(
     abstract val providerRegistry: ProviderRegistry
     abstract val updates: UpdateRepository
     abstract val threadSync: ThreadSync
+    abstract val nearbySync: NearbySync
     abstract val whatsNew: WhatsNewStore
     abstract val threadArchive: ThreadArchiver
 
@@ -211,6 +215,14 @@ abstract class SharedGraph(
             passwords = passwords,
         )
 
+    @AppScope
+    @Provides
+    protected fun nearbySync(
+        progress: ThreadSync,
+        preferences: DataStore<Preferences>,
+        secrets: NearbySyncSecrets,
+    ): NearbySync = NearbySync(progress, preferences, secrets)
+
     // Whole threads saved as a page with their files, for keeps.
     @AppScope
     @Provides
@@ -257,4 +269,5 @@ expect fun createSharedGraph(
     preferences: DataStore<Preferences>,
     dispatcher: CoroutineDispatcher,
     syncPasswords: SyncPasswordStore,
+    nearbySecrets: NearbySyncSecrets,
 ): SharedGraph

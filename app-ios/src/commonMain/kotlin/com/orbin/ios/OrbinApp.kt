@@ -61,6 +61,8 @@ import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.domain.repository.NearbySyncRepository
+import com.orbin.domain.repository.NearbySyncState
 import com.orbin.domain.repository.SyncAccountStorageException
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.WhatsNewRepository
@@ -76,6 +78,7 @@ import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.MediaCell
+import com.orbin.uinext.NearbySettingIds
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
@@ -90,6 +93,7 @@ import com.orbin.uinext.SyncSettingIds
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.WhatsNewOnUpdate
+import com.orbin.uinext.nearbySyncRows
 import com.orbin.uinext.next
 import com.orbin.uinext.syncSettingRows
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +120,7 @@ fun OrbinApp(
     sync: ThreadSyncRepository? = null,
     whatsNew: WhatsNewRepository? = null,
     pages: ThreadPages? = null,
+    nearby: NearbySyncRepository? = null,
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -126,6 +131,9 @@ fun OrbinApp(
 
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
+    LaunchedEffect(lockState.locked, lockState.obscured) {
+        nearby?.setActive(!lockState.locked && !lockState.obscured)
+    }
     val fontScale = rememberSystemFontScale()
     NextTheme(
         darkTheme =
@@ -146,7 +154,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync, pages)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync, pages, nearby)
                 }
             }
             LockCover(lock, lockState)
@@ -169,13 +177,14 @@ private fun Destination(
     route: Route,
     sync: ThreadSyncRepository?,
     pages: ThreadPages?,
+    nearby: NearbySyncRepository?,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser, formFactor)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, sync)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, sync, nearby)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -340,9 +349,13 @@ private fun SettingsDestination(
     formFactor: FormFactor,
     version: AppVersion,
     sync: ThreadSyncRepository?,
+    nearby: NearbySyncRepository?,
 ) {
     val settings by browser.settings.current.collectAsState()
     val syncStatus by remember(sync) { sync?.state ?: flowOf(null) }.collectAsState(null)
+    val nearbyStatus by remember(
+        nearby,
+    ) { nearby?.state ?: flowOf(NearbySyncState()) }.collectAsState(NearbySyncState())
     val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val uriHandler = LocalUriHandler.current
@@ -360,6 +373,7 @@ private fun SettingsDestination(
                 formFactor,
                 version,
                 syncStatus,
+                nearbyStatus,
             ) {
                 val groups = settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version)
                 if (sync == null) {
@@ -377,69 +391,90 @@ private fun SettingsDestination(
                         )
                     groups.take(1) + ("" to rows) + groups.drop(1)
                 }
-            },
+            } + (
+                "Nearby devices" to
+                    nearbySyncRows(
+                        nearbyStatus.enabled,
+                        nearbyStatus.listening,
+                        nearbyStatus.busy,
+                        nearbyStatus.pairingCode,
+                        nearbyStatus.devices.map { it.id to it.name },
+                        nearbyStatus.message,
+                    )
+            ),
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
-            when (item.id) {
-                SettingIds.HIDE_NSFW -> {
-                    Haptics.light()
-                    browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+            if (item.id.startsWith("nearby")) {
+                when {
+                    item.id == NearbySettingIds.ENABLED -> scope.launch { nearby?.setEnabled(!nearbyStatus.enabled) }
+                    item.id == NearbySettingIds.ADD -> scope.launch { nearby?.createPairingCode() }
+                    item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
+                    item.id == NearbySettingIds.SYNC -> scope.launch { nearby?.syncNow() }
+                    item.id.startsWith(NearbySettingIds.FORGET_PREFIX) ->
+                        scope.launch { nearby?.forget(item.id.removePrefix(NearbySettingIds.FORGET_PREFIX)) }
                 }
-                SettingIds.COVER_VIOLENT -> {
-                    Haptics.light()
-                    browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
-                }
-                SettingIds.AMOLED -> {
-                    Haptics.light()
-                    browser.settings.setAmoled(!settings.amoled)
-                }
-                SettingIds.APP_LOCK -> {
-                    Haptics.light()
-                    lock.setLockEnabled(!settings.biometricLockEnabled)
-                }
-                SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS -> {
-                    Haptics.light()
-                    expanded = if (expanded == item.id) null else item.id
-                }
-                SettingIds.CLEAR_ACTIVITY ->
-                    if (clearArmed) {
-                        clearArmed = false
-                        browser.settings.clearActivity {
+            } else {
+                when (item.id) {
+                    SettingIds.HIDE_NSFW -> {
+                        Haptics.light()
+                        browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
+                    }
+                    SettingIds.COVER_VIOLENT -> {
+                        Haptics.light()
+                        browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
+                    }
+                    SettingIds.AMOLED -> {
+                        Haptics.light()
+                        browser.settings.setAmoled(!settings.amoled)
+                    }
+                    SettingIds.APP_LOCK -> {
+                        Haptics.light()
+                        lock.setLockEnabled(!settings.biometricLockEnabled)
+                    }
+                    SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS -> {
+                        Haptics.light()
+                        expanded = if (expanded == item.id) null else item.id
+                    }
+                    SettingIds.CLEAR_ACTIVITY ->
+                        if (clearArmed) {
+                            clearArmed = false
+                            browser.settings.clearActivity {
+                                imageLoader.memoryCache?.clear()
+                                withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
+                            }
+                            Haptics.success()
+                        } else {
+                            Haptics.light()
+                            clearArmed = true
+                        }
+                    SettingIds.EXPORT_BACKUP -> {
+                        Haptics.light()
+                        backup.export()
+                    }
+                    SettingIds.IMPORT_BACKUP -> {
+                        Haptics.light()
+                        backup.import()
+                    }
+                    SettingIds.PRIVACY -> uriHandler.openUri(PRIVACY_POLICY_URL)
+                    SettingIds.CONTACT -> uriHandler.openUri(CONTACT_URL)
+                    SyncSettingIds.FOLDER, SyncSettingIds.USERNAME, SyncSettingIds.PASSWORD -> {
+                        Haptics.light()
+                        expanded = if (expanded == item.id) null else item.id
+                    }
+                    SyncSettingIds.SYNC_NOW ->
+                        sync?.let {
+                            Haptics.light()
+                            scope.launch { it.sync() }
+                        }
+                    SettingIds.CLEAR_IMAGE_CACHE ->
+                        scope.launch {
                             imageLoader.memoryCache?.clear()
                             withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
+                            imageCacheCleared = true
+                            Haptics.success()
                         }
-                        Haptics.success()
-                    } else {
-                        Haptics.light()
-                        clearArmed = true
-                    }
-                SettingIds.EXPORT_BACKUP -> {
-                    Haptics.light()
-                    backup.export()
                 }
-                SettingIds.IMPORT_BACKUP -> {
-                    Haptics.light()
-                    backup.import()
-                }
-                SettingIds.PRIVACY -> uriHandler.openUri(PRIVACY_POLICY_URL)
-                SettingIds.CONTACT -> uriHandler.openUri(CONTACT_URL)
-                SyncSettingIds.FOLDER, SyncSettingIds.USERNAME, SyncSettingIds.PASSWORD -> {
-                    Haptics.light()
-                    expanded = if (expanded == item.id) null else item.id
-                }
-                SyncSettingIds.SYNC_NOW ->
-                    sync?.let {
-                        Haptics.light()
-                        scope.launch { it.sync() }
-                    }
-                SettingIds.CLEAR_IMAGE_CACHE ->
-                    scope.launch {
-                        imageLoader.memoryCache?.clear()
-                        withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
-                        imageCacheCleared = true
-                        Haptics.success()
-                    }
             }
         },
         onSelectOption = { item, index ->
@@ -455,6 +490,10 @@ private fun SettingsDestination(
         onCommitText = { item, text ->
             Haptics.light()
             expanded = null
+            if (item.id == NearbySettingIds.JOIN) {
+                scope.launch { nearby?.join(text) }
+                return@SettingsScreen
+            }
             val engine = sync ?: return@SettingsScreen
             scope.launch {
                 try {

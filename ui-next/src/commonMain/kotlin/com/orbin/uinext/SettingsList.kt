@@ -59,6 +59,8 @@ data class SettingItem(
     val destructive: Boolean = false,
     /** A [SettingKind.TEXT] row whose text is hidden as typed, and never pre-filled (a password). */
     val secret: Boolean = false,
+    /** Show a selectable, wrapping pairing code below an informational row. */
+    val copyable: Boolean = false,
 )
 
 enum class SettingKind {
@@ -211,6 +213,16 @@ private fun SettingRow(
                         },
                     ),
         )
+        if (item.copyable && item.text.isNotBlank()) {
+            SelectionContainer {
+                Text(
+                    text = item.text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = next.ink,
+                    modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 14.dp),
+                )
+            }
+        }
         if (!expanded) return@Column
         if (item.kind == SettingKind.TEXT && item.hint != null) {
             Text(

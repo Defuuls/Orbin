@@ -20,6 +20,8 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
             api(libs.ktor.client.core)
+            implementation(libs.ktor.network)
+            implementation(libs.cryptography.optimal)
             api(libs.androidx.datastore.preferences.core)
             api(libs.okio)
         }
