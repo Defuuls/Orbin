@@ -19,7 +19,10 @@ data class ThreadSyncState(
 interface ThreadSyncRepository {
     val state: Flow<ThreadSyncState>
 
-    /** Changes only what is given. A new folder starts over with that folder's file. */
+    /**
+     * Changes only what is given. A new folder starts over with that folder's file.
+     * Throws [SyncAccountStorageException] if the login cannot be saved; the error is also in [state].
+     */
     suspend fun setAccount(
         folderUrl: String? = null,
         username: String? = null,
@@ -29,6 +32,11 @@ interface ThreadSyncRepository {
     /** Syncs now if set up, and does nothing otherwise. Server problems land in [state], not thrown. */
     suspend fun sync()
 }
+
+/** A login change failed; callers must not immediately sync with the previous credentials. */
+class SyncAccountStorageException(
+    cause: Throwable,
+) : Exception("Couldn't save the sync login", cause)
 
 /** Sync that is never set up: for previews and tests that don't exercise it. */
 object DisabledThreadSync : ThreadSyncRepository {

@@ -9,6 +9,7 @@ import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.HistoryDao
 import com.orbin.data.database.entity.BookmarkEntity
 import com.orbin.data.database.entity.HistoryEntity
+import com.orbin.domain.repository.SyncAccountStorageException
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.ThreadSyncState
 import kotlinx.coroutines.flow.Flow
@@ -29,8 +30,8 @@ import kotlin.time.Clock
  * ([mergeSync]), writes the result to the database and, if it changed, back to the file. The
  * agreed state is kept here so a removal on one device removes on the others.
  *
- * The account is kept in the app's private settings file. The sync file itself is plain JSON on the
- * reader's own server, sent only over https.
+ * Account metadata stays in preferences; the password uses the platform's secret store. The
+ * sync file itself is plain JSON on the reader's own server, sent only over https.
  */
 class ThreadSync(
     private val history: HistoryDao,
@@ -38,6 +39,7 @@ class ThreadSync(
     private val preferences: DataStore<Preferences>,
     private val remote: WebDavSyncFile,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    private val passwords: SyncPasswordStore = PreferencesSyncPasswordStore(preferences),
 ) : ThreadSyncRepository {
     private val json =
         Json {
@@ -48,12 +50,20 @@ class ThreadSync(
 
     override val state: Flow<ThreadSyncState> =
         preferences.data.map { prefs ->
+            var storageError: String? = null
+            val password =
+                try {
+                    passwords.read()
+                } catch (failure: SyncException) {
+                    storageError = failure.message
+                    null
+                }
             ThreadSyncState(
                 folderUrl = prefs[FOLDER].orEmpty(),
                 username = prefs[USERNAME].orEmpty(),
-                hasPassword = !prefs[PASSWORD].isNullOrEmpty(),
+                hasPassword = !password.isNullOrEmpty(),
                 lastSyncedMillis = prefs[LAST_SYNCED],
-                error = prefs[LAST_ERROR],
+                error = storageError ?: prefs[LAST_ERROR],
             )
         }
 
@@ -62,10 +72,15 @@ class ThreadSync(
         username: String?,
         password: String?,
     ) {
+        try {
+            password?.let { passwords.write(it) }
+        } catch (failure: SyncException) {
+            preferences.edit { it[LAST_ERROR] = failure.message ?: "Couldn't save the sync login" }
+            throw SyncAccountStorageException(failure)
+        }
         preferences.edit { prefs ->
             folderUrl?.let { prefs[FOLDER] = it.trim() }
             username?.let { prefs[USERNAME] = it.trim() }
-            password?.let { prefs[PASSWORD] = it }
             // A different folder is a different file: nothing agreed with the old one carries over.
             if (folderUrl != null) prefs.remove(BASE)
             prefs.remove(LAST_ERROR)
@@ -75,13 +90,13 @@ class ThreadSync(
     override suspend fun sync() {
         if (running.isLocked) return
         running.withLock {
-            val account =
-                preferences.data
-                    .first()
-                    .account()
-                    ?.takeIf { it.isUsable } ?: return
             val error =
                 try {
+                    val account =
+                        preferences.data
+                            .first()
+                            .account()
+                            ?.takeIf { it.isUsable } ?: return
                     syncWith(account)
                     null
                 } catch (failure: SyncException) {
@@ -186,15 +201,17 @@ class ThreadSync(
             null
         }
 
-    private fun Preferences.account(): SyncAccount? {
+    private suspend fun Preferences.account(): SyncAccount? {
+        // Launch sync also migrates a saved password when the reader has turned sync off by
+        // clearing its folder. Disabled sync must not leave a legacy plaintext secret behind.
+        val password = passwords.read().orEmpty()
         val folder = this[FOLDER]?.takeIf { it.isNotBlank() } ?: return null
-        return SyncAccount(folder, this[USERNAME].orEmpty(), this[PASSWORD].orEmpty())
+        return SyncAccount(folder, this[USERNAME].orEmpty(), password)
     }
 
     private companion object {
         val FOLDER = stringPreferencesKey("sync_folder_url")
         val USERNAME = stringPreferencesKey("sync_username")
-        val PASSWORD = stringPreferencesKey("sync_password")
         val BASE = stringPreferencesKey("sync_agreed_state")
         val LAST_SYNCED = longPreferencesKey("sync_last_synced")
         val LAST_ERROR = stringPreferencesKey("sync_last_error")

@@ -7,6 +7,7 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.PreferencesSyncPasswordStore
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -51,7 +52,8 @@ object SharedGraphModule {
         database: OrbinDatabase,
         preferences: DataStore<Preferences>,
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
-    ): SharedGraph = createSharedGraph(client, database, preferences, ioDispatcher)
+    ): SharedGraph =
+        createSharedGraph(client, database, preferences, ioDispatcher, PreferencesSyncPasswordStore(preferences))
 
     @Provides
     fun providesJson(graph: SharedGraph): Json = graph.json

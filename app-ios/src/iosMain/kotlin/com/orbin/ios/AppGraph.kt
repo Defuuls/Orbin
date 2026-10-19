@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.data.sync.MigratingSyncPasswordStore
 import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
@@ -41,7 +42,15 @@ internal object AppGraph {
      * The sites, stores and repositories, built by the same kotlin-inject graph Android uses. One
      * DataStore file holds both settings and board preferences, as on Android.
      */
-    private val shared = createSharedGraph(client, database, openPreferences(), Dispatchers.Default)
+    private val preferences = openPreferences()
+    private val shared =
+        createSharedGraph(
+            client,
+            database,
+            preferences,
+            Dispatchers.Default,
+            MigratingSyncPasswordStore(preferences, KeychainSyncPasswordStore()),
+        )
 
     val settingsStore = shared.settingsStore
     val boardPreferences = shared.boardPreferences

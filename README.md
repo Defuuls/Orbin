@@ -86,6 +86,8 @@ does not post, reply, or create threads.
   by Android Keystore material.
 - Optional biometric app lock uses a Keystore-backed cryptographic gate; `FLAG_SECURE` protects
   locked content from recents previews.
+- The app lock gates the UI; background sync can still use its saved login. iOS keeps the sync
+  password in device-only Keychain storage. See [authentication and recovery](docs/authentication.md).
 - HTTPS-only application networking, encrypted DNS with system-resolver fallback when a network
   blocks DoH, and configurable user-agent behavior.
 - Android cloud backup/device transfer of private local state is disabled.

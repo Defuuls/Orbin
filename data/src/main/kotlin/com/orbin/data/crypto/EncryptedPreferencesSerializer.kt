@@ -36,14 +36,23 @@ import java.io.OutputStream
  * Only the value types the app actually persists are supported; an unexpected type fails fast
  * rather than silently dropping data.
  */
-internal object EncryptedPreferencesSerializer : Serializer<Preferences> {
-    override val defaultValue: Preferences = emptyPreferences()
+internal class EncryptedPreferencesSerializer(
+    private val encrypt: (ByteArray) -> ByteArray = LocalDataCipher::encrypt,
+    private val decrypt: (ByteArray) -> ByteArray = LocalDataCipher::decrypt,
+    private val wasInitialized: () -> Boolean = SettingsInitializationMarker::exists,
+    private val markInitialized: () -> Unit = SettingsInitializationMarker::create,
+) : Serializer<Preferences> {
+    // DataStore uses defaultValue for a missing file too. A Keystore marker distinguishes a
+    // deleted settings file from a new install; a lookup failure must never turn the lock off.
+    override val defaultValue: Preferences
+        get() = if (runCatching(wasInitialized).getOrDefault(true)) lockedRecoveryPreferences() else emptyPreferences()
 
     override suspend fun readFrom(input: InputStream): Preferences {
         val blob = input.readBytes()
-        if (blob.isEmpty()) return defaultValue
         return runCatching {
-            val json = LocalDataCipher.decrypt(blob).decodeToString()
+            markInitialized()
+            require(blob.isNotEmpty()) { "Empty encrypted settings" }
+            val json = decrypt(blob).decodeToString()
             val root = Json.parseToJsonElement(json).jsonObject
             val prefs = mutablePreferencesOf()
             root.forEach { (name, element) -> prefs.putEntry(name, element.jsonObject) }
@@ -63,7 +72,10 @@ internal object EncryptedPreferencesSerializer : Serializer<Preferences> {
         output: OutputStream,
     ) {
         val bytes = Json.encodeToString(JsonObject.serializer(), encode(t)).encodeToByteArray()
-        output.write(LocalDataCipher.encrypt(bytes))
+        // Record initialization before writing so deleting or truncating the file cannot make
+        // the next launch look like a new install. This marker contains no settings or secrets.
+        markInitialized()
+        output.write(encrypt(bytes))
     }
 
     private fun MutablePreferences.putEntry(
@@ -130,13 +142,22 @@ internal object EncryptedPreferencesSerializer : Serializer<Preferences> {
         }
     }
 
-    private const val TYPE = "t"
-    private const val VALUE = "v"
-    private const val TYPE_BOOLEAN = "b"
-    private const val TYPE_INT = "i"
-    private const val TYPE_LONG = "l"
-    private const val TYPE_FLOAT = "f"
-    private const val TYPE_DOUBLE = "d"
-    private const val TYPE_STRING = "s"
-    private const val TYPE_STRING_SET = "ss"
+    private companion object {
+        const val TYPE = "t"
+        const val VALUE = "v"
+        const val TYPE_BOOLEAN = "b"
+        const val TYPE_INT = "i"
+        const val TYPE_LONG = "l"
+        const val TYPE_FLOAT = "f"
+        const val TYPE_DOUBLE = "d"
+        const val TYPE_STRING = "s"
+        const val TYPE_STRING_SET = "ss"
+    }
 }
+
+/** Unknown lock policy is recovered locked, including the onboarding condition in MainActivity. */
+internal fun lockedRecoveryPreferences(): Preferences =
+    mutablePreferencesOf(
+        booleanPreferencesKey("biometric_lock") to true,
+        booleanPreferencesKey("onboarding_completed") to true,
+    )

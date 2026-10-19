@@ -61,6 +61,7 @@ import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.domain.repository.SyncAccountStorageException
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.ios.resources.Res
@@ -456,12 +457,16 @@ private fun SettingsDestination(
             expanded = null
             val engine = sync ?: return@SettingsScreen
             scope.launch {
-                when (item.id) {
-                    SyncSettingIds.FOLDER -> engine.setAccount(folderUrl = text)
-                    SyncSettingIds.USERNAME -> engine.setAccount(username = text)
-                    SyncSettingIds.PASSWORD -> engine.setAccount(password = text)
+                try {
+                    when (item.id) {
+                        SyncSettingIds.FOLDER -> engine.setAccount(folderUrl = text)
+                        SyncSettingIds.USERNAME -> engine.setAccount(username = text)
+                        SyncSettingIds.PASSWORD -> engine.setAccount(password = text)
+                    }
+                    engine.sync()
+                } catch (_: SyncAccountStorageException) {
+                    // The settings row shows the repository's error; the old login is not tried.
                 }
-                engine.sync()
             }
         },
     )

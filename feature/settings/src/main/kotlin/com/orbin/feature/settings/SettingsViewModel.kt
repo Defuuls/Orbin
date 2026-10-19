@@ -16,6 +16,7 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.SyncAccountStorageException
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.ThreadSyncState
 import com.orbin.domain.repository.UpdateRepository
@@ -68,8 +69,12 @@ class SettingsViewModel
         // Each change is tried at once, so a wrong folder or login shows on the row straight away.
         private fun updateSyncAccount(change: suspend () -> Unit) {
             viewModelScope.launch {
-                change()
-                threadSync.sync()
+                try {
+                    change()
+                    threadSync.sync()
+                } catch (_: SyncAccountStorageException) {
+                    // The repository exposes the save failure in syncState. Do not sync the old login.
+                }
             }
         }
 
