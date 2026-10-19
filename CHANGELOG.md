@@ -6,10 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Fixed
-- Android and iOS now draw with the same forest-green palette. Android had kept Material's default purple for its accents and bars while its containers were green, so screens mixed the two; every Material control now takes its colour from Orbin's palette.
-- One type scale everywhere: Material controls and Orbin's own text use the same fonts, sizes and weights (the platform's system font on each), and the last hand-sized labels use it too.
-
 ## [167-Guava] - 2026-10-19
 
 ### Added
