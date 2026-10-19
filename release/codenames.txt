@@ -3,9 +3,10 @@
 # Sections:
 #   [disease]  v129–v135 (closed). Keep shipped Display names; do not remove or
 #              rename a name that already exists as a tag.
-#   [fruit]    v136 onward (current). Pick an unused Display name for
-#              release/next.toml. APPEND ONLY; never reorder or remove a name
-#              that has already shipped as a tag.
+#   [fruit]    v136–v167 (closed). Keep shipped Display names.
+#   [vegetable] v168 onward (current): unusual vegetables. Pick an unused
+#              Display name for release/next.toml. APPEND ONLY; never reorder
+#              or remove a name that has already shipped as a tag.
 #
 # Tag slug = spaces → hyphens (e.g. "Dragon Fruit" → vN-Dragon-Fruit).
 # Format: one Display name per non-comment line (Title Case; A-Za-z, spaces,
@@ -122,3 +123,35 @@ Rowan
 Salak
 Santol
 Quenepa
+
+[vegetable]
+Romanesco
+Kohlrabi
+Salsify
+Celeriac
+Fiddlehead
+Sunchoke
+Jicama
+Oca
+Mashua
+Yacon
+Ulluco
+Cardoon
+Samphire
+Skirret
+Crosne
+Chayote
+Taro
+Lotus Root
+Burdock
+Daikon
+Mizuna
+Tatsoi
+Puntarelle
+Agretti
+Sea Kale
+Purslane
+Malanga
+Bitter Melon
+Kai Lan
+Okahijiki

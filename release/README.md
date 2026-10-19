@@ -8,7 +8,7 @@ is the whole procedure — the **Cut Release** workflow
 
 ```toml
 number       = 136          # release number; the tag becomes v136-<Codename>
-codename     = "Apple"      # from release/codenames.txt [fruit] (v136+); never one already tagged
+codename     = "Romanesco"  # from release/codenames.txt [vegetable] (v168+); never one already tagged
 version_code = 154          # Android versionCode; must exceed the current value
 
 # Optional. One line for the README's "What's new in <number>:" highlight.
@@ -102,8 +102,9 @@ pushing a branch, opening a PR, or dispatching a build.
 
 ## Notes
 
-- **Codename eras:** diseases for **v129–v135** (closed; kept under `[disease]`), fruits from
-  **v136** (current; pick from `[fruit]` in [`release/codenames.txt`](codenames.txt)).
+- **Codename eras:** diseases for **v129–v135** (closed; `[disease]`), fruits for **v136–v167**
+  (closed; `[fruit]`), and unusual vegetables from **v168** (current; pick from `[vegetable]` in
+  [`release/codenames.txt`](codenames.txt)).
   `prepare_release.py` enforces the pool for the manifest's release number.
 - **Codenames are never reused across either product line.** The cutter refuses a codename matching
   any existing tag; check `git tag --list` before writing one down.
