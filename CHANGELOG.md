@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [168-Romanesco] - 2026-10-19
+
+### Fixed
+- Android and iOS now draw with the same forest-green palette. Android had kept Material's default purple for its accents and bars while its containers were green, so screens mixed the two; every Material control now takes its colour from Orbin's palette.
+- One type scale everywhere: Material controls and Orbin's own text use the same fonts, sizes and weights (the platform's system font on each), and the last hand-sized labels use it too.
+
+
 ## [167-Guava] - 2026-10-19
 
 ### Added
@@ -2550,7 +2557,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v167-Guava...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...HEAD
+[168-Romanesco]: https://github.com/Defuuls/Orbin/compare/v167-Guava...v168-Romanesco
 [167-Guava]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...v167-Guava
 [166-Dragon-Fruit]: https://github.com/Defuuls/Orbin/compare/v165-Currant...v166-Dragon-Fruit
 [165-Currant]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...v165-Currant

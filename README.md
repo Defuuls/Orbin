@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [167 — Guava](https://github.com/Defuuls/Orbin/releases/tag/v167-Guava)
+**Current release:** [168 — Romanesco](https://github.com/Defuuls/Orbin/releases/tag/v168-Romanesco)
 
-**What's new in 167:** Smoother scrolling on iOS, pull to refresh that fetches fresh pages, and updated libraries.
+**What's new in 168:** One forest-green palette and one type scale across Android and iOS.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
