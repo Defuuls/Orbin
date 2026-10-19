@@ -6,8 +6,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.orbin.data.database.entity.HistoryEntity
 import kotlinx.coroutines.runBlocking
+import net.zetetic.database.sqlcipher.SQLiteDatabase
+import net.zetetic.database.sqlcipher.SQLiteNotADatabaseException
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -124,6 +127,22 @@ class EncryptedDatabaseTest {
             assertThat(reopened.readEntry(42)).isNotNull()
         } finally {
             reopened.close()
+        }
+
+        // Do not use open(): its recovery wrapper could delete the file and conceal a bad key.
+        assertThrows(SQLiteNotADatabaseException::class.java) {
+            SQLiteDatabase
+                .openDatabase(
+                    context.getDatabasePath(TEST_DB).absolutePath,
+                    legacyZeroedPassphrase(),
+                    null,
+                    SQLiteDatabase.OPEN_READONLY,
+                    null,
+                ).use {
+                    it.rawQuery("SELECT count(*) FROM sqlite_master", emptyArray()).use { cursor ->
+                        cursor.moveToFirst()
+                    }
+                }
         }
     }
 

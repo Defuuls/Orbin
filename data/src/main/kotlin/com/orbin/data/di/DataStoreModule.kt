@@ -5,8 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
 import com.orbin.data.crypto.EncryptedPreferencesSerializer
+import com.orbin.data.crypto.lockedRecoveryPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,10 +25,9 @@ object DataStoreModule {
         @ApplicationContext context: Context,
     ): DataStore<Preferences> =
         DataStoreFactory.create(
-            serializer = EncryptedPreferencesSerializer,
-            // If the encrypted file can't be read (e.g. the Keystore key was lost after a device
-            // restore), reset to defaults instead of crash-looping the app.
-            corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+            serializer = EncryptedPreferencesSerializer(),
+            // An unreadable lock policy is never permission to expose the existing database.
+            corruptionHandler = ReplaceFileCorruptionHandler { lockedRecoveryPreferences() },
             produceFile = {
                 File(context.filesDir, "datastore").apply { mkdirs() }.resolve(SETTINGS_FILE_NAME)
             },

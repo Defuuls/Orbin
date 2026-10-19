@@ -197,8 +197,9 @@ class MainActivity : FragmentActivity() {
         MarkLaunchSucceededAfterDelay()
 
         val viewModel: MainViewModel = hiltViewModel()
-        val settings by viewModel.settings.collectAsStateWithLifecycle()
-        val ready by viewModel.ready.collectAsStateWithLifecycle()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val settings = uiState.settings
+        val ready = uiState.ready
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
         val shouldLock = ready && settings.biometricLockEnabled && settings.onboardingCompleted
         var unlocked by remember { mutableStateOf(false) }

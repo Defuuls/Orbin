@@ -24,19 +24,10 @@ class MainViewModel
         networkMonitor: NetworkMonitor,
         private val appUpdater: AppUpdater,
     ) : ViewModel() {
-        val settings: StateFlow<AppSettings> =
+        val uiState: StateFlow<MainUiState> =
             settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings.Default)
-
-        /**
-         * True once the first persisted settings snapshot has loaded. The activity waits for this
-         * before composing the app so first-run onboarding gating reads the real flag (no flash of
-         * onboarding for returning users).
-         */
-        val ready: StateFlow<Boolean> =
-            settingsRepository.settings
-                .map { true }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+                .map { MainUiState(settings = it, ready = true) }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
 
         /** Starts `true` so a fresh launch never flashes an offline banner before the first callback. */
         val isOnline: StateFlow<Boolean> =
@@ -71,3 +62,9 @@ class MainViewModel
 
         fun installUpdate() = appUpdater.installDownloaded()
     }
+
+/** Settings and readiness are one emission, so a loaded flag cannot race ahead of the lock policy. */
+data class MainUiState(
+    val settings: AppSettings = AppSettings.Default,
+    val ready: Boolean = false,
+)

@@ -16,6 +16,7 @@ import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.SyncPasswordStore
 import com.orbin.data.sync.ThreadSync
 import com.orbin.data.sync.WebDavSyncFile
 import com.orbin.data.whatsnew.WhatsNewStore
@@ -81,6 +82,7 @@ abstract class SharedGraph(
     @get:Provides protected val database: OrbinDatabase,
     @get:Provides protected val preferences: DataStore<Preferences>,
     @get:Provides protected val dispatcher: CoroutineDispatcher,
+    @get:Provides protected val syncPasswords: SyncPasswordStore,
 ) {
     abstract val json: Json
     abstract val settingsStore: SettingsStore
@@ -199,7 +201,15 @@ abstract class SharedGraph(
         database: OrbinDatabase,
         preferences: DataStore<Preferences>,
         client: HttpClient,
-    ): ThreadSync = ThreadSync(database.historyDao(), database.bookmarkDao(), preferences, WebDavSyncFile(client))
+        passwords: SyncPasswordStore,
+    ): ThreadSync =
+        ThreadSync(
+            database.historyDao(),
+            database.bookmarkDao(),
+            preferences,
+            WebDavSyncFile(client),
+            passwords = passwords,
+        )
 
     // Whole threads saved as a page with their files, for keeps.
     @AppScope
@@ -246,4 +256,5 @@ expect fun createSharedGraph(
     database: OrbinDatabase,
     preferences: DataStore<Preferences>,
     dispatcher: CoroutineDispatcher,
+    syncPasswords: SyncPasswordStore,
 ): SharedGraph
