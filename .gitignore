@@ -43,3 +43,4 @@ Thumbs.db
 # Secrets
 secrets.properties
 *.env
+_site/
