@@ -4,6 +4,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -94,7 +95,10 @@ object NextMaterials {
  */
 @Immutable
 object NextType {
-    private val sans = FontFamily.SansSerif
+    // The platform's own UI font: Roboto on Android, San Francisco on iOS. SansSerif resolved to a
+    // different face on iOS than the Material components' default, so text changed font between
+    // Orbin's own rows and Material controls on the same screen.
+    private val sans = FontFamily.Default
 
     // Display — M3 displayLarge / displayMedium / displaySmall
     val displayLarge =
@@ -224,6 +228,29 @@ object NextType {
             fontSize = 11.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.5.sp,
+        )
+
+    /**
+     * The same scale as Material's typography, so Material components (buttons, top bars, text
+     * fields) and Orbin's own text use one set of fonts, sizes and weights.
+     */
+    val material: Typography =
+        Typography(
+            displayLarge = displayLarge,
+            displayMedium = displayMedium,
+            displaySmall = displaySmall,
+            headlineLarge = headlineLarge,
+            headlineMedium = headlineMedium,
+            headlineSmall = headlineSmall,
+            titleLarge = titleLarge,
+            titleMedium = titleMedium,
+            titleSmall = titleSmall,
+            bodyLarge = bodyLarge,
+            bodyMedium = bodyMedium,
+            bodySmall = bodySmall,
+            labelLarge = labelLarge,
+            labelMedium = labelMedium,
+            labelSmall = labelSmall,
         )
 
     // Convenience aliases used in ui-next components

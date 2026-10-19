@@ -36,48 +36,19 @@ import com.orbin.uinext.resources.next_clear_search
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
-private val DarkBackground = Color(0xFF141218)
-private val DarkRaised = Color(0xFF211F26)
-private val DarkElevated = Color(0xFF2B2930)
-private val DarkAccent = Color(0xFFD0BCFF)
-private val DarkAccentSoft = Color(0xFF4A4458)
-private val DarkOnAccent = Color(0xFF381E72)
-private val LightBackground = Color(0xFFFEF7FF)
-private val LightRaised = Color(0xFFF7F2FA)
-private val LightElevated = Color(0xFFF3EDF7)
-private val LightInk = Color(0xFF1D1B20)
-private val LightMuted = Color(0xFF49454F)
-private val LightHairline = Color(0xFFE7E0EC)
-private val LightAccent = Color(0xFF6750A4)
-private val LightAccentSoft = Color(0xFFE8DEF8)
-
-/** Material color roles for the handoff's Android counterpart, including dark/AMOLED support. */
+/**
+ * The app's palette for [dark] / [amoled], the same forest-green palettes iOS draws with. Android
+ * used to substitute Material's baseline purple here while keeping the green containers, so the
+ * two apps differed and Android mixed purple accents with green surfaces.
+ */
 fun materialPalette(
     dark: Boolean,
     amoled: Boolean = false,
 ): NextPalette =
-    if (dark) {
-        DarkPalette.copy(
-            background = if (amoled) Color.Black else DarkBackground,
-            raised = DarkRaised,
-            elevated = DarkElevated,
-            accent = DarkAccent,
-            accentSoft = DarkAccentSoft,
-            onAccent = DarkOnAccent,
-            amoled = amoled,
-        )
-    } else {
-        LightPalette.copy(
-            background = LightBackground,
-            raised = LightRaised,
-            elevated = LightElevated,
-            ink = LightInk,
-            muted = LightMuted,
-            faint = LightMuted.copy(alpha = 0.60f),
-            hairline = LightHairline,
-            accent = LightAccent,
-            accentSoft = LightAccentSoft,
-        )
+    when {
+        dark && amoled -> AmoledPalette
+        dark -> DarkPalette
+        else -> LightPalette
     }
 
 @Composable
@@ -120,8 +91,8 @@ private fun IosSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val trackOn = Color(0xFF34C759)
-    val trackOff = if (next.dark) Color(0xFF39393D) else Color(0xFFE9E9EA)
+    val trackOn = next.accent
+    val trackOff = next.hairline
     val trackColor = animateColorAsState(if (checked) trackOn else trackOff, label = "ios-switch-track")
     val thumbOffset = animateDpAsState(if (checked) 20.dp else 0.dp, label = "ios-switch-thumb")
     Box(

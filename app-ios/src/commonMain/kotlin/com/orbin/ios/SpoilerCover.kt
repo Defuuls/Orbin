@@ -11,9 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_spoiler
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -33,7 +33,7 @@ internal fun SpoilerCover(
         Text(
             text = text,
             color = Color.White,
-            fontSize = 12.sp,
+            style = NextType.labelMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(8.dp),
         )

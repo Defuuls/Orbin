@@ -23,11 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_board_media
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -81,15 +80,13 @@ fun BoardScreen(
                         WidthSpacer(10)
                         Text(
                             text = board,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.9).sp,
+                            style = NextType.headlineLarge,
                             color = next.ink,
                         )
                     }
                     Text(
                         text = description,
-                        fontSize = 14.sp,
+                        style = NextType.bodyMedium,
                         color = next.muted,
                         modifier = Modifier.padding(top = 6.dp),
                     )

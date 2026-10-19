@@ -28,7 +28,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
@@ -217,7 +216,7 @@ fun SpoilerOverlay(modifier: Modifier = Modifier) {
             Text(
                 text = stringResource(R.string.media_spoiler),
                 color = Color.White,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }

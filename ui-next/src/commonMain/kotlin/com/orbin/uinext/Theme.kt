@@ -2,6 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -15,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.orbin.core.designsystem.theme.OrbinShapes
-import com.orbin.core.designsystem.theme.orbinTypography
+import com.orbin.uinext.tokens.NextType
 
 /**
  * The palette the entire interface is drawn from.
@@ -116,39 +117,9 @@ fun NextTheme(
             else -> LightPalette
         }
 
-    // Build the M3 color scheme for this dark/light mode
-    val m3Scheme =
-        if (dark) {
-            darkColorScheme(
-                primary = fallbackPalette.accent,
-                background = if (black) Color.Black else fallbackPalette.background,
-                surface = fallbackPalette.raised,
-                onBackground = fallbackPalette.ink,
-                onSurface = fallbackPalette.ink,
-                surfaceContainerLow = fallbackPalette.raised,
-                surfaceContainer = fallbackPalette.elevated,
-                primaryContainer = fallbackPalette.accentContainer,
-                onPrimary = fallbackPalette.onAccent,
-                onPrimaryContainer = fallbackPalette.onAccentContainer,
-                outlineVariant = fallbackPalette.hairline,
-                onSurfaceVariant = fallbackPalette.muted,
-            )
-        } else {
-            lightColorScheme(
-                primary = fallbackPalette.accent,
-                background = fallbackPalette.background,
-                surface = fallbackPalette.raised,
-                onBackground = fallbackPalette.ink,
-                onSurface = fallbackPalette.ink,
-                surfaceContainerLow = fallbackPalette.raised,
-                surfaceContainer = fallbackPalette.elevated,
-                primaryContainer = fallbackPalette.accentContainer,
-                onPrimary = fallbackPalette.onAccent,
-                onPrimaryContainer = fallbackPalette.onAccentContainer,
-                outlineVariant = fallbackPalette.hairline,
-                onSurfaceVariant = fallbackPalette.muted,
-            )
-        }
+    // Every Material role comes from the one palette: roles left unset fell back to Material's
+    // baseline purple, which is where stray purple bars and buttons came from.
+    val m3Scheme = materialColorScheme(fallbackPalette, dark, black)
 
     // Derive the NextPalette from the M3 scheme (dynamic color flows through here too)
     val resolvedPalette =
@@ -168,7 +139,7 @@ fun NextTheme(
     ) {
         MaterialTheme(
             colorScheme = m3Scheme,
-            typography = orbinTypography(1f),
+            typography = NextType.material,
             shapes = OrbinShapes,
         ) {
             // Press: highlight flash on iOS (HIG list-row feel); Material ripple on Android.
@@ -185,6 +156,50 @@ fun NextTheme(
             }
         }
     }
+}
+
+/** A Material color scheme with every role a component reads taken from [palette]. */
+internal fun materialColorScheme(
+    palette: NextPalette,
+    dark: Boolean,
+    black: Boolean,
+): ColorScheme {
+    val background = if (dark && black) Color.Black else palette.background
+    val base = if (dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = palette.accent,
+        onPrimary = palette.onAccent,
+        primaryContainer = palette.accentContainer,
+        onPrimaryContainer = palette.onAccentContainer,
+        inversePrimary = palette.accentSoft,
+        secondary = palette.accent,
+        onSecondary = palette.onAccent,
+        secondaryContainer = palette.accentContainer,
+        onSecondaryContainer = palette.onAccentContainer,
+        tertiary = palette.accent,
+        onTertiary = palette.onAccent,
+        tertiaryContainer = palette.accentContainer,
+        onTertiaryContainer = palette.onAccentContainer,
+        background = background,
+        onBackground = palette.ink,
+        surface = palette.raised,
+        onSurface = palette.ink,
+        surfaceVariant = palette.elevated,
+        onSurfaceVariant = palette.muted,
+        surfaceTint = palette.accent,
+        surfaceBright = palette.elevated,
+        surfaceDim = background,
+        surfaceContainerLowest = background,
+        surfaceContainerLow = palette.raised,
+        surfaceContainer = palette.elevated,
+        surfaceContainerHigh = palette.elevated,
+        surfaceContainerHighest = palette.elevated,
+        outline = palette.muted,
+        outlineVariant = palette.hairline,
+        inverseSurface = palette.ink,
+        inverseOnSurface = background,
+        scrim = Color.Black,
+    )
 }
 
 // ── Board hue system ───────────────────────────────────────────────────────

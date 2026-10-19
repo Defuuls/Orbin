@@ -35,7 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
@@ -55,6 +54,7 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import com.orbin.uinext.Post as NextPost
@@ -350,7 +350,7 @@ private fun PostMedia(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "${pagerState.currentPage + 1} of ${attachments.size}",
-                fontSize = 12.sp,
+                style = NextType.labelMedium,
                 color = next.muted,
             )
         }
