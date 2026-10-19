@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [167-Guava] - 2026-10-19
+
+### Added
+- iOS: Settings links to Orbin's privacy policy and to the project's issues page for contact and feedback.
+
+### Changed
+- Updated Kotlin to 2.4.21, Okio to 3.18.2, the Gradle wrapper to 9.8.1 and the AndroidX libraries.
+
+### Fixed
+- iOS: lists scroll smoothly again. Video thumbnails are read natively instead of through a web view each, only one catalog preview loops at a time, and pictures no longer redraw on every frame while scrolling.
+- iOS: pulling to refresh fetches the page from the site instead of a copy up to a minute old.
+
+
 ## [166-Dragon-Fruit] - 2026-10-13
 
 ### Added
@@ -2537,7 +2550,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v167-Guava...HEAD
+[167-Guava]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...v167-Guava
 [166-Dragon-Fruit]: https://github.com/Defuuls/Orbin/compare/v165-Currant...v166-Dragon-Fruit
 [165-Currant]: https://github.com/Defuuls/Orbin/compare/v164-Cranberry...v165-Currant
 [164-Cranberry]: https://github.com/Defuuls/Orbin/compare/v163-Jabuticaba...v164-Cranberry
