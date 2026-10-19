@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -154,14 +155,18 @@ fun NextPullToRefresh(
         }
     }
 
+    // One connection for the whole gesture: rebuilt per recomposition (a bound `::retry` is a new
+    // value each time, and the pull itself recomposes), the list could lose it mid-drag.
+    val refreshing by rememberUpdatedState(isRefreshing)
+    val refresh by rememberUpdatedState(onRefresh)
     val connection =
-        remember(isRefreshing, thresholdPx, onRefresh, haptics) {
+        remember(thresholdPx, haptics) {
             object : NestedScrollConnection {
                 override fun onPreScroll(
                     available: Offset,
                     source: NestedScrollSource,
                 ): Offset {
-                    if (isRefreshing || source != NestedScrollSource.UserInput) return Offset.Zero
+                    if (refreshing || source != NestedScrollSource.UserInput) return Offset.Zero
                     // Collapse outstanding pull when the list scrolls up.
                     if (available.y >= 0f || pullPx <= 0f) return Offset.Zero
                     val consumed = available.y.coerceAtLeast(-pullPx)
@@ -174,7 +179,7 @@ fun NextPullToRefresh(
                     available: Offset,
                     source: NestedScrollSource,
                 ): Offset {
-                    if (isRefreshing || source != NestedScrollSource.UserInput) return Offset.Zero
+                    if (refreshing || source != NestedScrollSource.UserInput) return Offset.Zero
                     if (available.y <= 0f) return Offset.Zero
                     val wasOver = pullPx >= thresholdPx
                     val next = (pullPx + available.y * PULL_RESISTANCE).coerceAtMost(thresholdPx * 1.35f)
@@ -187,7 +192,7 @@ fun NextPullToRefresh(
                 }
 
                 override suspend fun onPreFling(available: Velocity): Velocity {
-                    if (isRefreshing) {
+                    if (refreshing) {
                         pullPx = 0f
                         return Velocity.Zero
                     }
@@ -195,7 +200,7 @@ fun NextPullToRefresh(
                     pullPx = 0f
                     if (trigger) {
                         haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                        onRefresh()
+                        refresh()
                     }
                     return Velocity.Zero
                 }
