@@ -1,22 +1,29 @@
-# Orbin 166 - Dragon Fruit
+# Orbin 167 - Guava
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 166
-codename     = "Dragon Fruit"
-version_code = 184
+number       = 167
+codename     = "Guava"
+version_code = 185
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Save a whole thread as a page, with every image and video, to read offline in any browser."
+highlight = "Smoother scrolling on iOS, pull to refresh that fetches fresh pages, and updated libraries."
 
 summary = [
-  "bump Orbin to 166-Dragon-Fruit / versionCode 184",
-  "save a whole thread as an HTML page with its media",
+  "bump Orbin to 167-Guava / versionCode 185",
+  "iOS scrolling performance, fresh pull to refresh, privacy policy, dependency updates",
 ]
 
 [changelog]
 Added = [
-  "Save a whole thread as a page: \"Save page\" in a thread's Files view writes a .zip with an index.html that opens in any browser, its stylesheet, and every image, video and thumbnail in the thread (Downloads/Orbin on Android, the share sheet and Orbin's folder in Files on iOS).",
+  "iOS: Settings links to Orbin's privacy policy and to the project's issues page for contact and feedback.",
+]
+Changed = [
+  "Updated Kotlin to 2.4.21, Okio to 3.18.2, the Gradle wrapper to 9.8.1 and the AndroidX libraries.",
+]
+Fixed = [
+  "iOS: lists scroll smoothly again. Video thumbnails are read natively instead of through a web view each, only one catalog preview loops at a time, and pictures no longer redraw on every frame while scrolling.",
+  "iOS: pulling to refresh fetches the page from the site instead of a copy up to a minute old.",
 ]
