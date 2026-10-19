@@ -38,10 +38,11 @@ CODENAMES_FILE = ROOT / "release" / "codenames.txt"
 #   fruit    v136 onward (current; pick from [fruit])
 DISEASE_ERA_FROM = 129
 FRUIT_ERA_FROM = 136
+VEGETABLE_ERA_FROM = 168
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
 # README's one-line release highlight: **What's new in <number>:** <highlight>
 HIGHLIGHT_LINE = re.compile(r"^\*\*What's new in [^:\n]*:\*\*.*$", re.M)
-SECTION_HEADER = re.compile(r"^\[(disease|fruit)\]\s*$", re.IGNORECASE)
+SECTION_HEADER = re.compile(r"^\[(disease|fruit|vegetable)\]\s*$", re.IGNORECASE)
 
 
 class ManifestError(Exception):
@@ -98,10 +99,10 @@ def _require(data: dict, key: str, kind: type):
 
 
 def load_codename_sections() -> dict[str, list[str]]:
-    """Display-name pools from release/codenames.txt, keyed by section (disease/fruit)."""
+    """Display-name pools from release/codenames.txt, keyed by section (disease/fruit/vegetable)."""
     if not CODENAMES_FILE.exists():
         raise ManifestError(f"missing codename pool at {CODENAMES_FILE.relative_to(ROOT)}")
-    sections: dict[str, list[str]] = {"disease": [], "fruit": []}
+    sections: dict[str, list[str]] = {"disease": [], "fruit": [], "vegetable": []}
     current: str | None = None
     for line in CODENAMES_FILE.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
@@ -115,13 +116,15 @@ def load_codename_sections() -> dict[str, list[str]]:
             continue
         if current is None:
             raise ManifestError(
-                f"{CODENAMES_FILE.name}: name {stripped!r} appears before a [disease]/[fruit] section"
+                f"{CODENAMES_FILE.name}: name {stripped!r} appears before a [disease]/[fruit]/[vegetable] section"
             )
         sections[current].append(" ".join(stripped.split()))
     if not sections["disease"]:
         raise ManifestError(f"{CODENAMES_FILE.name} [disease] section has no codename entries")
     if not sections["fruit"]:
         raise ManifestError(f"{CODENAMES_FILE.name} [fruit] section has no codename entries")
+    if not sections["vegetable"]:
+        raise ManifestError(f"{CODENAMES_FILE.name} [vegetable] section has no codename entries")
     return sections
 
 
@@ -131,8 +134,13 @@ def load_disease_codenames() -> list[str]:
 
 
 def load_fruit_codenames() -> list[str]:
-    """Ordered fruit-era Display names (v136+)."""
+    """Ordered fruit-era Display names (v136–v167)."""
     return load_codename_sections()["fruit"]
+
+
+def load_vegetable_codenames() -> list[str]:
+    """Ordered vegetable-era Display names (v168+)."""
+    return load_codename_sections()["vegetable"]
 
 
 def require_era_codename(number: int, codename: str) -> None:
@@ -144,10 +152,14 @@ def require_era_codename(number: int, codename: str) -> None:
         pool = sections["disease"]
         label = "highly contagious diseases"
         era_hint = f"v{DISEASE_ERA_FROM}–v{FRUIT_ERA_FROM - 1}"
-    else:
+    elif number < VEGETABLE_ERA_FROM:
         pool = sections["fruit"]
         label = "fruits"
-        era_hint = f"v{FRUIT_ERA_FROM}+"
+        era_hint = f"v{FRUIT_ERA_FROM}–v{VEGETABLE_ERA_FROM - 1}"
+    else:
+        pool = sections["vegetable"]
+        label = "unusual vegetables"
+        era_hint = f"v{VEGETABLE_ERA_FROM}+"
     if codename not in pool:
         preview = ", ".join(pool[:8])
         raise ManifestError(
