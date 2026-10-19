@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSURLRequestReloadIgnoringLocalCacheData
 import platform.Foundation.NSUserDomainMask
 
 /**
@@ -19,8 +20,20 @@ import platform.Foundation.NSUserDomainMask
 internal object AppGraph {
     val scope = MainScope()
 
-    /** One HTTP client for the providers, image loading and saves, so every request looks the same. */
-    val client = iosHttpClient(Darwin.create())
+    /**
+     * One HTTP client for the providers, image loading and saves, so every request looks the same.
+     * Catalogs, threads and board lists always come from the site: iOS's URL cache otherwise served
+     * them for up to a minute, so pulling to refresh showed the same page again. Media keeps normal
+     * HTTP caching.
+     */
+    val client =
+        iosHttpClient(
+            Darwin.create {
+                configureRequest {
+                    if (!isMediaUrl(URL?.path.orEmpty())) setCachePolicy(NSURLRequestReloadIgnoringLocalCacheData)
+                }
+            },
+        )
 
     private val database = openDatabase()
 
@@ -72,3 +85,9 @@ internal object AppGraph {
 
     private fun infoString(key: String): String? = NSBundle.mainBundle.objectForInfoDictionaryKey(key) as? String
 }
+
+private val MEDIA_EXTENSIONS =
+    setOf("jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "webm", "mp4", "m4v", "mov", "mp3", "ogg", "m4a", "wav")
+
+/** A picture, video or sound file, which may come from the cache; anything else is page data. */
+internal fun isMediaUrl(path: String): Boolean = path.substringAfterLast('.', "").lowercase() in MEDIA_EXTENSIONS
