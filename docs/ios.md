@@ -14,7 +14,10 @@ design system and every `ui-next` screen. What is iOS-only is small:
 Tests that use Security.framework need a normally booted simulator. Kotlin's minimal standalone
 simulator does not start the Keychain service and reports `errSecNotAvailable` (-25291). CI boots
 an available iPhone simulator, waits for its system services, and shares that device between the
-app and storage suites. It keeps the real Keychain round-trip test enabled.
+app and storage suites. The app's simulator test executable also embeds a dedicated test-only
+Keychain identity, following [JetBrains' guidance](https://youtrack.jetbrains.com/issue/KT-61470).
+These entitlements apply only to the native simulator test binary, never to the production app
+or its framework. CI keeps the real Keychain round-trip test enabled.
 
 On a Mac, boot a device in Simulator and run the suites with its UDID:
 
