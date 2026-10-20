@@ -3,9 +3,11 @@ package com.orbin.data.sync
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -178,6 +180,60 @@ class NearbySyncTest {
             }
         }
 
+    @Test
+    fun manualSyncWaitsForAnExistingTransferAndBusyPeersCanRetry() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val firstProgress = Progress(doc(1))
+            val secondProgress = Progress(doc(2))
+            val first = controller(firstProgress, scope)
+            val second = controller(secondProgress, scope)
+            val entered = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            try {
+                first.setActive(true)
+                second.setActive(true)
+                first.createPairingCode()
+                val invite = NearbyInvite.parse(assertNotNull(first.state.value.pairingCode))
+                second.join(invite.code())
+                withTimeout(5000) { first.state.first { it.devices.firstOrNull()?.lastSyncedMillis != null } }
+                firstProgress.snapshotPause.value = entered to release
+                val inFlight = scope.async { first.syncNow() }
+                withTimeout(5000) { entered.await() }
+
+                // Both pair locks are now held by a real authenticated socket exchange.
+                val sockets = NearbySockets()
+                try {
+                    val connection = sockets.connect(invite.host, invite.port)
+                    try {
+                        val hello = NearbyHello(invite.id, NearbyCrypto.token())
+                        connection.write(NearbyJson.encodeToString(hello).encodeToByteArray())
+                        assertEquals("orbin-nearby-busy", withTimeout(5000) { connection.read().decodeToString() })
+                    } finally {
+                        connection.close()
+                    }
+                } finally {
+                    sockets.close()
+                }
+                secondProgress.replace(doc(3))
+                val queued = scope.async { second.syncNow() }
+                delay(100)
+                assertFalse(queued.isCompleted, "Manual sync must queue rather than return without syncing")
+                release.complete(Unit)
+                withTimeout(5000) {
+                    inFlight.await()
+                    queued.await()
+                }
+                assertEquals(listOf(3L), firstProgress.snapshot().visits.map { it.thread })
+                assertEquals(listOf(3L), secondProgress.snapshot().visits.map { it.thread })
+            } finally {
+                release.complete(Unit)
+                first.setActive(false)
+                second.setActive(false)
+                scope.cancel()
+            }
+        }
+
     private fun NearbySync.device() = state.value.devices.single()
 
     private fun controller(
@@ -204,7 +260,15 @@ class NearbySyncTest {
     ) : NearbyProgress {
         private val mutex = Mutex()
 
-        override suspend fun snapshot(): SyncDocument = mutex.withLock { document }
+        val snapshotPause = MutableStateFlow<Pair<CompletableDeferred<Unit>, CompletableDeferred<Unit>>?>(null)
+
+        override suspend fun snapshot(): SyncDocument {
+            snapshotPause.value?.let { (entered, release) ->
+                entered.complete(Unit)
+                release.await()
+            }
+            return mutex.withLock { document }
+        }
 
         override suspend fun merge(
             base: SyncDocument?,

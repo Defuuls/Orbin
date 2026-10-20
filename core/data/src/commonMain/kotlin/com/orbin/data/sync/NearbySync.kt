@@ -28,6 +28,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
+import kotlin.random.Random
 import kotlin.time.Clock
 
 @Serializable
@@ -284,29 +285,30 @@ class NearbySync(
         automatic: Boolean = false,
     ) {
         val mutex = lock(pair)
-        // Automatic rounds skip a busy pair and come back next round; a manual sync waits its turn.
-        if (automatic) {
-            if (!mutex.tryLock()) return
-        } else {
-            mutex.lock()
-        }
-        try {
-            // The peer drops a session while its own automatic round with us holds the pair, so a
-            // manual sync retries rather than silently doing nothing.
+        // Bound lock waits and every retry together, rather than allowing each to take 30 seconds.
+        withTimeout(TRANSFER_TIMEOUT_MS) {
             val attempts = if (automatic || invitation) 1 else MANUAL_ATTEMPTS
             repeat(attempts) { attempt ->
+                if (automatic) {
+                    if (!mutex.tryLock()) return@withTimeout
+                } else {
+                    mutex.lock()
+                }
                 try {
                     connectAndSend(pair, secret, host, remotePort, invitation, automatic)
-                    return
+                    return@withTimeout
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (failure: Exception) {
+                    if (automatic && failure is NearbyPeerBusyException) return@withTimeout
                     if (attempt == attempts - 1) throw failure
-                    delay(RETRY_DELAY_MS * (attempt + 1))
+                } finally {
+                    mutex.unlock()
                 }
+                // Release our lock so the peer can complete its own request before we retry.
+                // Jitter schedules retries only; keys and nonces still use the crypto provider.
+                delay(RETRY_DELAY_MS * (attempt + 1) + Random.nextLong(RETRY_DELAY_MS))
             }
-        } finally {
-            mutex.unlock()
         }
     }
 
@@ -353,6 +355,7 @@ class NearbySync(
         val nonce = NearbyCrypto.token()
         connection.write(NearbyJson.encodeToString(NearbyHello(pair, nonce)).encodeToByteArray())
         val challenge = connection.read(HELLO_LIMIT).decodeToString()
+        if (challenge == PEER_BUSY) throw NearbyPeerBusyException()
         require(validToken(challenge))
         val context = "orbin-nearby1|$pair|$nonce|$challenge"
         val snapshot = progress.snapshot().also(::validateNearbyDocument)
@@ -384,7 +387,10 @@ class NearbySync(
         // Reject unknown selectors before allocating a lock or generating a challenge.
         if (current().peers.none { it.pair == hello.pair } && pending.value?.id != hello.pair) return
         val mutex = lock(hello.pair)
-        if (!mutex.tryLock()) return
+        if (!mutex.tryLock()) {
+            connection.write(PEER_BUSY.encodeToByteArray())
+            return
+        }
         try {
             val local = current()
             val known = local.peers.firstOrNull { it.pair == hello.pair }
@@ -546,7 +552,10 @@ class NearbySync(
         }
     }
 
+    private class NearbyPeerBusyException : Exception()
+
     companion object {
+        private const val PEER_BUSY = "orbin-nearby-busy"
         private const val MAX_CONNECTIONS = 3
         private const val MAX_DEVICE_NAME_LENGTH = 64
         private const val TRANSFER_TIMEOUT_MS = 30_000L
