@@ -31,7 +31,19 @@ interface ThreadSyncRepository {
 
     /** Syncs now if set up, and does nothing otherwise. Server problems land in [state], not thrown. */
     suspend fun sync()
+
+    /**
+     * The folder and login as a [SYNC_SETUP_PREFIX] code for another device's QR scanner, or null
+     * when sync isn't set up. It contains the password.
+     */
+    suspend fun setupCode(): String? = null
+
+    /** Adopts a [setupCode] from another device. Throws [IllegalArgumentException] for a bad code. */
+    suspend fun applySetupCode(code: String): Unit = throw UnsupportedOperationException("Sync setup codes unsupported")
 }
+
+/** Marks a WebDAV sync setup code, as opposed to a nearby pairing code, in a scanned QR code. */
+const val SYNC_SETUP_PREFIX = "orbin-webdav1:"
 
 /** A login change failed; callers must not immediately sync with the previous credentials. */
 class SyncAccountStorageException(

@@ -110,6 +110,18 @@ class ThreadSync(
         }
     }
 
+    override suspend fun setupCode(): String? =
+        preferences.data
+            .first()
+            .account()
+            ?.takeIf { it.isUsable }
+            ?.let(SyncSetupCode::encode)
+
+    override suspend fun applySetupCode(code: String) {
+        val account = SyncSetupCode.parse(code)
+        setAccount(account.folderUrl, account.username, account.password)
+    }
+
     override suspend fun sync() {
         if (running.isLocked) return
         running.withLock {
