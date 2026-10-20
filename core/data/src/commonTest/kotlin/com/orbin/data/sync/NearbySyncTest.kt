@@ -58,9 +58,7 @@ class NearbySyncTest {
                 assertEquals(listOf(2L), firstProgress.snapshot().visits.map { it.thread })
 
                 first.forget(
-                    first.state.value.devices
-                        .single()
-                        .id,
+                    first.device().id,
                 )
                 assertTrue(
                     first.state.value.devices
@@ -106,10 +104,97 @@ class NearbySyncTest {
             }
         }
 
+    @Test
+    fun automaticSyncRequiresMutualTrustAndCurrentLocalNetwork() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val sameNetwork = MutableStateFlow(false)
+            val networks = {
+                if (sameNetwork.value) {
+                    listOf(NearbyNetwork("127.0.0.1", 8))
+                } else {
+                    listOf(NearbyNetwork("192.168.2.3", 24))
+                }
+            }
+            val firstProgress = Progress(doc(1))
+            val secondProgress = Progress(doc(2))
+            val secret = MemorySecret()
+            val first = controller(firstProgress, scope, networks, secret)
+            val second = controller(secondProgress, scope, networks)
+            try {
+                first.setActive(true)
+                second.setActive(true)
+                first.createPairingCode()
+                second.join(assertNotNull(first.state.value.pairingCode))
+                withTimeout(5000) { first.state.first { it.devices.firstOrNull()?.lastSyncedMillis != null } }
+                val secondId =
+                    first.device().id
+                val firstId =
+                    second.device().id
+                assertFalse(
+                    first.device().trusted,
+                )
+                firstProgress.replace(doc(3))
+                sameNetwork.value = true
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+                first.setTrusted(secondId, true)
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+                sameNetwork.value = false
+                second.setTrusted(firstId, true)
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+
+                // Trust survives repository recreation and does not need another invitation.
+                val restored = controller(Progress(doc(1)), scope, networks, secret)
+                restored.setEnabled(true)
+                assertTrue(
+                    restored.device().trusted,
+                )
+                sameNetwork.value = true
+                withTimeout(5000) { while (secondProgress.snapshot().visits.none { it.thread == 3L }) delay(10) }
+                assertTrue(
+                    first.device().trusted,
+                )
+                assertTrue(
+                    second.device().trusted,
+                )
+
+                // Revoking trust blocks automatic writes regardless of which device is the initiator.
+                first.setTrusted(secondId, false)
+                firstProgress.replace(doc(4))
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 4L })
+                first.syncNow()
+                withTimeout(5000) { while (secondProgress.snapshot().visits.none { it.thread == 4L }) delay(10) }
+                assertFalse(
+                    first.device().trusted,
+                )
+            } finally {
+                first.setActive(false)
+                second.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    private fun NearbySync.device() = state.value.devices.single()
+
     private fun controller(
         progress: Progress,
         scope: CoroutineScope,
-    ) = NearbySync(progress, MemoryPreferences(), NearbySyncSecrets(MemorySecret()), scope, { listOf("127.0.0.1") }, 0)
+        networks: () -> List<NearbyNetwork> = { listOf(NearbyNetwork("127.0.0.1", 8)) },
+        secret: MemorySecret = MemorySecret(),
+    ) = NearbySync(
+        progress,
+        MemoryPreferences(),
+        NearbySyncSecrets(secret),
+        scope,
+        { listOf("127.0.0.1") },
+        0,
+        networks = networks,
+        autoSyncMillis = 40,
+    )
 
     private fun doc(thread: Long) =
         SyncDocument(visits = listOf(SyncedVisit("site", "g", thread, "Title", lastVisitedMillis = 1)))

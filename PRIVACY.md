@@ -22,8 +22,9 @@ activity, Clear image cache), or by uninstalling the app.
 - **Nearby device sync (optional, off by default).** Paired devices exchange reading history,
   read positions, bookmarks and watched threads directly over your local network, encrypted with
   per-pair keys. There is no relay, account or developer server. Both apps must be open and
-  unlocked. Pairing codes expire after ten minutes and should be shared privately. Removing a
-  device revokes its future access; it does not erase copies it already received. Pair keys are
+  unlocked. Automatic transfers require enabling trust on both devices and a current local-subnet
+  check; trust is off by default. Pairing codes expire after ten minutes and should be shared
+  privately. Removing a device revokes its future access; it does not erase copies it already received. Pair keys are
   kept in encrypted settings on Android and device-only Keychain on iOS.
 - **Updates (Android only).** The Android app checks GitHub for new releases.
 

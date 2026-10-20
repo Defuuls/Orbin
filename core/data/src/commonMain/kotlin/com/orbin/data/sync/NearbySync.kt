@@ -39,6 +39,7 @@ internal data class NearbyPeer(
     val host: String,
     val port: Int,
     val synced: Long? = null,
+    val trusted: Boolean = false,
 )
 
 @Serializable
@@ -64,6 +65,8 @@ class NearbySync(
     private val addresses: () -> List<String> = ::nearbyAddresses,
     private val port: Int = NEARBY_PORT,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    private val networks: () -> List<NearbyNetwork> = ::nearbyNetworks,
+    private val autoSyncMillis: Long = AUTO_SYNC_MS,
 ) : NearbySyncRepository {
     private val mutableState = MutableStateFlow(NearbySyncState())
     override val state = mutableState.asStateFlow()
@@ -141,6 +144,29 @@ class NearbySync(
                 guarded { exchange(peer.pair, peer.secret, peer.host, peer.port) }
             }
         }
+
+    override suspend fun setTrusted(
+        deviceId: String,
+        trusted: Boolean,
+    ) = guarded {
+        val peer = current().peers.firstOrNull { it.device == deviceId } ?: return@guarded
+        lock(peer.pair).withLock {
+            change { value ->
+                value.copy(
+                    peers =
+                        value.peers.map {
+                            if (it.device ==
+                                deviceId
+                            ) {
+                                it.copy(trusted = trusted)
+                            } else {
+                                it
+                            }
+                        },
+                )
+            }
+        }
+    }
 
     override suspend fun forget(deviceId: String) =
         guarded {
@@ -242,10 +268,10 @@ class NearbySync(
         while (foreground.value) {
             val local = current()
             // One automatic initiator per pair avoids both endpoints opening duplicate sessions.
-            local.peers.filter { local.device < it.device }.forEach { peer ->
-                guarded { exchange(peer.pair, peer.secret, peer.host, peer.port) }
+            local.peers.filter { it.trusted && local.device < it.device && onLocalNetwork(it.host) }.forEach { peer ->
+                guarded { exchange(peer.pair, peer.secret, peer.host, peer.port, automatic = true) }
             }
-            delay(AUTO_SYNC_MS)
+            delay(autoSyncMillis)
         }
     }
 
@@ -255,20 +281,24 @@ class NearbySync(
         host: String,
         remotePort: Int,
         invitation: Boolean = false,
+        automatic: Boolean = false,
     ) {
         val mutex = lock(pair)
         if (!mutex.tryLock()) return
         try {
             withTimeout(TRANSFER_TIMEOUT_MS) {
                 check(foreground.value)
-                if (!invitation) require(current().peers.any { it.pair == pair && it.secret == secret })
+                if (!invitation) {
+                    val peer = current().peers.single { it.pair == pair && it.secret == secret }
+                    if (automatic) require(peer.trusted && onLocalNetwork(host))
+                }
                 val sockets = NearbySockets()
                 try {
                     val connection = sockets.connect(host, remotePort)
                     connections.update { it + connection }
                     try {
                         check(foreground.value)
-                        send(connection, pair, secret, host, remotePort)
+                        send(connection, pair, secret, host, remotePort, automatic)
                     } finally {
                         connection.close()
                         connections.update { it - connection }
@@ -288,6 +318,7 @@ class NearbySync(
         secret: String,
         host: String,
         remotePort: Int,
+        automatic: Boolean,
     ) {
         val local = current()
         val nonce = NearbyCrypto.token()
@@ -296,7 +327,7 @@ class NearbySync(
         require(validToken(challenge))
         val context = "orbin-nearby1|$pair|$nonce|$challenge"
         val snapshot = progress.snapshot().also(::validateNearbyDocument)
-        val request = NearbyRequest(local.device, local.name, boundPort, snapshot)
+        val request = NearbyRequest(local.device, local.name, boundPort, snapshot, automatic)
         connection.write(
             NearbyCrypto.encrypt(secret, "$context|request", NearbyJson.encodeToString(request).encodeToByteArray()),
         )
@@ -344,6 +375,7 @@ class NearbySync(
                 foreground.value &&
                     (known != null || pending.value?.id == invite?.id && invite != null && invite.expires > now()),
             )
+            if (request.automatic) require(known?.trusted == true && onLocalNetwork(connection.host))
             validateNearbyDocument(request.document)
             val merged = progress.merge(readBase(hello.pair), request.document)
             val permanent = known?.secret ?: NearbyCrypto.token()
@@ -417,7 +449,9 @@ class NearbySync(
             // Re-pairing requires explicit removal first, so a concurrent old session cannot
             // overwrite a new device key under a different pair lock.
             require(value.peers.none { it.device == peer.device && it.pair != peer.pair })
-            val peers = value.peers.filterNot { it.pair == peer.pair } + peer
+            val peers =
+                value.peers.filterNot { it.pair == peer.pair } +
+                    peer.copy(trusted = value.peers.firstOrNull { it.pair == peer.pair }?.trusted ?: false)
             require(peers.size <= MAX_NEARBY_DEVICES)
             value.copy(peers = peers)
         }
@@ -426,7 +460,7 @@ class NearbySync(
         mutableState.update { state ->
             state.copy(
                 enabled = value.enabled,
-                devices = value.peers.map { NearbyDevice(it.device, it.name, it.synced) },
+                devices = value.peers.map { NearbyDevice(it.device, it.name, it.synced, it.trusted) },
             )
         }
     }
@@ -440,6 +474,10 @@ class NearbySync(
     ) {
         preferences.edit { it[baseKey(pair)] = NearbyJson.encodeToString(document) }
     }
+
+    private fun onLocalNetwork(host: String): Boolean =
+        runCatching { networks().any { it.contains(host) } }
+            .getOrDefault(false)
 
     private fun baseKey(pair: String) = stringPreferencesKey("nearby_agreed_$pair")
 

@@ -6,6 +6,7 @@ data class NearbyDevice(
     val id: String,
     val name: String,
     val lastSyncedMillis: Long? = null,
+    val trusted: Boolean = false,
 )
 
 data class NearbySyncState(
@@ -31,6 +32,12 @@ interface NearbySyncRepository {
     suspend fun join(code: String)
 
     suspend fun syncNow()
+
+    /** Automatic sync requires trust on both devices. Manual sync remains available. */
+    suspend fun setTrusted(
+        deviceId: String,
+        trusted: Boolean,
+    )
 
     suspend fun forget(deviceId: String)
 }

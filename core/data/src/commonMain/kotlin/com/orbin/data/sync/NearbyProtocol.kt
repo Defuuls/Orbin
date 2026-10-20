@@ -106,6 +106,7 @@ internal data class NearbyRequest(
     val name: String,
     val port: Int,
     val document: SyncDocument,
+    val automatic: Boolean,
 )
 
 @Serializable
@@ -154,4 +155,39 @@ interface NearbyProgress {
     ): SyncDocument
 }
 
-internal expect fun nearbyAddresses(): List<String>
+internal fun nearbyAddresses(): List<String> = nearbyNetworks().map { it.address }
+
+internal expect fun nearbyNetworks(): List<NearbyNetwork>
+
+/** Interface netmasks, rather than an assumed /24 or Wi-Fi name, bound automatic attempts. */
+data class NearbyNetwork(
+    val address: String,
+    val prefixLength: Int,
+) {
+    fun contains(host: String): Boolean {
+        if (!localAddress(address) || !localAddress(host) || prefixLength !in 1..IPV4_BITS) return false
+        val mask = (IPV4_MASK shl (IPV4_BITS - prefixLength)) and IPV4_MASK
+        return (numeric(address) and mask) == (numeric(host) and mask)
+    }
+
+    private fun numeric(ip: String): Long =
+        ip.split('.').fold(0L) { value, octet ->
+            (value shl OCTET_BITS) or octet.toLong()
+        }
+
+    companion object {
+        private const val IPV4_BITS = 32
+        private const val OCTET_BITS = 8
+        private const val IPV4_MASK = 0xffffffffL
+    }
+}
+
+/** Return null for noncontiguous or empty netmasks. */
+@Suppress("MagicNumber") // IPv4 netmasks have four eight-bit octets.
+internal fun nearbyPrefix(mask: String): Int? {
+    val octets = mask.split('.').map { it.toIntOrNull() ?: return null }
+    if (octets.size != 4 || octets.any { it !in 0..255 }) return null
+    val bits = octets.joinToString("") { it.toString(2).padStart(8, '0') }
+    if (bits.contains("01")) return null
+    return bits.count { it == '1' }.takeIf { it > 0 }
+}
