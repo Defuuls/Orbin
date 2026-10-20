@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [168 — Romanesco](https://github.com/Defuuls/Orbin/releases/tag/v168-Romanesco)
+**Current release:** [169 — Kohlrabi](https://github.com/Defuuls/Orbin/releases/tag/v169-Kohlrabi)
 
-**What's new in 168:** One forest-green palette and one type scale across Android and iOS.
+**What's new in 169:** Sync reading progress directly between nearby devices over Wi-Fi, no account or server needed.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

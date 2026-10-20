@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [169-Kohlrabi] - 2026-10-20
+
+### Added
+- Nearby devices: pair Android and iOS devices with a one-use ten-minute code and sync reading history, positions, bookmarks and watched threads directly over local Wi-Fi, end-to-end encrypted, with no account, server or Internet connection.
+- Trust a paired device for automatic sync: when both devices trust each other and share the same local network, they sync on their own while Orbin is open. New pairings stay manual-only.
+
+### Changed
+- iOS: WebDAV sync passwords move into device-only Keychain storage, migrated automatically from the old location.
+
+### Fixed
+- Android: corrupted or deleted settings no longer switch off a saved app lock; Orbin recovers them locked.
+- Sync now no longer silently does nothing when it collides with the other device's automatic sync.
+
+
 ## [168-Romanesco] - 2026-10-19
 
 ### Fixed
@@ -2557,7 +2571,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...HEAD
+[169-Kohlrabi]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...v169-Kohlrabi
 [168-Romanesco]: https://github.com/Defuuls/Orbin/compare/v167-Guava...v168-Romanesco
 [167-Guava]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...v167-Guava
 [166-Dragon-Fruit]: https://github.com/Defuuls/Orbin/compare/v165-Currant...v166-Dragon-Fruit
