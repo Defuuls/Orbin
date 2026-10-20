@@ -5,12 +5,21 @@ object NearbySettingIds {
     const val ADD = "nearbyAdd"
     const val CODE = "nearbyCode"
     const val JOIN = "nearbyJoin"
+    const val SHOW_QR = "nearbyShowQr"
+    const val SCAN_QR = "nearbyScanQr"
+    const val BLUETOOTH = "nearbyBluetooth"
     const val SYNC = "nearbySync"
     const val TRUST_PREFIX = "nearbyTrust:"
     const val FORGET_PREFIX = "nearbyForget:"
 }
 
-/** Nearby sync's shared rows. No network addresses or secrets are shown until pairing is requested. */
+/**
+ * Nearby sync's shared rows. No network addresses or secrets are shown until pairing is requested.
+ * [qrCodes] adds the show/scan QR rows on platforms with a camera scanner; [bluetoothAvailable]
+ * adds the Bluetooth switch on platforms with a Bluetooth transport. Both default off, so a
+ * platform without them keeps the copy/paste flow unchanged.
+ */
+@Suppress("LongParameterList")
 fun nearbySyncRows(
     enabled: Boolean,
     listening: Boolean,
@@ -19,6 +28,9 @@ fun nearbySyncRows(
     devices: List<Pair<String, String>>,
     message: String?,
     trustedIds: Set<String> = emptySet(),
+    qrCodes: Boolean = false,
+    bluetoothAvailable: Boolean = false,
+    bluetoothEnabled: Boolean = false,
 ): List<SettingItem> =
     buildList {
         add(
@@ -32,7 +44,16 @@ fun nearbySyncRows(
             ),
         )
         if (!enabled) return@buildList
-        add(SettingItem(NearbySettingIds.ADD, "Add a device", "Create code", kind = SettingKind.ACTION))
+        if (bluetoothAvailable) add(nearbyBluetoothRow(bluetoothEnabled))
+        add(
+            SettingItem(
+                NearbySettingIds.ADD,
+                "Add a device",
+                if (qrCodes) "Show QR code" else "Create code",
+                kind = SettingKind.ACTION,
+            ),
+        )
+        if (code != null && qrCodes) add(nearbyShowQrRow())
         if (code != null) {
             add(
                 SettingItem(
@@ -48,10 +69,11 @@ fun nearbySyncRows(
                 ),
             )
         }
+        if (qrCodes) add(nearbyScanQrRow())
         add(
             SettingItem(
                 id = NearbySettingIds.JOIN,
-                label = "Join another device",
+                label = if (qrCodes) "Join with a code instead" else "Join another device",
                 value = "Paste code",
                 kind = SettingKind.TEXT,
                 hint = "Create a pairing code in Orbin on your other device, then paste it here.",
@@ -81,6 +103,34 @@ fun nearbySyncRows(
         )
         devices.forEach { (id, name) -> addAll(nearbyDeviceRows(id, name, id in trustedIds)) }
     }
+
+private fun nearbyBluetoothRow(enabled: Boolean) =
+    SettingItem(
+        id = NearbySettingIds.BLUETOOTH,
+        label = "Also use Bluetooth",
+        value = if (enabled) "On" else "Off",
+        hint =
+            "Pair and sync when the devices aren't on the same Wi-Fi, within about 10 m. " +
+                "Asks for Nearby devices access. Encrypted the same way as Wi-Fi.",
+    )
+
+private fun nearbyShowQrRow() =
+    SettingItem(
+        id = NearbySettingIds.SHOW_QR,
+        label = "Pairing QR code",
+        value = "Show",
+        kind = SettingKind.ACTION,
+        hint = "Scan it with Orbin on your other device. Expires in 10 minutes.",
+    )
+
+private fun nearbyScanQrRow() =
+    SettingItem(
+        id = NearbySettingIds.SCAN_QR,
+        label = "Join another device",
+        value = "Scan QR code",
+        kind = SettingKind.ACTION,
+        hint = "Choose Add a device on your other device, then point this camera at its QR code.",
+    )
 
 private fun nearbyDeviceRows(
     id: String,

@@ -8,6 +8,8 @@ android {
 
 dependencies {
     implementation(project(":ui-next"))
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
     testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
