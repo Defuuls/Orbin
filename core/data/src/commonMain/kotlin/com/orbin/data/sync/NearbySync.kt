@@ -299,8 +299,12 @@ class NearbySync(
                     return@withTimeout
                 } catch (cancelled: CancellationException) {
                     throw cancelled
-                } catch (failure: Exception) {
-                    if (automatic && failure is NearbyPeerBusyException) return@withTimeout
+                } catch (busy: NearbyPeerBusyException) {
+                    if (automatic) return@withTimeout
+                    if (attempt == attempts - 1) throw busy
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") failure: Exception,
+                ) {
                     if (attempt == attempts - 1) throw failure
                 } finally {
                     mutex.unlock()
