@@ -80,6 +80,38 @@ does not post, reply, or create threads.
   coverage for normal, dark, AMOLED, large-text, and maximum-text configurations.
 - Settings and commands are searchable rather than requiring users to memorize where controls live.
 
+### Sync across devices
+
+Orbin offers optional nearby sync on Android and iOS. It shares reading history, last-read
+positions, bookmarks and watched threads directly over your local network, encrypted between
+paired devices. No Orbin account, hosted server or Internet connection is needed. Media,
+settings and WebDAV credentials stay on their original device.
+
+To pair devices:
+
+1. Use builds with nearby-sync support on both devices, connect them to the same Wi-Fi, and keep
+   Orbin open and unlocked.
+2. Open **Settings → Nearby devices** and enable **Nearby device sync** on both.
+3. Choose **Add a device** on one, copy its pairing code, then paste it into **Join another
+   device** on the other. Codes expire after ten minutes and can enroll one device; share them
+   privately.
+4. Use **Sync now** for a manual transfer. For automatic transfers, enable **Trust for automatic
+   sync** for the pairing on both devices.
+
+Trust is off by default. Trusted devices check their current local subnet every thirty seconds
+and sync when the paired device is reachable and authenticates with its saved key. Both apps
+must remain open and unlocked. Turning trust off keeps manual sync available; **Remove device**
+revokes future access but does not erase copies already received by the other device.
+
+Nearby sync supports local IPv4 networks and up to eight pairings per device. Allow local-network
+access on iOS. Guest Wi-Fi isolation, VPNs or firewalls can prevent connections. Address discovery
+is not included: if a saved device address changes, remove the pairing on both devices and pair
+again. Update Orbin on both devices when upgrading the sync protocol.
+
+For sync through a server you control, the separate **WebDAV sync** option uses an HTTPS folder
+and its login. See the [nearby-sync setup and limits](docs/nearby-sync.md),
+[authentication and credential storage](docs/authentication.md), and [privacy policy](PRIVACY.md).
+
 ### Privacy and security
 
 - Room data is encrypted with SQLCipher and preferences use encrypted DataStore storage protected
