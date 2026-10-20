@@ -1,4 +1,5 @@
 import com.orbin.buildlogic.configureKotlin
+import com.orbin.buildlogic.configureSimulatorTests
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -34,6 +35,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
             }
 
             configureKotlin()
+            configureSimulatorTests()
 
             // CI runs `./gradlew test`. A multiplatform module has `jvmTest` rather than `test`, so
             // without this alias its tests would silently drop out of that run.

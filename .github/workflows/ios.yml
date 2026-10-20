@@ -18,6 +18,9 @@ on:
       - 'domain/**'
       - 'provider/**'
       - 'storage/**'
+      - 'core/data/**'
+      - 'core/graph/**'
+      - 'core/network/**'
       - 'build-logic/**'
       - 'gradle/**'
       - '*.gradle.kts'
@@ -43,9 +46,36 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
 
+      # Kotlin's standalone simulator mode omits system services, including Keychain.
+      # Boot one device normally and use it for both suites so neither suite shuts it down.
+      - name: Boot simulator with system services
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          listing = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"]))
+          candidates = [
+              device
+              for runtime, devices in listing["devices"].items() if ".iOS-" in runtime
+              for device in devices if device.get("isAvailable") and device["name"].startswith("iPhone")
+          ]
+          if not candidates:
+              raise SystemExit("No available iPhone simulator runtime")
+          device = candidates[0]
+          if device["state"] != "Booted":
+              subprocess.run(["xcrun", "simctl", "boot", device["udid"]], check=True)
+          subprocess.run(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], check=True)
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write("ORBIN_IOS_TEST_DEVICE=" + device["udid"] + "\n")
+          PY
+
       - name: Shared tests on the iOS simulator
         # The app's logic, and the shared database over the driver the app opens it with.
-        run: ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
+        run: >-
+          ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
+          -Porbin.iosTestDevice="$ORBIN_IOS_TEST_DEVICE"
 
       - name: Generate the Xcode project
         run: |
@@ -71,3 +101,7 @@ jobs:
             app-ios/build/reports/tests/**
             storage/build/reports/tests/**
           if-no-files-found: ignore
+
+      - name: Shut down test simulator
+        if: always() && env.ORBIN_IOS_TEST_DEVICE != ''
+        run: xcrun simctl shutdown "$ORBIN_IOS_TEST_DEVICE"

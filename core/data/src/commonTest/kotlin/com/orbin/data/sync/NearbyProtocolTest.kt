@@ -1,11 +1,13 @@
 package com.orbin.data.sync
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class NearbyProtocolTest {
@@ -45,6 +47,32 @@ class NearbyProtocolTest {
         listOf("172.15.0.1", "172.32.0.1", "192.169.0.1", "0.0.0.0", "224.0.0.1", "localhost").forEach {
             assertFalse(localAddress(it))
         }
+    }
+
+    @Test
+    fun transferIntentIsRequiredSoOldAutomaticClientsCannotAppearManual() {
+        val legacy = """{"device":"old-peer","name":"Old device","port":39157,"document":{"version":1}}"""
+        assertFailsWith<SerializationException> { NearbyJson.decodeFromString<NearbyRequest>(legacy) }
+        listOf(false, true).forEach { automatic ->
+            val request = NearbyRequest("peer", "Device", 39157, SyncDocument(), automatic)
+            assertEquals(request, NearbyJson.decodeFromString<NearbyRequest>(NearbyJson.encodeToString(request)))
+        }
+    }
+
+    @Test
+    fun localNetworkCheckUsesActualPrefixAndRejectsMalformedMasks() {
+        assertTrue(NearbyNetwork("192.168.1.20", 24).contains("192.168.1.42"))
+        assertFalse(NearbyNetwork("192.168.1.20", 24).contains("192.168.2.42"))
+        assertTrue(NearbyNetwork("10.8.1.20", 16).contains("10.8.200.42"))
+        assertFalse(NearbyNetwork("10.8.1.20", 16).contains("10.9.1.20"))
+        assertFalse(NearbyNetwork("192.168.1.20", 28).contains("192.168.1.42"))
+        assertFalse(NearbyNetwork("192.168.1.20", 0).contains("192.168.1.42"))
+        assertFalse(NearbyNetwork("192.168.1.20", 24).contains("example.com"))
+        assertEquals(24, nearbyPrefix("255.255.255.0"))
+        assertEquals(16, nearbyPrefix("255.255.0.0"))
+        assertNull(nearbyPrefix("255.0.255.0"))
+        assertNull(nearbyPrefix("0.0.0.0"))
+        assertNull(nearbyPrefix("broken"))
     }
 
     @Test

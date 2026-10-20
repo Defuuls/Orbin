@@ -129,6 +129,11 @@ fun NextSettingsScreen(
                     nearbyState.pairingCode,
                     nearbyState.devices.map { it.id to it.name },
                     nearbyState.message,
+                    trustedIds =
+                        nearbyState.devices
+                            .filter { it.trusted }
+                            .map { it.id }
+                            .toSet(),
                 )
         )
 
@@ -143,6 +148,11 @@ fun NextSettingsScreen(
                         item.id == NearbySettingIds.ADD -> viewModel.createNearbyCode()
                         item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
                         item.id == NearbySettingIds.SYNC -> viewModel.syncNearby()
+                        item.id.startsWith(NearbySettingIds.TRUST_PREFIX) -> {
+                            val id = item.id.removePrefix(NearbySettingIds.TRUST_PREFIX)
+                            val device = nearbyState.devices.firstOrNull { it.id == id }
+                            if (device != null) viewModel.setNearbyTrusted(id, !device.trusted)
+                        }
                         item.id.startsWith(NearbySettingIds.FORGET_PREFIX) ->
                             viewModel.forgetNearby(item.id.removePrefix(NearbySettingIds.FORGET_PREFIX))
                     }

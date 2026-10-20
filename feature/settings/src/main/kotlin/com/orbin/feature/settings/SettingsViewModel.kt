@@ -73,6 +73,13 @@ class SettingsViewModel
             viewModelScope.launch { nearbySync?.syncNow() }
         }
 
+        fun setNearbyTrusted(
+            device: String,
+            trusted: Boolean,
+        ) {
+            viewModelScope.launch { nearbySync?.setTrusted(device, trusted) }
+        }
+
         fun forgetNearby(device: String) {
             viewModelScope.launch { nearbySync?.forget(device) }
         }

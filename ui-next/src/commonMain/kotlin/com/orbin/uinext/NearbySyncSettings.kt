@@ -6,6 +6,7 @@ object NearbySettingIds {
     const val CODE = "nearbyCode"
     const val JOIN = "nearbyJoin"
     const val SYNC = "nearbySync"
+    const val TRUST_PREFIX = "nearbyTrust:"
     const val FORGET_PREFIX = "nearbyForget:"
 }
 
@@ -17,6 +18,7 @@ fun nearbySyncRows(
     code: String?,
     devices: List<Pair<String, String>>,
     message: String?,
+    trustedIds: Set<String> = emptySet(),
 ): List<SettingItem> =
     buildList {
         add(
@@ -77,16 +79,29 @@ fun nearbySyncRows(
                         ),
             ),
         )
-        devices.forEach { (id, name) ->
-            add(
-                SettingItem(
-                    id = NearbySettingIds.FORGET_PREFIX + id,
-                    label = name,
-                    value = "Remove device",
-                    kind = SettingKind.ACTION,
-                    hint = "Revoke this device's access. Local reading history and bookmarks are kept.",
-                    destructive = true,
-                ),
-            )
-        }
+        devices.forEach { (id, name) -> addAll(nearbyDeviceRows(id, name, id in trustedIds)) }
     }
+
+private fun nearbyDeviceRows(
+    id: String,
+    name: String,
+    trusted: Boolean,
+): List<SettingItem> =
+    listOf(
+        SettingItem(
+            id = NearbySettingIds.TRUST_PREFIX + id,
+            label = "$name: trust for automatic sync",
+            value = if (trusted) "On" else "Off",
+            hint =
+                "Enable on both devices to sync automatically when reachable on the same local network. " +
+                    "Both apps must be open and unlocked.",
+        ),
+        SettingItem(
+            id = NearbySettingIds.FORGET_PREFIX + id,
+            label = name,
+            value = "Remove device",
+            kind = SettingKind.ACTION,
+            hint = "Revoke this device's access. Local reading history and bookmarks are kept.",
+            destructive = true,
+        ),
+    )

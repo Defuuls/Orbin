@@ -3,9 +3,11 @@ package com.orbin.data.sync
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,9 +60,7 @@ class NearbySyncTest {
                 assertEquals(listOf(2L), firstProgress.snapshot().visits.map { it.thread })
 
                 first.forget(
-                    first.state.value.devices
-                        .single()
-                        .id,
+                    first.device().id,
                 )
                 assertTrue(
                     first.state.value.devices
@@ -106,10 +106,151 @@ class NearbySyncTest {
             }
         }
 
+    @Test
+    fun automaticSyncRequiresMutualTrustAndCurrentLocalNetwork() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val sameNetwork = MutableStateFlow(false)
+            val networks = {
+                if (sameNetwork.value) {
+                    listOf(NearbyNetwork("127.0.0.1", 8))
+                } else {
+                    listOf(NearbyNetwork("192.168.2.3", 24))
+                }
+            }
+            val firstProgress = Progress(doc(1))
+            val secondProgress = Progress(doc(2))
+            val secret = MemorySecret()
+            val first = controller(firstProgress, scope, networks, secret)
+            val second = controller(secondProgress, scope, networks)
+            try {
+                first.setActive(true)
+                second.setActive(true)
+                first.createPairingCode()
+                second.join(assertNotNull(first.state.value.pairingCode))
+                withTimeout(5000) { first.state.first { it.devices.firstOrNull()?.lastSyncedMillis != null } }
+                val secondId =
+                    first.device().id
+                val firstId =
+                    second.device().id
+                assertFalse(
+                    first.device().trusted,
+                )
+                firstProgress.replace(doc(3))
+                sameNetwork.value = true
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+                first.setTrusted(secondId, true)
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+                sameNetwork.value = false
+                second.setTrusted(firstId, true)
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 3L })
+
+                // Trust survives repository recreation and does not need another invitation.
+                val restored = controller(Progress(doc(1)), scope, networks, secret)
+                restored.setEnabled(true)
+                assertTrue(
+                    restored.device().trusted,
+                )
+                sameNetwork.value = true
+                withTimeout(5000) { while (secondProgress.snapshot().visits.none { it.thread == 3L }) delay(10) }
+                assertTrue(
+                    first.device().trusted,
+                )
+                assertTrue(
+                    second.device().trusted,
+                )
+
+                // Revoking trust blocks automatic writes regardless of which device is the initiator.
+                first.setTrusted(secondId, false)
+                firstProgress.replace(doc(4))
+                delay(200)
+                assertFalse(secondProgress.snapshot().visits.any { it.thread == 4L })
+                first.syncNow()
+                withTimeout(5000) { while (secondProgress.snapshot().visits.none { it.thread == 4L }) delay(10) }
+                assertFalse(
+                    first.device().trusted,
+                )
+            } finally {
+                first.setActive(false)
+                second.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    @Test
+    fun manualSyncWaitsForAnExistingTransferAndBusyPeersCanRetry() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val firstProgress = Progress(doc(1))
+            val secondProgress = Progress(doc(2))
+            val first = controller(firstProgress, scope)
+            val second = controller(secondProgress, scope)
+            val entered = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            try {
+                first.setActive(true)
+                second.setActive(true)
+                first.createPairingCode()
+                val invite = NearbyInvite.parse(assertNotNull(first.state.value.pairingCode))
+                second.join(invite.code())
+                withTimeout(5000) { first.state.first { it.devices.firstOrNull()?.lastSyncedMillis != null } }
+                firstProgress.snapshotPause.value = entered to release
+                val inFlight = scope.async { first.syncNow() }
+                withTimeout(5000) { entered.await() }
+
+                // Both pair locks are now held by a real authenticated socket exchange.
+                val sockets = NearbySockets()
+                try {
+                    val connection = sockets.connect(invite.host, invite.port)
+                    try {
+                        val hello = NearbyHello(invite.id, NearbyCrypto.token())
+                        connection.write(NearbyJson.encodeToString(hello).encodeToByteArray())
+                        assertEquals("orbin-nearby-busy", withTimeout(5000) { connection.read().decodeToString() })
+                    } finally {
+                        connection.close()
+                    }
+                } finally {
+                    sockets.close()
+                }
+                secondProgress.replace(doc(3))
+                val queued = scope.async { second.syncNow() }
+                delay(100)
+                assertFalse(queued.isCompleted, "Manual sync must queue rather than return without syncing")
+                release.complete(Unit)
+                withTimeout(5000) {
+                    inFlight.await()
+                    queued.await()
+                }
+                assertEquals(listOf(3L), firstProgress.snapshot().visits.map { it.thread })
+                assertEquals(listOf(3L), secondProgress.snapshot().visits.map { it.thread })
+            } finally {
+                release.complete(Unit)
+                first.setActive(false)
+                second.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    private fun NearbySync.device() = state.value.devices.single()
+
     private fun controller(
         progress: Progress,
         scope: CoroutineScope,
-    ) = NearbySync(progress, MemoryPreferences(), NearbySyncSecrets(MemorySecret()), scope, { listOf("127.0.0.1") }, 0)
+        networks: () -> List<NearbyNetwork> = { listOf(NearbyNetwork("127.0.0.1", 8)) },
+        secret: MemorySecret = MemorySecret(),
+    ) = NearbySync(
+        progress,
+        MemoryPreferences(),
+        NearbySyncSecrets(secret),
+        scope,
+        { listOf("127.0.0.1") },
+        0,
+        networks = networks,
+        autoSyncMillis = 40,
+    )
 
     private fun doc(thread: Long) =
         SyncDocument(visits = listOf(SyncedVisit("site", "g", thread, "Title", lastVisitedMillis = 1)))
@@ -119,7 +260,15 @@ class NearbySyncTest {
     ) : NearbyProgress {
         private val mutex = Mutex()
 
-        override suspend fun snapshot(): SyncDocument = mutex.withLock { document }
+        val snapshotPause = MutableStateFlow<Pair<CompletableDeferred<Unit>, CompletableDeferred<Unit>>?>(null)
+
+        override suspend fun snapshot(): SyncDocument {
+            snapshotPause.value?.let { (entered, release) ->
+                entered.complete(Unit)
+                release.await()
+            }
+            return mutex.withLock { document }
+        }
 
         override suspend fun merge(
             base: SyncDocument?,

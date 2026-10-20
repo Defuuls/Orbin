@@ -13,6 +13,17 @@ class NearbySettingsTest {
     }
 
     @Test
+    fun trustIsExplicitAndSeparateFromRemovingAPairing() {
+        val devices = listOf("one" to "My tablet", "two" to "My phone")
+        val rows = nearbySyncRows(true, true, false, null, devices, null, trustedIds = setOf("one"))
+        val trusted = rows.single { it.id == NearbySettingIds.TRUST_PREFIX + "one" }
+        assertEquals(SettingKind.TOGGLE, trusted.kind)
+        assertEquals("On", trusted.value)
+        assertEquals("Off", rows.single { it.id == NearbySettingIds.TRUST_PREFIX + "two" }.value)
+        assertEquals(2, rows.count { it.id.startsWith(NearbySettingIds.FORGET_PREFIX) })
+    }
+
+    @Test
     fun codeIsSelectableOnlyWhenPresentAndJoinNeverPrefillsSecrets() {
         val rows = nearbySyncRows(true, true, false, "private-code", listOf("device" to "Other device"), null)
         val code = rows.single { it.id == NearbySettingIds.CODE }

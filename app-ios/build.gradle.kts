@@ -24,6 +24,22 @@ kotlin {
         }
     }
 
+    // Native tests are executables, so they do not inherit an app's Keychain identity.
+    // Embed a simulator-only test identity, as recommended for KT-61470. Production frameworks
+    // and device binaries never receive these entitlements.
+    val keychainTestEntitlements = layout.projectDirectory.file("src/iosTest/resources/KeychainTest.entitlements.plist")
+    iosSimulatorArm64().testRuns.configureEach {
+        executionSource.binary.linkerOpts(
+            "-sectcreate",
+            "__TEXT",
+            "__entitlements",
+            keychainTestEntitlements.asFile.absolutePath,
+        )
+        executionSource.binary.linkTaskProvider.configure {
+            inputs.file(keychainTestEntitlements).withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(project(":ui-next"))
@@ -67,4 +83,11 @@ kotlin {
 // The few strings the iOS app says itself; the shared screens bring their own.
 compose.resources {
     packageOfResClass = "com.orbin.ios.resources"
+}
+
+// Print failure messages in CI; the default short format drops them.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }

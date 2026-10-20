@@ -400,6 +400,11 @@ private fun SettingsDestination(
                         nearbyStatus.pairingCode,
                         nearbyStatus.devices.map { it.id to it.name },
                         nearbyStatus.message,
+                        trustedIds =
+                            nearbyStatus.devices
+                                .filter { it.trusted }
+                                .map { it.id }
+                                .toSet(),
                     )
             ),
         expandedId = expanded,
@@ -411,6 +416,11 @@ private fun SettingsDestination(
                     item.id == NearbySettingIds.ADD -> scope.launch { nearby?.createPairingCode() }
                     item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
                     item.id == NearbySettingIds.SYNC -> scope.launch { nearby?.syncNow() }
+                    item.id.startsWith(NearbySettingIds.TRUST_PREFIX) -> {
+                        val id = item.id.removePrefix(NearbySettingIds.TRUST_PREFIX)
+                        val device = nearbyStatus.devices.firstOrNull { it.id == id }
+                        if (device != null) scope.launch { nearby?.setTrusted(id, !device.trusted) }
+                    }
                     item.id.startsWith(NearbySettingIds.FORGET_PREFIX) ->
                         scope.launch { nearby?.forget(item.id.removePrefix(NearbySettingIds.FORGET_PREFIX)) }
                 }

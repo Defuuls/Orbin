@@ -240,6 +240,26 @@ class ProposalScreenshotTest {
         }
 
     @Test
+    fun nearbyTrustedDevices() =
+        capture("next_nearby_trusted") {
+            SettingsScreen(
+                groups =
+                    listOf(
+                        "Nearby devices" to
+                            nearbySyncRows(
+                                enabled = true,
+                                listening = true,
+                                busy = false,
+                                code = null,
+                                devices = listOf("tablet" to "Orbin abc12", "phone" to "Orbin def34"),
+                                message = null,
+                                trustedIds = setOf("tablet"),
+                            ),
+                    ),
+            )
+        }
+
+    @Test
     fun nearbyPairing() =
         capture("next_nearby_pairing") {
             SettingsScreen(
