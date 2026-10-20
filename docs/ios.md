@@ -100,6 +100,15 @@ A reader, so far:
   in the background, and hidden in the app switcher. It unlocks with Face ID or Touch ID, or the
   device passcode, where Android asks for strong biometrics only. Turning it on asks you to unlock
   once first, so it cannot lock you out. The lock screen is the shared `ui-next` one Android uses.
+- nearby device sync, as on Android: pairing codes as QR codes (drawn with Core Image's
+  `CIQRCodeGenerator`, scanned with an `AVCaptureSession` metadata output, no extra dependencies),
+  Bluetooth LE through CoreBluetooth (`IosNearbyBluetooth` in `:core:data`, the same advertisement
+  and L2CAP framing as Android, so the two pair with each other), and the optional relay through
+  the shared Ktor client. Camera access (`NSCameraUsageDescription`) is asked on the first scan and
+  Bluetooth access (`NSBluetoothAlwaysUsageDescription`) when **Also use Bluetooth** is turned on.
+  iOS fits one 128-bit service UUID in an advertisement, so while an invitation is open it
+  advertises the invitation and not the device beacon. Bluetooth works only while Orbin is in the
+  foreground, as on Android.
 
 Followed boards and settings live in a DataStore file beside the database, read and written by
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,

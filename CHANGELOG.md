@@ -6,10 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Nearby Bluetooth advertisements now carry the beacon in a service UUID so iOS can advertise and read them; Bluetooth pairing needs this version on both devices.
+
 ### Added
 - Nearby devices (Android): **Add a device** now shows the pairing code as a QR code, and **Join another device → Scan QR code** reads it with the camera. Copying and pasting the code still works.
-- Nearby devices (Android): optional **Also use Bluetooth** pairs and syncs over Bluetooth LE when the devices aren't on the same Wi-Fi, with the same end-to-end encryption. A phone's own hotspot now also counts as a local network.
-- WebDAV sync (Android): **Set up another device** shows the folder and login as a QR code, and **Copy setup from another device** scans it, for syncing over the Internet or mobile data without retyping the password.
+- Nearby devices: optional **Also use Bluetooth** pairs and syncs over Bluetooth LE when the devices aren't on the same Wi-Fi, with the same end-to-end encryption. A phone's own hotspot now also counts as a local network.
+- Nearby devices: optional **Relay server** setting for pairing and syncing over the Internet through a self-hosted Orbin relay (new `relay/` server, Docker image, see `docs/relay.md`). The relay only forwards end-to-end encrypted frames, needs no accounts and stores nothing; the pairing QR code carries its URL. Empty by default.
+- iOS: pairing and sync setup QR codes are shown and scanned with the camera, and **Also use Bluetooth** syncs over Bluetooth LE, including with Android devices.
+- WebDAV sync: **Set up another device** shows the folder and login as a QR code, and **Copy setup from another device** scans it, for syncing over the Internet or mobile data without retyping the password.
 
 ## [169-Kohlrabi] - 2026-10-20
 

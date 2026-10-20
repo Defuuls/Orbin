@@ -92,10 +92,10 @@ To pair devices:
 1. Use builds with nearby-sync support on both devices, connect them to the same Wi-Fi, and keep
    Orbin open and unlocked.
 2. Open **Settings → Nearby devices** and enable **Nearby device sync** on both.
-3. Choose **Add a device** on one; it shows a QR code. On the other (Android), choose **Join
-   another device → Scan QR code** and point the camera at it. Copying the code and pasting it into
-   **Join with a code instead** still works, and is how iOS joins for now. Codes expire after ten
-   minutes and can enroll one device; share them privately.
+3. Choose **Add a device** on one; it shows a QR code. On the other, choose **Join another device
+   → Scan QR code** and point the camera at it. Copying the code and pasting it into **Join with a
+   code instead** still works. Codes expire after ten minutes and can enroll one device; share them
+   privately.
 4. Use **Sync now** for a manual transfer. For automatic transfers, enable **Trust for automatic
    sync** for the pairing on both devices.
 
@@ -109,10 +109,13 @@ access on iOS. Guest Wi-Fi isolation, VPNs or firewalls can prevent connections.
 is not included: if a saved device address changes, remove the pairing on both devices and pair
 again. Update Orbin on both devices when upgrading the sync protocol.
 
-Not on the same Wi-Fi? On Android, turn on **Also use Bluetooth** on both devices before pairing:
-pairing and **Sync now** then also work over Bluetooth LE within roughly ten metres, with the same
-encryption. On mobile data alone, share a hotspot from one phone and join it with the other; the
-hotspot counts as a local network.
+Not on the same Wi-Fi? Turn on **Also use Bluetooth** on both devices before pairing: pairing and
+**Sync now** then also work over Bluetooth LE within roughly ten metres, with the same encryption,
+between any mix of Android and iOS. On mobile data alone, share a hotspot from one phone and join
+it with the other; the hotspot counts as a local network. Or [host an Orbin relay](docs/relay.md)
+and enter its URL under **Relay server** before pairing: the QR code carries it, and pairing and
+**Sync now** then work over the Internet. The relay only forwards end-to-end encrypted frames; there
+is no public Orbin relay.
 
 For sync over the Internet (devices far apart, mobile data), the separate **WebDAV sync** option
 uses an HTTPS folder you control and its login. Set it up once, then use **Set up another device →
@@ -128,8 +131,8 @@ retyping the folder and password. See the [nearby-sync setup and limits](docs/ne
   locked content from recents previews.
 - The app lock gates the UI; background sync can still use its saved login. iOS keeps the sync
   password in device-only Keychain storage. See [authentication and recovery](docs/authentication.md).
-- Optional [nearby device sync](docs/nearby-sync.md) shares reading activity directly over Wi-Fi,
-  encrypted between paired devices, with no account or server.
+- Optional [nearby device sync](docs/nearby-sync.md) shares reading activity directly over Wi-Fi or
+  Bluetooth, or through a relay you host, encrypted between paired devices, with no account.
 - HTTPS-only imageboard and WebDAV networking, encrypted DNS with system-resolver fallback when a network
   blocks DoH, and configurable user-agent behavior.
 - Android cloud backup/device transfer of private local state is disabled.

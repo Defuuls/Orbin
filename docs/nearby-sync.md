@@ -3,8 +3,8 @@
 Open **Settings → Nearby devices** on both devices while connected to the same Wi-Fi (or with
 **Also use Bluetooth** on, see below). Enable nearby sync and choose **Add a device** on one: it
 shows the pairing code as a QR code. On the other, choose **Join another device → Scan QR code**
-and point the camera at it. The textual code is still listed under the QR row: long-press to copy
-it and paste it into **Join with a code instead** (iOS currently joins this way). Share the code
+and point the camera at it (Android and iOS). The textual code is still listed under the QR row:
+long-press to copy it and paste it into **Join with a code instead**. Share the code
 privately: it grants access to your activity. It expires after ten minutes and is consumed after
 one successful enrollment.
 
@@ -17,19 +17,37 @@ merging, key rotation and the authenticated encryption below are identical on ea
 | Transport | When | Notes |
 | --- | --- | --- |
 | Local network (TCP 39157) | Same Wi-Fi/Ethernet, or one phone's hotspot | Pairing, **Sync now**, automatic sync for trusted peers. Hotspot interfaces (`ap*`, `swlan*`) count as local, so two phones on mobile data can sync through one's hotspot without using data. |
-| Bluetooth LE (Android) | **Also use Bluetooth** on both devices | Pairing and **Sync now** only, about 10 m. Needs Nearby devices permission (`BLUETOOTH_SCAN` with `neverForLocation`, `BLUETOOTH_ADVERTISE`, `BLUETOOTH_CONNECT`). Never used for automatic sync. |
-| Internet | Devices far apart / mobile data | Uses the existing WebDAV sync through a folder you control. **Set up another device** shows the folder and login as a QR code for the other device to scan, see below. There is no Orbin relay server. |
+| Bluetooth LE (Android and iOS, interoperable) | **Also use Bluetooth** on both devices | Pairing and **Sync now** only, about 10 m. Android needs Nearby devices permission (`BLUETOOTH_SCAN` with `neverForLocation`, `BLUETOOTH_ADVERTISE`, `BLUETOOTH_CONNECT`); iOS asks for Bluetooth access. Never used for automatic sync. |
+| Relay (Internet, mobile data) | A **Relay server** URL is set on the inviter (the joiner adopts it from the QR code) | Pairing and **Sync now** through a self-hosted [Orbin relay](relay.md) that only forwards the already-encrypted frames. Empty by default: there is no public Orbin relay, you host your own. |
+| WebDAV (Internet) | Devices far apart, no relay | The separate WebDAV sync through a folder you control. **Set up another device** shows the folder and login as a QR code for the other device to scan, see below. |
 
-A pairing code lists every route the inviter offers: its local address when it has one, and a
-Bluetooth flag when Bluetooth sync is on. Wi-Fi-only codes are byte-for-byte the previous format.
-A joiner uses Wi-Fi when the inviter's address is on one of its current networks and Bluetooth
-otherwise. **Sync now** tries the same order for each saved device and falls back to the other.
+A pairing code lists every route the inviter offers: its local address when it has one, a
+Bluetooth flag when Bluetooth sync is on, and its relay URL when one is set. Wi-Fi-only codes are
+byte-for-byte the previous format. A joiner uses Wi-Fi when the inviter's address is on one of its
+current networks, then Bluetooth, then the relay, then Wi-Fi anyway. **Sync now** tries the same
+order for each saved device and falls through to the next route on failure. A joiner without a
+relay of its own adopts the invitation's, and each pairing remembers the relay it uses.
+
+### Relay details
+
+The relay is a rendezvous point, not a sync server: see [relay.md](relay.md) for deployment and the
+wire protocol. Both devices derive the channel names from secrets the relay never sees:
+
+- an open invitation listens on `base64url(SHA-256("orbin-relay1|invite|" + selector))`;
+- a device listens on `base64url(SHA-256("orbin-relay1|device|" + deviceId + "|" + window))` for the
+  current and previous ten-minute window, so a saved peer can find it without a fixed identifier.
+
+The relay pairs one `listen` with one `connect` on a channel and forwards binary WebSocket frames
+between them. Those frames are the same AES-GCM frames as over Wi-Fi, keyed by the pairing code or
+pair key, so the relay sees only channel hashes, sizes, timing and IP addresses. Relay URLs must be
+`https://` (plain `http://` is accepted only for `localhost` and private addresses, for testing).
 
 ### Bluetooth LE details
 
 While listening, the device opens an insecure (unbonded) L2CAP connection-oriented channel and
-advertises connectable BLE packets whose service data (UUID `8cd8eea8-5c1c-41dc-8dac-5c7824b81fa4`)
-is a six-byte beacon followed by the two-byte PSM. A peer scans for the beacon it expects and
+advertises connectable BLE packets carrying one 128-bit service UUID (the only payload iOS can
+advertise, so Android and iOS pair with each other): `4f52424e-0100-` + the six-byte beacon + the
+two-byte PSM + `0000`. A peer scans for the beacon it expects and
 connects to that PSM. Bonding is not needed and no system pairing dialog appears, because every
 frame is still authenticated and encrypted with the pair key. Beacons:
 
@@ -40,8 +58,10 @@ frame is still authenticated and encrypted with the pair key. Beacons:
   with paired devices, so an onlooker can't link a device's beacons across windows.
 
 Pairings made over Bluetooth have no saved IP address until the devices also meet on a network;
-they are skipped by automatic sync. iOS has no Bluetooth transport yet (`NearbySyncSecrets`
-takes an optional `NearbyBluetooth`; iOS passes none) and keeps the Wi-Fi flow.
+they are skipped by automatic sync. Both platforms implement `NearbyBluetooth`: Android with
+`BluetoothLeAdvertiser` and L2CAP CoC sockets, iOS with CoreBluetooth (`CBPeripheralManager`
+publishes an unencrypted L2CAP channel, `CBCentralManager` scans and opens it). Frames on the
+channel are a four-byte big-endian length followed by the payload on both.
 
 ### Internet sync setup by QR code
 
@@ -49,8 +69,7 @@ Two devices that are never on the same network sync through WebDAV. After enteri
 login on one device, **Sync setup by QR code → Set up another device** shows an
 `orbin-webdav1:` code (base64url JSON with the https folder, username and password). Scanning it
 with **Copy setup from another device** saves the login on the second device and syncs. The QR
-code contains the password: show it only to your own device's camera. A relay that works without
-your own server would need hosted infrastructure; it is deliberately not part of this change.
+code contains the password: show it only to your own device's camera.
 
 Orbin shares reading history, last-read positions, bookmarks and watched threads. It keeps media,
 settings and WebDAV credentials on the original device. Existing activity is merged; subsequent
