@@ -276,6 +276,8 @@ class NearbySync(
         }
     }
 
+    // Rethrows cancellation, a final busy peer and a final failure; each needs its own catch.
+    @Suppress("ThrowsCount")
     private suspend fun exchange(
         pair: String,
         secret: String,
