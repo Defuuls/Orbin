@@ -9,9 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -204,7 +208,7 @@ class NearbySyncTest {
                 // Both pair locks are now held by a real authenticated socket exchange.
                 val sockets = NearbySockets()
                 try {
-                    val connection = sockets.connect(invite.host, invite.port)
+                    val connection = sockets.connect(assertNotNull(invite.host), invite.port)
                     try {
                         val hello = NearbyHello(invite.id, NearbyCrypto.token())
                         connection.write(NearbyJson.encodeToString(hello).encodeToByteArray())
@@ -233,6 +237,158 @@ class NearbySyncTest {
                 scope.cancel()
             }
         }
+
+    @Test
+    fun pairsAndSyncsOverBluetoothWithoutAnyLocalNetwork() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val air = FakeAir()
+            val firstProgress = Progress(doc(1))
+            val secondProgress = Progress(doc(2))
+            val first = bluetoothController(firstProgress, scope, air)
+            val second = bluetoothController(secondProgress, scope, air)
+            try {
+                first.setActive(true)
+                second.setActive(true)
+                first.setEnabled(true)
+                second.setEnabled(true)
+                first.setBluetoothEnabled(true)
+                second.setBluetoothEnabled(true)
+                assertTrue(first.state.value.bluetoothEnabled)
+                first.createPairingCode()
+                val invite = NearbyInvite.parse(assertNotNull(first.state.value.pairingCode))
+                assertNull(invite.host)
+                assertTrue(invite.bluetooth)
+                second.join(invite.code())
+                withTimeout(5000) { first.state.first { it.devices.firstOrNull()?.lastSyncedMillis != null } }
+                assertEquals(
+                    setOf(1L, 2L),
+                    firstProgress
+                        .snapshot()
+                        .visits
+                        .map { it.thread }
+                        .toSet(),
+                )
+                assertEquals(firstProgress.snapshot().visits.toSet(), secondProgress.snapshot().visits.toSet())
+
+                // Later syncs find the peer by its rotating device beacon, still with no network.
+                secondProgress.replace(doc(2))
+                delay(20)
+                second.syncNow()
+                withTimeout(5000) { while (firstProgress.snapshot().visits.size != 1) delay(10) }
+                assertEquals(listOf(2L), firstProgress.snapshot().visits.map { it.thread })
+            } finally {
+                first.setActive(false)
+                second.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    @Test
+    fun pairingWithoutWifiOrBluetoothExplainsWhatIsNeeded() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val lonely = bluetoothController(Progress(doc(1)), scope, FakeAir())
+            try {
+                lonely.setActive(true)
+                lonely.createPairingCode()
+                assertNull(lonely.state.value.pairingCode)
+                assertEquals(
+                    "Couldn't sync. Keep both devices open on the same Wi-Fi or within Bluetooth range; " +
+                        "check the code and local network or Nearby devices permission.",
+                    lonely.state.value.message,
+                )
+            } finally {
+                lonely.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    private fun bluetoothController(
+        progress: Progress,
+        scope: CoroutineScope,
+        air: FakeAir,
+    ) = NearbySync(
+        progress,
+        MemoryPreferences(),
+        NearbySyncSecrets(MemorySecret(), air.radio()),
+        scope,
+        { emptyList() },
+        0,
+        networks = { emptyList() },
+        autoSyncMillis = 40,
+    )
+
+    /** Every radio hears every advertisement; channels are in-memory frame queues. */
+    private class FakeAir {
+        private val advertised =
+            MutableStateFlow<
+                Map<
+                    Any,
+                    Pair<
+                        List<ByteArray>,
+                        suspend (
+                            NearbyChannel,
+                        ) -> Unit,
+                    >,
+                >,
+            >(emptyMap())
+
+        fun radio(): NearbyBluetooth =
+            object : NearbyBluetooth {
+                override fun ready() = true
+
+                override suspend fun serve(
+                    beacons: kotlinx.coroutines.flow.Flow<List<ByteArray>>,
+                    accept: suspend (NearbyChannel) -> Unit,
+                ) {
+                    val key = Any()
+                    val handlers = CoroutineScope(currentCoroutineContext())
+                    try {
+                        beacons.collect { tags ->
+                            advertised.update {
+                                it +
+                                    (key to (tags to { channel -> handlers.launch { accept(channel) } }))
+                            }
+                        }
+                    } finally {
+                        advertised.update { it - key }
+                    }
+                }
+
+                override suspend fun connect(beacons: List<ByteArray>): NearbyChannel {
+                    val accept =
+                        withTimeout(5000) {
+                            advertised
+                                .first { ads ->
+                                    ads.values.any { (tags, _) ->
+                                        tags.any { t -> beacons.any { it.contentEquals(t) } }
+                                    }
+                                }.values
+                                .first { (tags, _) -> tags.any { t -> beacons.any { it.contentEquals(t) } } }
+                                .second
+                        }
+                    val toServer = Channel<ByteArray>(Channel.UNLIMITED)
+                    val toClient = Channel<ByteArray>(Channel.UNLIMITED)
+                    accept(Pipe(toServer, toClient))
+                    return Pipe(toClient, toServer)
+                }
+            }
+    }
+
+    private class Pipe(
+        private val incoming: Channel<ByteArray>,
+        private val outgoing: Channel<ByteArray>,
+    ) : NearbyChannel {
+        override suspend fun read(limit: Int): ByteArray = incoming.receive().also { require(it.size in 1..limit) }
+
+        override suspend fun write(bytes: ByteArray) = outgoing.send(bytes)
+
+        override fun close() {
+            incoming.close()
+            outgoing.close()
+        }
+    }
 
     private fun NearbySync.device() = state.value.devices.single()
 

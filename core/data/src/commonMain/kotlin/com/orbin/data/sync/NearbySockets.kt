@@ -29,9 +29,22 @@ internal class NearbySockets {
     fun close() = selector.close()
 }
 
+/**
+ * One length-prefixed, bounded frame stream between two Orbin instances. The nearby protocol runs
+ * unchanged over every transport (local-network TCP, Bluetooth LE L2CAP); each frame after the
+ * hello is AES-GCM authenticated, so a transport only has to deliver bytes.
+ */
+interface NearbyChannel {
+    suspend fun read(limit: Int = MAX_NEARBY_BYTES): ByteArray
+
+    suspend fun write(bytes: ByteArray)
+
+    fun close()
+}
+
 internal class NearbyConnection(
     private val socket: Socket,
-) {
+) : NearbyChannel {
     private val input = socket.openReadChannel()
     private val output = socket.openWriteChannel(autoFlush = true)
 
@@ -43,18 +56,18 @@ internal class NearbyConnection(
             return address.joinToString(".") { (it.toInt() and 255).toString() }
         }
 
-    suspend fun read(limit: Int = MAX_NEARBY_BYTES): ByteArray {
+    override suspend fun read(limit: Int): ByteArray {
         val length = input.readInt()
         require(length in 1..limit) { "Invalid nearby frame size" }
         return ByteArray(length).also { input.readFully(it) }
     }
 
-    suspend fun write(bytes: ByteArray) {
+    override suspend fun write(bytes: ByteArray) {
         require(bytes.size in 1..MAX_NEARBY_BYTES) { "Too much activity for one nearby sync" }
         output.writeInt(bytes.size)
         output.writeFully(bytes)
         output.flush()
     }
 
-    fun close() = socket.close()
+    override fun close() = socket.close()
 }
