@@ -284,31 +284,60 @@ class NearbySync(
         automatic: Boolean = false,
     ) {
         val mutex = lock(pair)
-        if (!mutex.tryLock()) return
+        // Automatic rounds skip a busy pair and come back next round; a manual sync waits its turn.
+        if (automatic) {
+            if (!mutex.tryLock()) return
+        } else {
+            mutex.lock()
+        }
         try {
-            withTimeout(TRANSFER_TIMEOUT_MS) {
-                check(foreground.value)
-                if (!invitation) {
-                    val peer = current().peers.single { it.pair == pair && it.secret == secret }
-                    if (automatic) require(peer.trusted && onLocalNetwork(host))
-                }
-                val sockets = NearbySockets()
+            // The peer drops a session while its own automatic round with us holds the pair, so a
+            // manual sync retries rather than silently doing nothing.
+            val attempts = if (automatic || invitation) 1 else MANUAL_ATTEMPTS
+            repeat(attempts) { attempt ->
                 try {
-                    val connection = sockets.connect(host, remotePort)
-                    connections.update { it + connection }
-                    try {
-                        check(foreground.value)
-                        send(connection, pair, secret, host, remotePort, automatic)
-                    } finally {
-                        connection.close()
-                        connections.update { it - connection }
-                    }
-                } finally {
-                    sockets.close()
+                    connectAndSend(pair, secret, host, remotePort, invitation, automatic)
+                    return
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    if (attempt == attempts - 1) throw failure
+                    delay(RETRY_DELAY_MS * (attempt + 1))
                 }
             }
         } finally {
             mutex.unlock()
+        }
+    }
+
+    private suspend fun connectAndSend(
+        pair: String,
+        secret: String,
+        host: String,
+        remotePort: Int,
+        invitation: Boolean,
+        automatic: Boolean,
+    ) {
+        withTimeout(TRANSFER_TIMEOUT_MS) {
+            check(foreground.value)
+            if (!invitation) {
+                val peer = current().peers.single { it.pair == pair && it.secret == secret }
+                if (automatic) require(peer.trusted && onLocalNetwork(host))
+            }
+            val sockets = NearbySockets()
+            try {
+                val connection = sockets.connect(host, remotePort)
+                connections.update { it + connection }
+                try {
+                    check(foreground.value)
+                    send(connection, pair, secret, host, remotePort, automatic)
+                } finally {
+                    connection.close()
+                    connections.update { it - connection }
+                }
+            } finally {
+                sockets.close()
+            }
         }
     }
 
@@ -523,6 +552,8 @@ class NearbySync(
         private const val TRANSFER_TIMEOUT_MS = 30_000L
         private const val START_TIMEOUT_MS = 5_000L
         private const val AUTO_SYNC_MS = 30_000L
+        private const val MANUAL_ATTEMPTS = 3
+        private const val RETRY_DELAY_MS = 250L
         private const val HELLO_LIMIT = 2048
         private const val ACK = "orbin-nearby-accepted"
     }
