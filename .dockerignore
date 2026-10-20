@@ -1,0 +1,7 @@
+# Docker builds only the relay (relay/Dockerfile); keep local and generated state out of the context.
+**/build
+**/.gradle
+.git
+.idea
+local.properties
+iosApp/Orbin.xcodeproj
