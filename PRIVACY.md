@@ -25,7 +25,16 @@ activity, Clear image cache), or by uninstalling the app.
   unlocked. Automatic transfers require enabling trust on both devices and a current local-subnet
   check; trust is off by default. Pairing codes expire after ten minutes and should be shared
   privately. Removing a device revokes its future access; it does not erase copies it already received. Pair keys are
-  kept in encrypted settings on Android and device-only Keychain on iOS.
+  kept in encrypted settings on Android and device-only Keychain on iOS. On Android, pairing codes
+  can be shown and scanned as QR codes; the camera is only opened when you tap **Scan QR code**
+  and frames are decoded on the device and never stored or sent. **Bluetooth (optional, off by
+  default)**: with **Also use Bluetooth** on, Orbin advertises a short beacon while it is open and
+  unlocked so a paired device can find it. Beacons are derived from your private device id (or an
+  invitation's random selector) and rotate every ten minutes; they contain no name or activity.
+  Bluetooth scanning is declared `neverForLocation` and is not used to determine location.
+- **Sync setup QR code (Android, optional).** **Set up another device** shows your WebDAV folder,
+  username and password as a QR code so your other device can copy the setup. It is only drawn on
+  your screen; anyone who photographs it gets your WebDAV login.
 - **Updates (Android only).** The Android app checks GitHub for new releases.
 
 Nothing is shared with the developer or any other third party.
