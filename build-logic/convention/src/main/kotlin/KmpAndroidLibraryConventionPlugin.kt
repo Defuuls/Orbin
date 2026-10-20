@@ -1,6 +1,7 @@
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.orbin.buildlogic.configureAndroidLint
 import com.orbin.buildlogic.configureKotlin
+import com.orbin.buildlogic.configureSimulatorTests
 import com.orbin.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -50,6 +51,7 @@ class KmpAndroidLibraryConventionPlugin : Plugin<Project> {
 
             // Sets JVM 17 on the Android compilations along with the shared compiler flags.
             configureKotlin()
+            configureSimulatorTests()
 
             // CI runs `./gradlew test`. The Android host tests are `testAndroidHostTest` here, so
             // without this alias they would silently drop out of that run.
