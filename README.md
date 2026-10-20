@@ -88,7 +88,9 @@ does not post, reply, or create threads.
   locked content from recents previews.
 - The app lock gates the UI; background sync can still use its saved login. iOS keeps the sync
   password in device-only Keychain storage. See [authentication and recovery](docs/authentication.md).
-- HTTPS-only application networking, encrypted DNS with system-resolver fallback when a network
+- Optional [nearby device sync](docs/nearby-sync.md) shares reading activity directly over Wi-Fi,
+  encrypted between paired devices, with no account or server.
+- HTTPS-only imageboard and WebDAV networking, encrypted DNS with system-resolver fallback when a network
   blocks DoH, and configurable user-agent behavior.
 - Android cloud backup/device transfer of private local state is disabled.
 - Explicit backup/restore exports are user-controlled. Backup JSON and exported link files are

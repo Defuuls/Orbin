@@ -240,6 +240,25 @@ class ProposalScreenshotTest {
         }
 
     @Test
+    fun nearbyPairing() =
+        capture("next_nearby_pairing") {
+            SettingsScreen(
+                groups =
+                    listOf(
+                        "Nearby devices" to
+                            nearbySyncRows(
+                                enabled = true,
+                                listening = true,
+                                busy = false,
+                                code = "orbin-nearby1:" + "Abcd1234".repeat(40),
+                                devices = emptyList(),
+                                message = null,
+                            ),
+                    ),
+            )
+        }
+
+    @Test
     fun settingsMaxText() =
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(

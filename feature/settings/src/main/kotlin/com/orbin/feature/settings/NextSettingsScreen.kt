@@ -18,12 +18,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.ui.device.rememberFormFactor
+import com.orbin.uinext.NearbySettingIds
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.SyncSettingIds
+import com.orbin.uinext.nearbySyncRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,6 +58,7 @@ fun NextSettingsScreen(
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val nearbyState by viewModel.nearbyState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -116,43 +119,65 @@ fun NextSettingsScreen(
                 System.currentTimeMillis(),
             )
         }
-    val groups = model.groups
+    val groups =
+        model.groups + (
+            "Nearby devices" to
+                nearbySyncRows(
+                    nearbyState.enabled,
+                    nearbyState.listening,
+                    nearbyState.busy,
+                    nearbyState.pairingCode,
+                    nearbyState.devices.map { it.id to it.name },
+                    nearbyState.message,
+                )
+        )
 
     NextTheme {
         SettingsScreen(
             groups = groups,
             expandedId = expanded,
             onActivate = { item ->
-                when (item.kind) {
-                    SettingKind.TOGGLE -> model.toggle(item.id)
-                    SettingKind.CHOICE, SettingKind.TEXT ->
-                        expanded = if (expanded == item.id) null else item.id
-                    SettingKind.ACTION ->
-                        if (item.id == SyncSettingIds.SYNC_NOW) {
-                            viewModel.syncNow()
-                        } else {
-                            dispatch(
-                                item = item,
-                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                                onClear = {
-                                    if (clearArmed) {
-                                        clearArmed = false
-                                        viewModel.clearLocalActivity()
-                                        scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
-                                    } else {
-                                        clearArmed = true
-                                    }
-                                },
-                                onClearImageCache = viewModel::clearImageCache,
-                                onCheckUpdates = {
-                                    if (updateCheck != UpdateCheckState.Checking) {
-                                        viewModel.checkForUpdate(appVersionName(context))
-                                    }
-                                },
-                            )
-                        }
-                    SettingKind.INFO -> Unit
+                if (item.id.startsWith("nearby")) {
+                    when {
+                        item.id == NearbySettingIds.ENABLED -> viewModel.setNearbyEnabled(!nearbyState.enabled)
+                        item.id == NearbySettingIds.ADD -> viewModel.createNearbyCode()
+                        item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
+                        item.id == NearbySettingIds.SYNC -> viewModel.syncNearby()
+                        item.id.startsWith(NearbySettingIds.FORGET_PREFIX) ->
+                            viewModel.forgetNearby(item.id.removePrefix(NearbySettingIds.FORGET_PREFIX))
+                    }
+                } else {
+                    when (item.kind) {
+                        SettingKind.TOGGLE -> model.toggle(item.id)
+                        SettingKind.CHOICE, SettingKind.TEXT ->
+                            expanded = if (expanded == item.id) null else item.id
+                        SettingKind.ACTION ->
+                            if (item.id == SyncSettingIds.SYNC_NOW) {
+                                viewModel.syncNow()
+                            } else {
+                                dispatch(
+                                    item = item,
+                                    onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                    onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                                    onClear = {
+                                        if (clearArmed) {
+                                            clearArmed = false
+                                            viewModel.clearLocalActivity()
+                                            scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
+                                        } else {
+                                            clearArmed = true
+                                        }
+                                    },
+                                    onClearImageCache = viewModel::clearImageCache,
+                                    onCheckUpdates = {
+                                        if (updateCheck != UpdateCheckState.Checking) {
+                                            viewModel.checkForUpdate(appVersionName(context))
+                                        }
+                                    },
+                                )
+                            }
+                        SettingKind.INFO -> Unit
+                    }
                 }
             },
             onSelectOption = { item, index ->
@@ -160,7 +185,7 @@ fun NextSettingsScreen(
                 expanded = null
             },
             onCommitText = { item, value ->
-                model.commit(item.id, value)
+                if (item.id == NearbySettingIds.JOIN) viewModel.joinNearby(value) else model.commit(item.id, value)
                 expanded = null
             },
             modifier = modifier,

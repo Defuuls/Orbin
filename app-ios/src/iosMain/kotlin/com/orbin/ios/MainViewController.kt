@@ -78,14 +78,19 @@ fun MainViewController(): UIViewController {
     // The app lives as long as this controller, so the observers are never removed.
     observe(UIApplicationDidBecomeActiveNotification) {
         lock.onForeground()
+        graph.nearbySync.setActive(!lock.state.value.locked && !lock.state.value.obscured)
         browser.watched.refresh()
         UNUserNotificationCenter.currentNotificationCenter().setBadgeCount(0, withCompletionHandler = null)
         // Pick up what was read on another device since.
         graph.scope.launch { graph.threadSync.sync() }
     }
-    observe(UIApplicationWillResignActiveNotification) { lock.onResignActive() }
+    observe(UIApplicationWillResignActiveNotification) {
+        graph.nearbySync.setActive(false)
+        lock.onResignActive()
+    }
     observe(UIApplicationDidEnterBackgroundNotification) {
         lock.onBackground()
+        graph.nearbySync.setActive(false)
         // Leaving the app is when a background refresh is worth asking for.
         scheduleBackgroundRefresh()
         // And when what was read here should reach the other devices.
@@ -103,6 +108,7 @@ fun MainViewController(): UIViewController {
             graph.threadSync,
             graph.whatsNew,
             graph.pages,
+            graph.nearbySync,
         )
     }.also { controller -> attachPencil(controller.view) }
 }

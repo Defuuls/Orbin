@@ -7,12 +7,14 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.data.sync.PreferencesSyncPasswordStore
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.NearbySyncRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -44,6 +46,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions") // One provider per shared binding, with no platform behavior here.
 object SharedGraphModule {
     @Provides
     @Singleton
@@ -53,7 +56,17 @@ object SharedGraphModule {
         preferences: DataStore<Preferences>,
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
     ): SharedGraph =
-        createSharedGraph(client, database, preferences, ioDispatcher, PreferencesSyncPasswordStore(preferences))
+        createSharedGraph(
+            client,
+            database,
+            preferences,
+            ioDispatcher,
+            PreferencesSyncPasswordStore(preferences),
+            NearbySyncSecrets(PreferencesSyncPasswordStore(preferences, "nearby_sync_identity")),
+        )
+
+    @Provides
+    fun providesNearbySyncRepository(graph: SharedGraph): NearbySyncRepository = graph.nearbySync
 
     @Provides
     fun providesJson(graph: SharedGraph): Json = graph.json

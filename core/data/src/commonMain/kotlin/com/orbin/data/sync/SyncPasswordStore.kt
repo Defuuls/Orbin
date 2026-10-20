@@ -18,11 +18,14 @@ interface SyncPasswordStore {
 /** Android supplies an encrypted DataStore, so its password can stay with the other settings. */
 class PreferencesSyncPasswordStore(
     private val preferences: DataStore<Preferences>,
+    keyName: String = "sync_password",
 ) : SyncPasswordStore {
-    override suspend fun read(): String? = preferences.data.first()[SYNC_PASSWORD]
+    private val passwordKey = stringPreferencesKey(keyName)
+
+    override suspend fun read(): String? = preferences.data.first()[passwordKey]
 
     override suspend fun write(password: String) {
-        preferences.edit { it[SYNC_PASSWORD] = password }
+        preferences.edit { it[passwordKey] = password }
     }
 }
 
