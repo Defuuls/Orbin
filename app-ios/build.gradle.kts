@@ -68,3 +68,10 @@ kotlin {
 compose.resources {
     packageOfResClass = "com.orbin.ios.resources"
 }
+
+// Print failure messages in CI; the default short format drops them.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
