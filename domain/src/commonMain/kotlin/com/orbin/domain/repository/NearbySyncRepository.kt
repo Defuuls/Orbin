@@ -22,6 +22,10 @@ data class NearbySyncState(
     val bluetoothAvailable: Boolean = false,
     /** Bluetooth is switched on and its runtime permissions are granted right now. */
     val bluetoothReady: Boolean = false,
+    /** The relay server used to sync over the Internet, or null when none is set. */
+    val relayUrl: String? = null,
+    /** This platform can use a relay at all. */
+    val relayAvailable: Boolean = false,
 )
 
 /** Encrypted direct sync. Both devices must be unlocked in Orbin on the same local network. */
@@ -49,6 +53,12 @@ interface NearbySyncRepository {
 
     /** Also pair and sync over Bluetooth LE when the devices share no network. Manual only. */
     suspend fun setBluetoothEnabled(enabled: Boolean) = Unit
+
+    /**
+     * The self-hosted relay for syncing over the Internet (see docs/relay.md); blank removes it.
+     * Pairing codes made afterwards carry it, and a joiner without one adopts the inviter's.
+     */
+    suspend fun setRelayUrl(url: String) = Unit
 
     /** Re-read adapter and permission state, e.g. after a permission prompt or returning to the app. */
     fun refreshBluetooth() = Unit

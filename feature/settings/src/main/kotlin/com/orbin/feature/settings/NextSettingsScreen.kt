@@ -196,6 +196,8 @@ fun NextSettingsScreen(
                     qrCodes = true,
                     bluetoothAvailable = nearbyState.bluetoothAvailable,
                     bluetoothEnabled = nearbyState.bluetoothEnabled,
+                    relayAvailable = nearbyState.relayAvailable,
+                    relayUrl = nearbyState.relayUrl,
                 )
         ) + ("Sync setup by QR code" to syncSetupQrRows(syncState.isConfigured()))
 
@@ -221,7 +223,8 @@ fun NextSettingsScreen(
                                 } -> enableBluetooth()
                                 else -> bluetoothPermissions.launch(BLUETOOTH_PERMISSIONS)
                             }
-                        item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
+                        item.id == NearbySettingIds.JOIN || item.id == NearbySettingIds.RELAY ->
+                            expanded = if (expanded == item.id) null else item.id
                         item.id == NearbySettingIds.SYNC -> viewModel.syncNearby()
                         item.id.startsWith(NearbySettingIds.TRUST_PREFIX) -> {
                             val id = item.id.removePrefix(NearbySettingIds.TRUST_PREFIX)
@@ -281,7 +284,11 @@ fun NextSettingsScreen(
                 expanded = null
             },
             onCommitText = { item, value ->
-                if (item.id == NearbySettingIds.JOIN) viewModel.joinNearby(value) else model.commit(item.id, value)
+                when (item.id) {
+                    NearbySettingIds.JOIN -> viewModel.joinNearby(value)
+                    NearbySettingIds.RELAY -> viewModel.setNearbyRelay(value)
+                    else -> model.commit(item.id, value)
+                }
                 expanded = null
             },
             modifier = modifier,

@@ -29,5 +29,12 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
         }
+        // End to end over the real relay server and real WebSockets, on the JVM.
+        getByName("androidHostTest").dependencies {
+            implementation(project(":relay"))
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.client.cio)
+        }
     }
 }

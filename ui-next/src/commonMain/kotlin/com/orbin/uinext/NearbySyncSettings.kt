@@ -8,6 +8,7 @@ object NearbySettingIds {
     const val SHOW_QR = "nearbyShowQr"
     const val SCAN_QR = "nearbyScanQr"
     const val BLUETOOTH = "nearbyBluetooth"
+    const val RELAY = "nearbyRelay"
     const val SYNC = "nearbySync"
     const val TRUST_PREFIX = "nearbyTrust:"
     const val FORGET_PREFIX = "nearbyForget:"
@@ -31,6 +32,8 @@ fun nearbySyncRows(
     qrCodes: Boolean = false,
     bluetoothAvailable: Boolean = false,
     bluetoothEnabled: Boolean = false,
+    relayAvailable: Boolean = false,
+    relayUrl: String? = null,
 ): List<SettingItem> =
     buildList {
         add(
@@ -45,6 +48,7 @@ fun nearbySyncRows(
         )
         if (!enabled) return@buildList
         if (bluetoothAvailable) add(nearbyBluetoothRow(bluetoothEnabled))
+        if (relayAvailable) add(nearbyRelayRow(relayUrl))
         add(
             SettingItem(
                 NearbySettingIds.ADD,
@@ -112,6 +116,18 @@ private fun nearbyBluetoothRow(enabled: Boolean) =
         hint =
             "Pair and sync when the devices aren't on the same Wi-Fi, within about 10 m. " +
                 "Asks for Nearby devices access. Encrypted the same way as Wi-Fi.",
+    )
+
+private fun nearbyRelayRow(url: String?) =
+    SettingItem(
+        id = NearbySettingIds.RELAY,
+        label = "Relay server",
+        value = url?.substringAfter("://") ?: "Not set",
+        kind = SettingKind.TEXT,
+        text = url.orEmpty(),
+        hint =
+            "Sync over the Internet or mobile data through a relay you host (https://…). " +
+                "It only forwards encrypted data. Set it before Add a device; leave empty to turn off.",
     )
 
 private fun nearbyShowQrRow() =

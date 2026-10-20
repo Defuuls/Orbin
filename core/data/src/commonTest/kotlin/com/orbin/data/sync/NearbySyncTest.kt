@@ -1,8 +1,5 @@
 package com.orbin.data.sync
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +14,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -294,8 +289,8 @@ class NearbySyncTest {
                 lonely.createPairingCode()
                 assertNull(lonely.state.value.pairingCode)
                 assertEquals(
-                    "Couldn't sync. Keep both devices open on the same Wi-Fi or within Bluetooth range; " +
-                        "check the code and local network or Nearby devices permission.",
+                    "Couldn't sync. Keep both devices open on the same Wi-Fi, within Bluetooth range " +
+                        "or on the same relay; check the code and permissions.",
                     lonely.state.value.message,
                 )
             } finally {
@@ -410,50 +405,4 @@ class NearbySyncTest {
 
     private fun doc(thread: Long) =
         SyncDocument(visits = listOf(SyncedVisit("site", "g", thread, "Title", lastVisitedMillis = 1)))
-
-    private class Progress(
-        private var document: SyncDocument,
-    ) : NearbyProgress {
-        private val mutex = Mutex()
-
-        val snapshotPause = MutableStateFlow<Pair<CompletableDeferred<Unit>, CompletableDeferred<Unit>>?>(null)
-
-        override suspend fun snapshot(): SyncDocument {
-            snapshotPause.value?.let { (entered, release) ->
-                entered.complete(Unit)
-                release.await()
-            }
-            return mutex.withLock { document }
-        }
-
-        override suspend fun merge(
-            base: SyncDocument?,
-            remote: SyncDocument,
-        ): SyncDocument =
-            mutex.withLock {
-                mergeSync(base, document, remote).also { document = it }
-            }
-
-        suspend fun replace(value: SyncDocument) = mutex.withLock { document = value }
-    }
-
-    private class MemorySecret : SyncPasswordStore {
-        private var value: String? = null
-
-        override suspend fun read(): String? = value
-
-        override suspend fun write(password: String) {
-            value = password
-        }
-    }
-
-    private class MemoryPreferences : DataStore<Preferences> {
-        override val data = MutableStateFlow<Preferences>(emptyPreferences())
-        private val mutex = Mutex()
-
-        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
-            mutex.withLock {
-                transform(data.value).also { data.value = it }
-            }
-    }
 }

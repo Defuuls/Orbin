@@ -16,6 +16,7 @@ import com.orbin.data.repository.UpdateRepositoryImpl
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsRepositoryImpl
 import com.orbin.data.settings.SettingsStore
+import com.orbin.data.sync.NearbyRelay
 import com.orbin.data.sync.NearbySync
 import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.data.sync.SyncPasswordStore
@@ -221,7 +222,8 @@ abstract class SharedGraph(
         progress: ThreadSync,
         preferences: DataStore<Preferences>,
         secrets: NearbySyncSecrets,
-    ): NearbySync = NearbySync(progress, preferences, secrets)
+        client: HttpClient,
+    ): NearbySync = NearbySync(progress, preferences, secrets, relay = NearbyRelay(client))
 
     // Whole threads saved as a page with their files, for keeps.
     @AppScope
