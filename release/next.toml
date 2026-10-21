@@ -1,31 +1,26 @@
-# Orbin 170 - Salsify
+# Orbin 171 - Celeriac
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 170
-codename     = "Salsify"
-version_code = 188
+number       = 171
+codename     = "Celeriac"
+version_code = 189
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Pair by QR code and sync between Android and iOS over Bluetooth, or across the Internet through your own end-to-end encrypted relay."
+highlight = "Nearby sync now shows each step with a progress bar and says exactly what went wrong."
 
 summary = [
-  "bump Orbin to 170-Salsify / versionCode 188",
-  "QR pairing, Bluetooth LE sync across Android and iOS, WebDAV setup QR, and a self-hostable encrypted sync relay",
+  "bump Orbin to 171-Celeriac / versionCode 189",
+  "nearby sync progress and errors, iOS Local Network prompt",
 ]
 
 [changelog]
 Added = [
-  "QR code pairing: pair nearby devices by scanning a QR code instead of typing the one-use pairing code.",
-  "Bluetooth LE sync (opt-in): sync with nearby devices over Bluetooth when they are not on the same Wi-Fi, including between Android and iOS, still end-to-end encrypted with the pair key.",
-  "Sync setup by QR code: copy WebDAV sync settings to another device by scanning a QR code.",
-  "Internet sync through a self-hostable relay (relay/, docs/relay.md): paired devices sync over the Internet through a relay you run yourself; frames stay end-to-end encrypted, so the relay never sees plaintext or keys. There is no public relay.",
-  "iOS: show and scan pairing QR codes, Bluetooth sync, relay server and sync setup QR settings.",
+  "Nearby devices: a Status row with a progress bar shows each step of pairing and syncing (connecting over Wi-Fi, Bluetooth or the relay, checking the pairing, sending, merging), then the result.",
 ]
-Changed = [
-  "Joining and Sync now try local Wi-Fi first, then Bluetooth, then a configured relay, falling back to another route if the first fails.",
-  "Phone hotspot interfaces now count as the local network, so two phones on mobile data can sync through one phone's hotspot.",
-  "Bluetooth pairing between Android and iOS needs this version on both devices.",
+Fixed = [
+  "Nearby sync failures now say which connection failed and what to check, in red, instead of one generic message, and Sync now stays busy until every device has finished.",
+  "iOS: Orbin asks for Local Network access as soon as nearby sync starts, so an iPhone no longer silently refuses an Android device's connection.",
 ]
