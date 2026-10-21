@@ -16,6 +16,12 @@ data class NearbySyncState(
     val pairingCode: String? = null,
     val devices: List<NearbyDevice> = emptyList(),
     val message: String? = null,
+    /** The user's persisted choice to also pair and sync over Bluetooth LE. */
+    val bluetoothEnabled: Boolean = false,
+    /** This platform has a Bluetooth transport at all. */
+    val bluetoothAvailable: Boolean = false,
+    /** Bluetooth is switched on and its runtime permissions are granted right now. */
+    val bluetoothReady: Boolean = false,
 )
 
 /** Encrypted direct sync. Both devices must be unlocked in Orbin on the same local network. */
@@ -40,4 +46,10 @@ interface NearbySyncRepository {
     )
 
     suspend fun forget(deviceId: String)
+
+    /** Also pair and sync over Bluetooth LE when the devices share no network. Manual only. */
+    suspend fun setBluetoothEnabled(enabled: Boolean) = Unit
+
+    /** Re-read adapter and permission state, e.g. after a permission prompt or returning to the app. */
+    fun refreshBluetooth() = Unit
 }

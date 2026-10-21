@@ -92,9 +92,10 @@ To pair devices:
 1. Use builds with nearby-sync support on both devices, connect them to the same Wi-Fi, and keep
    Orbin open and unlocked.
 2. Open **Settings → Nearby devices** and enable **Nearby device sync** on both.
-3. Choose **Add a device** on one, copy its pairing code, then paste it into **Join another
-   device** on the other. Codes expire after ten minutes and can enroll one device; share them
-   privately.
+3. Choose **Add a device** on one; it shows a QR code. On the other (Android), choose **Join
+   another device → Scan QR code** and point the camera at it. Copying the code and pasting it into
+   **Join with a code instead** still works, and is how iOS joins for now. Codes expire after ten
+   minutes and can enroll one device; share them privately.
 4. Use **Sync now** for a manual transfer. For automatic transfers, enable **Trust for automatic
    sync** for the pairing on both devices.
 
@@ -108,8 +109,15 @@ access on iOS. Guest Wi-Fi isolation, VPNs or firewalls can prevent connections.
 is not included: if a saved device address changes, remove the pairing on both devices and pair
 again. Update Orbin on both devices when upgrading the sync protocol.
 
-For sync through a server you control, the separate **WebDAV sync** option uses an HTTPS folder
-and its login. See the [nearby-sync setup and limits](docs/nearby-sync.md),
+Not on the same Wi-Fi? On Android, turn on **Also use Bluetooth** on both devices before pairing:
+pairing and **Sync now** then also work over Bluetooth LE within roughly ten metres, with the same
+encryption. On mobile data alone, share a hotspot from one phone and join it with the other; the
+hotspot counts as a local network.
+
+For sync over the Internet (devices far apart, mobile data), the separate **WebDAV sync** option
+uses an HTTPS folder you control and its login. Set it up once, then use **Set up another device →
+Show QR code** and scan it with **Copy setup from another device** on the second device instead of
+retyping the folder and password. See the [nearby-sync setup and limits](docs/nearby-sync.md),
 [authentication and credential storage](docs/authentication.md), and [privacy policy](PRIVACY.md).
 
 ### Privacy and security

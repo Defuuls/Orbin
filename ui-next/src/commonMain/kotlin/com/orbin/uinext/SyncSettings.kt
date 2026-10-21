@@ -6,7 +6,37 @@ object SyncSettingIds {
     const val USERNAME = "syncUsername"
     const val PASSWORD = "syncPassword"
     const val SYNC_NOW = "syncNow"
+    const val SHOW_SETUP_QR = "syncShowSetupQr"
+    const val SCAN_SETUP_QR = "syncScanSetupQr"
 }
+
+/**
+ * Moving the WebDAV login to another device by QR code, so devices that are far apart (or only on
+ * mobile data) can sync through the reader's own server without retyping the folder and password.
+ */
+fun syncSetupQrRows(configured: Boolean): List<SettingItem> =
+    buildList {
+        if (configured) {
+            add(
+                SettingItem(
+                    id = SyncSettingIds.SHOW_SETUP_QR,
+                    label = "Set up another device",
+                    value = "Show QR code",
+                    kind = SettingKind.ACTION,
+                    hint = "Includes your WebDAV password. Show it only to your own device's camera.",
+                ),
+            )
+        }
+        add(
+            SettingItem(
+                id = SyncSettingIds.SCAN_SETUP_QR,
+                label = "Copy setup from another device",
+                value = "Scan QR code",
+                kind = SettingKind.ACTION,
+                hint = "Works anywhere with internet, including mobile data. Both devices sync through your folder.",
+            ),
+        )
+    }
 
 /**
  * The thread-sync rows, the same on Android and iOS: the WebDAV folder and its login, then a row

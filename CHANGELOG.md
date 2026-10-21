@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Nearby devices (Android): **Add a device** now shows the pairing code as a QR code, and **Join another device → Scan QR code** reads it with the camera. Copying and pasting the code still works.
+- Nearby devices (Android): optional **Also use Bluetooth** pairs and syncs over Bluetooth LE when the devices aren't on the same Wi-Fi, with the same end-to-end encryption. A phone's own hotspot now also counts as a local network.
+- WebDAV sync (Android): **Set up another device** shows the folder and login as a QR code, and **Copy setup from another device** scans it, for syncing over the Internet or mobile data without retyping the password.
+
 ## [169-Kohlrabi] - 2026-10-20
 
 ### Added

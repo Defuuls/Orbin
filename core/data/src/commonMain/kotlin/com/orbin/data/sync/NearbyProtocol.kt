@@ -17,13 +17,19 @@ internal const val INVITE_LIFETIME_MS = 10 * 60 * 1000L
 internal const val MAX_NEARBY_DEVICES = 8
 internal val NearbyJson = Json { ignoreUnknownKeys = true }
 
+/**
+ * What a pairing code (and its QR code) carries. [host] is the inviter's local IPv4 address, or null
+ * when it has no local network; [bluetooth] says the inviter also accepts the invitation over
+ * Bluetooth LE, found by the beacon derived from [id]. At least one route is always present.
+ */
 @Serializable
 internal data class NearbyInvite(
     val id: String,
     val secret: String,
-    val host: String,
+    val host: String?,
     val port: Int,
     val expires: Long,
+    val bluetooth: Boolean = false,
 ) {
     fun code(): String = "orbin-nearby1:" + Base64.UrlSafe.encode(NearbyJson.encodeToString(this).encodeToByteArray())
 
@@ -37,8 +43,9 @@ internal data class NearbyInvite(
                     Base64.UrlSafe.decode(code.removePrefix("orbin-nearby1:")).decodeToString(),
                 )
             require(
-                localAddress(invite.host) && invite.port in NEARBY_PORT_RANGE,
+                (invite.host == null || localAddress(invite.host)) && invite.port in NEARBY_PORT_RANGE,
             ) { "Pairing requires a local network address" }
+            require(invite.host != null || invite.bluetooth) { "Pairing code has no way to reach the device" }
             require(validToken(invite.id) && validToken(invite.secret)) { "Invalid pairing code" }
             return invite
         }
@@ -140,9 +147,14 @@ internal fun validateNearbyDocument(document: SyncDocument) {
     ) { "Invalid thread identity" }
 }
 
-/** Metadata and pair keys go into encrypted preferences on Android, device-only Keychain on iOS. */
+/**
+ * Metadata and pair keys go into encrypted preferences on Android, device-only Keychain on iOS.
+ * [bluetooth] is the platform's optional short-range transport; it rides along with the store so
+ * the shared graph's inputs stay the same on platforms that have none.
+ */
 class NearbySyncSecrets(
     val store: SyncPasswordStore,
+    val bluetooth: NearbyBluetooth? = null,
 )
 
 /** A testable seam over local progress; implementations never fetch a board or send credentials. */
