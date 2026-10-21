@@ -18,7 +18,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,6 +66,7 @@ import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.domain.repository.NearbySyncRepository
 import com.orbin.domain.repository.NearbySyncState
+import com.orbin.domain.repository.SYNC_SETUP_PREFIX
 import com.orbin.domain.repository.SyncAccountStorageException
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.WhatsNewRepository
@@ -96,6 +100,7 @@ import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.nearbySyncRows
 import com.orbin.uinext.next
 import com.orbin.uinext.syncSettingRows
+import com.orbin.uinext.syncSetupQrRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.flowOf
@@ -363,6 +368,32 @@ private fun SettingsDestination(
     var expanded by remember { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
     var imageCacheCleared by remember { mutableStateOf(false) }
+    var shownQr by remember { mutableStateOf<ShownQr?>(null) }
+    var notice by remember { mutableStateOf<String?>(null) }
+    // A scanned code is a nearby pairing code or a WebDAV setup code; Android routes them the same.
+    val applyScanned: (String) -> Unit = { raw ->
+        val code = raw.trim()
+        scope.launch {
+            when {
+                code.startsWith(SYNC_SETUP_PREFIX) && sync != null ->
+                    notice =
+                        try {
+                            sync.applySetupCode(code)
+                            scope.launch { sync.sync() }
+                            "Sync set up from your other device"
+                        } catch (_: SyncAccountStorageException) {
+                            "Couldn't save the sync login"
+                        } catch (_: IllegalArgumentException) {
+                            "That isn't a valid Orbin sync setup code"
+                        } catch (_: UnsupportedOperationException) {
+                            "Sync setup codes aren't supported here"
+                        }
+                code.startsWith(NEARBY_CODE_PREFIX) -> nearby?.join(code)
+                else -> notice = "That QR code isn't from Orbin"
+            }
+        }
+    }
+    val scan = { scanQrCode(onResult = applyScanned, onFailure = { notice = it }) }
     SettingsScreen(
         groups =
             remember(
@@ -405,16 +436,39 @@ private fun SettingsDestination(
                                 .filter { it.trusted }
                                 .map { it.id }
                                 .toSet(),
+                        qrCodes = true,
+                        bluetoothAvailable = nearbyStatus.bluetoothAvailable,
+                        bluetoothEnabled = nearbyStatus.bluetoothEnabled,
+                        relayAvailable = nearbyStatus.relayAvailable,
+                        relayUrl = nearbyStatus.relayUrl,
                     )
-            ),
+            ) +
+                listOfNotNull(
+                    sync?.let {
+                        "Sync setup by QR code" to
+                            syncSetupQrRows(
+                                syncStatus?.folderUrl?.startsWith("https://", ignoreCase = true) == true &&
+                                    syncStatus?.username?.isNotBlank() == true &&
+                                    syncStatus?.hasPassword == true,
+                            )
+                    },
+                ),
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
             if (item.id.startsWith("nearby")) {
                 when {
                     item.id == NearbySettingIds.ENABLED -> scope.launch { nearby?.setEnabled(!nearbyStatus.enabled) }
-                    item.id == NearbySettingIds.ADD -> scope.launch { nearby?.createPairingCode() }
-                    item.id == NearbySettingIds.JOIN -> expanded = if (expanded == item.id) null else item.id
+                    item.id == NearbySettingIds.ADD -> {
+                        shownQr = ShownQr.Pairing
+                        scope.launch { nearby?.createPairingCode() }
+                    }
+                    item.id == NearbySettingIds.SHOW_QR -> shownQr = ShownQr.Pairing
+                    item.id == NearbySettingIds.SCAN_QR -> scan()
+                    item.id == NearbySettingIds.BLUETOOTH ->
+                        scope.launch { nearby?.setBluetoothEnabled(!nearbyStatus.bluetoothEnabled) }
+                    item.id == NearbySettingIds.JOIN || item.id == NearbySettingIds.RELAY ->
+                        expanded = if (expanded == item.id) null else item.id
                     item.id == NearbySettingIds.SYNC -> scope.launch { nearby?.syncNow() }
                     item.id.startsWith(NearbySettingIds.TRUST_PREFIX) -> {
                         val id = item.id.removePrefix(NearbySettingIds.TRUST_PREFIX)
@@ -472,6 +526,16 @@ private fun SettingsDestination(
                         Haptics.light()
                         expanded = if (expanded == item.id) null else item.id
                     }
+                    SyncSettingIds.SCAN_SETUP_QR -> scan()
+                    SyncSettingIds.SHOW_SETUP_QR ->
+                        scope.launch {
+                            val code = sync?.setupCode()
+                            if (code == null) {
+                                notice = "Set up WebDAV sync on this device first"
+                            } else {
+                                shownQr = ShownQr.SyncSetup(code)
+                            }
+                        }
                     SyncSettingIds.SYNC_NOW ->
                         sync?.let {
                             Haptics.light()
@@ -504,6 +568,10 @@ private fun SettingsDestination(
                 scope.launch { nearby?.join(text) }
                 return@SettingsScreen
             }
+            if (item.id == NearbySettingIds.RELAY) {
+                scope.launch { nearby?.setRelayUrl(text) }
+                return@SettingsScreen
+            }
             val engine = sync ?: return@SettingsScreen
             scope.launch {
                 try {
@@ -519,7 +587,48 @@ private fun SettingsDestination(
             }
         },
     )
+    when (val qr = shownQr) {
+        ShownQr.Pairing ->
+            nearbyStatus.pairingCode?.let { code ->
+                QrCodeDialog(
+                    title = "Scan on your other device",
+                    payload = code,
+                    note =
+                        "In Orbin on the other device: Settings → Nearby devices → Scan QR code. " +
+                            "Expires in 10 minutes. Only share it with your own devices.",
+                    onDismiss = { shownQr = null },
+                )
+            }
+        is ShownQr.SyncSetup ->
+            QrCodeDialog(
+                title = "Set up sync on another device",
+                payload = qr.code,
+                note =
+                    "In Orbin on the other device: Settings → Copy setup from another device. " +
+                        "This contains your WebDAV password.",
+                onDismiss = { shownQr = null },
+            )
+        null -> Unit
+    }
+    notice?.let { text ->
+        AlertDialog(
+            onDismissRequest = { notice = null },
+            text = { Text(text) },
+            confirmButton = { TextButton(onClick = { notice = null }) { Text("OK") } },
+        )
+    }
 }
+
+/** The QR code Settings is showing: this device's pairing invitation or its WebDAV setup. */
+private sealed interface ShownQr {
+    data object Pairing : ShownQr
+
+    data class SyncSetup(
+        val code: String,
+    ) : ShownQr
+}
+
+private const val NEARBY_CODE_PREFIX = "orbin-nearby1:"
 
 @Composable
 private fun SearchDestination(browser: Browser) {

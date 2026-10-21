@@ -114,7 +114,7 @@ class AndroidNearbyBluetooth(
                         .Builder()
                         .setIncludeDeviceName(false)
                         .setIncludeTxPowerLevel(false)
-                        .addServiceData(SERVICE, beacon + byteArrayOf((psm shr BYTE).toByte(), psm.toByte()))
+                        .addServiceUuid(parcelUuid(NearbyBleAdvert.encode(beacon, psm)))
                         .build()
                 object : AdvertiseCallback() {}.also { advertiser.startAdvertising(settings, data, it) }
             }
@@ -148,11 +148,13 @@ class AndroidNearbyBluetooth(
         beacons: List<ByteArray>,
     ): Pair<BluetoothDevice, Int> {
         val scanner = adapter.bluetoothLeScanner ?: error("Bluetooth LE scanning is unavailable")
+        val mask = ByteArray(NearbyBleAdvert.UUID_BYTES) { if (it < NearbyBleAdvert.MATCH_BYTES) FULL_MASK else 0 }
         val filters =
             beacons.map { beacon ->
+                val match = NearbyBleAdvert.match(beacon).copyOf(NearbyBleAdvert.UUID_BYTES)
                 ScanFilter
                     .Builder()
-                    .setServiceData(SERVICE, beacon, ByteArray(beacon.size) { FULL_MASK })
+                    .setServiceUuid(parcelUuid(match), parcelUuid(mask))
                     .build()
             }
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
@@ -163,13 +165,13 @@ class AndroidNearbyBluetooth(
                         callbackType: Int,
                         result: ScanResult,
                     ) {
-                        val data = result.scanRecord?.getServiceData(SERVICE) ?: return
-                        if (data.size != NEARBY_BEACON_BYTES + 2) return
-                        val tag = data.copyOf(NEARBY_BEACON_BYTES)
-                        if (beacons.none { it.contentEquals(tag) }) return
-                        val psm =
-                            ((data[NEARBY_BEACON_BYTES].toInt() and BYTE_MASK) shl BYTE) or
-                                (data[NEARBY_BEACON_BYTES + 1].toInt() and BYTE_MASK)
+                        val (_, psm) =
+                            result.scanRecord
+                                ?.serviceUuids
+                                .orEmpty()
+                                .mapNotNull { NearbyBleAdvert.parse(it.uuid.toString())?.let(NearbyBleAdvert::decode) }
+                                .firstOrNull { (tag, _) -> beacons.any { it.contentEquals(tag) } }
+                                ?: return
                         runCatching { scanner.stopScan(this) }
                         if (continuation.isActive) continuation.resume(result.device to psm)
                     }
@@ -216,6 +218,8 @@ class AndroidNearbyBluetooth(
         }
     }
 
+    private fun parcelUuid(bytes: ByteArray) = ParcelUuid(UUID.fromString(NearbyBleAdvert.text(bytes)))
+
     companion object {
         /** Runtime permissions Bluetooth sync needs; the settings screen requests exactly these. */
         val PERMISSIONS =
@@ -225,11 +229,7 @@ class AndroidNearbyBluetooth(
                 Manifest.permission.BLUETOOTH_CONNECT,
             )
 
-        /** Orbin's nearby-sync service data UUID; random, not a Bluetooth SIG assignment. */
-        private val SERVICE = ParcelUuid(UUID.fromString("8cd8eea8-5c1c-41dc-8dac-5c7824b81fa4"))
         private const val SCAN_TIMEOUT_MS = 15_000L
-        private const val BYTE = 8
-        private const val BYTE_MASK = 0xff
         private const val FULL_MASK = 0xff.toByte()
     }
 }

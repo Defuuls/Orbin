@@ -45,6 +45,8 @@ internal data class NearbyPeer(
     val port: Int,
     val synced: Long? = null,
     val trusted: Boolean = false,
+    /** The relay both devices meet on over the Internet, if pairing involved one. */
+    val relay: String? = null,
 )
 
 @Serializable
@@ -53,6 +55,8 @@ internal data class NearbyIdentity(
     val enabled: Boolean = false,
     val peers: List<NearbyPeer> = emptyList(),
     val bluetooth: Boolean = false,
+    /** This device's relay server address ([normalizeRelayUrl]), or null for none. */
+    val relay: String? = null,
 ) {
     val name: String get() = "Orbin ${device.take(5)}"
 }
@@ -62,7 +66,7 @@ internal data class NearbyIdentity(
  * identities are authenticated and encrypted. Pairing keys rotate before the first response, so
  * an invitation cannot authorize a second device after it has been used.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass") // One state machine over every transport, sharing its locks.
 class NearbySync(
     private val progress: NearbyProgress,
     private val preferences: DataStore<Preferences>,
@@ -74,6 +78,7 @@ class NearbySync(
     private val networks: () -> List<NearbyNetwork> = ::nearbyNetworks,
     private val autoSyncMillis: Long = AUTO_SYNC_MS,
     private val bluetooth: NearbyBluetooth? = secrets.bluetooth,
+    private val relay: NearbyRelay? = null,
 ) : NearbySyncRepository {
     private val mutableState = MutableStateFlow(NearbySyncState())
     override val state = mutableState.asStateFlow()
@@ -87,6 +92,7 @@ class NearbySync(
     private var identity: NearbyIdentity? = null
     private var listener: Job? = null
     private var bluetoothServer: Job? = null
+    private var relayServer: Job? = null
     private var expiry: Job? = null
     private val pending = MutableStateFlow<NearbyInvite?>(null)
     private var boundPort = port
@@ -104,9 +110,18 @@ class NearbySync(
 
     override suspend fun setBluetoothEnabled(enabled: Boolean) =
         guarded {
-            if (enabled) check(bluetooth?.ready() == true) { "Turn on Bluetooth and allow Nearby devices access" }
+            if (enabled) check(bluetooth?.prepare() == true) { "Turn on Bluetooth and allow Bluetooth access" }
             change { it.copy(bluetooth = enabled) }
             if (enabled) startBluetooth() else stopBluetooth()
+        }
+
+    override suspend fun setRelayUrl(url: String) =
+        guarded {
+            val normalized = if (url.isBlank()) null else normalizeRelayUrl(url)
+            require(url.isBlank() || normalized != null) { "Use an https:// relay address" }
+            change { it.copy(relay = normalized) }
+            stopRelay()
+            if (normalized != null) startRelay()
         }
 
     override fun refreshBluetooth() {
@@ -120,7 +135,10 @@ class NearbySync(
             check(current().peers.size < MAX_NEARBY_DEVICES) { "Remove a device before adding another" }
             val host = addresses().firstOrNull(::localAddress)
             val overBluetooth = bluetoothOn()
-            check(host != null || overBluetooth) { "Connect to Wi-Fi or turn on Bluetooth sync before pairing" }
+            val overRelay = current().relay?.takeIf { relay != null }
+            check(host != null || overBluetooth || overRelay != null) {
+                "Connect to Wi-Fi, turn on Bluetooth sync or set a relay before pairing"
+            }
             val invite =
                 NearbyInvite(
                     NearbyCrypto.token(),
@@ -129,6 +147,7 @@ class NearbySync(
                     boundPort,
                     now() + INVITE_LIFETIME_MS,
                     bluetooth = overBluetooth,
+                    relay = overRelay,
                 )
             pending.value = invite
             if (!foreground.value) {
@@ -159,9 +178,18 @@ class NearbySync(
             ensureListening()
             require(current().peers.size < MAX_NEARBY_DEVICES) { "Too many paired devices" }
             val beacons = if (invite.bluetooth) listOf(NearbyBeacons.invite(invite.id)) else emptyList()
-            // A consumed invitation can't be retried on another route, so an invitation tries one.
-            val route = routes(invite.host, invite.port, beacons).firstOrNull() ?: error(NO_ROUTE)
-            exchange(invite.id, invite.secret, route, invitation = true)
+            val channels = invite.relay?.let { listOf(NearbyRelayChannels.invite(invite.id)) }.orEmpty()
+            // Falling through is safe: a route that fails before the inviter answers leaves the
+            // invitation unused, and one consumed mid-way is refused on every later route.
+            val address = PeerAddress(invite.host, invite.port, invite.relay)
+            tryRoutes(routes(invite.host, invite.port, beacons, invite.relay, channels)) { route ->
+                exchange(invite.id, invite.secret, route, address, invitation = true)
+            }
+            // A device without its own relay adopts the inviter's, so the pair can meet again later.
+            if (invite.relay != null && current().relay == null) {
+                change { it.copy(relay = invite.relay) }
+                startRelay()
+            }
         }
 
     override suspend fun syncNow() =
@@ -172,13 +200,25 @@ class NearbySync(
             }
         }
 
-    /** Wi-Fi first when the saved address is on a current network, then Bluetooth, then Wi-Fi anyway. */
+    /** Wi-Fi first when the saved address is on a current network, then Bluetooth, the relay, Wi-Fi anyway. */
     private suspend fun syncPeer(peer: NearbyPeer) {
         val beacons = if (bluetoothOn()) NearbyBeacons.device(peer.device, now()) else emptyList()
+        val relayUrl = peer.relay ?: current().relay
+        val channels = relayUrl?.let { NearbyRelayChannels.device(peer.device, now()) }.orEmpty()
+        val address = PeerAddress(peer.host, peer.port, relayUrl)
+        tryRoutes(routes(peer.host, peer.port, beacons, relayUrl, channels)) { route ->
+            exchange(peer.pair, peer.secret, route, address)
+        }
+    }
+
+    private suspend fun tryRoutes(
+        routes: List<NearbyRoute>,
+        attempt: suspend (NearbyRoute) -> Unit,
+    ) {
         var failure: Exception? = null
-        for (route in routes(peer.host, peer.port, beacons)) {
+        for (route in routes) {
             try {
-                exchange(peer.pair, peer.secret, route)
+                attempt(route)
                 return
             } catch (timeout: TimeoutCancellationException) {
                 failure = timeout
@@ -193,17 +233,33 @@ class NearbySync(
         throw failure ?: IllegalStateException(NO_ROUTE)
     }
 
-    private fun routes(
+    @Suppress("LongParameterList")
+    private suspend fun routes(
         host: String?,
         port: Int,
         beacons: List<ByteArray>,
+        relayUrl: String? = null,
+        channels: List<String> = emptyList(),
     ): List<NearbyRoute> {
         val wifi = host?.let { NearbyRoute.Network(it, port) }
-        val air = beacons.takeIf { it.isNotEmpty() && bluetooth?.ready() == true }?.let { NearbyRoute.Bluetooth(it) }
-        return if (host != null && onLocalNetwork(host)) listOfNotNull(wifi, air) else listOfNotNull(air, wifi)
+        val air = beacons.takeIf { it.isNotEmpty() && bluetoothUsable() }?.let { NearbyRoute.Bluetooth(it) }
+        val internet =
+            relayUrl?.takeIf { relay != null && channels.isNotEmpty() }?.let { NearbyRoute.Relay(it, channels) }
+        return if (host != null && onLocalNetwork(host)) {
+            listOfNotNull(wifi, air, internet)
+        } else {
+            listOfNotNull(air, internet, wifi)
+        }
     }
 
-    private suspend fun bluetoothOn(): Boolean = bluetooth?.ready() == true && current().bluetooth
+    private suspend fun bluetoothOn(): Boolean = current().bluetooth && bluetoothUsable()
+
+    /**
+     * Ready now, or once the platform starts it for a user who turned Bluetooth sync on: iOS has
+     * no Bluetooth state to read until its managers exist, and creating them may ask permission.
+     */
+    private suspend fun bluetoothUsable(): Boolean =
+        bluetooth?.let { it.ready() || (current().bluetooth && it.prepare()) } == true
 
     override suspend fun setTrusted(
         deviceId: String,
@@ -264,6 +320,7 @@ class NearbySync(
                     it.copy(listening = true, message = null, bluetoothReady = bluetooth?.ready() == true)
                 }
                 startBluetooth()
+                startRelay()
                 coroutineScope {
                     launch { automaticSync() }
                     while (isActive) {
@@ -325,7 +382,7 @@ class NearbySync(
         scope.launch {
             lifecycle.withLock {
                 if (bluetoothServer?.isActive == true || !foreground.value) return@withLock
-                if (!current().enabled || !current().bluetooth || !transport.ready()) return@withLock
+                if (!current().enabled || !bluetoothOn()) return@withLock
                 bluetoothServer =
                     scope.launch {
                         try {
@@ -341,6 +398,38 @@ class NearbySync(
             }
         }
     }
+
+    /** Hold a listening socket on the relay for this device (and any open invitation). */
+    private fun startRelay() {
+        val transport = relay ?: return
+        scope.launch {
+            lifecycle.withLock {
+                if (relayServer?.isActive == true || !foreground.value) return@withLock
+                val local = current()
+                val url = local.relay ?: return@withLock
+                if (!local.enabled) return@withLock
+                relayServer =
+                    scope.launch {
+                        transport.serve(url, relayChannels()) { channel -> incoming(channel, null) }
+                    }
+            }
+        }
+    }
+
+    private fun stopRelay() {
+        relayServer?.cancel()
+        relayServer = null
+    }
+
+    private fun relayChannels(): Flow<List<String>> =
+        flow {
+            while (true) {
+                val invite = pending.value?.takeIf { it.relay != null }?.let { NearbyRelayChannels.invite(it.id) }
+                val own = NearbyRelayChannels.device(current().device, now()).first()
+                emit(listOfNotNull(invite, own))
+                delay(BEACON_REFRESH_MS)
+            }
+        }.distinctUntilChanged()
 
     private fun stopBluetooth() {
         bluetoothServer?.cancel()
@@ -360,6 +449,7 @@ class NearbySync(
 
     private fun stopListener() {
         stopBluetooth()
+        stopRelay()
         expiry?.cancel()
         pending.value = null
         listeningSocket.value?.close()
@@ -385,7 +475,8 @@ class NearbySync(
                 .filter { it.trusted && local.device < it.device && it.host != null && onLocalNetwork(it.host) }
                 .forEach { peer ->
                     val route = NearbyRoute.Network(checkNotNull(peer.host), peer.port)
-                    guarded { exchange(peer.pair, peer.secret, route, automatic = true) }
+                    val address = PeerAddress(peer.host, peer.port, peer.relay)
+                    guarded { exchange(peer.pair, peer.secret, route, address, automatic = true) }
                 }
             delay(autoSyncMillis)
         }
@@ -397,6 +488,7 @@ class NearbySync(
         pair: String,
         secret: String,
         route: NearbyRoute,
+        address: PeerAddress,
         invitation: Boolean = false,
         automatic: Boolean = false,
     ) {
@@ -411,7 +503,7 @@ class NearbySync(
                     mutex.lock()
                 }
                 try {
-                    connectAndSend(pair, secret, route, invitation, automatic)
+                    connectAndSend(pair, secret, route, address, invitation, automatic)
                     return@withTimeout
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -432,10 +524,12 @@ class NearbySync(
         }
     }
 
+    @Suppress("LongParameterList")
     private suspend fun connectAndSend(
         pair: String,
         secret: String,
         route: NearbyRoute,
+        address: PeerAddress,
         invitation: Boolean,
         automatic: Boolean,
     ) {
@@ -453,19 +547,17 @@ class NearbySync(
                             sockets.connect(route.host, route.port),
                             pair,
                             secret,
-                            route.host,
-                            route.port,
+                            address.copy(host = route.host, port = route.port),
                             automatic,
                         )
                     } finally {
                         sockets.close()
                     }
                 }
-                is NearbyRoute.Bluetooth -> {
-                    val known = current().peers.firstOrNull { it.pair == pair }
-                    val channel = checkNotNull(bluetooth).connect(route.beacons)
-                    sendOver(channel, pair, secret, known?.host, known?.port ?: NEARBY_PORT, automatic)
-                }
+                is NearbyRoute.Bluetooth ->
+                    sendOver(checkNotNull(bluetooth).connect(route.beacons), pair, secret, address, automatic)
+                is NearbyRoute.Relay ->
+                    sendOver(checkNotNull(relay).connect(route.url, route.channels), pair, secret, address, automatic)
             }
         }
     }
@@ -474,14 +566,13 @@ class NearbySync(
         channel: NearbyChannel,
         pair: String,
         secret: String,
-        host: String?,
-        remotePort: Int,
+        address: PeerAddress,
         automatic: Boolean,
     ) {
         connections.update { it + channel }
         try {
             check(foreground.value)
-            send(channel, pair, secret, host, remotePort, automatic)
+            send(channel, pair, secret, address, automatic)
         } finally {
             channel.close()
             connections.update { it - channel }
@@ -492,8 +583,7 @@ class NearbySync(
         connection: NearbyChannel,
         pair: String,
         secret: String,
-        host: String?,
-        remotePort: Int,
+        address: PeerAddress,
         automatic: Boolean,
     ) {
         val local = current()
@@ -525,9 +615,10 @@ class NearbySync(
                 response.device,
                 response.name,
                 response.secret,
-                host ?: existing?.host,
-                remotePort,
+                address.host ?: existing?.host,
+                address.port,
                 now(),
+                relay = address.relay ?: existing?.relay,
             ),
         )
         saveBase(pair, response.document)
@@ -575,7 +666,18 @@ class NearbySync(
             // Persist and rotate before replying. If delivery fails, the user can re-pair; the
             // consumed invitation can never enroll another device or replace the established key.
             val peerHost = host ?: known?.host
-            rememberPeer(NearbyPeer(hello.pair, request.device, request.name, permanent, peerHost, request.port))
+            val peerRelay = known?.relay ?: local.relay
+            rememberPeer(
+                NearbyPeer(
+                    hello.pair,
+                    request.device,
+                    request.name,
+                    permanent,
+                    peerHost,
+                    request.port,
+                    relay = peerRelay,
+                ),
+            )
             if (invite != null) {
                 pending.value = null
                 expiry?.cancel()
@@ -593,7 +695,16 @@ class NearbySync(
             require(ack == ACK)
             saveBase(hello.pair, merged)
             rememberPeer(
-                NearbyPeer(hello.pair, request.device, request.name, permanent, peerHost, request.port, now()),
+                NearbyPeer(
+                    hello.pair,
+                    request.device,
+                    request.name,
+                    permanent,
+                    peerHost,
+                    request.port,
+                    now(),
+                    relay = peerRelay,
+                ),
             )
             connection.write(NearbyCrypto.encrypt(secret, "$context|done", ACK.encodeToByteArray()))
             mutableState.update { it.copy(message = "Synced with ${request.name}") }
@@ -621,6 +732,7 @@ class NearbySync(
                 validToken(it.pair) &&
                     validToken(it.secret) &&
                     (it.host == null || localAddress(it.host)) &&
+                    (it.relay == null || normalizeRelayUrl(it.relay) == it.relay) &&
                     it.port in NEARBY_PORT_RANGE
             },
         )
@@ -658,6 +770,8 @@ class NearbySync(
                 bluetoothEnabled = value.bluetooth,
                 bluetoothAvailable = bluetooth != null,
                 bluetoothReady = bluetooth?.ready() == true,
+                relayUrl = value.relay,
+                relayAvailable = relay != null,
             )
         }
     }
@@ -705,8 +819,8 @@ class NearbySync(
             mutableState.update {
                 it.copy(
                     message =
-                        "Couldn't sync. Keep both devices open on the same Wi-Fi or within Bluetooth range; " +
-                            "check the code and local network or Nearby devices permission.",
+                        "Couldn't sync. Keep both devices open on the same Wi-Fi, within Bluetooth range " +
+                            "or on the same relay; check the code and permissions.",
                 )
             }
         } finally {
@@ -725,7 +839,19 @@ class NearbySync(
         class Bluetooth(
             val beacons: List<ByteArray>,
         ) : NearbyRoute
+
+        data class Relay(
+            val url: String,
+            val channels: List<String>,
+        ) : NearbyRoute
     }
+
+    /** What to remember about a peer after a transfer, whichever route carried it. */
+    private data class PeerAddress(
+        val host: String?,
+        val port: Int,
+        val relay: String?,
+    )
 
     companion object {
         private const val PEER_BUSY = "orbin-nearby-busy"

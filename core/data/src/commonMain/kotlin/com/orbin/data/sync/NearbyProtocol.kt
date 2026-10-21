@@ -30,6 +30,8 @@ internal data class NearbyInvite(
     val port: Int,
     val expires: Long,
     val bluetooth: Boolean = false,
+    /** The inviter's relay server, so a joiner anywhere on the Internet can meet it there. */
+    val relay: String? = null,
 ) {
     fun code(): String = "orbin-nearby1:" + Base64.UrlSafe.encode(NearbyJson.encodeToString(this).encodeToByteArray())
 
@@ -45,7 +47,10 @@ internal data class NearbyInvite(
             require(
                 (invite.host == null || localAddress(invite.host)) && invite.port in NEARBY_PORT_RANGE,
             ) { "Pairing requires a local network address" }
-            require(invite.host != null || invite.bluetooth) { "Pairing code has no way to reach the device" }
+            require(invite.relay == null || normalizeRelayUrl(invite.relay) == invite.relay) { "Invalid relay address" }
+            require(invite.host != null || invite.bluetooth || invite.relay != null) {
+                "Pairing code has no way to reach the device"
+            }
             require(validToken(invite.id) && validToken(invite.secret)) { "Invalid pairing code" }
             return invite
         }

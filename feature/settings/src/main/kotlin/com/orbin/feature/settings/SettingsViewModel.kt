@@ -88,6 +88,10 @@ class SettingsViewModel
             viewModelScope.launch { nearbySync?.forget(device) }
         }
 
+        fun setNearbyRelay(url: String) {
+            viewModelScope.launch { nearbySync?.setRelayUrl(url) }
+        }
+
         fun setNearbyBluetooth(enabled: Boolean) {
             viewModelScope.launch { nearbySync?.setBluetoothEnabled(enabled) }
         }

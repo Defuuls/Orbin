@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.data.sync.IosNearbyBluetooth
 import com.orbin.data.sync.MigratingSyncPasswordStore
 import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.graph.createSharedGraph
@@ -51,7 +52,10 @@ internal object AppGraph {
             preferences,
             Dispatchers.Default,
             MigratingSyncPasswordStore(preferences, KeychainSyncPasswordStore()),
-            NearbySyncSecrets(KeychainSyncPasswordStore(serviceName = "io.github.defuuls.orbin.nearby")),
+            NearbySyncSecrets(
+                KeychainSyncPasswordStore(serviceName = "io.github.defuuls.orbin.nearby"),
+                IosNearbyBluetooth(),
+            ),
         )
 
     val settingsStore = shared.settingsStore
