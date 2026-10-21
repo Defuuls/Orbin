@@ -1,30 +1,31 @@
-# Orbin 169 - Kohlrabi
+# Orbin 170 - Salsify
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 169
-codename     = "Kohlrabi"
-version_code = 187
+number       = 170
+codename     = "Salsify"
+version_code = 188
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Sync reading progress directly between nearby devices over Wi-Fi, no account or server needed."
+highlight = "Pair by QR code and sync between Android and iOS over Bluetooth, or across the Internet through your own end-to-end encrypted relay."
 
 summary = [
-  "bump Orbin to 169-Kohlrabi / versionCode 187",
-  "encrypted nearby device sync, trusted automatic sync, app lock and iOS password hardening",
+  "bump Orbin to 170-Salsify / versionCode 188",
+  "QR pairing, Bluetooth LE sync across Android and iOS, WebDAV setup QR, and a self-hostable encrypted sync relay",
 ]
 
 [changelog]
 Added = [
-  "Nearby devices: pair Android and iOS devices with a one-use ten-minute code and sync reading history, positions, bookmarks and watched threads directly over local Wi-Fi, end-to-end encrypted, with no account, server or Internet connection.",
-  "Trust a paired device for automatic sync: when both devices trust each other and share the same local network, they sync on their own while Orbin is open. New pairings stay manual-only.",
+  "QR code pairing: pair nearby devices by scanning a QR code instead of typing the one-use pairing code.",
+  "Bluetooth LE sync (opt-in): sync with nearby devices over Bluetooth when they are not on the same Wi-Fi, including between Android and iOS, still end-to-end encrypted with the pair key.",
+  "Sync setup by QR code: copy WebDAV sync settings to another device by scanning a QR code.",
+  "Internet sync through a self-hostable relay (relay/, docs/relay.md): paired devices sync over the Internet through a relay you run yourself; frames stay end-to-end encrypted, so the relay never sees plaintext or keys. There is no public relay.",
+  "iOS: show and scan pairing QR codes, Bluetooth sync, relay server and sync setup QR settings.",
 ]
 Changed = [
-  "iOS: WebDAV sync passwords move into device-only Keychain storage, migrated automatically from the old location.",
-]
-Fixed = [
-  "Android: corrupted or deleted settings no longer switch off a saved app lock; Orbin recovers them locked.",
-  "Sync now no longer silently does nothing when it collides with the other device's automatic sync.",
+  "Joining and Sync now try local Wi-Fi first, then Bluetooth, then a configured relay, falling back to another route if the first fails.",
+  "Phone hotspot interfaces now count as the local network, so two phones on mobile data can sync through one phone's hotspot.",
+  "Bluetooth pairing between Android and iOS needs this version on both devices.",
 ]
