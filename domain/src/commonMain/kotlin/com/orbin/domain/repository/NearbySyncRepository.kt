@@ -16,6 +16,10 @@ data class NearbySyncState(
     val pairingCode: String? = null,
     val devices: List<NearbyDevice> = emptyList(),
     val message: String? = null,
+    /** True when [message] reports a failure rather than a result. */
+    val messageIsError: Boolean = false,
+    /** What a pairing or sync in progress is doing right now, for a live status line. */
+    val step: String? = null,
     /** The user's persisted choice to also pair and sync over Bluetooth LE. */
     val bluetoothEnabled: Boolean = false,
     /** This platform has a Bluetooth transport at all. */

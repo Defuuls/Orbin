@@ -22,3 +22,5 @@ internal actual fun nearbyNetworks(): List<NearbyNetwork> =
  * sync on mobile data alone: one shares a hotspot and the other joins it.
  */
 private val LOCAL_INTERFACES = listOf("wlan", "eth", "swlan", "ap")
+
+internal actual val nearbyNeedsLocalNetworkPrompt: Boolean = false

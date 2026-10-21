@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +62,10 @@ data class SettingItem(
     val secret: Boolean = false,
     /** Show a selectable, wrapping pairing code below an informational row. */
     val copyable: Boolean = false,
+    /** Show an indeterminate progress bar under the row while work is under way. */
+    val progress: Boolean = false,
+    /** Colour the hint as an error. */
+    val error: Boolean = false,
 )
 
 enum class SettingKind {
@@ -170,7 +175,7 @@ private fun SettingRow(
                         Text(
                             text = item.hint,
                             style = MaterialTheme.typography.bodySmall,
-                            color = next.muted,
+                            color = if (item.error) nextDestructiveRed else next.muted,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
@@ -213,6 +218,13 @@ private fun SettingRow(
                         },
                     ),
         )
+        if (item.progress) {
+            LinearProgressIndicator(
+                color = next.accent,
+                trackColor = next.hairline,
+                modifier = Modifier.fillMaxWidth().padding(start = GUTTER, end = GUTTER, bottom = 12.dp),
+            )
+        }
         if (item.copyable && item.text.isNotBlank()) {
             SelectionContainer {
                 Text(

@@ -280,6 +280,51 @@ class NearbySyncTest {
         }
 
     @Test
+    fun aFailedJoinNamesTheRouteAndClearsProgress() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val inviter = controller(Progress(doc(1)), scope)
+            val joiner = controller(Progress(doc(2)), scope)
+            try {
+                inviter.setActive(true)
+                joiner.setActive(true)
+                inviter.createPairingCode()
+                val code = assertNotNull(inviter.state.value.pairingCode)
+                // The inviter goes away, so nothing is listening at the code's address any more.
+                inviter.setActive(false)
+                delay(100)
+                joiner.join(code)
+                val state = joiner.state.value
+                assertTrue(state.messageIsError)
+                assertTrue(assertNotNull(state.message).startsWith("Wi-Fi: couldn't connect to 127.0.0.1."))
+                assertFalse(state.busy)
+                assertNull(state.step)
+            } finally {
+                joiner.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    @Test
+    fun anInvalidCodeSaysSo() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val joiner = controller(Progress(doc(2)), scope)
+            try {
+                joiner.setActive(true)
+                joiner.join("not a code")
+                assertEquals(
+                    "That isn't a valid pairing code. Copy the whole code and try again.",
+                    joiner.state.value.message,
+                )
+                assertTrue(joiner.state.value.messageIsError)
+            } finally {
+                joiner.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    @Test
     fun pairingWithoutWifiOrBluetoothExplainsWhatIsNeeded() =
         runBlocking {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -289,10 +334,10 @@ class NearbySyncTest {
                 lonely.createPairingCode()
                 assertNull(lonely.state.value.pairingCode)
                 assertEquals(
-                    "Couldn't sync. Keep both devices open on the same Wi-Fi, within Bluetooth range " +
-                        "or on the same relay; check the code and permissions.",
+                    "Connect to Wi-Fi, turn on Bluetooth sync or set a relay before pairing",
                     lonely.state.value.message,
                 )
+                assertTrue(lonely.state.value.messageIsError)
             } finally {
                 lonely.setActive(false)
                 scope.cancel()
