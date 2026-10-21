@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [170 — Salsify](https://github.com/Defuuls/Orbin/releases/tag/v170-Salsify)
+**Current release:** [171 — Celeriac](https://github.com/Defuuls/Orbin/releases/tag/v171-Celeriac)
 
-**What's new in 170:** Pair by QR code and sync between Android and iOS over Bluetooth, or across the Internet through your own end-to-end encrypted relay.
+**What's new in 171:** Nearby sync now shows each step with a progress bar and says exactly what went wrong.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

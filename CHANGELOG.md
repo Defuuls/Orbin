@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [171-Celeriac] - 2026-10-21
+
+### Added
+- Nearby devices: a Status row with a progress bar shows each step of pairing and syncing (connecting over Wi-Fi, Bluetooth or the relay, checking the pairing, sending, merging), then the result.
+
+### Fixed
+- Nearby sync failures now say which connection failed and what to check, in red, instead of one generic message, and Sync now stays busy until every device has finished.
+- iOS: Orbin asks for Local Network access as soon as nearby sync starts, so an iPhone no longer silently refuses an Android device's connection.
+
+
 ## [170-Salsify] - 2026-10-21
 
 ### Added
@@ -2596,7 +2606,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...HEAD
+[171-Celeriac]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...v171-Celeriac
 [170-Salsify]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...v170-Salsify
 [169-Kohlrabi]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...v169-Kohlrabi
 [168-Romanesco]: https://github.com/Defuuls/Orbin/compare/v167-Guava...v168-Romanesco
