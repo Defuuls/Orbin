@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [170-Salsify] - 2026-10-21
+
+### Added
+- QR code pairing: pair nearby devices by scanning a QR code instead of typing the one-use pairing code.
+- Bluetooth LE sync (opt-in): sync with nearby devices over Bluetooth when they are not on the same Wi-Fi, including between Android and iOS, still end-to-end encrypted with the pair key.
+- Sync setup by QR code: copy WebDAV sync settings to another device by scanning a QR code.
+- Internet sync through a self-hostable relay (relay/, docs/relay.md): paired devices sync over the Internet through a relay you run yourself; frames stay end-to-end encrypted, so the relay never sees plaintext or keys. There is no public relay.
+- iOS: show and scan pairing QR codes, Bluetooth sync, relay server and sync setup QR settings.
+
+### Changed
+- Joining and Sync now try local Wi-Fi first, then Bluetooth, then a configured relay, falling back to another route if the first fails.
+- Phone hotspot interfaces now count as the local network, so two phones on mobile data can sync through one phone's hotspot.
+- Bluetooth pairing between Android and iOS needs this version on both devices.
+
+
 ### Changed
 - Nearby Bluetooth advertisements now carry the beacon in a service UUID so iOS can advertise and read them; Bluetooth pairing needs this version on both devices.
 
@@ -2581,7 +2596,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...HEAD
+[170-Salsify]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...v170-Salsify
 [169-Kohlrabi]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...v169-Kohlrabi
 [168-Romanesco]: https://github.com/Defuuls/Orbin/compare/v167-Guava...v168-Romanesco
 [167-Guava]: https://github.com/Defuuls/Orbin/compare/v166-Dragon-Fruit...v167-Guava

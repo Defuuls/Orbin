@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [169 — Kohlrabi](https://github.com/Defuuls/Orbin/releases/tag/v169-Kohlrabi)
+**Current release:** [170 — Salsify](https://github.com/Defuuls/Orbin/releases/tag/v170-Salsify)
 
-**What's new in 169:** Sync reading progress directly between nearby devices over Wi-Fi, no account or server needed.
+**What's new in 170:** Pair by QR code and sync between Android and iOS over Bluetooth, or across the Internet through your own end-to-end encrypted relay.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
