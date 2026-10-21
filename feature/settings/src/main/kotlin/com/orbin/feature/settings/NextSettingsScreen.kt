@@ -198,6 +198,8 @@ fun NextSettingsScreen(
                     bluetoothEnabled = nearbyState.bluetoothEnabled,
                     relayAvailable = nearbyState.relayAvailable,
                     relayUrl = nearbyState.relayUrl,
+                    step = nearbyState.step,
+                    messageIsError = nearbyState.messageIsError,
                 )
         ) + ("Sync setup by QR code" to syncSetupQrRows(syncState.isConfigured()))
 

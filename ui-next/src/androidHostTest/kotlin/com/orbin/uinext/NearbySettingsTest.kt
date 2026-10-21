@@ -35,4 +35,25 @@ class NearbySettingsTest {
         assertTrue(rows.single { it.id == NearbySettingIds.FORGET_PREFIX + "device" }.destructive)
         assertFalse(nearbySyncRows(true, true, false, null, emptyList(), null).any { it.copyable })
     }
+
+    @Test
+    fun statusShowsTheCurrentStepWithProgressThenTheResult() {
+        val working =
+            nearbySyncRows(true, true, true, null, emptyList(), null, step = "Connecting over Wi-Fi to 10.0.0.2…")
+                .single { it.id == NearbySettingIds.STATUS }
+        assertTrue(working.progress)
+        assertEquals("Connecting over Wi-Fi to 10.0.0.2…", working.hint)
+
+        val failed =
+            nearbySyncRows(true, true, false, null, emptyList(), "Wi-Fi: couldn't connect.", messageIsError = true)
+                .single { it.id == NearbySettingIds.STATUS }
+        assertFalse(failed.progress)
+        assertTrue(failed.error)
+        assertEquals("Failed", failed.value)
+
+        val waiting =
+            nearbySyncRows(true, true, false, "code", emptyList(), null).single { it.id == NearbySettingIds.STATUS }
+        assertTrue(waiting.progress)
+        assertFalse(nearbySyncRows(true, true, false, null, emptyList(), null).any { it.id == NearbySettingIds.STATUS })
+    }
 }

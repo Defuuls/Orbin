@@ -59,3 +59,5 @@ internal actual fun nearbyNetworks(): List<NearbyNetwork> =
     }
 
 private const val INTERFACE_UP = 1u
+
+internal actual val nearbyNeedsLocalNetworkPrompt: Boolean = true

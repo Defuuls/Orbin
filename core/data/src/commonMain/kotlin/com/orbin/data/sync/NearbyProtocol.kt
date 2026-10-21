@@ -176,6 +176,12 @@ internal fun nearbyAddresses(): List<String> = nearbyNetworks().map { it.address
 
 internal expect fun nearbyNetworks(): List<NearbyNetwork>
 
+/**
+ * iOS blocks local-network traffic, incoming included, until the user allows Orbin under Local
+ * Network, and only asks once the app itself reaches out to the network. Android needs no prompt.
+ */
+internal expect val nearbyNeedsLocalNetworkPrompt: Boolean
+
 /** Interface netmasks, rather than an assumed /24 or Wi-Fi name, bound automatic attempts. */
 data class NearbyNetwork(
     val address: String,

@@ -10,6 +10,7 @@ object NearbySettingIds {
     const val BLUETOOTH = "nearbyBluetooth"
     const val RELAY = "nearbyRelay"
     const val SYNC = "nearbySync"
+    const val STATUS = "nearbyStatus"
     const val TRUST_PREFIX = "nearbyTrust:"
     const val FORGET_PREFIX = "nearbyForget:"
 }
@@ -34,6 +35,8 @@ fun nearbySyncRows(
     bluetoothEnabled: Boolean = false,
     relayAvailable: Boolean = false,
     relayUrl: String? = null,
+    step: String? = null,
+    messageIsError: Boolean = false,
 ): List<SettingItem> =
     buildList {
         add(
@@ -47,6 +50,7 @@ fun nearbySyncRows(
             ),
         )
         if (!enabled) return@buildList
+        nearbyStatusRow(busy, step, message, messageIsError, code != null)?.let(::add)
         if (bluetoothAvailable) add(nearbyBluetoothRow(bluetoothEnabled))
         if (relayAvailable) add(nearbyRelayRow(relayUrl))
         add(
@@ -98,15 +102,48 @@ fun nearbySyncRows(
                     },
                 kind = SettingKind.ACTION,
                 hint =
-                    message
-                        ?: (
-                            "Shares reading progress, bookmarks and watched threads. " +
-                                "Images, passwords and settings stay on this device."
-                        ),
+                    "Shares reading progress, bookmarks and watched threads. " +
+                        "Images, passwords and settings stay on this device.",
             ),
         )
         devices.forEach { (id, name) -> addAll(nearbyDeviceRows(id, name, id in trustedIds)) }
     }
+
+/**
+ * A live status line at the top of the section: the current step with a progress bar while
+ * pairing or syncing, then the result, in red when it failed. Hidden when there is nothing to say.
+ */
+private fun nearbyStatusRow(
+    busy: Boolean,
+    step: String?,
+    message: String?,
+    messageIsError: Boolean,
+    waitingForJoin: Boolean,
+): SettingItem? {
+    val working = busy && step != null
+    val text =
+        when {
+            working -> step
+            message != null -> message
+            waitingForJoin -> "Waiting for your other device to join with this code…"
+            else -> return null
+        }
+    return SettingItem(
+        id = NearbySettingIds.STATUS,
+        label = "Status",
+        value =
+            when {
+                working -> "Working…"
+                message != null && messageIsError -> "Failed"
+                message != null -> "Done"
+                else -> "Waiting"
+            },
+        kind = SettingKind.INFO,
+        hint = text,
+        progress = working || (waitingForJoin && message == null),
+        error = !working && message != null && messageIsError,
+    )
+}
 
 private fun nearbyBluetoothRow(enabled: Boolean) =
     SettingItem(

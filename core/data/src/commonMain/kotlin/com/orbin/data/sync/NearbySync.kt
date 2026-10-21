@@ -24,12 +24,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -94,6 +96,8 @@ class NearbySync(
     private var bluetoothServer: Job? = null
     private var relayServer: Job? = null
     private var expiry: Job? = null
+    private val activeCalls = MutableStateFlow(0)
+    private var localNetworkPrompted = false
     private val pending = MutableStateFlow<NearbyInvite?>(null)
     private var boundPort = port
 
@@ -157,7 +161,9 @@ class NearbySync(
             mutableState.update {
                 it.copy(
                     pairingCode = invite.code().takeIf { foreground.value && pending.value?.id == invite.id },
-                    message = "Scan this QR code or enter the code on your other device. It expires in 10 minutes.",
+                    // The status row shows "waiting for your other device" while the code is live.
+                    message = null,
+                    messageIsError = false,
                 )
             }
             expiry?.cancel()
@@ -166,15 +172,26 @@ class NearbySync(
                     delay(INVITE_LIFETIME_MS)
                     if (pending.value?.id == invite.id) {
                         pending.value = null
-                        mutableState.update { it.copy(pairingCode = null) }
+                        mutableState.update {
+                            it.copy(
+                                pairingCode = null,
+                                message = "The pairing code expired. Create a new one to add a device.",
+                                messageIsError = true,
+                            )
+                        }
                     }
                 }
         }
 
     override suspend fun join(code: String) =
         guarded {
-            val invite = NearbyInvite.parse(code.trim())
-            require(invite.expires > now()) { "Pairing code expired" }
+            val invite =
+                runCatching { NearbyInvite.parse(code.trim()) }.getOrElse {
+                    throw NearbyUserException("That isn't a valid pairing code. Copy the whole code and try again.")
+                }
+            if (invite.expires <= now()) {
+                throw NearbyUserException("That pairing code expired. Create a new one on the other device.")
+            }
             ensureListening()
             require(current().peers.size < MAX_NEARBY_DEVICES) { "Too many paired devices" }
             val beacons = if (invite.bluetooth) listOf(NearbyBeacons.invite(invite.id)) else emptyList()
@@ -215,22 +232,29 @@ class NearbySync(
         routes: List<NearbyRoute>,
         attempt: suspend (NearbyRoute) -> Unit,
     ) {
-        var failure: Exception? = null
+        val failures = mutableListOf<Pair<NearbyRoute, Throwable>>()
         for (route in routes) {
+            step(
+                when (route) {
+                    is NearbyRoute.Network -> "Connecting over Wi-Fi to ${route.host}…"
+                    is NearbyRoute.Bluetooth -> "Looking for the other device over Bluetooth…"
+                    is NearbyRoute.Relay -> "Connecting through the relay…"
+                },
+            )
             try {
                 attempt(route)
                 return
             } catch (timeout: TimeoutCancellationException) {
-                failure = timeout
+                failures += route to timeout
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (
                 @Suppress("TooGenericExceptionCaught") other: Exception,
             ) {
-                failure = other
+                failures += route to other
             }
         }
-        throw failure ?: IllegalStateException(NO_ROUTE)
+        throw NearbyRouteFailure(failures)
     }
 
     @Suppress("LongParameterList")
@@ -319,6 +343,7 @@ class NearbySync(
                 mutableState.update {
                     it.copy(listening = true, message = null, bluetoothReady = bluetooth?.ready() == true)
                 }
+                if (nearbyNeedsLocalNetworkPrompt) scope.launch { promptForLocalNetwork() }
                 startBluetooth()
                 startRelay()
                 coroutineScope {
@@ -588,10 +613,12 @@ class NearbySync(
     ) {
         val local = current()
         val nonce = NearbyCrypto.token()
+        step("Connected. Checking the pairing…")
         connection.write(NearbyJson.encodeToString(NearbyHello(pair, nonce)).encodeToByteArray())
-        val challenge = connection.read(HELLO_LIMIT).decodeToString()
+        val challenge = rejectedOnFailure { connection.read(HELLO_LIMIT).decodeToString() }
         if (challenge == PEER_BUSY) throw NearbyPeerBusyException()
         require(validToken(challenge))
+        step("Sending your reading activity…")
         val context = "orbin-nearby1|$pair|$nonce|$challenge"
         val snapshot = progress.snapshot().also(::validateNearbyDocument)
         val request = NearbyRequest(local.device, local.name, boundPort, snapshot, automatic)
@@ -599,9 +626,12 @@ class NearbySync(
             NearbyCrypto.encrypt(secret, "$context|request", NearbyJson.encodeToString(request).encodeToByteArray()),
         )
         val response =
-            NearbyJson.decodeFromString<NearbyResponse>(
-                NearbyCrypto.decrypt(secret, "$context|response", connection.read()).decodeToString(),
-            )
+            rejectedOnFailure {
+                NearbyJson.decodeFromString<NearbyResponse>(
+                    NearbyCrypto.decrypt(secret, "$context|response", connection.read()).decodeToString(),
+                )
+            }
+        step("Merging ${response.name}'s activity…")
         validateDevice(response.device, response.name)
         require(response.device != local.device && validToken(response.secret))
         val existing = local.peers.firstOrNull { it.pair == pair }
@@ -624,7 +654,7 @@ class NearbySync(
         saveBase(pair, response.document)
         connection.write(NearbyCrypto.encrypt(secret, "$context|ack", ACK.encodeToByteArray()))
         require(NearbyCrypto.decrypt(secret, "$context|done", connection.read(HELLO_LIMIT)).decodeToString() == ACK)
-        mutableState.update { it.copy(message = "Synced with ${response.name}") }
+        mutableState.update { it.copy(message = "Synced with ${response.name}", messageIsError = false) }
     }
 
     private suspend fun receive(
@@ -707,7 +737,7 @@ class NearbySync(
                 ),
             )
             connection.write(NearbyCrypto.encrypt(secret, "$context|done", ACK.encodeToByteArray()))
-            mutableState.update { it.copy(message = "Synced with ${request.name}") }
+            mutableState.update { it.copy(message = "Synced with ${request.name}", messageIsError = false) }
         } finally {
             mutex.unlock()
         }
@@ -806,29 +836,117 @@ class NearbySync(
     }
 
     private suspend fun guarded(block: suspend () -> Unit) {
-        mutableState.update { it.copy(busy = true) }
+        // Nested calls (Sync now runs one per device) keep the flag on until the outermost ends.
+        val depth = activeCalls.updateAndGet { it + 1 }
+        mutableState.update { it.copy(busy = true, messageIsError = if (depth == 1) false else it.messageIsError) }
         try {
             block()
-        } catch (_: TimeoutCancellationException) {
-            mutableState.update {
-                it.copy(message = "Couldn't reach the other device. Keep Orbin open on both devices and try again.")
-            }
+        } catch (timeout: TimeoutCancellationException) {
+            fail(failureMessage(timeout))
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (_: Exception) {
-            mutableState.update {
-                it.copy(
-                    message =
-                        "Couldn't sync. Keep both devices open on the same Wi-Fi, within Bluetooth range " +
-                            "or on the same relay; check the code and permissions.",
-                )
-            }
+        } catch (
+            @Suppress("TooGenericExceptionCaught") failure: Exception,
+        ) {
+            fail(failureMessage(failure))
         } finally {
-            mutableState.update { it.copy(busy = false) }
+            val remaining = activeCalls.updateAndGet { it - 1 }
+            if (remaining == 0) mutableState.update { it.copy(busy = false, step = null) }
+        }
+    }
+
+    /**
+     * Reach out once to another address on this network so iOS shows its Local Network prompt
+     * now, while the user is setting up sync, instead of silently refusing the other device's
+     * connection. Nothing needs to answer; the attempt alone triggers the prompt.
+     */
+    private suspend fun promptForLocalNetwork() {
+        if (localNetworkPrompted) return
+        localNetworkPrompted = true
+        val own = networks().firstOrNull()?.address ?: return
+        val probe = own.substringBeforeLast('.') + if (own.endsWith(".1")) ".2" else ".1"
+        val sockets = NearbySockets()
+        try {
+            withTimeoutOrNull(LOCAL_NETWORK_PROBE_MS) { sockets.connect(probe, port).close() }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (
+            @Suppress("TooGenericExceptionCaught", "SwallowedException") _: Exception,
+        ) {
+            // A refused or unreachable probe is expected; only the prompt matters.
+        } finally {
+            sockets.close()
+        }
+    }
+
+    /** The peer is reachable but dropped or refused the session part-way through. */
+    private suspend fun <T> rejectedOnFailure(block: suspend () -> T): T =
+        try {
+            block()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (
+            @Suppress("TooGenericExceptionCaught") failure: Exception,
+        ) {
+            throw NearbyRejectedException(failure)
+        }
+
+    private fun fail(message: String) = mutableState.update { it.copy(message = message, messageIsError = true) }
+
+    private fun step(text: String) = mutableState.update { it.copy(step = text) }
+
+    /** Says which route failed and what to check, instead of one message for every failure. */
+    private fun failureMessage(failure: Throwable): String =
+        when (failure) {
+            is NearbyRouteFailure ->
+                if (failure.attempts.isEmpty()) {
+                    NO_ROUTE
+                } else {
+                    failure.attempts.joinToString(" ") { (route, cause) -> routeFailure(route, cause) }
+                }
+            is TimeoutCancellationException -> TIMEOUT_MESSAGE
+            is NearbyUserException -> failure.message.orEmpty()
+            else -> failure.message?.takeIf { it in USER_MESSAGES } ?: GENERIC_FAILURE
+        }
+
+    private fun routeFailure(
+        route: NearbyRoute,
+        cause: Throwable,
+    ): String {
+        val timedOut = cause is TimeoutCancellationException
+        return when (route) {
+            is NearbyRoute.Network ->
+                if (cause is NearbyPeerBusyException) {
+                    "The other device was busy syncing; try again in a moment."
+                } else if (timedOut || cause is NearbyRejectedException) {
+                    "Wi-Fi: reached ${route.host} but the other device didn't finish. Keep Orbin open there, " +
+                        "or create a new code if it was removed."
+                } else {
+                    "Wi-Fi: couldn't connect to ${route.host}. Check both devices are on the same Wi-Fi " +
+                        "(not guest or mobile data). On iPhone, allow Orbin in Settings → Privacy & Security → " +
+                        "Local Network."
+                }
+            is NearbyRoute.Bluetooth ->
+                "Bluetooth: no answer nearby. Turn on Bluetooth and \"Also use Bluetooth\" on both devices."
+            is NearbyRoute.Relay -> "Relay: couldn't sync through ${route.url.substringAfter("://")}."
         }
     }
 
     private class NearbyPeerBusyException : Exception()
+
+    /** The peer answered but refused or dropped the session (wrong key, removed pairing, closed app). */
+    private class NearbyRejectedException(
+        cause: Throwable,
+    ) : Exception(cause)
+
+    /** A failure whose message is already written for the user. */
+    private class NearbyUserException(
+        message: String,
+    ) : Exception(message)
+
+    private class NearbyRouteFailure(
+        val attempts: List<Pair<NearbyRoute, Throwable>>,
+    ) : Exception()
 
     private sealed interface NearbyRoute {
         data class Network(
@@ -855,6 +973,22 @@ class NearbySync(
 
     companion object {
         private const val PEER_BUSY = "orbin-nearby-busy"
+        private const val LOCAL_NETWORK_PROBE_MS = 1_500L
+        private const val TIMEOUT_MESSAGE =
+            "Couldn't reach the other device in time. Keep Orbin open and unlocked on both devices and try again."
+        private const val GENERIC_FAILURE =
+            "Couldn't sync. Keep Orbin open on both devices, on the same Wi-Fi, within Bluetooth range or on the " +
+                "same relay, then try again."
+        private val USER_MESSAGES =
+            setOf(
+                "Open and unlock Orbin before pairing",
+                "Open and unlock Orbin before syncing",
+                "Remove a device before adding another",
+                "Too many paired devices",
+                "Turn on Bluetooth and allow Bluetooth access",
+                "Use an https:// relay address",
+                "Connect to Wi-Fi, turn on Bluetooth sync or set a relay before pairing",
+            )
         private const val MAX_CONNECTIONS = 3
         private const val MAX_DEVICE_NAME_LENGTH = 64
         private const val TRANSFER_TIMEOUT_MS = 30_000L
@@ -865,6 +999,7 @@ class NearbySync(
         private const val HELLO_LIMIT = 2048
         private const val ACK = "orbin-nearby-accepted"
         private const val BEACON_REFRESH_MS = 1_000L
-        private const val NO_ROUTE = "No way to reach the other device"
+        private const val NO_ROUTE =
+            "No way to reach the other device. Connect to Wi-Fi, turn on Bluetooth sync or set a relay."
     }
 }

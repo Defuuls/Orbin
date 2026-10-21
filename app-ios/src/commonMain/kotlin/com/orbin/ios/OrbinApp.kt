@@ -441,6 +441,8 @@ private fun SettingsDestination(
                         bluetoothEnabled = nearbyStatus.bluetoothEnabled,
                         relayAvailable = nearbyStatus.relayAvailable,
                         relayUrl = nearbyStatus.relayUrl,
+                        step = nearbyStatus.step,
+                        messageIsError = nearbyStatus.messageIsError,
                     )
             ) +
                 listOfNotNull(
