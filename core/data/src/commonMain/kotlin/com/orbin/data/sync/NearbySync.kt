@@ -232,7 +232,6 @@ class NearbySync(
         routes: List<NearbyRoute>,
         attempt: suspend (NearbyRoute) -> Unit,
     ) {
-        if (routes.isEmpty()) throw NearbyUserException(NO_ROUTE)
         val failures = mutableListOf<Pair<NearbyRoute, Throwable>>()
         for (route in routes) {
             step(
@@ -245,9 +244,10 @@ class NearbySync(
             try {
                 attempt(route)
                 return
+            } catch (timeout: TimeoutCancellationException) {
+                failures += route to timeout
             } catch (cancelled: CancellationException) {
-                if (cancelled !is TimeoutCancellationException) throw cancelled
-                failures += route to cancelled
+                throw cancelled
             } catch (
                 @Suppress("TooGenericExceptionCaught") other: Exception,
             ) {
@@ -615,9 +615,7 @@ class NearbySync(
         val nonce = NearbyCrypto.token()
         step("Connected. Checking the pairing…")
         connection.write(NearbyJson.encodeToString(NearbyHello(pair, nonce)).encodeToByteArray())
-        val challenge =
-            runCatching { connection.read(HELLO_LIMIT).decodeToString() }
-                .getOrElse { if (it is CancellationException) throw it else throw NearbyRejectedException(it) }
+        val challenge = rejectedOnFailure { connection.read(HELLO_LIMIT).decodeToString() }
         if (challenge == PEER_BUSY) throw NearbyPeerBusyException()
         require(validToken(challenge))
         step("Sending your reading activity…")
@@ -628,11 +626,11 @@ class NearbySync(
             NearbyCrypto.encrypt(secret, "$context|request", NearbyJson.encodeToString(request).encodeToByteArray()),
         )
         val response =
-            runCatching {
+            rejectedOnFailure {
                 NearbyJson.decodeFromString<NearbyResponse>(
                     NearbyCrypto.decrypt(secret, "$context|response", connection.read()).decodeToString(),
                 )
-            }.getOrElse { if (it is CancellationException) throw it else throw NearbyRejectedException(it) }
+            }
         step("Merging ${response.name}'s activity…")
         validateDevice(response.device, response.name)
         require(response.device != local.device && validToken(response.secret))
@@ -843,9 +841,10 @@ class NearbySync(
         mutableState.update { it.copy(busy = true, messageIsError = if (depth == 1) false else it.messageIsError) }
         try {
             block()
+        } catch (timeout: TimeoutCancellationException) {
+            fail(failureMessage(timeout))
         } catch (cancelled: CancellationException) {
-            if (cancelled !is TimeoutCancellationException) throw cancelled
-            fail(failureMessage(cancelled))
+            throw cancelled
         } catch (
             @Suppress("TooGenericExceptionCaught") failure: Exception,
         ) {
@@ -880,6 +879,18 @@ class NearbySync(
         }
     }
 
+    /** The peer is reachable but dropped or refused the session part-way through. */
+    private suspend fun <T> rejectedOnFailure(block: suspend () -> T): T =
+        try {
+            block()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (
+            @Suppress("TooGenericExceptionCaught") failure: Exception,
+        ) {
+            throw NearbyRejectedException(failure)
+        }
+
     private fun fail(message: String) = mutableState.update { it.copy(message = message, messageIsError = true) }
 
     private fun step(text: String) = mutableState.update { it.copy(step = text) }
@@ -887,7 +898,12 @@ class NearbySync(
     /** Says which route failed and what to check, instead of one message for every failure. */
     private fun failureMessage(failure: Throwable): String =
         when (failure) {
-            is NearbyRouteFailure -> failure.attempts.joinToString(" ") { (route, cause) -> routeFailure(route, cause) }
+            is NearbyRouteFailure ->
+                if (failure.attempts.isEmpty()) {
+                    NO_ROUTE
+                } else {
+                    failure.attempts.joinToString(" ") { (route, cause) -> routeFailure(route, cause) }
+                }
             is TimeoutCancellationException -> TIMEOUT_MESSAGE
             is NearbyUserException -> failure.message.orEmpty()
             else -> failure.message?.takeIf { it in USER_MESSAGES } ?: GENERIC_FAILURE
