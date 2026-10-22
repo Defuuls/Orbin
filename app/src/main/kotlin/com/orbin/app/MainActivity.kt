@@ -41,7 +41,6 @@ import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
-import com.orbin.domain.repository.NearbySyncRepository
 import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
@@ -67,9 +66,6 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
     @Inject
     lateinit var appLockController: AppLockController
-
-    @Inject
-    lateinit var nearbySync: NearbySyncRepository
 
     @Inject
     lateinit var diagnosticsRepository: DiagnosticsRepository
@@ -252,12 +248,6 @@ class MainActivity : FragmentActivity() {
         val lifecycleOwner = LocalLifecycleOwner.current
         val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
 
-        LaunchedEffect(ready, shouldLock, unlocked, lifecycleState) {
-            nearbySync.setActive(
-                ready && (!shouldLock || unlocked) && lifecycleState.isAtLeast(Lifecycle.State.RESUMED),
-            )
-        }
-
         LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
             if (!ready) return@LaunchedEffect
 
@@ -330,7 +320,6 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onStop() {
-        nearbySync.setActive(false)
         // And hand on what was read here. Not tied to this activity: leaving shouldn't cut it short.
         applicationScope.launch { threadSync.sync() }
         cancelActiveAuthentication()

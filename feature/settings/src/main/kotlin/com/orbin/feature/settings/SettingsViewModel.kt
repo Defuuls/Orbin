@@ -14,8 +14,6 @@ import com.orbin.domain.repository.DisabledThreadSync
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
-import com.orbin.domain.repository.NearbySyncRepository
-import com.orbin.domain.repository.NearbySyncState
 import com.orbin.domain.repository.SYNC_SETUP_PREFIX
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -37,9 +35,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Nearby pairing codes, whether pasted or scanned, start with this. */
-private const val NEARBY_CODE_PREFIX = "orbin-nearby1:"
-
 /** Exposes settings and update actions for the settings screen. */
 @Suppress("TooManyFunctions")
 @HiltViewModel
@@ -57,53 +52,10 @@ class SettingsViewModel
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
         private val threadSync: ThreadSyncRepository = DisabledThreadSync,
-        private val nearbySync: NearbySyncRepository? = null,
     ) : ViewModel() {
-        val nearbyState: StateFlow<NearbySyncState> = nearbySync?.state ?: MutableStateFlow(NearbySyncState())
-
-        fun setNearbyEnabled(enabled: Boolean) {
-            viewModelScope.launch { nearbySync?.setEnabled(enabled) }
-        }
-
-        fun createNearbyCode() {
-            viewModelScope.launch { nearbySync?.createPairingCode() }
-        }
-
-        fun joinNearby(code: String) {
-            viewModelScope.launch { nearbySync?.join(code) }
-        }
-
-        fun syncNearby() {
-            viewModelScope.launch { nearbySync?.syncNow() }
-        }
-
-        fun setNearbyTrusted(
-            device: String,
-            trusted: Boolean,
-        ) {
-            viewModelScope.launch { nearbySync?.setTrusted(device, trusted) }
-        }
-
-        fun forgetNearby(device: String) {
-            viewModelScope.launch { nearbySync?.forget(device) }
-        }
-
-        fun setNearbyRelay(url: String) {
-            viewModelScope.launch { nearbySync?.setRelayUrl(url) }
-        }
-
-        fun setNearbyBluetooth(enabled: Boolean) {
-            viewModelScope.launch { nearbySync?.setBluetoothEnabled(enabled) }
-        }
-
-        /** After a permission prompt or the system "turn on Bluetooth" dialog. */
-        fun refreshNearbyBluetooth() {
-            nearbySync?.refreshBluetooth()
-        }
-
         /**
-         * Routes a scanned QR code: a nearby pairing code joins that device, a sync setup code
-         * adopts its WebDAV login and syncs. [onResult] gets a sentence for the snackbar.
+         * Routes a scanned QR code: a sync setup code adopts its WebDAV login and syncs.
+         * [onResult] gets a sentence for the snackbar.
          */
         fun applyScannedCode(
             code: String,
@@ -124,7 +76,6 @@ class SettingsViewModel
                         } catch (_: UnsupportedOperationException) {
                             onResult("Sync setup codes aren't supported here")
                         }
-                    trimmed.startsWith(NEARBY_CODE_PREFIX) -> nearbySync?.join(trimmed)
                     else -> onResult("That QR code isn't from Orbin")
                 }
             }

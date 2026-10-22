@@ -82,46 +82,12 @@ does not post, reply, or create threads.
 
 ### Sync across devices
 
-Orbin offers optional nearby sync on Android and iOS. It shares reading history, last-read
-positions, bookmarks and watched threads directly over your local network, encrypted between
-paired devices. No Orbin account, hosted server or Internet connection is needed. Media,
-settings and WebDAV credentials stay on their original device.
-
-To pair devices:
-
-1. Use builds with nearby-sync support on both devices, connect them to the same Wi-Fi, and keep
-   Orbin open and unlocked.
-2. Open **Settings → Nearby devices** and enable **Nearby device sync** on both.
-3. Choose **Add a device** on one; it shows a QR code. On the other, choose **Join another device
-   → Scan QR code** and point the camera at it. Copying the code and pasting it into **Join with a
-   code instead** still works. Codes expire after ten minutes and can enroll one device; share them
-   privately.
-4. Use **Sync now** for a manual transfer. For automatic transfers, enable **Trust for automatic
-   sync** for the pairing on both devices.
-
-Trust is off by default. Trusted devices check their current local subnet every thirty seconds
-and sync when the paired device is reachable and authenticates with its saved key. Both apps
-must remain open and unlocked. Turning trust off keeps manual sync available; **Remove device**
-revokes future access but does not erase copies already received by the other device.
-
-Nearby sync supports local IPv4 networks and up to eight pairings per device. Allow local-network
-access on iOS. Guest Wi-Fi isolation, VPNs or firewalls can prevent connections. Address discovery
-is not included: if a saved device address changes, remove the pairing on both devices and pair
-again. Update Orbin on both devices when upgrading the sync protocol.
-
-Not on the same Wi-Fi? Turn on **Also use Bluetooth** on both devices before pairing: pairing and
-**Sync now** then also work over Bluetooth LE within roughly ten metres, with the same encryption,
-between any mix of Android and iOS. On mobile data alone, share a hotspot from one phone and join
-it with the other; the hotspot counts as a local network. Or [host an Orbin relay](docs/relay.md)
-and enter its URL under **Relay server** before pairing: the QR code carries it, and pairing and
-**Sync now** then work over the Internet. The relay only forwards end-to-end encrypted frames; there
-is no public Orbin relay.
-
-For sync over the Internet (devices far apart, mobile data), the separate **WebDAV sync** option
-uses an HTTPS folder you control and its login. Set it up once, then use **Set up another device →
-Show QR code** and scan it with **Copy setup from another device** on the second device instead of
-retyping the folder and password. See the [nearby-sync setup and limits](docs/nearby-sync.md),
-[authentication and credential storage](docs/authentication.md), and [privacy policy](PRIVACY.md).
+Orbin syncs reading history, read positions and bookmarks between your devices through
+**WebDAV sync**: an HTTPS folder you control and its login. Set it up once, then use **Set up
+another device → Show QR code** and scan it with **Copy setup from another device** on the second
+device instead of retyping the folder and password. See
+[authentication and credential storage](docs/authentication.md) and the
+[privacy policy](PRIVACY.md).
 
 ### Privacy and security
 
@@ -131,8 +97,6 @@ retyping the folder and password. See the [nearby-sync setup and limits](docs/ne
   locked content from recents previews.
 - The app lock gates the UI; background sync can still use its saved login. iOS keeps the sync
   password in device-only Keychain storage. See [authentication and recovery](docs/authentication.md).
-- Optional [nearby device sync](docs/nearby-sync.md) shares reading activity directly over Wi-Fi or
-  Bluetooth, or through a relay you host, encrypted between paired devices, with no account.
 - HTTPS-only imageboard and WebDAV networking, encrypted DNS with system-resolver fallback when a network
   blocks DoH, and configurable user-agent behavior.
 - Android cloud backup/device transfer of private local state is disabled.

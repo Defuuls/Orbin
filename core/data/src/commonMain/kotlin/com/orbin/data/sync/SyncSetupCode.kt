@@ -2,9 +2,12 @@ package com.orbin.data.sync
 
 import com.orbin.domain.repository.SYNC_SETUP_PREFIX
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlin.io.encoding.Base64
 
 private const val MAX_SETUP_CODE_LENGTH = 4096
+
+private val SetupJson = Json { ignoreUnknownKeys = true }
 
 @Serializable
 private data class SyncSetup(
@@ -22,7 +25,7 @@ internal object SyncSetupCode {
     fun encode(account: SyncAccount): String {
         require(account.isUsable) { "Set up WebDAV sync first" }
         val setup = SyncSetup(account.folderUrl, account.username, account.password)
-        return SYNC_SETUP_PREFIX + Base64.UrlSafe.encode(NearbyJson.encodeToString(setup).encodeToByteArray())
+        return SYNC_SETUP_PREFIX + Base64.UrlSafe.encode(SetupJson.encodeToString(setup).encodeToByteArray())
     }
 
     fun parse(code: String): SyncAccount {
@@ -31,7 +34,7 @@ internal object SyncSetupCode {
             "Use an Orbin sync setup code"
         }
         val setup =
-            NearbyJson.decodeFromString<SyncSetup>(
+            SetupJson.decodeFromString<SyncSetup>(
                 Base64.UrlSafe.decode(trimmed.removePrefix(SYNC_SETUP_PREFIX)).decodeToString(),
             )
         val account = SyncAccount(setup.folder.trim(), setup.username.trim(), setup.password)

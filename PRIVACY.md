@@ -19,24 +19,6 @@ activity, Clear image cache), or by uninstalling the app.
 - **Thread sync (optional, off unless you set it up).** If you enter a WebDAV folder, your read
   threads, read positions and bookmarks are written as a file to that folder on the server you
   chose, over HTTPS, with the username and password you gave. The password is kept on your device.
-- **Nearby device sync (optional, off by default).** Paired devices exchange reading history,
-  read positions, bookmarks and watched threads directly over your local network, encrypted with
-  per-pair keys. There is no account or developer server. Both apps must be open and
-  unlocked. Automatic transfers require enabling trust on both devices and a current local-subnet
-  check; trust is off by default. Pairing codes expire after ten minutes and should be shared
-  privately. Removing a device revokes its future access; it does not erase copies it already received. Pair keys are
-  kept in encrypted settings on Android and device-only Keychain on iOS. Pairing codes
-  can be shown and scanned as QR codes; the camera is only opened when you tap **Scan QR code**
-  and frames are decoded on the device and never stored or sent. **Bluetooth (optional, off by
-  default)**: with **Also use Bluetooth** on, Orbin advertises a short beacon while it is open and
-  unlocked so a paired device can find it. Beacons are derived from your private device id (or an
-  invitation's random selector) and rotate every ten minutes; they contain no name or activity.
-  Bluetooth scanning is declared `neverForLocation` and is not used to determine location; on iOS
-  Bluetooth access is only requested when you turn the option on. **Relay (optional, empty by
-  default)**: if you enter a **Relay server** URL, Orbin connects to that server (one you or someone
-  you trust hosts; Orbin has none) to reach paired devices over the Internet. The relay forwards
-  frames that are already encrypted end to end and cannot read them; it sees your IP address,
-  connection times, frame sizes and rotating channel hashes, and stores nothing.
 - **Sync setup QR code (optional).** **Set up another device** shows your WebDAV folder,
   username and password as a QR code so your other device can copy the setup. It is only drawn on
   your screen; anyone who photographs it gets your WebDAV login.

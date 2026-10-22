@@ -20,21 +20,12 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
             api(libs.ktor.client.core)
-            implementation(libs.ktor.network)
-            implementation(libs.cryptography.optimal)
             api(libs.androidx.datastore.preferences.core)
             api(libs.okio)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-        }
-        // End to end over the real relay server and real WebSockets, on the JVM.
-        getByName("androidHostTest").dependencies {
-            implementation(project(":relay"))
-            implementation(libs.ktor.server.core)
-            implementation(libs.ktor.server.cio)
-            implementation(libs.ktor.client.cio)
         }
     }
 }

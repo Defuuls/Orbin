@@ -1,6 +1,5 @@
 package com.orbin.app.di
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.orbin.core.common.dispatchers.Dispatcher
@@ -8,15 +7,12 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
-import com.orbin.data.sync.AndroidNearbyBluetooth
-import com.orbin.data.sync.NearbySyncSecrets
 import com.orbin.data.sync.PreferencesSyncPasswordStore
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
-import com.orbin.domain.repository.NearbySyncRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -32,7 +28,6 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.ElementsIntoSet
 import io.ktor.client.HttpClient
@@ -58,7 +53,6 @@ object SharedGraphModule {
         database: OrbinDatabase,
         preferences: DataStore<Preferences>,
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
-        @ApplicationContext context: Context,
     ): SharedGraph =
         createSharedGraph(
             client,
@@ -66,14 +60,7 @@ object SharedGraphModule {
             preferences,
             ioDispatcher,
             PreferencesSyncPasswordStore(preferences),
-            NearbySyncSecrets(
-                PreferencesSyncPasswordStore(preferences, "nearby_sync_identity"),
-                AndroidNearbyBluetooth(context),
-            ),
         )
-
-    @Provides
-    fun providesNearbySyncRepository(graph: SharedGraph): NearbySyncRepository = graph.nearbySync
 
     @Provides
     fun providesJson(graph: SharedGraph): Json = graph.json
