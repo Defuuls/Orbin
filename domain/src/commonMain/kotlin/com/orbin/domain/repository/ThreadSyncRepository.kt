@@ -42,7 +42,7 @@ interface ThreadSyncRepository {
     suspend fun applySetupCode(code: String): Unit = throw UnsupportedOperationException("Sync setup codes unsupported")
 }
 
-/** Marks a WebDAV sync setup code, as opposed to a nearby pairing code, in a scanned QR code. */
+/** Marks a WebDAV sync setup code in a scanned QR code. */
 const val SYNC_SETUP_PREFIX = "orbin-webdav1:"
 
 /** A login change failed; callers must not immediately sync with the previous credentials. */

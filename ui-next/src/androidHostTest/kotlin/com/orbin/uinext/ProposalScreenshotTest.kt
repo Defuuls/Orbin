@@ -240,51 +240,6 @@ class ProposalScreenshotTest {
         }
 
     @Test
-    fun nearbyTrustedDevices() =
-        capture("next_nearby_trusted") {
-            SettingsScreen(
-                title = NEARBY_SCREEN_TITLE,
-                groups =
-                    nearbySyncGroups(
-                        NearbyUi(
-                            enabled = true,
-                            listening = true,
-                            deviceName = "Orbin 9f3a2",
-                            localAddresses = listOf("192.168.1.20"),
-                            port = 39157,
-                            devices =
-                                listOf(
-                                    NearbyUiDevice("tablet", "Orbin abc12", trusted = true, lastSyncedMillis = 0L),
-                                    NearbyUiDevice("phone", "Orbin def34"),
-                                ),
-                            message = "Synced with Orbin abc12",
-                        ),
-                        nowMillis = 120_000L,
-                    ),
-            )
-        }
-
-    @Test
-    fun nearbyPairing() =
-        capture("next_nearby_pairing") {
-            SettingsScreen(
-                title = NEARBY_SCREEN_TITLE,
-                groups =
-                    nearbySyncGroups(
-                        NearbyUi(
-                            enabled = true,
-                            listening = true,
-                            deviceName = "Orbin 9f3a2",
-                            localAddresses = listOf("192.168.1.20"),
-                            port = 39157,
-                            pairingCode = "orbin-nearby1:" + "Abcd1234".repeat(40),
-                        ),
-                        nowMillis = 0L,
-                    ),
-            )
-        }
-
-    @Test
     fun settingsMaxText() =
         capture("next_settings_max_text", fontScale = MAX_FONT_SCALE) {
             SettingsScreen(

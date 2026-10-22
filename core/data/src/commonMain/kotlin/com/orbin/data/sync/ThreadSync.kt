@@ -40,36 +40,13 @@ class ThreadSync(
     private val remote: WebDavSyncFile,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val passwords: SyncPasswordStore = PreferencesSyncPasswordStore(preferences),
-) : ThreadSyncRepository,
-    NearbyProgress {
+) : ThreadSyncRepository {
     private val json =
         Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
     private val running = Mutex()
-
-    override suspend fun snapshot(): SyncDocument =
-        running.withLock {
-            SyncDocument(
-                visits = history.all().map { it.toSynced() },
-                bookmarks = bookmarks.all().map { it.toSynced() },
-            )
-        }
-
-    override suspend fun merge(
-        base: SyncDocument?,
-        remote: SyncDocument,
-    ): SyncDocument =
-        running.withLock {
-            validateNearbyDocument(remote)
-            val visits = history.all()
-            val marks = bookmarks.all()
-            val local = SyncDocument(visits = visits.map { it.toSynced() }, bookmarks = marks.map { it.toSynced() })
-            val merged = mergeSync(base, local, remote)
-            applyLocally(visits, marks, merged)
-            merged
-        }
 
     override val state: Flow<ThreadSyncState> =
         preferences.data.map { prefs ->

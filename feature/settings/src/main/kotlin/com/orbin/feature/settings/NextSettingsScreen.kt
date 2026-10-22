@@ -18,14 +18,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.ui.device.rememberFormFactor
-import com.orbin.uinext.NearbySettingIds
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.SyncSettingIds
-import com.orbin.uinext.nearbyEntryRow
 import com.orbin.uinext.syncSetupQrRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -57,7 +55,6 @@ private sealed interface ShownQr {
 fun NextSettingsScreen(
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
-    onOpenNearby: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -67,7 +64,6 @@ fun NextSettingsScreen(
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
-    val nearbyState by viewModel.nearbyState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
@@ -134,60 +130,54 @@ fun NextSettingsScreen(
             )
         }
     val groups =
-        model.groups + (
-            "" to listOf(nearbyEntryRow(nearbyState.toUi()))
-        ) + ("Sync setup by QR code" to syncSetupQrRows(syncState.isConfigured()))
+        model.groups + ("Sync setup by QR code" to syncSetupQrRows(syncState.isConfigured()))
 
     NextTheme {
         SettingsScreen(
             groups = groups,
             expandedId = expanded,
             onActivate = { item ->
-                if (item.id == NearbySettingIds.OPEN) {
-                    onOpenNearby()
-                } else {
-                    when (item.kind) {
-                        SettingKind.TOGGLE -> model.toggle(item.id)
-                        SettingKind.CHOICE, SettingKind.TEXT ->
-                            expanded = if (expanded == item.id) null else item.id
-                        SettingKind.ACTION ->
-                            if (item.id == SyncSettingIds.SYNC_NOW) {
-                                viewModel.syncNow()
-                            } else if (item.id == SyncSettingIds.SCAN_SETUP_QR) {
-                                scanQr()
-                            } else if (item.id == SyncSettingIds.SHOW_SETUP_QR) {
-                                scope.launch {
-                                    val code = viewModel.syncSetupCode()
-                                    if (code == null) {
-                                        snackbarHostState.showSnackbar("Set up WebDAV sync on this device first")
-                                    } else {
-                                        shownQr = ShownQr.SyncSetup(code)
-                                    }
+                when (item.kind) {
+                    SettingKind.TOGGLE -> model.toggle(item.id)
+                    SettingKind.CHOICE, SettingKind.TEXT ->
+                        expanded = if (expanded == item.id) null else item.id
+                    SettingKind.ACTION ->
+                        if (item.id == SyncSettingIds.SYNC_NOW) {
+                            viewModel.syncNow()
+                        } else if (item.id == SyncSettingIds.SCAN_SETUP_QR) {
+                            scanQr()
+                        } else if (item.id == SyncSettingIds.SHOW_SETUP_QR) {
+                            scope.launch {
+                                val code = viewModel.syncSetupCode()
+                                if (code == null) {
+                                    snackbarHostState.showSnackbar("Set up WebDAV sync on this device first")
+                                } else {
+                                    shownQr = ShownQr.SyncSetup(code)
                                 }
-                            } else {
-                                dispatch(
-                                    item = item,
-                                    onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                                    onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                                    onClear = {
-                                        if (clearArmed) {
-                                            clearArmed = false
-                                            viewModel.clearLocalActivity()
-                                            scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
-                                        } else {
-                                            clearArmed = true
-                                        }
-                                    },
-                                    onClearImageCache = viewModel::clearImageCache,
-                                    onCheckUpdates = {
-                                        if (updateCheck != UpdateCheckState.Checking) {
-                                            viewModel.checkForUpdate(appVersionName(context))
-                                        }
-                                    },
-                                )
                             }
-                        SettingKind.INFO -> Unit
-                    }
+                        } else {
+                            dispatch(
+                                item = item,
+                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                                onClear = {
+                                    if (clearArmed) {
+                                        clearArmed = false
+                                        viewModel.clearLocalActivity()
+                                        scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
+                                    } else {
+                                        clearArmed = true
+                                    }
+                                },
+                                onClearImageCache = viewModel::clearImageCache,
+                                onCheckUpdates = {
+                                    if (updateCheck != UpdateCheckState.Checking) {
+                                        viewModel.checkForUpdate(appVersionName(context))
+                                    }
+                                },
+                            )
+                        }
+                    SettingKind.INFO -> Unit
                 }
             },
             onSelectOption = { item, index ->

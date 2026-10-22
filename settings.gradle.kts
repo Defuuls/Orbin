@@ -62,5 +62,3 @@ include(":feature:onboarding")
 
 include(":ui-next")
 
-// The optional, self-hostable relay for nearby sync over the Internet. A server, not part of either app.
-include(":relay")
