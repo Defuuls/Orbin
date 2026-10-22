@@ -688,15 +688,7 @@ class NearbySync(
         val hello = NearbyJson.decodeFromString<NearbyHello>(connection.read(HELLO_LIMIT).decodeToString())
         require(validToken(hello.pair) && validToken(hello.nonce))
         // Reject unknown selectors before allocating a lock or generating a challenge.
-        if (current().peers.none { it.pair == hello.pair } && pending.value?.id != hello.pair) {
-            log(
-                "Refused a connection from ${host ?: "a device"}: its code isn't current here. " +
-                    "Create a new code on this device.",
-                error = true,
-            )
-            return
-        }
-        log("Incoming connection from ${host ?: "a nearby device"}")
+        if (!acceptsSelector(hello.pair, host)) return
         val mutex = lock(hello.pair)
         if (!mutex.tryLock()) {
             connection.write(PEER_BUSY.encodeToByteArray())
@@ -922,6 +914,24 @@ class NearbySync(
         ) {
             throw NearbyRejectedException(failure)
         }
+
+    /** A known pairing or the live code; anything else is refused, and the log says why. */
+    private suspend fun acceptsSelector(
+        pair: String,
+        host: String?,
+    ): Boolean {
+        val known = current().peers.any { it.pair == pair } || pending.value?.id == pair
+        if (known) {
+            log("Incoming connection from ${host ?: "a nearby device"}")
+        } else {
+            log(
+                "Refused a connection from ${host ?: "a device"}: its code isn't current here. " +
+                    "Create a new code on this device.",
+                error = true,
+            )
+        }
+        return known
+    }
 
     private fun fail(message: String) {
         mutableState.update { it.copy(message = message, messageIsError = true) }
