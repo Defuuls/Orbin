@@ -1,26 +1,26 @@
-# Orbin 171 - Celeriac
+# Orbin 172 - Fiddlehead
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 171
-codename     = "Celeriac"
-version_code = 189
+number       = 172
+codename     = "Fiddlehead"
+version_code = 190
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Nearby sync now shows each step with a progress bar and says exactly what went wrong."
+highlight = "Nearby devices gets its own setup screen, and pairing tries every network address."
 
 summary = [
-  "bump Orbin to 171-Celeriac / versionCode 189",
-  "nearby sync progress and errors, iOS Local Network prompt",
+  "bump Orbin to 172-Fiddlehead / versionCode 190",
+  "nearby sync setup screen, multi-address pairing codes, activity log",
 ]
 
 [changelog]
 Added = [
-  "Nearby devices: a Status row with a progress bar shows each step of pairing and syncing (connecting over Wi-Fi, Bluetooth or the relay, checking the pairing, sending, merging), then the result.",
+  "Nearby devices has its own screen, opened from Settings: live status, this device's Wi-Fi address to compare with the other device's, a step-by-step pairing guide, your paired devices, troubleshooting tips and a copyable activity log.",
 ]
 Fixed = [
-  "Nearby sync failures now say which connection failed and what to check, in red, instead of one generic message, and Sync now stays busy until every device has finished.",
-  "iOS: Orbin asks for Local Network access as soon as nearby sync starts, so an iPhone no longer silently refuses an Android device's connection.",
+  "Nearby pairing codes now carry every local network address of the device that made them, so the other device no longer gets stuck trying an address it can't reach.",
+  "Leaving Orbin while a pairing code is showing now says the code was cancelled instead of it silently stopping working.",
 ]
