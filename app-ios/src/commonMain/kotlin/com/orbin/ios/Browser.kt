@@ -86,6 +86,9 @@ sealed interface Route {
     /** Settings, opened from the feed's header or the boards list. */
     data object Settings : Route
 
+    /** Nearby device sync setup, opened from Settings. */
+    data object NearbySync : Route
+
     data class Catalog(
         val board: SiteBoard,
     ) : Route
@@ -268,7 +271,7 @@ class Browser(
 
     /** Opens a page that loads nothing of its own: search or settings. */
     fun open(page: Route) {
-        require(page == Route.Search || page == Route.Settings) { "Not a page: $page" }
+        require(page == Route.Search || page == Route.Settings || page == Route.NearbySync) { "Not a page: $page" }
         _backStack.update { it + page }
     }
 
@@ -352,7 +355,8 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Feed, Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
+            Route.Feed, Route.Boards, Route.Downloads, Route.Search, Route.Settings, Route.NearbySync, is Route.Media ->
+                Unit
             is Route.Catalog ->
                 if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
                     catalogShown = route.board

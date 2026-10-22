@@ -97,7 +97,7 @@ import com.orbin.uinext.SyncSettingIds
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.WhatsNewOnUpdate
-import com.orbin.uinext.nearbySyncRows
+import com.orbin.uinext.nearbyEntryRow
 import com.orbin.uinext.next
 import com.orbin.uinext.syncSettingRows
 import com.orbin.uinext.syncSetupQrRows
@@ -190,6 +190,7 @@ private fun Destination(
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, sync, nearby)
+        Route.NearbySync -> NearbySyncDestination(nearby)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -422,29 +423,7 @@ private fun SettingsDestination(
                         )
                     groups.take(1) + ("" to rows) + groups.drop(1)
                 }
-            } + (
-                "Nearby devices" to
-                    nearbySyncRows(
-                        nearbyStatus.enabled,
-                        nearbyStatus.listening,
-                        nearbyStatus.busy,
-                        nearbyStatus.pairingCode,
-                        nearbyStatus.devices.map { it.id to it.name },
-                        nearbyStatus.message,
-                        trustedIds =
-                            nearbyStatus.devices
-                                .filter { it.trusted }
-                                .map { it.id }
-                                .toSet(),
-                        qrCodes = true,
-                        bluetoothAvailable = nearbyStatus.bluetoothAvailable,
-                        bluetoothEnabled = nearbyStatus.bluetoothEnabled,
-                        relayAvailable = nearbyStatus.relayAvailable,
-                        relayUrl = nearbyStatus.relayUrl,
-                        step = nearbyStatus.step,
-                        messageIsError = nearbyStatus.messageIsError,
-                    )
-            ) +
+            } + ("" to listOf(nearbyEntryRow(nearbyStatus.toUi()))) +
                 listOfNotNull(
                     sync?.let {
                         "Sync setup by QR code" to
@@ -458,28 +437,9 @@ private fun SettingsDestination(
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
-            if (item.id.startsWith("nearby")) {
-                when {
-                    item.id == NearbySettingIds.ENABLED -> scope.launch { nearby?.setEnabled(!nearbyStatus.enabled) }
-                    item.id == NearbySettingIds.ADD -> {
-                        shownQr = ShownQr.Pairing
-                        scope.launch { nearby?.createPairingCode() }
-                    }
-                    item.id == NearbySettingIds.SHOW_QR -> shownQr = ShownQr.Pairing
-                    item.id == NearbySettingIds.SCAN_QR -> scan()
-                    item.id == NearbySettingIds.BLUETOOTH ->
-                        scope.launch { nearby?.setBluetoothEnabled(!nearbyStatus.bluetoothEnabled) }
-                    item.id == NearbySettingIds.JOIN || item.id == NearbySettingIds.RELAY ->
-                        expanded = if (expanded == item.id) null else item.id
-                    item.id == NearbySettingIds.SYNC -> scope.launch { nearby?.syncNow() }
-                    item.id.startsWith(NearbySettingIds.TRUST_PREFIX) -> {
-                        val id = item.id.removePrefix(NearbySettingIds.TRUST_PREFIX)
-                        val device = nearbyStatus.devices.firstOrNull { it.id == id }
-                        if (device != null) scope.launch { nearby?.setTrusted(id, !device.trusted) }
-                    }
-                    item.id.startsWith(NearbySettingIds.FORGET_PREFIX) ->
-                        scope.launch { nearby?.forget(item.id.removePrefix(NearbySettingIds.FORGET_PREFIX)) }
-                }
+            if (item.id == NearbySettingIds.OPEN) {
+                Haptics.light()
+                browser.open(Route.NearbySync)
             } else {
                 when (item.id) {
                     SettingIds.HIDE_NSFW -> {
@@ -566,14 +526,6 @@ private fun SettingsDestination(
         onCommitText = { item, text ->
             Haptics.light()
             expanded = null
-            if (item.id == NearbySettingIds.JOIN) {
-                scope.launch { nearby?.join(text) }
-                return@SettingsScreen
-            }
-            if (item.id == NearbySettingIds.RELAY) {
-                scope.launch { nearby?.setRelayUrl(text) }
-                return@SettingsScreen
-            }
             val engine = sync ?: return@SettingsScreen
             scope.launch {
                 try {
@@ -590,17 +542,6 @@ private fun SettingsDestination(
         },
     )
     when (val qr = shownQr) {
-        ShownQr.Pairing ->
-            nearbyStatus.pairingCode?.let { code ->
-                QrCodeDialog(
-                    title = "Scan on your other device",
-                    payload = code,
-                    note =
-                        "In Orbin on the other device: Settings → Nearby devices → Scan QR code. " +
-                            "Expires in 10 minutes. Only share it with your own devices.",
-                    onDismiss = { shownQr = null },
-                )
-            }
         is ShownQr.SyncSetup ->
             QrCodeDialog(
                 title = "Set up sync on another device",
@@ -621,10 +562,8 @@ private fun SettingsDestination(
     }
 }
 
-/** The QR code Settings is showing: this device's pairing invitation or its WebDAV setup. */
+/** The QR code Settings is showing: this device's WebDAV setup. */
 private sealed interface ShownQr {
-    data object Pairing : ShownQr
-
     data class SyncSetup(
         val code: String,
     ) : ShownQr

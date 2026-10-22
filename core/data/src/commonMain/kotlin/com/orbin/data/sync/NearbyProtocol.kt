@@ -12,6 +12,7 @@ private const val MAX_ACTIVITY_RECORDS = 50_000
 private const val TOKEN_BYTES = 32
 private val TOKEN_LENGTH = 43..44
 internal const val NEARBY_PORT = 39157
+internal const val MAX_INVITE_HOSTS = 8
 internal const val MAX_NEARBY_BYTES = 8 * 1024 * 1024
 internal const val INVITE_LIFETIME_MS = 10 * 60 * 1000L
 internal const val MAX_NEARBY_DEVICES = 8
@@ -32,7 +33,15 @@ internal data class NearbyInvite(
     val bluetooth: Boolean = false,
     /** The inviter's relay server, so a joiner anywhere on the Internet can meet it there. */
     val relay: String? = null,
+    /**
+     * The inviter's other local addresses. A phone often has several (Wi-Fi, its own hotspot, a
+     * USB or self-assigned one) and [host] alone may name one the joiner can't reach.
+     */
+    val hosts: List<String> = emptyList(),
 ) {
+    /** [host] first, then the inviter's other addresses. */
+    fun candidateHosts(): List<String> = (listOfNotNull(host) + hosts).distinct()
+
     fun code(): String = "orbin-nearby1:" + Base64.UrlSafe.encode(NearbyJson.encodeToString(this).encodeToByteArray())
 
     companion object {
@@ -45,7 +54,10 @@ internal data class NearbyInvite(
                     Base64.UrlSafe.decode(code.removePrefix("orbin-nearby1:")).decodeToString(),
                 )
             require(
-                (invite.host == null || localAddress(invite.host)) && invite.port in NEARBY_PORT_RANGE,
+                (invite.host == null || localAddress(invite.host)) &&
+                    invite.hosts.size <= MAX_INVITE_HOSTS &&
+                    invite.hosts.all(::localAddress) &&
+                    invite.port in NEARBY_PORT_RANGE,
             ) { "Pairing requires a local network address" }
             require(invite.relay == null || normalizeRelayUrl(invite.relay) == invite.relay) { "Invalid relay address" }
             require(invite.host != null || invite.bluetooth || invite.relay != null) {

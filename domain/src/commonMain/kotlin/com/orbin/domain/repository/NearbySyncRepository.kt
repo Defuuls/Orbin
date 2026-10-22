@@ -9,6 +9,13 @@ data class NearbyDevice(
     val trusted: Boolean = false,
 )
 
+/** One line of the nearby-sync activity log, newest last. */
+data class NearbyLogEntry(
+    val timeMillis: Long,
+    val text: String,
+    val error: Boolean = false,
+)
+
 data class NearbySyncState(
     val enabled: Boolean = false,
     val listening: Boolean = false,
@@ -20,6 +27,14 @@ data class NearbySyncState(
     val messageIsError: Boolean = false,
     /** What a pairing or sync in progress is doing right now, for a live status line. */
     val step: String? = null,
+    /** This device's name as other devices see it. */
+    val deviceName: String? = null,
+    /** This device's local network addresses while listening, to compare with the other device's. */
+    val localAddresses: List<String> = emptyList(),
+    /** The port this device listens on while listening. */
+    val port: Int? = null,
+    /** Recent pairing and sync events, for troubleshooting a connection. */
+    val log: List<NearbyLogEntry> = emptyList(),
     /** The user's persisted choice to also pair and sync over Bluetooth LE. */
     val bluetoothEnabled: Boolean = false,
     /** This platform has a Bluetooth transport at all. */
