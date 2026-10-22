@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [172-Fiddlehead] - 2026-10-22
+
+### Added
+- Nearby devices has its own screen, opened from Settings: live status, this device's Wi-Fi address to compare with the other device's, a step-by-step pairing guide, your paired devices, troubleshooting tips and a copyable activity log.
+
+### Fixed
+- Nearby pairing codes now carry every local network address of the device that made them, so the other device no longer gets stuck trying an address it can't reach.
+- Leaving Orbin while a pairing code is showing now says the code was cancelled instead of it silently stopping working.
+
+
 ## [171-Celeriac] - 2026-10-21
 
 ### Added
@@ -2606,7 +2616,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...HEAD
+[172-Fiddlehead]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...v172-Fiddlehead
 [171-Celeriac]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...v171-Celeriac
 [170-Salsify]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...v170-Salsify
 [169-Kohlrabi]: https://github.com/Defuuls/Orbin/compare/v168-Romanesco...v169-Kohlrabi
