@@ -31,8 +31,9 @@ class NearbySettingsTest {
         val ui = NearbyUi(enabled = true, listening = true, localAddresses = listOf("192.168.1.20"), port = 39157)
         val row = rows(ui).single { it.id == NearbySettingIds.THIS_DEVICE }
         assertEquals("Ready", row.value)
-        assertTrue(row.hint!!.contains("192.168.1.20"))
-        assertTrue(row.hint!!.contains("192.168.1."))
+        val hint = row.hint.orEmpty()
+        assertTrue(hint.contains("192.168.1.20"))
+        assertTrue(hint.contains("192.168.1."))
     }
 
     @Test
