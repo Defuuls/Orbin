@@ -54,6 +54,7 @@ internal fun NavDestination.primaryTabIndex(): Int =
 
 internal fun NavDestination.slidesOver(threadPresentation: ThreadPresentation): Boolean =
     hasRoute(Route.Settings::class) ||
+        hasRoute(Route.NearbySync::class) ||
         (threadPresentation == ThreadPresentation.OVERLAY && hasRoute(Route.Thread::class))
 
 internal fun areSiblingTabs(

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.domain.repository.NearbyDevice
+import com.orbin.domain.repository.NearbyLogEntry
 import com.orbin.domain.repository.NearbySyncRepository
 import com.orbin.domain.repository.NearbySyncState
 import io.ktor.network.sockets.InetSocketAddress
@@ -137,7 +138,8 @@ class NearbySync(
         guarded {
             ensureListening()
             check(current().peers.size < MAX_NEARBY_DEVICES) { "Remove a device before adding another" }
-            val host = addresses().firstOrNull(::localAddress)
+            val hosts = rankedAddresses(addresses())
+            val host = hosts.firstOrNull()
             val overBluetooth = bluetoothOn()
             val overRelay = current().relay?.takeIf { relay != null }
             check(host != null || overBluetooth || overRelay != null) {
@@ -152,8 +154,13 @@ class NearbySync(
                     now() + INVITE_LIFETIME_MS,
                     bluetooth = overBluetooth,
                     relay = overRelay,
+                    hosts = hosts.drop(1).take(MAX_INVITE_HOSTS),
                 )
             pending.value = invite
+            log(
+                "Created a pairing code for " +
+                    (hosts.joinToString { "$it:$boundPort" }.ifEmpty { "Bluetooth or the relay" }),
+            )
             if (!foreground.value) {
                 pending.compareAndSet(invite, null)
                 error("Open and unlock Orbin before pairing")
@@ -199,7 +206,9 @@ class NearbySync(
             // Falling through is safe: a route that fails before the inviter answers leaves the
             // invitation unused, and one consumed mid-way is refused on every later route.
             val address = PeerAddress(invite.host, invite.port, invite.relay)
-            tryRoutes(routes(invite.host, invite.port, beacons, invite.relay, channels)) { route ->
+            val targets = invite.candidateHosts().joinToString { "$it:${invite.port}" }
+            log("Joining a device at ${targets.ifEmpty { "Bluetooth or the relay" }}")
+            tryRoutes(routes(invite.candidateHosts(), invite.port, beacons, invite.relay, channels)) { route ->
                 exchange(invite.id, invite.secret, route, address, invitation = true)
             }
             // A device without its own relay adopts the inviter's, so the pair can meet again later.
@@ -223,7 +232,8 @@ class NearbySync(
         val relayUrl = peer.relay ?: current().relay
         val channels = relayUrl?.let { NearbyRelayChannels.device(peer.device, now()) }.orEmpty()
         val address = PeerAddress(peer.host, peer.port, relayUrl)
-        tryRoutes(routes(peer.host, peer.port, beacons, relayUrl, channels)) { route ->
+        log("Syncing with ${peer.name}")
+        tryRoutes(routes(listOfNotNull(peer.host), peer.port, beacons, relayUrl, channels)) { route ->
             exchange(peer.pair, peer.secret, route, address)
         }
     }
@@ -257,23 +267,21 @@ class NearbySync(
         throw NearbyRouteFailure(failures)
     }
 
+    /** Wi-Fi addresses on one of this device's networks first, then Bluetooth, the relay, other addresses. */
     @Suppress("LongParameterList")
     private suspend fun routes(
-        host: String?,
+        hosts: List<String>,
         port: Int,
         beacons: List<ByteArray>,
         relayUrl: String? = null,
         channels: List<String> = emptyList(),
     ): List<NearbyRoute> {
-        val wifi = host?.let { NearbyRoute.Network(it, port) }
+        val (near, far) = hosts.partition(::onLocalNetwork)
         val air = beacons.takeIf { it.isNotEmpty() && bluetoothUsable() }?.let { NearbyRoute.Bluetooth(it) }
         val internet =
             relayUrl?.takeIf { relay != null && channels.isNotEmpty() }?.let { NearbyRoute.Relay(it, channels) }
-        return if (host != null && onLocalNetwork(host)) {
-            listOfNotNull(wifi, air, internet)
-        } else {
-            listOfNotNull(air, internet, wifi)
-        }
+        return near.map { NearbyRoute.Network(it, port) } + listOfNotNull(air, internet) +
+            far.map { NearbyRoute.Network(it, port) }
     }
 
     private suspend fun bluetoothOn(): Boolean = current().bluetooth && bluetoothUsable()
@@ -341,8 +349,16 @@ class NearbySync(
             try {
                 check(foreground.value)
                 mutableState.update {
-                    it.copy(listening = true, message = null, bluetoothReady = bluetooth?.ready() == true)
+                    it.copy(
+                        listening = true,
+                        bluetoothReady = bluetooth?.ready() == true,
+                        deviceName = current().name,
+                        localAddresses = rankedAddresses(addresses()),
+                        port = boundPort,
+                    )
                 }
+                val listening = state.value.localAddresses.joinToString { "$it:$boundPort" }
+                log("Listening on ${listening.ifEmpty { "no Wi-Fi address" }}")
                 if (nearbyNeedsLocalNetworkPrompt) scope.launch { promptForLocalNetwork() }
                 startBluetooth()
                 startRelay()
@@ -476,12 +492,20 @@ class NearbySync(
         stopBluetooth()
         stopRelay()
         expiry?.cancel()
-        pending.value = null
+        if (pending.value != null) {
+            pending.value = null
+            fail(
+                "The pairing code was cancelled because Orbin closed, locked or turned sync off. " +
+                    "Create a new code and keep Orbin open on this device until the other one joins.",
+            )
+        }
         listeningSocket.value?.close()
         connections.value.forEach { it.close() }
         listener?.cancel()
         listener = null
-        mutableState.update { it.copy(listening = false, pairingCode = null) }
+        mutableState.update {
+            it.copy(listening = false, pairingCode = null, localAddresses = emptyList(), port = null)
+        }
     }
 
     private suspend fun ensureListening() {
@@ -654,7 +678,7 @@ class NearbySync(
         saveBase(pair, response.document)
         connection.write(NearbyCrypto.encrypt(secret, "$context|ack", ACK.encodeToByteArray()))
         require(NearbyCrypto.decrypt(secret, "$context|done", connection.read(HELLO_LIMIT)).decodeToString() == ACK)
-        mutableState.update { it.copy(message = "Synced with ${response.name}", messageIsError = false) }
+        succeed("Synced with ${response.name}")
     }
 
     private suspend fun receive(
@@ -664,7 +688,15 @@ class NearbySync(
         val hello = NearbyJson.decodeFromString<NearbyHello>(connection.read(HELLO_LIMIT).decodeToString())
         require(validToken(hello.pair) && validToken(hello.nonce))
         // Reject unknown selectors before allocating a lock or generating a challenge.
-        if (current().peers.none { it.pair == hello.pair } && pending.value?.id != hello.pair) return
+        if (current().peers.none { it.pair == hello.pair } && pending.value?.id != hello.pair) {
+            log(
+                "Refused a connection from ${host ?: "a device"}: its code isn't current here. " +
+                    "Create a new code on this device.",
+                error = true,
+            )
+            return
+        }
+        log("Incoming connection from ${host ?: "a nearby device"}")
         val mutex = lock(hello.pair)
         if (!mutex.tryLock()) {
             connection.write(PEER_BUSY.encodeToByteArray())
@@ -737,7 +769,7 @@ class NearbySync(
                 ),
             )
             connection.write(NearbyCrypto.encrypt(secret, "$context|done", ACK.encodeToByteArray()))
-            mutableState.update { it.copy(message = "Synced with ${request.name}", messageIsError = false) }
+            succeed("Synced with ${request.name}")
         } finally {
             mutex.unlock()
         }
@@ -891,9 +923,29 @@ class NearbySync(
             throw NearbyRejectedException(failure)
         }
 
-    private fun fail(message: String) = mutableState.update { it.copy(message = message, messageIsError = true) }
+    private fun fail(message: String) {
+        mutableState.update { it.copy(message = message, messageIsError = true) }
+        log(message, error = true)
+    }
 
-    private fun step(text: String) = mutableState.update { it.copy(step = text) }
+    private fun step(text: String) {
+        mutableState.update { it.copy(step = text) }
+        log(text)
+    }
+
+    private fun succeed(message: String) {
+        mutableState.update { it.copy(message = message, messageIsError = false) }
+        log(message)
+    }
+
+    private fun log(
+        text: String,
+        error: Boolean = false,
+    ) = mutableState.update { it.copy(log = (it.log + NearbyLogEntry(now(), text, error)).takeLast(MAX_LOG)) }
+
+    /** Private, non-link-local addresses first: those are the Wi-Fi ones another device can reach. */
+    private fun rankedAddresses(all: List<String>): List<String> =
+        all.filter(::localAddress).distinct().sortedBy { if (it.startsWith("169.254.")) 1 else 0 }
 
     /** Says which route failed and what to check, instead of one message for every failure. */
     private fun failureMessage(failure: Throwable): String =
@@ -974,6 +1026,7 @@ class NearbySync(
     companion object {
         private const val PEER_BUSY = "orbin-nearby-busy"
         private const val LOCAL_NETWORK_PROBE_MS = 1_500L
+        private const val MAX_LOG = 40
         private const val TIMEOUT_MESSAGE =
             "Couldn't reach the other device in time. Keep Orbin open and unlocked on both devices and try again."
         private const val GENERIC_FAILURE =

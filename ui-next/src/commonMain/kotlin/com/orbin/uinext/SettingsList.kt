@@ -81,6 +81,8 @@ fun SettingsScreen(
     groups: List<Pair<String, List<SettingItem>>>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    /** The screen title; Settings when null. */
+    title: String? = null,
     expandedId: String? = null,
     showRail: Boolean = true,
     onActivate: (SettingItem) -> Unit = {},
@@ -96,7 +98,7 @@ fun SettingsScreen(
             state.scrollToItem(lazyItemIndex)
         }
     }
-    val settingsTitle = stringResource(Res.string.next_settings_title)
+    val settingsTitle = title ?: stringResource(Res.string.next_settings_title)
     val showCompactTitle by remember {
         derivedStateOf {
             state.firstVisibleItemIndex > 0 ||
@@ -121,7 +123,7 @@ fun SettingsScreen(
             ) {
                 item {
                     ScreenTitle(
-                        text = stringResource(Res.string.next_settings_title),
+                        text = settingsTitle,
                         subtitle = subtitle,
                     )
                 }

@@ -61,6 +61,10 @@ sealed interface Route {
     @Serializable
     data object Settings : Route
 
+    /** Nearby device sync setup, opened from Settings. */
+    @Serializable
+    data object NearbySync : Route
+
     @Serializable
     data object Onboarding : Route
 }

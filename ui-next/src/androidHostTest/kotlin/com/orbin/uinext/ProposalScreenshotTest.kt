@@ -243,18 +243,23 @@ class ProposalScreenshotTest {
     fun nearbyTrustedDevices() =
         capture("next_nearby_trusted") {
             SettingsScreen(
+                title = NEARBY_SCREEN_TITLE,
                 groups =
-                    listOf(
-                        "Nearby devices" to
-                            nearbySyncRows(
-                                enabled = true,
-                                listening = true,
-                                busy = false,
-                                code = null,
-                                devices = listOf("tablet" to "Orbin abc12", "phone" to "Orbin def34"),
-                                message = null,
-                                trustedIds = setOf("tablet"),
-                            ),
+                    nearbySyncGroups(
+                        NearbyUi(
+                            enabled = true,
+                            listening = true,
+                            deviceName = "Orbin 9f3a2",
+                            localAddresses = listOf("192.168.1.20"),
+                            port = 39157,
+                            devices =
+                                listOf(
+                                    NearbyUiDevice("tablet", "Orbin abc12", trusted = true, lastSyncedMillis = 0L),
+                                    NearbyUiDevice("phone", "Orbin def34"),
+                                ),
+                            message = "Synced with Orbin abc12",
+                        ),
+                        nowMillis = 120_000L,
                     ),
             )
         }
@@ -263,17 +268,18 @@ class ProposalScreenshotTest {
     fun nearbyPairing() =
         capture("next_nearby_pairing") {
             SettingsScreen(
+                title = NEARBY_SCREEN_TITLE,
                 groups =
-                    listOf(
-                        "Nearby devices" to
-                            nearbySyncRows(
-                                enabled = true,
-                                listening = true,
-                                busy = false,
-                                code = "orbin-nearby1:" + "Abcd1234".repeat(40),
-                                devices = emptyList(),
-                                message = null,
-                            ),
+                    nearbySyncGroups(
+                        NearbyUi(
+                            enabled = true,
+                            listening = true,
+                            deviceName = "Orbin 9f3a2",
+                            localAddresses = listOf("192.168.1.20"),
+                            port = 39157,
+                            pairingCode = "orbin-nearby1:" + "Abcd1234".repeat(40),
+                        ),
+                        nowMillis = 0L,
                     ),
             )
         }

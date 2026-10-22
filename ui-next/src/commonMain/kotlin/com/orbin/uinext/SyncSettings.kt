@@ -99,7 +99,7 @@ fun syncSettingRows(
     )
 }
 
-private fun ago(millis: Long): String {
+internal fun ago(millis: Long): String {
     val minutes = millis / MILLIS_PER_MINUTE
     return when {
         minutes < 1 -> "just now"

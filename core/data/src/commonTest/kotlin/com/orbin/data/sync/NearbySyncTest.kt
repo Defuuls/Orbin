@@ -280,6 +280,55 @@ class NearbySyncTest {
         }
 
     @Test
+    fun aCodeCarriesEveryAddressSoAnUnreachableFirstOneStillPairs() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            // A phone's first-listed address is often one the other device can't reach.
+            val inviter =
+                controller(Progress(doc(1)), scope, addresses = { listOf("10.255.255.1", "127.0.0.1") })
+            val joiner = controller(Progress(doc(2)), scope)
+            try {
+                inviter.setActive(true)
+                joiner.setActive(true)
+                inviter.createPairingCode()
+                val code = assertNotNull(inviter.state.value.pairingCode)
+                assertEquals(
+                    listOf("10.255.255.1", "127.0.0.1"),
+                    NearbyInvite.parse(code).candidateHosts(),
+                )
+                joiner.join(code)
+                withTimeout(5000) { inviter.state.first { it.devices.isNotEmpty() } }
+                assertFalse(joiner.state.value.messageIsError)
+                assertTrue(
+                    joiner.state.value.log
+                        .isNotEmpty(),
+                )
+            } finally {
+                inviter.setActive(false)
+                joiner.setActive(false)
+                scope.cancel()
+            }
+        }
+
+    @Test
+    fun leavingOrbinWithALiveCodeSaysTheCodeWasCancelled() =
+        runBlocking {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+            val inviter = controller(Progress(doc(1)), scope)
+            try {
+                inviter.setActive(true)
+                inviter.createPairingCode()
+                assertNotNull(inviter.state.value.pairingCode)
+                inviter.setActive(false)
+                assertNull(inviter.state.value.pairingCode)
+                assertTrue(inviter.state.value.messageIsError)
+                assertTrue(assertNotNull(inviter.state.value.message).startsWith("The pairing code was cancelled"))
+            } finally {
+                scope.cancel()
+            }
+        }
+
+    @Test
     fun aFailedJoinNamesTheRouteAndClearsProgress() =
         runBlocking {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -437,12 +486,13 @@ class NearbySyncTest {
         scope: CoroutineScope,
         networks: () -> List<NearbyNetwork> = { listOf(NearbyNetwork("127.0.0.1", 8)) },
         secret: MemorySecret = MemorySecret(),
+        addresses: () -> List<String> = { listOf("127.0.0.1") },
     ) = NearbySync(
         progress,
         MemoryPreferences(),
         NearbySyncSecrets(secret),
         scope,
-        { listOf("127.0.0.1") },
+        addresses,
         0,
         networks = networks,
         autoSyncMillis = 40,
