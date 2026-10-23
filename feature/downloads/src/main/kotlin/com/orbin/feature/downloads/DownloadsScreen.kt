@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,26 +24,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
+import com.orbin.uinext.DownloadRow
 import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.GroupedSection
 import com.orbin.uinext.InlineAction
-import com.orbin.uinext.MetaLine
 import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextScaffold
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ScreenTitle
-import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
 
 /**
  * Download history on the Next language. Transfer + notifications stay with the platform download
@@ -170,60 +164,19 @@ private fun DownloadRow(
     record: DownloadRecord,
     onRetry: () -> Unit,
 ) {
-    val retryLabel = stringResource(R.string.downloads_retry)
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = record.fileName,
-                style = NextType.body,
-                fontWeight = FontWeight.Medium,
-                color = next.ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            DownloadProgress(record)
-        }
-        if (record.status == DownloadStatus.FAILED) {
-            InlineAction(
-                label = "Retry",
-                accent = true,
-                onClick = onRetry,
-                modifier = Modifier.semantics { contentDescription = retryLabel },
-            )
-        }
-    }
-}
-
-@Composable
-private fun DownloadProgress(record: DownloadRecord) {
-    val fraction = record.progressFraction
-    Column(modifier = Modifier.padding(top = 4.dp)) {
-        MetaLine(
-            if (fraction != null && record.status in ACTIVE_DOWNLOAD_STATUSES) {
-                "${stringResource(record.status.labelRes())} · ${(fraction * 100).toInt()}%"
-            } else {
-                stringResource(record.status.labelRes())
-            },
-        )
-        if (record.status in ACTIVE_DOWNLOAD_STATUSES) {
-            NextLinearProgress(
-                progress = fraction,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
-    }
+    DownloadRow(
+        fileName = record.fileName,
+        status = stringResource(record.status.labelRes()),
+        progress = record.progressFraction,
+        active = record.status.isActive,
+        retryLabel = "Retry",
+        retryDescription = stringResource(R.string.downloads_retry),
+        onRetry = onRetry.takeIf { record.status == DownloadStatus.FAILED },
+    )
 }
 
 /** Room under the last download, above the tab pill's own clearance. */
 private val LIST_END_SPACE = 28.dp
-
-private val ACTIVE_DOWNLOAD_STATUSES = setOf(DownloadStatus.QUEUED, DownloadStatus.RUNNING)
 
 @StringRes
 private fun DownloadStatus.labelRes(): Int =

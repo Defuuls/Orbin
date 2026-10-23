@@ -1,7 +1,16 @@
 package com.orbin.core.model
 
 /** Lifecycle of a media download. Mirrors the states the platform download manager reports. */
-enum class DownloadStatus { QUEUED, RUNNING, COMPLETED, FAILED }
+enum class DownloadStatus {
+    QUEUED,
+    RUNNING,
+    COMPLETED,
+    FAILED,
+    ;
+
+    /** Still on its way: the downloads list shows its progress. */
+    val isActive: Boolean get() = this == QUEUED || this == RUNNING
+}
 
 /** A record of a media download, surfaced in the downloads screen. */
 data class DownloadRecord(
