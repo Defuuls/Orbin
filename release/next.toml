@@ -1,26 +1,24 @@
-# Orbin 172 - Fiddlehead
+# Orbin 173 - Sunchoke
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 172
-codename     = "Fiddlehead"
-version_code = 190
+number       = 173
+codename     = "Sunchoke"
+version_code = 191
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Nearby devices gets its own setup screen, and pairing tries every network address."
+highlight = "Device sync is gone: nearby sync and WebDAV sync are removed, and Orbin no longer asks for camera, Bluetooth or local network access."
 
 summary = [
-  "bump Orbin to 172-Fiddlehead / versionCode 190",
-  "nearby sync setup screen, multi-address pairing codes, activity log",
+  "bump Orbin to 173-Sunchoke / versionCode 191",
+  "remove nearby device sync and WebDAV sync",
 ]
 
 [changelog]
-Added = [
-  "Nearby devices has its own screen, opened from Settings: live status, this device's Wi-Fi address to compare with the other device's, a step-by-step pairing guide, your paired devices, troubleshooting tips and a copyable activity log.",
-]
-Fixed = [
-  "Nearby pairing codes now carry every local network address of the device that made them, so the other device no longer gets stuck trying an address it can't reach.",
-  "Leaving Orbin while a pairing code is showing now says the code was cancelled instead of it silently stopping working.",
+Removed = [
+  "Nearby device sync over Wi-Fi, Bluetooth and the relay, with its pairing screen and QR codes. It didn't connect reliably between Android and iOS.",
+  "WebDAV sync and its setup QR code. Reading history and bookmarks now stay on each device; any saved WebDAV login is no longer used.",
+  "Camera, Bluetooth and local network permissions, which only sync used.",
 ]
