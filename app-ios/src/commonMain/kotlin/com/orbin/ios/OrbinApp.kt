@@ -81,6 +81,9 @@ import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.OnboardingBoard
+import com.orbin.uinext.OnboardingBoards
+import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
@@ -147,7 +150,10 @@ fun OrbinApp(
         val routeStates = remember { RouteStates() }
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
         Box(Modifier.fillMaxSize()) {
-            if (!lockState.locked && !lockState.obscured) {
+            val firstRun by browser.firstRun.needed.collectAsState()
+            if (!lockState.locked && !lockState.obscured && firstRun) {
+                OnboardingDestination(browser)
+            } else if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
                     Destination(browser, lock, downloads, backup, formFactor, version, route, pages)
@@ -160,6 +166,49 @@ fun OrbinApp(
             WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible = !lockState.locked && !lockState.obscured)
         }
     }
+}
+
+/** First run: Android's board picker, over the active site's boards. */
+@Composable
+private fun OnboardingDestination(browser: Browser) {
+    val boards by browser.boards.collectAsState()
+    val followed by browser.followed.collectAsState()
+    val site by browser.activeSite.collectAsState()
+    val onSite =
+        remember(boards, site) {
+            (boards as? Load.Ready)?.value.orEmpty().filter { it.provider == site }
+        }
+    val byId = remember(onSite) { onSite.associateBy { it.board.id.value } }
+    OnboardingScreen(
+        boards =
+            remember(boards, onSite) {
+                when (val loaded = boards) {
+                    Load.Loading -> OnboardingBoards.Loading
+                    is Load.Failed -> OnboardingBoards.Failed(loaded.message)
+                    is Load.Ready ->
+                        OnboardingBoards.Ready(
+                            onSite.map {
+                                OnboardingBoard(
+                                    it.board.id.value,
+                                    it.board.title,
+                                    it.board.description,
+                                    it.board.isNsfw,
+                                )
+                            },
+                        )
+                }
+            },
+        following =
+            remember(followed, site) {
+                followed.filter { it.provider == site }.mapTo(mutableSetOf()) { it.board.value }
+            },
+        sites = remember { browser.sites.map { it.name } },
+        selectedSite = browser.sites.indexOfFirst { it.id == site },
+        onSelectSite = { index -> browser.selectSite(browser.sites[index].id) },
+        onFollow = { id, follow -> byId[id]?.let { browser.setFollowed(it, follow) } },
+        onRetry = browser::retry,
+        onStart = { browser.firstRun.complete() },
+    )
 }
 
 @Composable

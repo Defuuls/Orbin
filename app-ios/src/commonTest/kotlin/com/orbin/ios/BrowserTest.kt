@@ -40,7 +40,9 @@ class BrowserTest {
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
-    private val settings = FakeSettings()
+
+    // Past first run: these tests are about browsing, not the board picker.
+    private val settings = FakeSettings().apply { settings.value = settings.value.copy(onboardingCompleted = true) }
 
     private var clock = NOW
 
