@@ -74,6 +74,7 @@ import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.MediaCell
+import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
@@ -170,6 +171,7 @@ private fun Destination(
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
+        is Route.BoardMedia -> BoardMediaDestination(browser, route.board)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
             val previous = backStack.getOrNull(backStack.lastIndex - 1)
@@ -494,9 +496,44 @@ private fun CatalogDestination(
                     onSort = browser::cycleCatalogSort,
                     showRail = false,
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                    onOpenMedia = { browser.open(Route.BoardMedia(board)) },
                     thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
                 )
             }
+        }
+    }
+}
+
+/** A board's media wall: every file its catalog carries, through the same sweep Android's wall runs. */
+@Composable
+private fun BoardMediaDestination(
+    browser: Browser,
+    board: SiteBoard,
+) {
+    val catalog by browser.catalog.collectAsState()
+    NextPullToRefresh(
+        isRefreshing = catalog is Load.Loading,
+        onRefresh = browser::retry,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Loaded(catalog, onRetry = browser::retry) { threads ->
+            val items = remember(threads) { boardMediaItems(board, threads) }
+            val byId = remember(items) { items.associateBy { it.id } }
+            val label = "/${board.board.id.value}/"
+            MediaWallScreen(
+                scanned = 1,
+                total = 1,
+                failed = 0,
+                cells = remember(items) { items.map { MediaCell(it.id, label) } },
+                showRail = false,
+                title = label,
+                onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
+                tile = { cell, modifier ->
+                    byId[cell.id]?.let { item ->
+                        SharpImage(item.attachment, contentDescription = null, modifier, fill = Modifier.fillMaxSize())
+                    }
+                },
+            )
         }
     }
 }

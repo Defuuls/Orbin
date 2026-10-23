@@ -21,6 +21,7 @@ import com.orbin.core.testing.repository.FakeBoardRepository
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.media.AllMediaUiState
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities

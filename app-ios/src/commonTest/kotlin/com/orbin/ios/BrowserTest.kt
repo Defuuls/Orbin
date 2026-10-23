@@ -99,6 +99,11 @@ class BrowserTest {
             val catalog = assertIs<Load.Ready<*>>(browser.catalog.settled()).value as List<*>
             assertEquals(1, catalog.size)
 
+            browser.open(Route.BoardMedia(technology))
+            assertIs<Route.BoardMedia>(browser.backStack.value.last())
+            assertIs<Load.Ready<*>>(browser.catalog.settled(), "the wall reuses the catalog already loaded")
+            assertTrue(browser.back())
+
             browser.openThread(ThreadKey(technology.provider, technology.board.id, ThreadId(7)))
             val thread = assertIs<Load.Ready<Thread>>(browser.thread.settled()).value
             assertEquals("Hi", thread.subject)

@@ -92,6 +92,11 @@ sealed interface Route {
         val board: SiteBoard,
     ) : Route
 
+    /** Every file in a board's catalog, as one wall: the catalog's "media" action, as on Android. */
+    data class BoardMedia(
+        val board: SiteBoard,
+    ) : Route
+
     data class ThreadPage(
         val key: ThreadKey,
     ) : Route
@@ -102,6 +107,15 @@ sealed interface Route {
         val index: Int,
     ) : Route
 }
+
+/** The board whose catalog a route shows: its page, or its media wall. */
+private val Route.catalogBoard: SiteBoard?
+    get() =
+        when (this) {
+            is Route.Catalog -> board
+            is Route.BoardMedia -> board
+            else -> null
+        }
 
 /**
  * The iOS app's navigation and loading state: boards from every site, then a board's catalog,
@@ -272,10 +286,11 @@ class Browser(
     /** Every thread the reader has opened, on any board, for the feed's read state. */
     fun visitedKeys(): Flow<Set<ThreadKey>> = history.observeVisitedKeys()
 
-    /** Opens a page that loads nothing of its own: search or settings. */
+    /** Opens a page over the current one: search, settings, or a board's media wall. */
     fun open(page: Route) {
-        require(page == Route.Search || page == Route.Settings) { "Not a page: $page" }
+        require(page == Route.Search || page == Route.Settings || page is Route.BoardMedia) { "Not a page: $page" }
         _backStack.update { it + page }
+        loadCurrent()
     }
 
     fun openBoard(board: SiteBoard) {
@@ -359,11 +374,13 @@ class Browser(
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
             Route.Feed, Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
-            is Route.Catalog ->
-                if (force || catalogShown != route.board || _catalog.value !is Load.Ready) {
-                    catalogShown = route.board
-                    load(_catalog) { catalogOf(route.board) }
+            is Route.Catalog, is Route.BoardMedia -> {
+                val board = route.catalogBoard ?: return
+                if (force || catalogShown != board || _catalog.value !is Load.Ready) {
+                    catalogShown = board
+                    load(_catalog) { catalogOf(board) }
                 }
+            }
             is Route.ThreadPage ->
                 if (force || threadShown != route.key || _thread.value !is Load.Ready) {
                     threadShown = route.key
