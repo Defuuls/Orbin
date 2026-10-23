@@ -11,8 +11,9 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
-import com.orbin.core.model.matchesFilterTokens
 import com.orbin.data.database.dao.DownloadDao
+import com.orbin.domain.feed.BoardFeed
+import com.orbin.domain.feed.SubscribedFeedLoader
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -216,6 +217,10 @@ class Browser(
     // What the feed holds: the followed boards, and whether NSFW ones were hidden.
     private var feedFor: Pair<Set<FollowedBoard>, Boolean>? = null
     private var feedLoad: Job? = null
+    private val feedLoader = SubscribedFeedLoader()
+
+    /** The last feed that loaded, per site, so a board that fails next time keeps its threads. */
+    private var lastFeed: Pair<ProviderId, List<BoardFeed>>? = null
 
     private var pageLoad: Job? = null
 
@@ -416,31 +421,40 @@ class Browser(
     }
 
     /**
-     * Android's feed, board by board: each followed board's catalog, at most [MAX_CONCURRENT_BOARD_LOADS]
-     * at a time, cut to the board's thread limit and passed through the permanent filter. A board
-     * that fails to load leaves the others; only when every one fails is the feed an error.
+     * The followed boards' newest threads, built by the same [SubscribedFeedLoader] as Android's
+     * feed. A board that fails keeps what it showed last time; only when every board fails with
+     * nothing to fall back on is the feed an error.
      */
     private suspend fun feedOf(boards: Set<FollowedBoard>): Load<List<FeedThread>> {
-        val wanted = searchableBoards(boards)
+        val site = activeSite.value
+        val known =
+            (_boards.value as? Load.Ready)
+                ?.value
+                .orEmpty()
+                .filter { it.provider == site }
+                .associateBy { it.board.id }
+        val ids = boards.mapTo(mutableSetOf()) { it.board }
+        // Before the boards list has loaded a followed board is known only by its id.
+        val candidates = ids.map { id -> known[id]?.board ?: Board(id, title = id.value) }
+        val wanted = feedLoader.feedBoards(candidates, ids, settings.current.value.hideNsfwBoards)
         if (wanted.isEmpty()) return Load.Ready(emptyList())
-        val limits =
-            wanted.groupBy { it.provider }.mapValues { (provider, onSite) ->
-                boardPreferences.observeFeedThreadLimits(provider, onSite.map { it.board }.toSet()).first()
+        val limits = boardPreferences.observeFeedThreadLimits(site, ids).first()
+        var firstError: Exception? = null
+        val loaded =
+            feedLoader.load(wanted, limits, onFailure = { _, error -> firstError = firstError ?: error }) { id ->
+                provider(site).getCatalog(CatalogRequest(site, id))
             }
-        val results =
-            loadEach(wanted) { board ->
-                val catalog = provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board))
-                val limit = limits[board.provider]?.get(board.board)?.count
-                (limit?.let(catalog::take) ?: catalog)
-                    .filterNot { it.matchesFilterTokens(emptySet()) }
-                    .map { FeedThread(board.provider, it) }
-            }
-        val loaded = results.mapNotNull { it.getOrNull() }
-        return if (loaded.isEmpty()) {
-            Load.Failed(results.firstNotNullOf { it.exceptionOrNull() }.readable())
-        } else {
-            Load.Ready(loaded.flatten().sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }))
+        val cached = lastFeed?.takeIf { it.first == site }?.second
+        val shown = SubscribedFeedLoader.withCachedFailures(loaded, cached)
+        if (shown.all { it.failed && it.threads.isEmpty() }) {
+            return Load.Failed(firstError?.readable() ?: "Couldn't load the feed")
         }
+        if (loaded.any { !it.failed }) lastFeed = site to shown
+        return Load.Ready(
+            shown
+                .flatMap { feed -> feed.threads.map { FeedThread(site, it) } }
+                .sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }),
+        )
     }
 
     /**
