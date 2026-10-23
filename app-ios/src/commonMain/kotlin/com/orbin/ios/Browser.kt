@@ -147,6 +147,16 @@ class Browser(
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
     val settings = ReaderSettings(settings, history, scope, downloadDao)
 
+    /** First run's board picker, shown until it is finished once, as on Android. */
+    val firstRun =
+        FirstRun(
+            settings,
+            combine(providers.map { boardPreferences.observeSubscribedBoards(it.metadata.id) }) { perSite ->
+                perSite.any { it.isNotEmpty() }
+            },
+            scope,
+        )
+
     /** Every site, in the order the app registers them: the site switcher's segments. */
     val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
 
@@ -335,6 +345,8 @@ class Browser(
 
     fun retry() {
         Haptics.light()
+        // First run's picker lists the boards, whatever tab sits under it.
+        if (firstRun.needed.value) return loadBoards()
         when (_backStack.value.last()) {
             Route.Boards -> loadBoards()
             Route.Feed -> loadFeed(force = true)
