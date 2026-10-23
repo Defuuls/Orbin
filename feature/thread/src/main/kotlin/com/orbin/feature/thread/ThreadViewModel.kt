@@ -15,6 +15,7 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DisabledThreadArchive
 import com.orbin.domain.repository.DownloadRepository
@@ -112,22 +113,17 @@ class ThreadViewModel
                 }.map { result ->
                     result.fold(
                         onSuccess = {
-                            if (it.isPermanentlyFiltered()) {
-                                ThreadUiState.Blocked
-                            } else {
-                                ThreadUiState.Success(it.hidingMatches(emptySet(), includeHarsh = false))
-                            }
+                            ContentPolicy.visibleThread(it)?.let(ThreadUiState::Success) ?: ThreadUiState.Blocked
                         },
                         onFailure = { error ->
                             val saved = savedThreadRepository.load(threadKey)
                             when {
                                 saved == null -> ThreadUiState.Error(error.message)
-                                saved.isPermanentlyFiltered() -> ThreadUiState.Blocked
                                 else ->
-                                    ThreadUiState.Success(
-                                        thread = saved.hidingMatches(emptySet(), includeHarsh = false),
-                                        fromSavedCopy = true,
-                                    )
+                                    ContentPolicy
+                                        .visibleThread(saved)
+                                        ?.let { ThreadUiState.Success(thread = it, fromSavedCopy = true) }
+                                        ?: ThreadUiState.Blocked
                             }
                         },
                     )

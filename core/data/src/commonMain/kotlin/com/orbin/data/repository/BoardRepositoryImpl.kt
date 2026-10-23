@@ -5,11 +5,11 @@ import com.orbin.core.common.result.map
 import com.orbin.core.common.result.onSuccess
 import com.orbin.core.model.Board
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toEntity
 import com.orbin.data.util.runCatchingProvider
+import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,7 +30,7 @@ class BoardRepositoryImpl(
         boardDao
             .observeBoards(provider.value)
             .map { entities ->
-                entities.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
+                ContentPolicy.visibleBoards(entities.map { it.toDomain() })
             }.onStart {
                 if (isStale(provider)) refreshBoards(provider)
             }
@@ -49,7 +49,7 @@ class BoardRepositoryImpl(
                         provider = provider.value,
                         boards = boards.mapIndexed { index, board -> board.toEntity(provider, index, now) },
                     )
-                }.map { boards -> boards.filterNot { board -> board.isPermanentlyFiltered() } }
+                }.map(ContentPolicy::visibleBoards)
         }
 
     private suspend fun isStale(provider: ProviderId): Boolean =
