@@ -1,4 +1,4 @@
-package com.orbin.feature.thread
+package com.orbin.domain.thread
 
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.BoardId

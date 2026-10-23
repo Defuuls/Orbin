@@ -93,6 +93,26 @@ class RowsTest {
     }
 
     @Test
+    fun postsIndentAndCountRepliesFromQuoteLinksAsOnAndroid() {
+        fun quoting(
+            id: Long,
+            vararg targets: Long,
+        ) = post(id, files = 0).copy(repliesTo = targets.map(::PostId).toPersistentList())
+        // No stored backlinks, as in a saved copy: the counts come from the quotes themselves.
+        val thread =
+            Thread(
+                key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
+                originalPost = post(1, files = 0),
+                replies = persistentListOf(quoting(2, 1), quoting(3, 2), quoting(4, 3)),
+            )
+
+        val posts = thread.toPosts(nowMillis = 0)
+
+        assertEquals(listOf(0, 0, 1, 2), posts.map { it.depth })
+        assertEquals(listOf(1, 1, 1, 0), posts.map { it.replies })
+    }
+
+    @Test
     fun onlyHttpsLinksWithAHostMayBeOpened() {
         assertEquals("https://example.com/a", safeExternalLink(" https://example.com/a "))
         assertEquals("HTTPS://example.com", safeExternalLink("HTTPS://example.com"))
