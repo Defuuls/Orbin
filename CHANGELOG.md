@@ -6,6 +6,28 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [174-Jicama] - 2026-10-23
+
+### Added
+- iOS: a first-run board picker, the same one Android shows.
+- iOS: each board's media wall, opened from its catalog.
+- iOS: home-screen quick actions for Your Feed, Saved Media and Browse Boards.
+- iOS: picture in picture when you leave the app while a video plays.
+- iOS: safe mode after two startup crashes in a row, with crash details you can share.
+
+### Changed
+- iOS indents thread replies and counts them the way Android does, saved threads included.
+- iOS applies the built-in content filter to boards, catalogs and threads, as Android does.
+- Feed, search, thread layout, downloads and onboarding now share one implementation on Android and iOS.
+- Sites behind a proof-of-work gate are solved once per site instead of once per image on a fresh session.
+- Android targets SDK 37.
+
+### Fixed
+- A board that fails during search no longer hides the other boards' results.
+- iOS shows progress for queued downloads.
+- Leftover sync logins from earlier versions are removed from the device.
+
+
 ## [173-Sunchoke] - 2026-10-23
 
 ### Removed
@@ -2624,7 +2646,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...HEAD
+[174-Jicama]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...v174-Jicama
 [173-Sunchoke]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...v173-Sunchoke
 [172-Fiddlehead]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...v172-Fiddlehead
 [171-Celeriac]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...v171-Celeriac
