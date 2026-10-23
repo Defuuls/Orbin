@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Preferences -->
+    <string name="settings_hide_nsfw">Hide NSFW boards</string>
+    <string name="settings_cover_violent">Cover violent media</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_feed_columns">Feed columns</string>
+    <string name="settings_feed_columns_unfolded">Feed columns when unfolded</string>
+    <string name="settings_catalog_columns">Catalog columns</string>
+    <string name="settings_one_column">1 column</string>
+    <string name="settings_columns">%1$d columns</string>
+    <string name="settings_true_black">True black</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_update_on_launch">Tell me about new releases</string>
+
+    <!-- Your data -->
+    <string name="settings_clear_activity">Clear local activity</string>
+    <string name="settings_clear_activity_armed">Tap again to delete</string>
+    <string name="settings_clear_activity_action">Delete</string>
+    <string name="settings_clear_activity_hint">Deletes browsing history, recent searches and download history on this device.</string>
+    <string name="settings_clear_activity_done">Local activity cleared</string>
+    <string name="settings_clear_image_cache">Clear image cache</string>
+    <string name="settings_image_cache_empty">Empty · Clear</string>
+    <string name="settings_image_cache_small">&lt;1 MB · Clear</string>
+    <string name="settings_image_cache_size">%1$d MB · Clear</string>
+    <string name="settings_check_updates">Check for updates</string>
+    <string name="settings_export">Export data</string>
+    <string name="settings_export_action">Save</string>
+    <string name="settings_import">Import data</string>
+    <string name="settings_import_action">Restore</string>
+
+    <!-- Updates and backups -->
+    <string name="settings_unknown_build">Unknown build</string>
+    <string name="settings_checking">Checking…</string>
+    <string name="settings_check_failed">Check failed</string>
+    <string name="settings_up_to_date">Up to date</string>
+    <string name="settings_update_available">%1$s available</string>
+    <string name="settings_check_failed_message">Could not check for updates: %1$s</string>
+    <string name="settings_up_to_date_message">Orbin is up to date</string>
+    <string name="settings_backup_saved">Backup saved</string>
+    <string name="settings_backup_restored">Restored %1$d boards, %2$d bookmarks and %3$d saved searches</string>
+    <string name="settings_backup_restored_skipped">Restored %1$d boards, %2$d bookmarks and %3$d saved searches (skipped %4$d from a provider this build doesn\'t support)</string>
+</resources>

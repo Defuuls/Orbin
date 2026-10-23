@@ -4,6 +4,10 @@ plugins {
 
 android {
     namespace = "com.orbin.feature.settings"
+
+    androidResources {
+        enable = true
+    }
 }
 
 dependencies {

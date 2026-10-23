@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -68,7 +69,8 @@ class NextSettingsListTest {
         composeTestRule.setContent {
             val settings by viewModel.settings.collectAsState()
             var expanded by remember { mutableStateOf<String?>(null) }
-            val model = buildSettings(settings, viewModel, "Up to date")
+            val strings = LocalContext.current.settingsStrings()
+            val model = buildSettings(settings, viewModel, "Up to date", strings)
             NextTheme {
                 SettingsScreen(
                     groups = model.groups,
