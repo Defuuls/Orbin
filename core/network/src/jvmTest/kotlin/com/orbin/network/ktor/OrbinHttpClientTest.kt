@@ -13,6 +13,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -71,6 +73,42 @@ class OrbinHttpClientTest {
         // The confirmation is sent with the disclaimer as referer and the policy's user agent.
         assertThat(site.confirmHeaders?.get(HttpHeaders.Referrer)).endsWith("/.static/pages/disclaimer.html")
         assertThat(site.confirmHeaders?.get("User-Agent")).isEqualTo("OrbinTest")
+    }
+
+    @Test
+    fun `requests that hit the gate together mine it once`() {
+        var cleared = false
+        var submissions = 0
+        val client =
+            orbinHttpClient(
+                MockEngine { request ->
+                    when {
+                        request.url.parameters["powblock"] != null -> {
+                            submissions++
+                            cleared = true
+                            respond("")
+                        }
+                        !cleared ->
+                            respond(
+                                PowBlockTest.interstitial(PowBlockTest.TOKEN, difficulty = 8),
+                                headers = HTML,
+                            )
+                        else -> respond("ok")
+                    }
+                },
+                { config },
+            )
+
+        // All four are challenged before any clears the gate: each sends before the first mines.
+        val bodies =
+            runBlocking {
+                (1..4)
+                    .map { index -> async { client.get("https://8chan.example/thumb/$index.jpg").bodyAsText() } }
+                    .awaitAll()
+            }
+
+        assertThat(bodies).containsExactly("ok", "ok", "ok", "ok")
+        assertThat(submissions).isEqualTo(1)
     }
 
     @Test
