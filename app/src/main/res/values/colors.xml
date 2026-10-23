@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Orbin-X design color scheme -->
-    <color name="orbinx_icon_background">#171717</color>
     <color name="orbinx_status_bar">#212121</color>
     <color name="orbinx_navigation_bar">#212121</color>
     <color name="orbinx_window_background">#212121</color>
