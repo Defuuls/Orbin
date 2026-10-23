@@ -21,7 +21,10 @@ import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.encodedPath
 import io.ktor.http.takeFrom
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
+import kotlin.concurrent.Volatile
 
 /** Thrown for a cleartext request while HTTPS-only is on; it never leaves the device. */
 class CleartextBlockedException(
@@ -68,7 +71,12 @@ fun requestPolicyPlugin(configProvider: NetworkConfigProvider) =
  * kept by the engine's cookie store (NSHTTPCookieStorage on iOS).
  */
 fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
+    val gates = PowGates()
     plugin(HttpSend).intercept { original ->
+        val gate = gates.forHost(original.url.host)
+        // Read before each request goes out, as on Android: a gate cleared after this point was
+        // cleared without this request's challenge, which then is not worth mining.
+        var clearancesSeen = gate.clearances
         var call = execute(original)
         repeat(PowBlock.MAX_ROUNDS) {
             val html = call.response.contentType()?.match(ContentType.Text.Html) == true
@@ -77,17 +85,23 @@ fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
             val challenge = if (PowBlock.isChallenge(body)) PowBlock.parse(body) else null
             val cleared =
                 when {
-                    challenge != null -> {
-                        val nonce = PowBlock.mine(challenge) ?: return@intercept call
-                        val submit =
-                            URLBuilder(call.request.url).apply {
-                                parameters.clear()
-                                PowBlock.submitQuery(challenge, nonce).forEach { (key, value) ->
-                                    parameters.append(key, value)
+                    // One request per host mines at a time; the rest wait, then ask again with the
+                    // cookie it earned. A cold session's thumbnails would otherwise each mine one.
+                    challenge != null ->
+                        gate.mutex.withLock {
+                            if (gate.clearances != clearancesSeen) return@withLock true
+                            val nonce = PowBlock.mine(challenge) ?: return@intercept call
+                            val submit =
+                                URLBuilder(call.request.url).apply {
+                                    parameters.clear()
+                                    PowBlock.submitQuery(challenge, nonce).forEach { (key, value) ->
+                                        parameters.append(key, value)
+                                    }
                                 }
+                            runGate(gateRequest(submit.build(), referer = null, configProvider)).also { solved ->
+                                if (solved) gate.clearances++
                             }
-                        runGate(gateRequest(submit.build(), referer = null, configProvider))
-                    }
+                        }
                     termsPage(call) != null -> {
                         val disclaimer = termsPage(call)!!
                         runGate(
@@ -101,10 +115,26 @@ fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
                     else -> return@intercept call
                 }
             if (!cleared) return@intercept call
+            clearancesSeen = gate.clearances
             call = execute(HttpRequestBuilder().takeFrom(original))
         }
         call
     }
+}
+
+/** Each host's POWBlock gate: how often it has been cleared, and the lock its miners take turns on. */
+private class PowGates {
+    class Gate {
+        val mutex = Mutex()
+
+        @Volatile
+        var clearances = 0
+    }
+
+    private val lock = Mutex()
+    private val gates = mutableMapOf<String, Gate>()
+
+    suspend fun forHost(host: String): Gate = lock.withLock { gates.getOrPut(host) { Gate() } }
 }
 
 /**

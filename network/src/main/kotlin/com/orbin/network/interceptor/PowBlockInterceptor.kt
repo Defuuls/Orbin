@@ -7,6 +7,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Transparently clears the POWBlock proof-of-work gate and the terms-of-service redirect that some
@@ -23,6 +24,8 @@ import java.io.IOException
  * Cleared cookies live in the client's [InMemoryCookieJar], so once a session is unlocked the
  * layers are skipped. On sites without POWBlock none of the detection matches and this is a no-op.
  *
+ * Requests to one host that hit the gate together mine it once, not once each (see [clearPowGate]).
+ *
  * Mining never runs on OkHttp's shared dispatcher threads: [PowBlock.mine] runs it on a small
  * dedicated pool while this call waits, with a hard timeout. Timeouts fail closed so a
  * pathological challenge cannot stall API and Coil traffic forever.
@@ -30,28 +33,71 @@ import java.io.IOException
 class PowBlockInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
+        val gate = gates.computeIfAbsent(original.url.host) { Gate() }
+        // Read before each request goes out: a gate cleared after this point was cleared without
+        // this request's challenge, which then is not worth mining.
+        var clearancesSeen = gate.clearances
         var response = chain.proceed(original)
 
         var rounds = 0
         while (rounds < MAX_ROUNDS) {
             when {
                 response.isPowChallenge() -> {
-                    val solved = solvePow(chain, response)
-                    response.close()
-                    if (!solved) break
+                    val cleared = clearPowGate(chain, original, response, gate, clearancesSeen) ?: break
+                    clearancesSeen = cleared.first
+                    response = cleared.second
                 }
                 response.isTosRedirect() -> {
                     val accepted = acceptTos(chain, response.request.url)
                     response.close()
                     if (!accepted) break
+                    clearancesSeen = gate.clearances
+                    response = chain.proceed(original)
                 }
                 else -> return response
             }
             rounds++
-            response = chain.proceed(original)
         }
         return response
     }
+
+    /**
+     * Clears [challenged]'s gate and returns the original request's next response, with the
+     * clearance count read just before it was sent; or null when the challenge cannot be solved.
+     *
+     * One request per host mines at a time. A cold session sends many requests at once (the API
+     * and every thumbnail), each answered with its own challenge; mining them all would burn every
+     * core for one cookie. The rest wait here, and a request whose challenge predates a clearance
+     * another request made simply asks again with the cookie that request earned.
+     */
+    private fun clearPowGate(
+        chain: Interceptor.Chain,
+        original: Request,
+        challenged: Response,
+        gate: Gate,
+        clearancesSeen: Int,
+    ): Pair<Int, Response>? {
+        synchronized(gate) {
+            if (gate.clearances == clearancesSeen) {
+                val solved = solvePow(chain, challenged)
+                challenged.close()
+                if (!solved) return null
+                gate.clearances++
+            } else {
+                challenged.close()
+            }
+        }
+        val seen = gate.clearances
+        return seen to chain.proceed(original)
+    }
+
+    /** How many times a host's gate has been cleared, and the lock its miners take turns on. */
+    private class Gate {
+        @Volatile
+        var clearances = 0
+    }
+
+    private val gates = ConcurrentHashMap<String, Gate>()
 
     /** Mines and submits the challenge on the interstitial's URL; returns false if unsolvable. */
     private fun solvePow(
