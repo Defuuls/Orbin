@@ -1,24 +1,38 @@
-# Orbin 173 - Sunchoke
+# Orbin 174 - Jicama
 #
 # Merging this file to main triggers the Cut Release workflow, which opens the
 # release PR. See release/README.md.
 
-number       = 173
-codename     = "Sunchoke"
-version_code = 191
+number       = 174
+codename     = "Jicama"
+version_code = 192
 
 # One line for the README's "What's new in <number>:" highlight. Optional -
 # leaving it out removes that line rather than letting it name a stale release.
-highlight = "Device sync is gone: nearby sync and WebDAV sync are removed, and Orbin no longer asks for camera, Bluetooth or local network access."
+highlight = "iOS catches up: a first-run board picker, board media walls, home-screen quick actions, picture in picture and safe mode."
 
 summary = [
-  "bump Orbin to 173-Sunchoke / versionCode 191",
-  "remove nearby device sync and WebDAV sync",
+  "bump Orbin to 174-Jicama / versionCode 192",
+  "iOS parity, shared Android/iOS logic, and quality work",
 ]
 
 [changelog]
-Removed = [
-  "Nearby device sync over Wi-Fi, Bluetooth and the relay, with its pairing screen and QR codes. It didn't connect reliably between Android and iOS.",
-  "WebDAV sync and its setup QR code. Reading history and bookmarks now stay on each device; any saved WebDAV login is no longer used.",
-  "Camera, Bluetooth and local network permissions, which only sync used.",
+Added = [
+  "iOS: a first-run board picker, the same one Android shows.",
+  "iOS: each board's media wall, opened from its catalog.",
+  "iOS: home-screen quick actions for Your Feed, Saved Media and Browse Boards.",
+  "iOS: picture in picture when you leave the app while a video plays.",
+  "iOS: safe mode after two startup crashes in a row, with crash details you can share.",
+]
+Changed = [
+  "iOS indents thread replies and counts them the way Android does, saved threads included.",
+  "iOS applies the built-in content filter to boards, catalogs and threads, as Android does.",
+  "Feed, search, thread layout, downloads and onboarding now share one implementation on Android and iOS.",
+  "Sites behind a proof-of-work gate are solved once per site instead of once per image on a fresh session.",
+  "Android targets SDK 37.",
+]
+Fixed = [
+  "A board that fails during search no longer hides the other boards' results.",
+  "iOS shows progress for queued downloads.",
+  "Leftover sync logins from earlier versions are removed from the device.",
 ]
