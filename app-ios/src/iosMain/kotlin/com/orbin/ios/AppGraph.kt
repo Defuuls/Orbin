@@ -1,11 +1,13 @@
 package com.orbin.ios
 
+import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
@@ -49,6 +51,14 @@ internal object AppGraph {
             preferences,
             Dispatchers.Default,
         )
+
+    init {
+        // Sync was removed; its saved login and pairing data must not linger on the device.
+        scope.launch(Dispatchers.Default) {
+            deleteLegacySyncKeychainItems()
+            LegacySyncCleanup.clear(preferences)
+        }
+    }
 
     val settingsStore = shared.settingsStore
     val boardPreferences = shared.boardPreferences
