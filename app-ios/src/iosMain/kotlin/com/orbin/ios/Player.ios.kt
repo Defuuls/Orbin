@@ -64,6 +64,10 @@ internal actual fun NativePlayer(
             AVPlayerViewController().apply {
                 this.player = player
                 showsPlaybackControls = false
+                // Picture in picture, as Android's player: leaving the app while a video plays
+                // keeps it going in a floating window. Needs the audio background mode.
+                allowsPictureInPicturePlayback = true
+                canStartPictureInPictureAutomaticallyFromInline = true
             }
         }
     val currentLoop = rememberUpdatedState(loop)

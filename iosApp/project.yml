@@ -71,8 +71,10 @@ targets:
           - UIApplicationShortcutItemType: io.github.defuuls.orbin.boards
             UIApplicationShortcutItemTitle: Browse Boards
             UIApplicationShortcutItemIconSymbolName: square.grid.2x2
+        # audio: a playing video carries on in picture in picture after leaving the app (Player.ios.kt).
         UIBackgroundModes:
           - fetch
+          - audio
         BGTaskSchedulerPermittedIdentifiers:
           - io.github.defuuls.orbin.refresh
         NSPhotoLibraryAddUsageDescription: Orbin saves the photos and videos you choose to your library.
