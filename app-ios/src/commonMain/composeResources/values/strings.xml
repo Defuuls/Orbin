@@ -29,4 +29,15 @@
     <string name="ios_pencil_watch">Watch thread</string>
     <string name="ios_pencil_unwatch">Stop watching</string>
     <string name="ios_pencil_share">Share</string>
+    <string name="ios_safe_mode_title">Orbin didn\'t start</string>
+    <string name="ios_safe_mode_explanation">The last two launches stopped before the app was usable, so it\'s starting in safe mode instead of trying again.</string>
+    <string name="ios_safe_mode_save_first">Saving the crash details first is worth doing even if you plan to reset — it\'s the only record of what went wrong, and it stays on your device until you share it.</string>
+    <string name="ios_safe_mode_save_crash_details">Save crash details</string>
+    <string name="ios_safe_mode_reset">Reset local data</string>
+    <string name="ios_safe_mode_try_normally">Try starting normally</string>
+    <string name="ios_safe_mode_reset_dialog_title">Reset local data?</string>
+    <string name="ios_safe_mode_reset_dialog_text">Deletes bookmarks, reading history and download history from this device. Your settings are kept. This cannot be undone.</string>
+    <string name="ios_safe_mode_reset_confirm">Reset</string>
+    <string name="ios_safe_mode_cancel">Cancel</string>
+    <string name="ios_safe_mode_no_details">No crash details were recorded.</string>
 </resources>

@@ -1,6 +1,10 @@
 package com.orbin.ios
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -10,6 +14,7 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.delay
 import okio.Path.Companion.toPath
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
@@ -32,6 +37,57 @@ import platform.UserNotifications.UNUserNotificationCenter
 @OptIn(ExperimentalForeignApi::class)
 @Suppress("FunctionName", "unused") // Called from Swift as MainViewControllerKt.MainViewController().
 fun MainViewController(): UIViewController {
+    IosStartupCrashes.install()
+    // Decided before anything reads local state: a crash loop most likely comes from that state,
+    // so safe mode must not depend on it, as on Android.
+    val crashLooping = IosStartupCrashes.crashes.isCrashLooping
+    return ComposeUIViewController {
+        var safeMode by remember { mutableStateOf(crashLooping) }
+        if (safeMode) {
+            IosSafeMode(
+                report = IosStartupCrashes.crashes::report,
+                onReset = {
+                    IosStartupCrashes.resetLocalData()
+                    safeMode = false
+                },
+                onContinue = { safeMode = false },
+            )
+        } else {
+            val app = remember { startApp() }
+            setSingletonImageLoaderFactory { context -> imageLoader(context, app.graph) }
+            // A launch that stays up this long got going: it no longer counts towards safe mode.
+            LaunchedEffect(Unit) {
+                delay(StartupCrashes.STARTUP_WINDOW_MILLIS)
+                IosStartupCrashes.crashes.launchSucceeded()
+            }
+            OrbinApp(
+                app.browser,
+                app.lock,
+                app.downloads,
+                app.backup,
+                formFactor(),
+                AppVersion(app.graph.appVersion, app.graph.appBuild),
+                app.graph.whatsNew,
+                app.graph.pages,
+            )
+        }
+    }.also { controller -> attachPencil(controller.view) }
+}
+
+/** What the app runs on, made once safe mode is out of the way. */
+private class StartedApp(
+    val graph: AppGraph,
+    val browser: Browser,
+    val lock: AppLock,
+    val downloads: MediaDownloads,
+    val backup: IosBackup,
+)
+
+/**
+ * Builds the app over [AppGraph]: one HTTP client for the providers, image loading and saves, and
+ * one database for what the reader keeps, shared with the background refresh.
+ */
+private fun startApp(): StartedApp {
     val graph = AppGraph
     val browser =
         Browser(
@@ -88,19 +144,7 @@ fun MainViewController(): UIViewController {
         // Leaving the app is when a background refresh is worth asking for.
         scheduleBackgroundRefresh()
     }
-    return ComposeUIViewController {
-        setSingletonImageLoaderFactory { context -> imageLoader(context, graph) }
-        OrbinApp(
-            remember { browser },
-            remember { lock },
-            remember { downloads },
-            remember { backup },
-            formFactor(),
-            AppVersion(graph.appVersion, graph.appBuild),
-            graph.whatsNew,
-            graph.pages,
-        )
-    }.also { controller -> attachPencil(controller.view) }
+    return StartedApp(graph, browser, lock, downloads, backup)
 }
 
 /** Coil over the app's Ktor client (encrypted DNS included), with its disk cache in Caches. */
