@@ -9,8 +9,8 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
-import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.CatalogRequest
+import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.feed.BoardFeed
