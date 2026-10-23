@@ -2,15 +2,17 @@ package com.orbin.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.fold
 import com.orbin.core.model.Board
 import com.orbin.core.model.SearchQuery
-import com.orbin.core.model.SearchResult
 import com.orbin.core.model.SearchScope
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.search.searchEachBoard
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
@@ -53,7 +55,10 @@ class SearchViewModel
             observeActiveProvider()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
 
-        /** The boards a search covers: the ones you follow, less NSFW ones when those are hidden. */
+        /**
+         * The boards a search covers: the ones you follow, less NSFW ones when those are hidden
+         * and any the permanent filter catches, as the feed does.
+         */
         val searchableBoards: StateFlow<ImmutableList<Board>> =
             activeProvider
                 .flatMapLatest { provider ->
@@ -65,6 +70,7 @@ class SearchViewModel
                         boards
                             .filter { it.id in subscribedIds }
                             .filterNot { settings.hideNsfwBoards && it.isNsfw }
+                            .filterNot { it.isPermanentlyFiltered() }
                             .sortedBy { it.id.value }
                             .toImmutableList()
                     }
@@ -89,26 +95,25 @@ class SearchViewModel
                     _state.value = SearchUiState.Error("Follow a few boards to search them")
                     return@launch
                 }
-                val results = mutableListOf<SearchResult>()
-                for (board in boards) {
-                    val query =
-                        SearchQuery(
-                            provider = activeProvider.value.metadata.id,
-                            text = trimmed,
-                            scope = SearchScope.BOARD_CATALOG,
-                            board = board.id,
-                        )
-                    var failed = false
-                    searchRepository.search(query).fold(
-                        onSuccess = { results += it },
-                        onFailure = {
-                            _state.value = SearchUiState.Error(it.message)
-                            failed = true
-                        },
-                    )
-                    if (failed) return@launch
+                val provider = activeProvider.value.metadata.id
+                // Boards are searched a few at a time; one that fails leaves the others' results.
+                val outcome =
+                    searchEachBoard(boards) { board ->
+                        searchRepository
+                            .search(SearchQuery(provider, trimmed, SearchScope.BOARD_CATALOG, board.id))
+                            .fold(onSuccess = { it }, onFailure = { throw BoardSearchFailed(it) })
+                    }
+                if (outcome.allFailed) {
+                    _state.value = SearchUiState.Error(outcome.firstError?.message ?: "Search failed")
+                    return@launch
                 }
+                val results = outcome.results
                 _state.value = SearchUiState.Results(results.toImmutableList())
             }
         }
     }
+
+/** A board's search failure, carried through [searchEachBoard] with its readable message. */
+private class BoardSearchFailed(
+    error: DataError,
+) : Exception(error.message, error.cause)
