@@ -64,7 +64,13 @@ class AppPerformanceBenchmark {
             compilationMode = CompilationMode.Partial(),
             startupMode = mode,
             iterations = STARTUP_ITERATIONS,
-            setupBlock = { pressHome() },
+            setupBlock = {
+                pressHome()
+                // Macrobenchmark drops the shader cache between cold iterations by broadcasting to
+                // the app, which can start its process again; a cold start then fails with "must not
+                // be running prior to cold start". Kill whatever that left running.
+                if (mode == StartupMode.COLD) killProcess()
+            },
         ) {
             startActivityAndWait()
         }
