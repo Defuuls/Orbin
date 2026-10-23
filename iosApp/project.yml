@@ -60,8 +60,10 @@ targets:
         # Asked the first time a photo or video is saved from a thread; add-only, never read.
         # A background refresh of watched threads, as Android's watch worker; the Kotlin side
         # registers REFRESH_TASK in BackgroundRefresh.kt.
+        # audio: a playing video carries on in picture in picture after leaving the app (Player.ios.kt).
         UIBackgroundModes:
           - fetch
+          - audio
         BGTaskSchedulerPermittedIdentifiers:
           - io.github.defuuls.orbin.refresh
         NSPhotoLibraryAddUsageDescription: Orbin saves the photos and videos you choose to your library.
