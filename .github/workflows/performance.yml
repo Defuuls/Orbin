@@ -60,6 +60,33 @@ jobs:
             -keysize 2048 \
             -validity 10000
           ./gradlew :app:assembleDebug
+      # The emulator runner downloads the system image itself, and that download now and then comes
+      # back truncated ("unknown archive"), failing the job before a benchmark runs. As in
+      # instrumentation.yml: cache the image, and install it with retries on a miss.
+      - name: System image cache
+        uses: actions/cache@v6
+        id: sysimg-cache
+        with:
+          path: |
+            /usr/local/lib/android/sdk/system-images/android-35
+            /usr/local/lib/android/sdk/platforms/android-35
+          key: sysimg-35-google_apis-x86_64
+
+      - name: Install system image
+        if: steps.sysimg-cache.outputs.cache-hit != 'true'
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          PACKAGES="system-images;android-35;google_apis;x86_64 platforms;android-35 emulator"
+          for attempt in 1 2 3; do
+            if yes | "$SDKMANAGER" --install $PACKAGES > /dev/null; then
+              exit 0
+            fi
+            echo "sdkmanager attempt $attempt failed; clearing partial downloads" >&2
+            rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+            sleep $((attempt * 15))
+          done
+          exit 1
+
       - name: Run macrobenchmarks
         uses: reactivecircus/android-emulator-runner@v2
         with:
