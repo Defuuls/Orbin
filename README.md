@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [173 — Sunchoke](https://github.com/Defuuls/Orbin/releases/tag/v173-Sunchoke)
+**Current release:** [174 — Jicama](https://github.com/Defuuls/Orbin/releases/tag/v174-Jicama)
 
-**What's new in 173:** Device sync is gone: nearby sync and WebDAV sync are removed, and Orbin no longer asks for camera, Bluetooth or local network access.
+**What's new in 174:** iOS catches up: a first-run board picker, board media walls, home-screen quick actions, picture in picture and safe mode.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
