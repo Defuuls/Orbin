@@ -7,6 +7,7 @@ import com.orbin.core.model.SearchScope
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesSearch
+import com.orbin.domain.search.searchEachBoard
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -66,19 +67,18 @@ class ThreadSearch(
     private suspend fun searchFor(text: String): Load<List<FeedThread>> {
         val wanted = boards()
         if (wanted.isEmpty()) return Load.Ready(emptyList())
-        val perBoard =
-            loadEach(wanted) { board ->
+        val outcome =
+            searchEachBoard(wanted) { board ->
                 val query = SearchQuery(board.provider, text, SearchScope.BOARD_CATALOG, board.board)
                 catalogOf(board)
                     .filterNot { it.isPermanentlyFiltered() }
                     .filter { it.matchesSearch(query) }
                     .map { FeedThread(board.provider, it) }
             }
-        val loaded = perBoard.mapNotNull { it.getOrNull() }
-        return if (loaded.isEmpty()) {
-            Load.Failed(perBoard.firstNotNullOf { it.exceptionOrNull() }.readable())
+        return if (outcome.allFailed) {
+            Load.Failed(outcome.firstError?.readable() ?: "Search failed")
         } else {
-            Load.Ready(loaded.flatten().sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }))
+            Load.Ready(outcome.results.sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }))
         }
     }
 }
