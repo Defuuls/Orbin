@@ -6,7 +6,7 @@ tracking, and the developer runs no server that receives your data.
 ## What stays on your device
 
 Your followed boards, bookmarks and watched threads, reading history and read positions, saved
-threads and pages, downloads and settings are stored on your device unless you enable optional sync below. The app's database and
+threads and pages, downloads and settings are stored on your device. The app's database and
 settings are encrypted at rest. You can delete them at any time from Settings (Clear local
 activity, Clear image cache), or by uninstalling the app.
 
@@ -16,12 +16,6 @@ activity, Clear image cache), or by uninstalling the app.
   browser would. Those sites see your IP address and the request, under their own privacy policies.
 - **Encrypted DNS.** Site names are looked up over DNS-over-HTTPS (Cloudflare, Google or OpenDNS),
   so your network can't see which sites you open; that resolver sees the names looked up.
-- **Thread sync (optional, off unless you set it up).** If you enter a WebDAV folder, your read
-  threads, read positions and bookmarks are written as a file to that folder on the server you
-  chose, over HTTPS, with the username and password you gave. The password is kept on your device.
-- **Sync setup QR code (optional).** **Set up another device** shows your WebDAV folder,
-  username and password as a QR code so your other device can copy the setup. It is only drawn on
-  your screen; anyone who photographs it gets your WebDAV login.
 - **Updates (Android only).** The Android app checks GitHub for new releases.
 
 Nothing is shared with the developer or any other third party.

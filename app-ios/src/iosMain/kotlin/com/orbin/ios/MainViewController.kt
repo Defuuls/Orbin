@@ -10,7 +10,6 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
@@ -80,8 +79,6 @@ fun MainViewController(): UIViewController {
         lock.onForeground()
         browser.watched.refresh()
         UNUserNotificationCenter.currentNotificationCenter().setBadgeCount(0, withCompletionHandler = null)
-        // Pick up what was read on another device since.
-        graph.scope.launch { graph.threadSync.sync() }
     }
     observe(UIApplicationWillResignActiveNotification) {
         lock.onResignActive()
@@ -90,8 +87,6 @@ fun MainViewController(): UIViewController {
         lock.onBackground()
         // Leaving the app is when a background refresh is worth asking for.
         scheduleBackgroundRefresh()
-        // And when what was read here should reach the other devices.
-        graph.scope.launch { graph.threadSync.sync() }
     }
     return ComposeUIViewController {
         setSingletonImageLoaderFactory { context -> imageLoader(context, graph) }
@@ -102,7 +97,6 @@ fun MainViewController(): UIViewController {
             remember { backup },
             formFactor(),
             AppVersion(graph.appVersion, graph.appBuild),
-            graph.threadSync,
             graph.whatsNew,
             graph.pages,
         )

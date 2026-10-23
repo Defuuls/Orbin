@@ -18,10 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,9 +61,6 @@ import com.orbin.core.model.comparator
 import com.orbin.core.model.feedColumns
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.ui.post.PostCommentText
-import com.orbin.domain.repository.SYNC_SETUP_PREFIX
-import com.orbin.domain.repository.SyncAccountStorageException
-import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
@@ -90,16 +84,12 @@ import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
-import com.orbin.uinext.SyncSettingIds
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.next
-import com.orbin.uinext.syncSettingRows
-import com.orbin.uinext.syncSetupQrRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,7 +108,6 @@ fun OrbinApp(
     backup: IosBackup,
     formFactor: FormFactor = FormFactor.PHONE,
     version: AppVersion = AppVersion(),
-    sync: ThreadSyncRepository? = null,
     whatsNew: WhatsNewRepository? = null,
     pages: ThreadPages? = null,
 ) {
@@ -151,7 +140,7 @@ fun OrbinApp(
             if (!lockState.locked && !lockState.obscured) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route, sync, pages)
+                    Destination(browser, lock, downloads, backup, formFactor, version, route, pages)
                 }
             }
             LockCover(lock, lockState)
@@ -172,7 +161,6 @@ private fun Destination(
     formFactor: FormFactor,
     version: AppVersion,
     route: Route,
-    sync: ThreadSyncRepository?,
     pages: ThreadPages?,
 ) {
     when (route) {
@@ -180,7 +168,7 @@ private fun Destination(
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, sync)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -344,10 +332,8 @@ private fun SettingsDestination(
     backup: IosBackup,
     formFactor: FormFactor,
     version: AppVersion,
-    sync: ThreadSyncRepository?,
 ) {
     val settings by browser.settings.current.collectAsState()
-    val syncStatus by remember(sync) { sync?.state ?: flowOf(null) }.collectAsState(null)
     val backupState by backup.state.collectAsState()
     val imageLoader = SingletonImageLoader.get(LocalPlatformContext.current)
     val uriHandler = LocalUriHandler.current
@@ -355,31 +341,6 @@ private fun SettingsDestination(
     var expanded by remember { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
     var imageCacheCleared by remember { mutableStateOf(false) }
-    var shownQr by remember { mutableStateOf<ShownQr?>(null) }
-    var notice by remember { mutableStateOf<String?>(null) }
-    // A scanned code is a WebDAV setup code; Android routes it the same.
-    val applyScanned: (String) -> Unit = { raw ->
-        val code = raw.trim()
-        scope.launch {
-            when {
-                code.startsWith(SYNC_SETUP_PREFIX) && sync != null ->
-                    notice =
-                        try {
-                            sync.applySetupCode(code)
-                            scope.launch { sync.sync() }
-                            "Sync set up from your other device"
-                        } catch (_: SyncAccountStorageException) {
-                            "Couldn't save the sync login"
-                        } catch (_: IllegalArgumentException) {
-                            "That isn't a valid Orbin sync setup code"
-                        } catch (_: UnsupportedOperationException) {
-                            "Sync setup codes aren't supported here"
-                        }
-                else -> notice = "That QR code isn't from Orbin"
-            }
-        }
-    }
-    val scan = { scanQrCode(onResult = applyScanned, onFailure = { notice = it }) }
     SettingsScreen(
         groups =
             remember(
@@ -389,35 +350,9 @@ private fun SettingsDestination(
                 backupState,
                 formFactor,
                 version,
-                syncStatus,
             ) {
-                val groups = settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version)
-                if (sync == null) {
-                    groups
-                } else {
-                    // Thread sync, the same rows as Android, between the preferences and the data rows.
-                    val rows =
-                        syncSettingRows(
-                            folderUrl = syncStatus?.folderUrl.orEmpty(),
-                            username = syncStatus?.username.orEmpty(),
-                            hasPassword = syncStatus?.hasPassword == true,
-                            lastSyncedMillis = syncStatus?.lastSyncedMillis,
-                            error = syncStatus?.error,
-                            nowMillis = Clock.System.now().toEpochMilliseconds(),
-                        )
-                    groups.take(1) + ("" to rows) + groups.drop(1)
-                }
-            } +
-                listOfNotNull(
-                    sync?.let {
-                        "Sync setup by QR code" to
-                            syncSetupQrRows(
-                                syncStatus?.folderUrl?.startsWith("https://", ignoreCase = true) == true &&
-                                    syncStatus?.username?.isNotBlank() == true &&
-                                    syncStatus?.hasPassword == true,
-                            )
-                    },
-                ),
+                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version)
+            },
         expandedId = expanded,
         showRail = false,
         onActivate = { item ->
@@ -464,25 +399,6 @@ private fun SettingsDestination(
                 }
                 SettingIds.PRIVACY -> uriHandler.openUri(PRIVACY_POLICY_URL)
                 SettingIds.CONTACT -> uriHandler.openUri(CONTACT_URL)
-                SyncSettingIds.FOLDER, SyncSettingIds.USERNAME, SyncSettingIds.PASSWORD -> {
-                    Haptics.light()
-                    expanded = if (expanded == item.id) null else item.id
-                }
-                SyncSettingIds.SCAN_SETUP_QR -> scan()
-                SyncSettingIds.SHOW_SETUP_QR ->
-                    scope.launch {
-                        val code = sync?.setupCode()
-                        if (code == null) {
-                            notice = "Set up WebDAV sync on this device first"
-                        } else {
-                            shownQr = ShownQr.SyncSetup(code)
-                        }
-                    }
-                SyncSettingIds.SYNC_NOW ->
-                    sync?.let {
-                        Haptics.light()
-                        scope.launch { it.sync() }
-                    }
                 SettingIds.CLEAR_IMAGE_CACHE ->
                     scope.launch {
                         imageLoader.memoryCache?.clear()
@@ -502,50 +418,7 @@ private fun SettingsDestination(
             }
             expanded = null
         },
-        onCommitText = { item, text ->
-            Haptics.light()
-            expanded = null
-            val engine = sync ?: return@SettingsScreen
-            scope.launch {
-                try {
-                    when (item.id) {
-                        SyncSettingIds.FOLDER -> engine.setAccount(folderUrl = text)
-                        SyncSettingIds.USERNAME -> engine.setAccount(username = text)
-                        SyncSettingIds.PASSWORD -> engine.setAccount(password = text)
-                    }
-                    engine.sync()
-                } catch (_: SyncAccountStorageException) {
-                    // The settings row shows the repository's error; the old login is not tried.
-                }
-            }
-        },
     )
-    when (val qr = shownQr) {
-        is ShownQr.SyncSetup ->
-            QrCodeDialog(
-                title = "Set up sync on another device",
-                payload = qr.code,
-                note =
-                    "In Orbin on the other device: Settings → Copy setup from another device. " +
-                        "This contains your WebDAV password.",
-                onDismiss = { shownQr = null },
-            )
-        null -> Unit
-    }
-    notice?.let { text ->
-        AlertDialog(
-            onDismissRequest = { notice = null },
-            text = { Text(text) },
-            confirmButton = { TextButton(onClick = { notice = null }) { Text("OK") } },
-        )
-    }
-}
-
-/** The QR code Settings is showing: this device's WebDAV setup. */
-private sealed interface ShownQr {
-    data class SyncSetup(
-        val code: String,
-    ) : ShownQr
 }
 
 @Composable

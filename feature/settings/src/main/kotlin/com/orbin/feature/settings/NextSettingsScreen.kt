@@ -23,8 +23,6 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
-import com.orbin.uinext.SyncSettingIds
-import com.orbin.uinext.syncSetupQrRows
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -33,13 +31,6 @@ import kotlinx.coroutines.withContext
 private const val CLEAR_ARMED_MS = 4_000L
 private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val BYTES_PER_MB = 1024L * 1024L
-
-/** Which QR code the screen is showing, if any. */
-private sealed interface ShownQr {
-    data class SyncSetup(
-        val code: String,
-    ) : ShownQr
-}
 
 /**
  * Every setting on one screen, and every one of them editable on it.
@@ -63,16 +54,10 @@ fun NextSettingsScreen(
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
-    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
-    var shownQr by remember { mutableStateOf<ShownQr?>(null) }
-    val scanQr =
-        rememberQrScanner("Point at the QR code on your other device") { code ->
-            viewModel.applyScannedCode(code) { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
-        }
     LaunchedEffect(clearArmed) {
         if (clearArmed) {
             delay(CLEAR_ARMED_MS)
@@ -116,7 +101,7 @@ fun NextSettingsScreen(
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
     val model =
-        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor, syncState) {
+        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor) {
             buildSettings(
                 settings,
                 viewModel,
@@ -125,16 +110,12 @@ fun NextSettingsScreen(
                 clearArmed,
                 checkUpdatesOnLaunch,
                 formFactor,
-                syncState,
-                System.currentTimeMillis(),
             )
         }
-    val groups =
-        model.groups + ("Sync setup by QR code" to syncSetupQrRows(syncState.isConfigured()))
 
     NextTheme {
         SettingsScreen(
-            groups = groups,
+            groups = model.groups,
             expandedId = expanded,
             onActivate = { item ->
                 when (item.kind) {
@@ -142,41 +123,26 @@ fun NextSettingsScreen(
                     SettingKind.CHOICE, SettingKind.TEXT ->
                         expanded = if (expanded == item.id) null else item.id
                     SettingKind.ACTION ->
-                        if (item.id == SyncSettingIds.SYNC_NOW) {
-                            viewModel.syncNow()
-                        } else if (item.id == SyncSettingIds.SCAN_SETUP_QR) {
-                            scanQr()
-                        } else if (item.id == SyncSettingIds.SHOW_SETUP_QR) {
-                            scope.launch {
-                                val code = viewModel.syncSetupCode()
-                                if (code == null) {
-                                    snackbarHostState.showSnackbar("Set up WebDAV sync on this device first")
+                        dispatch(
+                            item = item,
+                            onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                            onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                            onClear = {
+                                if (clearArmed) {
+                                    clearArmed = false
+                                    viewModel.clearLocalActivity()
+                                    scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
                                 } else {
-                                    shownQr = ShownQr.SyncSetup(code)
+                                    clearArmed = true
                                 }
-                            }
-                        } else {
-                            dispatch(
-                                item = item,
-                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                                onClear = {
-                                    if (clearArmed) {
-                                        clearArmed = false
-                                        viewModel.clearLocalActivity()
-                                        scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
-                                    } else {
-                                        clearArmed = true
-                                    }
-                                },
-                                onClearImageCache = viewModel::clearImageCache,
-                                onCheckUpdates = {
-                                    if (updateCheck != UpdateCheckState.Checking) {
-                                        viewModel.checkForUpdate(appVersionName(context))
-                                    }
-                                },
-                            )
-                        }
+                            },
+                            onClearImageCache = viewModel::clearImageCache,
+                            onCheckUpdates = {
+                                if (updateCheck != UpdateCheckState.Checking) {
+                                    viewModel.checkForUpdate(appVersionName(context))
+                                }
+                            },
+                        )
                     SettingKind.INFO -> Unit
                 }
             },
@@ -190,23 +156,8 @@ fun NextSettingsScreen(
             },
             modifier = modifier,
         )
-        when (val qr = shownQr) {
-            is ShownQr.SyncSetup ->
-                QrCodeDialog(
-                    title = "Set up sync on another device",
-                    payload = qr.code,
-                    note =
-                        "In Orbin on the other device: Settings → Copy setup from another device. " +
-                            "This contains your WebDAV password.",
-                    onDismiss = { shownQr = null },
-                )
-            null -> Unit
-        }
     }
 }
-
-private fun com.orbin.domain.repository.ThreadSyncState.isConfigured(): Boolean =
-    folderUrl.startsWith("https://", ignoreCase = true) && username.isNotBlank() && hasPassword
 
 private fun dispatch(
     item: SettingItem,

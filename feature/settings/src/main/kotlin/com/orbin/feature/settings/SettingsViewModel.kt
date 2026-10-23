@@ -10,16 +10,11 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
-import com.orbin.domain.repository.DisabledThreadSync
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
-import com.orbin.domain.repository.SYNC_SETUP_PREFIX
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.domain.repository.SyncAccountStorageException
-import com.orbin.domain.repository.ThreadSyncRepository
-import com.orbin.domain.repository.ThreadSyncState
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
@@ -51,65 +46,7 @@ class SettingsViewModel
         dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
-        private val threadSync: ThreadSyncRepository = DisabledThreadSync,
     ) : ViewModel() {
-        /**
-         * Routes a scanned QR code: a sync setup code adopts its WebDAV login and syncs.
-         * [onResult] gets a sentence for the snackbar.
-         */
-        fun applyScannedCode(
-            code: String,
-            onResult: (String) -> Unit,
-        ) {
-            val trimmed = code.trim()
-            viewModelScope.launch {
-                when {
-                    trimmed.startsWith(SYNC_SETUP_PREFIX) ->
-                        try {
-                            threadSync.applySetupCode(trimmed)
-                            onResult("Sync set up from your other device")
-                            threadSync.sync()
-                        } catch (_: SyncAccountStorageException) {
-                            onResult("Couldn't save the sync login")
-                        } catch (_: IllegalArgumentException) {
-                            onResult("That isn't a valid Orbin sync setup code")
-                        } catch (_: UnsupportedOperationException) {
-                            onResult("Sync setup codes aren't supported here")
-                        }
-                    else -> onResult("That QR code isn't from Orbin")
-                }
-            }
-        }
-
-        /** The WebDAV login as a QR payload for another device, or null when sync isn't set up. */
-        suspend fun syncSetupCode(): String? = threadSync.setupCode()
-
-        /** Thread sync's account and last result, for its rows. */
-        val syncState: StateFlow<ThreadSyncState> =
-            threadSync.state.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadSyncState())
-
-        fun setSyncFolder(url: String) = updateSyncAccount { threadSync.setAccount(folderUrl = url) }
-
-        fun setSyncUsername(name: String) = updateSyncAccount { threadSync.setAccount(username = name) }
-
-        fun setSyncPassword(password: String) = updateSyncAccount { threadSync.setAccount(password = password) }
-
-        fun syncNow() {
-            viewModelScope.launch { threadSync.sync() }
-        }
-
-        // Each change is tried at once, so a wrong folder or login shows on the row straight away.
-        private fun updateSyncAccount(change: suspend () -> Unit) {
-            viewModelScope.launch {
-                try {
-                    change()
-                    threadSync.sync()
-                } catch (_: SyncAccountStorageException) {
-                    // The repository exposes the save failure in syncState. Do not sync the old login.
-                }
-            }
-        }
-
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
         private val _imageCacheUsageBytes = MutableStateFlow(0L)
