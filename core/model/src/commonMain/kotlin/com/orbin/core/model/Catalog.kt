@@ -26,6 +26,9 @@ enum class CatalogSort {
                 LAST_REPLY -> "Latest"
                 SUBJECT -> "A-Z"
             }
+
+    /** The order after this one, wrapping round: what the catalog's sort chip steps to. */
+    fun next(): CatalogSort = entries[(ordinal + 1) % entries.size]
 }
 
 /**

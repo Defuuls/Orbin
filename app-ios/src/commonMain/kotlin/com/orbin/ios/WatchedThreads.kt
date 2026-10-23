@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.unreadByThread
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BookmarkRepository
 import kotlinx.coroutines.CoroutineScope
@@ -52,9 +53,7 @@ class WatchedThreads(
 
     /** New replies on the watched threads of [board] since each was last read, by thread number. */
     fun unread(board: SiteBoard): Flow<Map<Long, Int>> =
-        bookmarks.observeBookmarks(board.provider, board.board.id).map { watched ->
-            watched.filter { it.hasUnread }.associate { it.key.thread.value to it.unreadCount }
-        }
+        bookmarks.observeBookmarks(board.provider, board.board.id).map { it.unreadByThread() }
 
     /**
      * Android's watch refresh: fetches every watched thread, at most [MAX_CONCURRENT_WATCH_REFRESHES]
