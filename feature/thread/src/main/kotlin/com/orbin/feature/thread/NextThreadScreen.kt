@@ -44,6 +44,8 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThumbnailSize
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.post.PostCommentText
+import com.orbin.domain.thread.replyCounts
+import com.orbin.domain.thread.replyDepths
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MessageScreen

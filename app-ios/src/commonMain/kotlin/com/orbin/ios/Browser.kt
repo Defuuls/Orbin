@@ -201,8 +201,7 @@ class Browser(
 
     /** The catalog's next order, as Android's sort chip steps through them. */
     fun cycleCatalogSort() {
-        val orders = CatalogSort.entries
-        _catalogSort.update { orders[(orders.indexOf(it) + 1) % orders.size] }
+        _catalogSort.update { it.next() }
     }
 
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)

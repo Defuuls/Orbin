@@ -60,6 +60,17 @@ targets:
         # Asked the first time a photo or video is saved from a thread; add-only, never read.
         # A background refresh of watched threads, as Android's watch worker; the Kotlin side
         # registers REFRESH_TASK in BackgroundRefresh.kt.
+        # Home-screen quick actions, as Android's app shortcuts; QuickActions.kt opens each tab.
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: io.github.defuuls.orbin.feed
+            UIApplicationShortcutItemTitle: Your Feed
+            UIApplicationShortcutItemIconSymbolName: list.bullet
+          - UIApplicationShortcutItemType: io.github.defuuls.orbin.downloads
+            UIApplicationShortcutItemTitle: Saved Media
+            UIApplicationShortcutItemIconSymbolName: arrow.down.circle
+          - UIApplicationShortcutItemType: io.github.defuuls.orbin.boards
+            UIApplicationShortcutItemTitle: Browse Boards
+            UIApplicationShortcutItemIconSymbolName: square.grid.2x2
         # audio: a playing video carries on in picture in picture after leaving the app (Player.ios.kt).
         UIBackgroundModes:
           - fetch

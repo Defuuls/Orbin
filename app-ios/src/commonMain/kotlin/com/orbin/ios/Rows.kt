@@ -8,6 +8,8 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
 import com.orbin.core.ui.date.formatRelativeTime
+import com.orbin.domain.thread.replyCounts
+import com.orbin.domain.thread.replyDepths
 import com.orbin.provider.api.UriParts
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
@@ -124,19 +126,26 @@ internal fun Thread.toHistoryEntry(nowMillis: Long): HistoryEntry =
 
 private val Thread.displayTitle: String get() = subject?.takeIf { it.isNotBlank() } ?: "/${key.board.value}/"
 
-internal fun Thread.toPosts(nowMillis: Long): List<NextPost> =
-    allPosts.map { post ->
+internal fun Thread.toPosts(nowMillis: Long): List<NextPost> {
+    val posts = allPosts
+    // The same indent and reply counts as Android's reader, taken from the quote links themselves
+    // so a saved copy without stored backlinks counts the same.
+    val depths = replyDepths(posts)
+    val counts = replyCounts(posts)
+    return posts.map { post ->
         NextPost(
             id = post.id.value.toString(),
             number = "No.${post.id.value}",
             time = formatRelativeTime(post.createdAtMillis, nowMillis).orEmpty(),
             body = post.comment.plainText(),
+            depth = depths[post.id] ?: 0,
             hasMedia = post.attachments.isNotEmpty(),
-            replies = post.backlinks.size,
+            replies = counts[post.id] ?: 0,
             // A spoilered file is covered where it is drawn; `spoiler` here would hide the post's
             // text instead, which is not what a spoilered file means.
         )
     }
+}
 
 /** Every file in the thread, in reading order: what the viewer pages through. */
 internal val Thread.files: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }

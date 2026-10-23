@@ -1,4 +1,4 @@
-package com.orbin.feature.thread
+package com.orbin.domain.thread
 
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
@@ -27,7 +27,7 @@ import com.orbin.core.model.PostId
  *    happens to match an id) and depth has to stay well-defined, so a forward or unknown target is
  *    ignored rather than trusted.
  */
-internal fun replyDepths(posts: List<Post>): Map<PostId, Int> {
+fun replyDepths(posts: List<Post>): Map<PostId, Int> {
     val depths = LinkedHashMap<PostId, Int>(posts.size)
     val opId = posts.firstOrNull()?.id
     posts.forEach { post ->
@@ -46,7 +46,7 @@ internal fun replyDepths(posts: List<Post>): Map<PostId, Int> {
  * Derived from `repliesTo` rather than read from `backlinks` so it holds for a saved copy, where
  * the backlinks the data layer would have filled in may not have been persisted.
  */
-internal fun replyCounts(posts: List<Post>): Map<PostId, Int> {
+fun replyCounts(posts: List<Post>): Map<PostId, Int> {
     val counts = HashMap<PostId, Int>(posts.size)
     val known = posts.mapTo(HashSet()) { it.id }
     posts.forEach { post ->
