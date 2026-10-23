@@ -17,6 +17,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.filteredBy
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.core.model.unreadByThread
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -77,9 +78,7 @@ class BoardViewModel
             savedStateHandle.getStateFlow(CATALOG_SORT_KEY, CatalogSort.BUMP_ORDER)
 
         fun cycleCatalogSort() {
-            val values = CatalogSort.entries
-            val current = catalogSort.value
-            savedStateHandle[CATALOG_SORT_KEY] = values[(values.indexOf(current) + 1) % values.size]
+            savedStateHandle[CATALOG_SORT_KEY] = catalogSort.value.next()
         }
 
         val catalog: Flow<PagingData<CatalogThread>> =
@@ -160,16 +159,8 @@ private data class BoardBookmarkState(
     val unreadByThread: Map<Long, Int> = emptyMap(),
 )
 
-private fun List<Bookmark>.toBoardState(): BoardBookmarkState {
-    val watched = mutableSetOf<Long>()
-    val unread = mutableMapOf<Long, Int>()
-    for (bookmark in this) {
-        val threadId = bookmark.key.thread.value
-        watched += threadId
-        if (bookmark.hasUnread) unread[threadId] = bookmark.unreadCount
-    }
-    return BoardBookmarkState(watched, unread)
-}
+private fun List<Bookmark>.toBoardState(): BoardBookmarkState =
+    BoardBookmarkState(watchedIds = mapTo(mutableSetOf()) { it.key.thread.value }, unreadByThread = unreadByThread())
 
 internal fun Flow<PagingData<CatalogThread>>.presentedBy(
     settings: Flow<CatalogPresentationSettings>,

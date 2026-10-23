@@ -31,3 +31,7 @@ data class HistoryEntry(
     /** Pixel offset of [lastReadPostId]'s row from the top of the list, for a precise restore. */
     val lastReadOffsetPx: Int = 0,
 )
+
+/** New replies on each of these bookmarks since it was last read, by thread number; read ones are left out. */
+fun List<Bookmark>.unreadByThread(): Map<Long, Int> =
+    filter { it.hasUnread }.associate { it.key.thread.value to it.unreadCount }
