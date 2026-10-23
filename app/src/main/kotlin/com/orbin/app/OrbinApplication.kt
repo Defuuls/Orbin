@@ -1,6 +1,8 @@
 package com.orbin.app
 
 import android.app.Application
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import co.touchlab.kermit.Logger
@@ -8,6 +10,7 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
+import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.data.worker.WatchScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +41,9 @@ class OrbinApplication :
     @Inject
     lateinit var diagnosticsRepository: DiagnosticsRepositoryImpl
 
+    @Inject
+    lateinit var preferences: DataStore<Preferences>
+
     override val workManagerConfiguration: Configuration
         get() =
             Configuration
@@ -57,6 +63,10 @@ class OrbinApplication :
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
         CoroutineScope(Dispatchers.Default).launch {
             watchScheduler.ensureScheduled()
+        }
+        // Sync was removed; its saved login and pairing data must not linger on the device.
+        CoroutineScope(Dispatchers.IO).launch {
+            LegacySyncCleanup.clear(preferences)
         }
     }
 

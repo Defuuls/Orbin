@@ -2,11 +2,14 @@ package com.orbin.feature.search
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.common.result.DataError
+import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -16,6 +19,7 @@ import com.orbin.core.testing.repository.FakeBoardRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -93,8 +97,31 @@ class SearchViewModelTest {
             assertThat(showing.searchableBoards.first { it.size == 2 }.map { it.id.value }).containsExactly("b", "g")
         }
 
+    @Test
+    fun `a board that fails leaves the other boards' results`() =
+        runTest {
+            val boards = listOf(Board(BoardId("g"), "Technology"), Board(BoardId("v"), "Games"))
+            val flaky =
+                object : SearchRepository by FakeSearchRepository() {
+                    override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> =
+                        if (query.board == BoardId("g")) {
+                            OrbinResult.Failure(DataError.Offline())
+                        } else {
+                            OrbinResult.Success(listOf(result))
+                        }
+                }
+            val viewModel = createViewModel(flaky, boards = boards, subscribed = boards.map { it.id }.toSet())
+            viewModel.searchableBoards.first { it.size == 2 }
+
+            viewModel.search("match")
+
+            val state = viewModel.state.first { it is SearchUiState.Results || it is SearchUiState.Error }
+            assertThat(state).isInstanceOf(SearchUiState.Results::class.java)
+            assertThat((state as SearchUiState.Results).results.map { it.title }).containsExactly("Match")
+        }
+
     private fun createViewModel(
-        repository: FakeSearchRepository,
+        repository: SearchRepository,
         settings: AppSettings = AppSettings.Default,
         boards: List<Board> = listOf(Board(BoardId("g"), "Technology")),
         subscribed: Set<BoardId> = setOf(BoardId("g")),

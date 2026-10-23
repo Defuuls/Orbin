@@ -52,6 +52,33 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # The emulator runner downloads the system image and platform itself, and a truncated
+      # download fails the job with "Error on ZipFile unknown archive" before any test runs.
+      # Cache them, and on a miss install them here with retries, clearing partial downloads.
+      - name: System image cache
+        uses: actions/cache@v6
+        id: sysimg-cache
+        with:
+          path: |
+            /usr/local/lib/android/sdk/system-images/android-${{ matrix.api-level }}
+            /usr/local/lib/android/sdk/platforms/android-${{ matrix.api-level }}
+          key: sysimg-${{ matrix.api-level }}-google_apis-x86_64
+
+      - name: Install system image
+        if: steps.sysimg-cache.outputs.cache-hit != 'true'
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          PACKAGES="system-images;android-${{ matrix.api-level }};google_apis;x86_64 platforms;android-${{ matrix.api-level }} emulator"
+          for attempt in 1 2 3; do
+            if yes | "$SDKMANAGER" --install $PACKAGES > /dev/null; then
+              exit 0
+            fi
+            echo "sdkmanager attempt $attempt failed; clearing partial downloads" >&2
+            rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+            sleep $((attempt * 15))
+          done
+          exit 1
+
       - name: AVD cache
         uses: actions/cache@v6
         id: avd-cache
