@@ -80,24 +80,15 @@ does not post, reply, or create threads.
   coverage for normal, dark, AMOLED, large-text, and maximum-text configurations.
 - Settings and commands are searchable rather than requiring users to memorize where controls live.
 
-### Sync across devices
-
-Orbin syncs reading history, read positions and bookmarks between your devices through
-**WebDAV sync**: an HTTPS folder you control and its login. Set it up once, then use **Set up
-another device → Show QR code** and scan it with **Copy setup from another device** on the second
-device instead of retyping the folder and password. See
-[authentication and credential storage](docs/authentication.md) and the
-[privacy policy](PRIVACY.md).
-
 ### Privacy and security
 
 - Room data is encrypted with SQLCipher and preferences use encrypted DataStore storage protected
   by Android Keystore material.
 - Optional biometric app lock uses a Keystore-backed cryptographic gate; `FLAG_SECURE` protects
   locked content from recents previews.
-- The app lock gates the UI; background sync can still use its saved login. iOS keeps the sync
-  password in device-only Keychain storage. See [authentication and recovery](docs/authentication.md).
-- HTTPS-only imageboard and WebDAV networking, encrypted DNS with system-resolver fallback when a network
+- See [authentication and recovery](docs/authentication.md) for how the app lock and local
+  encryption work.
+- HTTPS-only imageboard networking, encrypted DNS with system-resolver fallback when a network
   blocks DoH, and configurable user-agent behavior.
 - Android cloud backup/device transfer of private local state is disabled.
 - Explicit backup/restore exports are user-controlled. Backup JSON and exported link files are

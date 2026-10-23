@@ -9,15 +9,10 @@ design system and every `ui-next` screen. What is iOS-only is small:
 | `:app-ios` | `app-ios/` | The iOS composition root (Kotlin). Builds the providers over Ktor's Darwin engine, opens the shared database, holds navigation and loading state (`Browser`), and draws the shared screens. Linked into the app as the static `OrbinKit` framework. |
 | Xcode project | `iosApp/` | A SwiftUI shell that hosts `MainViewController()` full screen, plus the app icon, launch mark (`LaunchMark` from AppIcon), launch background color, and `Info.plist`. Generated from `iosApp/project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen); the `.xcodeproj` is not committed. |
 
-## Simulator tests and Keychain
+## Simulator tests
 
-Tests that use Security.framework need a normally booted simulator. Kotlin's minimal standalone
-simulator does not start the Keychain service and reports `errSecNotAvailable` (-25291). CI boots
-an available iPhone simulator, waits for its system services, and shares that device between the
-app and storage suites. The app's simulator test executable also embeds a dedicated test-only
-Keychain identity, following [JetBrains' guidance](https://youtrack.jetbrains.com/issue/KT-61470).
-These entitlements apply only to the native simulator test binary, never to the production app
-or its framework. CI keeps the real Keychain round-trip test enabled.
+CI boots an available iPhone simulator, waits for its system services, and shares that device
+between the app and storage suites.
 
 On a Mac, boot a device in Simulator and run the suites with its UDID:
 
@@ -28,7 +23,7 @@ On a Mac, boot a device in Simulator and run the suites with its UDID:
 
 Find the UDID with `xcrun simctl list devices available`. The property selects that device and
 disables standalone mode; Gradle leaves its lifecycle to you. Ordinary tests without this property
-retain Kotlin's default simulator management. No production Keychain accessibility policy changes.
+retain Kotlin's default simulator management.
 
 ## What it does so far
 

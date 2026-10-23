@@ -66,10 +66,6 @@ interface HistoryDao {
     @Query("DELETE FROM history")
     suspend fun clear()
 
-    /** Every visited thread, for sync. */
-    @Query("SELECT * FROM history")
-    suspend fun all(): List<HistoryEntity>
-
     @Query("DELETE FROM history WHERE provider = :provider AND board = :board AND thread = :thread")
     suspend fun deleteByKey(
         provider: String,

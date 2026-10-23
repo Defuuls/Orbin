@@ -5,30 +5,12 @@ POWBlock and terms cookies clear browsing gates; they do not identify an Orbin u
 holds these cookies in memory for the process lifetime. iOS delegates cookies to the system
 networking stack, so Android's process-only guarantee does not apply there.
 
-## Optional WebDAV sync
-
-Sync sends HTTP Basic authentication over HTTPS to the folder the reader configures. The server
-validates the username and password. There are no access tokens, refresh tokens or token refresh
-endpoints. Prefer a dedicated app password with access only to the sync folder. To revoke a
-password, revoke it at the server; clearing it in Orbin only stops this installation using it.
-
-Android stores the login in its Keystore-encrypted preferences. iOS stores the password in
-Keychain with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`: it can support background sync
-after the first device unlock and does not migrate to another device. The folder and username
-remain in preferences. During upgrade, the legacy preference password is removed only after a
-successful Keychain write. Failed reads and writes surface an error rather than falling back to
-the old copy. An empty password disables sync, including after an interrupted migration.
-
-The sync document contains reading history and bookmarks as JSON. HTTPS protects transport;
-the server operator and anyone granted access to that file can read it. It is not end-to-end
-encrypted. Changing a local password does not remove existing server files or other devices' copies.
-
 ## App lock and local encryption
 
 The app lock controls the screen, separately from encryption of local data. Android's unlock
 key requires a fresh strong biometric operation; its data-encryption key deliberately does not,
 so startup and background workers can run. iOS uses device-owner authentication, including the
-device passcode. Locking Orbin does not revoke WebDAV credentials or stop background sync.
+device passcode.
 
 Android loads settings and readiness together before showing content. Unreadable or empty
 encrypted settings recover with biometric lock enabled and onboarding complete, so neither a

@@ -7,7 +7,6 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
-import com.orbin.data.sync.PreferencesSyncPasswordStore
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -18,7 +17,6 @@ import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadArchiveRepository
 import com.orbin.domain.repository.ThreadRepository
-import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.graph.SharedGraph
@@ -59,7 +57,6 @@ object SharedGraphModule {
             database,
             preferences,
             ioDispatcher,
-            PreferencesSyncPasswordStore(preferences),
         )
 
     @Provides
@@ -104,9 +101,6 @@ object SharedGraphModule {
 
     @Provides
     fun providesUpdateRepository(graph: SharedGraph): UpdateRepository = graph.updates
-
-    @Provides
-    fun providesThreadSyncRepository(graph: SharedGraph): ThreadSyncRepository = graph.threadSync
 
     @Provides
     fun providesThreadArchiveRepository(graph: SharedGraph): ThreadArchiveRepository = graph.threadArchive

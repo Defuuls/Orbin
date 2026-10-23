@@ -37,11 +37,9 @@ import com.orbin.app.routing.IntentRoute
 import com.orbin.app.routing.parseRoute
 import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
-import com.orbin.core.common.dispatchers.ApplicationScope
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
-import com.orbin.domain.repository.ThreadSyncRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
@@ -51,7 +49,6 @@ import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.materialPalette
 import com.orbin.uinext.next
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -74,14 +71,7 @@ class MainActivity : FragmentActivity() {
     lateinit var versionGuardRepository: VersionGuardRepository
 
     @Inject
-    lateinit var threadSync: ThreadSyncRepository
-
-    @Inject
     lateinit var whatsNew: WhatsNewRepository
-
-    @Inject
-    @ApplicationScope
-    lateinit var applicationScope: CoroutineScope
 
     /**
      * Registered eagerly: the safe-mode screen may be the very first thing composed, and a
@@ -313,15 +303,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        // Pick up what was read on another device since the app was last in front.
-        applicationScope.launch { threadSync.sync() }
-    }
-
     override fun onStop() {
-        // And hand on what was read here. Not tied to this activity: leaving shouldn't cut it short.
-        applicationScope.launch { threadSync.sync() }
         cancelActiveAuthentication()
         super.onStop()
         if (biometricLockActive && !isInPictureInPictureMode) {
