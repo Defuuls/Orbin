@@ -3,11 +3,13 @@ package com.orbin.ios
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
+import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.domain.filter.ContentPolicy
 import com.orbin.graph.orbinProviders
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -519,6 +521,44 @@ class BrowserTest {
             browser.search.run()?.join()
             val hits = assertIs<Load.Ready<List<FeedThread>>>(browser.search.results.value).value
             assertEquals(listOf("g"), hits.map { it.thread.key.board.value })
+        }
+
+    @Test
+    fun theContentFilterAppliesToBoardsCatalogsAndThreadsAsOnAndroid() =
+        runTest {
+            val routes =
+                BOTH_SITES +
+                    (
+                        "a.4cdn.org/boards.json" to
+                            """{"boards":[{"board":"g","title":"Technology"},{"board":"x","title":"Gore"}]}"""
+                    ) +
+                    (
+                        "a.4cdn.org/g/catalog.json" to
+                            """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1},{"no":8,"sub":"gore video","time":2}]}]"""
+                    ) +
+                    (
+                        "a.4cdn.org/g/thread/7.json" to
+                            """{"posts":[{"no":7,"sub":"Hi","time":1},{"no":8,"com":"gore","time":2},{"no":9,"com":"ok","time":3}]}"""
+                    ) +
+                    ("a.4cdn.org/g/thread/8.json" to """{"posts":[{"no":8,"sub":"gore video","time":2}]}""")
+            val browser = browser(backgroundScope, routes)
+
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            assertEquals(listOf("g", "b"), boards.map { it.board.id.value }, "a filtered board is not listed")
+
+            browser.openBoard(boards.first { it.board.id.value == "g" })
+            val catalog = assertIs<Load.Ready<List<CatalogThread>>>(browser.catalog.settled()).value
+            assertEquals(listOf(7L), catalog.map { it.key.thread.value }, "a filtered thread is not in the catalog")
+
+            browser.openThread(ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(7)))
+            val thread = assertIs<Load.Ready<Thread>>(browser.thread.settled()).value
+            assertEquals(listOf(9L), thread.replies.map { it.id.value }, "a filtered reply is hidden")
+
+            browser.back()
+            browser.openThread(ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(8)))
+            val blocked = assertIs<Load.Failed>(browser.thread.settled())
+            assertEquals(ContentPolicy.BLOCKED_THREAD_MESSAGE, blocked.message)
+            assertTrue(browser.visitedThreads(boards.first { it.board.id.value == "g" }).first().none { it == 8L })
         }
 
     @Test

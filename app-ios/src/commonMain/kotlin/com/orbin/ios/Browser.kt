@@ -14,6 +14,7 @@ import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.feed.BoardFeed
 import com.orbin.domain.feed.SubscribedFeedLoader
+import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -472,15 +473,22 @@ class Browser(
         }
     }
 
+    // The content filter applies here, as it does to Android's boards list.
     private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
-        getBoards().map { SiteBoard(metadata.id, metadata.displayName, it) }
+        ContentPolicy.visibleBoards(getBoards()).map { SiteBoard(metadata.id, metadata.displayName, it) }
 
     private suspend fun catalogOf(board: SiteBoard): List<CatalogThread> =
-        provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board.id))
+        ContentPolicy.visibleCatalog(
+            provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board.id)),
+        )
 
     private suspend fun threadOf(key: ThreadKey): Thread {
         _firstUnreadPostId.value = null
-        return provider(key.provider).getThread(key.board, key.thread).also {
+        val loaded = provider(key.provider).getThread(key.board, key.thread)
+        // A thread the content filter catches is not shown, as on Android; otherwise its caught
+        // replies are hidden. Neither is recorded as read.
+        val visible = ContentPolicy.visibleThread(loaded) ?: throw ContentBlocked()
+        return visible.also {
             recordVisit(it)
             _firstUnreadPostId.value = watched.read(it)
         }
@@ -496,6 +504,9 @@ class Browser(
     private fun provider(id: ProviderId): ImageBoardProvider =
         byId[id] ?: throw ProviderException.NotFound("No site ${id.value}")
 }
+
+/** A thread the content filter catches, shown as an error with the filter's explanation. */
+private class ContentBlocked : Exception(ContentPolicy.BLOCKED_THREAD_MESSAGE)
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")

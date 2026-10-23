@@ -10,7 +10,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.CancellationException
@@ -53,9 +53,8 @@ private class CatalogPagingSource(
                 registry.get(request.provider)
                     ?: return LoadResult.Error(IllegalStateException("Unknown provider"))
             val all =
-                cached ?: provider
-                    .getCatalog(request)
-                    .filterNot { it.isPermanentlyFiltered() }
+                cached ?: ContentPolicy
+                    .visibleCatalog(provider.getCatalog(request))
                     .also { cached = it }
 
             val offset = params.key ?: 0
