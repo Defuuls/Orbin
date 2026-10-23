@@ -1,29 +1,23 @@
 package com.orbin.app
 
-import android.Manifest
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.WindowManager
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,19 +29,11 @@ import androidx.lifecycle.lifecycleScope
 import com.orbin.app.navigation.Route
 import com.orbin.app.routing.IntentRoute
 import com.orbin.app.routing.parseRoute
-import com.orbin.app.update.UpdateDialog
-import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.common.lock.AppLockController
-import com.orbin.core.model.AppSettings
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
-import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
 import com.orbin.uinext.WhatsNewOnUpdate
-import com.orbin.uinext.materialPalette
-import com.orbin.uinext.next
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -466,123 +452,3 @@ class MainActivity : FragmentActivity() {
         private const val LAUNCH_SUCCESS_DELAY_MILLIS = 15_000L
     }
 }
-
-@Composable
-private fun RequestNotificationPermissionWhenUnlocked(
-    ready: Boolean,
-    shouldLock: Boolean,
-    unlocked: Boolean,
-) {
-    var notificationPermissionRequested by rememberSaveable { mutableStateOf(false) }
-    val permissionLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { }
-
-    LaunchedEffect(ready, shouldLock, unlocked) {
-        val shouldRequest =
-            shouldRequestNotificationPermission(
-                ready = ready,
-                shouldLock = shouldLock,
-                unlocked = unlocked,
-                alreadyRequested = notificationPermissionRequested,
-            )
-        if (shouldRequest) {
-            notificationPermissionRequested = true
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-}
-
-/** Runs the launch update check once the app is [visible], and shows the update dialog. */
-@Composable
-private fun AppUpdateDialog(
-    viewModel: MainViewModel,
-    visible: Boolean,
-) {
-    val state by viewModel.updateState.collectAsStateWithLifecycle()
-    LaunchedEffect(visible) {
-        if (visible) viewModel.checkForUpdateOnLaunch(BuildConfig.VERSION_NAME)
-    }
-    val actions =
-        remember(viewModel) {
-            UpdateDialogActions(
-                onUpdate = viewModel::update,
-                onDismiss = viewModel::dismissUpdate,
-                onCancel = viewModel::cancelUpdate,
-                onOpenSettings = viewModel::openInstallPermissionSettings,
-                onInstall = viewModel::installUpdate,
-            )
-        }
-    if (visible) UpdateDialog(state, actions)
-}
-
-@Composable
-private fun AppContent(
-    settings: AppSettings,
-    ready: Boolean,
-    isOnline: Boolean,
-    shouldLock: Boolean,
-    unlocked: Boolean,
-    unlockMessage: String?,
-    allowContinueWithoutLock: Boolean,
-    authenticationInProgress: Boolean,
-    onRetryUnlock: () -> Unit,
-    onContinueWithoutLock: () -> Unit,
-    pendingRoute: Route?,
-    onPendingRouteHandled: () -> Unit,
-    updateDialog: @Composable () -> Unit,
-) {
-    // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
-    // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; nested
-    // Material sliders / snackbars / pull-to-refresh were replaced with Next controls, so the
-    // MaterialOrbinTheme adapter is gone.
-    // One palette. Light, dark or the system decides, with true black as the only variation;
-    // text follows the system font size.
-    val nextPalette = materialPalette(settings.themeMode.isDark(), settings.amoled)
-    NextTheme(
-        darkTheme = nextPalette.dark,
-        amoled = nextPalette.amoled,
-        palette = nextPalette,
-        platform = NextPlatform.ANDROID,
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = next.background,
-        ) {
-            if (ready && (!shouldLock || unlocked)) {
-                OrbinAppProviders {
-                    OrbinApp(
-                        startWithOnboarding = !settings.onboardingCompleted,
-                        isOnline = isOnline,
-                        pendingRoute = pendingRoute,
-                        onPendingRouteHandled = onPendingRouteHandled,
-                    )
-                }
-            }
-
-            if (ready && shouldLock && !unlocked) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = next.background,
-                ) {
-                    LockScreen(
-                        message = unlockMessage,
-                        unlocking = authenticationInProgress,
-                        onUnlock = onRetryUnlock,
-                        onContinueWithoutLock = onContinueWithoutLock.takeIf { allowContinueWithoutLock },
-                    )
-                }
-            }
-
-            if (ready) updateDialog()
-        }
-    }
-}
-
-private fun shouldRequestNotificationPermission(
-    ready: Boolean,
-    shouldLock: Boolean,
-    unlocked: Boolean,
-    alreadyRequested: Boolean,
-): Boolean = ready && (unlocked || !shouldLock) && !alreadyRequested
