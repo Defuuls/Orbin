@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [173-Sunchoke] - 2026-10-23
+
+### Removed
+- Nearby device sync over Wi-Fi, Bluetooth and the relay, with its pairing screen and QR codes. It didn't connect reliably between Android and iOS.
+- WebDAV sync and its setup QR code. Reading history and bookmarks now stay on each device; any saved WebDAV login is no longer used.
+- Camera, Bluetooth and local network permissions, which only sync used.
+
+
 ## [172-Fiddlehead] - 2026-10-22
 
 ### Added
@@ -2616,7 +2624,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...HEAD
+[173-Sunchoke]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...v173-Sunchoke
 [172-Fiddlehead]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...v172-Fiddlehead
 [171-Celeriac]: https://github.com/Defuuls/Orbin/compare/v170-Salsify...v171-Celeriac
 [170-Salsify]: https://github.com/Defuuls/Orbin/compare/v169-Kohlrabi...v170-Salsify

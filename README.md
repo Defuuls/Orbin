@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [172 — Fiddlehead](https://github.com/Defuuls/Orbin/releases/tag/v172-Fiddlehead)
+**Current release:** [173 — Sunchoke](https://github.com/Defuuls/Orbin/releases/tag/v173-Sunchoke)
 
-**What's new in 172:** Nearby devices gets its own setup screen, and pairing tries every network address.
+**What's new in 173:** Device sync is gone: nearby sync and WebDAV sync are removed, and Orbin no longer asks for camera, Bluetooth or local network access.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
