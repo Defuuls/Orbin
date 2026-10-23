@@ -85,6 +85,7 @@ roborazzi = "1.76.0"
 detekt = "1.23.8"
 dependencyAnalysis = "3.19.2"
 ktlintGradle = "14.2.0"
+kover = "0.9.11"
 
 [libraries]
 # AndroidX
@@ -245,6 +246,7 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 android-test = { id = "com.android.test" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }

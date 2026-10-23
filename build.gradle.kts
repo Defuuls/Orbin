@@ -78,6 +78,7 @@ plugins {
     alias(libs.plugins.roborazzi) apply false
     // Root-only: unused/misdeclared dependency advice via `./gradlew buildHealth`.
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kover)
 }
 
 // The very same rule the plugin classpath was patched with, reused rather than restated.
@@ -94,6 +95,49 @@ configurations.configureEach {
 
 // Apply code-quality tooling uniformly. Centralizing it here keeps per-module build files thin
 // and guarantees the `detekt` / `ktlintCheck` tasks exist on every module for CI.
+// Test coverage, merged across every module that has JVM tests into one report:
+// `./gradlew koverHtmlReport` to read it, `koverVerify` (run in CI) to hold the line. The benchmark
+// is an instrumentation-only test app, and core:testing is the tests' own fixtures.
+val koverExcludedProjects = setOf(":benchmark", ":core:testing")
+
+dependencies {
+    subprojects.filter { it.path !in koverExcludedProjects }.forEach { kover(it) }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Generated: Hilt, Room, Compose singletons and resources, BuildConfig.
+                classes(
+                    "*Hilt_*",
+                    "*_HiltModules*",
+                    "*_Factory*",
+                    "*_MembersInjector",
+                    "*_Impl*",
+                    "*ComposableSingletons*",
+                    "*.BuildConfig",
+                    "*.R",
+                    "*.R$*",
+                    "dagger.*",
+                    "hilt_aggregated_deps.*",
+                    "*.resources.*",
+                )
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+            }
+        }
+        total {
+            verify {
+                rule {
+                    // Merged line coverage was 50.35% when this rule went in; this is that, less a point of slack:
+                    // raise it as tests are added, never lower it to let a change through.
+                    minBound(49)
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     configurations.configureEach {
         resolutionStrategy.applySecurityDependencyPatches()
@@ -101,6 +145,7 @@ subprojects {
 
     apply(plugin = "io.gitlab.arturbosch.detekt")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    if (path !in koverExcludedProjects) apply(plugin = "org.jetbrains.kotlinx.kover")
 
     extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
         buildUponDefaultConfig = true

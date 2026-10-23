@@ -88,8 +88,19 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
 
+      # koverVerify fails the job when merged line coverage falls below the floor in
+      # build.gradle.kts; the HTML report is uploaded either way.
       - name: Run JVM unit tests
-        run: ./gradlew test --continue -Porbin.warningsAsErrors=true
+        run: ./gradlew test koverVerify koverHtmlReport --continue -Porbin.warningsAsErrors=true
+
+      - name: Upload coverage report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: build/reports/kover/html/**
+          if-no-files-found: ignore
 
       - name: Upload test reports
         if: always()
