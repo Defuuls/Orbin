@@ -7,13 +7,15 @@ import co.touchlab.kermit.Logger
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogRequest
-import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.MediaAttachment
-import com.orbin.core.model.MediaFilter
-import com.orbin.core.model.Post
-import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.isPermanentlyFiltered
-import com.orbin.core.model.matchesFilterTokens
+import com.orbin.domain.media.AllMediaItem
+import com.orbin.domain.media.AllMediaUiState
+import com.orbin.domain.media.BoardSweep
+import com.orbin.domain.media.DeepScanTarget
+import com.orbin.domain.media.MediaWallCollector
+import com.orbin.domain.media.ScanSettings
+import com.orbin.domain.media.mediaItemsFor
+import com.orbin.domain.media.sweepBoard
+import com.orbin.domain.media.visibleUnder
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -22,8 +24,6 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -46,34 +46,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import javax.inject.Inject
-
-/**
- * One file on the wall, carrying enough of where it came from to open it and to label the tile.
- */
-data class AllMediaItem(
-    val attachment: MediaAttachment,
-    val key: ThreadKey,
-    val boardTitle: String,
-    val threadTitle: String,
-) {
-    /** Stable across rescans and unique within a scan, so the grid can key its items by it. */
-    val id: String get() = "${key.board.value}/${key.thread.value}/${attachment.id}"
-}
-
-data class AllMediaUiState(
-    val items: ImmutableList<AllMediaItem> = persistentListOf(),
-    val boardsScanned: Int = 0,
-    val boardsTotal: Int = 0,
-    val isScanning: Boolean = false,
-    /** Boards whose catalog could not be fetched this sweep; the rest of the wall still stands. */
-    val failedBoards: Int = 0,
-    /** True while the deep pass is walking threads for reply media, after the catalog sweep. */
-    val isDeepScanning: Boolean = false,
-    val threadsScanned: Int = 0,
-    val threadsTotal: Int = 0,
-) {
-    val isInitialLoad: Boolean get() = isScanning && items.isEmpty()
-}
 
 /**
  * Every file on every board, in one list.
@@ -122,22 +94,15 @@ class AllMediaViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        /**
-         * Everything the sweep found, before [MediaFilter] is applied. Kept so switching between
-         * images-only and videos-only re-filters what is already on screen instead of costing a
-         * fresh sweep of every board.
-         */
-        private var collected: List<AllMediaItem> = emptyList()
-
-        /** Source URLs already on the wall, so the same file reposted in two threads appears once. */
-        private val seenUrls = mutableSetOf<String>()
+        /** What the sweep has found so far, deduplicated and capped; see [MediaWallCollector]. */
+        private val wall = MediaWallCollector()
 
         private var scanJob: Job? = null
         private var deepScanJob: Job? = null
 
         /**
          * Threads the catalog sweep found, for the deep scan to walk. Held separately from
-         * [collected] because a thread whose opening post has no media contributes nothing to the
+         * [wall] because a thread whose opening post has no media contributes nothing to the
          * wall and would be invisible there — and a text-only OP with image replies is exactly the
          * case the deep scan exists for.
          */
@@ -217,8 +182,7 @@ class AllMediaViewModel
         ) {
             scanJob?.cancel()
             stopDeepScan()
-            collected = emptyList()
-            seenUrls.clear()
+            wall.clear()
             deepScanTargets = emptyList()
             sweptWith = null
 
@@ -294,7 +258,7 @@ class AllMediaViewModel
          * Walks every thread the catalog sweep found and adds the media hanging off its replies.
          *
          * This is one request per *thread* rather than per board — thousands of them — so it is
-         * trickled out one at a time with [DEEP_SCAN_REQUEST_INTERVAL_MS] between requests, which
+         * trickled out one at a time with [MediaWallCollector.DEEP_SCAN_REQUEST_INTERVAL_MS] between requests, which
          * is what providers ask of a client. That makes it a background trickle measured in hours,
          * not a load that finishes: it fills the wall gradually while the reader scrolls, keeps its
          * place is at the end so nothing above it moves, and stops the moment the screen closes or
@@ -306,7 +270,7 @@ class AllMediaViewModel
                 it.copy(isDeepScanning = true, threadsTotal = targets.size, threadsScanned = 0)
             }
             targets.forEachIndexed { index, target ->
-                if (collected.size >= MAX_WALL_ITEMS) {
+                if (wall.isFull) {
                     _uiState.update {
                         it.copy(isDeepScanning = false, threadsScanned = index)
                     }
@@ -314,7 +278,7 @@ class AllMediaViewModel
                 }
                 fetchThreadMedia(context, target)?.let(::append)
                 _uiState.update { it.copy(threadsScanned = index + 1) }
-                delay(DEEP_SCAN_REQUEST_INTERVAL_MS)
+                delay(MediaWallCollector.DEEP_SCAN_REQUEST_INTERVAL_MS)
             }
             _uiState.update { it.copy(isDeepScanning = false) }
         }
@@ -338,17 +302,7 @@ class AllMediaViewModel
          * scan from re-adding the opening-post media the catalog sweep already found.
          */
         private fun append(items: List<AllMediaItem>) {
-            if (collected.size >= MAX_WALL_ITEMS) return
-            val room = MAX_WALL_ITEMS - collected.size
-            val fresh =
-                items
-                    .asSequence()
-                    .filter { seenUrls.add(it.attachment.sourceUrl) }
-                    .take(room)
-                    .toList()
-            if (fresh.isEmpty()) return
-            collected = collected + fresh
-            _uiState.update { it.copy(items = collected.toImmutableList()) }
+            if (wall.append(items)) _uiState.update { it.copy(items = wall.items.toImmutableList()) }
         }
 
         private companion object {
@@ -361,111 +315,11 @@ class AllMediaViewModel
              * a scraper to the server.
              */
             const val MAX_CONCURRENT_BOARD_LOADS = 4
-
-            /**
-             * One request a second, sequentially, which is the rate the major engines ask clients
-             * to stay under. Deliberately not tuned for speed: the deep scan's whole risk is that
-             * it is thousands of requests, and a reader who gets rate-limited loses the wall.
-             */
-            const val DEEP_SCAN_REQUEST_INTERVAL_MS = 1_000L
-
-            /**
-             * Hard cap on wall growth so an unbounded deep scan cannot retain every attachment on
-             * a large provider in Compose state / lazy-grid keys. Catalog sweep still prefers
-             * board order; once the cap is hit further appends are no-ops.
-             */
-            const val MAX_WALL_ITEMS = 4_000
         }
     }
-
-/** A thread the deep scan can walk, with the labels its files will carry onto the wall. */
-internal data class DeepScanTarget(
-    val key: ThreadKey,
-    val boardTitle: String,
-    val threadTitle: String,
-)
-
-/** What one board's catalog yielded: files for the wall now, threads for the deep scan later. */
-internal data class BoardSweep(
-    val items: List<AllMediaItem>,
-    val targets: List<DeepScanTarget>,
-)
 
 /** The provider and filters a completed sweep ran under, so the deep scan matches it exactly. */
 private data class SweepContext(
     val provider: ImageBoardProvider,
     val scanSettings: ScanSettings,
 )
-
-/**
- * The settings a sweep actually depends on. Isolated from [AppSettings] so that changing an
- * unrelated preference — a theme, a download folder — does not throw away the whole wall and
- * re-fetch every board.
- */
-internal data class ScanSettings(
-    val hideNsfwBoards: Boolean,
-    val hiddenTokens: Set<String>,
-) {
-    // Reader tags are gone, so only the permanent filter applies on top of the NSFW choice.
-    constructor(settings: AppSettings) : this(settings.hideNsfwBoards, emptySet())
-}
-
-/** The boards a sweep should visit: the reader's board filters, applied as the feed applies them. */
-internal fun List<Board>.visibleUnder(scanSettings: ScanSettings): List<Board> =
-    filterNot { board -> scanSettings.hideNsfwBoards && board.isNsfw }
-        // Catches the permanent filter too, so a board it hides is never even fetched.
-        .filterNot { board -> board.matchesFilterTokens(scanSettings.hiddenTokens) }
-        .sortedBy { it.id.value }
-
-/**
- * Every attachment a board's catalog carries, as wall items, plus the threads behind them.
- *
- * Teaser replies count as well as opening posts: they cost nothing extra, and they are the only
- * reply-level media a catalog sweep can reach on its own.
- *
- * A thread the filters reject yields no files *and* no deep-scan target — otherwise the deep scan
- * would walk straight back into a thread the wall had deliberately dropped.
- */
-internal fun sweepBoard(
-    board: Board,
-    catalog: List<CatalogThread>,
-    hiddenTokens: Set<String>,
-): BoardSweep {
-    val visible = catalog.filterNot { thread -> thread.matchesFilterTokens(hiddenTokens) }
-    val targets =
-        visible.map { thread ->
-            DeepScanTarget(key = thread.key, boardTitle = board.id.value, threadTitle = thread.title())
-        }
-    val items =
-        visible.flatMapIndexed { index, thread ->
-            (listOf(thread.originalPost) + thread.previewReplies).mediaItemsFor(targets[index], hiddenTokens)
-        }
-    return BoardSweep(items = items, targets = targets)
-}
-
-/** The wall items a set of posts contributes, with every filter the wall applies. */
-internal fun List<Post>.mediaItemsFor(
-    target: DeepScanTarget,
-    hiddenTokens: Set<String>,
-): List<AllMediaItem> =
-    filterNot { post -> post.matchesFilterTokens(hiddenTokens) }
-        .flatMap { post -> post.attachments }
-        .filterNot { attachment -> attachment.isPermanentlyFiltered() }
-        .map { attachment ->
-            AllMediaItem(
-                attachment = attachment,
-                key = target.key,
-                boardTitle = target.boardTitle,
-                threadTitle = target.threadTitle,
-            )
-        }
-
-/** A short label for the tile: the subject if the thread has one, otherwise the start of the OP. */
-private fun CatalogThread.title(): String {
-    val subject = originalPost.subject?.trim().orEmpty()
-    if (subject.isNotEmpty()) return subject
-    val comment = originalPost.comment.raw.trim()
-    return if (comment.length > TITLE_MAX_CHARS) comment.take(TITLE_MAX_CHARS) + "…" else comment
-}
-
-private const val TITLE_MAX_CHARS = 60

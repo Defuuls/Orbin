@@ -13,6 +13,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.domain.media.AllMediaItem
+import com.orbin.domain.media.AllMediaUiState
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
