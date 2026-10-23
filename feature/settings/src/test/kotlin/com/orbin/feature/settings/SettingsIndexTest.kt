@@ -96,6 +96,7 @@ class SettingsIndexTest {
                     .AppSettings(),
             vm = io.mockk.mockk(relaxed = true),
             updateState = "Up to date",
+            strings = ResourceFileStrings,
             formFactor = formFactor,
         )
 }

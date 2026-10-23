@@ -25,12 +25,13 @@ internal fun buildSettings(
     settings: AppSettings,
     vm: SettingsViewModel,
     updateState: String,
-    imageCacheLabel: String = "Empty · Clear",
+    strings: SettingsStrings,
+    imageCacheLabel: String = strings.get(R.string.settings_image_cache_empty),
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
     formFactor: FormFactor = FormFactor.PHONE,
 ): SettingsModel {
-    val rows = Rows()
+    val rows = Rows(strings)
     val groups =
         listOf(
             rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor),
@@ -45,7 +46,9 @@ internal fun buildSettings(
  * A row's effect is recorded from the same value the row displays, so the two cannot drift: a
  * toggle's closure flips the state it was built from rather than re-reading it later.
  */
-private class Rows {
+private class Rows(
+    private val strings: SettingsStrings,
+) {
     val toggles = mutableMapOf<String, () -> Unit>()
     val choices = mutableMapOf<String, (Int) -> Unit>()
 
@@ -102,14 +105,36 @@ private class Rows {
         checkUpdatesOnLaunch: Boolean,
         formFactor: FormFactor,
     ) = listOfNotNull(
-        toggle("hideNsfw", "Hide NSFW boards", settings.hideNsfwBoards, vm::setHideNsfwBoards),
-        toggle("coverViolent", "Cover violent media", settings.coverViolentMedia, vm::setCoverViolentMedia),
-        choice("themeMode", "Theme", AppThemeMode.entries, settings.themeMode, Enum<*>::titleCase, vm::setThemeMode),
+        toggle("hideNsfw", strings.get(R.string.settings_hide_nsfw), settings.hideNsfwBoards, vm::setHideNsfwBoards),
+        toggle(
+            "coverViolent",
+            strings.get(R.string.settings_cover_violent),
+            settings.coverViolentMedia,
+            vm::setCoverViolentMedia,
+        ),
+        choice(
+            "themeMode",
+            strings.get(R.string.settings_theme),
+            AppThemeMode.entries,
+            settings.themeMode,
+            Enum<*>::titleCase,
+            vm::setThemeMode,
+        ),
         feedColumns(settings, vm, formFactor),
         catalogColumns(settings, vm, formFactor),
-        toggle("amoled", "True black", settings.amoled, vm::setAmoled),
-        toggle("biometric", "App lock", settings.biometricLockEnabled, vm::setBiometricLock),
-        toggle("updateOnLaunch", "Tell me about new releases", checkUpdatesOnLaunch, vm::setCheckUpdatesOnLaunch),
+        toggle("amoled", strings.get(R.string.settings_true_black), settings.amoled, vm::setAmoled),
+        toggle(
+            "biometric",
+            strings.get(R.string.settings_app_lock),
+            settings.biometricLockEnabled,
+            vm::setBiometricLock,
+        ),
+        toggle(
+            "updateOnLaunch",
+            strings.get(R.string.settings_update_on_launch),
+            checkUpdatesOnLaunch,
+            vm::setCheckUpdatesOnLaunch,
+        ),
     )
 
     /**
@@ -122,13 +147,30 @@ private class Rows {
         formFactor: FormFactor,
     ): SettingItem? {
         if (formFactor.maxFeedColumns <= 1) return null
-        val label = if (formFactor == FormFactor.FOLDABLE) "Feed columns when unfolded" else "Feed columns"
+        val label =
+            strings.get(
+                if (formFactor ==
+                    FormFactor.FOLDABLE
+                ) {
+                    R.string.settings_feed_columns_unfolded
+                } else {
+                    R.string.settings_feed_columns
+                },
+            )
         return choice(
             id = "feedColumns",
             label = label,
             values = (1..formFactor.maxFeedColumns).toList(),
             selected = settings.feedColumnsFor(formFactor),
-            text = { if (it == 1) "1 column" else "$it columns" },
+            text = {
+                if (it ==
+                    1
+                ) {
+                    strings.get(R.string.settings_one_column)
+                } else {
+                    strings.get(R.string.settings_columns, it)
+                }
+            },
             onChange = { vm.setFeedColumns(formFactor, it) },
         )
     }
@@ -142,10 +184,10 @@ private class Rows {
         if (formFactor != FormFactor.TABLET) return null
         return choice(
             id = "catalogColumns",
-            label = "Catalog columns",
+            label = strings.get(R.string.settings_catalog_columns),
             values = (TABLET_MIN_CATALOG_COLUMNS..TABLET_MAX_CATALOG_COLUMNS).toList(),
             selected = settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS),
-            text = { "$it columns" },
+            text = { strings.get(R.string.settings_columns, it) },
             onChange = vm::setTabletCatalogColumns,
         )
     }
@@ -158,16 +200,23 @@ private class Rows {
     ) = listOf(
         action(
             "clearActivity",
-            "Clear local activity",
+            strings.get(R.string.settings_clear_activity),
             // Confirmed in place: the first tap arms the row, a second tap deletes.
-            if (clearArmed) "Tap again to delete" else "Delete",
-            "Deletes browsing history, recent searches and download history on this device.",
+            strings.get(
+                if (clearArmed) R.string.settings_clear_activity_armed else R.string.settings_clear_activity_action,
+            ),
+            strings.get(R.string.settings_clear_activity_hint),
             destructive = true,
         ),
-        action("clearImageCache", "Clear image cache", imageCacheLabel, destructive = true),
-        action("checkUpdates", "Check for updates", updateState),
-        action("exportBackup", "Export data", "Save"),
-        action("importBackup", "Import data", "Restore"),
+        action(
+            "clearImageCache",
+            strings.get(R.string.settings_clear_image_cache),
+            imageCacheLabel,
+            destructive = true,
+        ),
+        action("checkUpdates", strings.get(R.string.settings_check_updates), updateState),
+        action("exportBackup", strings.get(R.string.settings_export), strings.get(R.string.settings_export_action)),
+        action("importBackup", strings.get(R.string.settings_import), strings.get(R.string.settings_import_action)),
     )
 }
 

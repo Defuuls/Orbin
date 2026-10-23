@@ -55,6 +55,7 @@ fun NextSettingsScreen(
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val strings = remember(context) { context.settingsStrings() }
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
@@ -89,23 +90,24 @@ fun NextSettingsScreen(
 
     LaunchedEffect(backupStatus) {
         val status = backupStatus ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(status.message())
+        snackbarHostState.showSnackbar(status.message(strings))
         viewModel.clearBackupStatus()
     }
     // The row itself reports progress; the snackbar says how a finished check went. A newer
     // release says so in the app-wide update dialog instead, which can install it.
     LaunchedEffect(updateCheck) {
-        val message = updateCheck.snackbarMessage() ?: return@LaunchedEffect
+        val message = updateCheck.snackbarMessage(strings) ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message = message, withDismissAction = true)
     }
 
-    val cacheLabel = imageCacheUsageBytes.cacheSizeLabel()
+    val cacheLabel = imageCacheUsageBytes.cacheSizeLabel(strings)
     val model =
         remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor) {
             buildSettings(
                 settings,
                 viewModel,
-                updateCheck.rowValue(context),
+                updateCheck.rowValue(context, strings),
+                strings,
                 cacheLabel,
                 clearArmed,
                 checkUpdatesOnLaunch,
@@ -131,7 +133,11 @@ fun NextSettingsScreen(
                                 if (clearArmed) {
                                     clearArmed = false
                                     viewModel.clearLocalActivity()
-                                    scope.launch { snackbarHostState.showSnackbar("Local activity cleared") }
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            strings.get(R.string.settings_clear_activity_done),
+                                        )
+                                    }
                                 } else {
                                     clearArmed = true
                                 }
@@ -176,46 +182,62 @@ private fun dispatch(
     }
 }
 
-private fun Long.cacheSizeLabel(): String {
-    if (this <= 0L) return "Empty · Clear"
+private fun Long.cacheSizeLabel(strings: SettingsStrings): String {
+    if (this <= 0L) return strings.get(R.string.settings_image_cache_empty)
     val megabytes = this.toDouble() / BYTES_PER_MB
-    return if (megabytes < 1.0) "<1 MB · Clear" else "${megabytes.toInt()} MB · Clear"
+    return if (megabytes < 1.0) {
+        strings.get(R.string.settings_image_cache_small)
+    } else {
+        strings.get(R.string.settings_image_cache_size, megabytes.toInt())
+    }
 }
 
-private fun BackupStatus.message(): String =
+private fun BackupStatus.message(strings: SettingsStrings): String =
     when (this) {
-        BackupStatus.Exported -> "Backup saved"
+        BackupStatus.Exported -> strings.get(R.string.settings_backup_saved)
         is BackupStatus.Imported ->
-            "Restored ${summary.subscribedBoards} boards, ${summary.bookmarks} bookmarks and " +
-                "${summary.savedSearches} saved searches" +
-                if (summary.skippedUnknownProvider > 0) {
-                    " (skipped ${summary.skippedUnknownProvider} from a provider this build doesn't support)"
-                } else {
-                    ""
-                }
+            if (summary.skippedUnknownProvider > 0) {
+                strings.get(
+                    R.string.settings_backup_restored_skipped,
+                    summary.subscribedBoards,
+                    summary.bookmarks,
+                    summary.savedSearches,
+                    summary.skippedUnknownProvider,
+                )
+            } else {
+                strings.get(
+                    R.string.settings_backup_restored,
+                    summary.subscribedBoards,
+                    summary.bookmarks,
+                    summary.savedSearches,
+                )
+            }
         is BackupStatus.Failed -> message
     }
 
-private fun UpdateCheckState.snackbarMessage(): String? =
+private fun UpdateCheckState.snackbarMessage(strings: SettingsStrings): String? =
     when (this) {
         UpdateCheckState.Idle, UpdateCheckState.Checking -> null
-        is UpdateCheckState.Failed -> "Could not check for updates: $message"
+        is UpdateCheckState.Failed -> strings.get(R.string.settings_check_failed_message, message)
         is UpdateCheckState.Result ->
             when (status) {
-                UpdateStatus.UpToDate -> "Orbin is up to date"
+                UpdateStatus.UpToDate -> strings.get(R.string.settings_up_to_date_message)
                 // Shown by the update dialog rather than a snackbar.
                 is UpdateStatus.Available -> null
             }
     }
 
-private fun UpdateCheckState.rowValue(context: android.content.Context): String =
+private fun UpdateCheckState.rowValue(
+    context: android.content.Context,
+    strings: SettingsStrings,
+): String =
     when (this) {
-        UpdateCheckState.Idle -> appVersionName(context).ifBlank { "Unknown build" }
-        UpdateCheckState.Checking -> "Checking…"
-        is UpdateCheckState.Failed -> "Check failed"
+        UpdateCheckState.Idle -> appVersionName(context).ifBlank { strings.get(R.string.settings_unknown_build) }
+        UpdateCheckState.Checking -> strings.get(R.string.settings_checking)
+        is UpdateCheckState.Failed -> strings.get(R.string.settings_check_failed)
         is UpdateCheckState.Result ->
             when (status) {
-                UpdateStatus.UpToDate -> "Up to date"
-                is UpdateStatus.Available -> "${status.tag} available"
+                UpdateStatus.UpToDate -> strings.get(R.string.settings_up_to_date)
+                is UpdateStatus.Available -> strings.get(R.string.settings_update_available, status.tag)
             }
     }
