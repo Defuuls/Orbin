@@ -45,10 +45,11 @@ A reader, so far:
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
   that open in the browser when they pass the same https check Android uses;
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.
-  Video and audio play on their page in the system player (AVKit), with its controls and AirPlay,
+  Video and audio play on their page in the system player (AVKit), with app controls for play, seek and mute,
   pausing when you swipe away. That covers MP4, QuickTime and the common audio
   formats. WebM plays inside the viewer through WebKit on iOS 17.4 and later; older iOS versions
-  offer the browser link;
+  offer the browser link. Native and WebM viewer videos start muted and remember the last audio
+  choice until the app process ends; inline previews always stay muted;
 - watching a thread (the thread screen's watch action bookmarks it) and a reading history that
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
