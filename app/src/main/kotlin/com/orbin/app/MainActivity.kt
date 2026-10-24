@@ -177,7 +177,7 @@ class MainActivity : FragmentActivity() {
         val settings = uiState.settings
         val ready = uiState.ready
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
-        val shouldLock = ready && settings.biometricLockEnabled && settings.onboardingCompleted
+        val shouldLock = uiState.shouldLock
         var unlocked by remember { mutableStateOf(false) }
         var unlockMessage by remember { mutableStateOf<String?>(null) }
         var allowContinueWithoutLock by remember { mutableStateOf(false) }

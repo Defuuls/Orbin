@@ -74,6 +74,18 @@ class BackupServiceTest {
         }
 
     @Test
+    fun importedOnboardingCannotSuppressTheExistingLock() =
+        runTest {
+            for (json in listOf("""{"settings":{"onboardingCompleted":false}}""", "{}")) {
+                val destination = FakeSettingsRepository(populatedSettings)
+                service(destination).importFromJson(json).getOrThrow()
+                val restored = destination.settings.first()
+                assertThat(restored.biometricLockEnabled).isTrue()
+                assertThat(restored.onboardingCompleted).isTrue()
+            }
+        }
+
+    @Test
     fun bookmarksAndSavedSearchesSurviveExportAndImport() =
         runTest {
             val bookmarks = FakeBookmarkRepository(listOf(bookmark("g", 42L, watched = true)))

@@ -15,6 +15,9 @@ import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,18 +75,27 @@ class IosBackup(
     private val files: BackupFiles,
     private val scope: CoroutineScope,
     private val appVersion: String,
+    private val isAuthorized: () -> Boolean,
     private val now: () -> String = { Clock.System.now().toString() },
 ) {
     private val _state = MutableStateFlow<BackupState>(BackupState.Idle)
     val state: StateFlow<BackupState> = _state.asStateFlow()
+    private var pending: Job? = null
+    private var generation = 0L
 
     /** Writes a backup and opens the share sheet for it. */
-    fun export() = perform { if (files.share(fileName(), exportToJson())) BackupState.Exported else BackupState.Idle }
+    fun export() =
+        perform {
+            val contents = exportToJson()
+            requireAuthorization()
+            if (files.share(fileName(), contents)) BackupState.Exported else BackupState.Idle
+        }
 
     /** Asks for a backup file and restores it. */
     fun import() =
         perform {
             val text = files.pick() ?: return@perform BackupState.Idle
+            requireAuthorization()
             importFromJson(text).fold(
                 onSuccess = { BackupState.Imported(boards = it.first, bookmarks = it.second) },
                 onFailure = { BackupState.Failed(it.message ?: "Not an Orbin backup") },
@@ -106,6 +118,7 @@ class IosBackup(
     /** Restores [backupJson]; the result counts the boards and bookmarks restored. */
     suspend fun importFromJson(backupJson: String): Result<Pair<Int, Int>> =
         runCatching {
+            requireAuthorization()
             val document = json.decodeFromString(BackupDocument.serializer(), backupJson)
             require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                 "This backup was written by a newer version of Orbin (format ${document.formatVersion})."
@@ -114,6 +127,7 @@ class IosBackup(
             val known = providers.map { it.value }.toSet()
             val subscribed = document.subscribedBoards.filter { it.providerId in known }
             subscribed.forEach {
+                requireAuthorization()
                 boardPreferences.setSubscribedBoard(
                     ProviderId(it.providerId),
                     BoardId(it.boardId),
@@ -122,6 +136,7 @@ class IosBackup(
             }
             val favourites = document.favoriteBoards.filter { it.providerId in known }
             favourites.forEach {
+                requireAuthorization()
                 boardPreferences.setFavoriteBoard(
                     ProviderId(it.providerId),
                     BoardId(it.boardId),
@@ -129,19 +144,44 @@ class IosBackup(
                 )
             }
             val restored = document.bookmarks.filter { it.providerId in known }
-            restored.forEach { bookmarks.addBookmark(it.toBookmark()) }
+            restored.forEach {
+                requireAuthorization()
+                bookmarks.addBookmark(it.toBookmark())
+            }
             subscribed.size to restored.size
         }.onFailure { if (it is CancellationException) throw it }
 
     private fun perform(block: suspend () -> BackupState) {
         if (_state.value == BackupState.Working) return
+        if (!isAuthorized()) return
+        val session = ++generation
         _state.value = BackupState.Working
-        scope.launch {
-            _state.value =
-                runCatching { block() }
-                    .onFailure { if (it is CancellationException) throw it }
-                    .getOrElse { BackupState.Failed(it.message ?: "Something went wrong") }
-        }
+        pending =
+            scope.launch {
+                try {
+                    requireAuthorization()
+                    val result =
+                        runCatching { block() }
+                            .onFailure { if (it is CancellationException) throw it }
+                            .getOrElse { BackupState.Failed(it.message ?: "Something went wrong") }
+                    if (session == generation) _state.value = result
+                } finally {
+                    if (session == generation && _state.value == BackupState.Working) _state.value = BackupState.Idle
+                }
+            }
+    }
+
+    /** Relocking revokes this operation even if the owner unlocks again before a callback arrives. */
+    fun cancelPending() {
+        generation++
+        pending?.cancel()
+        pending = null
+        _state.value = BackupState.Idle
+    }
+
+    private suspend fun requireAuthorization() {
+        currentCoroutineContext().ensureActive()
+        check(isAuthorized()) { "Unlock Orbin before using backups" }
     }
 
     private suspend fun ProviderId.refs(subscribed: Boolean): List<BackupBoardRef> {
@@ -159,15 +199,25 @@ class IosBackup(
     // The same fields Android's BackupService restores, less the app lock.
     private suspend fun restoreSettings(restored: AppSettings) =
         with(settings) {
+            requireAuthorization()
             setHideNsfwBoards(restored.hideNsfwBoards)
+            requireAuthorization()
             setCoverViolentMedia(restored.coverViolentMedia)
+            requireAuthorization()
             setDeepMediaScan(restored.deepMediaScan)
+            requireAuthorization()
             setThemeMode(restored.themeMode)
+            requireAuthorization()
             setAmoled(restored.amoled)
+            requireAuthorization()
             setFeedColumns(FormFactor.FOLDABLE, restored.unfoldedFeedColumns)
+            requireAuthorization()
             setFeedColumns(FormFactor.TABLET, restored.tabletFeedColumns)
+            requireAuthorization()
             setTabletCatalogColumns(restored.tabletCatalogColumns)
+            requireAuthorization()
             if (restored.activeProviderId.isNotBlank()) setActiveProviderId(ProviderId(restored.activeProviderId))
+            requireAuthorization()
             setOnboardingCompleted(restored.onboardingCompleted)
         }
 
