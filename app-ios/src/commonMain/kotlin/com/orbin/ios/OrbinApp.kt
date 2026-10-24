@@ -23,6 +23,7 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.NextColorTheme
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -75,7 +76,7 @@ fun OrbinApp(
             AppThemeMode.LIGHT -> false
             AppThemeMode.DARK -> true
         }
-    val palette = colorThemePalette(settings.colorTheme, dark, settings.amoled)
+    val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
     NextTheme(
         darkTheme = palette.dark,
         amoled = palette.amoled,

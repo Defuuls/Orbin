@@ -3,7 +3,6 @@ package com.orbin.uinext
 import androidx.compose.ui.graphics.Color
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.orbin.core.model.AppColorTheme
 import org.junit.Test
 import kotlin.math.pow
 
@@ -23,7 +22,7 @@ import kotlin.math.pow
 class PaletteContrastTest {
     @Test
     fun `general colors cover text controls selection and Material errors in every mode`() {
-        AppColorTheme.entries.filter { it != AppColorTheme.ORBIN }.forEach { theme ->
+        NextColorTheme.entries.filter { it != NextColorTheme.ORBIN }.forEach { theme ->
             listOf(false, true).forEach { dark ->
                 listOf(false, true).forEach { amoled ->
                     val palette = colorThemePalette(theme, dark, amoled)
@@ -37,8 +36,8 @@ class PaletteContrastTest {
                     assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
                     assertThat(palette.dark).isEqualTo(
                         when (theme) {
-                            AppColorTheme.WHITE -> false
-                            AppColorTheme.BLACK -> true
+                            NextColorTheme.WHITE -> false
+                            NextColorTheme.BLACK -> true
                             else -> dark
                         },
                     )
@@ -50,12 +49,12 @@ class PaletteContrastTest {
     @Test
     fun `registry preserves defaults and has no duplicate palettes`() {
         listOf(false, true).forEach { dark ->
-            assertThat(colorThemePalette(AppColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
-            val palettes = AppColorTheme.entries.map { colorThemePalette(it, dark) }
-            assertThat(palettes.distinct()).hasSize(AppColorTheme.entries.size)
+            assertThat(colorThemePalette(NextColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
+            val palettes = NextColorTheme.entries.map { colorThemePalette(it, dark) }
+            assertThat(palettes.distinct()).hasSize(NextColorTheme.entries.size)
         }
-        assertThat(colorThemePalette(AppColorTheme.BLACK, false).background).isEqualTo(Color.Black)
-        assertThat(colorThemePalette(AppColorTheme.WHITE, true, true).background).isEqualTo(Color.White)
+        assertThat(colorThemePalette(NextColorTheme.BLACK, false).background).isEqualTo(Color.Black)
+        assertThat(colorThemePalette(NextColorTheme.WHITE, true, true).background).isEqualTo(Color.White)
     }
 
     @Test
