@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [174 — Jicama](https://github.com/Defuuls/Orbin/releases/tag/v174-Jicama)
+**Current release:** [175 — Oca](https://github.com/Defuuls/Orbin/releases/tag/v175-Oca)
 
-**What's new in 174:** iOS catches up: a first-run board picker, board media walls, home-screen quick actions, picture in picture and safe mode.
+**What's new in 175:** Stronger app-lock enforcement around backups and safer iOS media downloads.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
