@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [175-Oca] - 2026-10-24
+
+### Fixed
+- Android: importing a backup cannot suppress an enabled app lock through onboarding settings.
+- iOS: relocking cancels pending backup operations and dismisses their system sheets; stale callbacks cannot restore data.
+- iOS: oversized media downloads are rejected before copying native data into a Kotlin byte array.
+
+
 ## [174-Jicama] - 2026-10-23
 
 ### Added
@@ -2646,7 +2654,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v175-Oca...HEAD
+[175-Oca]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...v175-Oca
 [174-Jicama]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...v174-Jicama
 [173-Sunchoke]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...v173-Sunchoke
 [172-Fiddlehead]: https://github.com/Defuuls/Orbin/compare/v171-Celeriac...v172-Fiddlehead

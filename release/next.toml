@@ -1,38 +1,20 @@
-# Orbin 174 - Jicama
-#
-# Merging this file to main triggers the Cut Release workflow, which opens the
-# release PR. See release/README.md.
+# Orbin 175 - Oca
+# Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 174
-codename     = "Jicama"
-version_code = 192
+number       = 175
+codename     = "Oca"
+version_code = 193
 
-# One line for the README's "What's new in <number>:" highlight. Optional -
-# leaving it out removes that line rather than letting it name a stale release.
-highlight = "iOS catches up: a first-run board picker, board media walls, home-screen quick actions, picture in picture and safe mode."
+highlight = "Stronger app-lock enforcement around backups and safer iOS media downloads."
 
 summary = [
-  "bump Orbin to 174-Jicama / versionCode 192",
-  "iOS parity, shared Android/iOS logic, and quality work",
+  "bump Orbin to 175-Oca / versionCode 193",
+  "ship backup app-lock enforcement and iOS media-copy bounds fixes",
 ]
 
 [changelog]
-Added = [
-  "iOS: a first-run board picker, the same one Android shows.",
-  "iOS: each board's media wall, opened from its catalog.",
-  "iOS: home-screen quick actions for Your Feed, Saved Media and Browse Boards.",
-  "iOS: picture in picture when you leave the app while a video plays.",
-  "iOS: safe mode after two startup crashes in a row, with crash details you can share.",
-]
-Changed = [
-  "iOS indents thread replies and counts them the way Android does, saved threads included.",
-  "iOS applies the built-in content filter to boards, catalogs and threads, as Android does.",
-  "Feed, search, thread layout, downloads and onboarding now share one implementation on Android and iOS.",
-  "Sites behind a proof-of-work gate are solved once per site instead of once per image on a fresh session.",
-  "Android targets SDK 37.",
-]
 Fixed = [
-  "A board that fails during search no longer hides the other boards' results.",
-  "iOS shows progress for queued downloads.",
-  "Leftover sync logins from earlier versions are removed from the device.",
+  "Android: importing a backup cannot suppress an enabled app lock through onboarding settings.",
+  "iOS: relocking cancels pending backup operations and dismisses their system sheets; stale callbacks cannot restore data.",
+  "iOS: oversized media downloads are rejected before copying native data into a Kotlin byte array.",
 ]
