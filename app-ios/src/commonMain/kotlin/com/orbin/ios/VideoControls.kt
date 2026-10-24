@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -88,7 +88,8 @@ internal fun VideoControls(
                     .background(Color.Black.copy(alpha = SCRIM), CircleShape),
         ) {
             Icon(
-                imageVector = if (state.muted) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                imageVector =
+                    if (state.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                 contentDescription =
                     stringResource(
                         if (state.muted) Res.string.ios_media_unmute else Res.string.ios_media_mute,
@@ -133,9 +134,11 @@ internal fun clock(seconds: Double): String {
 
 /** "playing,position,duration,muted" as the WebM page's state script reports it, or null if the page is not ready. */
 internal fun parseWebMState(text: String): VideoState? {
-    val (playing, positionText, durationText, muted) =
+    val fields =
         text.split(',').takeIf { it.size == WEBM_STATE_FIELDS }
             ?: return null
+    val (playing, positionText, durationText) = fields
+    val muted = fields.last()
     if (playing !in listOf("0", "1") || muted !in listOf("0", "1")) return null
     val position = positionText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: return null
     val duration = durationText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: 0.0
