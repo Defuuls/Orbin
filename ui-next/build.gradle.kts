@@ -28,6 +28,7 @@ kotlin {
         }
         commonMain.dependencies {
             api(project(":core:designsystem"))
+            implementation(project(":core:model"))
             implementation(libs.cmp.resources)
             implementation(libs.kotlinx.coroutines.core)
         }

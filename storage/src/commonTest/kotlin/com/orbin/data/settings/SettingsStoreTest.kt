@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +23,35 @@ class SettingsStoreTest {
     private fun CoroutineScope.dataStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.createWithPath(scope = this) {
             FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "settings-${Random.nextLong()}.preferences_pb"
+        }
+
+    @Test
+    fun everyColorSurvivesAStoreWrapperRecreation() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            val store = SettingsStore(dataStore)
+            store.setThemeMode(AppThemeMode.DARK)
+            store.setAmoled(true)
+            AppColorTheme.entries.forEach { theme ->
+                store.setColorTheme(theme)
+                val restored = SettingsStore(dataStore).settings.first()
+                assertEquals(theme, restored.colorTheme)
+                assertEquals(AppThemeMode.DARK, restored.themeMode)
+                assertTrue(restored.amoled)
+            }
+        }
+
+    @Test
+    fun unknownColorFallsBackWithoutLosingOtherSettings() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("color_theme")] = "FUTURE_COLOR"
+                it[stringPreferencesKey("theme_mode")] = "DARK"
+            }
+            val restored = SettingsStore(dataStore).settings.first()
+            assertEquals(AppColorTheme.ORBIN, restored.colorTheme)
+            assertEquals(AppThemeMode.DARK, restored.themeMode)
         }
 
     @Test
@@ -57,5 +87,6 @@ class SettingsStoreTest {
             val settings = SettingsStore(dataStore).settings.first()
             assertTrue(settings.hideNsfwBoards)
             assertEquals(AppThemeMode.LIGHT, settings.themeMode)
+            assertEquals(AppColorTheme.ORBIN, settings.colorTheme)
         }
 }

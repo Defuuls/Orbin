@@ -1,6 +1,7 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
@@ -158,6 +159,10 @@ class FakeSettingsRepository(
 
     override suspend fun setDeepMediaScan(enabled: Boolean) {
         update { copy(deepMediaScan = enabled) }
+    }
+
+    override suspend fun setColorTheme(theme: AppColorTheme) {
+        update { copy(colorTheme = theme) }
     }
 
     override suspend fun setThemeMode(mode: AppThemeMode) {

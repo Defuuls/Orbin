@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -11,6 +12,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SettingsRowsTest {
+    @Test
+    fun everyColorIsSelectableAndShowsItsSavedSelection() {
+        AppColorTheme.entries.forEach { theme ->
+            val row =
+                settingsGroups(AppSettings(colorTheme = theme), false, false)
+                    .flatMap { it.second }
+                    .single { it.id == SettingIds.COLOR_THEME }
+            assertEquals(SettingKind.CHOICE, row.kind)
+            assertEquals(AppColorTheme.entries.map { it.label }, row.options)
+            assertEquals(theme.label, row.value)
+            assertEquals(theme.ordinal, row.selected)
+        }
+    }
+
     @Test
     fun theRowsShowTheCurrentSettings() {
         val rows =

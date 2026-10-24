@@ -1,5 +1,6 @@
 package com.orbin.domain.repository
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -16,6 +17,8 @@ interface SettingsRepository {
     suspend fun setCoverViolentMedia(enabled: Boolean)
 
     suspend fun setDeepMediaScan(enabled: Boolean)
+
+    suspend fun setColorTheme(theme: AppColorTheme)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 

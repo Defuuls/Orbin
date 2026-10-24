@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -43,6 +44,8 @@ class ReaderSettings(
 
     fun setCoverViolentMedia(cover: Boolean): Job = scope.launch { repository.setCoverViolentMedia(cover) }
 
+    fun setColorTheme(theme: AppColorTheme): Job = scope.launch { repository.setColorTheme(theme) }
+
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
@@ -71,6 +74,7 @@ internal object SettingIds {
     const val PRIVACY = "privacy"
     const val CONTACT = "contact"
     const val COVER_VIOLENT = "coverViolent"
+    const val COLOR_THEME = "colorTheme"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
     const val FEED_COLUMNS = "feedColumns"
@@ -118,6 +122,7 @@ internal fun settingsGroups(
                     options = AppThemeMode.entries.map { it.label },
                     selected = settings.themeMode.ordinal,
                 ),
+                colorThemeChoice(settings.colorTheme),
                 toggle(SettingIds.AMOLED, "True black", settings.amoled),
                 feedColumns(settings, formFactor),
                 catalogColumns(settings, formFactor),
@@ -238,3 +243,13 @@ private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar
 /** Where the privacy policy and the contact address live: the project's own repository. */
 internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
 internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin/issues"
+
+private fun colorThemeChoice(theme: AppColorTheme) =
+    SettingItem(
+        id = SettingIds.COLOR_THEME,
+        label = "Color theme",
+        value = theme.label,
+        kind = SettingKind.CHOICE,
+        options = AppColorTheme.entries.map { it.label },
+        selected = theme.ordinal,
+    )

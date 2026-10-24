@@ -21,7 +21,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.materialPalette
+import com.orbin.uinext.colorThemePalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.launch
 
@@ -98,9 +98,7 @@ internal fun AppContent(
     // do not pay a second MaterialTheme. Reachable destinations draw through NextTheme; nested
     // Material sliders / snackbars / pull-to-refresh were replaced with Next controls, so the
     // MaterialOrbinTheme adapter is gone.
-    // One palette. Light, dark or the system decides, with true black as the only variation;
-    // text follows the system font size.
-    val nextPalette = materialPalette(settings.themeMode.isDark(), settings.amoled)
+    val nextPalette = colorThemePalette(settings.colorTheme, settings.themeMode.isDark(), settings.amoled)
     NextTheme(
         darkTheme = nextPalette.dark,
         amoled = nextPalette.amoled,

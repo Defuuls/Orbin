@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.compose.ui.graphics.Color
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.orbin.core.model.AppColorTheme
 import org.junit.Test
 import kotlin.math.pow
 
@@ -20,6 +21,43 @@ import kotlin.math.pow
  * make out, and holding a hairline to 4.5:1 would draw a rule far heavier than the design wants.
  */
 class PaletteContrastTest {
+    @Test
+    fun `general colors cover text controls selection and Material errors in every mode`() {
+        AppColorTheme.entries.filter { it != AppColorTheme.ORBIN }.forEach { theme ->
+            listOf(false, true).forEach { dark ->
+                listOf(false, true).forEach { amoled ->
+                    val palette = colorThemePalette(theme, dark, amoled)
+                    val name = "$theme dark=$dark amoled=$amoled"
+                    assertSurfaceText(palette, name)
+                    assertRatio("$name filled", palette.onAccent, palette.accent)
+                    assertRatio("$name selected", palette.onAccentContainer, palette.accentContainer)
+                    val material = materialColorScheme(palette, palette.dark, palette.amoled)
+                    assertRatio("$name error", material.error, material.surface)
+                    assertRatio("$name onError", material.onError, material.error)
+                    assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
+                    assertThat(palette.dark).isEqualTo(
+                        when (theme) {
+                            AppColorTheme.WHITE -> false
+                            AppColorTheme.BLACK -> true
+                            else -> dark
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `registry preserves defaults and has no duplicate palettes`() {
+        listOf(false, true).forEach { dark ->
+            assertThat(colorThemePalette(AppColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
+            val palettes = AppColorTheme.entries.map { colorThemePalette(it, dark) }
+            assertThat(palettes.distinct()).hasSize(AppColorTheme.entries.size)
+        }
+        assertThat(colorThemePalette(AppColorTheme.BLACK, false).background).isEqualTo(Color.Black)
+        assertThat(colorThemePalette(AppColorTheme.WHITE, true, true).background).isEqualTo(Color.White)
+    }
+
     @Test
     fun `every text colour clears AA on the light ground`() = assertPalette(LightPalette, "light")
 
@@ -77,6 +115,17 @@ class PaletteContrastTest {
             assertThat(index).isAtLeast(0)
             assertThat(index).isLessThan(BoardHues.size)
             assertThat(boardHueIndex(board)).isEqualTo(index)
+        }
+    }
+
+    private fun assertSurfaceText(
+        palette: NextPalette,
+        name: String,
+    ) {
+        listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
+            listOf(palette.ink, palette.muted, palette.faint, palette.accent).forEach { text ->
+                assertRatio(name, text, ground)
+            }
         }
     }
 

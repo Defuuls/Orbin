@@ -3,6 +3,7 @@
     <!-- Preferences -->
     <string name="settings_hide_nsfw">Hide NSFW boards</string>
     <string name="settings_cover_violent">Cover violent media</string>
+    <string name="settings_color_theme">Color theme</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_feed_columns">Feed columns</string>
     <string name="settings_feed_columns_unfolded">Feed columns when unfolded</string>

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.testing.repository.FakeAppUpdater
@@ -75,6 +76,16 @@ class SettingsUserJourneyTest {
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.LIGHT)
         choose("Theme", "System")
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
+    }
+
+    @Test
+    fun everyColorCanBePickedWithoutChangingTheBrightnessPreference() {
+        launch()
+        AppColorTheme.entries.forEach { theme ->
+            choose("Color theme", theme.label)
+            assertThat(settings.current.colorTheme).isEqualTo(theme)
+            assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
+        }
     }
 
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
