@@ -9,7 +9,8 @@ import javax.crypto.SecretKey
 
 /**
  * Backs the app-lock unlock gate with an Android Keystore key that requires a fresh
- * BIOMETRIC_STRONG authentication for every use (no grace period). A `BiometricPrompt` success
+ * authentication for every use (no grace period): a strong biometric, or the device's screen
+ * lock as the backup. A `BiometricPrompt` success
  * callback alone only proves the callback fired, which instrumentation that bypasses the real
  * sensor can also trigger. Requiring the returned `CryptoObject`'s cipher to complete a real
  * Keystore-backed [Cipher.doFinal] call ties "unlocked" to an operation the TEE/StrongBox itself
@@ -17,7 +18,10 @@ import javax.crypto.SecretKey
  */
 internal object AppLockCrypto {
     private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-    private const val KEY_ALIAS = "orbin_app_lock_key"
+    private const val KEY_ALIAS = "orbin_app_lock_key_v2"
+
+    // The key before the screen-lock backup: it accepts only a biometric, so it is replaced.
+    private const val BIOMETRIC_ONLY_KEY_ALIAS = "orbin_app_lock_key"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val REQUIRE_AUTH_PER_USE_SECONDS = 0
     private val GATE_PLAINTEXT = "orbin-app-lock-gate".toByteArray()
@@ -41,6 +45,7 @@ internal object AppLockCrypto {
 
     private fun getOrCreateKey(): SecretKey {
         val store = keyStore()
+        if (store.containsAlias(BIOMETRIC_ONLY_KEY_ALIAS)) runCatching { store.deleteEntry(BIOMETRIC_ONLY_KEY_ALIAS) }
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
@@ -50,8 +55,10 @@ internal object AppLockCrypto {
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setUserAuthenticationRequired(true)
-                .setUserAuthenticationParameters(REQUIRE_AUTH_PER_USE_SECONDS, KeyProperties.AUTH_BIOMETRIC_STRONG)
-                .setInvalidatedByBiometricEnrollment(true)
+                .setUserAuthenticationParameters(
+                    REQUIRE_AUTH_PER_USE_SECONDS,
+                    KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL,
+                ).setInvalidatedByBiometricEnrollment(true)
                 .build(),
         )
         return generator.generateKey()

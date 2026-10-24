@@ -21,10 +21,9 @@
     <string name="downgrade_blocked_close">Close</string>
 
     <!-- App lock. -->
-    <string name="lock_biometric_unavailable">Biometric authentication is required but not available. Please enroll a biometric or reconfigure app lock in Settings.</string>
+    <string name="lock_biometric_unavailable">App lock needs a screen lock or a fingerprint or face unlock on this device. Set one up in your device settings, or turn off app lock in Settings.</string>
     <string name="lock_prompt_title">Unlock Orbin</string>
-    <string name="lock_prompt_subtitle">Use fingerprint or face unlock</string>
-    <string name="lock_prompt_cancel">Cancel</string>
+    <string name="lock_prompt_subtitle">Use fingerprint, face unlock or your screen lock</string>
     <string name="lock_error_canceled">Unlock was canceled. Try again.</string>
     <string name="lock_error_not_recognized">Authentication was not recognized. Try again.</string>
     <string name="lock_error_timeout">Unlock timed out. Try again.</string>

@@ -329,10 +329,11 @@ class MainActivity : FragmentActivity() {
         authenticationInProgress = true
         val session = ++authenticationSession
 
-        // Require biometric authentication with KeyStore-backed cryptography.
-        // Device credential fallback is not used to ensure all authentication paths
-        // use cryptographic verification to prevent bypass via hooking tools.
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
+        // A strong biometric, or the device's own PIN, pattern or password as the backup when
+        // there is no biometric or it is not recognised. Both go through the Keystore-backed
+        // cipher below, so neither path unlocks on the prompt's callback alone.
+        val authenticators =
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
         val canAuthenticate = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
             finishAuthentication(session)
@@ -408,8 +409,8 @@ class MainActivity : FragmentActivity() {
                 .Builder()
                 .setTitle(getString(R.string.lock_prompt_title))
                 .setSubtitle(getString(R.string.lock_prompt_subtitle))
+                // The system adds "Use PIN" itself; a cancel button is not allowed with it.
                 .setAllowedAuthenticators(authenticators)
-                .setNegativeButtonText(getString(R.string.lock_prompt_cancel))
                 .build()
 
         runCatching { prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher)) }
