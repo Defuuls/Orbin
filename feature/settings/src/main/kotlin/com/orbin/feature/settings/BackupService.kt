@@ -109,6 +109,7 @@ class BackupService
                 setCoverViolentMedia(settings.coverViolentMedia)
                 setDeepMediaScan(settings.deepMediaScan)
                 setThemeMode(settings.themeMode)
+                setColorTheme(settings.colorTheme)
                 setAmoled(settings.amoled)
                 setFeedColumns(FormFactor.FOLDABLE, settings.unfoldedFeedColumns)
                 setFeedColumns(FormFactor.TABLET, settings.tabletFeedColumns)

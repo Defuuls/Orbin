@@ -1,6 +1,7 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -37,6 +38,7 @@ class BackupServiceTest {
         AppSettings(
             hideNsfwBoards = true,
             themeMode = AppThemeMode.DARK,
+            colorTheme = AppColorTheme.TEAL,
             amoled = true,
             biometricLockEnabled = true,
             onboardingCompleted = true,

@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -124,6 +125,8 @@ class FakeSettings : SettingsRepository {
         settings.update { it.copy(coverViolentMedia = enabled) }
 
     override suspend fun setDeepMediaScan(enabled: Boolean) = settings.update { it.copy(deepMediaScan = enabled) }
+
+    override suspend fun setColorTheme(theme: AppColorTheme) = settings.update { it.copy(colorTheme = theme) }
 
     override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }
 

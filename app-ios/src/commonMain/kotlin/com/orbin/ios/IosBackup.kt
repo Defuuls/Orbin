@@ -208,6 +208,8 @@ class IosBackup(
             requireAuthorization()
             setThemeMode(restored.themeMode)
             requireAuthorization()
+            setColorTheme(restored.colorTheme)
+            requireAuthorization()
             setAmoled(restored.amoled)
             requireAuthorization()
             setFeedColumns(FormFactor.FOLDABLE, restored.unfoldedFeedColumns)

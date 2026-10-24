@@ -1,5 +1,6 @@
 package com.orbin.feature.settings
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -119,6 +120,14 @@ private class Rows(
             settings.themeMode,
             Enum<*>::titleCase,
             vm::setThemeMode,
+        ),
+        choice(
+            "colorTheme",
+            strings.get(R.string.settings_color_theme),
+            AppColorTheme.entries,
+            settings.colorTheme,
+            AppColorTheme::label,
+            vm::setColorTheme,
         ),
         feedColumns(settings, vm, formFactor),
         catalogColumns(settings, vm, formFactor),

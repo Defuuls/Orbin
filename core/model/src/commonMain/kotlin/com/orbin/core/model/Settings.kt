@@ -105,6 +105,7 @@ data class AppSettings(
      */
     val deepMediaScan: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    val colorTheme: AppColorTheme = AppColorTheme.ORBIN,
     val amoled: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val activeProviderId: String = "",

@@ -21,6 +21,43 @@ import kotlin.math.pow
  */
 class PaletteContrastTest {
     @Test
+    fun `general colors cover text controls selection and Material errors in every mode`() {
+        NextColorTheme.entries.filter { it != NextColorTheme.ORBIN }.forEach { theme ->
+            listOf(false, true).forEach { dark ->
+                listOf(false, true).forEach { amoled ->
+                    val palette = colorThemePalette(theme, dark, amoled)
+                    val name = "$theme dark=$dark amoled=$amoled"
+                    assertSurfaceText(palette, name)
+                    assertRatio("$name filled", palette.onAccent, palette.accent)
+                    assertRatio("$name selected", palette.onAccentContainer, palette.accentContainer)
+                    val material = materialColorScheme(palette, palette.dark, palette.amoled)
+                    assertRatio("$name error", material.error, material.surface)
+                    assertRatio("$name onError", material.onError, material.error)
+                    assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
+                    assertThat(palette.dark).isEqualTo(
+                        when (theme) {
+                            NextColorTheme.WHITE -> false
+                            NextColorTheme.BLACK -> true
+                            else -> dark
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `registry preserves defaults and has no duplicate palettes`() {
+        listOf(false, true).forEach { dark ->
+            assertThat(colorThemePalette(NextColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
+            val palettes = NextColorTheme.entries.map { colorThemePalette(it, dark) }
+            assertThat(palettes.distinct()).hasSize(NextColorTheme.entries.size)
+        }
+        assertThat(colorThemePalette(NextColorTheme.BLACK, false).background).isEqualTo(Color.Black)
+        assertThat(colorThemePalette(NextColorTheme.WHITE, true, true).background).isEqualTo(Color.White)
+    }
+
+    @Test
     fun `every text colour clears AA on the light ground`() = assertPalette(LightPalette, "light")
 
     @Test
@@ -77,6 +114,17 @@ class PaletteContrastTest {
             assertThat(index).isAtLeast(0)
             assertThat(index).isLessThan(BoardHues.size)
             assertThat(boardHueIndex(board)).isEqualTo(index)
+        }
+    }
+
+    private fun assertSurfaceText(
+        palette: NextPalette,
+        name: String,
+    ) {
+        listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
+            listOf(palette.ink, palette.muted, palette.faint, palette.accent).forEach { text ->
+                assertRatio(name, text, ground)
+            }
         }
     }
 

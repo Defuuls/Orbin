@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DEFAULT_TABLET_CATALOG_COLUMNS
@@ -40,6 +41,10 @@ class SettingsStore(
 
     override suspend fun setDeepMediaScan(enabled: Boolean) {
         edit { it[Keys.deepMediaScan] = enabled }
+    }
+
+    override suspend fun setColorTheme(theme: AppColorTheme) {
+        edit { it[Keys.colorTheme] = theme.name }
     }
 
     override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -91,6 +96,7 @@ class SettingsStore(
             coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
             themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
+            colorTheme = AppColorTheme.entries.firstOrNull { it.name == this[Keys.colorTheme] } ?: AppColorTheme.ORBIN,
             amoled = this[Keys.amoled] ?: false,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
             activeProviderId = this[Keys.activeProviderId] ?: "",
@@ -104,6 +110,7 @@ class SettingsStore(
         val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
         val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
         val deepMediaScan = booleanPreferencesKey("deep_media_scan")
+        val colorTheme = stringPreferencesKey("color_theme")
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")
         val biometricLock = booleanPreferencesKey("biometric_lock")

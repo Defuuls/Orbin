@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.NextColorTheme
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -30,6 +32,7 @@ import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
+import com.orbin.uinext.colorThemePalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.flow.map
 
@@ -67,14 +70,17 @@ fun OrbinApp(
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
     val fontScale = rememberSystemFontScale()
+    val dark =
+        when (settings.themeMode) {
+            AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+            AppThemeMode.LIGHT -> false
+            AppThemeMode.DARK -> true
+        }
+    val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
     NextTheme(
-        darkTheme =
-            when (settings.themeMode) {
-                AppThemeMode.SYSTEM -> null
-                AppThemeMode.LIGHT -> false
-                AppThemeMode.DARK -> true
-            },
-        amoled = settings.amoled,
+        darkTheme = palette.dark,
+        amoled = palette.amoled,
+        palette = palette,
         fontScale = fontScale,
         platform = NextPlatform.IOS,
     ) {

@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
@@ -69,6 +70,7 @@ class IosBackupTest {
         runTest {
             val from = Stores()
             from.settings.setThemeMode(AppThemeMode.DARK)
+            from.settings.setColorTheme(AppColorTheme.PURPLE)
             from.settings.setCoverViolentMedia(false)
             from.settings.setBiometricLockEnabled(true)
             from.boards.setSubscribedBoard(site, BoardId("g"), true)
@@ -84,6 +86,7 @@ class IosBackupTest {
             assertEquals(1 to 1, result)
             val settings = to.settings.settings.first()
             assertEquals(AppThemeMode.DARK, settings.themeMode)
+            assertEquals(AppColorTheme.PURPLE, settings.colorTheme)
             assertFalse(settings.coverViolentMedia)
             assertFalse(settings.biometricLockEnabled, "a backup must not change the app lock")
             assertEquals(setOf(BoardId("g")), to.boards.observeSubscribedBoards(site).first())

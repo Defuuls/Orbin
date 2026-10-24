@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -107,6 +108,8 @@ class SettingsViewModel
         ) = update { repository.setFeedColumns(formFactor, columns) }
 
         fun setTabletCatalogColumns(columns: Int) = update { repository.setTabletCatalogColumns(columns) }
+
+        fun setColorTheme(theme: AppColorTheme) = update { repository.setColorTheme(theme) }
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
