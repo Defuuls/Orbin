@@ -28,6 +28,7 @@ import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.duration
+import platform.AVFoundation.muted
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVFoundation.rate
@@ -58,7 +59,11 @@ internal actual fun NativePlayer(
     loop: Boolean,
     modifier: Modifier,
 ) {
-    val player = remember(url) { NSURL.URLWithString(url)?.let { AVPlayer(uRL = it) } } ?: return
+    val player =
+        remember(url) {
+            NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = SessionAudio.muted } }
+        } ?: return
+    var muted by remember(player) { mutableStateOf(player.muted) }
     val controller =
         remember(player) {
             AVPlayerViewController().apply {
@@ -89,6 +94,9 @@ internal actual fun NativePlayer(
     }
     LaunchedEffect(player, active) {
         if (active) {
+            // A neighbouring page may have been composed before the last audio choice.
+            muted = SessionAudio.muted
+            player.muted = muted
             // Plays with the ringer switch on silent, as video in Safari and Photos does.
             AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback, error = null)
             player.play()
@@ -111,8 +119,12 @@ internal actual fun NativePlayer(
     Box(modifier) {
         UIKitViewController(factory = { controller }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
         VideoControls(
-            state = state,
+            state = state.copy(muted = muted),
             onTogglePlay = { if (player.rate > 0f) player.pause() else player.play() },
+            onToggleMute = {
+                muted = SessionAudio.toggle(muted)
+                player.muted = muted
+            },
             onSeekTo = { target ->
                 player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
             },
@@ -146,6 +158,8 @@ internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
 ) {
+    var muted by remember(url) { mutableStateOf(SessionAudio.muted) }
+    val currentMuted = rememberUpdatedState(muted)
     val webView =
         remember(url) {
             val configuration =
@@ -165,7 +179,8 @@ internal actual fun NativeWebMPlayer(
                         "<style>html,body{margin:0;width:100%;height:100%;" +
                         "background:#000;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
-                        "</head><body><video id=\"v\" src=\"${url.escapeHtmlAttribute()}\" autoplay loop playsinline>" +
+                        "</head><body><video id=\"v\" src=\"${url.escapeHtmlAttribute()}\" " +
+                        "autoplay ${if (muted) "muted" else ""} loop playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
@@ -173,7 +188,7 @@ internal actual fun NativeWebMPlayer(
     var state by remember(webView) { mutableStateOf(VideoState()) }
     LaunchedEffect(webView) {
         while (true) {
-            webView.script(WEBM_STATE_SCRIPT)?.let(::parseWebMState)?.let { state = it }
+            webView.script(webMStateScript(currentMuted.value))?.let(::parseWebMState)?.let { state = it }
             delay(CONTROLS_REFRESH_MS)
         }
     }
@@ -187,7 +202,11 @@ internal actual fun NativeWebMPlayer(
     Box(modifier) {
         UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
         VideoControls(
-            state = state,
+            state = state.copy(muted = muted),
+            onToggleMute = {
+                muted = SessionAudio.toggle(muted)
+                webView.evaluateJavaScript(webMStateScript(muted), null)
+            },
             onTogglePlay = {
                 webView.evaluateJavaScript(
                     "var v=document.getElementById('v');v.paused?v.play():v.pause()",
@@ -207,10 +226,6 @@ private suspend fun WKWebView.script(script: String): String? =
     suspendCancellableCoroutine { continuation ->
         evaluateJavaScript(script) { result, _ -> continuation.resume(result as? String) }
     }
-
-private const val WEBM_STATE_SCRIPT =
-    "(function(){var v=document.getElementById('v');if(!v)return null;" +
-        "return (v.paused?'0':'1')+','+v.currentTime+','+v.duration})()"
 
 /** Muted inline preview for a catalog video; the thumbnail remains visible underneath until loaded. */
 @OptIn(ExperimentalForeignApi::class)

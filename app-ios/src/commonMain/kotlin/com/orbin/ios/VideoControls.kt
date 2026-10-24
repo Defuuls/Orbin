@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -23,12 +26,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_media_mute
 import com.orbin.ios.resources.ios_media_play_video
+import com.orbin.ios.resources.ios_media_unmute
 import org.jetbrains.compose.resources.stringResource
 
 /** What the video on screen is doing, for [VideoControls]. Times are in seconds; 0 while unknown. */
 internal data class VideoState(
     val playing: Boolean = false,
+    val muted: Boolean = true,
     val position: Double = 0.0,
     val duration: Double = 0.0,
 )
@@ -42,6 +48,7 @@ internal data class VideoState(
 internal fun VideoControls(
     state: VideoState,
     onTogglePlay: () -> Unit,
+    onToggleMute: () -> Unit,
     onSeekTo: (Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -69,6 +76,25 @@ internal fun VideoControls(
                         .size(PLAY_SIZE)
                         .background(Color.Black.copy(alpha = SCRIM), CircleShape)
                         .padding(12.dp),
+            )
+        }
+        IconButton(
+            onClick = onToggleMute,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 12.dp, bottom = 56.dp)
+                    .size(48.dp)
+                    .background(Color.Black.copy(alpha = SCRIM), CircleShape),
+        ) {
+            Icon(
+                imageVector =
+                    if (state.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                contentDescription =
+                    stringResource(
+                        if (state.muted) Res.string.ios_media_unmute else Res.string.ios_media_mute,
+                    ),
+                tint = Color.White,
             )
         }
         if (state.duration > 0.0) {
@@ -106,15 +132,32 @@ internal fun clock(seconds: Double): String {
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
-/** "playing,position,duration" as the WebM page's state script reports it, or null if the page is not ready. */
+/** "playing,position,duration,muted" as the WebM page's state script reports it, or null if the page is not ready. */
 internal fun parseWebMState(text: String): VideoState? {
-    val (playing, positionText, durationText) = text.split(',').takeIf { it.size == WEBM_STATE_FIELDS } ?: return null
-    val position = positionText.toDoubleOrNull() ?: return null
+    val fields =
+        text.split(',').takeIf { it.size == WEBM_STATE_FIELDS }
+            ?: return null
+    val (playing, positionText, durationText) = fields
+    val muted = fields.last()
+    if (playing !in listOf("0", "1") || muted !in listOf("0", "1")) return null
+    val position = positionText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: return null
     val duration = durationText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: 0.0
-    return VideoState(playing = playing == "1", position = position, duration = duration)
+    return VideoState(playing = playing == "1", muted = muted == "1", position = position, duration = duration)
 }
 
-private const val WEBM_STATE_FIELDS = 3
+/** Last viewer audio choice for this process; inline previews never use or change it. */
+internal object SessionAudio {
+    var muted: Boolean = true
+
+    fun toggle(current: Boolean): Boolean = (!current).also { muted = it }
+}
+
+/** Apply the latest choice even if a toggle happened before the WebKit page finished loading. */
+internal fun webMStateScript(muted: Boolean): String =
+    "(function(){var v=document.getElementById('v');if(!v)return null;v.muted=$muted;" +
+        "return (v.paused?'0':'1')+','+v.currentTime+','+v.duration+','+(v.muted?'1':'0')})()"
+
+private const val WEBM_STATE_FIELDS = 4
 private const val SKIP_SECONDS = 10.0
 private const val SECONDS_PER_MINUTE = 60
 private const val SCRIM = 0.4f

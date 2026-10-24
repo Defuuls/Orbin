@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- iOS: full-screen native and WebM videos now have an accessible mute/unmute button, defaulting to muted and remembering the last audio choice for the app session.
+
 ## [175-Oca] - 2026-10-24
 
 ### Fixed
