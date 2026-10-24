@@ -40,4 +40,6 @@
     <string name="ios_safe_mode_reset_confirm">Reset</string>
     <string name="ios_safe_mode_cancel">Cancel</string>
     <string name="ios_safe_mode_no_details">No crash details were recorded.</string>
+    <string name="ios_media_mute">Mute</string>
+    <string name="ios_media_unmute">Unmute</string>
 </resources>
