@@ -203,12 +203,17 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
 
     private fun readBytes(url: NSURL): ByteArray {
         val data = NSData.dataWithContentsOfURL(url) ?: error("Could not read completed download")
-        val bytes = ByteArray(data.length.toInt())
-        if (bytes.isNotEmpty()) {
-            bytes.usePinned { data.getBytes(it.addressOf(0), data.length) }
-        }
-        return bytes
+        return data.toDownloadedMediaBytes()
     }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun NSData.toDownloadedMediaBytes(): ByteArray {
+    val bytes = ByteArray(checkedMediaByteCount(length))
+    if (bytes.isNotEmpty()) {
+        bytes.usePinned { getBytes(it.addressOf(0), bytes.size.toULong()) }
+    }
+    return bytes
 }
 
 /** Called by the Swift app delegate before the system delivers background URLSession events. */

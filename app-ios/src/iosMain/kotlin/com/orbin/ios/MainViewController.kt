@@ -110,6 +110,13 @@ private fun startApp(): StartedApp {
             graph.scope,
             durableFetch = IosBackgroundMediaFetch,
         )
+    val lock =
+        AppLock(
+            graph.settingsStore.settings,
+            graph.settingsStore::setBiometricLockEnabled,
+            DeviceOwnerAuthenticator(),
+            graph.scope,
+        )
     // Export and import in Android's backup format, through the system share sheet and file picker.
     val backup =
         IosBackup(
@@ -120,13 +127,7 @@ private fun startApp(): StartedApp {
             files = DeviceBackupFiles(),
             scope = graph.scope,
             appVersion = graph.appVersion,
-        )
-    val lock =
-        AppLock(
-            graph.settingsStore.settings,
-            graph.settingsStore::setBiometricLockEnabled,
-            DeviceOwnerAuthenticator(),
-            graph.scope,
+            isAuthorized = { !lock.state.value.locked && !lock.state.value.obscured },
         )
     graph.notifier.attachNavigation(browser::openThread)
 
@@ -141,6 +142,7 @@ private fun startApp(): StartedApp {
     }
     observe(UIApplicationDidEnterBackgroundNotification) {
         lock.onBackground()
+        if (lock.state.value.locked) backup.cancelPending()
         // Leaving the app is when a background refresh is worth asking for.
         scheduleBackgroundRefresh()
     }

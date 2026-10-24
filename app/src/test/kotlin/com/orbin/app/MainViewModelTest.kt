@@ -24,6 +24,16 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
     @Test
+    fun `an enabled lock is independent of imported onboarding state`() {
+        for (onboarding in listOf(false, true)) {
+            val settings = AppSettings(biometricLockEnabled = true, onboardingCompleted = onboarding)
+            assertThat(MainUiState(settings, ready = true).shouldLock).isTrue()
+            assertThat(MainUiState(settings, ready = false).shouldLock).isFalse()
+            assertThat(MainUiState(settings.copy(biometricLockEnabled = false), ready = true).shouldLock).isFalse()
+        }
+    }
+
+    @Test
     fun `readiness is never emitted with the default unlocked policy`() =
         runTest {
             Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))

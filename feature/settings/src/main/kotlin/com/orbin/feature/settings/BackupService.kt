@@ -117,7 +117,7 @@ class BackupService
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }
                 // Skip onboarding for a restored install — the user has already been through it.
-                setOnboardingCompleted(settings.onboardingCompleted)
+                setOnboardingCompleted(true)
                 // Security-sensitive settings are deliberately local to this install. httpsOnly has
                 // no setter and is always enforced; biometricLockEnabled is never restored so an
                 // imported backup cannot weaken (or unexpectedly enable) the current app-lock policy.

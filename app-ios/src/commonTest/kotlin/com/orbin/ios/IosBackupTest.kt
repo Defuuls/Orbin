@@ -7,14 +7,20 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class IosBackupTest {
     private val site = ProviderId("site")
     private val gone = ProviderId("gone")
@@ -45,6 +51,7 @@ class IosBackupTest {
         stores: Stores,
         files: BackupFiles = Files(),
         providers: List<ProviderId> = listOf(site),
+        isAuthorized: () -> Boolean = { true },
     ) = IosBackup(
         settings = stores.settings,
         boardPreferences = stores.boards,
@@ -53,6 +60,7 @@ class IosBackupTest {
         files = files,
         scope = backgroundScope,
         appVersion = "155",
+        isAuthorized = isAuthorized,
         now = { "2026-09-26T12:00:00Z" },
     )
 
@@ -137,5 +145,104 @@ class IosBackupTest {
             val cancelled = backup(Stores(), Files(picked = null))
             cancelled.import()
             assertIs<BackupState.Idle>(cancelled.state.first { it != BackupState.Working })
+        }
+
+    @Test
+    fun relockingCancelsThePendingSheetAndAllowsANewOperation() =
+        runTest {
+            var dismissed = false
+            var opens = 0
+            var authorized = true
+            val files =
+                object : BackupFiles {
+                    override suspend fun share(
+                        fileName: String,
+                        contents: String,
+                    ): Boolean {
+                        opens++
+                        return suspendCancellableCoroutine { continuation ->
+                            continuation.invokeOnCancellation { dismissed = true }
+                        }
+                    }
+
+                    override suspend fun pick(): String? = null
+                }
+            val backup = backup(Stores(), files, isAuthorized = { authorized })
+            backup.export()
+            runCurrent()
+            assertEquals(1, opens)
+            authorized = false
+            backup.cancelPending()
+            runCurrent()
+            assertTrue(dismissed)
+            assertIs<BackupState.Idle>(backup.state.value)
+
+            backup.export()
+            runCurrent()
+            assertEquals(1, opens, "locked calls must not present a sheet")
+            authorized = true
+            backup.export()
+            runCurrent()
+            assertEquals(2, opens)
+            backup.cancelPending()
+        }
+
+    @Test
+    fun aLatePickerCallbackAfterRelockAndUnlockCannotRestoreData() =
+        runTest {
+            var selected: Continuation<String?>? = null
+            val files =
+                object : BackupFiles {
+                    override suspend fun share(
+                        fileName: String,
+                        contents: String,
+                    ): Boolean = false
+
+                    override suspend fun pick(): String? = suspendCoroutine { selected = it }
+                }
+            val from = Stores()
+            from.settings.setThemeMode(AppThemeMode.DARK)
+            val json = backup(from).exportToJson()
+            val to = Stores()
+            val before = to.settings.settings.first()
+            var authorized = true
+            val backup = backup(to, files, isAuthorized = { authorized })
+            backup.import()
+            runCurrent()
+            authorized = false
+            backup.cancelPending()
+            authorized = true
+            selected!!.resume(json)
+            runCurrent()
+            assertEquals(before, to.settings.settings.first())
+            assertIs<BackupState.Idle>(backup.state.value)
+        }
+
+    @Test
+    fun lossOfAuthorizationAtPickerCompletionRejectsTheRestore() =
+        runTest {
+            val from = Stores()
+            from.settings.setThemeMode(AppThemeMode.DARK)
+            val json = backup(from).exportToJson()
+            var authorized = true
+            val files =
+                object : BackupFiles {
+                    override suspend fun share(
+                        fileName: String,
+                        contents: String,
+                    ): Boolean = false
+
+                    override suspend fun pick(): String {
+                        authorized = false
+                        return json
+                    }
+                }
+            val to = Stores()
+            val before = to.settings.settings.first()
+            val backup = backup(to, files, isAuthorized = { authorized })
+            backup.import()
+            runCurrent()
+            assertIs<BackupState.Failed>(backup.state.value)
+            assertEquals(before, to.settings.settings.first())
         }
 }

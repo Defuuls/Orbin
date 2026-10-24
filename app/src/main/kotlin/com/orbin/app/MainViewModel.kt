@@ -67,4 +67,7 @@ class MainViewModel
 data class MainUiState(
     val settings: AppSettings = AppSettings.Default,
     val ready: Boolean = false,
-)
+) {
+    // Onboarding can come from a backup; it must never disable the local authentication policy.
+    val shouldLock: Boolean get() = ready && settings.biometricLockEnabled
+}
