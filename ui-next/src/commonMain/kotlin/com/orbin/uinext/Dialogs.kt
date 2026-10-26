@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -90,9 +91,9 @@ fun NextConfirmDialog(
     }
 }
 
-/** System red for irreversible actions — same hue as [DestructiveConfirm] trailing labels. */
+/** Accessible error color shared by destructive labels and confirmation buttons. */
 val nextDestructiveRed: Color
-    @Composable get() = if (next.dark) Color(0xFFFF453A) else Color(0xFFFF3B30)
+    @Composable get() = MaterialTheme.colorScheme.error
 
 @Composable
 private fun DestructiveConfirm(
@@ -113,7 +114,7 @@ private fun DestructiveConfirm(
             text = label,
             style = NextType.footnote,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onError,
             modifier =
                 Modifier
                     .clip(shape)
