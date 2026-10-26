@@ -10,6 +10,7 @@ import kotlinx.cinterop.useContents
 import platform.AVFoundation.AVURLAsset
 import platform.AVFoundation.asset
 import platform.AVFoundation.currentItem
+import platform.AVFoundation.muted
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSDate
@@ -22,8 +23,10 @@ import platform.UIKit.UIWindow
 import platform.UIKit.childViewControllers
 import platform.WebKit.WKWebView
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** Native host tests: these check attachment and layout, not decoded video pixels. */
@@ -42,14 +45,20 @@ class PlayerHostTest {
             repeat(3) {
                 await { root.players().size == 1 }
                 val host = root.players().single()
-                await { host.player?.currentItem != null }
+                await {
+                    val asset = host.player?.currentItem?.asset as? AVURLAsset
+                    asset?.URL?.absoluteString == url.value
+                }
                 val previousPlayer = host.player
+                SessionAudio.muted = !SessionAudio.muted
                 url.value = if (url.value == FIRST_URL) SECOND_URL else FIRST_URL
                 await {
                     val asset = host.player?.currentItem?.asset as? AVURLAsset
                     asset?.URL?.absoluteString == url.value
                 }
+                assertSame(host, root.players().single(), "URL replacement updates the mounted host")
                 assertNotSame(previousPlayer, host.player)
+                assertEquals(SessionAudio.muted, host.player?.muted, "replacement keeps the session audio choice")
                 await { host.view.bounds.useContents { size.width > 0 && size.height > 0 } }
 
                 // Navigation away and the app's background lock both remove the composition.
@@ -97,6 +106,7 @@ class PlayerHostTest {
         root: UIViewController,
         block: () -> Unit,
     ) {
+        val originalMute = SessionAudio.muted
         val window = UIWindow(frame = CGRectMake(0.0, 0.0, 390.0, 844.0))
         window.rootViewController = root
         window.makeKeyAndVisible()
@@ -105,6 +115,7 @@ class PlayerHostTest {
         } finally {
             window.hidden = true
             window.rootViewController = null
+            SessionAudio.muted = originalMute
         }
     }
 
