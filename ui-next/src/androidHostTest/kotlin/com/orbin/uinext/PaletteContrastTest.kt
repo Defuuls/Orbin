@@ -50,27 +50,22 @@ class PaletteContrastTest {
                     assertRatio("$name error", material.error, material.surface)
                     assertRatio("$name onError", material.onError, material.error)
                     assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
-                    assertThat(palette.dark).isEqualTo(
-                        when (theme) {
-                            NextColorTheme.WHITE -> false
-                            NextColorTheme.BLACK -> true
-                            else -> dark
-                        },
-                    )
+                    assertThat(palette.dark).isEqualTo(dark)
                 }
             }
         }
     }
 
     @Test
-    fun `registry preserves defaults and has no duplicate palettes`() {
+    fun `registry preserves defaults and monochrome accents`() {
         listOf(false, true).forEach { dark ->
             assertThat(colorThemePalette(NextColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
             val palettes = NextColorTheme.entries.map { colorThemePalette(it, dark) }
-            assertThat(palettes.distinct()).hasSize(NextColorTheme.entries.size)
+            // White and Black are persisted choices for the same monochrome accent family.
+            assertThat(palettes.distinct()).hasSize(NextColorTheme.entries.size - 1)
         }
-        assertThat(colorThemePalette(NextColorTheme.BLACK, false).background).isEqualTo(Color.Black)
-        assertThat(colorThemePalette(NextColorTheme.WHITE, true, true).background).isEqualTo(Color.White)
+        assertThat(colorThemePalette(NextColorTheme.BLACK, false).background).isEqualTo(Color.White)
+        assertThat(colorThemePalette(NextColorTheme.WHITE, true, true).background).isEqualTo(Color.Black)
     }
 
     @Test

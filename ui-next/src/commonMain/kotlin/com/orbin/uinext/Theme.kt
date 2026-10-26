@@ -106,8 +106,8 @@ fun NextTheme(
         return
     }
 
-    val dark = darkTheme ?: inherited?.dark ?: isSystemInDarkTheme()
-    val black = amoled ?: (inherited?.amoled ?: false)
+    val dark = darkTheme ?: palette?.dark ?: inherited?.dark ?: isSystemInDarkTheme()
+    val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale
 
     val fallbackPalette =
@@ -121,9 +121,14 @@ fun NextTheme(
     // baseline purple, which is where stray purple bars and buttons came from.
     val m3Scheme = materialColorScheme(fallbackPalette, dark, black)
 
-    // Derive the NextPalette from the M3 scheme (dynamic color flows through here too)
+    // Explicit palettes must use the same effective ground as Material components. Otherwise
+    // an AMOLED override blackens Material backgrounds but screens reading `next` ignore it.
     val resolvedPalette =
-        palette ?: nextPaletteFromColorScheme(
+        palette?.copy(
+            background = m3Scheme.background,
+            dark = dark,
+            amoled = dark && black,
+        ) ?: nextPaletteFromColorScheme(
             colorScheme = m3Scheme,
             dark = dark,
             amoled = dark && black,
