@@ -1,25 +1,19 @@
-# Orbin 176 - Mashua
+# Orbin 177 - Yacon
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 176
-codename     = "Mashua"
-version_code = 194
+number       = 177
+codename     = "Yacon"
+version_code = 195
 
-highlight = "General-color themes on Android and iOS, plus iOS video mute controls."
+highlight = "Android and iOS launcher icons now match the README hero artwork."
 
 summary = [
-  "bump Orbin to 176-Mashua / versionCode 194",
-  "ship general-color themes, iOS video mute controls and dependency updates",
+  "bump Orbin to 177-Yacon / versionCode 195",
+  "ship matching hero aperture launcher icons on Android and iOS",
 ]
 
 [changelog]
-Added = [
-  "Android and iOS: general-color themes alongside the existing palettes.",
-  "iOS: session mute controls in the video viewer.",
-]
 Fixed = [
-  "The selected theme is announced to accessibility services, and destructive actions have higher contrast.",
-]
-Security = [
-  "Build: FreeMarker pinned to 2.3.35 for a template-loading path traversal advisory.",
+  "Android and iOS launcher icons now use the cream aperture artwork from the README hero.",
+  "Android adaptive, round and themed icons share the same mark; iOS uses an opaque icon for system-generated sizes.",
 ]
