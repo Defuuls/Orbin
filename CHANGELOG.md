@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [178-Ulluco] - 2026-10-26
+
+### Reliability
+- Added regression coverage for all palettes, System/Light/Dark modes, live True black toggles and persisted preferences.
+- Added iOS media-to-thread synchronization tests covering attachment mapping and navigation state.
+
+
 ### Fixed
 - Android and iOS: White and Black color themes now respect Theme mode and True black, preserving monochrome accents.
 - Explicit shared palettes honor True black consistently in page backgrounds and Material components.
@@ -2682,7 +2689,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...HEAD
+[178-Ulluco]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...v178-Ulluco
 [177-Yacon]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...v177-Yacon
 [176-Mashua]: https://github.com/Defuuls/Orbin/compare/v175-Oca...v176-Mashua
 [175-Oca]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...v175-Oca
