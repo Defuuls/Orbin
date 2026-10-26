@@ -70,7 +70,7 @@
     <g transform="translate(0, 520)">
         <text x="0" y="0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" fill="#3D5A80" letter-spacing="3">FEATURES</text>
         <text x="0" y="30" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Immersive edge-to-edge media</text>
-        <text x="0" y="60" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Frosted glass & floating app bars</text>
+        <text x="0" y="60" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Frosted glass &amp; floating app bars</text>
         <text x="0" y="90" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Floating bottom pill navigation</text>
         <text x="0" y="120" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Dense multi-column walls</text>
     </g>
