@@ -269,6 +269,55 @@ class BrowserTest {
         }
 
     @Test
+    fun viewerSelectionReturnsToItsOwningPostOnceWithoutChangingTheRoute() =
+        runTest {
+            val mediaThread =
+                """{"posts":[{"no":7,"time":1,"tim":70,"filename":"op","ext":".jpg"},
+                    {"no":8,"time":2},
+                    {"no":9,"time":3,"tim":90,"filename":"reply","ext":".jpg"}]}"""
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to mediaThread))
+            browser.openThread(WATCHED_KEY)
+            browser.thread.settled()
+            browser.openMedia(0)
+            val route = assertIs<Route.Media>(browser.backStack.value.last())
+
+            browser.mediaScroll.select(route, 0)
+            assertNull(browser.mediaScroll.target.value, "no swipe preserves the original offset")
+            browser.mediaScroll.select(route, 1)
+            assertEquals(WATCHED_KEY to "9", browser.mediaScroll.target.value)
+            assertEquals(route, browser.backStack.value.last(), "page changes must not change saved-state keys")
+            browser.mediaScroll.select(route, -1)
+            browser.mediaScroll.select(route, 2)
+            assertEquals(
+                WATCHED_KEY to "9",
+                browser.mediaScroll.target.value,
+                "invalid indices cannot replace the target",
+            )
+            browser.mediaScroll.select(route, 0)
+            assertEquals(WATCHED_KEY to "7", browser.mediaScroll.target.value, "swiping back updates the target too")
+            browser.mediaScroll.select(route, 1)
+
+            assertTrue(browser.back(), "both Close and edge-back use this navigation path")
+            assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
+            browser.mediaScroll.select(route, 0)
+            assertEquals(WATCHED_KEY to "9", browser.mediaScroll.target.value, "ignore a disposed viewer's callback")
+            browser.mediaScroll.consume(WATCHED_KEY to "7")
+            assertEquals(WATCHED_KEY to "9", browser.mediaScroll.target.value)
+            browser.mediaScroll.consume(WATCHED_KEY to "9")
+            assertNull(browser.mediaScroll.target.value, "later recompositions must not jump again")
+
+            browser.openMedia(0)
+            browser.mediaScroll.select(route, 1)
+            browser.back()
+            browser.openThread(WATCHED_KEY)
+            assertNull(browser.mediaScroll.target.value, "reopening a thread cannot inherit an unconsumed jump")
+            browser.openMedia(0)
+            browser.mediaScroll.select(route, 1)
+            browser.openTab(Route.Feed)
+            assertNull(browser.mediaScroll.target.value, "leaving the stack clears a pending jump")
+        }
+
+    @Test
     fun openingAThreadMarksItReadOnItsBoard() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
