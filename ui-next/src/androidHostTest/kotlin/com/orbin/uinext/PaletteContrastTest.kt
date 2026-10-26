@@ -27,9 +27,9 @@ class PaletteContrastTest {
                 listOf(false, true).forEach { amoled ->
                     val palette = colorThemePalette(theme, dark, amoled)
                     val material = materialColorScheme(palette, palette.dark, palette.amoled)
-                    listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
-                        assertRatio("$theme destructive label", material.error, ground)
-                    }
+                    assertRatio("$theme destructive label on background", material.error, palette.background)
+                    assertRatio("$theme destructive label on raised", material.error, palette.raised)
+                    assertRatio("$theme destructive label on elevated", material.error, palette.elevated)
                     assertRatio("$theme destructive confirmation", material.onError, material.error)
                 }
             }
