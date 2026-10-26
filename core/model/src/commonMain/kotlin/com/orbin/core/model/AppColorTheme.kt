@@ -2,7 +2,7 @@ package com.orbin.core.model
 
 import kotlinx.serialization.Serializable
 
-/** Stable persisted names. White and Black have fixed brightness; other colors follow Theme mode. */
+/** Stable persisted names. All colors follow Theme mode and the independent True black preference. */
 @Serializable
 enum class AppColorTheme(
     val label: String,
@@ -10,8 +10,8 @@ enum class AppColorTheme(
     ORBIN("Orbin (green)"),
     BLUE("Blue"),
     RED("Red"),
-    WHITE("White (always light)"),
-    BLACK("Black (always dark)"),
+    WHITE("White"),
+    BLACK("Black"),
     PURPLE("Purple"),
     ORANGE("Orange"),
     TEAL("Teal"),

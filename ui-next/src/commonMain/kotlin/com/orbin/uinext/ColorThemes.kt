@@ -5,23 +5,21 @@ import androidx.compose.ui.graphics.Color
 /** Presentation-only colors; app roots adapt their persisted preference by stable name. */
 enum class NextColorTheme { ORBIN, BLUE, RED, WHITE, BLACK, PURPLE, ORANGE, TEAL }
 
-/** Shared Android/iOS palette registry. Existing forest and AMOLED palettes remain unchanged. */
+/**
+ * Shared Android/iOS palette registry. Color chooses accents; brightness follows Theme mode.
+ * True black only changes dark grounds, leaving raised surfaces and accent choices readable.
+ */
 fun colorThemePalette(
     theme: NextColorTheme,
     dark: Boolean,
     amoled: Boolean = false,
 ): NextPalette {
     if (theme == NextColorTheme.ORBIN) return canonicalNextPalette(dark, amoled)
-    val resolvedDark =
-        when (theme) {
-            NextColorTheme.WHITE -> false
-            NextColorTheme.BLACK -> true
-            else -> dark
-        }
-    val black = resolvedDark && (amoled || theme == NextColorTheme.BLACK)
-    val base = if (resolvedDark) NeutralDark else NeutralLight
+    // Color is independent of brightness: Theme mode and True black own the ground.
+    val black = dark && amoled
+    val base = if (dark) NeutralDark else NeutralLight
     val accents = ThemeAccents.getValue(theme)
-    val accent = if (resolvedDark) accents.second else accents.first
+    val accent = if (dark) accents.second else accents.first
     return base.copy(
         background = if (black) Color.Black else base.background,
         accent = accent,

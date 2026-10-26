@@ -30,14 +30,18 @@ class SettingsStoreTest {
         runTest {
             val dataStore = backgroundScope.dataStore()
             val store = SettingsStore(dataStore)
-            store.setThemeMode(AppThemeMode.DARK)
-            store.setAmoled(true)
-            AppColorTheme.entries.forEach { theme ->
-                store.setColorTheme(theme)
-                val restored = SettingsStore(dataStore).settings.first()
-                assertEquals(theme, restored.colorTheme)
-                assertEquals(AppThemeMode.DARK, restored.themeMode)
-                assertTrue(restored.amoled)
+            AppThemeMode.entries.forEach { mode ->
+                store.setThemeMode(mode)
+                listOf(true, false).forEach { amoled ->
+                    store.setAmoled(amoled)
+                    AppColorTheme.entries.forEach { theme ->
+                        store.setColorTheme(theme)
+                        val restored = SettingsStore(dataStore).settings.first()
+                        assertEquals(theme, restored.colorTheme)
+                        assertEquals(mode, restored.themeMode)
+                        assertEquals(amoled, restored.amoled)
+                    }
+                }
             }
         }
 
