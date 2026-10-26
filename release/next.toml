@@ -1,20 +1,25 @@
-# Orbin 175 - Oca
+# Orbin 176 - Mashua
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 175
-codename     = "Oca"
-version_code = 193
+number       = 176
+codename     = "Mashua"
+version_code = 194
 
-highlight = "Stronger app-lock enforcement around backups and safer iOS media downloads."
+highlight = "General-color themes on Android and iOS, plus iOS video mute controls."
 
 summary = [
-  "bump Orbin to 175-Oca / versionCode 193",
-  "ship backup app-lock enforcement and iOS media-copy bounds fixes",
+  "bump Orbin to 176-Mashua / versionCode 194",
+  "ship general-color themes, iOS video mute controls and dependency updates",
 ]
 
 [changelog]
+Added = [
+  "Android and iOS: general-color themes alongside the existing palettes.",
+  "iOS: session mute controls in the video viewer.",
+]
 Fixed = [
-  "Android: importing a backup cannot suppress an enabled app lock through onboarding settings.",
-  "iOS: relocking cancels pending backup operations and dismisses their system sheets; stale callbacks cannot restore data.",
-  "iOS: oversized media downloads are rejected before copying native data into a Kotlin byte array.",
+  "The selected theme is announced to accessibility services, and destructive actions have higher contrast.",
+]
+Security = [
+  "Build: FreeMarker pinned to 2.3.35 for a template-loading path traversal advisory.",
 ]
