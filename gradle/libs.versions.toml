@@ -51,7 +51,7 @@ sqlcipher = "4.19.1"
 
 # Async / Serialization
 coroutines = "1.11.0"
-serialization = "1.11.0"
+serialization = "1.12.0"
 
 # Networking
 okhttp = "5.5.0"
