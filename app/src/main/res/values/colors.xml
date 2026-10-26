@@ -6,6 +6,6 @@
     <color name="orbinx_window_background">#212121</color>
 
     <!-- Orbin forest green launcher and splash theme -->
-    <color name="ic_launcher_background">#142018</color>
+    <color name="ic_launcher_background">#0A0A0C</color>
     <color name="splash_background">#142018</color>
 </resources>
