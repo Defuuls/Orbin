@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [176 — Mashua](https://github.com/Defuuls/Orbin/releases/tag/v176-Mashua)
+**Current release:** [177 — Yacon](https://github.com/Defuuls/Orbin/releases/tag/v177-Yacon)
 
-**What's new in 176:** General-color themes on Android and iOS, plus iOS video mute controls.
+**What's new in 177:** Android and iOS launcher icons now match the README hero artwork.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
