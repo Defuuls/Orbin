@@ -217,6 +217,12 @@ class Browser(
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
 
+    internal val mediaScroll =
+        MediaScrollSync(
+            currentRoute = { _backStack.value.last() },
+            currentThread = { (_thread.value as? Load.Ready)?.value },
+        )
+
     private val _feed = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
     val feed: StateFlow<Load<List<FeedThread>>> = _feed.asStateFlow()
 
@@ -276,6 +282,7 @@ class Browser(
     /** Switches to a tab, leaving whatever was open on the other one. */
     fun openTab(tab: Route) {
         require(tab == Route.Feed || tab == Route.Boards || tab == Route.Downloads) { "Not a tab: $tab" }
+        mediaScroll.clear()
         _backStack.value = listOf(tab)
         if (tab == Route.Feed) loadFeed()
         // A site that could not be reached gets another try, on a new network say.
@@ -309,6 +316,7 @@ class Browser(
     }
 
     fun openThread(key: ThreadKey) {
+        mediaScroll.clear()
         _backStack.update { it + Route.ThreadPage(key) }
         loadCurrent()
     }
@@ -320,6 +328,7 @@ class Browser(
     /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
     fun openMedia(index: Int) {
         val thread = (_backStack.value.last() as? Route.ThreadPage)?.key ?: return
+        mediaScroll.clear()
         _backStack.update { it + Route.Media(thread, index) }
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -51,6 +52,7 @@ internal fun ThreadDestination(
     val scope = rememberCoroutineScope()
     val thread by browser.thread.collectAsState()
     val firstUnread by browser.firstUnreadPostId.collectAsState()
+    val mediaTarget by browser.mediaScroll.target.collectAsState()
     NextPullToRefresh(
         isRefreshing = thread is Load.Loading,
         onRefresh = browser::retry,
@@ -64,6 +66,8 @@ internal fun ThreadDestination(
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
                 onOpenFile = browser::openMedia,
+                mediaPostId = mediaTarget?.takeIf { it.first == loaded.key }?.second,
+                onMediaScrollConsumed = { mediaTarget?.let(browser.mediaScroll::consume) },
                 onDownloadAll = {
                     loaded.files.forEach { file -> downloads.save(file, loaded.key, loaded.subject) }
                 },
@@ -85,6 +89,8 @@ private fun ThreadContent(
     firstUnreadPostId: String?,
     onWatch: () -> Unit,
     onOpenFile: (index: Int) -> Unit,
+    mediaPostId: String? = null,
+    onMediaScrollConsumed: () -> Unit = {},
     onDownloadAll: () -> Unit = {},
     onSavePage: (() -> Unit)? = null,
     onShare: () -> Unit = {},
@@ -110,6 +116,13 @@ private fun ThreadContent(
             saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
         ) { mutableStateListOf<String>() }
     val listState = rememberLazyListState()
+    LaunchedEffect(mediaPostId, posts, layout) {
+        if (mediaPostId == null || layout != ThreadLayout.POSTS) return@LaunchedEffect
+        val index = posts.indexOfFirst { it.id == mediaPostId }
+        // Item zero is the thread header. Files mode keeps its position until Posts is selected.
+        if (index >= 0) listState.scrollToItem(index + 1)
+        onMediaScrollConsumed()
+    }
     var pencilMenu by remember { mutableStateOf(false) }
     val rollScroll = with(LocalDensity.current) { PENCIL_ROLL_SCROLL.toPx() }
     // Apple Pencil: a double-tap steps to the next post, turning the barrel scrolls, and a squeeze
@@ -209,6 +222,7 @@ internal fun MediaDestination(
     MediaViewer(
         files = files,
         startIndex = route.index,
+        onPageChanged = { browser.mediaScroll.select(route, it) },
         onClose = { browser.back() },
         onSave = { file -> downloads.save(file, route.thread, open?.subject) },
     )

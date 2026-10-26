@@ -75,6 +75,21 @@ class RowsTest {
     }
 
     @Test
+    fun viewerPagesResolveToPostsAcrossMultipleAttachmentsAndTextOnlyReplies() {
+        val thread =
+            Thread(
+                key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
+                originalPost = post(1, files = 2),
+                replies = persistentListOf(post(2, files = 0), post(3, files = 2), post(4, files = 1)),
+            )
+
+        assertEquals(listOf("1", "1", "3", "3", "4"), thread.files.indices.map(thread::postIdForFileIndex))
+        assertNull(thread.postIdForFileIndex(-1))
+        assertNull(thread.postIdForFileIndex(5))
+        assertNull(thread.copy(originalPost = post(1, files = 0), replies = persistentListOf()).postIdForFileIndex(0))
+    }
+
+    @Test
     fun aSpoileredFileLeavesItsPostsTextReadable() {
         val covered =
             post(1, files = 1).let {

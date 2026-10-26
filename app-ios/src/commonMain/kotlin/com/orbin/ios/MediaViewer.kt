@@ -27,7 +27,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -71,12 +73,21 @@ internal fun MediaViewer(
     startIndex: Int,
     onClose: () -> Unit,
     onSave: (MediaAttachment) -> Boolean = { false },
+    onPageChanged: (Int) -> Unit = {},
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
         return
     }
     val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, files.lastIndex)) { files.size }
+    val reportPage by rememberUpdatedState(onPageChanged)
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.collect { reportPage(it) }
+    }
+    val close = {
+        reportPage(pager.settledPage)
+        onClose()
+    }
     var pencilMenu by remember { mutableStateOf(false) }
     // Apple Pencil: a double-tap moves to the next file, and a squeeze offers save and close.
     OnPencilGesture { gesture ->
@@ -106,7 +117,7 @@ internal fun MediaViewer(
                 NextIconAction(
                     imageVector = Icons.Filled.Close,
                     contentDescription = stringResource(Res.string.ios_media_close),
-                    onClick = onClose,
+                    onClick = close,
                     tint = Color.White,
                 )
             }
@@ -118,7 +129,7 @@ internal fun MediaViewer(
             actions =
                 listOf<Pair<String, () -> Unit>>(
                     stringResource(Res.string.ios_media_save) to { onSave(current) },
-                    stringResource(Res.string.ios_media_close) to onClose,
+                    stringResource(Res.string.ios_media_close) to close,
                 ),
             modifier = Modifier.align(Alignment.Center),
         )

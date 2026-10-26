@@ -150,6 +150,17 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> {
 /** Every file in the thread, in reading order: what the viewer pages through. */
 internal val Thread.files: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }
 
+/** The owning post of a viewer page, counting every attachment and skipping text-only posts. */
+internal fun Thread.postIdForFileIndex(index: Int): String? {
+    if (index < 0) return null
+    var remaining = index
+    for (post in allPosts) {
+        if (remaining < post.attachments.size) return post.id.value.toString()
+        remaining -= post.attachments.size
+    }
+    return null
+}
+
 /** Where the post with [postId]'s first file sits in [files], or null when it has none. */
 internal fun Thread.firstFileIndex(postId: String): Int? {
     var index = 0
