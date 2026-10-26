@@ -72,7 +72,7 @@ internal actual fun NativePlayer(
         val observer =
             NSNotificationCenter.defaultCenter.addObserverForName(
                 name = AVPlayerItemDidPlayToEndTimeNotification,
-                `object` = player.currentItem,
+                `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
                 if (currentLoop.value && currentActive.value) {
@@ -270,9 +270,7 @@ internal actual fun NativeInlineLoop(
         }
     }
     // Display only: taps must reach the card or post underneath, which opens the player.
-    key(webView) {
-        UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
-    }
+    UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
 }
 
 private const val SEEK_TIMESCALE = 600
