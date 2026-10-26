@@ -59,3 +59,5 @@ org.apache.httpcomponents:httpclient                | 4.5.13        | Dependabot
 
 io.opentelemetry:opentelemetry-api                  | 1.62.0        | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
 io.opentelemetry:opentelemetry-extension-trace-propagators | 1.62.0  | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
+
+org.freemarker:freemarker                           | 2.3.35        | Dependabot reports a FreeMarker template-loading path traversal (alert #68), pulled in by Kover's report generator.
