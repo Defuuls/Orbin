@@ -8,15 +8,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.useContents
 import platform.AVFoundation.AVURLAsset
+import platform.AVFoundation.asset
 import platform.AVFoundation.currentItem
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSDate
 import platform.Foundation.NSRunLoop
 import platform.Foundation.dateWithTimeIntervalSinceNow
+import platform.Foundation.runUntilDate
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.childViewControllers
 import platform.WebKit.WKWebView
 import kotlin.test.Test
 import kotlin.test.assertNotSame
@@ -29,11 +32,12 @@ class PlayerHostTest {
     fun nativeHostFollowsUrlReplacementAndReopensWithFreshPlayer() {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
-        val root = ComposeUIViewController {
-            if (visible.value) {
-                NativePlayer(url.value, active = false, loop = true, modifier = Modifier.fillMaxSize())
+        val root =
+            ComposeUIViewController {
+                if (visible.value) {
+                    NativePlayer(url.value, active = false, loop = true, modifier = Modifier.fillMaxSize())
+                }
             }
-        }
         withWindow(root) {
             repeat(3) {
                 await { root.players().size == 1 }
@@ -63,15 +67,21 @@ class PlayerHostTest {
     fun webMUrlReplacementMountsTheNewViewAndRemovesTheOldOne() {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
-        val root = ComposeUIViewController {
-            if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
-        }
+        val root =
+            ComposeUIViewController {
+                if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
+            }
         withWindow(root) {
             repeat(3) {
                 await { root.view.webViews().size == 1 }
                 val previous = root.view.webViews().single()
                 url.value = if (url.value == FIRST_URL) SECOND_URL else FIRST_URL
-                await { root.view.webViews().singleOrNull()?.let { it !== previous } == true }
+                await {
+                    root.view
+                        .webViews()
+                        .singleOrNull()
+                        ?.let { it !== previous } == true
+                }
                 val current = root.view.webViews().single()
                 await { current.bounds.useContents { size.width > 0 && size.height > 0 } }
                 visible.value = false
@@ -83,7 +93,10 @@ class PlayerHostTest {
         }
     }
 
-    private fun withWindow(root: UIViewController, block: () -> Unit) {
+    private fun withWindow(
+        root: UIViewController,
+        block: () -> Unit,
+    ) {
         val window = UIWindow(frame = CGRectMake(0.0, 0.0, 390.0, 844.0))
         window.rootViewController = root
         window.makeKeyAndVisible()

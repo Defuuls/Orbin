@@ -53,14 +53,16 @@ internal fun VideoControls(
     modifier: Modifier = Modifier,
 ) {
     val latest by rememberUpdatedState(state)
+    val togglePlay by rememberUpdatedState(onTogglePlay)
+    val seekTo by rememberUpdatedState(onSeekTo)
     Box(
         modifier.pointerInput(Unit) {
             // Taps only: drags are left unconsumed so the pager still turns the page.
             detectTapGestures(
-                onTap = { onTogglePlay() },
+                onTap = { togglePlay() },
                 onDoubleTap = { at ->
                     val skip = if (at.x >= size.width / 2f) SKIP_SECONDS else -SKIP_SECONDS
-                    onSeekTo(clampedSeek(latest.position + skip, latest.duration))
+                    seekTo(clampedSeek(latest.position + skip, latest.duration))
                 },
             )
         },
