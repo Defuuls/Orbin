@@ -1,19 +1,20 @@
-# Orbin 177 - Yacon
+# Orbin 178 - Ulluco
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 177
-codename     = "Yacon"
-version_code = 195
+number       = 178
+codename     = "Ulluco"
+version_code = 196
 
-highlight = "Android and iOS launcher icons now match the README hero artwork."
+highlight = "True black follows Theme mode, and iOS threads follow the media you viewed."
 
 summary = [
-  "bump Orbin to 177-Yacon / versionCode 195",
-  "ship matching hero aperture launcher icons on Android and iOS",
+  "bump Orbin to 178-Ulluco / versionCode 196",
+  "restore True black and Theme mode behavior for White and Black palettes",
+  "keep the iOS thread positioned at the post selected in the media viewer",
 ]
 
 [changelog]
-Fixed = [
-  "Android and iOS launcher icons now use the cream aperture artwork from the README hero.",
-  "Android adaptive, round and themed icons share the same mark; iOS uses an opaque icon for system-generated sizes.",
+Reliability = [
+  "Added regression coverage for all palettes, System/Light/Dark modes, live True black toggles and persisted preferences.",
+  "Added iOS media-to-thread synchronization tests covering attachment mapping and navigation state.",
 ]

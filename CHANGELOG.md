@@ -9,6 +9,7 @@ All notable changes to Orbin are documented here. The format is based on
 ### Fixed
 - Android and iOS: White and Black color themes now respect Theme mode and True black, preserving monochrome accents.
 - Explicit shared palettes honor True black consistently in page backgrounds and Material components.
+- iOS: Dismissing the media viewer after swiping now returns to the post owning the selected attachment, while preserving the original scroll offset when no page was changed.
 
 ## [177-Yacon] - 2026-10-26
 
