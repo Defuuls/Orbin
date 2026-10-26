@@ -54,7 +54,11 @@ class SettingsChoiceAccessibilityTest {
 
         val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
         composeRule.onNodeWithText("Blue").assert(radio).assertIsSelected()
-        composeRule.onNodeWithText("Teal").assert(radio).assertIsNotSelected().performClick()
+        composeRule
+            .onNodeWithText("Teal")
+            .assert(radio)
+            .assertIsNotSelected()
+            .performClick()
         composeRule.onNodeWithText("Teal").assertIsSelected().performClick()
         composeRule.onNodeWithText("Teal").assertIsSelected()
         composeRule.onNodeWithText("Blue").assertIsNotSelected()
