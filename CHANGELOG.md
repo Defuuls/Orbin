@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [177-Yacon] - 2026-10-26
+
+### Fixed
+- Android and iOS launcher icons now use the cream aperture artwork from the README hero.
+- Android adaptive, round and themed icons share the same mark; iOS uses an opaque icon for system-generated sizes.
+
+
 ## [176-Mashua] - 2026-10-26
 
 ### Added
@@ -2670,7 +2677,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...HEAD
+[177-Yacon]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...v177-Yacon
 [176-Mashua]: https://github.com/Defuuls/Orbin/compare/v175-Oca...v176-Mashua
 [175-Oca]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...v175-Oca
 [174-Jicama]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...v174-Jicama
