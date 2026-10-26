@@ -243,7 +243,7 @@ private fun SettingRow(
                     item.options.forEachIndexed { index, option ->
                         InlineAction(
                             label = option,
-                            accent = index == item.selected,
+                            selected = index == item.selected,
                             onClick = { onSelectOption(item, index) },
                         )
                     }

@@ -21,6 +21,22 @@ import kotlin.math.pow
  */
 class PaletteContrastTest {
     @Test
+    fun `destructive labels and confirmations clear AA across all themes`() {
+        NextColorTheme.entries.forEach { theme ->
+            listOf(false, true).forEach { dark ->
+                listOf(false, true).forEach { amoled ->
+                    val palette = colorThemePalette(theme, dark, amoled)
+                    val material = materialColorScheme(palette, palette.dark, palette.amoled)
+                    listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
+                        assertRatio("$theme destructive label", material.error, ground)
+                    }
+                    assertRatio("$theme destructive confirmation", material.onError, material.error)
+                }
+            }
+        }
+    }
+
+    @Test
     fun `general colors cover text controls selection and Material errors in every mode`() {
         NextColorTheme.entries.filter { it != NextColorTheme.ORBIN }.forEach { theme ->
             listOf(false, true).forEach { dark ->
