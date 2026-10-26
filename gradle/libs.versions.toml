@@ -28,7 +28,7 @@ composeBom = "2026.09.00"
 # Compose Multiplatform: the shared UI modules compile against JetBrains' artifacts, which resolve to
 # the androidx ones above on Android (the BOM still wins there) and to Skia-backed ones on iOS.
 # Material 3 and the icon set are versioned separately from the rest of the framework.
-composeMultiplatform = "1.12.1"
+composeMultiplatform = "1.12.2"
 composeMultiplatformMaterial3 = "1.9.0"
 composeMultiplatformIcons = "1.7.3"
 navigationCompose = "2.10.2"
