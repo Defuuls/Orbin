@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [177 — Yacon](https://github.com/Defuuls/Orbin/releases/tag/v177-Yacon)
+**Current release:** [178 — Ulluco](https://github.com/Defuuls/Orbin/releases/tag/v178-Ulluco)
 
-**What's new in 177:** Android and iOS launcher icons now match the README hero artwork.
+**What's new in 178:** True black follows Theme mode, and iOS threads follow the media you viewed.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
