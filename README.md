@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [175 — Oca](https://github.com/Defuuls/Orbin/releases/tag/v175-Oca)
+**Current release:** [176 — Mashua](https://github.com/Defuuls/Orbin/releases/tag/v176-Mashua)
 
-**What's new in 175:** Stronger app-lock enforcement around backups and safer iOS media downloads.
+**What's new in 176:** General-color themes on Android and iOS, plus iOS video mute controls.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 

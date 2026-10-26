@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [176-Mashua] - 2026-10-26
+
+### Added
+- Android and iOS: general-color themes alongside the existing palettes.
+- iOS: session mute controls in the video viewer.
+
+### Fixed
+- The selected theme is announced to accessibility services, and destructive actions have higher contrast.
+
+### Security
+- Build: FreeMarker pinned to 2.3.35 for a template-loading path traversal advisory.
+
+
 ### Fixed
 - iOS: full-screen native and WebM videos now have an accessible mute/unmute button, defaulting to muted and remembering the last audio choice for the app session.
 
@@ -2657,7 +2670,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v175-Oca...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...HEAD
+[176-Mashua]: https://github.com/Defuuls/Orbin/compare/v175-Oca...v176-Mashua
 [175-Oca]: https://github.com/Defuuls/Orbin/compare/v174-Jicama...v175-Oca
 [174-Jicama]: https://github.com/Defuuls/Orbin/compare/v173-Sunchoke...v174-Jicama
 [173-Sunchoke]: https://github.com/Defuuls/Orbin/compare/v172-Fiddlehead...v173-Sunchoke
