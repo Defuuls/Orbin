@@ -45,9 +45,11 @@ class ThreadRepositoryImpl(
     ): Flow<OrbinResult<Thread>> =
         flow {
             val cached = if (forceRefresh) null else cachedThread(key)
-            if (cached != null) emit(OrbinResult.Success(cached))
-            val fresh = refreshThread(key.provider, key.board, key.thread, forceRefresh = true)
-            if (cached == null || fresh is OrbinResult.Success) emit(fresh)
+            if (cached != null) {
+                emit(OrbinResult.Success(cached))
+            } else {
+                emit(refreshThread(key.provider, key.board, key.thread, forceRefresh = true))
+            }
         }
 
     private suspend fun cachedThread(key: ThreadKey): Thread? =

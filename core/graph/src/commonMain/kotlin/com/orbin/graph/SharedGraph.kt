@@ -86,6 +86,7 @@ abstract class SharedGraph(
     abstract val bookmarks: BookmarkRepository
     abstract val history: HistoryRepository
     abstract val providers: Set<ImageBoardProvider>
+    abstract val providerDiagnostics: ProviderDiagnostics
 
     abstract val boards: BoardRepository
     abstract val catalog: CatalogRepository

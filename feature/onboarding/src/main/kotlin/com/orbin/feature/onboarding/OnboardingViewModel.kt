@@ -15,6 +15,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /** Board list state for the onboarding "pick boards" step. */
@@ -108,11 +110,14 @@ class OnboardingViewModel
         }
 
         /** Persist that setup is done so the wizard never auto-shows again, and lock in the selected provider. */
-        fun complete() =
-            update {
-                settingsRepository.setActiveProviderId(_selectedProvider.value.metadata.id)
-                settingsRepository.setOnboardingCompleted(true)
+        fun complete() {
+            viewModelScope.launch {
+                withContext(NonCancellable) {
+                    settingsRepository.setActiveProviderId(_selectedProvider.value.metadata.id)
+                    settingsRepository.setOnboardingCompleted(true)
+                }
             }
+        }
 
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }

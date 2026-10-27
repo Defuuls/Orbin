@@ -15,6 +15,7 @@ import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -125,6 +126,7 @@ class MediaPreloader
                         Logger.w(result.throwable, TAG) { "Failed to preload image: ${url.redactForLog()}" }
                     }
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     Logger.w(error, TAG) { "Failed to preload image: ${url.redactForLog()}" }
                 }
         }
@@ -148,6 +150,7 @@ class MediaPreloader
             }.onSuccess { _ ->
                 Logger.d(tag = TAG) { "Preloaded video metadata: ${url.redactForLog()}" }
             }.onFailure { error ->
+                if (error is CancellationException) throw error
                 Logger.w(error, TAG) { "Failed to preload video: ${url.redactForLog()}" }
             }
         }

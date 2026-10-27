@@ -144,6 +144,7 @@ object NetworkModule {
             // doesn't correctly serve or store partial (206) responses against it - a documented
             // source of misbehavior for large streamed files. Media3's range-aware
             // SimpleCache/CacheDataSource is layered on top of this client in :media.
+            .cache(null)
             // Keep video requests CDN-friendly even when the URL does not have a media extension.
             .addInterceptor { chain ->
                 val req =

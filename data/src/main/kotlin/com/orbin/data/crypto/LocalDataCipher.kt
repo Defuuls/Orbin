@@ -45,6 +45,7 @@ internal object LocalDataCipher {
         return cipher.doFinal(ciphertext)
     }
 
+    @Synchronized
     private fun getOrCreateKey(): SecretKey {
         val store = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }

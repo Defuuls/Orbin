@@ -5,6 +5,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.unreadByThread
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.provider.api.ProviderException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -85,19 +86,40 @@ class WatchedThreads(
             watched.forEach { bookmark ->
                 launch {
                     gate.withPermit {
-                        runCatching { fetch(bookmark.key) }.onSuccess { thread ->
-                            val latest = thread.stats.replyCount
-                            if (latest > bookmark.latestReplyCount) {
-                                val stored =
+                        runCatching { fetch(bookmark.key) }
+                            .onSuccess { thread ->
+                                val latest = thread.stats.replyCount
+                                if (latest > bookmark.latestReplyCount) {
+                                    val stored =
+                                        runCatching {
+                                            bookmarks.updateLatest(bookmark.key, latest, thread.stats.isArchived)
+                                        }.isSuccess
+                                    val unread = latest - bookmark.lastSeenReplyCount
+                                    if (stored && unread > 0) {
+                                        runCatching {
+                                            notifier?.notifyThreadUpdate(bookmark.key, bookmark.title, unread)
+                                        }
+                                    }
+                                } else if (thread.stats.isArchived && !bookmark.isThreadDead) {
                                     runCatching {
-                                        bookmarks.updateLatest(bookmark.key, latest, thread.stats.isArchived)
-                                    }.isSuccess
-                                val unread = latest - bookmark.lastSeenReplyCount
-                                if (stored && unread > 0) {
-                                    runCatching { notifier?.notifyThreadUpdate(bookmark.key, bookmark.title, unread) }
+                                        bookmarks.updateLatest(
+                                            bookmark.key,
+                                            bookmark.latestReplyCount,
+                                            isThreadDead = true,
+                                        )
+                                    }
+                                }
+                            }.onFailure { error ->
+                                if (error is ProviderException.NotFound) {
+                                    runCatching {
+                                        bookmarks.updateLatest(
+                                            bookmark.key,
+                                            bookmark.latestReplyCount,
+                                            isThreadDead = true,
+                                        )
+                                    }
                                 }
                             }
-                        }
                     }
                 }
             }

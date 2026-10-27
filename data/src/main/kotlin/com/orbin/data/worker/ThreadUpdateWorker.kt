@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.orbin.core.common.result.DataError
+import com.orbin.core.common.result.onFailure
 import com.orbin.core.common.result.onSuccess
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BookmarkRepository
@@ -60,6 +62,20 @@ class ThreadUpdateWorker
                                             if (unread > 0) {
                                                 notifier.notifyThreadUpdate(key, bookmark.title, unread)
                                             }
+                                        } else if (thread.stats.isArchived && !bookmark.isThreadDead) {
+                                            bookmarkRepository.updateLatest(
+                                                key,
+                                                bookmark.latestReplyCount,
+                                                isThreadDead = true,
+                                            )
+                                        }
+                                    }.onFailure { error ->
+                                        if (error is DataError.NotFound && !bookmark.isThreadDead) {
+                                            bookmarkRepository.updateLatest(
+                                                key,
+                                                bookmark.latestReplyCount,
+                                                isThreadDead = true,
+                                            )
                                         }
                                     }
                             }

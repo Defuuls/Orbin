@@ -63,13 +63,14 @@ object PowBlock {
                 ?.get(1)
                 ?.trim() ?: return null
         if (token.length < MIN_TOKEN_LENGTH) return null
-        val difficulty =
+        val difficultyRaw =
             DIFFICULTY_REGEX
                 .find(body)
                 ?.groupValues
                 ?.get(1)
                 ?.trim()
-                ?.toIntOrNull() ?: DEFAULT_DIFFICULTY
+        val difficulty = if (difficultyRaw != null) difficultyRaw.toIntOrNull() else DEFAULT_DIFFICULTY
+        if (difficulty == null || difficulty !in MIN_DIFFICULTY..MAX_DIFFICULTY) return null
         val algorithm =
             when (
                 ALGORITHM_REGEX
@@ -151,6 +152,8 @@ object PowBlock {
     }
 
     private const val MIN_TOKEN_LENGTH = 60
+    private const val MIN_DIFFICULTY = 1
+    private const val MAX_DIFFICULTY = 24
     private const val DEFAULT_DIFFICULTY = 20
     private const val SHA512_BITS = 512
     private const val BYTE_MASK = 0xFF

@@ -21,6 +21,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -85,31 +86,35 @@ class SearchViewModel
                 .launchIn(viewModelScope)
         }
 
+        private var searchJob: Job? = null
+
         fun search(text: String) {
             val trimmed = text.trim()
             if (trimmed.isEmpty()) return
-            viewModelScope.launch {
-                _state.value = SearchUiState.Loading
-                val boards = searchableBoards.value
-                if (boards.isEmpty()) {
-                    _state.value = SearchUiState.Error("Follow a few boards to search them")
-                    return@launch
-                }
-                val provider = activeProvider.value.metadata.id
-                // Boards are searched a few at a time; one that fails leaves the others' results.
-                val outcome =
-                    searchEachBoard(boards) { board ->
-                        searchRepository
-                            .search(SearchQuery(provider, trimmed, SearchScope.BOARD_CATALOG, board.id))
-                            .fold(onSuccess = { it }, onFailure = { throw BoardSearchFailed(it) })
+            searchJob?.cancel()
+            searchJob =
+                viewModelScope.launch {
+                    _state.value = SearchUiState.Loading
+                    val boards = searchableBoards.value
+                    if (boards.isEmpty()) {
+                        _state.value = SearchUiState.Error("Follow a few boards to search them")
+                        return@launch
                     }
-                if (outcome.allFailed) {
-                    _state.value = SearchUiState.Error(outcome.firstError?.message ?: "Search failed")
-                    return@launch
+                    val provider = activeProvider.value.metadata.id
+                    // Boards are searched a few at a time; one that fails leaves the others' results.
+                    val outcome =
+                        searchEachBoard(boards) { board ->
+                            searchRepository
+                                .search(SearchQuery(provider, trimmed, SearchScope.BOARD_CATALOG, board.id))
+                                .fold(onSuccess = { it }, onFailure = { throw BoardSearchFailed(it) })
+                        }
+                    if (outcome.allFailed) {
+                        _state.value = SearchUiState.Error(outcome.firstError?.message ?: "Search failed")
+                        return@launch
+                    }
+                    val results = outcome.results
+                    _state.value = SearchUiState.Results(results.toImmutableList())
                 }
-                val results = outcome.results
-                _state.value = SearchUiState.Results(results.toImmutableList())
-            }
         }
     }
 

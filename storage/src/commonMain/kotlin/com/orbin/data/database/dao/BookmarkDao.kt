@@ -85,6 +85,6 @@ interface BookmarkDao {
         dead: Boolean,
     )
 
-    @Query("SELECT * FROM bookmarks WHERE isWatched = 1")
+    @Query("SELECT * FROM bookmarks WHERE isWatched = 1 AND isThreadDead = 0")
     suspend fun watchedBookmarks(): List<BookmarkEntity>
 }

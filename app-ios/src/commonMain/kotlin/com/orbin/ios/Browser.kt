@@ -317,7 +317,14 @@ class Browser(
 
     fun openThread(key: ThreadKey) {
         mediaScroll.clear()
-        _backStack.update { it + Route.ThreadPage(key) }
+        _backStack.update { stack ->
+            val previous = stack.getOrNull(stack.lastIndex - 1)
+            if (stack.lastOrNull() is Route.ThreadPage && previous is Route.Catalog) {
+                stack.dropLast(1) + Route.ThreadPage(key)
+            } else {
+                stack + Route.ThreadPage(key)
+            }
+        }
         loadCurrent()
     }
 

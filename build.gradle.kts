@@ -162,6 +162,7 @@ subprojects {
                 "src/jvmTest/kotlin",
                 "src/androidMain/kotlin",
                 "src/iosMain/kotlin",
+                "src/iosTest/kotlin",
                 "src/androidHostTest/kotlin",
             )
         }

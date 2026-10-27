@@ -127,12 +127,18 @@ private fun StringBuilder.appendFile(
                 .appendEscaped(file.originalFileName)
                 .append("\"></a>")
     }
+    val base = file.originalFileName
+    val ext = file.extension.trimStart('.')
+    val displayName =
+        if (ext.isEmpty() || base.endsWith(".$ext", ignoreCase = true)) {
+            base
+        } else {
+            "$base.$ext"
+        }
     append("<figcaption><a href=\"")
         .appendEscaped(full)
         .append("\">")
-        .appendEscaped(file.originalFileName)
-        .append('.')
-        .appendEscaped(file.extension.trimStart('.'))
+        .appendEscaped(displayName)
         .append("</a>")
     if (file.width > 0 && file.height > 0) append(" · ").append(file.width).append('×').append(file.height)
     if (saved?.full == null) append(" · <span class=\"missing\">not saved</span>")

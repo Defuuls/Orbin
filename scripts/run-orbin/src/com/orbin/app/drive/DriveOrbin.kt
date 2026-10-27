@@ -54,7 +54,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Agent driver: launches the real MainActivity (real OrbinApplication, Hilt graph, DataStore,
+ * Headless driver: launches the real MainActivity (real OrbinApplication, Hilt graph, DataStore,
  * navigation) under Robolectric and runs the step script in -Porbin.steps, e.g.
  *   wait:Welcome to Orbin;shot:welcome;click:Get started;tree
  * Steps (separated by ';'):

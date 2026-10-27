@@ -118,17 +118,29 @@ fun Board.toEntity(
  */
 fun Thread.toSavedEntities(savedAtMillis: Long): Pair<SavedThreadEntity, List<SavedPostEntity>> {
     val posts = allPosts
+    val opComment =
+        if (originalPost.comment.nodes.isNotEmpty()) {
+            originalPost.comment.plainText()
+        } else {
+            originalPost.comment.raw
+        }
     val savedThread =
         SavedThreadEntity(
             provider = key.provider.value,
             board = key.board.value,
             thread = key.thread.value,
-            title = originalPost.subject ?: originalPost.comment.raw.take(SAVED_TITLE_LENGTH),
+            title = originalPost.subject ?: opComment.take(SAVED_TITLE_LENGTH),
             savedAtMillis = savedAtMillis,
             postCount = posts.size,
         )
     val savedPosts =
         posts.mapIndexed { index, post ->
+            val postComment =
+                if (post.comment.nodes.isNotEmpty()) {
+                    post.comment.plainText()
+                } else {
+                    post.comment.raw
+                }
             SavedPostEntity(
                 provider = key.provider.value,
                 board = key.board.value,
@@ -136,7 +148,7 @@ fun Thread.toSavedEntities(savedAtMillis: Long): Pair<SavedThreadEntity, List<Sa
                 postId = post.id.value,
                 isOriginalPost = post.isOriginalPost,
                 subject = post.subject,
-                comment = post.comment.raw,
+                comment = postComment,
                 posterName = post.poster.name,
                 posterTripcode = post.poster.tripcode,
                 posterIdentifier = post.poster.posterId,
@@ -193,11 +205,18 @@ private fun SavedPostEntity.savedAttachments(): List<MediaAttachment> {
     val names = attachmentNames.split("\n").filter { it.isNotBlank() }
     return urls.mapIndexed { index, url ->
         val name = names.getOrElse(index) { url.substringAfterLast('/') }
+        val extension = name.substringAfterLast('.', "")
+        val type =
+            when (extension.lowercase().trimStart('.')) {
+                "webm", "mp4" -> MediaType.VIDEO
+                "gif" -> MediaType.ANIMATED_IMAGE
+                else -> MediaType.IMAGE
+            }
         MediaAttachment(
             id = "$postId-$index",
             originalFileName = name,
-            extension = name.substringAfterLast('.', ""),
-            type = MediaType.IMAGE,
+            extension = extension,
+            type = type,
             sourceUrl = url,
             thumbnailUrl = url,
         )

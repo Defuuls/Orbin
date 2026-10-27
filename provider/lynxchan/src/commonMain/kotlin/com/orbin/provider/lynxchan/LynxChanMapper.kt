@@ -127,7 +127,11 @@ class LynxChanMapper(
                     isSticky = response.pinned,
                     isClosed = response.locked,
                     isArchived = response.archived,
-                    lastModifiedMillis = response.creation.parseIsoOrZero(),
+                    lastModifiedMillis =
+                        maxOf(
+                            op.createdAtMillis,
+                            replies.maxOfOrNull { it.createdAtMillis } ?: 0L,
+                        ),
                 ),
         )
     }
@@ -247,7 +251,7 @@ class LynxChanMapper(
      */
     private fun String?.toSafeMediaLocation(): String? {
         val value = this?.trim().orEmpty()
-        if (value.isEmpty() || value.hasUnsafeCharacters()) return null
+        if (value.isEmpty() || value.hasUnsafeCharacters() || value.lowercase().contains("%2e%2e")) return null
 
         if (value.startsWith('/')) {
             val isSafePath = !value.startsWith("//") && value.split('/').none { it == ".." }
@@ -264,7 +268,7 @@ class LynxChanMapper(
     }
 
     private fun LynxChanSite.resolveMediaLocation(location: String): String =
-        if (location.startsWith("https://")) {
+        if (location.startsWith("https://", ignoreCase = true)) {
             location
         } else {
             siteUrl.trimEnd('/') + location

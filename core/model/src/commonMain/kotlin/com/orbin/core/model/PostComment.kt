@@ -28,7 +28,12 @@ data class PostComment(
      * The comment as readable text: quotes as `>>123`, links as their text, line breaks kept.
      * Styling (greentext, spoilers, bold) is dropped; that is the rich renderer's job.
      */
-    fun plainText(): String = buildString { appendPlain(nodes) }.trim()
+    fun plainText(): String =
+        if (nodes.isEmpty()) {
+            raw.trim()
+        } else {
+            buildString { appendPlain(nodes) }.trim()
+        }
 
     companion object {
         val Empty = PostComment(raw = "", nodes = persistentListOf())

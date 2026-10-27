@@ -64,7 +64,7 @@ class PlayerHostTest {
     @Test
     fun localVideoDecodesAndBecomesDisplayReadyAfterReplacementAndReopen() {
         val paths =
-            listOf(PlaybackFixtures.red, PlaybackFixtures.green).map { encoded ->
+            listOf(PlaybackFixtures.RED, PlaybackFixtures.GREEN).map { encoded ->
                 val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
                 val bytes = Base64.decode(encoded)
                 val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }

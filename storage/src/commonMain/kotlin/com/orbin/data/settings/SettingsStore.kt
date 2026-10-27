@@ -95,7 +95,7 @@ class SettingsStore(
             hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
             coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
-            themeMode = this[Keys.themeMode]?.let(AppThemeMode::valueOf) ?: AppThemeMode.SYSTEM,
+            themeMode = AppThemeMode.entries.firstOrNull { it.name == this[Keys.themeMode] } ?: AppThemeMode.SYSTEM,
             colorTheme = AppColorTheme.entries.firstOrNull { it.name == this[Keys.colorTheme] } ?: AppColorTheme.ORBIN,
             amoled = this[Keys.amoled] ?: false,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,

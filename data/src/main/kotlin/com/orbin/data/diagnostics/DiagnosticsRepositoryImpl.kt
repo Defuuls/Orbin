@@ -122,9 +122,11 @@ class DiagnosticsRepositoryImpl
             throwable: Throwable,
         ): String {
             val stackTrace =
-                StringWriter().also { writer ->
-                    PrintWriter(writer).use(throwable::printStackTrace)
-                }
+                StringWriter()
+                    .also { writer ->
+                        PrintWriter(writer).use(throwable::printStackTrace)
+                    }.toString()
+                    .replace(URL_REGEX, "[url]")
 
             return buildString {
                 appendLine("time: ${SimpleDateFormat(TIME_FORMAT, Locale.US).format(Date())}")
@@ -151,5 +153,6 @@ class DiagnosticsRepositoryImpl
             const val SEPARATOR_WIDTH = 40
             const val STARTUP_WINDOW_MILLIS = 10_000L
             const val CRASH_LOOP_THRESHOLD = 2
+            val URL_REGEX = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
         }
     }

@@ -3,8 +3,8 @@ name: run-orbin
 description: Build, run, and drive the Orbin Android app headlessly. Use when asked to run or start Orbin, launch the app, click through it, take a screenshot of a screen (feed, thread, onboarding, settings), check a UI change in the real app, or run its tests.
 ---
 
-Orbin is a Kotlin Multiplatform image board client. Here there is no emulator (no `/dev/kvm`), so the
-agent path is **`.claude/skills/run-orbin/driver.sh`**. It launches the real `MainActivity` under
+Orbin is a Kotlin Multiplatform image board client. Where there is no emulator (no `/dev/kvm`), the
+headless driver path is **`scripts/run-orbin/driver.sh`**. It launches the real `MainActivity` under
 Robolectric: the real Hilt graph, providers, DataStore, navigation and live network. It runs a step
 script against that app, writes Roborazzi screenshots, and prints the semantics tree.
 
@@ -12,14 +12,13 @@ All paths are relative to the repo root.
 
 ## Prerequisites
 
-The container already has JDK 21, the Android SDK at `/root/android-sdk` (platform 37, no emulator)
-and network access through the agent proxy. Nothing else is installed. The Gradle wrapper fetches
-Gradle 9.7.1.
+Requires JDK 17+, the Android SDK (platform 37, no emulator needed) and network access. The Gradle
+wrapper fetches the configured Gradle distribution.
 
-## Run (agent path): the driver
+## Run (headless path): the driver
 
 ```bash
-.claude/skills/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;sleep:8000;idle:500;shot:feed;tree'
+scripts/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;sleep:8000;idle:500;shot:feed;tree'
 ```
 
 - The argument is a `;`-separated step script. With no argument it runs
@@ -48,11 +47,11 @@ These flows were verified this session:
 
 ```bash
 # First-run screen (board list is fetched live from 4chan's API)
-.claude/skills/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'
+scripts/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'
 # Onboarding → feed with live thumbnails
-.claude/skills/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;sleep:8000;idle:500;shot:feed'
+scripts/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;sleep:8000;idle:500;shot:feed'
 # Open a thread, in dark mode
-DARK=true .claude/skills/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;click:T-rex;sleep:6000;idle:1000;shot:thread-dark'
+DARK=true scripts/run-orbin/driver.sh 'wait:/an/;click:/an/;click:Start browsing;wait:Gathering threads;gone:Gathering threads;click:T-rex;sleep:6000;idle:1000;shot:thread-dark'
 ```
 
 Thread titles are live data, so `click:T-rex` only worked for that day's /an/ catalog. Run `tree`
