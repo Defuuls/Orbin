@@ -105,7 +105,7 @@ fun MediaWallScreen(
                 columns = GridCells.Adaptive(imageCellMinSize),
                 state = gridState,
                 modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding = gridPadding(bottomPad, top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp),
+                contentPadding = gridPadding(bottomPad, top = 0.dp),
             ) {
                 fullWidthItem {
                     Column {

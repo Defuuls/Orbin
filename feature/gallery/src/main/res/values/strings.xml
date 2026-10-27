@@ -32,4 +32,9 @@
     <string name="gallery_copy_link">Copy link</string>
     <string name="gallery_link_copied">Link copied</string>
     <string name="gallery_saving">Saving to Downloads/Orbin</string>
+    <string name="gallery_empty">No media</string>
+    <string name="gallery_image_copied">Image copied</string>
+    <string name="gallery_url_copied">Image unavailable; URL copied</string>
+    <string name="gallery_preparing_media">Preparing media…</string>
+    <string name="gallery_spoiler_reveal">Spoiler — tap to reveal</string>
 </resources>

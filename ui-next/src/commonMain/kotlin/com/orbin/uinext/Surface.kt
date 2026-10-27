@@ -29,9 +29,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,7 +44,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -55,6 +56,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -117,8 +120,8 @@ fun DestinationPill(
                         .weight(1f)
                         .height(RAIL_HEIGHT)
                         .clip(RoundedCornerShape(NextRadius.pill)),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                containerColor = next.elevated,
+                contentColor = next.ink,
                 windowInsets = WindowInsets(0, 0, 0, 0),
             ) {
                 NavigationBarItem(
@@ -128,11 +131,11 @@ fun DestinationPill(
                     label = { Text(stringResource(Res.string.next_feed_title)) },
                     colors =
                         NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedIconColor = next.onAccentContainer,
+                            selectedTextColor = next.ink,
+                            indicatorColor = next.accentContainer,
+                            unselectedIconColor = next.muted,
+                            unselectedTextColor = next.muted,
                         ),
                 )
                 NavigationBarItem(
@@ -142,11 +145,11 @@ fun DestinationPill(
                     label = { Text(stringResource(Res.string.next_downloads_tab)) },
                     colors =
                         NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedIconColor = next.onAccentContainer,
+                            selectedTextColor = next.ink,
+                            indicatorColor = next.accentContainer,
+                            unselectedIconColor = next.muted,
+                            unselectedTextColor = next.muted,
                         ),
                 )
                 NavigationBarItem(
@@ -156,11 +159,11 @@ fun DestinationPill(
                     label = { Text(stringResource(Res.string.next_launchpad_boards)) },
                     colors =
                         NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedIconColor = next.onAccentContainer,
+                            selectedTextColor = next.ink,
+                            indicatorColor = next.accentContainer,
+                            unselectedIconColor = next.muted,
+                            unselectedTextColor = next.muted,
                         ),
                 )
             }
@@ -334,6 +337,52 @@ fun GroupedDivider(modifier: Modifier = Modifier) {
         thickness = 0.5.dp,
         color = next.hairline,
     )
+}
+
+/** Shape for an item in a grouped card sequence. */
+fun groupedCardShape(
+    index: Int,
+    count: Int,
+): Shape =
+    when {
+        count <= 1 -> RoundedCornerShape(NextRadius.card)
+        index == 0 -> RoundedCornerShape(topStart = NextRadius.card, topEnd = NextRadius.card)
+        index == count - 1 -> RoundedCornerShape(bottomStart = NextRadius.card, bottomEnd = NextRadius.card)
+        else -> RectangleShape
+    }
+
+/**
+ * Emits individual lazy items with grouped card styling and virtualization.
+ *
+ * Each item is rendered in its own slot with top/middle/bottom card corner radii,
+ * allowing Compose to virtualize long lists without eager measurement.
+ */
+inline fun <T> LazyListScope.groupedItems(
+    items: List<T>,
+    noinline key: ((T) -> Any)? = null,
+    crossinline itemContent: @Composable (index: Int, item: T) -> Unit,
+) {
+    itemsIndexed(
+        items = items,
+        key = if (key != null) { _, item -> key(item) } else null,
+    ) { index, item ->
+        val shape = groupedCardShape(index, items.size)
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = NextSpace.gutterTight)
+                    .clip(shape)
+                    .background(next.raised),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                itemContent(index, item)
+                if (index < items.size - 1) {
+                    GroupedDivider()
+                }
+            }
+        }
+    }
 }
 
 /** A row's secondary line: counts and timestamps. */

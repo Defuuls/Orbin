@@ -55,6 +55,10 @@ data class NextPalette(
     val accentContainer: Color,
     /** Text/icons inside [accentContainer] — M3 `onPrimaryContainer`. */
     val onAccentContainer: Color,
+    /** Destructive / error color — WCAG AA compliant. */
+    val destructive: Color,
+    /** Text/icons on solid [destructive] fill — WCAG AA compliant. */
+    val onDestructive: Color,
     val dark: Boolean,
     val amoled: Boolean = false,
 )
@@ -185,6 +189,8 @@ internal fun materialColorScheme(
         onTertiary = palette.onAccent,
         tertiaryContainer = palette.accentContainer,
         onTertiaryContainer = palette.onAccentContainer,
+        error = palette.destructive,
+        onError = palette.onDestructive,
         background = background,
         onBackground = palette.ink,
         surface = palette.raised,

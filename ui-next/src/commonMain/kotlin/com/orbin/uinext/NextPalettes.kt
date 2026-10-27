@@ -19,6 +19,11 @@ private val AmoledElevated = Color(0xFF221F24)
 private const val FAINT_ALPHA_DARK = 0.60f
 private const val FAINT_ALPHA_LIGHT = 0.62f
 
+private val DestructiveLight = Color(0xFFBA1A1A)
+private val OnDestructiveLight = Color(0xFFFFFFFF)
+private val DestructiveDark = Color(0xFFFFB4AB)
+private val OnDestructiveDark = Color(0xFF690005)
+
 /**
  * Derives a [NextPalette] directly from an active Material 3 [ColorScheme].
  *
@@ -42,6 +47,8 @@ fun nextPaletteFromColorScheme(
         onAccent = colorScheme.onPrimary,
         accentContainer = colorScheme.primaryContainer,
         onAccentContainer = colorScheme.onPrimaryContainer,
+        destructive = colorScheme.error,
+        onDestructive = colorScheme.onError,
         dark = dark,
         amoled = dark && amoled,
     )
@@ -64,6 +71,8 @@ internal val LightPalette =
         onAccent = Color(0xFFFFFFFF),
         accentContainer = Color(0xFFC8EAD4),
         onAccentContainer = Color(0xFF00210E),
+        destructive = DestructiveLight,
+        onDestructive = OnDestructiveLight,
         dark = false,
         amoled = false,
     )
@@ -82,6 +91,8 @@ internal val DarkPalette =
         onAccent = Color(0xFF00391A),
         accentContainer = Color(0xFF1F5D3A),
         onAccentContainer = Color(0xFFC8EAD4),
+        destructive = DestructiveDark,
+        onDestructive = OnDestructiveDark,
         dark = true,
         amoled = false,
     )

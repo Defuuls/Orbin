@@ -15,7 +15,6 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,6 +36,7 @@ import com.orbin.uinext.resources.next_nothing_here_yet
 import com.orbin.uinext.resources.next_thread_jump_top
 import com.orbin.uinext.resources.next_try_different_search
 import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
@@ -213,20 +213,20 @@ fun FeedScreen(
                             scope.launch { gridState.animateScrollToItem(0) }
                         },
                         shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                        containerColor = next.accentContainer,
+                        contentColor = next.onAccentContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
                         expanded = showCompactTitle,
                         icon = {
                             Icon(
                                 imageVector = Icons.Outlined.ArrowUpward,
-                                contentDescription = "Jump to top",
+                                contentDescription = stringResource(Res.string.next_thread_jump_top),
                             )
                         },
                         text = {
                             Text(
                                 text = stringResource(Res.string.next_thread_jump_top),
-                                style = MaterialTheme.typography.labelLarge,
+                                style = NextType.labelLarge,
                             )
                         },
                         modifier =

@@ -113,11 +113,7 @@ fun BoardScreen(
                 columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(GRID_MIN_CELL),
                 state = gridState,
                 modifier = insets,
-                contentPadding =
-                    gridPadding(
-                        bottomPad,
-                        top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
-                    ),
+                contentPadding = gridPadding(bottomPad, top = 0.dp),
             ) {
                 fullWidthItem { header() }
                 items(

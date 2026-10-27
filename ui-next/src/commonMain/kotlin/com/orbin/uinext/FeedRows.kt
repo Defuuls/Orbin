@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,9 +31,11 @@ import com.orbin.uinext.resources.next_row_counts_unread
 import com.orbin.uinext.resources.next_row_files
 import com.orbin.uinext.resources.next_row_no_image
 import com.orbin.uinext.resources.next_row_replies
+import com.orbin.uinext.resources.next_search_threads_prompt
 import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -68,7 +69,7 @@ internal fun FeedHeader(
         Column(Modifier.padding(horizontal = 0.dp)) {
             headerContent()
             Gap(12)
-            SchematicSearch(query, onQueryChange, "Sift through your threads")
+            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
             Gap(8)
         }
         Gap(12)
@@ -143,7 +144,7 @@ internal fun FeedGridCell(
                         WidthSpacer(6)
                         Text(
                             text = row.board,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = NextType.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = if (row.read) next.muted else boardHue(row.board),
                         )
@@ -154,7 +155,7 @@ internal fun FeedGridCell(
                 Gap(6)
                 Text(
                     text = row.subject,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = NextType.body,
                     fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
                     color = if (row.read) next.muted else next.ink,
                     maxLines = 2,
@@ -238,7 +239,7 @@ private fun CollapsedFeedRow(
                 WidthSpacer(7)
                 Text(
                     text = row.board,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = NextType.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = next.muted,
                 )
@@ -247,7 +248,7 @@ private fun CollapsedFeedRow(
             Text(
                 text = row.subject,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
+                style = NextType.bodySmall,
                 fontWeight = FontWeight.Normal,
                 color = next.muted,
                 maxLines = 1,

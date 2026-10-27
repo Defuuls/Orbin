@@ -22,13 +22,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_onboarding_adult_board
+import com.orbin.uinext.resources.next_onboarding_catalog
+import com.orbin.uinext.resources.next_onboarding_following_count
+import com.orbin.uinext.resources.next_onboarding_skip_hint
+import com.orbin.uinext.resources.next_onboarding_start
+import com.orbin.uinext.resources.next_onboarding_subtitle
+import com.orbin.uinext.resources.next_onboarding_title
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** A board the first-run picker offers. */
 data class OnboardingBoard(
@@ -80,8 +90,8 @@ fun OnboardingScreen(
                 ),
     ) {
         ScreenTitle(
-            text = "Welcome to Orbin",
-            subtitle = "Follow a few boards to fill your feed.",
+            text = stringResource(Res.string.next_onboarding_title),
+            subtitle = stringResource(Res.string.next_onboarding_subtitle),
         )
         if (sites.size > 1) {
             SiteSelector(sites, selectedSite, onSelectSite)
@@ -98,12 +108,21 @@ fun OnboardingScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (following.isEmpty()) "You can follow boards later" else "${following.size} following",
+                text =
+                    if (following.isEmpty()) {
+                        stringResource(Res.string.next_onboarding_skip_hint)
+                    } else {
+                        pluralStringResource(
+                            Res.plurals.next_onboarding_following_count,
+                            following.size,
+                            following.size,
+                        )
+                    },
                 style = NextType.footnote,
                 color = next.muted,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
-            InlineAction(label = "Start browsing", accent = true, onClick = onStart)
+            InlineAction(label = stringResource(Res.string.next_onboarding_start), accent = true, onClick = onStart)
         }
     }
 }
@@ -169,7 +188,11 @@ private fun BoardRow(
 ) {
     val description =
         board.description.ifBlank {
-            if (board.isNsfw) "Adult board" else "Imageboard catalog"
+            if (board.isNsfw) {
+                stringResource(Res.string.next_onboarding_adult_board)
+            } else {
+                stringResource(Res.string.next_onboarding_catalog)
+            }
         }
     Row(
         modifier =
@@ -210,25 +233,20 @@ private fun BoardRow(
 
 @Composable
 private fun BoardMonogram(id: String) {
+    val hue = boardHue("/$id/")
     Box(
         modifier =
             Modifier
                 .size(42.dp)
-                .background(boardColor(id), RoundedCornerShape(NextRadius.tight)),
+                .clip(RoundedCornerShape(NextRadius.control))
+                .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = id.take(1).uppercase(),
-            color = Color.White,
+            text = "/$id/",
+            color = hue,
             fontWeight = FontWeight.Bold,
-            style = NextType.title3,
+            style = NextType.footnote,
         )
     }
-}
-
-private const val HUE_DEGREES = 360
-
-private fun boardColor(id: String): Color {
-    val hue = (((id.hashCode() % HUE_DEGREES) + HUE_DEGREES) % HUE_DEGREES).toFloat()
-    return Color.hsv(hue, saturation = 0.42f, value = 0.48f)
 }
