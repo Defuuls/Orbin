@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [180-Samphire] - 2026-10-27
+
+### Fixed
+- Kept the iOS startup privacy cover visible until persisted app-lock settings are loaded, including foreground callbacks during loading or a failed settings read.
+- Preserved the cover when settings arrive while inactive or backgrounded, and deferred startup authentication until return.
+
+### Reliability
+- Added regression coverage for delayed and failed settings reads, repeated lifecycle callbacks, and legitimate unlocked startup. The previous state logic fails five of the twelve focused lock tests.
+- Please test cold launches with app lock enabled and disabled, authentication cancellation, and background/foreground transitions. An incorrect lock state was reproduced; actual sensitive-content exposure on a device has not been observed.
+
+
 ## [179-Cardoon] - 2026-10-27
 
 ### Fixed
@@ -2700,7 +2711,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...HEAD
+[180-Samphire]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...v180-Samphire
 [179-Cardoon]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...v179-Cardoon
 [178-Ulluco]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...v178-Ulluco
 [177-Yacon]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...v177-Yacon
