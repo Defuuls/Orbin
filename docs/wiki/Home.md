@@ -14,7 +14,7 @@ links, and media but does not post, reply, or create threads.
 
 | | |
 | --- | --- |
-| Current release | **v179 — Cardoon** (2026-10-27) |
+| Current release | **v180 — Samphire** (2026-10-27) |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |

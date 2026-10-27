@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [179 — Cardoon](https://github.com/Defuuls/Orbin/releases/tag/v179-Cardoon)
+**Current release:** [180 — Samphire](https://github.com/Defuuls/Orbin/releases/tag/v180-Samphire)
 
-**What's new in 179:** iOS video hosts and playback controls follow the current video when its URL changes.
+**What's new in 180:** iOS keeps the startup privacy cover in place until app-lock settings are loaded.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
