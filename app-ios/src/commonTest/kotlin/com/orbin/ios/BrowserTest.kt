@@ -30,6 +30,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** The iOS browser end to end over the real providers, with the network replaced by a script. */
@@ -280,6 +281,10 @@ class BrowserTest {
             browser.thread.settled()
             browser.openMedia(0)
             val route = assertIs<Route.Media>(browser.backStack.value.last())
+            val originalStack = browser.backStack.value
+            val originalThread = browser.thread.value
+            val originalFiles = assertIs<Load.Ready<Thread>>(originalThread).value.files
+            val requestCount = requested.size
 
             browser.mediaScroll.select(route, 0)
             assertNull(browser.mediaScroll.target.value, "no swipe preserves the original offset")
@@ -296,6 +301,11 @@ class BrowserTest {
             browser.mediaScroll.select(route, 0)
             assertEquals(WATCHED_KEY to "7", browser.mediaScroll.target.value, "swiping back updates the target too")
             browser.mediaScroll.select(route, 1)
+            assertSame(originalStack, browser.backStack.value, "selection cannot remount the route")
+            assertSame(originalThread, browser.thread.value, "selection cannot reload or replace media")
+            val selectedFiles = assertIs<Load.Ready<Thread>>(browser.thread.value).value.files
+            originalFiles.zip(selectedFiles).forEach { (before, after) -> assertSame(before, after) }
+            assertEquals(requestCount, requested.size, "selection cannot refetch a URL")
 
             assertTrue(browser.back(), "both Close and edge-back use this navigation path")
             assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
