@@ -109,14 +109,25 @@ class ApkDownloader
                 if (contentLength > MAX_CHECKSUM_BYTES) {
                     throw UpdateVerificationException("The release's checksum file is unreadable")
                 }
-                response.body.byteStream().use { input ->
-                    val bytes = input.readNBytes(MAX_CHECKSUM_BYTES + 1)
-                    if (bytes.size > MAX_CHECKSUM_BYTES) {
-                        throw UpdateVerificationException("The release's checksum file is unreadable")
-                    }
-                    bytes.decodeToString()
-                }
+                response.body.byteStream().use { input -> readBoundedUtf8(input, MAX_CHECKSUM_BYTES) }
             }
+
+        private fun readBoundedUtf8(
+            input: InputStream,
+            maxBytes: Int,
+        ): String {
+            val buffer = ByteArray(maxBytes + 1)
+            var totalRead = 0
+            while (totalRead < buffer.size) {
+                val read = input.read(buffer, totalRead, buffer.size - totalRead)
+                if (read < 0) break
+                totalRead += read
+            }
+            if (totalRead > maxBytes) {
+                throw UpdateVerificationException("The release's checksum file is unreadable")
+            }
+            return buffer.decodeToString(startIndex = 0, endIndex = totalRead)
+        }
 
         private companion object {
             const val DOWNLOAD_READ_TIMEOUT_SECONDS = 60L
