@@ -119,7 +119,8 @@ class PlayerHostTest {
             AVPlayerItemVideoOutput(
                 pixelBufferAttributes =
                     mapOf(
-                        CFBridgingRelease(CFRetain(kCVPixelBufferPixelFormatTypeKey)) to kCVPixelFormatType_32BGRA,
+                        CFBridgingRelease(CFRetain(kCVPixelBufferPixelFormatTypeKey)) to
+                            kCVPixelFormatType_32BGRA.toLong(),
                     ),
             )
         item.addOutput(output)
