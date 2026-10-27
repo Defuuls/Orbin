@@ -7,8 +7,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -54,23 +52,30 @@ class AppLock(
     val state: StateFlow<LockState> = _state.asStateFlow()
 
     private var enabled = false
+    private var settingsLoaded = false
+
+    // Startup may already be active before observers attach; only a lifecycle event hides it.
+    private var foreground = true
     private var attempt: Job? = null
 
-    // Only a return from the background asks to unlock by itself. The Face ID sheet also takes the
-    // app off screen and back, and a failed attempt must not ask again at once.
+    // A background return or startup while inactive asks to unlock on return. The Face ID sheet
+    // also takes the app off screen and back, and a failed attempt must not ask again at once.
     private var askOnReturn = false
 
     init {
         scope.launch {
-            enabled = settings.first().biometricLockEnabled
-            _state.update { it.copy(locked = enabled, obscured = false) }
-            if (enabled) unlock()
-        }
-        scope.launch {
-            settings.map { it.biometricLockEnabled }.drop(1).collect { on ->
+            settings.map { it.biometricLockEnabled }.collect { on ->
                 enabled = on
-                // Turning it off lets the reader straight in; turning it on waits for the background.
-                if (!on) _state.update { LockState(obscured = false) }
+                if (!settingsLoaded) {
+                    settingsLoaded = true
+                    _state.update { it.copy(locked = on, obscured = !foreground) }
+                    if (on) {
+                        if (foreground) unlock() else askOnReturn = true
+                    }
+                } else if (!on) {
+                    // Turning it off lets the reader in; turning it on waits for the background.
+                    _state.update { LockState(obscured = !foreground) }
+                }
             }
         }
     }
@@ -99,11 +104,13 @@ class AppLock(
 
     /** The app is leaving the screen for a moment: hide it, as Android's secure window does. */
     fun onResignActive() {
+        foreground = false
         if (enabled && attempt?.isActive != true) _state.update { it.copy(obscured = true) }
     }
 
     /** The app went to the background: it is locked when it comes back. */
     fun onBackground() {
+        foreground = false
         if (!enabled) return
         askOnReturn = true
         _state.update { it.copy(locked = true, obscured = true, message = null) }
@@ -111,6 +118,9 @@ class AppLock(
 
     /** The app is back on screen: show it, and ask to unlock it if it was in the background. */
     fun onForeground() {
+        foreground = true
+        // Foreground is not proof that the persisted lock policy has been read.
+        if (!settingsLoaded) return
         _state.update { it.copy(obscured = false) }
         if (askOnReturn) {
             askOnReturn = false
