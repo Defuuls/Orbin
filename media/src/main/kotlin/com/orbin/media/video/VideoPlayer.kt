@@ -266,7 +266,7 @@ fun VideoPlayer(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Logger.w(error, TAG) { "Video failed to load" }
+                    Logger.w(tag = TAG) { "Video failed to load (${error.errorCodeName})" }
                     val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
                     isRateLimited = rateLimited
                     if (rateLimited) {

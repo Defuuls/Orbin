@@ -55,6 +55,8 @@ class OrbinApplication :
         super.onCreate()
         if (BuildConfig.DEBUG) {
             Logger.d(tag = "OrbinApplication") { "Debug build initialized" }
+        } else {
+            Logger.setLogWriters(emptyList())
         }
 
         // Before anything else that could throw: an uncaught exception during startup is exactly

@@ -123,11 +123,11 @@ class MediaPreloader
             runCatching { imageLoader.execute(request) }
                 .onSuccess { result ->
                     if (result is ErrorResult) {
-                        Logger.w(result.throwable, TAG) { "Failed to preload image: ${url.redactForLog()}" }
+                        Logger.w(tag = TAG) { "Failed to preload image: ${url.redactForLog()}" }
                     }
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
-                    Logger.w(error, TAG) { "Failed to preload image: ${url.redactForLog()}" }
+                    Logger.w(tag = TAG) { "Failed to preload image: ${url.redactForLog()}" }
                 }
         }
 
@@ -151,7 +151,7 @@ class MediaPreloader
                 Logger.d(tag = TAG) { "Preloaded video metadata: ${url.redactForLog()}" }
             }.onFailure { error ->
                 if (error is CancellationException) throw error
-                Logger.w(error, TAG) { "Failed to preload video: ${url.redactForLog()}" }
+                Logger.w(tag = TAG) { "Failed to preload video: ${url.redactForLog()}" }
             }
         }
 

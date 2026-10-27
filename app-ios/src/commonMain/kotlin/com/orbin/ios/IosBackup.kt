@@ -119,13 +119,19 @@ class IosBackup(
     suspend fun importFromJson(backupJson: String): Result<Pair<Int, Int>> =
         runCatching {
             requireAuthorization()
+            require(backupJson.length <= MAX_BACKUP_JSON_CHARS) {
+                "Backup file is too large to import."
+            }
             val document = json.decodeFromString(BackupDocument.serializer(), backupJson)
             require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                 "This backup was written by a newer version of Orbin (format ${document.formatVersion})."
             }
             restoreSettings(document.settings)
             val known = providers.map { it.value }.toSet()
-            val subscribed = document.subscribedBoards.filter { it.providerId in known }
+            val subscribed =
+                document.subscribedBoards.filter {
+                    it.providerId in known && isValidBoardSlug(it.boardId)
+                }
             subscribed.forEach {
                 requireAuthorization()
                 boardPreferences.setSubscribedBoard(
@@ -134,7 +140,10 @@ class IosBackup(
                     true,
                 )
             }
-            val favourites = document.favoriteBoards.filter { it.providerId in known }
+            val favourites =
+                document.favoriteBoards.filter {
+                    it.providerId in known && isValidBoardSlug(it.boardId)
+                }
             favourites.forEach {
                 requireAuthorization()
                 boardPreferences.setFavoriteBoard(
@@ -143,7 +152,10 @@ class IosBackup(
                     true,
                 )
             }
-            val restored = document.bookmarks.filter { it.providerId in known }
+            val restored =
+                document.bookmarks.filter {
+                    it.providerId in known && isValidBoardSlug(it.boardId) && it.threadId > 0
+                }
             restored.forEach {
                 requireAuthorization()
                 bookmarks.addBookmark(it.toBookmark())
@@ -227,6 +239,12 @@ class IosBackup(
 
     private companion object {
         const val DATE_LENGTH = 10 // yyyy-MM-dd
+        const val MAX_BACKUP_JSON_CHARS = 5 * 1024 * 1024
+        const val MAX_BOARD_SLUG_LENGTH = 32
+        val VALID_BOARD_SLUG = Regex("""^[A-Za-z0-9_-]{1,$MAX_BOARD_SLUG_LENGTH}$""")
+
+        fun isValidBoardSlug(value: String): Boolean = VALID_BOARD_SLUG.matches(value)
+
         val json =
             Json {
                 prettyPrint = true

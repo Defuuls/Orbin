@@ -106,15 +106,15 @@ class DownloadWorker
                         if (success) Result.success() else Result.failure()
                     }
                 } catch (e: IOException) {
-                    Logger.e(e, TAG) { "Download failed for id=$id" }
+                    Logger.e(tag = TAG) { "Download failed for id=$id (${e::class.simpleName})" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 } catch (e: IllegalArgumentException) {
-                    Logger.e(e, TAG) { "Invalid download request for id=$id" }
+                    Logger.e(tag = TAG) { "Invalid download request for id=$id (${e::class.simpleName})" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 } catch (e: SecurityException) {
-                    Logger.e(e, TAG) { "Missing storage permission for download id=$id" }
+                    Logger.e(tag = TAG) { "Missing storage permission for download id=$id (${e::class.simpleName})" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
                     Result.failure()
                 }

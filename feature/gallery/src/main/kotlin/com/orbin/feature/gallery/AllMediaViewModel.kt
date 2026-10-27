@@ -237,7 +237,7 @@ class AllMediaViewModel
                 val catalog = provider.getCatalog(CatalogRequest(provider.metadata.id, board.id))
                 sweepBoard(board, catalog, scanSettings.hiddenTokens)
             } catch (e: ProviderException) {
-                Logger.w(e, TAG) { "Failed to sweep board" }
+                Logger.w(tag = TAG) { "Failed to sweep board (${e::class.simpleName})" }
                 _uiState.update { it.copy(failedBoards = it.failedBoards + 1) }
                 null
             }
@@ -292,7 +292,7 @@ class AllMediaViewModel
                 val thread = context.provider.getThread(target.key.board, target.key.thread)
                 thread.allPosts.mediaItemsFor(target, context.scanSettings.hiddenTokens)
             } catch (e: ProviderException) {
-                Logger.w(e, TAG) { "Deep scan skipped thread" }
+                Logger.w(tag = TAG) { "Deep scan skipped thread (${e::class.simpleName})" }
                 null
             }
 

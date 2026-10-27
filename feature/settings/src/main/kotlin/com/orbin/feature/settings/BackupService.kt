@@ -19,6 +19,7 @@ import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -54,6 +55,9 @@ class BackupService
          */
         suspend fun importFromJson(backupJson: String): Result<BackupSummary> =
             runCatching {
+                require(backupJson.length <= MAX_BACKUP_JSON_CHARS) {
+                    "Backup file is too large to import."
+                }
                 val document = json.decodeFromString(BackupDocument.serializer(), backupJson)
                 require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                     "This backup was written by a newer version of Orbin " +
@@ -63,24 +67,32 @@ class BackupService
                 restoreSettings(document.settings)
 
                 val (subscribedBoards, unknownSubscribed) =
-                    document.subscribedBoards.partition { registry.get(ProviderId(it.providerId)) != null }
+                    document.subscribedBoards
+                        .filter { isValidBoardSlug(it.boardId) }
+                        .partition { registry.get(ProviderId(it.providerId)) != null }
                 subscribedBoards.forEach { ref ->
                     boardPreferences.setSubscribedBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
                 }
                 val (favoriteBoards, unknownFavorite) =
-                    document.favoriteBoards.partition { registry.get(ProviderId(it.providerId)) != null }
+                    document.favoriteBoards
+                        .filter { isValidBoardSlug(it.boardId) }
+                        .partition { registry.get(ProviderId(it.providerId)) != null }
                 favoriteBoards.forEach { ref ->
                     boardPreferences.setFavoriteBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
                 }
 
                 val (bookmarks, unknownBookmarks) =
-                    document.bookmarks.partition { registry.get(ProviderId(it.providerId)) != null }
+                    document.bookmarks
+                        .filter { isValidBoardSlug(it.boardId) && it.threadId > 0 }
+                        .partition { registry.get(ProviderId(it.providerId)) != null }
                 bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
 
                 // Saved searches carry only a board id, not a provider id (a search isn't scoped to
                 // one provider the way a bookmark or subscription is), so there is nothing to
                 // validate against the registry here.
-                document.savedSearches.forEach { searchRepository.saveSearch(it.toSavedSearch()) }
+                document.savedSearches
+                    .filter { it.boardId?.let(::isValidBoardSlug) ?: true }
+                    .forEach { searchRepository.saveSearch(it.toSavedSearch()) }
 
                 BackupSummary(
                     exportedAt = document.exportedAt,
@@ -90,7 +102,7 @@ class BackupService
                     savedSearches = document.savedSearches.size,
                     skippedUnknownProvider = unknownSubscribed.size + unknownFavorite.size + unknownBookmarks.size,
                 )
-            }
+            }.onFailure { if (it is CancellationException) throw it }
 
         private suspend fun ProviderId.refs(subscribed: Boolean): List<BackupBoardRef> {
             val boards =
@@ -186,6 +198,12 @@ class BackupService
                 .toString()
 
         private companion object {
+            const val MAX_BACKUP_JSON_CHARS = 5 * 1024 * 1024
+            const val MAX_BOARD_SLUG_LENGTH = 32
+            val VALID_BOARD_SLUG = Regex("""^[A-Za-z0-9_-]{1,$MAX_BOARD_SLUG_LENGTH}$""")
+
+            fun isValidBoardSlug(value: String): Boolean = VALID_BOARD_SLUG.matches(value)
+
             val json =
                 Json {
                     prettyPrint = true

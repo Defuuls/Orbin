@@ -10,6 +10,8 @@ import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSData
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileProtectionCompleteUntilFirstUserAuthentication
+import platform.Foundation.NSFileProtectionKey
 import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSOperationQueue
@@ -67,6 +69,7 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         if (NSFileManager.defaultManager.fileExistsAtPath(checkNotNull(destination.path))) {
             return readBytes(destination)
         }
+        require(url.startsWith("https://", ignoreCase = true)) { "Invalid download URL" }
         val source = NSURL.URLWithString(url) ?: error("Invalid download URL")
         return suspendCancellableCoroutine { continuation ->
             continuations[key] = continuation
@@ -150,6 +153,13 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         if (!moved) {
             finish(key, Result.failure(IllegalStateException("Could not preserve the completed download")))
         } else {
+            destination.path?.let { path ->
+                manager.setAttributes(
+                    attributes = mapOf(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication),
+                    ofItemAtPath = path,
+                    error = null,
+                )
+            }
             if (!continuations.containsKey(key)) return
             finish(key, runCatching { readBytes(destination) })
         }
@@ -198,7 +208,12 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
             ) { "No Application Support directory" }
         support.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
         val directory = checkNotNull(support.URLByAppendingPathComponent("background-downloads", isDirectory = true))
-        manager.createDirectoryAtURL(directory, withIntermediateDirectories = true, attributes = null, error = null)
+        manager.createDirectoryAtURL(
+            directory,
+            withIntermediateDirectories = true,
+            attributes = mapOf(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication),
+            error = null,
+        )
         return checkNotNull(directory.URLByAppendingPathComponent("$key.download"))
     }
 

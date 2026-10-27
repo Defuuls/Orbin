@@ -194,7 +194,7 @@ class SubscribedFeedViewModel
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                Logger.w(error, TAG) { "Failed to refresh subscribed feed" }
+                Logger.w(tag = TAG) { "Failed to refresh subscribed feed (${error::class.simpleName})" }
                 cachedForProvider?.copy(stale = true)
                     ?: SubscribedFeedUiState.Error(error.message ?: "Feed refresh failed")
             }
@@ -208,7 +208,7 @@ class SubscribedFeedViewModel
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        Logger.w(error, TAG) { "Failed to refresh board index" }
+                        Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
                     }
                 }.launchIn(viewModelScope)
         }
@@ -221,7 +221,7 @@ class SubscribedFeedViewModel
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    Logger.w(error, TAG) { "Failed to refresh board index" }
+                    Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
                 } finally {
                     // Always trigger the catalog pass. If board-index refresh failed, the existing
                     // board list can still refresh and stale content remains available on failure.
@@ -257,7 +257,9 @@ class SubscribedFeedViewModel
                 feedLoader.load(
                     feedBoards,
                     limitOverrides,
-                    onFailure = { _, error -> Logger.w(error, TAG) { "Failed to load catalog" } },
+                    onFailure = { _, error ->
+                        Logger.w(tag = TAG) { "Failed to load catalog (${error::class.simpleName})" }
+                    },
                 ) { board -> provider.getCatalog(CatalogRequest(provider.metadata.id, board)) }
             return SubscribedFeedUiState.Success(
                 boards = results.map { it.toUi() }.toImmutableList(),
