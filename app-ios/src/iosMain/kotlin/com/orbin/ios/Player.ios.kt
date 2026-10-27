@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -65,6 +64,17 @@ internal actual fun NativePlayer(
             NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = SessionAudio.muted } }
         } ?: return
     var muted by remember(player) { mutableStateOf(player.muted) }
+    val controller =
+        remember(player) {
+            AVPlayerViewController().apply {
+                this.player = player
+                showsPlaybackControls = false
+                // Picture in picture, as Android's player: leaving the app while a video plays
+                // keeps it going in a floating window. Needs the audio background mode.
+                allowsPictureInPicturePlayback = true
+                canStartPictureInPictureAutomaticallyFromInline = true
+            }
+        }
     val currentLoop = rememberUpdatedState(loop)
     val currentActive = rememberUpdatedState(active)
     var state by remember(player) { mutableStateOf(VideoState()) }
@@ -107,21 +117,7 @@ internal actual fun NativePlayer(
     }
     DisposableEffect(player) { onDispose { player.pause() } }
     Box(modifier) {
-        UIKitViewController(
-            factory = {
-                AVPlayerViewController().apply {
-                    showsPlaybackControls = false
-                    allowsPictureInPicturePlayback = true
-                    canStartPictureInPictureAutomaticallyFromInline = true
-                }
-            },
-            // The interop factory runs once per host, not once per remembered player. A URL
-            // replacement must attach the player that the playback effects and controls use.
-            update = { it.player = player },
-            onRelease = { it.player = null },
-            modifier = Modifier.fillMaxSize(),
-            properties = PASS_THROUGH,
-        )
+        UIKitViewController(factory = { controller }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
         VideoControls(
             state = state.copy(muted = muted),
             onTogglePlay = { if (player.rate > 0f) player.pause() else player.play() },
@@ -204,9 +200,7 @@ internal actual fun NativeWebMPlayer(
         }
     }
     Box(modifier) {
-        key(webView) {
-            UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
-        }
+        UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
         VideoControls(
             state = state.copy(muted = muted),
             onToggleMute = {
