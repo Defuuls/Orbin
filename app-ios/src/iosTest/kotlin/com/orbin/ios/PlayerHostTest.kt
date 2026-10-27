@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
+import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.useContents
 import platform.AVFoundation.AVURLAsset
 import platform.AVFoundation.asset
@@ -24,9 +25,8 @@ import platform.UIKit.childViewControllers
 import platform.WebKit.WKWebView
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotSame
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** Native host tests: these check attachment and layout, not decoded video pixels. */
@@ -58,8 +58,9 @@ class PlayerHostTest {
                     val asset = host.player?.currentItem?.asset as? AVURLAsset
                     asset?.URL?.absoluteString == url.value
                 }
-                assertSame(host, root.players().single(), "URL replacement updates the mounted host")
-                assertNotSame(previousPlayer, host.player)
+                // UIKit getters may return different Kotlin wrappers for the same native object.
+                assertEquals(host.objcPtr(), root.players().single().objcPtr(), "URL replacement reuses the host")
+                assertNotEquals(previousPlayer.objcPtr(), host.player.objcPtr())
                 assertEquals(SessionAudio.muted, host.player?.muted, "replacement keeps the session audio choice")
                 await { host.view.bounds.useContents { size.width > 0 && size.height > 0 } }
 
@@ -69,7 +70,7 @@ class PlayerHostTest {
                 assertNull(host.player)
                 visible.value = true
                 await { root.players().size == 1 }
-                assertNotSame(host, root.players().single())
+                assertNotEquals(host.objcPtr(), root.players().single().objcPtr())
             }
         }
     }
@@ -93,7 +94,7 @@ class PlayerHostTest {
                     root.view
                         .webViews()
                         .singleOrNull()
-                        ?.let { it !== previous } == true
+                        ?.let { it.objcPtr() != previous.objcPtr() } == true
                 }
                 val current = root.view.webViews().single()
                 await { current.bounds.useContents { size.width > 0 && size.height > 0 } }
@@ -101,7 +102,13 @@ class PlayerHostTest {
                 await { root.view.webViews().isEmpty() }
                 visible.value = true
                 await { root.view.webViews().size == 1 }
-                assertNotSame(current, root.view.webViews().single())
+                assertNotEquals(
+                    current.objcPtr(),
+                    root.view
+                        .webViews()
+                        .single()
+                        .objcPtr(),
+                )
             }
         }
     }
