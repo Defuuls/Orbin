@@ -150,6 +150,7 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         if (!moved) {
             finish(key, Result.failure(IllegalStateException("Could not preserve the completed download")))
         } else {
+            if (!continuations.containsKey(key)) return
             finish(key, runCatching { readBytes(destination) })
         }
     }

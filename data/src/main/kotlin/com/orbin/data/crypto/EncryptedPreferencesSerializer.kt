@@ -50,12 +50,12 @@ internal class EncryptedPreferencesSerializer(
     override suspend fun readFrom(input: InputStream): Preferences {
         val blob = input.readBytes()
         return runCatching {
-            markInitialized()
             require(blob.isNotEmpty()) { "Empty encrypted settings" }
             val json = decrypt(blob).decodeToString()
             val root = Json.parseToJsonElement(json).jsonObject
             val prefs = mutablePreferencesOf()
             root.forEach { (name, element) -> prefs.putEntry(name, element.jsonObject) }
+            markInitialized()
             prefs
         }.getOrElse {
             if (it is CancellationException) throw it

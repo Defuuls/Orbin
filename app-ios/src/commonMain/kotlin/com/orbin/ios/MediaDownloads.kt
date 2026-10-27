@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.time.Clock
 
 /** Where a saved file lands on the device. */
@@ -95,6 +97,7 @@ class MediaDownloads(
             .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private var lastId = 0L
+    private val transferGate = Semaphore(MAX_CONCURRENT_TRANSFERS)
 
     init {
         // Reattach to background URLSession tasks, or consume a file that completed while the
@@ -103,7 +106,9 @@ class MediaDownloads(
             dao.all().filter { it.status in UNFINISHED }.forEach { entry ->
                 if (durableFetch?.hasPendingTransfer(entry.id, entry.url) == true) {
                     dao.updateStatus(entry.id, DownloadStatus.RUNNING.name)
-                    transfer(entry.id, entry.url, entry.fileName, entry.relativeDir)
+                    scope.launch {
+                        transfer(entry.id, entry.url, entry.fileName, entry.relativeDir)
+                    }
                 } else {
                     dao.updateStatus(entry.id, DownloadStatus.FAILED.name)
                 }
@@ -163,12 +168,14 @@ class MediaDownloads(
     ) {
         val saved =
             runCatching {
-                val onProgress: (Long, Long?) -> Unit = { received, total ->
-                    progress.update { it + (id to (received to total)) }
+                transferGate.withPermit {
+                    val onProgress: (Long, Long?) -> Unit = { received, total ->
+                        progress.update { it + (id to (received to total)) }
+                    }
+                    val bytes = durableFetch?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
+                    store.save(bytes, name, folder, saveTargetOf(name))
+                    durableFetch?.didSave(id)
                 }
-                val bytes = durableFetch?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
-                store.save(bytes, name, folder, saveTargetOf(name))
-                durableFetch?.didSave(id)
             }.onFailure { if (it is CancellationException) throw it }
         progress.update { it - id }
         dao.updateStatus(id, if (saved.isSuccess) DownloadStatus.COMPLETED.name else DownloadStatus.FAILED.name)
@@ -255,5 +262,6 @@ private fun DownloadEntity.toRecord(live: Pair<Long, Long?>?): DownloadRecord =
 
 private val UNFINISHED = setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name)
 private val UNSAFE_PATH_CHARS = Regex("""[/\\:*?"<>|]""")
+private const val MAX_CONCURRENT_TRANSFERS = 3
 private const val MAX_FILE_NAME_LENGTH = 200
 private const val MAX_PATH_SEGMENT_LENGTH = 80

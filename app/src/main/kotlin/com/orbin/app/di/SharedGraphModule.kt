@@ -22,6 +22,7 @@ import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.graph.SharedGraph
 import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.provider.api.ProviderDiagnostics
 import com.orbin.provider.api.ProviderRegistry
 import dagger.Module
 import dagger.Provides
@@ -98,6 +99,9 @@ object SharedGraphModule {
 
     @Provides
     fun providesProviderRegistry(graph: SharedGraph): ProviderRegistry = graph.providerRegistry
+
+    @Provides
+    fun provideProviderDiagnostics(graph: SharedGraph): ProviderDiagnostics = graph.providerDiagnostics
 
     @Provides
     fun providesUpdateRepository(graph: SharedGraph): UpdateRepository = graph.updates

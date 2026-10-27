@@ -11,12 +11,13 @@ fun CatalogThread.matchesSearch(query: SearchQuery): Boolean {
     val needle = query.text.trim().lowercase()
     if (needle.isEmpty()) return true
     val subject = originalPost.subject?.lowercase().orEmpty()
-    val comment = originalPost.comment.raw.lowercase()
+    val comment = originalPost.comment.plainText().lowercase()
     val filters = query.filters
     val textMatches = needle in subject || needle in comment
     val mediaMatches = !filters.mediaOnly || originalPost.attachments.isNotEmpty()
     val contentMatches = filters.contentTypes.isEmpty() || filters.contentTypes.any(::hasContent)
-    return textMatches && mediaMatches && contentMatches
+    val repliesMatch = filters.minReplies?.let { stats.replyCount >= it } ?: true
+    return textMatches && mediaMatches && contentMatches && repliesMatch
 }
 
 /** This thread as a search hit: its subject (or board), the start of its opening post, its thumbnail. */
@@ -24,7 +25,7 @@ fun CatalogThread.toSearchResult(): SearchResult =
     SearchResult(
         key = key,
         title = originalPost.subject ?: "/${key.board.value}/",
-        snippet = originalPost.comment.raw.take(SEARCH_SNIPPET_MAX),
+        snippet = originalPost.comment.plainText().take(SEARCH_SNIPPET_MAX),
         matchedPost = originalPost.id,
         thumbnailUrl = originalPost.attachments.firstOrNull()?.thumbnailUrl,
     )

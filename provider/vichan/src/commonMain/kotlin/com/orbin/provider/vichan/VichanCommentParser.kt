@@ -105,15 +105,27 @@ object VichanCommentParser {
         attr: String,
     ): String? {
         val key = "$attr="
-        val idx = tagBody.indexOf(key)
+        var searchFrom = 0
+        var idx = -1
+        while (searchFrom < tagBody.length) {
+            val found = tagBody.indexOf(key, startIndex = searchFrom, ignoreCase = true)
+            if (found < 0) break
+            if (found == 0 || tagBody[found - 1].isWhitespace()) {
+                idx = found
+                break
+            }
+            searchFrom = found + 1
+        }
         if (idx < 0) return null
         val after = tagBody.substring(idx + key.length)
         val quote = after.firstOrNull()
-        return if (quote == '"' || quote == '\'') {
-            after.substring(1, after.indexOf(quote, 1).takeIf { it > 0 } ?: after.length)
-        } else {
-            after.takeWhile { !it.isWhitespace() }
-        }
+        val rawValue =
+            if (quote == '"' || quote == '\'') {
+                after.substring(1, after.indexOf(quote, 1).takeIf { it > 0 } ?: after.length)
+            } else {
+                after.takeWhile { !it.isWhitespace() }
+            }
+        return decodeEntities(rawValue)
     }
 
     // endregion
@@ -204,7 +216,7 @@ object VichanCommentParser {
         dead: Boolean,
     ): PostNode {
         val safeHref = sanitizeLinkHref(href)
-        val text = children.joinToString("") { (it as? PostNode.Text)?.text ?: "" }
+        val text = extractText(children)
         val board = safeHref?.let { BOARD_IN_PATH.find(it)?.groupValues?.get(1) }?.let(::BoardId)
         val target =
             safeHref?.let {
@@ -223,6 +235,18 @@ object VichanCommentParser {
             isOp = false,
         )
     }
+
+    private fun extractText(nodes: List<PostNode>): String =
+        buildString {
+            nodes.forEach { node ->
+                when (node) {
+                    is PostNode.Text -> append(node.text)
+                    is PostNode.Styled -> append(extractText(node.children))
+                    is PostNode.Link -> append(extractText(node.children))
+                    else -> Unit
+                }
+            }
+        }
 
     // endregion
 

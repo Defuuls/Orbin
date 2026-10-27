@@ -33,13 +33,20 @@ def included_modules() -> list[str]:
 
 
 def source_imports(module: str) -> list[tuple[pathlib.Path, str]]:
-    root = next((module_path(module) / d for d in ("src/main/kotlin", "src/commonMain/kotlin") if (module_path(module) / d).exists()), module_path(module) / "src/main/kotlin")
+    source_dirs = (
+        "src/main/kotlin",
+        "src/commonMain/kotlin",
+        "src/androidMain/kotlin",
+        "src/iosMain/kotlin",
+    )
     found: list[tuple[pathlib.Path, str]] = []
-    if not root.exists():
-        return found
-    for file in root.rglob("*.kt"):
-        text = file.read_text(encoding="utf-8")
-        found.extend((file, match.group(1)) for match in IMPORT.finditer(text))
+    for rel in source_dirs:
+        root = module_path(module) / rel
+        if not root.exists():
+            continue
+        for file in root.rglob("*.kt"):
+            text = file.read_text(encoding="utf-8")
+            found.extend((file, match.group(1)) for match in IMPORT.finditer(text))
     return found
 
 

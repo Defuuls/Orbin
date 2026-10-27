@@ -139,15 +139,18 @@ class ThreadViewModel
                 .map { it != null }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
+        private val _firstUnreadPostId = MutableStateFlow<PostId?>(null)
+
         val firstUnreadPostId: StateFlow<PostId?> =
-            combine(bookmark, uiState) { savedBookmark, state ->
+            combine(_firstUnreadPostId, bookmark, uiState) { capturedUnread, savedBookmark, state ->
                 val success = state as? ThreadUiState.Success
                 if (savedBookmark == null || success == null) {
                     null
                 } else {
-                    success.thread.replies
-                        .getOrNull(savedBookmark.lastSeenReplyCount)
-                        ?.id
+                    capturedUnread
+                        ?: success.thread.replies
+                            .getOrNull(savedBookmark.lastSeenReplyCount)
+                            ?.id
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
@@ -231,7 +234,7 @@ class ThreadViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
         fun saveThread() {
-            val thread = loadedThread ?: return
+            val thread = loadedThread ?: (uiState.value as? ThreadUiState.Success)?.thread ?: return
             viewModelScope.launch {
                 savedThreadRepository.save(thread)
                 _exportMessage.value = "Saved this thread's text (${thread.allPosts.size} posts)"
@@ -246,7 +249,7 @@ class ThreadViewModel
         }
 
         fun exportLinks() {
-            val thread = loadedThread ?: return
+            val thread = loadedThread ?: (uiState.value as? ThreadUiState.Success)?.thread ?: return
             viewModelScope.launch {
                 val links = thread.allPosts.flatMap { it.comment.externalLinks }.distinct()
                 if (links.isEmpty()) {
@@ -298,25 +301,37 @@ class ThreadViewModel
 
         private fun onThreadLoaded(thread: Thread) {
             if (thread.isPermanentlyFiltered()) return
-            loadedThread = thread
+            val visible = ContentPolicy.visibleThread(thread) ?: return
+            loadedThread = visible
             viewModelScope.launch {
+                val existingBookmark = bookmarkRepository.getBookmark(key)
+                if (existingBookmark != null) {
+                    _firstUnreadPostId.value =
+                        visible.replies
+                            .getOrNull(existingBookmark.lastSeenReplyCount)
+                            ?.id
+                    bookmarkRepository.updateLatest(key, visible.stats.replyCount, visible.stats.isArchived)
+                    bookmarkRepository.markRead(key)
+                } else {
+                    _firstUnreadPostId.value = null
+                }
                 historyRepository.record(
                     HistoryEntry(
                         key = key,
-                        title = title.ifBlank { thread.subject ?: "/${board.value}/" },
+                        title = title.ifBlank { visible.subject ?: "/${board.value}/" },
                         thumbnailUrl =
-                            thread.originalPost.attachments
+                            visible.originalPost.attachments
                                 .firstOrNull()
                                 ?.thumbnailUrl,
                         lastVisitedMillis = System.currentTimeMillis(),
-                        lastReadPostId = thread.originalPost.id,
+                        lastReadPostId = visible.originalPost.id,
                     ),
                 )
             }
         }
 
         private fun currentBookmark(): Bookmark {
-            val thread = loadedThread
+            val thread = loadedThread ?: (uiState.value as? ThreadUiState.Success)?.thread
             return Bookmark(
                 key = key,
                 title = title.ifBlank { thread?.subject ?: "/${board.value}/" },

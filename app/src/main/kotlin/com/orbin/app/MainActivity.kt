@@ -17,6 +17,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -86,6 +87,7 @@ class MainActivity : FragmentActivity() {
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
     private var activeBiometricPrompt: BiometricPrompt? = null
+    private var authTimeoutRunnable: Runnable? = null
     private var authenticationSession = 0
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -146,7 +148,9 @@ class MainActivity : FragmentActivity() {
         // which is all safe mode needs.
         safeMode = diagnosticsRepository.isCrashLooping()
         downgradeBlocked = versionGuardRepository.isDowngrade()
-        handleIncomingIntent(intent)
+        if (savedInstanceState == null) {
+            handleIncomingIntent(intent)
+        }
 
         setContent {
             ActivityRoot()
@@ -178,7 +182,8 @@ class MainActivity : FragmentActivity() {
         val ready = uiState.ready
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
         val shouldLock = uiState.shouldLock
-        var unlocked by remember { mutableStateOf(false) }
+        var unlocked by rememberSaveable { mutableStateOf(false) }
+        var previousShouldLock by rememberSaveable { mutableStateOf<Boolean?>(null) }
         var unlockMessage by remember { mutableStateOf<String?>(null) }
         var allowContinueWithoutLock by remember { mutableStateOf(false) }
 
@@ -223,6 +228,14 @@ class MainActivity : FragmentActivity() {
         // requested once the activity has actually reached RESUMED.
         val lifecycleOwner = LocalLifecycleOwner.current
         val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+
+        if (ready) {
+            val enabledMidSession = previousShouldLock == false && shouldLock && !relockOnResume
+            if (enabledMidSession && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
+                unlocked = true
+            }
+            previousShouldLock = shouldLock
+        }
 
         LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
             if (!ready) return@LaunchedEffect
@@ -292,7 +305,7 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         cancelActiveAuthentication()
         super.onStop()
-        if (biometricLockActive && !isInPictureInPictureMode) {
+        if (biometricLockActive) {
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave
             // authenticationInProgress stuck true, which would silently block every future
@@ -353,6 +366,7 @@ class MainActivity : FragmentActivity() {
                     return
                 }
 
+        authTimeoutRunnable?.let(mainHandler::removeCallbacks)
         val timeout =
             Runnable {
                 val promptToCancel = activeBiometricPrompt
@@ -361,6 +375,7 @@ class MainActivity : FragmentActivity() {
                     onAuthenticationError(getString(R.string.lock_error_timeout))
                 }
             }
+        authTimeoutRunnable = timeout
         mainHandler.postDelayed(timeout, AUTHENTICATION_TIMEOUT_MS)
 
         val prompt =
@@ -423,6 +438,8 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun cancelActiveAuthentication() {
+        authTimeoutRunnable?.let(mainHandler::removeCallbacks)
+        authTimeoutRunnable = null
         activeBiometricPrompt?.cancelAuthentication()
         activeBiometricPrompt = null
         authenticationInProgress = false
@@ -431,6 +448,8 @@ class MainActivity : FragmentActivity() {
 
     private fun finishAuthentication(session: Int): Boolean {
         if (session != authenticationSession) return false
+        authTimeoutRunnable?.let(mainHandler::removeCallbacks)
+        authTimeoutRunnable = null
         activeBiometricPrompt = null
         authenticationInProgress = false
         return true

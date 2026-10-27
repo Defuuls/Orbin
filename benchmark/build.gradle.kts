@@ -29,8 +29,8 @@ android {
 }
 
 baselineProfile {
-    // Generation needs real hardware: a rooted emulator or an unlocked physical device. There is
-    // no CI path for this, which is why the generated profile is committed rather than rebuilt.
+    // Generation runs against a connected emulator or physical device; in CI, see
+    // `.github/workflows/baseline-profile.yml` which regenerates and opens a PR with the profile.
     useConnectedDevices = true
 }
 

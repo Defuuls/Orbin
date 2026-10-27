@@ -80,8 +80,8 @@ class PowBlockInterceptor : Interceptor {
         synchronized(gate) {
             if (gate.clearances == clearancesSeen) {
                 val solved = solvePow(chain, challenged)
-                challenged.close()
                 if (!solved) return null
+                challenged.close()
                 gate.clearances++
             } else {
                 challenged.close()

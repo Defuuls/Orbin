@@ -5,11 +5,12 @@ plugins {
 
 // "What's new" in both apps is this release's CHANGELOG.md section, compiled in at build time, so
 // cutting a release (which dates that section) is all it takes for Android and iOS to show it.
-val generateReleaseNotes by tasks.registering(GenerateReleaseNotes::class) {
-    changelog.set(rootProject.layout.projectDirectory.file("CHANGELOG.md"))
-    versionName.set(providers.gradleProperty("orbin.versionName"))
-    outputDir.set(layout.buildDirectory.dir("generated/releaseNotes/commonMain/kotlin"))
-}
+val generateReleaseNotes =
+    tasks.register<GenerateReleaseNotes>("generateReleaseNotes") {
+        changelog.set(rootProject.layout.projectDirectory.file("CHANGELOG.md"))
+        versionName.set(providers.gradleProperty("orbin.versionName"))
+        outputDir.set(layout.buildDirectory.dir("generated/releaseNotes/commonMain/kotlin"))
+    }
 
 kotlin {
     android {

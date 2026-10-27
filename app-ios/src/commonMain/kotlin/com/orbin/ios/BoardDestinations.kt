@@ -116,7 +116,15 @@ internal fun BoardMediaDestination(
                 onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
                 tile = { cell, modifier ->
                     byId[cell.id]?.let { item ->
-                        SharpImage(item.attachment, contentDescription = null, modifier, fill = Modifier.fillMaxSize())
+                        Box(modifier) {
+                            SharpImage(
+                                item.attachment,
+                                contentDescription = null,
+                                Modifier.fillMaxSize(),
+                                fill = Modifier.fillMaxSize(),
+                            )
+                            if (item.attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                        }
                     }
                 },
             )

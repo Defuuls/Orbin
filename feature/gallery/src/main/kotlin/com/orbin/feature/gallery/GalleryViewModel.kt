@@ -9,8 +9,10 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.DownloadRepository
+import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import com.orbin.media.ImagePreloader
@@ -53,6 +55,7 @@ class GalleryViewModel
         observeThread: ObserveThreadUseCase,
         private val downloadRepository: DownloadRepository,
         settingsRepository: SettingsRepository,
+        private val savedThreadRepository: SavedThreadRepository,
         private val imageClipboard: ImageClipboard,
         private val imagePreloader: ImagePreloader,
     ) : ViewModel() {
@@ -93,6 +96,7 @@ class GalleryViewModel
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
+        private val threadKey = ThreadKey(provider, board, threadId)
 
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
@@ -106,14 +110,19 @@ class GalleryViewModel
         val media: StateFlow<ImmutableList<MediaAttachment>> =
             observeThread(provider, board, threadId)
                 .map { result ->
-                    when (result) {
-                        is OrbinResult.Success ->
-                            result.data.allPosts
-                                .filterNot { it.isPermanentlyFiltered() }
-                                .flatMap { it.attachments }
-                                .filterNot { it.isPermanentlyFiltered() }
-                                .toImmutableList()
-                        is OrbinResult.Failure -> persistentListOf()
+                    val thread =
+                        when (result) {
+                            is OrbinResult.Success -> result.data
+                            is OrbinResult.Failure -> savedThreadRepository.load(threadKey)
+                        }
+                    if (thread == null || thread.isPermanentlyFiltered()) {
+                        persistentListOf()
+                    } else {
+                        thread.allPosts
+                            .filterNot { it.isPermanentlyFiltered() }
+                            .flatMap { it.attachments }
+                            .filterNot { it.isPermanentlyFiltered() }
+                            .toImmutableList()
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 

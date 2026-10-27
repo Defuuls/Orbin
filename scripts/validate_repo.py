@@ -211,6 +211,15 @@ def check_release_tooling() -> None:
         fail("release-tooling", f"per-release cutter workflow(s) present, use release/next.toml instead: {stale}")
 
 
+def check_tracked_hygiene() -> None:
+    tracked = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+    for rel in tracked:
+        if "__pycache__/" in rel or rel.endswith((".pyc", ".pyo")):
+            fail("hygiene", f"tracked Python bytecode artifact: {rel}")
+        if rel.startswith(".agents/"):
+            fail("hygiene", f"tracked agent scratchpad file: {rel}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fix-links", action="store_true", help="backfill missing CHANGELOG link refs")
@@ -226,6 +235,7 @@ def main() -> int:
     check_changelog_links(tags, args.fix_links)
     check_relative_links()
     check_release_tooling()
+    check_tracked_hygiene()
 
     for note in notes:
         print(f"note: {note}")

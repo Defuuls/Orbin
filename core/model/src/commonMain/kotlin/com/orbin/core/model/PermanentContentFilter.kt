@@ -168,7 +168,7 @@ private const val SEPARATOR = "[^\\p{L}\\p{N}]"
  */
 fun Post.isPermanentlyFiltered(includeHarsh: Boolean = false): Boolean =
     PermanentContentFilter.matchesAny(
-        listOf(subject, comment.raw, poster.name) +
+        listOf(subject, comment.plainText(), poster.name) +
             attachments.map { it.originalFileName },
         includeHarsh,
     )
