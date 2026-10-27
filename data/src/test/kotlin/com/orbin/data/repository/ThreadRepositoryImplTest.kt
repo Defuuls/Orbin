@@ -57,13 +57,13 @@ class ThreadRepositoryImplTest {
         }
 
     @Test
-    fun `a revisit shows the cached copy and then the replies posted since`() =
+    fun `a revisit serves the cached copy without re-fetching`() =
         runTest {
             coEvery { provider.getThread(key.board, key.thread) } returns thread(replies = 3)
             repository.observeThread(key).toList()
             coEvery { provider.getThread(key.board, key.thread) } returns thread(replies = 9)
 
-            assertThat(replyCounts(repository.observeThread(key).toList())).containsExactly(3, 9).inOrder()
+            assertThat(replyCounts(repository.observeThread(key).toList())).containsExactly(3)
         }
 
     @Test

@@ -63,9 +63,14 @@ data class BoardSweep(
 data class ScanSettings(
     val hideNsfwBoards: Boolean,
     val hiddenTokens: Set<String>,
+    val coverViolentMedia: Boolean = true,
 ) {
     // Reader tags are gone, so only the permanent filter applies on top of the NSFW choice.
-    constructor(settings: AppSettings) : this(settings.hideNsfwBoards, emptySet())
+    constructor(settings: AppSettings) : this(
+        hideNsfwBoards = settings.hideNsfwBoards,
+        hiddenTokens = emptySet(),
+        coverViolentMedia = settings.coverViolentMedia,
+    )
 }
 
 /** The boards a sweep should visit: the reader's board filters, applied as the feed applies them. */
@@ -122,7 +127,7 @@ fun List<Post>.mediaItemsFor(
 private fun CatalogThread.title(): String {
     val subject = originalPost.subject?.trim().orEmpty()
     if (subject.isNotEmpty()) return subject
-    val comment = originalPost.comment.raw.trim()
+    val comment = originalPost.comment.plainText().trim()
     return if (comment.length > TITLE_MAX_CHARS) comment.take(TITLE_MAX_CHARS) + "…" else comment
 }
 

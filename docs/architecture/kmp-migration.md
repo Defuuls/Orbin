@@ -113,8 +113,8 @@ no behaviour change.
   migration tests.
 - **Prove behaviour is preserved.** Existing tests are kept unmodified where they cover moved code.
 - **Release automation is untouched** (`release/next.toml`).
-- **Check in the real app.** Each phase is checked with `/run-orbin`
-  (`.claude/skills/run-orbin/`), which drives the real `MainActivity` headlessly.
+- **Check in the real app.** Each phase is checked with `scripts/run-orbin/driver.sh`
+  (`scripts/run-orbin/`), which drives the real `MainActivity` headlessly.
 
 ## Also done along the way
 

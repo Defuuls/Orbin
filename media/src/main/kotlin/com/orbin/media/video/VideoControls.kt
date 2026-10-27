@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,10 +50,14 @@ internal fun VideoFullscreenEffect(
     fullscreen: Boolean,
     onFullscreenChange: (Boolean) -> Unit,
 ) {
-    LaunchedEffect(fullscreen) { onFullscreenChange(fullscreen) }
+    val currentOnFullscreenChange by rememberUpdatedState(onFullscreenChange)
+    LaunchedEffect(fullscreen) { currentOnFullscreenChange(fullscreen) }
     LaunchedEffect(activity, fullscreen) { activity?.applyVideoFullscreen(fullscreen) }
     DisposableEffect(activity) {
-        onDispose { activity?.applyVideoFullscreen(fullscreen = false) }
+        onDispose {
+            currentOnFullscreenChange(false)
+            activity?.applyVideoFullscreen(fullscreen = false)
+        }
     }
 }
 

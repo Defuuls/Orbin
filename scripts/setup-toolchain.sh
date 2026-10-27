@@ -1,23 +1,19 @@
 #!/bin/bash
-# SessionStart hook: provision the Android build toolchain for Claude Code on the web.
+# Provision the Android build toolchain for Defuuls headless/remote environments.
 #
-# The web sandbox ships a JDK but not the Android SDK, and the Gradle distribution host
-# (services.gradle.org -> GitHub releases) is blocked by the egress policy, so `./gradlew`
-# cannot self-bootstrap. This script installs the Android SDK and seeds the Gradle wrapper
-# cache from an allowed mirror so detekt/ktlint/tests/assemble all run locally.
+# Installs the Android SDK and seeds the Gradle wrapper cache from an allowed mirror so
+# detekt/ktlint/tests/assemble all run locally.
 #
-# Idempotent: every step is skipped when its output already exists, so re-running (resume,
-# clear, compact) is cheap. Remote-only: does nothing on a local machine.
+# Idempotent: every step is skipped when its output already exists.
 set -euo pipefail
 
-# Only provision the managed web sandbox; a developer's own machine is left untouched.
-if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+if [ "${ORBIN_REMOTE_TOOLCHAIN:-}" != "true" ]; then
   exit 0
 fi
 
-log() { echo "[session-start] $*" >&2; }
+log() { echo "[setup-toolchain] $*" >&2; }
 
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+PROJECT_DIR="${ORBIN_PROJECT_DIR:-$(pwd)}"
 SDK_DIR="${ANDROID_SDK_ROOT:-$HOME/android-sdk}"
 CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
 GRADLE_MIRROR_BASE="https://mirrors.cloud.tencent.com/gradle"
@@ -56,11 +52,11 @@ fi
 
 # Point both the build (local.properties, gitignored) and the session env at the SDK.
 echo "sdk.dir=$SDK_DIR" > "$PROJECT_DIR/local.properties"
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+if [ -n "${ORBIN_ENV_FILE:-}" ]; then
   {
     echo "export ANDROID_HOME=\"$SDK_DIR\""
     echo "export ANDROID_SDK_ROOT=\"$SDK_DIR\""
-  } >> "$CLAUDE_ENV_FILE"
+  } >> "$ORBIN_ENV_FILE"
 fi
 
 # ---------------------------------------------------------------------------

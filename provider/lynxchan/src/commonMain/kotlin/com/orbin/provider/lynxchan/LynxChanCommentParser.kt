@@ -71,7 +71,7 @@ internal object LynxChanCommentParser {
         data object LineBreak : Token
     }
 
-    private val voidTags = setOf("br", "wbr", "hr")
+    private val voidTags = setOf("br", "hr")
 
     private fun tokenize(html: String): List<Token> {
         val tokens = mutableListOf<Token>()
@@ -90,7 +90,7 @@ internal object LynxChanCommentParser {
                 break
             }
             val rawTag = html.substring(lt + 1, gt).trim()
-            tokens.add(parseTag(rawTag))
+            parseTag(rawTag)?.let(tokens::add)
             i = gt + 1
         }
         return tokens
@@ -110,11 +110,13 @@ internal object LynxChanCommentParser {
         }
     }
 
-    private fun parseTag(raw: String): Token {
+    private fun parseTag(raw: String): Token? {
+        val selfClosing = raw.endsWith("/")
         val body = raw.removeSuffix("/").trim()
         if (body.startsWith("/")) return Token.Close(body.removePrefix("/").trim().lowercase())
         val name = body.takeWhile { !it.isWhitespace() }.lowercase()
         if (name in voidTags) return Token.LineBreak
+        if (name == "wbr" || selfClosing) return null
         return Token.Open(name, cssClass = attr(body, "class"), href = attr(body, "href"))
     }
 
@@ -123,15 +125,27 @@ internal object LynxChanCommentParser {
         attr: String,
     ): String? {
         val key = "$attr="
-        val idx = tagBody.indexOf(key)
+        var searchFrom = 0
+        var idx = -1
+        while (searchFrom < tagBody.length) {
+            val found = tagBody.indexOf(key, startIndex = searchFrom, ignoreCase = true)
+            if (found < 0) break
+            if (found == 0 || tagBody[found - 1].isWhitespace()) {
+                idx = found
+                break
+            }
+            searchFrom = found + 1
+        }
         if (idx < 0) return null
         val after = tagBody.substring(idx + key.length)
         val quote = after.firstOrNull()
-        return if (quote == '"' || quote == '\'') {
-            after.substring(1, after.indexOf(quote, 1).takeIf { it > 0 } ?: after.length)
-        } else {
-            after.takeWhile { !it.isWhitespace() }
-        }
+        val rawValue =
+            if (quote == '"' || quote == '\'') {
+                after.substring(1, after.indexOf(quote, 1).takeIf { it > 0 } ?: after.length)
+            } else {
+                after.takeWhile { !it.isWhitespace() }
+            }
+        return decodeEntities(rawValue)
     }
 
     // endregion
@@ -218,7 +232,7 @@ internal object LynxChanCommentParser {
         context: Context,
     ): PostNode {
         val safeHref = sanitizeLinkHref(href)
-        val text = children.joinToString("") { (it as? PostNode.Text)?.text ?: "" }
+        val text = extractText(children)
         val hrefBoard = safeHref?.let { BOARD_IN_PATH.find(it)?.groupValues?.get(1) }
         val board = hrefBoard?.takeIf { it != context.currentBoard }?.let(::BoardId)
         val target =
@@ -233,6 +247,18 @@ internal object LynxChanCommentParser {
                 ?: 0L
         return PostNode.QuoteLink(target = PostId(target), board = board, isDead = false, isOp = false)
     }
+
+    private fun extractText(nodes: List<PostNode>): String =
+        buildString {
+            nodes.forEach { node ->
+                when (node) {
+                    is PostNode.Text -> append(node.text)
+                    is PostNode.Styled -> append(extractText(node.children))
+                    is PostNode.Link -> append(extractText(node.children))
+                    else -> Unit
+                }
+            }
+        }
 
     /** A bare `<a href>` with no `quoteLink` class: either `>>>/board/` (board-only) or a genuine
      * external link. LynxChan renders board links as a site-relative path with no post fragment. */

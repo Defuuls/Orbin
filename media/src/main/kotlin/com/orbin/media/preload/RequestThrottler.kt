@@ -21,9 +21,17 @@ class RequestThrottler(
 
     suspend fun acquire() {
         semaphore.acquire()
-        throttleCooldown()
-        throttlePerMinute()
-        delay(delayBetweenRequests)
+        var acquired = false
+        try {
+            throttleCooldown()
+            throttlePerMinute()
+            delay(delayBetweenRequests)
+            acquired = true
+        } finally {
+            if (!acquired) {
+                semaphore.release()
+            }
+        }
     }
 
     fun release() {
@@ -53,25 +61,22 @@ class RequestThrottler(
     private suspend fun throttlePerMinute() {
         if (maxPerMinute <= 0) return
 
-        var waitTime = 0L
-        synchronized(lock) {
-            val now = System.currentTimeMillis()
-            val oneMinuteAgo = now - ONE_MINUTE_MILLIS
+        while (true) {
+            val waitTime =
+                synchronized(lock) {
+                    val now = System.currentTimeMillis()
+                    val oneMinuteAgo = now - ONE_MINUTE_MILLIS
 
-            requestTimestamps.removeAll { it < oneMinuteAgo }
+                    requestTimestamps.removeAll { it < oneMinuteAgo }
 
-            if (requestTimestamps.size >= maxPerMinute) {
-                val oldestTimestamp = requestTimestamps.first()
-                waitTime = (oldestTimestamp + ONE_MINUTE_MILLIS) - now
-            }
-        }
-
-        if (waitTime > 0) delay(waitTime)
-
-        synchronized(lock) {
-            val now = System.currentTimeMillis()
-            requestTimestamps.removeAll { it < now - ONE_MINUTE_MILLIS }
-            requestTimestamps.addLast(now)
+                    if (requestTimestamps.size < maxPerMinute) {
+                        requestTimestamps.addLast(now)
+                        return
+                    }
+                    val oldestTimestamp = requestTimestamps.first()
+                    (oldestTimestamp + ONE_MINUTE_MILLIS - now).coerceAtLeast(1L)
+                }
+            delay(waitTime)
         }
     }
 

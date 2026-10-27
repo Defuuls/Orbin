@@ -44,7 +44,7 @@ fun Post.matchesFilterTokens(
 ): Boolean {
     if (isPermanentlyFiltered(includeHarsh)) return true
     if (tokens.isEmpty()) return false
-    val text = listOfNotNull(subject, comment.raw).joinToString(" ").lowercase()
+    val text = listOfNotNull(subject, comment.plainText()).joinToString(" ").lowercase()
     return tokens.any { token -> matches(token, text) }
 }
 

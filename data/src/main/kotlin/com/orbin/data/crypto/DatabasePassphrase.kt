@@ -2,7 +2,6 @@ package com.orbin.data.crypto
 
 import android.content.Context
 import android.util.Base64
-import androidx.core.content.edit
 import java.security.SecureRandom
 
 /**
@@ -28,12 +27,13 @@ internal class DatabasePassphrase(
                 ?.let { return Resolved(it, wipeDatabase = false) }
         }
         val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
-        runCatching {
-            val encrypted = LocalDataCipher.encrypt(fresh)
-            val wrapped = Base64.encodeToString(encrypted, Base64.NO_WRAP)
-            prefs.edit { putString(KEY_PASSPHRASE, wrapped) }
-        }
-        return Resolved(fresh, wipeDatabase = true)
+        val persisted =
+            runCatching {
+                val encrypted = LocalDataCipher.encrypt(fresh)
+                val wrapped = Base64.encodeToString(encrypted, Base64.NO_WRAP)
+                prefs.edit().putString(KEY_PASSPHRASE, wrapped).commit()
+            }.getOrDefault(false)
+        return Resolved(fresh, wipeDatabase = persisted)
     }
 
     data class Resolved(

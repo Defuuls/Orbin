@@ -40,7 +40,20 @@ Thumbs.db
 **/test-results/
 **/screenshots/diff/
 
-# Secrets
+# Secrets & local scratchpads
 secrets.properties
 *.env
 _site/
+.agents/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.windsurf/
+.aider*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/

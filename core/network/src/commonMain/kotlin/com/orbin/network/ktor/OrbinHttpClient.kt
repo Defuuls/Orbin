@@ -18,6 +18,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
+import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.encodedPath
 import io.ktor.http.takeFrom
@@ -79,7 +80,9 @@ fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
         var clearancesSeen = gate.clearances
         var call = execute(original)
         repeat(PowBlock.MAX_ROUNDS) {
-            val html = call.response.contentType()?.match(ContentType.Text.Html) == true
+            val html =
+                call.response.contentType()?.match(ContentType.Text.Html) == true &&
+                    (call.response.contentLength() ?: 0L) <= PowBlock.MAX_INTERSTITIAL_BYTES
             if (html) call = call.save()
             val body = if (html) call.response.bodyAsText().take(PowBlock.MAX_INTERSTITIAL_BYTES.toInt()) else ""
             val challenge = if (PowBlock.isChallenge(body)) PowBlock.parse(body) else null
@@ -146,7 +149,7 @@ private fun termsPage(call: HttpClientCall): Url? {
     val url = call.request.url
     if (url.encodedPath.endsWith(PowBlock.DISCLAIMER_PATH)) return url
     val location = call.response.headers[HttpHeaders.Location] ?: return null
-    val target = URLBuilder(url).takeFrom(location).build()
+    val target = runCatching { URLBuilder(url).takeFrom(location).build() }.getOrElse { return null }
     return target.takeIf {
         call.response.status.value in REDIRECT_CODES &&
             it.encodedPath.endsWith(PowBlock.DISCLAIMER_PATH)

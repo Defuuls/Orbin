@@ -123,9 +123,7 @@ fun BoardScreen(
                 items(
                     count = itemCount,
                     key = rowKey,
-                    contentType = { index ->
-                        if (rowAt(index)?.hasPreview == true) "catalog-grid-preview" else "catalog-grid"
-                    },
+                    contentType = { "thread" },
                 ) { index ->
                     rowAt(index)?.let { row ->
                         FeedGridCell(row, seed = index, onClick = onOpenRow, thumbnail = thumbnail, showBoard = false)

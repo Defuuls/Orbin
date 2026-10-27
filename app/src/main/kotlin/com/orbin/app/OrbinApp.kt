@@ -55,7 +55,8 @@ fun OrbinApp(
     pendingRoute: Route? = null,
     onPendingRouteHandled: () -> Unit = {},
 ) {
-    LaunchedEffect(pendingRoute) {
+    LaunchedEffect(pendingRoute, startWithOnboarding) {
+        if (startWithOnboarding) return@LaunchedEffect
         val route = pendingRoute ?: return@LaunchedEffect
         when (route) {
             Route.NextFeed, Route.Downloads, Route.BoardGallery -> navController.navigateToTab(route)

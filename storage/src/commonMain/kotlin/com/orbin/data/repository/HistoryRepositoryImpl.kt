@@ -12,6 +12,7 @@ import com.orbin.data.database.toDomain
 import com.orbin.data.database.toEntity
 import com.orbin.domain.repository.HistoryRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 private const val HISTORY_LIMIT = 200
@@ -26,16 +27,22 @@ class HistoryRepositoryImpl(
         }
 
     override fun observeVisitedKeys(): Flow<Set<ThreadKey>> =
-        dao.observeKeys().map { rows ->
-            rows.mapTo(mutableSetOf()) { row ->
-                ThreadKey(ProviderId(row.provider), BoardId(row.board), ThreadId(row.thread))
-            }
-        }
+        dao
+            .observeKeys()
+            .map { rows ->
+                rows.mapTo(mutableSetOf()) { row ->
+                    ThreadKey(ProviderId(row.provider), BoardId(row.board), ThreadId(row.thread))
+                }
+            }.distinctUntilChanged()
 
     override fun observeVisitedThreadIds(
         provider: ProviderId,
         board: BoardId,
-    ): Flow<Set<Long>> = dao.observeThreadIds(provider.value, board.value).map { it.toSet() }
+    ): Flow<Set<Long>> =
+        dao
+            .observeThreadIds(provider.value, board.value)
+            .map { it.toSet() }
+            .distinctUntilChanged()
 
     override suspend fun getEntry(key: ThreadKey): HistoryEntry? =
         dao.getEntry(key.provider.value, key.board.value, key.thread.value)?.toDomain()

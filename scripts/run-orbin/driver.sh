@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Drive the real Orbin Android app headlessly (Robolectric + Roborazzi), from the repo root.
-#   .claude/skills/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'   (steps: see SKILL.md)
+#   scripts/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'   (steps: see SKILL.md)
 # Env: OUT=<dir> (default build/orbin-drive), DARK=true for night mode.
 set -euo pipefail
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
-SKILL=.claude/skills/run-orbin
+SKILL=scripts/run-orbin
 STEPS="${1:-idle:2000;shot:launch;tree}"
 OUT="${OUT:-$PWD/build/orbin-drive}"
 mkdir -p "$OUT"

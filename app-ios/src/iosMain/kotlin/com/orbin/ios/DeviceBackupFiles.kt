@@ -4,6 +4,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.CoreGraphics.CGRectMake
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
@@ -41,11 +42,13 @@ class DeviceBackupFiles : BackupFiles {
         return suspendCancellableCoroutine { continuation ->
             val sheet = UIActivityViewController(activityItems = listOf(file), applicationActivities = null)
             sheet.completionWithItemsHandler = { _, completed, _, _ ->
+                NSFileManager.defaultManager.removeItemAtURL(file, error = null)
                 if (continuation.isActive) continuation.resume(completed)
             }
             continuation.invokeOnCancellation {
                 // Backup operations and lifecycle cancellation both run on the main scope.
                 sheet.completionWithItemsHandler = null
+                NSFileManager.defaultManager.removeItemAtURL(file, error = null)
                 if (presenter.presentedViewController === sheet) {
                     presenter.dismissViewControllerAnimated(false, completion = null)
                 }

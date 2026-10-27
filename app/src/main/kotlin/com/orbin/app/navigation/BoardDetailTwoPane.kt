@@ -47,8 +47,7 @@ fun BoardDetailTwoPane(
     LaunchedEffect(selectedThread) {
         selectedThread?.let { thread ->
             detailNavController.navigate(thread) {
-                popUpTo<DetailPaneEmpty>()
-                launchSingleTop = true
+                popUpTo<DetailPaneEmpty> { inclusive = false }
             }
         }
     }

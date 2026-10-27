@@ -63,6 +63,7 @@ private class PencilListener :
         }
     }
 
+    @OptIn(kotlinx.cinterop.BetaInteropApi::class)
     @ObjCAction
     fun onHover(recognizer: UIHoverGestureRecognizer) {
         when (recognizer.state) {

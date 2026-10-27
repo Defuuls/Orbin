@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -131,6 +132,9 @@ fun VideoPlayer(
         }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val currentActive by rememberUpdatedState(active)
+    val currentAutoPlay by rememberUpdatedState(autoPlay)
+    val currentPlaybackError by rememberUpdatedState(playbackError)
     DisposableEffect(lifecycleOwner, exoPlayer) {
         val observer =
             LifecycleEventObserver { _, event ->
@@ -141,7 +145,7 @@ fun VideoPlayer(
                         }
                     }
                     Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
-                        if (active && autoPlay && playbackError == null) {
+                        if (currentActive && currentAutoPlay && currentPlaybackError == null) {
                             exoPlayer.play()
                         }
                     }
@@ -222,18 +226,23 @@ fun VideoPlayer(
 
     // Turning the phone sideways is the fullscreen button.
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    VideoFullscreenEffect(
-        activity = activity,
-        fullscreen = active && landscape,
-        onFullscreenChange = onFullscreenChange,
-    )
+    if (active) {
+        VideoFullscreenEffect(
+            activity = activity,
+            fullscreen = landscape,
+            onFullscreenChange = onFullscreenChange,
+        )
+    }
 
-    LaunchedEffect(exoPlayer) {
-        while (true) {
+    LaunchedEffect(exoPlayer, active, isPlaying) {
+        positionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
+        durationMs = exoPlayer.duration.coerceAtLeast(0L)
+        bufferedProgress = (exoPlayer.bufferedPercentage / PERCENT_DIVISOR).coerceIn(0f, 1f)
+        while (active && isPlaying) {
+            delay(PROGRESS_UPDATE_MS)
             positionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
             durationMs = exoPlayer.duration.coerceAtLeast(0L)
             bufferedProgress = (exoPlayer.bufferedPercentage / PERCENT_DIVISOR).coerceIn(0f, 1f)
-            delay(PROGRESS_UPDATE_MS)
         }
     }
 
@@ -277,6 +286,13 @@ fun VideoPlayer(
             }
         exoPlayer.addListener(listener)
         onDispose {
+            if (activity != null) {
+                runCatching {
+                    activity.setPictureInPictureParams(
+                        PictureInPictureParams.Builder().setAutoEnterEnabled(false).build(),
+                    )
+                }
+            }
             PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
             exoPlayer.release()

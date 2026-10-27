@@ -177,11 +177,12 @@ class SubscribedFeedViewModel
             lastLoad?.let { cached ->
                 if (cached.inputs == inputs) return cached.state
             }
+            val cachedForProvider = lastLoad?.takeIf { it.inputs.providerId == inputs.providerId }?.state
 
             return try {
                 when (val state = load()) {
                     is SubscribedFeedUiState.Success -> {
-                        val merged = state.withCachedFailures(lastLoad?.state)
+                        val merged = state.withCachedFailures(cachedForProvider)
                         if (merged.failedBoards.size < merged.boards.size || merged.boards.isEmpty()) {
                             lastLoad = CachedFeed(inputs, merged, merged.loadedAtMillis)
                         }
@@ -194,13 +195,22 @@ class SubscribedFeedViewModel
                 throw cancelled
             } catch (error: Exception) {
                 Logger.w(error, TAG) { "Failed to refresh subscribed feed" }
-                lastLoad?.state?.copy(stale = true)
+                cachedForProvider?.copy(stale = true)
                     ?: SubscribedFeedUiState.Error(error.message ?: "Feed refresh failed")
             }
         }
 
         init {
-            activeProvider.onEach { refresh() }.launchIn(viewModelScope)
+            activeProvider
+                .onEach { provider ->
+                    try {
+                        boardRepository.refreshBoards(provider.metadata.id)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        Logger.w(error, TAG) { "Failed to refresh board index" }
+                    }
+                }.launchIn(viewModelScope)
         }
 
         fun refresh() {
@@ -264,12 +274,17 @@ class SubscribedFeedViewModel
         }
     }
 
-/** The one setting that shapes the feed; everything else about it is fixed. */
+/** The settings that shape the feed; everything else about it is fixed. */
 private data class FeedLoadSettings(
     val hideNsfwBoards: Boolean,
+    val coverViolentMedia: Boolean,
 )
 
-private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings = FeedLoadSettings(hideNsfwBoards = hideNsfwBoards)
+private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
+    FeedLoadSettings(
+        hideNsfwBoards = hideNsfwBoards,
+        coverViolentMedia = coverViolentMedia,
+    )
 
 private data class FeedInputs(
     val providerId: String,

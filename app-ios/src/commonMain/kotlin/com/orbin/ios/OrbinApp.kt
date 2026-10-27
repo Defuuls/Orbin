@@ -90,9 +90,9 @@ fun OrbinApp(
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
         Box(Modifier.fillMaxSize()) {
             val firstRun by browser.firstRun.needed.collectAsState()
-            if (!lockState.locked && !lockState.obscured && firstRun) {
+            if (!lockState.locked && firstRun) {
                 OnboardingDestination(browser)
-            } else if (!lockState.locked && !lockState.obscured) {
+            } else if (!lockState.locked) {
                 val route = backStack.last()
                 stateHolder.SaveableStateProvider(route.stateKey) {
                     Destination(browser, lock, downloads, backup, formFactor, version, route, pages)

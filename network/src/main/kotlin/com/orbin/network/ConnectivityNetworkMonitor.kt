@@ -56,15 +56,24 @@ class ConnectivityNetworkMonitor
                         }
                     }
 
+                // Seed with the current capability-validated state before registering the callback.
+                val activeNetwork = connectivityManager.activeNetwork
+                val activeCaps = activeNetwork?.let(connectivityManager::getNetworkCapabilities)
+                val initiallyOnline =
+                    activeCaps != null &&
+                        activeCaps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                        activeCaps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                if (initiallyOnline) {
+                    networks.add(activeNetwork)
+                }
+                channel.trySend(initiallyOnline)
+
                 val request =
                     NetworkRequest
                         .Builder()
                         .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                         .build()
                 connectivityManager.registerNetworkCallback(request, callback)
-
-                // Seed with the current state.
-                channel.trySend(connectivityManager.activeNetwork != null)
 
                 awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
             }.conflate()

@@ -88,7 +88,7 @@ object ViolentMediaCover {
 /** Whether this post's subject, text or any filename carries a [ViolentMediaCover] term. */
 fun Post.hasViolentLabel(): Boolean =
     ViolentMediaCover.matches(subject) ||
-        ViolentMediaCover.matches(comment.raw) ||
+        ViolentMediaCover.matches(comment.plainText()) ||
         attachments.any { ViolentMediaCover.matches(it.originalFileName) }
 
 /** This post with every attachment spoilered; the post itself, text and all, is unchanged. */

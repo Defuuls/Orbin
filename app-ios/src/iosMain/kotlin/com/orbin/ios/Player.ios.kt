@@ -33,6 +33,7 @@ import platform.AVFoundation.muted
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVFoundation.rate
+import platform.AVFoundation.replaceCurrentItemWithPlayerItem
 import platform.AVFoundation.seekToTime
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
@@ -72,7 +73,7 @@ internal actual fun NativePlayer(
         val observer =
             NSNotificationCenter.defaultCenter.addObserverForName(
                 name = AVPlayerItemDidPlayToEndTimeNotification,
-                `object` = null,
+                `object` = player.currentItem,
                 queue = NSOperationQueue.mainQueue,
             ) {
                 if (currentLoop.value && currentActive.value) {
@@ -94,7 +95,8 @@ internal actual fun NativePlayer(
             player.pause()
         }
     }
-    LaunchedEffect(player) {
+    LaunchedEffect(player, active) {
+        if (!active) return@LaunchedEffect
         while (true) {
             state =
                 VideoState(
@@ -105,7 +107,12 @@ internal actual fun NativePlayer(
             delay(CONTROLS_REFRESH_MS)
         }
     }
-    DisposableEffect(player) { onDispose { player.pause() } }
+    DisposableEffect(player) {
+        onDispose {
+            player.pause()
+            player.replaceCurrentItemWithPlayerItem(null)
+        }
+    }
     Box(modifier) {
         UIKitViewController(
             factory = {

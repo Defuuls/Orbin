@@ -81,11 +81,15 @@ fun FeedScreen(
     val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
 
     // Emit at most one on-screen preview id so callers can hard-cap feed ExoPlayers to 0–1.
-    LaunchedEffect(rows, gridState) {
+    val previewById =
+        remember(rows) {
+            rows.filter { it.hasPreview && !it.muted }.associateBy { it.id }
+        }
+    LaunchedEffect(previewById, gridState) {
         snapshotFlow {
             val candidates =
                 gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
-                    rows.firstOrNull { it.id == item.key && it.hasPreview && !it.muted }?.id
+                    previewById[item.key]?.id
                 }
             candidates.take(MAX_FEED_AUTOPLAY_IDS).firstOrNull()
         }.distinctUntilChanged()
@@ -140,12 +144,14 @@ fun FeedScreen(
             val insets = Modifier.fillMaxSize().contentInsets()
             val visibleRows = rows
             val groups =
-                if (groupByBoard) {
-                    visibleRows.groupBy { it.boardTitle to it.board }
-                } else {
-                    linkedMapOf(
-                        ("" to "") to visibleRows,
-                    )
+                remember(visibleRows, groupByBoard) {
+                    if (groupByBoard) {
+                        visibleRows.groupBy { it.boardTitle to it.board }
+                    } else {
+                        linkedMapOf(
+                            ("" to "") to visibleRows,
+                        )
+                    }
                 }
             Box(modifier = Modifier.fillMaxSize()) {
                 LazyVerticalGrid(

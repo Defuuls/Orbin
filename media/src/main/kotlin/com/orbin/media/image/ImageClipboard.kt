@@ -9,7 +9,13 @@ import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.network.di.BaseOkHttp
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -35,23 +41,31 @@ class ImageClipboard
         @BaseOkHttp private val okHttpClient: OkHttpClient,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
+        private val clearScope = CoroutineScope(SupervisorJob() + ioDispatcher)
+        private var clearJob: Job? = null
+
         /**
          * Puts [imageUrl]'s contents on the clipboard, falling back to the URL as plain text when
          * the file cannot be fetched — a failed copy still leaves the reader something to paste.
          */
         suspend fun copy(imageUrl: String): ImageCopyResult {
             val clipboard = context.getSystemService(ClipboardManager::class.java)
-            val imageUri = runCatching { cache(imageUrl) }.getOrNull()
+            val imageUri =
+                runCatching { cache(imageUrl) }
+                    .onFailure { if (it is CancellationException) throw it }
+                    .getOrNull()
 
             return if (imageUri != null) {
                 clipboard.setPrimaryClip(ClipData.newUri(context.contentResolver, "Image", imageUri))
                 // Clear after a short window so the image URI grant doesn't linger indefinitely.
                 // Background clipboard reads are blocked by the OS on API 33+, but clearing
                 // removes the grant proactively on all supported API levels (minSdk 31).
-                withContext(ioDispatcher) {
-                    kotlinx.coroutines.delay(CLIPBOARD_CLEAR_DELAY_MS)
-                    clipboard.clearPrimaryClip()
-                }
+                clearJob?.cancel()
+                clearJob =
+                    clearScope.launch {
+                        delay(CLIPBOARD_CLEAR_DELAY_MS)
+                        clipboard.clearPrimaryClip()
+                    }
                 ImageCopyResult.IMAGE
             } else {
                 clipboard.setPrimaryClip(ClipData.newPlainText("Image URL", imageUrl))
