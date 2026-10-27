@@ -36,7 +36,9 @@ class PlayerHostTest {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
         val root =
-            ComposeUIViewController {
+            // The Kotlin test executable has no app Info.plist. The shipped Xcode app supplies
+            // CADisableMinimumFrameDurationOnPhone; skip only that display-link check here.
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) {
                     NativePlayer(url.value, active = false, loop = true, modifier = Modifier.fillMaxSize())
                 }
@@ -77,7 +79,9 @@ class PlayerHostTest {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
         val root =
-            ComposeUIViewController {
+            // The Kotlin test executable has no app Info.plist. The shipped Xcode app supplies
+            // CADisableMinimumFrameDurationOnPhone; skip only that display-link check here.
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
             }
         withWindow(root) {
