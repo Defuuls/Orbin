@@ -1,20 +1,24 @@
-# Orbin 178 - Ulluco
+# Orbin 179 - Cardoon
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 178
-codename     = "Ulluco"
-version_code = 196
+number       = 179
+codename     = "Cardoon"
+version_code = 197
 
-highlight = "True black follows Theme mode, and iOS threads follow the media you viewed."
+highlight = "iOS video hosts and playback controls follow the current video when its URL changes."
 
 summary = [
-  "bump Orbin to 178-Ulluco / versionCode 196",
-  "restore True black and Theme mode behavior for White and Black palettes",
-  "keep the iOS thread positioned at the post selected in the media viewer",
+  "bump Orbin to 179-Cardoon / versionCode 197",
+  "repair iOS native and WebM host attachment when video URLs change",
+  "retain session mute choices and media-to-thread synchronization",
 ]
 
 [changelog]
+Fixed = [
+  "Fixed iOS video hosts staying attached to an earlier player or WebM view after a video URL changes.",
+  "Kept iOS play and seek gestures connected to the current video's controls.",
+]
 Reliability = [
-  "Added regression coverage for all palettes, System/Light/Dark modes, live True black toggles and persisted preferences.",
-  "Added iOS media-to-thread synchronization tests covering attachment mapping and navigation state.",
+  "Verified native video replacement and reopening with generated clips, decoded-frame colors, AVKit display readiness and view bounds; the old host code fails the same regression tests.",
+  "Preserved session mute choices and media-to-thread synchronization. Please test opening, switching and reopening videos, including returning from the background. The reported black picture on every video has not yet been confirmed resolved.",
 ]
