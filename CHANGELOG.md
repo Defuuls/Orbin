@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [179-Cardoon] - 2026-10-27
+
+### Fixed
+- Fixed iOS video hosts staying attached to an earlier player or WebM view after a video URL changes.
+- Kept iOS play and seek gestures connected to the current video's controls.
+
+### Reliability
+- Verified native video replacement and reopening with generated clips, decoded-frame colors, AVKit display readiness and view bounds; the old host code fails the same regression tests.
+- Preserved session mute choices and media-to-thread synchronization. Please test opening, switching and reopening videos, including returning from the background. The reported black picture on every video has not yet been confirmed resolved.
+
+
 ## [178-Ulluco] - 2026-10-26
 
 ### Reliability
@@ -2689,7 +2700,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...HEAD
+[179-Cardoon]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...v179-Cardoon
 [178-Ulluco]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...v178-Ulluco
 [177-Yacon]: https://github.com/Defuuls/Orbin/compare/v176-Mashua...v177-Yacon
 [176-Mashua]: https://github.com/Defuuls/Orbin/compare/v175-Oca...v176-Mashua

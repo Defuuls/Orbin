@@ -11,9 +11,9 @@ does not post, reply, or create threads.
 
 **Website:** https://defuuls.github.io/Orbin/
 
-**Current release:** [178 — Ulluco](https://github.com/Defuuls/Orbin/releases/tag/v178-Ulluco)
+**Current release:** [179 — Cardoon](https://github.com/Defuuls/Orbin/releases/tag/v179-Cardoon)
 
-**What's new in 178:** True black follows Theme mode, and iOS threads follow the media you viewed.
+**What's new in 179:** iOS video hosts and playback controls follow the current video when its URL changes.
 
 **Providers:** 4chan (Vichan-compatible reference provider) and BBW Chan (LynxChan)
 
