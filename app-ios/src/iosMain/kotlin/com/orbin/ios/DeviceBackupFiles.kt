@@ -37,7 +37,13 @@ class DeviceBackupFiles : BackupFiles {
         contents: String,
     ): Boolean {
         val presenter = topViewController() ?: return false
-        val file = NSURL.fileURLWithPath(NSTemporaryDirectory() + fileName)
+        val safeName =
+            fileName
+                .substringAfterLast('/')
+                .substringAfterLast('\\')
+                .replace("..", "_")
+                .ifBlank { "orbin-backup.json" }
+        val file = NSURL.fileURLWithPath(NSTemporaryDirectory() + safeName)
         if (!contents.encodeToByteArray().toNSData().writeToURL(file, atomically = true)) return false
         return suspendCancellableCoroutine { continuation ->
             val sheet = UIActivityViewController(activityItems = listOf(file), applicationActivities = null)

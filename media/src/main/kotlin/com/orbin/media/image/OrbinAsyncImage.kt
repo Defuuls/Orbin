@@ -93,7 +93,7 @@ fun OrbinAsyncImage(
                 },
                 onError = { state ->
                     val throwable = state.result.throwable
-                    Logger.w(throwable, TAG) { "Image failed to load" }
+                    Logger.w(tag = TAG) { "Image failed to load (${throwable::class.simpleName})" }
                     loadFailed = true
                     failureMessage = throwable.mediaLoadMessage()
                 },

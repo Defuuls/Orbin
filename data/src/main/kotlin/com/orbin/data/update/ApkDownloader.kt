@@ -43,6 +43,11 @@ class ApkDownloader
             target: File,
             onProgress: (Float?) -> Unit,
         ): File {
+            if (!apkUrl.startsWith("https://", ignoreCase = true) ||
+                !checksumUrl.startsWith("https://", ignoreCase = true)
+            ) {
+                throw UpdateVerificationException("Update URLs must use HTTPS")
+            }
             val expected = parseSha256(fetchText(checksumUrl))
             target.parentFile?.mkdirs()
             var verified = false
@@ -100,12 +105,34 @@ class ApkDownloader
         private fun fetchText(url: String): String =
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("Checksum download failed (HTTP ${response.code})")
-                response.body.string()
+                val contentLength = response.body.contentLength()
+                if (contentLength > MAX_CHECKSUM_BYTES) {
+                    throw UpdateVerificationException("The release's checksum file is unreadable")
+                }
+                response.body.byteStream().use { input -> readBoundedUtf8(input, MAX_CHECKSUM_BYTES) }
             }
+
+        private fun readBoundedUtf8(
+            input: InputStream,
+            maxBytes: Int,
+        ): String {
+            val buffer = ByteArray(maxBytes + 1)
+            var totalRead = 0
+            while (totalRead < buffer.size) {
+                val read = input.read(buffer, totalRead, buffer.size - totalRead)
+                if (read < 0) break
+                totalRead += read
+            }
+            if (totalRead > maxBytes) {
+                throw UpdateVerificationException("The release's checksum file is unreadable")
+            }
+            return buffer.decodeToString(startIndex = 0, endIndex = totalRead)
+        }
 
         private companion object {
             const val DOWNLOAD_READ_TIMEOUT_SECONDS = 60L
             const val BUFFER_BYTES = 64 * 1024
+            const val MAX_CHECKSUM_BYTES = 4096
         }
     }
 

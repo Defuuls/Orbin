@@ -37,8 +37,14 @@ class DeviceMediaStore : MediaStore {
         folder: String,
         target: SaveTarget,
     ) {
-        val savedToPhotos = target != SaveTarget.FILE && saveToPhotos(bytes, fileName, target)
-        if (!savedToPhotos) saveToFiles(bytes, fileName, folder)
+        val safeFileName =
+            fileName
+                .substringAfterLast('/')
+                .substringAfterLast('\\')
+                .replace("..", "_")
+                .ifBlank { "download" }
+        val savedToPhotos = target != SaveTarget.FILE && saveToPhotos(bytes, safeFileName, target)
+        if (!savedToPhotos) saveToFiles(bytes, safeFileName, folder)
         Haptics.success()
     }
 
@@ -92,7 +98,12 @@ class DeviceMediaStore : MediaStore {
                 error = null,
             )
         val basePath = checkNotNull(documents?.path) { "No Documents folder" }
-        val cleanFolder = folder.trim('/')
+        val cleanFolder =
+            folder
+                .split('/', '\\')
+                .map { it.replace("..", "_").trim() }
+                .filter { it.isNotEmpty() && it != "." }
+                .joinToString("/")
         val directory = NSURL.fileURLWithPath("$basePath/Orbin/$cleanFolder", isDirectory = true)
         manager.createDirectoryAtURL(directory, withIntermediateDirectories = true, attributes = null, error = null)
         val destination = checkNotNull(freeName(directory, fileName)) { "No file name free for $fileName" }

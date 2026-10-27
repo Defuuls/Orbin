@@ -96,7 +96,8 @@ class AppUpdaterImpl
                     try {
                         installer.updatesDir.deleteRecursively()
                         var shownPercent = -1
-                        val target = File(installer.updatesDir, "${release.tag}.apk")
+                        val safeTag = release.tag.replace(UNSAFE_TAG_CHARS, "_").ifBlank { "update" }
+                        val target = File(installer.updatesDir, "$safeTag.apk")
                         val apk =
                             downloader.download(apkUrl, checksumUrl, target) {
                                 // One emission per percent, not per 64 KB buffer.
@@ -174,6 +175,7 @@ class AppUpdaterImpl
             const val KEY_LAST_CHECK = "last_check_millis"
             const val KEY_DISMISSED_TAG = "dismissed_tag"
             const val PERCENT = 100
+            val UNSAFE_TAG_CHARS = Regex("""[^A-Za-z0-9._-]""")
         }
     }
 

@@ -14,7 +14,10 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
@@ -129,7 +132,15 @@ private fun startApp(): StartedApp {
             appVersion = graph.appVersion,
             isAuthorized = { !lock.state.value.locked && !lock.state.value.obscured },
         )
-    graph.notifier.attachNavigation(browser::openThread)
+    var pendingNotificationJob: Job? = null
+    graph.notifier.attachNavigation { key ->
+        pendingNotificationJob?.cancel()
+        pendingNotificationJob =
+            graph.scope.launch {
+                lock.state.first { !it.locked && !it.obscured }
+                browser.openThread(key)
+            }
+    }
 
     // The app lives as long as this controller, so the observers are never removed.
     observe(UIApplicationDidBecomeActiveNotification) {

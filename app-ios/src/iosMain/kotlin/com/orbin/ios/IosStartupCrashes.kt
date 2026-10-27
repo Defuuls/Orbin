@@ -68,13 +68,15 @@ internal object IosStartupCrashes {
             appendLine("ios: ${UIDevice.currentDevice.systemVersion}")
             appendLine("device: ${UIDevice.currentDevice.model}")
             appendLine()
-            append(throwable.stackTraceToString())
+            append(throwable.stackTraceToString().replace(URL_REGEX, "[url]"))
         }
 
     private fun info(key: String): String? =
         (NSBundle.mainBundle.objectForInfoDictionaryKey(key) as? String)?.takeUnless { it.isBlank() }
 
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+    private val URL_REGEX = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
 }
 
 private object UserDefaultsCrashStore : CrashStore {
