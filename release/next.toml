@@ -1,24 +1,34 @@
-# Orbin 180 - Samphire
+# Orbin 181 - Skirret
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 180
-codename     = "Samphire"
-version_code = 198
+number       = 181
+codename     = "Skirret"
+version_code = 199
 
-highlight = "iOS keeps the startup privacy cover in place until app-lock settings are loaded."
+highlight = "Unified design tokens, eliminated feed scroll jumps, and hardened background download and lock security."
 
 summary = [
-  "bump Orbin to 180-Samphire / versionCode 198",
-  "keep iOS startup covered until persisted app-lock settings arrive",
-  "preserve normal unlocked startup and defer authentication while inactive",
+  "bump Orbin to 181-Skirret / versionCode 199",
+  "unify design system tokens, eliminate feed scroll jumps, and virtualize grouped lists",
+  "harden crash log URL redaction, backup validation, and concurrent crypto cipher operations",
+  "resolve iOS background media file protection and AVKit player lifecycle stability",
 ]
 
 [changelog]
+Added = [
+  "Virtualized grouped feed and thread cards with LazyListScope.groupedItems to improve scroll smoothness.",
+  "Unified design system tokens, typography scales, and surface elevation across phone and tablet themes.",
+]
 Fixed = [
-  "Kept the iOS startup privacy cover visible until persisted app-lock settings are loaded, including foreground callbacks during loading or a failed settings read.",
-  "Preserved the cover when settings arrive while inactive or backgrounded, and deferred startup authentication until return.",
+  "Eliminated 52dp jumpy scroll position offsets caused by non-virtualized feed headers.",
+  "Redacted full URLs and sensitive paths from crash reports and provider diagnostics.",
+  "Hardened LocalDataCipher and DatabasePassphrase against concurrent initialization races.",
+  "Isolated OkHttp video caches to prevent video playback from evicting API response caches.",
+  "Fixed biometric lock state retention across configuration changes and Android picture-in-picture transitions.",
+  "Set NSFileProtectionCompleteUntilFirstUserAuthentication on iOS storage to prevent background download I/O errors while locked.",
+  "Fixed video player lifecycle cleanup and AVKit display bounds timing in iOS simulator playback.",
 ]
 Reliability = [
-  "Added regression coverage for delayed and failed settings reads, repeated lifecycle callbacks, and legitimate unlocked startup. The previous state logic fails five of the twelve focused lock tests.",
-  "Please test cold launches with app lock enabled and disabled, authentication cancellation, and background/foreground transitions. An incorrect lock state was reproduced; actual sensitive-content exposure on a device has not been observed.",
+  "Added test coverage for design token palettes, video output color decoding, and list virtualization.",
+  "Updated golden screenshot baselines for verified Roborazzi UI tests across light and dark themes.",
 ]
