@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [181-Skirret] - 2026-10-27
+
+### Added
+- Virtualized grouped feed and thread cards with LazyListScope.groupedItems to improve scroll smoothness.
+- Unified design system tokens, typography scales, and surface elevation across phone and tablet themes.
+
+### Fixed
+- Eliminated 52dp jumpy scroll position offsets caused by non-virtualized feed headers.
+- Redacted full URLs and sensitive paths from crash reports and provider diagnostics.
+- Hardened LocalDataCipher and DatabasePassphrase against concurrent initialization races.
+- Isolated OkHttp video caches to prevent video playback from evicting API response caches.
+- Fixed biometric lock state retention across configuration changes and Android picture-in-picture transitions.
+- Set NSFileProtectionCompleteUntilFirstUserAuthentication on iOS storage to prevent background download I/O errors while locked.
+- Fixed video player lifecycle cleanup and AVKit display bounds timing in iOS simulator playback.
+
+### Reliability
+- Added test coverage for design token palettes, video output color decoding, and list virtualization.
+- Updated golden screenshot baselines for verified Roborazzi UI tests across light and dark themes.
+
+
 ## [180-Samphire] - 2026-10-27
 
 ### Fixed
@@ -2711,7 +2731,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...HEAD
+[181-Skirret]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...v181-Skirret
 [180-Samphire]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...v180-Samphire
 [179-Cardoon]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...v179-Cardoon
 [178-Ulluco]: https://github.com/Defuuls/Orbin/compare/v177-Yacon...v178-Ulluco
