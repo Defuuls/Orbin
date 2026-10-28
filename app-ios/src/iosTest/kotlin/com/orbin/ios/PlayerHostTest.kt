@@ -153,7 +153,21 @@ class PlayerHostTest {
                     CVPixelBufferRelease(buffer)
                 }
             }
-            await { host.readyForDisplay }
+            await {
+                if (!host.readyForDisplay) return@await false
+                if (host.view.window == null || host.view.hidden || host.view.alpha <= 0.0) return@await false
+                val viewWidth = host.view.bounds.useContents { size.width }
+                val viewHeight = host.view.bounds.useContents { size.height }
+                if (viewWidth <= 0.0 || viewHeight <= 0.0) return@await false
+                host.videoBounds.useContents {
+                    size.width > 0.0 &&
+                        size.height > 0.0 &&
+                        origin.x >= -1.0 &&
+                        origin.y >= -1.0 &&
+                        origin.x + size.width <= viewWidth + 1.0 &&
+                        origin.y + size.height <= viewHeight + 1.0
+                }
+            }
             assertTrue(host.view.window != null && !host.view.hidden && host.view.alpha > 0.0)
             val viewWidth = host.view.bounds.useContents { size.width }
             val viewHeight = host.view.bounds.useContents { size.height }
