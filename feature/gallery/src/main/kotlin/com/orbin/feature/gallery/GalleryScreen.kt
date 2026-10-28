@@ -120,6 +120,8 @@ fun GalleryScreen(
         val closeLabel = stringResource(R.string.gallery_close)
         val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
+        val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
+        val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
 
         LaunchedEffect(chromeVisible, pagerState.settledPage, actionsFor != null, downloadState.isBusy) {
@@ -257,11 +259,8 @@ fun GalleryScreen(
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                                         val message =
                                             when (result) {
-                                                ImageCopyResult.IMAGE ->
-                                                    context.getString(
-                                                        R.string.gallery_image_copied,
-                                                    )
-                                                ImageCopyResult.URL -> context.getString(R.string.gallery_url_copied)
+                                                ImageCopyResult.IMAGE -> imageCopiedMessage
+                                                ImageCopyResult.URL -> urlCopiedMessage
                                             }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                     }
