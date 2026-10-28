@@ -31,6 +31,14 @@ class PaletteContrastTest {
                     assertRatio("$theme destructive label on raised", material.error, palette.raised)
                     assertRatio("$theme destructive label on elevated", material.error, palette.elevated)
                     assertRatio("$theme destructive confirmation", material.onError, material.error)
+                    assertRatio(
+                        "$theme direct destructive label on background",
+                        palette.destructive,
+                        palette.background,
+                    )
+                    assertRatio("$theme direct destructive label on raised", palette.destructive, palette.raised)
+                    assertRatio("$theme direct destructive label on elevated", palette.destructive, palette.elevated)
+                    assertRatio("$theme direct destructive confirmation", palette.onDestructive, palette.destructive)
                 }
             }
         }

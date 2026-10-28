@@ -154,7 +154,7 @@ fun BoardsScreen(
                 modifier = Modifier.fillMaxSize().contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        top = if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp,
+                        top = 0.dp,
                         bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap,
                     ),
             ) {
@@ -206,25 +206,25 @@ fun BoardsScreen(
                         }
                     }
                 }
-                item(key = "boards-group") {
-                    GroupedSection {
-                        if (visibleBoards.isEmpty()) {
+                if (visibleBoards.isEmpty()) {
+                    item(key = "boards-empty") {
+                        GroupedSection {
                             MetaLine(
                                 stringResource(Res.string.next_boards_no_match),
                                 modifier = Modifier.padding(16.dp),
                             )
                         }
-                        visibleBoards.forEachIndexed { index, board ->
-                            BoardListRow(
-                                board = board,
-                                onClick = { onOpenBoard(board) },
-                                onFollow =
-                                    onFollowBoard?.let { action ->
-                                        { checked -> action(board, checked) }
-                                    },
-                            )
-                            if (index < visibleBoards.lastIndex) GroupedDivider()
-                        }
+                    }
+                } else {
+                    groupedItems(visibleBoards, key = { it.path }) { _, board ->
+                        BoardListRow(
+                            board = board,
+                            onClick = { onOpenBoard(board) },
+                            onFollow =
+                                onFollowBoard?.let { action ->
+                                    { checked -> action(board, checked) }
+                                },
+                        )
                     }
                 }
             }

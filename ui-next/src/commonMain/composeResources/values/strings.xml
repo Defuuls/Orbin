@@ -120,4 +120,21 @@
         <item quantity="one">%1$d thread</item>
         <item quantity="other">%1$d threads</item>
     </plurals>
+    <string name="next_search_threads_prompt">Sift through your threads</string>
+    <plurals name="next_thread_posts_count">
+        <item quantity="one">%1$d post</item>
+        <item quantity="other">%1$d posts</item>
+    </plurals>
+
+    <!-- Onboarding -->
+    <string name="next_onboarding_title">Welcome to Orbin</string>
+    <string name="next_onboarding_subtitle">Follow a few boards to fill your feed.</string>
+    <string name="next_onboarding_skip_hint">You can follow boards later</string>
+    <plurals name="next_onboarding_following_count">
+        <item quantity="one">%1$d following</item>
+        <item quantity="other">%1$d following</item>
+    </plurals>
+    <string name="next_onboarding_start">Start browsing</string>
+    <string name="next_onboarding_adult_board">Adult board</string>
+    <string name="next_onboarding_catalog">Imageboard catalog</string>
 </resources>

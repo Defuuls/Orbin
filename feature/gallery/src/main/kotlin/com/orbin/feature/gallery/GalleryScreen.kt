@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,7 +62,7 @@ import com.orbin.uinext.NextEmpty
 import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
-import com.orbin.uinext.nextFrosted
+import com.orbin.uinext.nextElevatedSurface
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.delay
@@ -88,7 +89,7 @@ fun GalleryScreen(
 
     NextTheme(darkTheme = true) {
         if (media.isEmpty()) {
-            NextEmpty("No media", Modifier.fillMaxSize())
+            NextEmpty(stringResource(R.string.gallery_empty), Modifier.fillMaxSize())
             return@NextTheme
         }
 
@@ -119,6 +120,8 @@ fun GalleryScreen(
         val closeLabel = stringResource(R.string.gallery_close)
         val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
+        val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
+        val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
 
         LaunchedEffect(chromeVisible, pagerState.settledPage, actionsFor != null, downloadState.isBusy) {
@@ -191,6 +194,25 @@ fun GalleryScreen(
                             onLongPress = { actionsFor = item },
                         )
                     }
+                    if (item.isSpoiler) {
+                        var revealed by remember(item.id) { mutableStateOf(false) }
+                        if (!revealed) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.85f))
+                                        .clickable { revealed = true },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.gallery_spoiler_reveal),
+                                    color = Color.White,
+                                    style = NextType.labelMedium,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -209,7 +231,7 @@ fun GalleryScreen(
                                     WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
                                 ),
                             ).padding(horizontal = NextSpace.gutter, vertical = 8.dp)
-                            .nextFrosted(RoundedCornerShape(14.dp))
+                            .nextElevatedSurface(RoundedCornerShape(14.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -237,8 +259,8 @@ fun GalleryScreen(
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                                         val message =
                                             when (result) {
-                                                ImageCopyResult.IMAGE -> "Image copied"
-                                                ImageCopyResult.URL -> "Image unavailable; URL copied"
+                                                ImageCopyResult.IMAGE -> imageCopiedMessage
+                                                ImageCopyResult.URL -> urlCopiedMessage
                                             }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                     }
@@ -271,12 +293,12 @@ fun GalleryScreen(
                             .align(Alignment.TopCenter)
                             .padding(top = 72.dp)
                             .fillMaxWidth(0.92f)
-                            .nextFrosted(RoundedCornerShape(12.dp))
+                            .nextElevatedSurface(RoundedCornerShape(12.dp))
                             .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        text = downloadState.label ?: "Preparing media…",
+                        text = downloadState.label ?: stringResource(R.string.gallery_preparing_media),
                         color = next.ink,
                         style = NextType.footnote,
                     )

@@ -18,7 +18,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
 import com.orbin.uinext.resources.next_settings_title
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 data class SettingItem(
@@ -61,6 +61,8 @@ data class SettingItem(
     val secret: Boolean = false,
     /** Show a selectable, wrapping pairing code below an informational row. */
     val copyable: Boolean = false,
+    /** Explicit boolean checked state for [SettingKind.TOGGLE], decoupling switch state from localized labels. */
+    val checked: Boolean? = null,
 )
 
 enum class SettingKind {
@@ -110,7 +112,7 @@ fun SettingsScreen(
                 contentPadding =
                     PaddingValues(
                         bottom = bottomPad.calculateBottomPadding(),
-                        top = 4.dp + (if (showCompactTitle) COMPACT_TITLE_CLEARANCE else 0.dp),
+                        top = 4.dp,
                     ),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
@@ -160,7 +162,7 @@ private fun SettingRow(
             headlineContent = {
                 Text(
                     text = item.label,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = NextType.body,
                     color = next.ink,
                 )
             },
@@ -169,7 +171,7 @@ private fun SettingRow(
                     {
                         Text(
                             text = item.hint,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = NextType.footnote,
                             color = next.muted,
                             modifier = Modifier.padding(top = 3.dp),
                         )
@@ -184,7 +186,7 @@ private fun SettingRow(
                     SelectionContainer {
                         Text(
                             text = item.value,
-                            style = MaterialTheme.typography.labelLarge,
+                            style = NextType.callout,
                             fontWeight = FontWeight.SemiBold,
                             color =
                                 when {
@@ -217,7 +219,7 @@ private fun SettingRow(
             SelectionContainer {
                 Text(
                     text = item.text,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = NextType.footnote,
                     color = next.ink,
                     modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 14.dp),
                 )
@@ -227,7 +229,7 @@ private fun SettingRow(
         if (item.kind == SettingKind.TEXT && item.hint != null) {
             Text(
                 text = item.hint,
-                style = MaterialTheme.typography.bodySmall,
+                style = NextType.footnote,
                 color = next.muted,
                 modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 10.dp),
             )
@@ -270,7 +272,7 @@ private fun SettingTextEditor(
             if (draft.isEmpty()) {
                 Text(
                     text = item.value,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = NextType.body,
                     color = next.faint,
                     maxLines = 1,
                 )
@@ -281,7 +283,7 @@ private fun SettingTextEditor(
                 value = draft,
                 onValueChange = { draft = it },
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = next.ink),
+                textStyle = NextType.body.copy(color = next.ink),
                 cursorBrush = SolidColor(next.accent),
                 keyboardOptions =
                     KeyboardOptions(
@@ -304,7 +306,7 @@ private fun SettingTextEditor(
     }
 }
 
-private fun SettingItem.isOn(): Boolean = kind == SettingKind.TOGGLE && value != OFF_LABEL
+private fun SettingItem.isOn(): Boolean = checked ?: (kind == SettingKind.TOGGLE && value != OFF_LABEL)
 
 const val ON_LABEL = "On"
 const val OFF_LABEL = "Off"
