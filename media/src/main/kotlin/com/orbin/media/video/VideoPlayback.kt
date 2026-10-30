@@ -11,7 +11,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.HttpDataSource
 import com.orbin.media.di.VideoMediaDataSource
+import com.orbin.network.interceptor.RetryAfter
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -77,7 +79,7 @@ internal fun Long.formatTimestamp(): String {
 }
 
 internal fun PlaybackException.mediaLoadMessage(): String =
-    if (hasHttpStatus(HTTP_TOO_MANY_REQUESTS)) {
+    if (hasHttpStatus(RetryAfter.HTTP_TOO_MANY_REQUESTS)) {
         "Video rate limited. Try again later."
     } else {
         "Video unavailable"
@@ -85,7 +87,8 @@ internal fun PlaybackException.mediaLoadMessage(): String =
 
 internal fun Throwable.hasHttpStatus(statusCode: Int): Boolean =
     generateSequence(this as Throwable?) { it.cause }
-        .any { throwable -> throwable.message?.contains(statusCode.toString()) == true }
+        .filterIsInstance<HttpDataSource.InvalidResponseCodeException>()
+        .any { it.responseCode == statusCode }
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)

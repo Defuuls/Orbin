@@ -1,5 +1,6 @@
 package com.orbin.media.preload
 
+import com.orbin.network.interceptor.RetryAfter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
 
@@ -42,8 +43,9 @@ class RequestThrottler(
         statusCode: Int,
         retryAfter: String?,
     ) {
-        if (statusCode != HTTP_TOO_MANY_REQUESTS && statusCode != HTTP_SERVICE_UNAVAILABLE) return
-        val cooldownMillis = retryAfter?.toRetryAfterMillis() ?: defaultRateLimitCooldownMillis
+        if (statusCode != RetryAfter.HTTP_TOO_MANY_REQUESTS && statusCode != HTTP_SERVICE_UNAVAILABLE) return
+        val cooldownMillis =
+            RetryAfter.parseSeconds(retryAfter)?.times(MILLIS_PER_SECOND) ?: defaultRateLimitCooldownMillis
         val until = System.currentTimeMillis() + cooldownMillis.coerceAtLeast(MIN_RATE_LIMIT_COOLDOWN_MILLIS)
         synchronized(lock) {
             cooldownUntilMillis = maxOf(cooldownUntilMillis, until)
@@ -80,15 +82,11 @@ class RequestThrottler(
         }
     }
 
-    private fun String.toRetryAfterMillis(): Long? =
-        toLongOrNull()?.let { seconds -> seconds.coerceAtLeast(0L) * MILLIS_PER_SECOND }
-
     private companion object {
         const val ONE_MINUTE_MILLIS = 60_000L
         const val MILLIS_PER_SECOND = 1_000L
-        const val HTTP_TOO_MANY_REQUESTS = 429
         const val HTTP_SERVICE_UNAVAILABLE = 503
         const val MIN_RATE_LIMIT_COOLDOWN_MILLIS = 5_000L
-        const val DEFAULT_RATE_LIMIT_COOLDOWN_MILLIS = 30_000L
+        const val DEFAULT_RATE_LIMIT_COOLDOWN_MILLIS = RetryAfter.DEFAULT_SECONDS * MILLIS_PER_SECOND
     }
 }

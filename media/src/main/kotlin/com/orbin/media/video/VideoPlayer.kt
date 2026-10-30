@@ -57,6 +57,7 @@ import androidx.media3.ui.PlayerView
 import co.touchlab.kermit.Logger
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
+import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextCircularProgress
@@ -94,7 +95,11 @@ fun VideoPlayer(
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
     var playbackError by remember(url) { mutableStateOf<String?>(null) }
     var isRateLimited by remember(url) { mutableStateOf(false) }
-    var rateLimitCooldownSeconds by remember { mutableLongStateOf(0L) }
+    var rateLimitCooldownSeconds by remember(url) { mutableLongStateOf(0L) }
+    // Whether the cooldown ends in an automatic reload; false once the retry policy gives up.
+    var autoRetryPending by remember(url) { mutableStateOf(false) }
+    var autoRetries by remember(url) { mutableIntStateOf(0) }
+    val retryPolicy = remember { RateLimitRetryPolicy() }
     // Bumped when a rate-limit cooldown ends so the player loads the video again by itself.
     var loadAttempt by remember(url) { mutableIntStateOf(0) }
     var positionMs by remember { mutableLongStateOf(0L) }
@@ -197,8 +202,11 @@ fun VideoPlayer(
             delay(1_000L)
             rateLimitCooldownSeconds = (rateLimitCooldownSeconds - 1L).coerceAtLeast(0L)
         }
+        // Out of automatic retries: leave the error up so the reader decides when to try again.
+        if (!autoRetryPending) return@LaunchedEffect
         isRateLimited = false
         playbackError = null
+        autoRetries++
         loadAttempt++
     }
 
@@ -254,22 +262,27 @@ fun VideoPlayer(
 
                 override fun onIsPlayingChanged(isPlayingNow: Boolean) {
                     isPlaying = isPlayingNow
+                    if (isPlayingNow) autoRetries = 0
                     if (!isPlayingNow) controlsVisible = true
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
                     Logger.w(tag = TAG) { "Video failed to load (${error.errorCodeName})" }
-                    val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
+                    val rateLimited = error.hasHttpStatus(RetryAfter.HTTP_TOO_MANY_REQUESTS)
                     isRateLimited = rateLimited
                     if (rateLimited) {
                         val address = runCatching { url.toHttpUrl() }.getOrNull()
                         val blockedUntil = address?.let { RetryAfterTracker.blockedUntilMs(it.host, it.toString()) }
-                        rateLimitCooldownSeconds =
+                        val retryAfterSeconds =
                             if (blockedUntil != null) {
                                 ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
                             } else {
-                                DEFAULT_RATE_LIMIT_DISPLAY_SECONDS
+                                RetryAfter.DEFAULT_SECONDS
                             }
+                        val retryDelayMs = retryPolicy.delayMs(autoRetries, retryAfterSeconds)
+                        autoRetryPending = retryDelayMs != null
+                        rateLimitCooldownSeconds =
+                            retryDelayMs?.let { (it + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND } ?: 0L
                     }
                     playbackError = error.mediaLoadMessage()
                     isBuffering = false
@@ -411,6 +424,17 @@ fun VideoPlayer(
                         style = NextType.body,
                         textAlign = TextAlign.Center,
                     )
+                    if (isRateLimited && !autoRetryPending) {
+                        InlineAction(
+                            label = stringResource(R.string.media_retry),
+                            accent = true,
+                            onClick = {
+                                RetryAfterTracker.clear()
+                                autoRetries = 0
+                                loadAttempt++
+                            },
+                        )
+                    }
                     InlineAction(
                         label = stringResource(R.string.media_open_in_browser),
                         accent = true,
@@ -497,8 +521,6 @@ object SessionAudio {
  */
 
 private const val TAG = "OrbinVideoPlayer"
-internal const val HTTP_TOO_MANY_REQUESTS = 429
-private const val DEFAULT_RATE_LIMIT_DISPLAY_SECONDS = 300L
 private const val ERROR_OVERLAY_ALPHA = 0.68f
 internal const val CONTROLS_OVERLAY_ALPHA = 0.38f
 internal const val PASSIVE_PROGRESS_ALPHA = 0.65f

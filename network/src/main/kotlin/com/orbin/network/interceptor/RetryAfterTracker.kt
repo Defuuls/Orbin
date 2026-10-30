@@ -18,17 +18,22 @@ object RetryAfterTracker {
     private const val HOST_ESCALATION_URLS = 3
     private const val HOST_ESCALATION_WINDOW_MS = 30_000L
 
+    /** Test seam; production always reads the wall clock. */
+    @Volatile
+    internal var clock: () -> Long = System::currentTimeMillis
+
     private val blockedUrls = ConcurrentHashMap<String, Long>()
     private val blockedHosts = ConcurrentHashMap<String, Long>()
     private val recentHits = ConcurrentHashMap<String, MutableMap<String, Long>>()
 
     /** Records that [url] on [host] was rate-limited for [retryAfterSeconds] seconds from now. */
+    @Synchronized
     fun record(
         host: String,
         url: String,
         retryAfterSeconds: Long,
     ) {
-        val now = System.currentTimeMillis()
+        val now = clock()
         val unblockAt = now + retryAfterSeconds.coerceIn(0L, MAX_BLOCK_SECONDS) * 1_000L
         blockedUrls[url] = unblockAt
         val hits = recentHits.computeIfAbsent(host) { ConcurrentHashMap() }
@@ -48,13 +53,14 @@ object RetryAfterTracker {
         host: String,
         url: String,
     ): Long? {
-        val now = System.currentTimeMillis()
+        val now = clock()
         val urlUntil = blockedUrls.activeUntil(url, now)
         val hostUntil = blockedHosts.activeUntil(host, now)
         return listOfNotNull(urlUntil, hostUntil).maxOrNull()
     }
 
     /** Forgets every block, e.g. when the reader explicitly retries. */
+    @Synchronized
     fun clear() {
         blockedUrls.clear()
         blockedHosts.clear()

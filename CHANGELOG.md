@@ -6,6 +6,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Android: playing a single video no longer trips the CDN rate limit. A video's startup requests are now spaced out instead of fired together, the preloader no longer sends a useless request per video and leaves a blocked CDN alone, and a video refused with a 429 retries itself at most three times (with a short random delay) before offering a Retry button.
+- Android: a non-429 playback error whose text happened to contain "429" (for example a file name) is no longer shown as "rate limited".
+- A `Retry-After` given as an HTTP date is now honoured for videos.
+
 ## [183-Chayote] - 2026-10-29
 
 ### Fixed
