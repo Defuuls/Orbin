@@ -317,8 +317,10 @@ object VichanCommentParser {
             while (i < input.length) {
                 val c = input[i]
                 if (c == '&') {
-                    val semi = input.indexOf(';', i)
-                    if (semi in (i + 1)..(i + MAX_ENTITY_LENGTH)) {
+                    val end = minOf(input.length - 1, i + MAX_ENTITY_LENGTH)
+                    var semi = i + 1
+                    while (semi <= end && input[semi] != ';') semi++
+                    if (semi <= end && input[semi] == ';') {
                         val entity = input.substring(i + 1, semi)
                         val decoded = entityMap[entity] ?: decodeNumeric(entity)
                         if (decoded != null) {

@@ -113,7 +113,7 @@ data class UriParts(
                         c.code < SPACE || c.code == DELETE -> false
                         c.code < ASCII_LIMIT && c in ILLEGAL_ASCII -> false
                         c == '%' ->
-                            value.substring(i + 1).take(2).let { it.length == 2 && it.all(::isHexDigit) }.also {
+                            (i + 2 < value.length && isHexDigit(value[i + 1]) && isHexDigit(value[i + 2])).also {
                                 i +=
                                     2
                             }

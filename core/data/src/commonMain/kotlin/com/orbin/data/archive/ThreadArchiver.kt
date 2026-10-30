@@ -4,10 +4,11 @@ import com.orbin.core.model.Thread
 import com.orbin.data.repository.downloadRequestHeaders
 import com.orbin.domain.repository.ThreadArchive
 import com.orbin.domain.repository.ThreadArchiveRepository
+import com.orbin.network.ktor.MAX_BUFFERED_MEDIA_BYTES
+import com.orbin.network.ktor.readBoundedBytes
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
 import io.ktor.client.request.headers
-import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.request.prepareGet
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,35 +42,44 @@ class ThreadArchiver(
             val target = folder / "$root.zip"
             val attachments = thread.allPosts.flatMap { it.attachments }.distinctBy { it.id }
             val saved = mutableMapOf<String, SavedFiles>()
+            var remainingMediaBytes = MAX_ARCHIVE_MEDIA_BYTES
             onProgress(0, attachments.size)
-            fileSystem.sink(target).buffer().use { sink ->
-                val zip = ZipWriter(sink)
-                attachments.forEachIndexed { index, file ->
-                    val fullName = "media/${safeName(file.id)}${extensionOf(file.extension, file.sourceUrl)}"
-                    val full =
-                        fetch(file.sourceUrl)?.let {
-                            zip.add("$root/$fullName", it)
-                            fullName
-                        }
-                    val thumbName = "thumbs/${safeName(file.id)}${extensionOf("", file.thumbnailUrl)}"
-                    val thumbnail =
-                        if (file.thumbnailUrl.isBlank() || file.thumbnailUrl == file.sourceUrl) {
-                            null
-                        } else {
-                            fetch(file.thumbnailUrl)?.let {
-                                zip.add("$root/$thumbName", it)
-                                thumbName
+            var archiveComplete = false
+            try {
+                fileSystem.sink(target).buffer().use { sink ->
+                    val zip = ZipWriter(sink)
+                    attachments.forEachIndexed { index, file ->
+                        val fullName = "media/${safeName(file.id)}${extensionOf(file.extension, file.sourceUrl)}"
+                        val full =
+                            fetch(file.sourceUrl, minOf(MAX_BUFFERED_MEDIA_BYTES, remainingMediaBytes))?.let {
+                                remainingMediaBytes -= it.size
+                                zip.add("$root/$fullName", it)
+                                fullName
                             }
-                        }
-                    saved[file.id] = SavedFiles(full, thumbnail)
-                    onProgress(index + 1, attachments.size)
+                        val thumbName = "thumbs/${safeName(file.id)}${extensionOf("", file.thumbnailUrl)}"
+                        val thumbnail =
+                            if (file.thumbnailUrl.isBlank() || file.thumbnailUrl == file.sourceUrl) {
+                                null
+                            } else {
+                                fetch(file.thumbnailUrl, minOf(MAX_BUFFERED_MEDIA_BYTES, remainingMediaBytes))?.let {
+                                    remainingMediaBytes -= it.size
+                                    zip.add("$root/$thumbName", it)
+                                    thumbName
+                                }
+                            }
+                        saved[file.id] = SavedFiles(full, thumbnail)
+                        onProgress(index + 1, attachments.size)
+                    }
+                    zip.add("$root/style.css", ARCHIVE_CSS.encodeToByteArray())
+                    zip.add(
+                        "$root/index.html",
+                        threadPage(thread, saved, sourceUrl = null, savedAtMillis = now()).encodeToByteArray(),
+                    )
+                    zip.finish()
                 }
-                zip.add("$root/style.css", ARCHIVE_CSS.encodeToByteArray())
-                zip.add(
-                    "$root/index.html",
-                    threadPage(thread, saved, sourceUrl = null, savedAtMillis = now()).encodeToByteArray(),
-                )
-                zip.finish()
+                archiveComplete = true
+            } finally {
+                if (!archiveComplete) runCatching { fileSystem.delete(target, mustExist = false) }
             }
             ThreadArchive(
                 path = target.toString(),
@@ -80,18 +90,24 @@ class ThreadArchiver(
         }
 
     /** The file at [url], or null when it isn't https or can't be fetched. */
-    private suspend fun fetch(url: String): ByteArray? {
+    private suspend fun fetch(
+        url: String,
+        maxBytes: Int,
+    ): ByteArray? {
+        if (maxBytes <= 0) return null
         if (!url.startsWith("https://", ignoreCase = true)) return null
         return try {
             val response =
-                client.get(url) {
+                client.prepareGet(url) {
                     headers {
                         downloadRequestHeaders(url).forEach { (k, v) ->
                             append(k, v)
                         }
                     }
                 }
-            if (response.status.isSuccess()) response.bodyAsBytes() else null
+            response.execute { streamed ->
+                if (streamed.status.isSuccess()) streamed.readBoundedBytes(maxBytes) else null
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (
@@ -136,3 +152,5 @@ internal fun extensionOf(
 }
 
 private const val MAX_EXTENSION = 8
+
+private const val MAX_ARCHIVE_MEDIA_BYTES = 256 * 1024 * 1024

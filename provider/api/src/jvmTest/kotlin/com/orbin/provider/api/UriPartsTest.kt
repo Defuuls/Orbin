@@ -9,6 +9,15 @@ import java.net.URI
  * sanitizers built on it accept and reject exactly what they did on the JVM.
  */
 class UriPartsTest {
+    @Test
+    fun `long percent encoded paths and malformed final escapes`() {
+        val prefix = "https://example.test/" + "%41".repeat(100_000)
+        assertWithMessage("valid long path").that(UriParts.parse(prefix)).isNotNull()
+        for (ending in listOf("%", "%4", "%4z")) {
+            assertWithMessage("reject $ending").that(UriParts.parse(prefix + ending)).isNull()
+        }
+    }
+
     private val corpus =
         listOf(
             // Ordinary absolute URLs.

@@ -2,6 +2,7 @@ package com.orbin.network.ktor
 
 import com.google.common.truth.Truth.assertThat
 import com.orbin.network.NetworkConfig
+import com.orbin.network.policy.PowBlock
 import com.orbin.network.policy.PowBlockTest
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -13,9 +14,14 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import io.ktor.utils.io.ByteChannel
+import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.IOException
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -128,6 +134,89 @@ class OrbinHttpClientTest {
         assertThat(body).isEqualTo("<html>a page</html>")
         assertThat(sent).isEqualTo(1)
     }
+
+    @Test
+    fun `rejects oversized html with missing or misleading length`() {
+        for (declared in listOf<String?>(null, "1", (PowBlock.MAX_INTERSTITIAL_BYTES + 1).toString())) {
+            val responseHeaders =
+                io.ktor.http.Headers.build {
+                    append(HttpHeaders.ContentType, "text/html")
+                    declared?.let { append(HttpHeaders.ContentLength, it) }
+                }
+            val client =
+                orbinHttpClient(
+                    MockEngine {
+                        respond("x".repeat(PowBlock.MAX_INTERSTITIAL_BYTES.toInt() + 1), headers = responseHeaders)
+                    },
+                    { config },
+                )
+            try {
+                assertThrows(IOException::class.java) {
+                    runBlocking { client.get("https://a.example.org/").bodyAsText() }
+                }
+            } finally {
+                client.close()
+            }
+        }
+    }
+
+    @Test
+    fun `clearance response bodies are discarded without saving`() {
+        var cleared = false
+        val client =
+            orbinHttpClient(
+                MockEngine { request ->
+                    when {
+                        request.url.parameters["powblock"] != null -> {
+                            cleared = true
+                            respond(
+                                "x".repeat(PowBlock.MAX_INTERSTITIAL_BYTES.toInt() * 2),
+                                headers = HTML,
+                            )
+                        }
+                        !cleared ->
+                            respond(
+                                PowBlockTest.interstitial(PowBlockTest.TOKEN, difficulty = 8),
+                                headers = HTML,
+                            )
+                        else -> respond("ok")
+                    }
+                },
+                { config },
+            )
+        try {
+            assertThat(runBlocking { client.get("https://a.example.org/").bodyAsText() }).isEqualTo("ok")
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `html limit stops the producer before default response buffering`() =
+        runBlocking {
+            val channel = ByteChannel(autoFlush = true)
+            var produced = 0
+            val chunks = 512
+            val producer =
+                launch {
+                    runCatching {
+                        repeat(chunks) {
+                            channel.writeFully(ByteArray(8192))
+                            produced++
+                        }
+                        channel.close()
+                    }
+                }
+            val client = orbinHttpClient(MockEngine { respond(channel, headers = HTML) }, { config })
+            try {
+                val failure = runCatching { client.get("https://a.example.org/") }.exceptionOrNull()
+                assertThat(failure).isInstanceOf(IOException::class.java)
+                assertThat(produced).isLessThan(chunks)
+            } finally {
+                producer.cancelAndJoin()
+                client.close()
+            }
+        }
 
     /** A LynxChan site behind POWBlock, then a terms page; clearance is tracked server-side. */
     private class GatedSite {

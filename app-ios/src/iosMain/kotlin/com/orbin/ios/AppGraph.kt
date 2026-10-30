@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSURLCache
 import platform.Foundation.NSURLRequestReloadIgnoringLocalCacheData
 import platform.Foundation.NSUserDomainMask
 
@@ -25,17 +26,23 @@ internal object AppGraph {
     /**
      * One HTTP client for the providers, image loading and saves, so every request looks the same.
      * Catalogs, threads and board lists always come from the site: iOS's URL cache otherwise served
-     * them for up to a minute, so pulling to refresh showed the same page again. Media keeps normal
-     * HTTP caching.
+     * them for up to a minute, so pulling to refresh showed the same page again. Sensitive response
+     * and media bodies are no longer persisted in the system URL cache.
      */
     val client =
-        iosHttpClient(
-            Darwin.create {
-                configureRequest {
-                    if (!isMediaUrl(URL?.path.orEmpty())) setCachePolicy(NSURLRequestReloadIgnoringLocalCacheData)
-                }
-            },
-        )
+        run {
+            retireLegacyIosImageCache()
+            NSURLCache.sharedURLCache.removeAllCachedResponses()
+            iosHttpClient(
+                Darwin.create {
+                    configureSession {
+                        setURLCache(null)
+                        setRequestCachePolicy(NSURLRequestReloadIgnoringLocalCacheData)
+                    }
+                    configureRequest { setCachePolicy(NSURLRequestReloadIgnoringLocalCacheData) }
+                },
+            )
+        }
 
     private val database = openDatabase()
 

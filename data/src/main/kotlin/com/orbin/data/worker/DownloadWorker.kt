@@ -35,11 +35,13 @@ class DownloadWorker
         override suspend fun doWork(): Result =
             withContext(Dispatchers.IO) {
                 val id = inputData.getLong(KEY_ID, -1L)
-                val url = inputData.getString(KEY_URL)
-                val fileName = inputData.getString(KEY_FILE_NAME)
-                val relativeDir = inputData.getString(KEY_RELATIVE_DIR) ?: ""
-
-                if (id == -1L || url.isNullOrBlank() || fileName.isNullOrBlank()) {
+                if (id == -1L) return@withContext Result.failure()
+                // No metadata fallback: old scheduler inputs must never become an authority.
+                val download = dao.getById(id) ?: return@withContext Result.success()
+                val url = download.url
+                val fileName = download.fileName
+                val relativeDir = download.relativeDir
+                if (!url.startsWith("https://", ignoreCase = true) || fileName.isBlank()) {
                     return@withContext Result.failure()
                 }
 
@@ -123,8 +125,5 @@ class DownloadWorker
         companion object {
             private const val TAG = "DownloadWorker"
             const val KEY_ID = "id"
-            const val KEY_URL = "url"
-            const val KEY_FILE_NAME = "fileName"
-            const val KEY_RELATIVE_DIR = "relativeDir"
         }
     }

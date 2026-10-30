@@ -5,10 +5,17 @@ import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.orbin.core.model.DownloadStatus
+import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.worker.DownloadWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,32 +25,57 @@ class AndroidDownloadQueue
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val dao: DownloadDao,
     ) : DownloadPlatformQueue {
         private val workManager: WorkManager
             get() = WorkManager.getInstance(context)
 
-        override fun enqueue(
-            id: Long,
-            url: String,
-            fileName: String,
-            relativeDir: String,
-        ) {
-            val inputData =
-                Data
-                    .Builder()
-                    .putLong(DownloadWorker.KEY_ID, id)
-                    .putString(DownloadWorker.KEY_URL, url)
-                    .putString(DownloadWorker.KEY_FILE_NAME, fileName)
-                    .putString(DownloadWorker.KEY_RELATIVE_DIR, relativeDir)
-                    .build()
+        private val migrationMutex = Mutex()
 
+        override suspend fun enqueue(id: Long) =
+            withContext(Dispatchers.IO) {
+                prepare()
+                migrationMutex.withLock { schedule(id) }
+            }
+
+        private fun schedule(id: Long) {
+            val inputData = Data.Builder().putLong(DownloadWorker.KEY_ID, id).build()
             val workRequest =
                 OneTimeWorkRequestBuilder<DownloadWorker>()
                     .setInputData(inputData)
                     .build()
-
-            workManager.enqueue(workRequest)
+            workManager.enqueueUniqueWork("download-$id", ExistingWorkPolicy.KEEP, workRequest).result.get()
         }
+
+        /** Retire pre-upgrade WorkSpecs rather than retaining plaintext input as a fallback. */
+        suspend fun prepare() =
+            withContext(Dispatchers.IO) {
+                migrationMutex.withLock {
+                    val migration = context.getSharedPreferences("download-security", Context.MODE_PRIVATE)
+                    if (migration.getBoolean("opaque-inputs", false)) return@withLock
+                    val oldWork = workManager.getWorkInfosByTag(DownloadWorker::class.java.name).get()
+                    oldWork.filterNot { it.state.isFinished }.forEach { workManager.cancelWorkById(it.id).result.get() }
+                    workManager.pruneWork().result.get()
+                    // Active encrypted records are the authority for re-creating interrupted work.
+                    dao
+                        .all()
+                        .filter { it.status in setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name) }
+                        .forEach { schedule(it.id) }
+                    check(
+                        migration.edit().putBoolean("opaque-inputs", true).commit(),
+                    ) { "Could not record download migration" }
+                }
+            }
+
+        override suspend fun cancelAll() =
+            withContext(Dispatchers.IO) {
+                prepare()
+                migrationMutex.withLock {
+                    workManager.cancelAllWorkByTag(DownloadWorker::class.java.name).result.get()
+                    workManager.pruneWork().result.get()
+                    Unit
+                }
+            }
 
         override fun writeTextFile(
             fileName: String,

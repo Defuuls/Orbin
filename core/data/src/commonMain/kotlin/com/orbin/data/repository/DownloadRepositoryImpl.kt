@@ -20,12 +20,9 @@ import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
 interface DownloadPlatformQueue {
-    fun enqueue(
-        id: Long,
-        url: String,
-        fileName: String,
-        relativeDir: String,
-    )
+    suspend fun enqueue(id: Long)
+
+    suspend fun cancelAll() = Unit
 
     fun writeTextFile(
         fileName: String,
@@ -89,13 +86,16 @@ class DownloadRepositoryImpl(
                 ),
             )
 
-            queue?.enqueue(id, url, safeName, relativeDir)
+            queue?.enqueue(id)
             id
         }
 
     override suspend fun refreshStatuses() = Unit
 
-    override suspend fun clearHistory() = dao.clear()
+    override suspend fun clearHistory() {
+        queue?.cancelAll()
+        dao.clear()
+    }
 
     override suspend fun retry(id: Long): Long =
         withContext(ioDispatcher) {
@@ -104,7 +104,7 @@ class DownloadRepositoryImpl(
             if (uri?.protocol?.name?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
             dao.updateStatus(id, DownloadStatus.QUEUED.name)
-            queue?.enqueue(id, entity.url, entity.fileName, entity.relativeDir)
+            queue?.enqueue(id)
             id
         }
 

@@ -17,7 +17,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
@@ -34,10 +33,6 @@ annotation class BaseOkHttp
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class VideoOkHttp
-
-private const val HTTP_CACHE_SIZE_MB = 50L
-private const val BYTES_PER_KB = 1024L
-private const val KB_PER_MB = 1024L
 
 /**
  * Provides the shared networking primitives: an [OkHttpClient]
@@ -72,11 +67,9 @@ object NetworkModule {
                 .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
                 .build()
 
-        // HTTP disk cache for API responses (catalog, threads, board metadata).
-        // Sized at 50MB; HeadersInterceptor allows short max-age on idempotent GETs so this
-        // cache is actually used instead of being voided by a blanket no-store.
-        val cacheDir = File(context.cacheDir, "http-cache")
-        val httpCache = Cache(cacheDir, HTTP_CACHE_SIZE_MB * KB_PER_MB * BYTES_PER_KB)
+        // Browsing responses must not duplicate encrypted history in a plaintext disk cache.
+        val legacyCache = File(context.cacheDir, "http-cache")
+        check(!legacyCache.exists() || legacyCache.deleteRecursively()) { "Could not retire legacy HTTP cache" }
 
         // Always negotiate modern TLS. Cleartext is intentionally absent from the connection
         // specs so HTTPS-only remains a hard privacy boundary.
@@ -91,7 +84,7 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
             ).cookieJar(InMemoryCookieJar())
-            .cache(httpCache)
+            .cache(null)
             .addInterceptor(HttpsOnlyInterceptor(configProvider))
             // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
             // configured User-Agent and Accept headers.
@@ -116,7 +109,7 @@ object NetworkModule {
     /**
      * The Ktor client the shared providers use, made by the same factory as iOS's, running on the
      * [BaseOkHttp] client. Its interceptors apply the shared request policy and POWBlock gate (and
-     * DoH, cookies and the cache), so the Ktor plugins stay off. Ktor follows redirects itself and
+     * DoH and cookies), so the Ktor plugins stay off. Ktor follows redirects itself and
      * refuses an HTTPS-to-HTTP downgrade.
      */
     @Provides
@@ -139,11 +132,7 @@ object NetworkModule {
     ): OkHttpClient =
         base
             .newBuilder()
-            // Deliberately no okhttp3.Cache here: ExoPlayer's OkHttpDataSource issues byte-range
-            // (Range:) requests to seek/buffer within the file, and OkHttp's built-in disk cache
-            // doesn't correctly serve or store partial (206) responses against it - a documented
-            // source of misbehavior for large streamed files. Media3's range-aware
-            // SimpleCache/CacheDataSource is layered on top of this client in :media.
+            // Streaming media also stays out of persistent caches.
             .cache(null)
             // Keep video requests CDN-friendly even when the URL does not have a media extension.
             .addInterceptor { chain ->

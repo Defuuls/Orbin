@@ -7,10 +7,11 @@ import com.orbin.core.model.PermanentContentFilter
 import com.orbin.core.model.ThreadKey
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
+import com.orbin.network.ktor.MAX_BUFFERED_MEDIA_BYTES
+import com.orbin.network.ktor.readBoundedBytes
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.onDownload
-import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.request.prepareGet
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -191,9 +192,10 @@ class MediaDownloads(
 /** Fetching through the app's own client, so a save sends the same headers as the app's reads. */
 fun ktorMediaFetch(client: HttpClient): MediaFetch =
     { url, onProgress ->
-        val response = client.get(url) { onDownload { received, total -> onProgress(received, total) } }
-        check(response.status.isSuccess()) { "HTTP ${response.status.value}" }
-        response.bodyAsBytes()
+        client.prepareGet(url) { onDownload { received, total -> onProgress(received, total) } }.execute { response ->
+            check(response.status.isSuccess()) { "HTTP ${response.status.value}" }
+            response.readBoundedBytes(MAX_BUFFERED_MEDIA_BYTES)
+        }
     }
 
 /** Photos takes stills, GIFs and the videos iOS plays; everything else goes to Files. */
@@ -262,6 +264,6 @@ private fun DownloadEntity.toRecord(live: Pair<Long, Long?>?): DownloadRecord =
 
 private val UNFINISHED = setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name)
 private val UNSAFE_PATH_CHARS = Regex("""[/\\:*?"<>|]""")
-private const val MAX_CONCURRENT_TRANSFERS = 3
+private const val MAX_CONCURRENT_TRANSFERS = 1
 private const val MAX_FILE_NAME_LENGTH = 200
 private const val MAX_PATH_SEGMENT_LENGTH = 80

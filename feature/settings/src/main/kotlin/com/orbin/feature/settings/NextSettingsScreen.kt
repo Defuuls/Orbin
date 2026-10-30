@@ -82,7 +82,7 @@ fun NextSettingsScreen(
             uri ?: return@rememberLauncherForActivityResult
             viewModel.importBackup {
                 withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                    context.contentResolver.openInputStream(uri)?.use { it.readBackupText() }
                         ?: error("Could not open the selected file for reading")
                 }
             }

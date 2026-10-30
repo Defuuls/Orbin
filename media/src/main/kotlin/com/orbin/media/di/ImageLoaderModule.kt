@@ -3,7 +3,6 @@ package com.orbin.media.di
 import android.app.ActivityManager
 import android.content.Context
 import coil3.ImageLoader
-import coil3.disk.DiskCache
 import coil3.gif.AnimatedImageDecoder
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -16,19 +15,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okio.Path.Companion.toOkioPath
 import javax.inject.Singleton
 
 private const val MEMORY_CACHE_PERCENT = 0.25
 private const val LOW_RAM_MEMORY_CACHE_PERCENT = 0.15
-private const val BYTES_PER_MB = 1024L * 1024L
-
-/** Image disk cache size. A fixed 256 MB: large enough to scroll back without refetching. */
-private const val IMAGE_DISK_CACHE_MB = 256L
 
 /**
  * Builds the singleton Coil [ImageLoader], reusing the app's shared [OkHttpClient] and configuring
- * bounded memory/disk caches. Low-RAM devices reserve less heap for decoded images because video
+ * bounded memory caches. Low-RAM devices reserve less heap for decoded images because video
  * buffers, Compose state and SQLCipher native allocations share the same constrained process.
  *
  * Crossfade is off: feed/catalog grids recycle aggressively, and the fade animation costs jank
@@ -47,6 +41,9 @@ object ImageLoaderModule {
         val memoryCachePercent =
             if (activityManager.isLowRamDevice) LOW_RAM_MEMORY_CACHE_PERCENT else MEMORY_CACHE_PERCENT
 
+        val legacyCache = context.cacheDir.resolve("image_cache")
+        check(!legacyCache.exists() || legacyCache.deleteRecursively()) { "Could not retire legacy image cache" }
+
         return ImageLoader
             .Builder(context)
             .components {
@@ -57,13 +54,8 @@ object ImageLoaderModule {
                     .Builder()
                     .maxSizePercent(context, memoryCachePercent)
                     .build()
-            }.diskCache {
-                DiskCache
-                    .Builder()
-                    .directory(context.cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizeBytes(IMAGE_DISK_CACHE_MB * BYTES_PER_MB)
-                    .build()
-            }.crossfade(false)
+            }.diskCache(null)
+            .crossfade(false)
             .build()
     }
 

@@ -17,7 +17,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -84,6 +83,7 @@ class MainActivity : FragmentActivity() {
     private var pendingRoute by mutableStateOf<Route?>(null)
 
     private var relockOnResume by mutableStateOf(false)
+    private var unlocked by mutableStateOf(false)
     private var biometricLockActive = false
     private var authenticationInProgress by mutableStateOf(false)
     private var activeBiometricPrompt: BiometricPrompt? = null
@@ -182,8 +182,7 @@ class MainActivity : FragmentActivity() {
         val ready = uiState.ready
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
         val shouldLock = uiState.shouldLock
-        var unlocked by rememberSaveable { mutableStateOf(false) }
-        var previousShouldLock by rememberSaveable { mutableStateOf<Boolean?>(null) }
+        var previousShouldLock by remember { mutableStateOf<Boolean?>(null) }
         var unlockMessage by remember { mutableStateOf<String?>(null) }
         var allowContinueWithoutLock by remember { mutableStateOf(false) }
 
@@ -306,6 +305,7 @@ class MainActivity : FragmentActivity() {
         cancelActiveAuthentication()
         super.onStop()
         if (biometricLockActive) {
+            unlocked = false
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave
             // authenticationInProgress stuck true, which would silently block every future
