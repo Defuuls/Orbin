@@ -33,8 +33,10 @@ import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.R
+import com.orbin.media.hasHttpStatus
 import com.orbin.media.video.InlineLoop
 import com.orbin.media.video.canAutoplayInFeed
+import com.orbin.network.interceptor.RetryAfter
 
 /**
  * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.
@@ -95,7 +97,7 @@ fun OrbinAsyncImage(
                     val throwable = state.result.throwable
                     Logger.w(tag = TAG) { "Image failed to load (${throwable::class.simpleName})" }
                     loadFailed = true
-                    failureMessage = throwable.mediaLoadMessage()
+                    failureMessage = throwable.imageLoadMessage()
                 },
             )
         }
@@ -227,17 +229,12 @@ fun SpoilerOverlay(modifier: Modifier = Modifier) {
 // its own blackout has not been hidden.
 private const val SPOILER_SCRIM_ALPHA = 0.85f
 
-private fun Throwable.mediaLoadMessage(): String =
-    if (hasHttpStatus(HTTP_TOO_MANY_REQUESTS)) {
+internal fun Throwable.imageLoadMessage(): String =
+    if (hasHttpStatus(RetryAfter.HTTP_TOO_MANY_REQUESTS)) {
         "Image rate limited"
     } else {
         "Image unavailable"
     }
 
-private fun Throwable.hasHttpStatus(statusCode: Int): Boolean =
-    generateSequence(this as Throwable?) { it.cause }
-        .any { throwable -> throwable.message?.contains(statusCode.toString()) == true }
-
 private const val TAG = "OrbinAsyncImage"
-private const val HTTP_TOO_MANY_REQUESTS = 429
 private const val ERROR_OVERLAY_ALPHA = 0.62f

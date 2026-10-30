@@ -11,8 +11,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.HttpDataSource
 import com.orbin.media.di.VideoMediaDataSource
+import com.orbin.media.hasHttpStatus
 import com.orbin.network.interceptor.RetryAfter
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -84,11 +84,6 @@ internal fun PlaybackException.mediaLoadMessage(): String =
     } else {
         "Video unavailable"
     }
-
-internal fun Throwable.hasHttpStatus(statusCode: Int): Boolean =
-    generateSequence(this as Throwable?) { it.cause }
-        .filterIsInstance<HttpDataSource.InvalidResponseCodeException>()
-        .any { it.responseCode == statusCode }
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
