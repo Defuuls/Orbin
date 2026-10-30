@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [181 — Skirret](https://github.com/Defuuls/Orbin/releases/tag/v181-Skirret)
+**Current release:** [182 — Crosne](https://github.com/Defuuls/Orbin/releases/tag/v182-Crosne)
 
-**What's new in 181:** Unified design tokens, eliminated feed scroll jumps, and hardened background download and lock security.
+**What's new in 182:** Fresh app-lock authentication, stronger browsing privacy, and bounded backup and media processing.
 
 ---
 
