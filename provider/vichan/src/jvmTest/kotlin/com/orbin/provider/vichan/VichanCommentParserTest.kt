@@ -7,6 +7,14 @@ import org.junit.Test
 
 class VichanCommentParserTest {
     @Test
+    fun `long unmatched entities remain literal and valid suffix still decodes`() {
+        val text = "&".repeat(100_000) + "&amp;"
+        val result = VichanCommentParser.parse(text)
+        assertThat((result.nodes.single() as PostNode.Text).text).isEqualTo("&".repeat(100_001))
+        assertThat((VichanCommentParser.parse("&amp").nodes.single() as PostNode.Text).text).isEqualTo("&amp")
+    }
+
+    @Test
     fun `plain text and entities decode`() {
         val result = VichanCommentParser.parse("Tom &amp; Jerry &gt;&gt; 5 &#039;quoted&#039;")
         val text = (result.nodes.single() as PostNode.Text).text

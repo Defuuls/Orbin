@@ -5,14 +5,16 @@ import com.orbin.network.policy.PowBlock
 import com.orbin.network.policy.RequestPolicy
 import io.ktor.client.HttpClient
 import io.ktor.client.call.HttpClientCall
-import io.ktor.client.call.save
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.Sender
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.plugin
+import io.ktor.client.request.HttpRequest
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.prepareRequest
+import io.ktor.client.statement.HttpReceivePipeline
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -22,6 +24,11 @@ import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.encodedPath
 import io.ktor.http.takeFrom
+import io.ktor.util.AttributeKey
+import io.ktor.util.pipeline.PipelinePhase
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.InternalAPI
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
@@ -55,7 +62,10 @@ fun orbinHttpClient(
             socketTimeoutMillis = config.readTimeoutSeconds * MILLIS_PER_SECOND
         }
         install(requestPolicyPlugin(configProvider))
-    }.apply { installPowBlockGate(configProvider) }
+    }.apply {
+        installHtmlResponseLimit()
+        installPowBlockGate(configProvider)
+    }
 }
 
 /** Refuses cleartext under HTTPS-only and sets the policy's headers on every request. */
@@ -74,16 +84,14 @@ fun requestPolicyPlugin(configProvider: NetworkConfigProvider) =
 fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
     val gates = PowGates()
     plugin(HttpSend).intercept { original ->
+        if (original.attributes.contains(GATE_REQUEST)) return@intercept execute(original)
         val gate = gates.forHost(original.url.host)
         // Read before each request goes out, as on Android: a gate cleared after this point was
         // cleared without this request's challenge, which then is not worth mining.
         var clearancesSeen = gate.clearances
         var call = execute(original)
         repeat(PowBlock.MAX_ROUNDS) {
-            val html =
-                call.response.contentType()?.match(ContentType.Text.Html) == true &&
-                    (call.response.contentLength() ?: 0L) <= PowBlock.MAX_INTERSTITIAL_BYTES
-            if (html) call = call.save()
+            val html = call.response.contentType()?.match(ContentType.Text.Html) == true
             val body = if (html) call.response.bodyAsText().take(PowBlock.MAX_INTERSTITIAL_BYTES.toInt()) else ""
             val challenge = if (PowBlock.isChallenge(body)) PowBlock.parse(body) else null
             val cleared =
@@ -158,9 +166,12 @@ private fun termsPage(call: HttpClientCall): Url? {
 
 private val REDIRECT_CODES = 300..399
 
-private suspend fun Sender.runGate(request: HttpRequestBuilder): Boolean =
+private suspend fun HttpClient.runGate(request: HttpRequestBuilder): Boolean =
     try {
-        execute(request).save()
+        prepareRequest {
+            takeFrom(request)
+            attributes.put(GATE_REQUEST, Unit)
+        }.execute { /* Cookies are header-driven; never save or drain a clearance body. */ }
         true
     } catch (_: IOException) {
         false
@@ -203,3 +214,58 @@ private fun Url.withPath(path: String): Url =
         }.build()
 
 private const val MILLIS_PER_SECOND = 1_000L
+
+/** Preserve ordinary HTML for consumers, without ever saving more than the inspection budget. */
+@OptIn(InternalAPI::class)
+private suspend fun HttpClientCall.saveBounded(maxBytes: Int): HttpClientCall =
+    BoundedReplayCall(this, response.rawContent.readBoundedBytes(maxBytes))
+
+private class BoundedReplayCall(
+    original: HttpClientCall,
+    bytes: ByteArray,
+) : HttpClientCall(original.client) {
+    init {
+        request =
+            object : HttpRequest by original.request {
+                override val call: HttpClientCall get() = this@BoundedReplayCall
+            }
+        response = ReplayResponse(this, original.response, bytes)
+    }
+
+    override val allowDoubleReceive: Boolean = true
+}
+
+private class ReplayResponse(
+    override val call: HttpClientCall,
+    original: HttpResponse,
+    private val bytes: ByteArray,
+) : HttpResponse() {
+    override val status = original.status
+    override val version = original.version
+    override val requestTime = original.requestTime
+    override val responseTime = original.responseTime
+    override val headers = original.headers
+    override val coroutineContext = original.coroutineContext
+
+    @InternalAPI
+    override val rawContent: ByteReadChannel get() = ByteReadChannel(bytes)
+}
+
+private val GATE_REQUEST = AttributeKey<Unit>("OrbinGateRequest")
+
+/** Runs before Ktor's default SaveBody receive phase, including for non-streaming get calls. */
+private fun HttpClient.installHtmlResponseLimit() {
+    val phase = PipelinePhase("OrbinBoundedHtml")
+    receivePipeline.insertPhaseBefore(HttpReceivePipeline.Before, phase)
+    receivePipeline.intercept(phase) { response ->
+        if (!response.call.attributes.contains(GATE_REQUEST) &&
+            response.contentType()?.match(ContentType.Text.Html) == true
+        ) {
+            if ((response.contentLength() ?: 0L) > PowBlock.MAX_INTERSTITIAL_BYTES) {
+                response.cancel()
+                throw IOException("HTML response exceeds the inspection limit")
+            }
+            proceedWith(response.call.saveBounded(PowBlock.MAX_INTERSTITIAL_BYTES.toInt()).response)
+        }
+    }
+}

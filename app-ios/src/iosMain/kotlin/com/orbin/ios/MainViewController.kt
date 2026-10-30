@@ -9,7 +9,6 @@ import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
-import coil3.disk.DiskCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
@@ -18,7 +17,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import okio.Path.Companion.toPath
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNotificationCenter
@@ -160,36 +158,18 @@ private fun startApp(): StartedApp {
     return StartedApp(graph, browser, lock, downloads, backup)
 }
 
-/** Coil over the app's Ktor client (encrypted DNS included), with its disk cache in Caches. */
+/** Coil over the app's Ktor client, with memory-only caching. */
 @OptIn(ExperimentalForeignApi::class)
 private fun imageLoader(
     context: PlatformContext,
     graph: AppGraph,
-): ImageLoader {
-    val cacheDirectory =
-        NSFileManager
-            .defaultManager
-            .URLForDirectory(
-                directory = NSCachesDirectory,
-                inDomain = NSUserDomainMask,
-                appropriateForURL = null,
-                create = true,
-                error = null,
-            )?.path ?: ""
-    return ImageLoader
+): ImageLoader =
+    ImageLoader
         .Builder(context)
         .components { add(KtorNetworkFetcherFactory(httpClient = { graph.client })) }
-        .diskCache {
-            DiskCache
-                .Builder()
-                .directory("$cacheDirectory/image_cache".toPath())
-                .maxSizeBytes(COIL_DISK_CACHE_BYTES)
-                .build()
-        }.crossfade(false)
+        .diskCache(null)
+        .crossfade(false)
         .build()
-}
-
-private const val COIL_DISK_CACHE_BYTES: Long = 250L * 1024 * 1024
 
 private fun observe(
     name: String?,
@@ -207,3 +187,25 @@ private fun observe(
 /** An iPad is a tablet, with Android's tablet column choice; everything else is a phone. */
 private fun formFactor(): FormFactor =
     if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) FormFactor.TABLET else FormFactor.PHONE
+
+/** Also run for background launches, before any lazy image loader is requested. */
+@OptIn(ExperimentalForeignApi::class)
+internal fun retireLegacyIosImageCache() {
+    val cacheDirectory =
+        NSFileManager
+            .defaultManager
+            .URLForDirectory(
+                directory = NSCachesDirectory,
+                inDomain = NSUserDomainMask,
+                appropriateForURL = null,
+                create = true,
+                error = null,
+            )?.path ?: ""
+    if (cacheDirectory.isNotBlank()) {
+        val legacyCache = "$cacheDirectory/image_cache"
+        val manager = NSFileManager.defaultManager
+        check(!manager.fileExistsAtPath(legacyCache) || manager.removeItemAtPath(legacyCache, error = null)) {
+            "Could not retire legacy image cache"
+        }
+    }
+}

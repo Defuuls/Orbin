@@ -10,6 +10,7 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
+import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.data.worker.WatchScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -42,6 +43,9 @@ class OrbinApplication :
     lateinit var diagnosticsRepository: DiagnosticsRepositoryImpl
 
     @Inject
+    lateinit var downloadQueue: AndroidDownloadQueue
+
+    @Inject
     lateinit var preferences: DataStore<Preferences>
 
     override val workManagerConfiguration: Configuration
@@ -62,12 +66,14 @@ class OrbinApplication :
         // Before anything else that could throw: an uncaught exception during startup is exactly
         // the case this records, and a handler installed later would miss it.
         diagnosticsRepository.install()
+        retireLegacyBrowsingCaches(this)
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
         CoroutineScope(Dispatchers.Default).launch {
             watchScheduler.ensureScheduled()
         }
         // Sync was removed; its saved login and pairing data must not linger on the device.
         CoroutineScope(Dispatchers.IO).launch {
+            downloadQueue.prepare()
             LegacySyncCleanup.clear(preferences)
         }
     }

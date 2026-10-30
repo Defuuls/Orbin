@@ -1,11 +1,19 @@
 package com.orbin.ios
 
+import com.orbin.data.util.readBoundedBytes
+import com.orbin.network.ktor.MAX_BUFFERED_MEDIA_BYTES
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import okio.FileSystem
+import okio.IOException
+import okio.Path.Companion.toPath
+import okio.SYSTEM
+import okio.buffer
+import okio.use
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSData
 import platform.Foundation.NSError
@@ -17,13 +25,13 @@ import platform.Foundation.NSMutableURLRequest
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLIsExcludedFromBackupKey
+import platform.Foundation.NSURLRequestReloadIgnoringLocalCacheData
 import platform.Foundation.NSURLSession
 import platform.Foundation.NSURLSessionConfiguration
 import platform.Foundation.NSURLSessionDownloadDelegateProtocol
 import platform.Foundation.NSURLSessionDownloadTask
 import platform.Foundation.NSURLSessionTask
 import platform.Foundation.NSUserDomainMask
-import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.getBytes
 import platform.Foundation.setValue
 import kotlin.coroutines.resume
@@ -49,6 +57,8 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
             NSURLSessionConfiguration.backgroundSessionConfigurationWithIdentifier(
                 BACKGROUND_DOWNLOAD_SESSION,
             )
+        configuration.setURLCache(null)
+        configuration.setRequestCachePolicy(NSURLRequestReloadIgnoringLocalCacheData)
         configuration.setSessionSendsLaunchEvents(true)
         configuration.setDiscretionary(false)
         configuration.setAllowsCellularAccess(true)
@@ -133,6 +143,12 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         totalBytesExpectedToWrite: Long,
     ) {
         val key = downloadTask.taskDescription ?: return
+        if (totalBytesWritten > MAX_BUFFERED_MEDIA_BYTES || totalBytesExpectedToWrite > MAX_BUFFERED_MEDIA_BYTES) {
+            downloadTask.cancel()
+            NSFileManager.defaultManager.removeItemAtURL(downloadedFile(key), error = null)
+            finish(key, Result.failure(IllegalArgumentException("Downloaded media exceeds the size limit")))
+            return
+        }
         progressCallbacks[key]?.invoke(totalBytesWritten, totalBytesExpectedToWrite.takeIf { it >= 0L })
     }
 
@@ -148,6 +164,16 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
         }
         val destination = downloadedFile(key)
         val manager = NSFileManager.defaultManager
+        val size =
+            runCatching {
+                FileSystem.SYSTEM.metadata(checkNotNull(temporaryUrl.path).toPath()).size
+            }.getOrNull()
+        if (size == null || size > MAX_BUFFERED_MEDIA_BYTES) {
+            manager.removeItemAtURL(temporaryUrl, error = null)
+            manager.removeItemAtURL(destination, error = null)
+            finish(key, Result.failure(IllegalArgumentException("Downloaded media exceeds the size limit")))
+            return
+        }
         manager.removeItemAtURL(destination, error = null)
         val moved = manager.moveItemAtURL(srcURL = temporaryUrl, toURL = destination, error = null)
         if (!moved) {
@@ -218,8 +244,17 @@ internal object IosBackgroundMediaFetch : DurableMediaFetch {
     }
 
     private fun readBytes(url: NSURL): ByteArray {
-        val data = NSData.dataWithContentsOfURL(url) ?: error("Could not read completed download")
-        return data.toDownloadedMediaBytes()
+        val path = checkNotNull(url.path) { "Could not read completed download" }.toPath()
+        try {
+            return FileSystem.SYSTEM
+                .source(path)
+                .buffer()
+                .use { it.readBoundedBytes(MAX_BUFFERED_MEDIA_BYTES) }
+        } catch (failure: IOException) {
+            // Never keep an unreadable/oversized durable file as an automatic retry source.
+            NSFileManager.defaultManager.removeItemAtURL(url, error = null)
+            throw failure
+        }
     }
 }
 

@@ -1,15 +1,22 @@
 package com.orbin.ios
 
+import com.orbin.data.util.MAX_BACKUP_INPUT_BYTES
+import com.orbin.data.util.readBoundedBytes
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.SYSTEM
+import okio.buffer
+import okio.use
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSFileManager
-import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
-import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.stringWithContentsOfURL
 import platform.Foundation.writeToURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
@@ -73,25 +80,32 @@ class DeviceBackupFiles : BackupFiles {
 
     override suspend fun pick(): String? {
         val presenter = topViewController() ?: return null
-        return suspendCancellableCoroutine { continuation ->
-            val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeJSON), asCopy = true)
-            val delegate =
-                PickerDelegate { url ->
-                    if (!continuation.isActive) return@PickerDelegate
-                    pickerDelegate = null
-                    continuation.resume(url?.let { NSString.stringWithContentsOfURL(it, NSUTF8StringEncoding, null) })
+        val selected =
+            suspendCancellableCoroutine<NSURL?> { continuation ->
+                val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeJSON), asCopy = true)
+                val delegate =
+                    PickerDelegate { url ->
+                        if (!continuation.isActive) return@PickerDelegate
+                        pickerDelegate = null
+                        continuation.resume(url)
+                    }
+                pickerDelegate = delegate
+                picker.delegate = delegate
+                picker.allowsMultipleSelection = false
+                continuation.invokeOnCancellation {
+                    picker.delegate = null
+                    if (pickerDelegate === delegate) pickerDelegate = null
+                    if (presenter.presentedViewController === picker) {
+                        presenter.dismissViewControllerAnimated(false, completion = null)
+                    }
                 }
-            pickerDelegate = delegate
-            picker.delegate = delegate
-            picker.allowsMultipleSelection = false
-            continuation.invokeOnCancellation {
-                picker.delegate = null
-                if (pickerDelegate === delegate) pickerDelegate = null
-                if (presenter.presentedViewController === picker) {
-                    presenter.dismissViewControllerAnimated(false, completion = null)
-                }
+                if (continuation.isActive) presenter.presentViewController(picker, animated = true, completion = null)
+            } ?: return null
+        return withContext(Dispatchers.IO) {
+            val path = checkNotNull(selected.path) { "Could not read the selected backup" }.toPath()
+            FileSystem.SYSTEM.source(path).buffer().use {
+                it.readBoundedBytes(MAX_BACKUP_INPUT_BYTES).decodeToString(throwOnInvalidSequence = true)
             }
-            if (continuation.isActive) presenter.presentViewController(picker, animated = true, completion = null)
         }
     }
 }
