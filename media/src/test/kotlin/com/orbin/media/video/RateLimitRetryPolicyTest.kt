@@ -27,7 +27,10 @@ class RateLimitRetryPolicyTest {
     @Test
     fun `jitter is asked for no more than its maximum`() {
         var asked = -1L
-        RateLimitRetryPolicy(maxJitterMs = 3_000L, jitter = { asked = it; 0L }).delayMs(0, 10)
+        RateLimitRetryPolicy(maxJitterMs = 3_000L, jitter = {
+            asked = it
+            0L
+        }).delayMs(0, 10)
 
         assertThat(asked).isEqualTo(3_000L)
     }

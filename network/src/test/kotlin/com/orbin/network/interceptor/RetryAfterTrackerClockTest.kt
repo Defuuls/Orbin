@@ -73,7 +73,13 @@ class RetryAfterTrackerClockTest {
         val pool = Executors.newFixedThreadPool(8)
         val start = CountDownLatch(1)
         try {
-            val jobs = (1..8).map { id -> pool.submit { start.await(); RetryAfterTracker.record(HOST, "$BASE/$id.webm", 30) } }
+            val jobs =
+                (1..8).map { id ->
+                    pool.submit {
+                        start.await()
+                        RetryAfterTracker.record(HOST, "$BASE/$id.webm", 30)
+                    }
+                }
             start.countDown()
             jobs.forEach { it.get(5, TimeUnit.SECONDS) }
         } finally {
