@@ -31,6 +31,8 @@ dependencies {
 
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Named directly: load failures are read as Coil's HttpException, which this module inspects.
+    implementation(libs.coil.network.core)
     implementation(libs.coil.gif)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
