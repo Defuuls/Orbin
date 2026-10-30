@@ -181,21 +181,13 @@ fun VideoPlayer(
         positionMs = 0L
         durationMs = 0L
         bufferedProgress = 0f
-        // Skip network hit if the CDN host is still in cooldown.
-        val host = runCatching { url.toHttpUrl().host }.getOrNull()
-        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it, url) }
-        if (blockedUntil != null) {
-            isRateLimited = true
-            rateLimitCooldownSeconds = ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
-            playbackError = "Video rate limited by CDN"
-        } else {
-            exoPlayer.setMediaItem(MediaItem.fromUri(url))
-            exoPlayer.prepare()
-            // Pick up where this video was left, for as long as Orbin keeps running.
-            exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
-            exoPlayer.playWhenReady = active && autoPlay
-            controlsVisible = !autoPlay
-        }
+        // The data source checks encrypted media first, then applies CDN backoff to cache misses.
+        // A UI-level cooldown gate would prevent already-cached clips from playing.
+        exoPlayer.setMediaItem(MediaItem.fromUri(url))
+        exoPlayer.prepare()
+        exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
+        exoPlayer.playWhenReady = active && autoPlay
+        controlsVisible = !autoPlay
     }
 
     // Tick down the rate-limit cooldown every second so the UI stays current.
@@ -270,8 +262,8 @@ fun VideoPlayer(
                     val rateLimited = error.hasHttpStatus(HTTP_TOO_MANY_REQUESTS)
                     isRateLimited = rateLimited
                     if (rateLimited) {
-                        val host = runCatching { url.toHttpUrl().host }.getOrNull()
-                        val blockedUntil = host?.let { RetryAfterTracker.blockedUntilMs(it, url) }
+                        val address = runCatching { url.toHttpUrl() }.getOrNull()
+                        val blockedUntil = address?.let { RetryAfterTracker.blockedUntilMs(it.host, it.toString()) }
                         rateLimitCooldownSeconds =
                             if (blockedUntil != null) {
                                 ((blockedUntil - System.currentTimeMillis()) / 1_000L).coerceAtLeast(0L)
