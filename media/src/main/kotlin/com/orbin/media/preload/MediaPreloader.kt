@@ -13,7 +13,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PreloadOption
 import com.orbin.core.model.PreloadThrottleMode
-import com.orbin.network.di.BaseOkHttp
+import com.orbin.network.interceptor.RetryAfterTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,18 +21,20 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
-/** Preloads media while Orbin is foregrounded, with bounded concurrency and rate limiting. */
+/**
+ * Preloads thumbnails and images while Orbin is foregrounded, with bounded concurrency and rate limiting.
+ * Videos are deliberately not touched: a `HEAD` stores nothing, so the player fetches (and the encrypted
+ * media cache keeps) the bytes itself.
+ */
 class MediaPreloader
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
         private val imageLoader: ImageLoader,
-        @BaseOkHttp private val okHttpClient: OkHttpClient,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun preload(
@@ -55,12 +57,11 @@ class MediaPreloader
                         launch {
                             for (target in queue) {
                                 if (!isAppForeground()) continue
+                                // Preloading is best effort: leave a CDN alone while a player has it blocked.
+                                if (target.url.isCdnBlocked()) continue
                                 plan.throttler.acquire()
                                 try {
-                                    when (target.type) {
-                                        PreloadTargetType.IMAGE -> preloadImage(target.url)
-                                        PreloadTargetType.VIDEO -> preloadVideo(target.url, plan.throttler)
-                                    }
+                                    preloadImage(target.url)
                                 } finally {
                                     plan.throttler.release()
                                 }
@@ -131,30 +132,6 @@ class MediaPreloader
                 }
         }
 
-        private suspend fun preloadVideo(
-            url: String,
-            throttler: RequestThrottler,
-        ) {
-            runCatching {
-                okHttpClient
-                    .newCall(
-                        Request
-                            .Builder()
-                            .head()
-                            .url(url)
-                            .build(),
-                    ).execute()
-                    .use { response ->
-                        throttler.recordResponse(response.code, response.header(RETRY_AFTER_HEADER))
-                    }
-            }.onSuccess { _ ->
-                Logger.d(tag = TAG) { "Preloaded video metadata: ${url.redactForLog()}" }
-            }.onFailure { error ->
-                if (error is CancellationException) throw error
-                Logger.w(tag = TAG) { "Failed to preload video: ${url.redactForLog()}" }
-            }
-        }
-
         private fun List<MediaAttachment>.preloadTargets(option: PreloadOption): List<PreloadTarget> =
             flatMap { attachment ->
                 buildList {
@@ -162,22 +139,14 @@ class MediaPreloader
                     val shouldPreloadImage =
                         option.includesImages() &&
                             (attachment.type == MediaType.IMAGE || attachment.type == MediaType.ANIMATED_IMAGE)
-                    val shouldPreloadVideo = option.includesVideos() && attachment.type == MediaType.VIDEO
 
                     if (shouldPreloadThumbnail && attachment.thumbnailUrl.isNotBlank()) {
                         add(
-                            PreloadTarget(
-                                attachment.thumbnailUrl,
-                                attachment.originalFileName,
-                                PreloadTargetType.IMAGE,
-                            ),
+                            PreloadTarget(attachment.thumbnailUrl, attachment.originalFileName),
                         )
                     }
                     if (shouldPreloadImage) {
-                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.IMAGE))
-                    }
-                    if (shouldPreloadVideo) {
-                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName, PreloadTargetType.VIDEO))
+                        add(PreloadTarget(attachment.sourceUrl, attachment.originalFileName))
                     }
                 }
             }.distinctBy { it.url }
@@ -191,19 +160,17 @@ class MediaPreloader
         private data class PreloadTarget(
             val url: String,
             val label: String,
-            val type: PreloadTargetType,
         )
-
-        private enum class PreloadTargetType {
-            IMAGE,
-            VIDEO,
-        }
 
         private companion object {
             const val TAG = "OrbinMediaPreloader"
-            const val RETRY_AFTER_HEADER = "Retry-After"
         }
     }
+
+private fun String.isCdnBlocked(): Boolean {
+    val address = toHttpUrlOrNull() ?: return false
+    return RetryAfterTracker.blockedUntilMs(address.host, address.toString()) != null
+}
 
 /** Host-only form for logs so release builds do not retain full media paths. */
 private fun String.redactForLog(): String =
