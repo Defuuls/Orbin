@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [184-Taro] - 2026-10-30
+
+### Fixed
+- Android: playing a single video no longer trips the CDN rate limit. A video's startup requests are now spaced out instead of fired together, the preloader no longer sends a useless request per video and leaves a blocked CDN alone, and a video refused with a 429 retries itself at most three times (with a short random delay) before offering a Retry button.
+- Android: a non-429 playback or image error whose text happened to contain "429" (for example a file name) is no longer shown as "rate limited".
+- A `Retry-After` given as an HTTP date is now honoured for videos.
+
+### Reliability
+- Added tests for Retry-After parsing, per-URL request pacing under a parallel burst, the bounded retry policy, preload throttling, and HTTP status detection for ExoPlayer and Coil errors.
+- Real CDN behaviour still needs confirmation on an affected device.
+
+
 ## [183-Chayote] - 2026-10-29
 
 ### Fixed
@@ -2767,7 +2779,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v184-Taro...HEAD
+[184-Taro]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...v184-Taro
 [183-Chayote]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...v183-Chayote
 [182-Crosne]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...v182-Crosne
 [181-Skirret]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...v181-Skirret

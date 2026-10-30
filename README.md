@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [183 — Chayote](https://github.com/Defuuls/Orbin/releases/tag/v183-Chayote)
+**Current release:** [184 — Taro](https://github.com/Defuuls/Orbin/releases/tag/v184-Taro)
 
-**What's new in 183:** Reduce repeated Android GIF and video requests with an encrypted media cache.
+**What's new in 184:** Playing a single Android video no longer trips the media CDN's rate limit.
 
 ---
 
