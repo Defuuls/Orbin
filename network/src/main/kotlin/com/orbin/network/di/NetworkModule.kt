@@ -2,11 +2,13 @@ package com.orbin.network.di
 
 import android.content.Context
 import com.orbin.network.DohFallbackTracker
+import com.orbin.network.MediaResponseCache
 import com.orbin.network.NetworkConfigProvider
 import com.orbin.network.dns.DynamicDns
 import com.orbin.network.interceptor.HeadersInterceptor
 import com.orbin.network.interceptor.HttpsOnlyInterceptor
 import com.orbin.network.interceptor.InMemoryCookieJar
+import com.orbin.network.interceptor.MediaResponseCacheInterceptor
 import com.orbin.network.interceptor.PowBlockInterceptor
 import com.orbin.network.interceptor.VideoRetryAfterInterceptor
 import com.orbin.network.ktor.orbinHttpClient
@@ -53,8 +55,10 @@ object NetworkModule {
         @ApplicationContext context: Context,
         configProvider: NetworkConfigProvider,
         dohFallbackTracker: DohFallbackTracker,
+        mediaCache: MediaResponseCache,
     ): OkHttpClient {
         val config = configProvider.current()
+        val cookieJar = InMemoryCookieJar()
 
         // Certificate revocation is left to Android/Conscrypt. The old `ocsp.enable` /
         // `com.sun.security.enableCRLDP` System properties are HotSpot-only and never affected
@@ -83,13 +87,14 @@ object NetworkModule {
                     okhttp3.ConnectionSpec.RESTRICTED_TLS,
                     okhttp3.ConnectionSpec.MODERN_TLS,
                 ),
-            ).cookieJar(InMemoryCookieJar())
+            ).cookieJar(cookieJar)
             .cache(null)
             .addInterceptor(HttpsOnlyInterceptor(configProvider))
             // Before HeadersInterceptor so that gate-clearance sub-requests still carry the
             // configured User-Agent and Accept headers.
             .addInterceptor(PowBlockInterceptor())
             .addInterceptor(HeadersInterceptor(configProvider))
+            .addInterceptor(MediaResponseCacheInterceptor(mediaCache, cookieJar))
             .apply {
                 dns(
                     DynamicDns(
@@ -129,10 +134,12 @@ object NetworkModule {
     @VideoOkHttp
     fun providesVideoOkHttpClient(
         @BaseOkHttp base: OkHttpClient,
+        mediaCache: MediaResponseCache,
     ): OkHttpClient =
         base
             .newBuilder()
-            // Streaming media also stays out of persistent caches.
+            .apply { interceptors().removeAll { it is MediaResponseCacheInterceptor } }
+            // Disable plaintext OkHttp caching; the encrypted media cache below handles full/range responses.
             .cache(null)
             // Keep video requests CDN-friendly even when the URL does not have a media extension.
             .addInterceptor { chain ->
@@ -148,6 +155,7 @@ object NetworkModule {
                         // referrer, and the previous hard-coded 4chan value broke those hosts.
                         .build()
                 chain.proceed(req)
-            }.addInterceptor(VideoRetryAfterInterceptor())
+            }.addInterceptor(MediaResponseCacheInterceptor(mediaCache, base.cookieJar))
+            .addInterceptor(VideoRetryAfterInterceptor())
             .build()
 }

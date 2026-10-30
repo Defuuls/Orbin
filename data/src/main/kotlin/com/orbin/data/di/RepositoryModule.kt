@@ -10,6 +10,7 @@ import com.orbin.data.repository.ImageCacheRepositoryImpl
 import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.network.MediaResponseCache
 import com.orbin.network.NetworkConfigProvider
 import dagger.Module
 import dagger.Provides
@@ -17,6 +18,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import okio.Path.Companion.toPath
 import javax.inject.Singleton
 
@@ -39,6 +41,7 @@ object RepositoryModule {
     @Singleton
     fun providesImageCacheRepository(
         @ApplicationContext context: Context,
+        mediaCache: MediaResponseCache,
         @Dispatcher(OrbinDispatcher.IO) ioDispatcher: CoroutineDispatcher,
     ): ImageCacheRepository {
         val cacheDirectories =
@@ -60,6 +63,16 @@ object RepositoryModule {
                     .absolutePath
                     .toPath(),
             )
-        return ImageCacheRepositoryImpl(cacheDirectories, ioDispatcher)
+        val legacy = ImageCacheRepositoryImpl(cacheDirectories, ioDispatcher)
+        return object : ImageCacheRepository {
+            override suspend fun usageBytes(): Long =
+                legacy.usageBytes() +
+                    withContext(ioDispatcher) { runCatching { mediaCache.usageBytes() }.getOrDefault(0L) }
+
+            override suspend fun clear() {
+                withContext(ioDispatcher) { mediaCache.clear() }
+                legacy.clear()
+            }
+        }
     }
 }

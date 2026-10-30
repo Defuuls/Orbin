@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [183-Chayote] - 2026-10-29
+
+### Fixed
+- Reduced repeated Android GIF, image and video downloads by keeping eligible responses and exact video ranges in a bounded encrypted cache.
+- Allow cached videos to play during CDN cooldown; uncached requests continue respecting server rate limits.
+- Normalize video cooldown lookups so the player uses the tracked retry time.
+
+### Changed
+- The Android media cache uses SQLCipher with the existing protected database key, retains at most 128 MiB of encoded media, and excludes individual responses over 32 MiB from caching while allowing playback to stream.
+- Clear-cache and local-activity cleanup include the encrypted media cache. Plaintext HTTP, Coil and video disk caches remain disabled.
+
+### Reliability
+- Added tests for repeated GIF/video playback, concurrent loads, byte ranges, cache expiry, interrupted writes, quotas and a paused player holding a response.
+- Added an Android device test for encrypted media persistence and clearing. Real CDN behavior still needs confirmation on affected devices.
+
+
 ## [182-Crosne] - 2026-10-29
 
 ### Fixed
@@ -2751,7 +2767,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...HEAD
+[183-Chayote]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...v183-Chayote
 [182-Crosne]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...v182-Crosne
 [181-Skirret]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...v181-Skirret
 [180-Samphire]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...v180-Samphire

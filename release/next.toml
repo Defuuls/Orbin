@@ -1,34 +1,29 @@
-# Orbin 182 - Crosne
+# Orbin 183 - Chayote
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 182
-codename     = "Crosne"
-version_code = 200
+number       = 183
+codename     = "Chayote"
+version_code = 201
 
-highlight = "Fresh app-lock authentication, stronger browsing privacy, and bounded backup and media processing."
+highlight = "Reduce repeated Android GIF and video requests with an encrypted media cache."
 
 summary = [
-  "bump Orbin to 182-Crosne / versionCode 200",
-  "require fresh Android authentication after activity restoration",
-  "retire plaintext browsing caches and download scheduler metadata",
-  "bound backup, network challenge and media reads and make provider parsing linear",
+  "bump Orbin to 183-Chayote / versionCode 201",
+  "restore bounded encrypted Android media reuse after the privacy update",
+  "allow saved clips to play during CDN cooldown while preserving backoff for cache misses",
 ]
 
 [changelog]
 Fixed = [
-  "Prevented restored Android activities from reusing a previously unlocked app-lock session and revoke authorization on backgrounding.",
-  "Keep Android scheduled download metadata in the encrypted database, migrate legacy jobs, and cancel pending jobs when clearing download history.",
-  "Removed persistent browsing response, image and video caches and clean up legacy files and video URL indexes at startup; explicit saved threads and exported downloads remain.",
-  "Bound actual backup document and HTML challenge response bytes before allocating complete contents, including missing or misleading length headers.",
-  "Bound iOS completed-media and fallback reads, remove oversized durable files, and clean up incomplete thread archives.",
-  "Replaced quadratic entity decoding and percent-escape validation with bounded scans and direct character checks.",
+  "Reduced repeated Android GIF, image and video downloads by keeping eligible responses and exact video ranges in a bounded encrypted cache.",
+  "Allow cached videos to play during CDN cooldown; uncached requests continue respecting server rate limits.",
+  "Normalize video cooldown lookups so the player uses the tracked retry time.",
 ]
 Changed = [
-  "Browsing caches are memory-only, which may increase network use and reduce cache-based offline playback.",
-  "Buffered iOS media saves and individual archive media entries are limited to 32 MiB; archives retain at most 256 MiB of media and preserve original links for omitted entries. Ordinary Android downloads continue streaming.",
-  "Backup imports reject inputs over 20 MiB before decoding and retain the existing five-megacharacter parsing limit.",
+  "The Android media cache uses SQLCipher with the existing protected database key, retains at most 128 MiB of encoded media, and excludes individual responses over 32 MiB from caching while allowing playback to stream.",
+  "Clear-cache and local-activity cleanup include the encrypted media cache. Plaintext HTTP, Coil and video disk caches remain disabled.",
 ]
 Reliability = [
-  "Added regression coverage for early streaming limits, malformed and large parser inputs, Unicode backups and startup cache cleanup; 666 local tests pass.",
-  "Validated Android checks and native iOS Kotlin compilation. Please test app-lock restoration, background downloads and upgrade cleanup on devices.",
+  "Added tests for repeated GIF/video playback, concurrent loads, byte ranges, cache expiry, interrupted writes, quotas and a paused player holding a response.",
+  "Added an Android device test for encrypted media persistence and clearing. Real CDN behavior still needs confirmation on affected devices.",
 ]
