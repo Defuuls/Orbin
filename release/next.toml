@@ -1,34 +1,34 @@
-# Orbin 181 - Skirret
+# Orbin 182 - Crosne
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 181
-codename     = "Skirret"
-version_code = 199
+number       = 182
+codename     = "Crosne"
+version_code = 200
 
-highlight = "Unified design tokens, eliminated feed scroll jumps, and hardened background download and lock security."
+highlight = "Fresh app-lock authentication, stronger browsing privacy, and bounded backup and media processing."
 
 summary = [
-  "bump Orbin to 181-Skirret / versionCode 199",
-  "unify design system tokens, eliminate feed scroll jumps, and virtualize grouped lists",
-  "harden crash log URL redaction, backup validation, and concurrent crypto cipher operations",
-  "resolve iOS background media file protection and AVKit player lifecycle stability",
+  "bump Orbin to 182-Crosne / versionCode 200",
+  "require fresh Android authentication after activity restoration",
+  "retire plaintext browsing caches and download scheduler metadata",
+  "bound backup, network challenge and media reads and make provider parsing linear",
 ]
 
 [changelog]
-Added = [
-  "Virtualized grouped feed and thread cards with LazyListScope.groupedItems to improve scroll smoothness.",
-  "Unified design system tokens, typography scales, and surface elevation across phone and tablet themes.",
-]
 Fixed = [
-  "Eliminated 52dp jumpy scroll position offsets caused by non-virtualized feed headers.",
-  "Redacted full URLs and sensitive paths from crash reports and provider diagnostics.",
-  "Hardened LocalDataCipher and DatabasePassphrase against concurrent initialization races.",
-  "Isolated OkHttp video caches to prevent video playback from evicting API response caches.",
-  "Fixed biometric lock state retention across configuration changes and Android picture-in-picture transitions.",
-  "Set NSFileProtectionCompleteUntilFirstUserAuthentication on iOS storage to prevent background download I/O errors while locked.",
-  "Fixed video player lifecycle cleanup and AVKit display bounds timing in iOS simulator playback.",
+  "Prevented restored Android activities from reusing a previously unlocked app-lock session and revoke authorization on backgrounding.",
+  "Keep Android scheduled download metadata in the encrypted database, migrate legacy jobs, and cancel pending jobs when clearing download history.",
+  "Removed persistent browsing response, image and video caches and clean up legacy files and video URL indexes at startup; explicit saved threads and exported downloads remain.",
+  "Bound actual backup document and HTML challenge response bytes before allocating complete contents, including missing or misleading length headers.",
+  "Bound iOS completed-media and fallback reads, remove oversized durable files, and clean up incomplete thread archives.",
+  "Replaced quadratic entity decoding and percent-escape validation with bounded scans and direct character checks.",
+]
+Changed = [
+  "Browsing caches are memory-only, which may increase network use and reduce cache-based offline playback.",
+  "Buffered iOS media saves and individual archive media entries are limited to 32 MiB; archives retain at most 256 MiB of media and preserve original links for omitted entries. Ordinary Android downloads continue streaming.",
+  "Backup imports reject inputs over 20 MiB before decoding and retain the existing five-megacharacter parsing limit.",
 ]
 Reliability = [
-  "Added test coverage for design token palettes, video output color decoding, and list virtualization.",
-  "Updated golden screenshot baselines for verified Roborazzi UI tests across light and dark themes.",
+  "Added regression coverage for early streaming limits, malformed and large parser inputs, Unicode backups and startup cache cleanup; 666 local tests pass.",
+  "Validated Android checks and native iOS Kotlin compilation. Please test app-lock restoration, background downloads and upgrade cleanup on devices.",
 ]

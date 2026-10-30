@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [182-Crosne] - 2026-10-29
+
+### Fixed
+- Prevented restored Android activities from reusing a previously unlocked app-lock session and revoke authorization on backgrounding.
+- Keep Android scheduled download metadata in the encrypted database, migrate legacy jobs, and cancel pending jobs when clearing download history.
+- Removed persistent browsing response, image and video caches and clean up legacy files and video URL indexes at startup; explicit saved threads and exported downloads remain.
+- Bound actual backup document and HTML challenge response bytes before allocating complete contents, including missing or misleading length headers.
+- Bound iOS completed-media and fallback reads, remove oversized durable files, and clean up incomplete thread archives.
+- Replaced quadratic entity decoding and percent-escape validation with bounded scans and direct character checks.
+
+### Changed
+- Browsing caches are memory-only, which may increase network use and reduce cache-based offline playback.
+- Buffered iOS media saves and individual archive media entries are limited to 32 MiB; archives retain at most 256 MiB of media and preserve original links for omitted entries. Ordinary Android downloads continue streaming.
+- Backup imports reject inputs over 20 MiB before decoding and retain the existing five-megacharacter parsing limit.
+
+### Reliability
+- Added regression coverage for early streaming limits, malformed and large parser inputs, Unicode backups and startup cache cleanup; 666 local tests pass.
+- Validated Android checks and native iOS Kotlin compilation. Please test app-lock restoration, background downloads and upgrade cleanup on devices.
+
+
 ## [181-Skirret] - 2026-10-27
 
 ### Added
@@ -2731,7 +2751,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...HEAD
+[182-Crosne]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...v182-Crosne
 [181-Skirret]: https://github.com/Defuuls/Orbin/compare/v180-Samphire...v181-Skirret
 [180-Samphire]: https://github.com/Defuuls/Orbin/compare/v179-Cardoon...v180-Samphire
 [179-Cardoon]: https://github.com/Defuuls/Orbin/compare/v178-Ulluco...v179-Cardoon
