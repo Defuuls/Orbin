@@ -44,7 +44,7 @@ class SettingsViewModel
         private val backupService: BackupService,
         private val updateRepository: UpdateRepository,
         private val appUpdater: AppUpdater,
-        dnsPrivacyMonitor: DnsPrivacyMonitor,
+        private val dnsPrivacyMonitor: DnsPrivacyMonitor,
         registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
     ) : ViewModel() {
@@ -73,6 +73,13 @@ class SettingsViewModel
         val dnsFallbackActive: StateFlow<Boolean> =
             dnsPrivacyMonitor.usingSystemFallback
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
+        /** Whether a blocked encrypted DNS resolver makes lookups fail instead of falling back. */
+        val strictDns: StateFlow<Boolean> =
+            dnsPrivacyMonitor.strictMode
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
+        fun setStrictDns(enabled: Boolean) = dnsPrivacyMonitor.setStrictMode(enabled)
 
         val settings: StateFlow<AppSettings> =
             repository.settings

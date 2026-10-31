@@ -20,6 +20,9 @@ import java.util.concurrent.ConcurrentHashMap
  * not exist fails over DoH too, and treating that as interference would light up the warning on
  * every dead link. Only a failure the *system* resolver can answer means something is blocking the
  * resolver. When both fail, the original DoH error is rethrown untouched.
+ *
+ * With strict encrypted DNS on (`DnsPrivacyMonitor.strictMode`) there is no fallback at all: the
+ * system resolver is never asked, so the network never sees the hostname.
  */
 internal class DynamicDns(
     private val configProvider: NetworkConfigProvider,
@@ -39,7 +42,8 @@ internal class DynamicDns(
                 .lookup(hostname)
                 .also { fallbackTracker.recordEncrypted() }
         } catch (e: UnknownHostException) {
-            if (config.strictDoh) throw e
+            // Strict: the reader would rather a lookup fail than reach the network's resolver.
+            if (config.strictDoh || fallbackTracker.strictMode.value) throw e
             val viaSystem =
                 try {
                     systemDns.lookup(hostname)

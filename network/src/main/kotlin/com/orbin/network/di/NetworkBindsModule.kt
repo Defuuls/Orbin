@@ -4,6 +4,8 @@ import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.network.NetworkMonitor
 import com.orbin.network.ConnectivityNetworkMonitor
 import com.orbin.network.DohFallbackTracker
+import com.orbin.network.SharedPreferencesStrictDnsStore
+import com.orbin.network.StrictDnsStore
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +23,7 @@ interface NetworkBindsModule {
     @Binds
     @Singleton
     fun bindsDnsPrivacyMonitor(impl: DohFallbackTracker): DnsPrivacyMonitor
+
+    @Binds
+    fun bindsStrictDnsStore(impl: SharedPreferencesStrictDnsStore): StrictDnsStore
 }

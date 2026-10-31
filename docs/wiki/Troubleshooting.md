@@ -56,8 +56,10 @@ slower by design.
 ### Why does DNS say it fell back to the system resolver?
 
 Some networks block the configured encrypted DNS endpoint. Orbin falls back so browsing does not
-fail completely and reports that privacy degradation. Switching resolver or network may clear it;
-the notice clears after encrypted resolution succeeds again.
+fail completely and reports that privacy degradation under **Settings → Strict encrypted DNS**.
+Switching resolver or network may clear it; the notice clears after encrypted resolution succeeds
+again. Turn **Strict encrypted DNS** on if you would rather nothing load than let the network see
+which sites you open.
 
 ### How do I update Orbin?
 
@@ -73,6 +75,12 @@ silently. Signed APKs and checksums are also on the repository Releases page for
 
 The main local database is encrypted with SQLCipher and preferences use encrypted storage protected
 by Android Keystore material.
+
+If Android loses or refuses to save the Keystore key that protects the database, Orbin tells you.
+When the key is lost, the database cannot be opened and is cleared; import a backup from
+**Settings** to get your boards, bookmarks and saved searches back. When a new key cannot be saved,
+Orbin keeps that session in memory, leaves your existing data untouched, and tries again on the
+next start.
 
 ### Are backups and saved-link files encrypted?
 

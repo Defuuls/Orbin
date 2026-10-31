@@ -31,11 +31,12 @@ internal fun buildSettings(
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
     formFactor: FormFactor = FormFactor.PHONE,
+    dns: DnsRowState = DnsRowState(),
 ): SettingsModel {
     val rows = Rows(strings)
     val groups =
         listOf(
-            rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor),
+            rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor) + rows.strictDns(dns, vm),
             rows.data(updateState, imageCacheLabel, clearArmed),
         ).map { NO_HEADING to it }
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
@@ -67,10 +68,34 @@ private class Rows(
         label: String,
         value: Boolean,
         onChange: (Boolean) -> Unit,
+        hint: String? = null,
     ): SettingItem {
         toggles[id] = { onChange(!value) }
-        return SettingItem(id, label, if (value) ON_LABEL else OFF_LABEL, SettingKind.TOGGLE)
+        return SettingItem(id, label, if (value) ON_LABEL else OFF_LABEL, SettingKind.TOGGLE, hint = hint)
     }
+
+    /**
+     * Strict encrypted DNS, with a hint that turns into a warning while lookups are going through
+     * the network's resolver — the only place the app says that its DNS stopped being private.
+     */
+    fun strictDns(
+        dns: DnsRowState,
+        vm: SettingsViewModel,
+    ): SettingItem =
+        toggle(
+            "strictDns",
+            strings.get(R.string.settings_strict_dns),
+            dns.strict,
+            vm::setStrictDns,
+            hint =
+                strings.get(
+                    when {
+                        dns.strict -> R.string.settings_strict_dns_hint_on
+                        dns.fallbackActive -> R.string.settings_strict_dns_hint_fallback
+                        else -> R.string.settings_strict_dns_hint_off
+                    },
+                ),
+        )
 
     fun <T> choice(
         id: String,
@@ -258,6 +283,12 @@ internal class SettingsModel(
 
 /** SYSTEM -> "System". These enums carry no label, and shouting at the reader is not a design. */
 private fun Enum<*>.titleCase(): String = name.lowercase().replace('_', ' ').replaceFirstChar(Char::uppercase)
+
+/** The strict encrypted DNS row's inputs: the reader's choice, and whether a fallback is happening. */
+internal data class DnsRowState(
+    val strict: Boolean = false,
+    val fallbackActive: Boolean = false,
+)
 
 /** The cards carry no headings: a few rows need no sections. */
 internal const val NO_HEADING = ""

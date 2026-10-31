@@ -44,7 +44,15 @@ object DatabaseModule {
         // android-database-sqlcipher artifact did; without this, SupportOpenHelperFactory's first
         // open throws UnsatisfiedLinkError on nativeOpen.
         System.loadLibrary("sqlcipher")
-        val (passphrase, wipeDatabase) = DatabasePassphrase(context).resolve()
+        val (passphrase, wipeDatabase, persisted) = DatabasePassphrase(context).resolve()
+        if (!persisted) {
+            // The Keystore would not save a key. Opening orbin.db with one that will not exist next
+            // launch would fail and the repair below would delete it, so this session runs in
+            // memory and leaves the file for the next start to open. The reader is told.
+            return Room
+                .inMemoryDatabaseBuilder(context, OrbinDatabase::class.java)
+                .build()
+        }
         if (wipeDatabase) {
             // No usable passphrase existed yet: either a pre-encryption install left a plaintext
             // orbin.db that SQLCipher cannot open, or the stored key was lost. Drop the old file so

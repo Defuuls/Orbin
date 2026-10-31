@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.network.DohConfig
 import com.orbin.network.DohFallbackTracker
 import com.orbin.network.NetworkConfig
+import com.orbin.network.StrictDnsStore
 import okhttp3.Dns
 import org.junit.Test
 import java.net.InetAddress
@@ -52,6 +53,52 @@ class DynamicDnsTest {
             assertThat(e).hasMessageThat().contains("doh")
         }
         assertThat(tracker.usingSystemFallback.value).isFalse()
+    }
+
+    /** The reader's strict setting refuses the fallback without asking the system resolver at all. */
+    @Test
+    fun withStrictModeOnABlockedResolverFailsAndTheSystemResolverIsNeverAsked() {
+        var systemAsked = false
+        tracker.setStrictMode(true)
+        val dns =
+            dns(
+                encrypted = failing(),
+                system = {
+                    systemAsked = true
+                    resolved
+                },
+            )
+
+        try {
+            dns.lookup("example.com")
+            error("expected UnknownHostException")
+        } catch (e: UnknownHostException) {
+            assertThat(e).hasMessageThat().contains("doh")
+        }
+        assertThat(systemAsked).isFalse()
+        assertThat(tracker.usingSystemFallback.value).isFalse()
+    }
+
+    /** Turning strict mode off again restores the fallback on the very next lookup. */
+    @Test
+    fun turningStrictModeOffRestoresTheFallback() {
+        val dns = dns(encrypted = failing(), system = working())
+        tracker.setStrictMode(true)
+        tracker.setStrictMode(false)
+
+        assertThat(dns.lookup("example.com")).isEqualTo(resolved)
+        assertThat(tracker.usingSystemFallback.value).isTrue()
+    }
+
+    @Test
+    fun strictModeIsReadFromAndSavedToItsStore() {
+        val store = StrictDnsStore.InMemory(enabled = true)
+        val persisted = DohFallbackTracker(store)
+        assertThat(persisted.strictMode.value).isTrue()
+
+        persisted.setStrictMode(false)
+        assertThat(store.load()).isFalse()
+        assertThat(DohFallbackTracker().strictMode.value).isFalse()
     }
 
     /**

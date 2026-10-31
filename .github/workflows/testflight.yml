@@ -51,11 +51,11 @@ jobs:
   upload:
     name: Upload to TestFlight
     runs-on: macos-26
+    # The App Store Connect key has the Admin role, so it is handed only to the steps that talk to
+    # App Store Connect, never to the job: the Gradle build, XcodeGen and the archive (which runs
+    # Gradle again) cannot read it from their environment, and the .p8 file does not exist on disk
+    # until the archive is finished. Each step that needs the file writes it and removes it again.
     env:
-      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-      ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
       BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'io.github.defuuls.orbin' }}
     steps:
       # Until the secrets exist, a release skips this quietly; a manual run says what is missing.
@@ -64,6 +64,10 @@ jobs:
         env:
           # Inside a release, github.workflow names the caller.
           STARTED_BY_HAND: ${{ github.workflow == 'TestFlight' }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
         run: |
           missing=()
           [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
@@ -83,6 +87,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.config.outputs.configured == 'true'
         with:
+          persist-credentials: false
           # From a release, build exactly the tag it published.
           ref: ${{ inputs.ref || github.sha }}
 
@@ -90,11 +95,13 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         uses: ./.github/actions/setup-jdk-gradle
 
+      - name: Set up XcodeGen
+        if: steps.config.outputs.configured == 'true'
+        uses: ./.github/actions/setup-xcodegen
+
       - name: Generate the Xcode project
         if: steps.config.outputs.configured == 'true'
-        run: |
-          brew install xcodegen
-          xcodegen --spec iosApp/project.yml
+        run: xcodegen --spec iosApp/project.yml
 
       # The Android release's number, so both platforms report the same version: "148" from
       # "148-Nectarine", built as <versionCode>.<yyyyMMddHHmm> in Chicago time so every upload is a new,
@@ -115,11 +122,13 @@ jobs:
       # the account for a new one until Apple's limit refused the next build. The upload step signs
       # the archive with the team's cloud-managed distribution certificate instead, which lives
       # with Apple and is reused. The app has no entitlements file, so nothing is lost unsigned.
+      # The team id is the only signing value the archive needs, and it is not a credential: it is
+      # printed in every app the team ships.
       - name: Archive
         if: steps.config.outputs.configured == 'true'
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          key="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
-          printf '%s\n' "$API_KEY" > "$key"
           xcodebuild archive \
             -project iosApp/Orbin.xcodeproj \
             -scheme Orbin \
@@ -136,8 +145,15 @@ jobs:
 
       - name: Upload to App Store Connect
         if: steps.config.outputs.configured == 'true'
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
         run: |
           key="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
+          trap 'rm -f "$key"' EXIT
+          (umask 077 && printf '%s\n' "$API_KEY" > "$key")
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -162,6 +178,14 @@ jobs:
             -authenticationKeyIssuerID "$ISSUER_ID"
           echo "Uploaded build ${{ steps.version.outputs.build }} (version ${{ steps.version.outputs.marketing }})." >> "$GITHUB_STEP_SUMMARY"
 
+      # Installed before any step holds the key, so pip and package build scripts never see it.
+      - name: Install the notes script's dependencies
+        if: steps.config.outputs.configured == 'true'
+        continue-on-error: true
+        run: |
+          python3 -m venv "$RUNNER_TEMP/notes-venv"
+          "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
+
       # Testers read what changed in the TestFlight app: this release's changelog section, or
       # what is unreleased for a manual build between releases. Apple takes a few minutes to
       # register a new build, so this waits for it. A failure here leaves the build uploaded,
@@ -170,16 +194,21 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         continue-on-error: true
         timeout-minutes: 35
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
         run: |
           export API_KEY_PATH="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
-          python3 -m venv "$RUNNER_TEMP/notes-venv"
-          "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
+          trap 'rm -f "$API_KEY_PATH"' EXIT
+          (umask 077 && printf '%s\n' "$API_KEY" > "$API_KEY_PATH")
           "$RUNNER_TEMP/notes-venv/bin/python" scripts/testflight_notes.py \
             --version-name "${{ steps.version.outputs.name }}" \
             --marketing "${{ steps.version.outputs.marketing }}" \
             --build "${{ steps.version.outputs.build }}" \
             --bundle-id "$BUNDLE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Each step already removes the key on exit; this covers a step that was killed outright.
       - name: Remove the API key
         if: always()
         run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8

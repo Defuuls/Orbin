@@ -26,7 +26,16 @@ class SettingsIndexTest {
     fun `settings is a short list with nothing hidden behind it`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf("hideNsfw", "coverViolent", "themeMode", "colorTheme", "amoled", "biometric", "updateOnLaunch"),
+                listOf(
+                    "hideNsfw",
+                    "coverViolent",
+                    "themeMode",
+                    "colorTheme",
+                    "amoled",
+                    "biometric",
+                    "updateOnLaunch",
+                    "strictDns",
+                ),
                 listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
             ).inOrder()
     }
@@ -83,20 +92,43 @@ class SettingsIndexTest {
         }
     }
 
+    /**
+     * The strict DNS row is the only place the app says its lookups stopped being private, so its
+     * hint has to change to a warning while that is happening — and drop it once strict is on.
+     */
+    @Test
+    fun `the strict DNS row warns while lookups fall back`() {
+        fun strictRow(dns: DnsRowState) =
+            checkNotNull(buildModel(dns = dns).groups.flatMap { it.second }.firstOrNull { it.id == "strictDns" })
+
+        with(strictRow(DnsRowState())) {
+            assertThat(label).isEqualTo("Strict encrypted DNS")
+            assertThat(kind).isEqualTo(SettingKind.TOGGLE)
+            assertThat(hint).contains("Turn this on to stop loading instead")
+        }
+        assertThat(strictRow(DnsRowState(fallbackActive = true)).hint)
+            .contains("Encrypted DNS is blocked on this network")
+        assertThat(strictRow(DnsRowState(strict = true, fallbackActive = true)).hint)
+            .contains("never falls back")
+    }
+
     private fun allRows() = buildModel().groups.flatMap { it.second }
 
     /**
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(formFactor: FormFactor = FormFactor.PHONE) =
-        buildSettings(
-            settings =
-                com.orbin.core.model
-                    .AppSettings(),
-            vm = io.mockk.mockk(relaxed = true),
-            updateState = "Up to date",
-            strings = ResourceFileStrings,
-            formFactor = formFactor,
-        )
+    private fun buildModel(
+        formFactor: FormFactor = FormFactor.PHONE,
+        dns: DnsRowState = DnsRowState(),
+    ) = buildSettings(
+        settings =
+            com.orbin.core.model
+                .AppSettings(),
+        vm = io.mockk.mockk(relaxed = true),
+        updateState = "Up to date",
+        strings = ResourceFileStrings,
+        formFactor = formFactor,
+        dns = dns,
+    )
 }

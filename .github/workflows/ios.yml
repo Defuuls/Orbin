@@ -42,6 +42,8 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
@@ -77,10 +79,11 @@ jobs:
           ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
           -Porbin.iosTestDevice="$ORBIN_IOS_TEST_DEVICE"
 
+      - name: Set up XcodeGen
+        uses: ./.github/actions/setup-xcodegen
+
       - name: Generate the Xcode project
-        run: |
-          brew install xcodegen
-          xcodegen --spec iosApp/project.yml
+        run: xcodegen --spec iosApp/project.yml
 
       - name: Build the app for the simulator
         run: >-
