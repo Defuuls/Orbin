@@ -24,7 +24,6 @@
     <string name="next_lock_hint">Authenticate to continue.</string>
     <string name="next_lock_unlocking">Unlocking…</string>
     <string name="next_lock_unlock">Unlock</string>
-    <string name="next_lock_continue_without">Continue without app lock</string>
     <string name="next_board_media_subtitle">Every file on this board</string>
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>

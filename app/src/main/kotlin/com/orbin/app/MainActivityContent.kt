@@ -87,10 +87,8 @@ internal fun AppContent(
     shouldLock: Boolean,
     unlocked: Boolean,
     unlockMessage: String?,
-    allowContinueWithoutLock: Boolean,
     authenticationInProgress: Boolean,
     onRetryUnlock: () -> Unit,
-    onContinueWithoutLock: () -> Unit,
     pendingRoute: Route?,
     onPendingRouteHandled: () -> Unit,
     updateDialog: @Composable () -> Unit,
@@ -135,7 +133,6 @@ internal fun AppContent(
                         message = unlockMessage,
                         unlocking = authenticationInProgress,
                         onUnlock = onRetryUnlock,
-                        onContinueWithoutLock = onContinueWithoutLock.takeIf { allowContinueWithoutLock },
                     )
                 }
             }

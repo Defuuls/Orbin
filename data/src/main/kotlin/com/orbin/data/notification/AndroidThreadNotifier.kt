@@ -109,6 +109,7 @@ class AndroidThreadNotifier
             launch.putExtra(EXTRA_BOARD, key.board.value)
             launch.putExtra(EXTRA_THREAD, key.thread.value)
             launch.putExtra(EXTRA_TITLE, title)
+            launch.putExtra(NotificationLaunchToken.EXTRA_TOKEN, NotificationLaunchToken.get(context))
             return PendingIntent.getActivity(
                 context,
                 key.notificationId(),
