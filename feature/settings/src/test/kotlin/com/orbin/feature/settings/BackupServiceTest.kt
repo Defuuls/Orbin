@@ -170,6 +170,29 @@ class BackupServiceTest {
         }
 
     @Test
+    fun importKeepsOnlyThumbnailsOnTheProvidersOwnHttpsHosts() =
+        runTest {
+            val exported =
+                service(
+                    FakeSettingsRepository(),
+                    bookmarks =
+                        FakeBookmarkRepository(
+                            listOf(
+                                bookmark("g", 1L).copy(thumbnailUrl = "https://example.org/g/1s.jpg"),
+                                bookmark("g", 2L).copy(thumbnailUrl = "https://tracker.example/u123.png"),
+                                bookmark("g", 3L).copy(thumbnailUrl = "http://example.org/g/3s.jpg"),
+                            ),
+                        ),
+                ).exportToJson("test")
+
+            val destination = FakeBookmarkRepository()
+            service(FakeSettingsRepository(), bookmarks = destination).importFromJson(exported).getOrThrow()
+
+            val thumbnails = destination.observeBookmarks().first().associate { it.key.thread.value to it.thumbnailUrl }
+            assertThat(thumbnails).containsExactly(1L, "https://example.org/g/1s.jpg", 2L, null, 3L, null)
+        }
+
+    @Test
     fun aBackupFromANewerFormatIsRejected() =
         runTest {
             val result = service(FakeSettingsRepository()).importFromJson("""{ "formatVersion": 99 }""")

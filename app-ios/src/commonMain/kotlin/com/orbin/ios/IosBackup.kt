@@ -77,6 +77,12 @@ class IosBackup(
     private val appVersion: String,
     private val isAuthorized: () -> Boolean,
     private val now: () -> String = { Clock.System.now().toString() },
+    /**
+     * Whether an imported bookmark thumbnail is on that provider's own https media hosts. A backup
+     * file can come from anyone, so anything else is dropped rather than fetched. Defaults to
+     * dropping every imported thumbnail.
+     */
+    private val isOwnMediaUrl: (ProviderId, String) -> Boolean = { _, _ -> false },
 ) {
     private val _state = MutableStateFlow<BackupState>(BackupState.Idle)
     val state: StateFlow<BackupState> = _state.asStateFlow()
@@ -158,7 +164,7 @@ class IosBackup(
                 }
             restored.forEach {
                 requireAuthorization()
-                bookmarks.addBookmark(it.toBookmark())
+                bookmarks.addBookmark(it.toBookmark(isOwnMediaUrl))
             }
             subscribed.size to restored.size
         }.onFailure { if (it is CancellationException) throw it }
@@ -266,11 +272,11 @@ private fun Bookmark.toBackup(): BackupBookmark =
         lastSeenReplyCount = lastSeenReplyCount,
     )
 
-private fun BackupBookmark.toBookmark(): Bookmark =
+private fun BackupBookmark.toBookmark(isOwnMediaUrl: (ProviderId, String) -> Boolean): Bookmark =
     Bookmark(
         key = ThreadKey(ProviderId(providerId), BoardId(boardId), ThreadId(threadId)),
         title = title,
-        thumbnailUrl = thumbnailUrl,
+        thumbnailUrl = thumbnailUrl?.takeIf { isOwnMediaUrl(ProviderId(providerId), it) },
         createdAtMillis = createdAtMillis,
         isWatched = isWatched,
         lastSeenReplyCount = lastSeenReplyCount,

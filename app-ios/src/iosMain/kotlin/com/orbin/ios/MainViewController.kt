@@ -129,6 +129,12 @@ private fun startApp(): StartedApp {
             scope = graph.scope,
             appVersion = graph.appVersion,
             isAuthorized = { !lock.state.value.locked && !lock.state.value.obscured },
+            isOwnMediaUrl = { id, url ->
+                graph.providers
+                    .firstOrNull { it.metadata.id == id }
+                    ?.metadata
+                    ?.isOwnMediaUrl(url) == true
+            },
         )
     var pendingNotificationJob: Job? = null
     graph.notifier.attachNavigation { key ->
