@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [186-Burdock] - 2026-10-31
+
+### Security
+- Release workflow: the APK is built without any signing secrets and with no write token, then signed with `apksigner` in a separate job that runs no project code and checks the result against the pinned release certificate. Checkouts no longer keep the GitHub token in `.git/config`.
+- TestFlight: the App Store Connect key is only given to the steps that upload and set What to Test, is written just before the upload and removed afterwards, and XcodeGen is a pinned release verified by checksum instead of a Homebrew install.
+- Post links whose text names a different site than they open now show the real host after the link.
+- Settings has a **Strict encrypted DNS** option (off by default) that stops lookups instead of falling back to the network's DNS, and warns while that fallback is happening.
+
+### Fixed
+- Android: if the Keystore can't save the database key, Orbin no longer opens and then deletes your data; that session runs in memory and you are told. If the key is lost and the data has to be cleared, Orbin says so and points you to backup import.
+
+### Reliability
+- Added tests for look-alike link detection, strict encrypted DNS, the strict DNS settings row and database key loss.
+- The Settings row, the database key dialogs and the iOS link change are compiled and tested on the JVM but still need confirmation on a device.
+
+
 ## [185-Lotus-Root] - 2026-10-31
 
 ### Security
@@ -2796,7 +2812,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...HEAD
+[186-Burdock]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...v186-Burdock
 [185-Lotus-Root]: https://github.com/Defuuls/Orbin/compare/v184-Taro...v185-Lotus-Root
 [184-Taro]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...v184-Taro
 [183-Chayote]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...v183-Chayote
