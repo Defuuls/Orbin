@@ -1,0 +1,27 @@
+name: Set up XcodeGen
+description: >-
+  Installs a pinned XcodeGen release, checked against its SHA-256, and puts it on PATH.
+
+# `brew install xcodegen` took whatever Homebrew served that day, on the runner that later holds
+# the App Store Connect key. A fixed release whose digest is written here cannot change under the
+# workflow. To update: take the new release's xcodegen.zip, check the digest GitHub lists for the
+# asset matches `shasum -a 256` of the download, and change both values together.
+runs:
+  using: composite
+  steps:
+    - name: Install XcodeGen
+      shell: bash
+      env:
+        XCODEGEN_VERSION: 2.46.0
+        XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+      run: |
+        set -euo pipefail
+        dir="$RUNNER_TEMP/xcodegen-$XCODEGEN_VERSION"
+        mkdir -p "$dir"
+        curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+          --output "$dir/xcodegen.zip" \
+          "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+        echo "${XCODEGEN_SHA256}  $dir/xcodegen.zip" | shasum -a 256 -c -
+        unzip -q "$dir/xcodegen.zip" -d "$dir"
+        # Run in place: the binary finds its SettingPresets at ../share/xcodegen.
+        echo "$dir/xcodegen/bin" >> "$GITHUB_PATH"
