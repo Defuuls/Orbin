@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
@@ -37,7 +37,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Record profile
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 35
           # google_apis, not google_apis_playstore: only the former allows `adb root`, which the
@@ -63,7 +63,7 @@ jobs:
       # recorded a profile successfully and then discarded it, because opening the PR is the step
       # that fails and it was the only thing carrying the result off the runner.
       - name: Upload the recorded profile
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: baseline-profile
           path: app/src/release/generated/**
@@ -72,7 +72,7 @@ jobs:
       - name: Open a pull request with the profile
         id: profile_pr
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: claude/baseline-profile-generated
           add-paths: app/src/release/generated/**

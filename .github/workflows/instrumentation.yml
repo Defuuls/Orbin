@@ -34,7 +34,7 @@ jobs:
         api-level: [31, 35]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free disk space
         run: |
@@ -56,7 +56,7 @@ jobs:
       # download fails the job with "Error on ZipFile unknown archive" before any test runs.
       # Cache them, and on a miss install them here with retries, clearing partial downloads.
       - name: System image cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: sysimg-cache
         with:
           path: |
@@ -80,7 +80,7 @@ jobs:
           exit 1
 
       - name: AVD cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
         with:
           path: |
@@ -92,7 +92,7 @@ jobs:
       # seconds on subsequent runs.
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis
@@ -115,7 +115,7 @@ jobs:
           echo "INSTRUMENTATION_TASKS=$TASKS" >> "$GITHUB_ENV"
 
       - name: Run instrumentation tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis
@@ -135,7 +135,7 @@ jobs:
       - name: Upload logcat
         if: failure()
         continue-on-error: true
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: logcat-api-${{ matrix.api-level }}
           path: logcat-api-${{ matrix.api-level }}.txt
@@ -144,7 +144,7 @@ jobs:
       - name: Upload instrumentation reports
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: instrumentation-reports-api-${{ matrix.api-level }}
           path: |

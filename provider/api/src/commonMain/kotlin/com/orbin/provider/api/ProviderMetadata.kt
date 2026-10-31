@@ -14,7 +14,21 @@ data class ProviderMetadata(
     /** The engine family this provider targets, for grouping in the UI. */
     val engine: EngineKind = EngineKind.GENERIC,
     val isNsfwByDefault: Boolean = false,
-)
+    /** HTTPS hosts other than [baseUrl]'s that serve this provider's media and thumbnails. */
+    val mediaHosts: Set<String> = emptySet(),
+) {
+    /**
+     * Whether [url] is an https URL on this provider's own site or media hosts. Used to drop URLs
+     * that came from outside the provider, such as an imported backup, before the app fetches them.
+     */
+    fun isOwnMediaUrl(url: String): Boolean {
+        val parts = UriParts.parse(url) ?: return false
+        val host = parts.host ?: return false
+        if (!parts.scheme.equals("https", ignoreCase = true)) return false
+        val siteHost = UriParts.parse(baseUrl)?.host
+        return host.equals(siteHost, ignoreCase = true) || mediaHosts.any { it.equals(host, ignoreCase = true) }
+    }
+}
 
 /** Known image board engine families. Adding a new one here is purely informational. */
 enum class EngineKind {

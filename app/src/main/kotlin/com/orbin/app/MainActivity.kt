@@ -30,6 +30,7 @@ import com.orbin.app.navigation.Route
 import com.orbin.app.routing.IntentRoute
 import com.orbin.app.routing.parseRoute
 import com.orbin.core.common.lock.AppLockController
+import com.orbin.data.notification.NotificationLaunchToken
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
@@ -184,15 +185,12 @@ class MainActivity : FragmentActivity() {
         val shouldLock = uiState.shouldLock
         var previousShouldLock by remember { mutableStateOf<Boolean?>(null) }
         var unlockMessage by remember { mutableStateOf<String?>(null) }
-        var allowContinueWithoutLock by remember { mutableStateOf(false) }
 
         fun requestUnlock() {
             if (!shouldLock || authenticationInProgress) return
-            allowContinueWithoutLock = false
             authenticateToUnlock(
                 onUnlocked = {
                     unlockMessage = null
-                    allowContinueWithoutLock = false
                     unlocked = true
                 },
                 onAuthenticationError = { message ->
@@ -245,7 +243,6 @@ class MainActivity : FragmentActivity() {
                     relockOnResume = false
                     unlocked = false
                     unlockMessage = null
-                    allowContinueWithoutLock = false
                 }
                 if (!unlocked && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) {
                     requestUnlock()
@@ -255,7 +252,6 @@ class MainActivity : FragmentActivity() {
                 relockOnResume = false
                 unlocked = false
                 unlockMessage = null
-                allowContinueWithoutLock = false
             }
         }
 
@@ -266,14 +262,8 @@ class MainActivity : FragmentActivity() {
             shouldLock = shouldLock,
             unlocked = unlocked,
             unlockMessage = unlockMessage,
-            allowContinueWithoutLock = allowContinueWithoutLock,
             authenticationInProgress = authenticationInProgress,
             onRetryUnlock = { requestUnlock() },
-            onContinueWithoutLock = {
-                unlockMessage = null
-                allowContinueWithoutLock = false
-                unlocked = true
-            },
             pendingRoute = pendingRoute,
             onPendingRouteHandled = { pendingRoute = null },
             // Offered once the reader can see the app: never over onboarding or the lock screen.
@@ -321,7 +311,7 @@ class MainActivity : FragmentActivity() {
 
     private fun handleIncomingIntent(intent: Intent?) {
         intent ?: return
-        val route = intent.parseRoute()
+        val route = intent.parseRoute { NotificationLaunchToken.matches(this, it) }
         pendingRoute =
             when (route) {
                 is IntentRoute.Thread ->

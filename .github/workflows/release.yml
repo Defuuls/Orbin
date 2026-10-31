@@ -2,8 +2,14 @@ name: Release
 
 # Every git tag matching v* triggers a full release build of the main client: signs the APK,
 # generates release notes, and publishes a GitHub Release with the APK and its SHA-256 checksum.
-# The R8 mapping file is kept out of the release and uploaded as a private workflow artifact
-# instead: it is only needed to decode crash stack traces, not by anyone installing the app.
+# The R8 mapping file is kept out of the release and uploaded as a workflow artifact instead: it
+# is only needed to decode crash stack traces, not by anyone installing the app. On a public
+# repository workflow artifacts can be downloaded by any signed-in GitHub user, so the mapping is
+# not secret; it only keeps the release page free of it.
+#
+# Supply chain: every third-party action is pinned to a full commit SHA (Dependabot bumps the
+# pins), the signing keystore only exists on disk for the single Gradle step that needs it, and
+# only the App Store Connect secrets are passed on to the TestFlight workflow.
 #
 # Orbin Minimal is NOT released here. It is a separate app on its own version line and its own
 # cadence — see release-minimal.yml, which triggers on minimal-v* tags. Publishing it from both
@@ -26,19 +32,29 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     name: Build, sign & publish release
     runs-on: ubuntu-latest
+    permissions:
+      # Pushes the dispatch tag and publishes the GitHub Release.
+      contents: write
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
+
+      - name: Validate the release tag
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+(-[A-Za-z0-9]+)*$ ]]; then
+            echo "::error::Release tag '$RELEASE_TAG' must look like v101 or v101-Hana"; exit 1
+          fi
 
       - name: Derive the release name
         run: |
@@ -55,18 +71,24 @@ jobs:
 
       - name: Create and push annotated tag (dispatch only)
         if: github.event_name == 'workflow_dispatch'
+        # The tag reaches the shell only through the validated RELEASE_TAG env var, never through
+        # a ${{ }} expression inside the script.
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --tags origin "${{ inputs.tag }}" | grep -q "${{ inputs.tag }}"; then
-            echo "Tag ${{ inputs.tag }} already exists on remote — skipping creation."
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" > /dev/null; then
+            echo "Tag ${RELEASE_TAG} already exists on remote — skipping creation."
           else
-            git tag -a "${{ inputs.tag }}" -m "$RELEASE_NAME"
-            git push origin "${{ inputs.tag }}"
+            git tag -a "${RELEASE_TAG}" -m "$RELEASE_NAME"
+            git push origin "refs/tags/${RELEASE_TAG}"
           fi
 
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
+        with:
+          # Never let a release build write the shared Gradle cache that other jobs restore.
+          cache-read-only: 'true'
 
       - name: Release preflight
         run: |
@@ -74,22 +96,37 @@ jobs:
           python3 scripts/validate_repo.py
           ./gradlew :provider:api:test -Porbin.warningsAsErrors=true
 
-      - name: Decode signing keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-        run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::RELEASE_KEYSTORE_BASE64 secret is not set"; exit 1
-          fi
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/orbin-release.jks"
-          echo "ORBIN_KEYSTORE_FILE=$RUNNER_TEMP/orbin-release.jks" >> "$GITHUB_ENV"
-
+      # The keystore is decoded, used and shredded inside this one step, and the Gradle daemon that
+      # saw the passwords is stopped, so no later step (including third-party actions and their
+      # post-job hooks) can read either from disk or from a lingering process.
       - name: Build signed release APK
         env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           ORBIN_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           ORBIN_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           ORBIN_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 secret is not set"; exit 1
+          fi
+          export ORBIN_KEYSTORE_FILE="$RUNNER_TEMP/orbin-release.jks"
+          cleanup() {
+            ./gradlew --stop > /dev/null 2>&1 || true
+            if [ -f "$ORBIN_KEYSTORE_FILE" ]; then shred -u "$ORBIN_KEYSTORE_FILE" || rm -f "$ORBIN_KEYSTORE_FILE"; fi
+          }
+          trap cleanup EXIT
+          ( umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ORBIN_KEYSTORE_FILE" )
+          unset KEYSTORE_BASE64
+          ./gradlew assembleRelease
+
+      # Belt and braces: covers a cancelled run that skipped the trap above.
+      - name: Remove signing keystore
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/orbin-release.jks" ]; then
+            shred -u "$RUNNER_TEMP/orbin-release.jks" || rm -f "$RUNNER_TEMP/orbin-release.jks"
+          fi
 
       - name: Locate artifacts and compute checksums
         id: artifacts
@@ -110,8 +147,8 @@ jobs:
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Keep the R8 mapping file as a private artifact
-        uses: actions/upload-artifact@v7
+      - name: Keep the R8 mapping file as a workflow artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: orbin-${{ env.RELEASE_TAG }}-mapping
           path: mapping-staging/
@@ -146,7 +183,7 @@ jobs:
           } > release-notes.md
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ steps.notes.outputs.release_name }}
@@ -162,6 +199,13 @@ jobs:
     name: TestFlight
     needs: release
     uses: ./.github/workflows/testflight.yml
-    secrets: inherit
+    permissions:
+      contents: read
+    # Only what TestFlight needs; the Android signing secrets stay in the release job.
+    secrets:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}

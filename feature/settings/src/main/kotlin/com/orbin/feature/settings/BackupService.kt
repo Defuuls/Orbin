@@ -186,7 +186,12 @@ class BackupService
             Bookmark(
                 key = ThreadKey(ProviderId(providerId), BoardId(boardId), ThreadId(threadId)),
                 title = title,
-                thumbnailUrl = thumbnailUrl,
+                // A backup file can come from anyone: keep a thumbnail only if it points at the
+                // provider's own https media, so an import can't make the app fetch a tracker URL.
+                thumbnailUrl =
+                    thumbnailUrl?.takeIf { url ->
+                        registry.get(ProviderId(providerId))?.metadata?.isOwnMediaUrl(url) == true
+                    },
                 createdAtMillis = createdAtMillis,
                 isWatched = isWatched,
                 lastSeenReplyCount = lastSeenReplyCount,

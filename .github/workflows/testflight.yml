@@ -28,6 +28,17 @@ on:
         description: The release tag to build.
         type: string
         required: true
+    # Declared so release.yml can pass exactly these instead of `secrets: inherit`. Optional, so
+    # a release still skips this quietly until they are configured.
+    secrets:
+      APPLE_TEAM_ID:
+        required: false
+      APP_STORE_CONNECT_KEY_ID:
+        required: false
+      APP_STORE_CONNECT_ISSUER_ID:
+        required: false
+      APP_STORE_CONNECT_KEY:
+        required: false
 
 concurrency:
   group: testflight
@@ -69,7 +80,7 @@ jobs:
             echo "configured=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.config.outputs.configured == 'true'
         with:
           # From a release, build exactly the tag it published.

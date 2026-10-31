@@ -138,7 +138,13 @@ internal fun safeName(raw: String): String =
         }.joinToString("")
         .ifEmpty { "file" }
 
-/** ".jpg" from [extension], or from [url]'s path when the extension isn't known. */
+/**
+ * ".jpg" from [extension], or from [url]'s path when the extension isn't known.
+ *
+ * The extension comes from the board, so anything outside [INERT_MEDIA_EXTENSIONS] is saved as
+ * [INERT_EXTENSION]: an attached .svg, .html or .xhtml opened from the archive's index.html would
+ * otherwise be a top-level document whose script runs, which the archive promises it never does.
+ */
 internal fun extensionOf(
     extension: String,
     url: String,
@@ -147,9 +153,20 @@ internal fun extensionOf(
         extension.trimStart('.').ifBlank {
             url.substringBefore('?').substringAfterLast('/').substringAfterLast('.', "")
         }
-    val clean = safeName(raw).take(MAX_EXTENSION)
-    return if (raw.isBlank()) "" else ".${clean.lowercase()}"
+    if (raw.isBlank()) return ""
+    val clean = safeName(raw).take(MAX_EXTENSION).lowercase()
+    return if (clean in INERT_MEDIA_EXTENSIONS) ".$clean" else INERT_EXTENSION
 }
+
+/** Saved name suffix for attachments whose type could be active content. */
+internal const val INERT_EXTENSION = ".bin"
+
+private val INERT_MEDIA_EXTENSIONS =
+    (
+        "jpg jpeg png gif webp bmp avif heic heif jxl " +
+            "webm mp4 m4v mov mkv ogv " +
+            "mp3 ogg oga opus flac wav m4a aac"
+    ).split(' ').toSet()
 
 private const val MAX_EXTENSION = 8
 

@@ -13,6 +13,7 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
+import com.orbin.provider.api.UriParts
 import com.orbin.provider.vichan.api.VichanApi
 import io.ktor.client.plugins.ResponseException
 import io.ktor.http.HttpHeaders
@@ -43,6 +44,7 @@ class VichanProvider(
             baseUrl = site.siteUrl,
             engine = EngineKind.VICHAN,
             isNsfwByDefault = site.nsfwByDefault,
+            mediaHosts = listOf(site.mediaBaseUrl, site.thumbBaseUrl).mapNotNull { UriParts.parse(it)?.host }.toSet(),
         )
 
     override val capabilities: ProviderCapabilities =

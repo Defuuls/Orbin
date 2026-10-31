@@ -2,6 +2,7 @@ package com.orbin.app.routing
 
 import android.content.Intent
 import com.orbin.data.notification.AndroidThreadNotifier
+import com.orbin.data.notification.NotificationLaunchToken
 
 sealed interface IntentRoute {
     data class Thread(
@@ -27,8 +28,15 @@ private const val MAX_TITLE_LENGTH = 256
 /** Intent extra used when launching a deep shortcut destination. */
 const val EXTRA_SHORTCUT_DESTINATION = "com.orbin.extra.SHORTCUT_DESTINATION"
 
-fun Intent.parseRoute(): IntentRoute {
-    if (hasExtra(AndroidThreadNotifier.EXTRA_THREAD)) {
+/**
+ * The route this launch asks for. Thread extras are honoured only when [isNotificationToken]
+ * accepts the intent's [NotificationLaunchToken.EXTRA_TOKEN]: MainActivity is exported, so without
+ * it any app could open an arbitrary thread, switch the active provider and write history.
+ */
+fun Intent.parseRoute(isNotificationToken: (String?) -> Boolean): IntentRoute {
+    if (hasExtra(AndroidThreadNotifier.EXTRA_THREAD) &&
+        isNotificationToken(getStringExtra(NotificationLaunchToken.EXTRA_TOKEN))
+    ) {
         val provider = (getStringExtra(AndroidThreadNotifier.EXTRA_PROVIDER) ?: "").take(MAX_PROVIDER_LENGTH)
         val board = (getStringExtra(AndroidThreadNotifier.EXTRA_BOARD) ?: "").take(MAX_BOARD_LENGTH)
         val thread = getLongExtra(AndroidThreadNotifier.EXTRA_THREAD, 0L)

@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_lock_continue_without
 import com.orbin.uinext.resources.next_lock_hint
 import com.orbin.uinext.resources.next_lock_title
 import com.orbin.uinext.resources.next_lock_unlock
@@ -30,7 +29,6 @@ fun LockScreen(
     unlocking: Boolean,
     onUnlock: () -> Unit,
     modifier: Modifier = Modifier,
-    onContinueWithoutLock: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
@@ -59,9 +57,6 @@ fun LockScreen(
                 color = next.muted,
                 modifier = Modifier.padding(top = 16.dp),
             )
-        }
-        if (onContinueWithoutLock != null) {
-            InlineAction(label = stringResource(Res.string.next_lock_continue_without), onClick = onContinueWithoutLock)
         }
     }
 }

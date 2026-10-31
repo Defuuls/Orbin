@@ -121,7 +121,9 @@ private fun StringBuilder.appendFile(
         else ->
             append("<a href=\"")
                 .appendEscaped(full)
-                .append("\"><img loading=\"lazy\" src=\"")
+                // A file saved under the inert extension is offered as a download, never opened.
+                .append(if (full.endsWith(INERT_EXTENSION)) "\" download" else "\"")
+                .append("><img loading=\"lazy\" src=\"")
                 .appendEscaped(thumbnail)
                 .append("\" alt=\"")
                 .appendEscaped(file.originalFileName)

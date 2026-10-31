@@ -125,7 +125,7 @@ class VichanMapper(
         dto: VichanPost,
     ): List<MediaAttachment> {
         val primary =
-            dto.tim.takeIf { it.isNotBlank() }?.let { tim ->
+            dto.tim.takeIf { isSafeMediaName(it, dto.ext) }?.let { tim ->
                 attachment(
                     board = board,
                     tim = tim,
@@ -144,7 +144,7 @@ class VichanMapper(
     }
 
     private fun VichanFile.toAttachment(board: BoardId): MediaAttachment? {
-        val tim = this.tim.takeIf { it.isNotBlank() } ?: return null
+        val tim = this.tim.takeIf { isSafeMediaName(it, ext) } ?: return null
         return attachment(board, tim, filename, ext, fsize, w, h, tnW, tnH, spoiler == 1)
     }
 
@@ -214,5 +214,19 @@ class VichanMapper(
 
     private companion object {
         const val MILLIS_PER_SECOND = 1000L
+
+        /** Server file names: digits on 4chan, a few more characters on some vichan forks. */
+        val SAFE_TIM = Regex("^[A-Za-z0-9_-]{1,64}$")
+        val SAFE_EXT = Regex("^\\.[A-Za-z0-9]{1,8}$")
+
+        /**
+         * `tim` and `ext` are pasted into the media URL, so a hostile or broken mirror could
+         * otherwise add path segments, a query or a fragment. The host stays fixed either way; this
+         * matches the checks LynxChanMapper applies to the same fields.
+         */
+        fun isSafeMediaName(
+            tim: String,
+            ext: String?,
+        ): Boolean = SAFE_TIM.matches(tim) && (ext.isNullOrEmpty() || SAFE_EXT.matches(ext))
     }
 }

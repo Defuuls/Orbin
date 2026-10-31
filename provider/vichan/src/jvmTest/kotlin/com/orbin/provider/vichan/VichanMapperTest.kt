@@ -36,6 +36,20 @@ class VichanMapperTest {
     }
 
     @Test
+    fun `media names that would change the url path are dropped`() {
+        val hostile =
+            listOf(
+                VichanPost(no = 1, time = 100, tim = "../../x", filename = "a", ext = ".jpg"),
+                VichanPost(no = 2, time = 100, tim = "123", filename = "b", ext = ".jpg?x=1"),
+                VichanPost(no = 3, time = 100, tim = "123#frag", filename = "c", ext = ".png"),
+            )
+        hostile.forEach { post ->
+            val thread = mapper.mapThread(board, VichanThreadResponse(listOf(post)))
+            assertThat(thread.originalPost.attachments).isEmpty()
+        }
+    }
+
+    @Test
     fun `webm is classified as video`() {
         val op = VichanPost(no = 1, time = 100, tim = "999", filename = "clip", ext = ".webm")
         val thread = mapper.mapThread(board, VichanThreadResponse(listOf(op)))

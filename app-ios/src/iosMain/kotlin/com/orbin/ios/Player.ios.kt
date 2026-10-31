@@ -47,6 +47,7 @@ import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
 import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
+import platform.WebKit.WKWebsiteDataStore
 import kotlin.coroutines.resume
 
 /**
@@ -177,6 +178,9 @@ internal actual fun NativeWebMPlayer(
                 WKWebViewConfiguration().apply {
                     allowsInlineMediaPlayback = true
                     mediaTypesRequiringUserActionForPlayback = 0uL
+                    // In-memory only: the default store keeps WebKit's cache and cookies on disk,
+                    // which would undo the app's choice not to persist media (see AppGraph).
+                    websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore()
                 }
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
                 opaque = false
@@ -253,6 +257,9 @@ internal actual fun NativeInlineLoop(
                 WKWebViewConfiguration().apply {
                     allowsInlineMediaPlayback = true
                     mediaTypesRequiringUserActionForPlayback = 0uL
+                    // In-memory only: the default store keeps WebKit's cache and cookies on disk,
+                    // which would undo the app's choice not to persist media (see AppGraph).
+                    websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore()
                 }
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
                 scrollView.scrollEnabled = false

@@ -93,6 +93,19 @@ class ThreadArchiveTest {
     }
 
     @Test
+    fun activeContentIsSavedInertAndOfferedAsADownload() {
+        assertEquals(".bin", extensionOf("svg", ""))
+        assertEquals(".bin", extensionOf(".html", ""))
+        assertEquals(".bin", extensionOf("", "https://x/a.xhtml"))
+        assertEquals(".bin", extensionOf("", "https://x/a.SVG?x=1"))
+        assertEquals(".jpeg", extensionOf("JPEG", ""))
+        val page = threadPage(thread, mapOf("a1" to SavedFiles("media/a1.bin", null)), null, 0L)
+        assertTrue("<a href=\"media/a1.bin\" download><img" in page)
+        val normal = threadPage(thread, mapOf("a1" to SavedFiles("media/a1.jpg", null)), null, 0L)
+        assertFalse(" download>" in normal)
+    }
+
+    @Test
     fun theZipHasEveryEntryAndAValidEnd() {
         assertEquals(0xCBF43926.toInt(), crc32("123456789".encodeToByteArray()))
         val out = Buffer()

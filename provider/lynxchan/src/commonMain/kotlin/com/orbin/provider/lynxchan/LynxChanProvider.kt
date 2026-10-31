@@ -41,6 +41,7 @@ class LynxChanProvider(
             baseUrl = site.siteUrl,
             engine = EngineKind.LYNXCHAN,
             isNsfwByDefault = site.nsfwByDefault,
+            mediaHosts = site.allowedMediaHosts,
         )
 
     override val capabilities: ProviderCapabilities =

@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Let a new release age a week before proposing it, so a hijacked or yanked version is
+    # usually caught upstream first.
+    cooldown:
+      default-days: 7
     groups:
       android-build:
         patterns:
@@ -22,3 +26,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Actions are pinned to commit SHAs; Dependabot updates the SHA and its version comment.
+    cooldown:
+      default-days: 7

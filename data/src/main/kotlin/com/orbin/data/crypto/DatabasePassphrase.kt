@@ -12,13 +12,21 @@ import java.security.SecureRandom
  * install whose plaintext `orbin.db` SQLCipher cannot open, or a recovery case where the stored
  * passphrase can no longer be decrypted (e.g. the Keystore key was lost). In both cases the caller
  * must drop the existing database file before opening with the freshly generated passphrase.
+ *
+ * Every encrypted database in the process (Room's `orbin.db` and the media cache) shares this one
+ * passphrase, so it is resolved once per process and the same [Resolved] - including its
+ * [Resolved.wipeDatabase] verdict - is handed to every caller. Resolving independently let two
+ * first-launch callers each generate and store a different key, and after a key loss only the first
+ * caller was told to wipe, leaving the other database keyed with a passphrase that no longer exists.
  */
 internal class DatabasePassphrase(
     context: Context,
 ) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun resolve(): Resolved {
+    fun resolve(): Resolved = synchronized(lock) { resolved ?: resolveOnce().also { resolved = it } }
+
+    private fun resolveOnce(): Resolved {
         prefs.getString(KEY_PASSPHRASE, null)?.let { stored ->
             runCatching {
                 val decoded = Base64.decode(stored, Base64.NO_WRAP)
@@ -48,6 +56,11 @@ internal class DatabasePassphrase(
     }
 
     private companion object {
+        private val lock = Any()
+
+        /** The process-wide result; never cleared, since the passphrase cannot change while running. */
+        private var resolved: Resolved? = null
+
         const val PREFS_NAME = "orbin_db_key"
         const val KEY_PASSPHRASE = "db_passphrase"
         const val PASSPHRASE_BYTES = 32
