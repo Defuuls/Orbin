@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [184 — Taro](https://github.com/Defuuls/Orbin/releases/tag/v184-Taro)
+**Current release:** [185 — Lotus Root](https://github.com/Defuuls/Orbin/releases/tag/v185-Lotus-Root)
 
-**What's new in 184:** Playing a single Android video no longer trips the media CDN's rate limit.
+**What's new in 185:** Security hardening across the release pipeline, notification routing, thread archives and backup import.
 
 ---
 
