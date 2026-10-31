@@ -1,29 +1,28 @@
-# Orbin 185 - Lotus Root
+# Orbin 186 - Burdock
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 185
-codename     = "Lotus Root"
-version_code = 203
+number       = 186
+codename     = "Burdock"
+version_code = 204
 
-highlight = "Security hardening across the release pipeline, notification routing, thread archives and backup import."
+highlight = "Release signing moves out of the build, a strict encrypted DNS option, look-alike link warnings and no more silent data loss when the database key can't be kept."
 
 summary = [
-  "bump Orbin to 185-Lotus-Root / versionCode 203",
-  "ship the security hardening from #764: pinned and least-privilege release workflow, token-gated notification routing, inert archive attachments, validated backup thumbnails and vichan media names",
+  "bump Orbin to 186-Burdock / versionCode 204",
+  "ship the scan fixes from #770: unsigned release build signed by apksigner in a separate job with a certificate pin, step-scoped App Store Connect key and pinned XcodeGen, real host shown after look-alike links, strict encrypted DNS option, and in-memory fallback with a notice when the database key can't be saved",
 ]
 
 [changelog]
 Security = [
-  "Release workflow: every third-party action is pinned to a commit SHA, the signing keystore only exists for the Gradle step that uses it and is shredded afterwards, the dispatch tag is validated and never expanded into a script, workflow permissions default to read-only, and TestFlight receives only the App Store Connect secrets.",
-  "Android: another app can no longer open a thread, switch the active provider or write history through MainActivity's notification extras; only notification taps carrying a per-install token are routed.",
-  "Saved thread archives store attachments with active-content types (SVG, HTML and similar) as inert `.bin` downloads instead of linking them as pages.",
-  "Backup import keeps a bookmark thumbnail only if it is an https URL on that provider's own site or media hosts (Android and iOS).",
-  "iOS: the WebM player's web views use a non-persistent data store, so WebKit keeps no media cache or cookies on disk.",
-  "vichan/4chan media file names that would add path segments, a query or a fragment to media URLs are dropped.",
-  "The database passphrase is resolved once per process and shared by the main database and the media cache.",
-  "Removed the unused \"Continue without app lock\" path.",
+  "Release workflow: the APK is built without any signing secrets and with no write token, then signed with `apksigner` in a separate job that runs no project code and checks the result against the pinned release certificate. Checkouts no longer keep the GitHub token in `.git/config`.",
+  "TestFlight: the App Store Connect key is only given to the steps that upload and set What to Test, is written just before the upload and removed afterwards, and XcodeGen is a pinned release verified by checksum instead of a Homebrew install.",
+  "Post links whose text names a different site than they open now show the real host after the link.",
+  "Settings has a **Strict encrypted DNS** option (off by default) that stops lookups instead of falling back to the network's DNS, and warns while that fallback is happening.",
+]
+Fixed = [
+  "Android: if the Keystore can't save the database key, Orbin no longer opens and then deletes your data; that session runs in memory and you are told. If the key is lost and the data has to be cleared, Orbin says so and points you to backup import.",
 ]
 Reliability = [
-  "Added tests for notification intent routing, provider media-host checks, inert archive attachments, backup thumbnail filtering and hostile vichan media names.",
-  "The iOS player and backup changes are compiled but still need confirmation on a device.",
+  "Added tests for look-alike link detection, strict encrypted DNS, the strict DNS settings row and database key loss.",
+  "The Settings row, the database key dialogs and the iOS link change are compiled and tested on the JVM but still need confirmation on a device.",
 ]

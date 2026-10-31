@@ -6,15 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Security
-- Release workflow: the APK is built without any signing secrets and with no write token, then signed with `apksigner` in a separate job that runs no project code and checks the result against the pinned release certificate. Checkouts no longer keep the GitHub token in `.git/config`.
-- TestFlight: the App Store Connect key is only given to the steps that upload and set What to Test, is written just before the upload and removed afterwards, and XcodeGen is a pinned release verified by checksum instead of a Homebrew install.
-- Post links whose text names a different site than they open now show the real host after the link.
-- Settings has a **Strict encrypted DNS** option (off by default) that stops lookups instead of falling back to the network's DNS, and warns while that fallback is happening.
-
-### Fixed
-- Android: if the Keystore can't save the database key, Orbin no longer opens and then deletes your data; that session runs in memory and you are told. If the key is lost and the data has to be cleared, Orbin says so and points you to backup import.
-
 ## [185-Lotus-Root] - 2026-10-31
 
 ### Security
