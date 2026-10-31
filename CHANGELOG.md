@@ -6,6 +6,23 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [185-Lotus-Root] - 2026-10-31
+
+### Security
+- Release workflow: every third-party action is pinned to a commit SHA, the signing keystore only exists for the Gradle step that uses it and is shredded afterwards, the dispatch tag is validated and never expanded into a script, workflow permissions default to read-only, and TestFlight receives only the App Store Connect secrets.
+- Android: another app can no longer open a thread, switch the active provider or write history through MainActivity's notification extras; only notification taps carrying a per-install token are routed.
+- Saved thread archives store attachments with active-content types (SVG, HTML and similar) as inert `.bin` downloads instead of linking them as pages.
+- Backup import keeps a bookmark thumbnail only if it is an https URL on that provider's own site or media hosts (Android and iOS).
+- iOS: the WebM player's web views use a non-persistent data store, so WebKit keeps no media cache or cookies on disk.
+- vichan/4chan media file names that would add path segments, a query or a fragment to media URLs are dropped.
+- The database passphrase is resolved once per process and shared by the main database and the media cache.
+- Removed the unused "Continue without app lock" path.
+
+### Reliability
+- Added tests for notification intent routing, provider media-host checks, inert archive attachments, backup thumbnail filtering and hostile vichan media names.
+- The iOS player and backup changes are compiled but still need confirmation on a device.
+
+
 ## [184-Taro] - 2026-10-30
 
 ### Fixed
@@ -2779,7 +2796,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v184-Taro...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...HEAD
+[185-Lotus-Root]: https://github.com/Defuuls/Orbin/compare/v184-Taro...v185-Lotus-Root
 [184-Taro]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...v184-Taro
 [183-Chayote]: https://github.com/Defuuls/Orbin/compare/v182-Crosne...v183-Chayote
 [182-Crosne]: https://github.com/Defuuls/Orbin/compare/v181-Skirret...v182-Crosne
