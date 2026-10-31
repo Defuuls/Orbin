@@ -37,6 +37,9 @@ import com.orbin.core.model.PostNode
 private val quoteLinkStyle = SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)
 private val quoteLinkStyles = TextLinkStyles(style = quoteLinkStyle)
 
+/** The real host after a link whose text names another; not a link itself, so it reads as a label. */
+private val realDestinationStyle = SpanStyle(fontStyle = FontStyle.Italic)
+
 /** Text painted in its own background colour: present for layout and selection, but unreadable. */
 private val blackedOutSpoilerStyle = SpanStyle(color = SpoilerBackground, background = SpoilerBackground)
 
@@ -215,6 +218,10 @@ private fun AnnotatedString.Builder.appendLink(
         withLink(clickableLink { ctx.onLinkClick(url) }, children)
     } else {
         withStyle(quoteLinkStyle, children)
+    }
+    // Text that reads as one address but links to another shows where it really goes.
+    misleadingLinkHost(node.visibleText(), url)?.let { host ->
+        withStyle(realDestinationStyle) { append("\u00A0($host)") }
     }
 }
 
