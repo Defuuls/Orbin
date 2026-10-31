@@ -75,16 +75,27 @@ live on `main`, re-running on each subsequent release and failing its own "tag m
 exist" assertion. `validate_repo.py` fails if a `cut-<number>-*.yml` reappears.
 
 ### `release.yml` — on every `v*` tag (or manual dispatch with a tag name)
-A single job that produces a complete, verifiable release:
-1. Checks out full history (for release-note diffs).
-2. On manual dispatch, creates and pushes the annotated tag itself.
-3. Decodes the signing keystore from `RELEASE_KEYSTORE_BASE64`.
-4. Builds a **signed** release APK (`assembleRelease`).
-5. Stages the APK and computes its **SHA-256** checksum.
-6. Uploads the R8 `mapping.txt` as a private workflow artifact, `orbin-<tag>-mapping`, kept 90
+Two jobs, so no build code ever runs next to a credential:
+
+**build** (`contents: read`, checkout without persisted credentials, no signing secrets)
+1. Checks out full history and validates the tag.
+2. Runs the release preflight.
+3. Builds an **unsigned** release APK (`assembleRelease -Porbin.unsignedRelease=true`).
+4. Uploads the R8 `mapping.txt` as a private workflow artifact, `orbin-<tag>-mapping`, kept 90
    days. It decodes crash stack traces and is not published with the release.
-7. Generates release notes from the commit log since the previous tag.
-8. Publishes a GitHub Release with the APK and its `.sha256` checksum attached.
+5. Hands the unsigned APK to the next job as a one-day artifact.
+
+**publish** (`contents: write`; runs no Gradle or repository code)
+1. Downloads the unsigned APK and signs it with the SDK's `zipalign` and `apksigner` (APK
+   Signature Scheme v2, as before). The keystore is decoded, used and shredded inside that one
+   step; the passwords reach `apksigner` through `env:` references.
+2. Verifies the signature and refuses to publish unless the signing certificate's SHA-256 matches
+   `RELEASE_CERT_SHA256` in the workflow. Update that value only with a deliberate key rotation.
+3. On manual dispatch, creates and pushes the annotated tag (the token is passed to that one
+   `git push`).
+4. Computes the APK's **SHA-256** checksum and generates release notes from the commit log since
+   the previous tag.
+5. Publishes a GitHub Release with the APK and its `.sha256` checksum attached.
 
 ### `wiki-sync.yml` — on push to `main` touching `docs/wiki/**` (or manual)
 Mirrors `docs/wiki/` onto the repository's GitHub wiki with `rsync --delete`. `docs/wiki` is the
@@ -107,7 +118,8 @@ Deploys the static landing page in `site/` to GitHub Pages
 The app's `signingConfigs.release` reads these from environment variables
 (`ORBIN_KEYSTORE_FILE`, `ORBIN_KEYSTORE_PASSWORD`, `ORBIN_KEY_ALIAS`, `ORBIN_KEY_PASSWORD`) and
 falls back to the debug signing config locally when they are absent, so local `assembleRelease`
-works without secrets.
+works without secrets. `-Porbin.unsignedRelease=true` leaves the release build unsigned instead
+(no fallback), which is how CI builds it.
 
 ## Release codenames
 

@@ -8,8 +8,14 @@ name: Release
 # not secret; it only keeps the release page free of it.
 #
 # Supply chain: every third-party action is pinned to a full commit SHA (Dependabot bumps the
-# pins), the signing keystore only exists on disk for the single Gradle step that needs it, and
-# only the App Store Connect secrets are passed on to the TestFlight workflow.
+# pins), and only the App Store Connect secrets are passed on to the TestFlight workflow.
+#
+# Two jobs, so that no build code ever runs next to a credential:
+#   build    runs Gradle (every plugin and dependency it resolves) with a read-only token that is
+#            not even kept on disk, and no signing secrets. It produces an unsigned APK.
+#   publish  runs no build code. It signs that APK with apksigner on a fresh runner, checks the
+#            signature and certificate, pushes the dispatch tag and publishes the release. Only
+#            this job holds the keystore, its passwords and a contents: write token.
 #
 # Orbin Minimal is NOT released here. It is a separate app on its own version line and its own
 # cadence — see release-minimal.yml, which triggers on minimal-v* tags. Publishing it from both
@@ -35,12 +41,11 @@ permissions:
   contents: read
 
 jobs:
-  release:
-    name: Build, sign & publish release
+  build:
+    name: Build unsigned release APK
     runs-on: ubuntu-latest
     permissions:
-      # Pushes the dispatch tag and publishes the GitHub Release.
-      contents: write
+      contents: read
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
@@ -48,40 +53,15 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
+          # Nothing in this job pushes, so the token is not written into .git/config for the build
+          # to read.
+          persist-credentials: false
 
       - name: Validate the release tag
         run: |
           set -euo pipefail
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+(-[A-Za-z0-9]+)*$ ]]; then
             echo "::error::Release tag '$RELEASE_TAG' must look like v101 or v101-Hana"; exit 1
-          fi
-
-      - name: Derive the release name
-        run: |
-          set -euo pipefail
-          VERSION="${RELEASE_TAG#v}"
-          NUMBER="${VERSION%%-*}"
-          CODENAME="${VERSION#*-}"
-          if [ "$CODENAME" = "$NUMBER" ]; then
-            RELEASE_NAME="Orbin ${NUMBER}"
-          else
-            RELEASE_NAME="Orbin ${NUMBER} - ${CODENAME//-/ }"
-          fi
-          echo "RELEASE_NAME=${RELEASE_NAME}" >> "$GITHUB_ENV"
-
-      - name: Create and push annotated tag (dispatch only)
-        if: github.event_name == 'workflow_dispatch'
-        # The tag reaches the shell only through the validated RELEASE_TAG env var, never through
-        # a ${{ }} expression inside the script.
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" > /dev/null; then
-            echo "Tag ${RELEASE_TAG} already exists on remote — skipping creation."
-          else
-            git tag -a "${RELEASE_TAG}" -m "$RELEASE_NAME"
-            git push origin "refs/tags/${RELEASE_TAG}"
           fi
 
       - name: Set up JDK and Gradle
@@ -96,56 +76,26 @@ jobs:
           python3 scripts/validate_repo.py
           ./gradlew :provider:api:test -Porbin.warningsAsErrors=true
 
-      # The keystore is decoded, used and shredded inside this one step, and the Gradle daemon that
-      # saw the passwords is stopped, so no later step (including third-party actions and their
-      # post-job hooks) can read either from disk or from a lingering process.
-      - name: Build signed release APK
-        env:
-          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          ORBIN_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          ORBIN_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          ORBIN_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      # No signing secrets in this job: the release build type is left unsigned (see
+      # ReleaseSigning.kt) and the publish job signs the APK.
+      - name: Build unsigned release APK
+        run: ./gradlew assembleRelease -Porbin.unsignedRelease=true
+
+      - name: Stage the unsigned APK and the R8 mapping
         run: |
           set -euo pipefail
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::RELEASE_KEYSTORE_BASE64 secret is not set"; exit 1
+          mkdir -p unsigned-staging
+          mapfile -t apks < <(find app/build/outputs/apk/release -name '*-unsigned.apk')
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one unsigned release APK, found ${#apks[@]}"; exit 1
           fi
-          export ORBIN_KEYSTORE_FILE="$RUNNER_TEMP/orbin-release.jks"
-          cleanup() {
-            ./gradlew --stop > /dev/null 2>&1 || true
-            if [ -f "$ORBIN_KEYSTORE_FILE" ]; then shred -u "$ORBIN_KEYSTORE_FILE" || rm -f "$ORBIN_KEYSTORE_FILE"; fi
-          }
-          trap cleanup EXIT
-          ( umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ORBIN_KEYSTORE_FILE" )
-          unset KEYSTORE_BASE64
-          ./gradlew assembleRelease
-
-      # Belt and braces: covers a cancelled run that skipped the trap above.
-      - name: Remove signing keystore
-        if: always()
-        run: |
-          if [ -f "$RUNNER_TEMP/orbin-release.jks" ]; then
-            shred -u "$RUNNER_TEMP/orbin-release.jks" || rm -f "$RUNNER_TEMP/orbin-release.jks"
-          fi
-
-      - name: Locate artifacts and compute checksums
-        id: artifacts
-        run: |
-          set -euo pipefail
-          mkdir -p release-staging
-          VERSION="${RELEASE_TAG}"
-
-          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          cp "${apks[0]}" unsigned-staging/app-release-unsigned.apk
+          # Staged apart from the APK so the release's file globs cannot pick it up.
           MAPPING=$(find app/build/outputs/mapping/release -name 'mapping.txt' | head -n1 || true)
-          cp "$APK" "release-staging/orbin-${VERSION}.apk"
-          ( cd release-staging && sha256sum "orbin-${VERSION}.apk" > "orbin-${VERSION}.apk.sha256" )
-          # Staged apart from release-staging so the release's file globs cannot pick it up.
           if [ -n "$MAPPING" ]; then
             mkdir -p mapping-staging
-            cp "$MAPPING" "mapping-staging/orbin-${VERSION}-mapping.txt"
+            cp "$MAPPING" "mapping-staging/orbin-${RELEASE_TAG}-mapping.txt"
           fi
-
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Keep the R8 mapping file as a workflow artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -156,6 +106,145 @@ jobs:
           # within this window, or rebuild the tag to regenerate its mapping.
           retention-days: 90
           if-no-files-found: warn
+
+      - name: Hand the unsigned APK to the publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: orbin-${{ env.RELEASE_TAG }}-unsigned
+          path: unsigned-staging/app-release-unsigned.apk
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    name: Sign & publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      # Pushes the dispatch tag and publishes the GitHub Release.
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      # SHA-256 of the release signing certificate (public: `apksigner verify --print-certs` on any
+      # published APK shows it). A release signed by anything else is refused before it is
+      # published, since installed copies would reject it as an update. Change it only together
+      # with a deliberate signing-key rotation.
+      RELEASE_CERT_SHA256: 5c27621cfb4f7d030d7a52bc636728325c4b121f383e27610df541311e825952
+    steps:
+      # Checked out only for the tag and the release notes; no code from it is run in this job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
+          # The write token is given to the one git command that needs it, below.
+          persist-credentials: false
+
+      - name: Derive the release name
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          NUMBER="${VERSION%%-*}"
+          CODENAME="${VERSION#*-}"
+          if [ "$CODENAME" = "$NUMBER" ]; then
+            RELEASE_NAME="Orbin ${NUMBER}"
+          else
+            RELEASE_NAME="Orbin ${NUMBER} - ${CODENAME//-/ }"
+          fi
+          echo "RELEASE_NAME=${RELEASE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Download the unsigned APK
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: orbin-${{ env.RELEASE_TAG }}-unsigned
+          path: unsigned
+
+      # The keystore and its passwords exist only inside this step, which runs nothing but the SDK's
+      # zipalign and apksigner. Passwords reach apksigner through env: references, never argv.
+      - name: Sign the release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          ORBIN_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          ORBIN_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          ORBIN_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 secret is not set"; exit 1
+          fi
+          keystore="$RUNNER_TEMP/orbin-release.jks"
+          cleanup() {
+            if [ -f "$keystore" ]; then shred -u "$keystore" || rm -f "$keystore"; fi
+          }
+          trap cleanup EXIT
+          ( umask 077 && printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore" )
+          unset KEYSTORE_BASE64
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)
+          echo "Signing with build-tools $(basename "$build_tools")"
+          mkdir -p signed
+          # 16 KB page alignment for the uncompressed native libraries, as AGP packages them.
+          "$build_tools/zipalign" -f -P 16 4 unsigned/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          # v2 only, matching what the Gradle-signed releases carried: v1 is unused at minSdk 31
+          # and v3/v4 add nothing without key rotation or incremental install.
+          "$build_tools/apksigner" sign \
+            --ks "$keystore" \
+            --ks-key-alias "$ORBIN_KEY_ALIAS" \
+            --ks-pass env:ORBIN_KEYSTORE_PASSWORD \
+            --key-pass env:ORBIN_KEY_PASSWORD \
+            --v1-signing-enabled false \
+            --v2-signing-enabled true \
+            --v3-signing-enabled false \
+            --v4-signing-enabled false \
+            --out signed/app-release.apk \
+            "$RUNNER_TEMP/aligned.apk"
+          rm -f "$RUNNER_TEMP/aligned.apk"
+
+      # Belt and braces: covers a cancelled run that skipped the trap above.
+      - name: Remove signing keystore
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/orbin-release.jks" ]; then
+            shred -u "$RUNNER_TEMP/orbin-release.jks" || rm -f "$RUNNER_TEMP/orbin-release.jks"
+          fi
+
+      - name: Verify the signature
+        run: |
+          set -euo pipefail
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)
+          "$build_tools/zipalign" -c -P 16 4 signed/app-release.apk
+          certs=$("$build_tools/apksigner" verify --verbose --print-certs signed/app-release.apk)
+          echo "$certs"
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<< "$certs")
+          signers=$(sed -n 's/^Number of signers: //p' <<< "$certs")
+          if [ "$signers" != "1" ] || [ "$actual" != "$RELEASE_CERT_SHA256" ]; then
+            echo "::error::Signed APK certificate ${actual:-none} (${signers:-0} signers) is not the release certificate ${RELEASE_CERT_SHA256}"
+            exit 1
+          fi
+
+      - name: Create and push annotated tag (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        # The tag reaches the shell only through the validated RELEASE_TAG env var, never through
+        # a ${{ }} expression inside the script.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" > /dev/null; then
+            echo "Tag ${RELEASE_TAG} already exists on remote — skipping creation."
+          else
+            git tag -a "${RELEASE_TAG}" -m "$RELEASE_NAME"
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            echo "::add-mask::${auth}"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" \
+              push origin "refs/tags/${RELEASE_TAG}"
+          fi
+
+      - name: Compute checksums
+        run: |
+          set -euo pipefail
+          mkdir -p release-staging
+          cp signed/app-release.apk "release-staging/orbin-${RELEASE_TAG}.apk"
+          ( cd release-staging && sha256sum "orbin-${RELEASE_TAG}.apk" > "orbin-${RELEASE_TAG}.apk.sha256" )
 
       - name: Generate release notes
         id: notes
@@ -197,7 +286,7 @@ jobs:
   # the App Store Connect secrets are configured (docs/ios.md).
   testflight:
     name: TestFlight
-    needs: release
+    needs: publish
     uses: ./.github/workflows/testflight.yml
     permissions:
       contents: read

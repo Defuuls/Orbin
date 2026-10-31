@@ -1,7 +1,9 @@
 package com.orbin.buildlogic
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.getByType
 import java.util.Properties
 
 /**
@@ -15,7 +17,9 @@ import java.util.Properties
 fun Project.configureReleaseSigning(extension: ApplicationExtension) {
     val credentials = ReleaseSigningCredentials(this)
 
-    if (credentials.buildsShippableRelease(gradle.startParameter.taskNames)) {
+    if (providers.gradleProperty(UNSIGNED_RELEASE_PROPERTY).orNull.toBoolean()) {
+        configureUnsignedRelease()
+    } else if (credentials.buildsShippableRelease(gradle.startParameter.taskNames)) {
         check(credentials.isComplete) {
             "Release signing is not configured. Set ORBIN_KEYSTORE_FILE, " +
                 "ORBIN_KEYSTORE_PASSWORD, ORBIN_KEY_ALIAS, and ORBIN_KEY_PASSWORD, " +
@@ -43,6 +47,26 @@ fun Project.configureReleaseSigning(extension: ApplicationExtension) {
         }
     }
 }
+
+/**
+ * `-Porbin.unsignedRelease=true`: the release build type gets no signing config at all, so AGP
+ * writes `*-release-unsigned.apk` and the build never needs, or sees, the keystore or its passwords.
+ *
+ * The release workflow builds this way and signs the result with `apksigner` in a separate job
+ * that alone holds the signing secrets: the whole Gradle build (every plugin and dependency it
+ * runs) used to execute with the passwords in its environment and the keystore on disk. There is
+ * deliberately no debug-key fallback here — an unsigned APK cannot be mistaken for a release.
+ *
+ * Applied in `finalizeDsl` because the module's own `android {}` block, which runs after this
+ * convention plugin, is what assigns `signingConfig` on the release build type.
+ */
+private fun Project.configureUnsignedRelease() {
+    extensions.getByType<ApplicationAndroidComponentsExtension>().finalizeDsl { android ->
+        android.buildTypes.getByName("release").signingConfig = null
+    }
+}
+
+private const val UNSIGNED_RELEASE_PROPERTY = "orbin.unsignedRelease"
 
 /** Reads signing credentials from the environment, falling back to an ignored properties file. */
 private class ReleaseSigningCredentials(
