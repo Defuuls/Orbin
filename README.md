@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [185 — Lotus Root](https://github.com/Defuuls/Orbin/releases/tag/v185-Lotus-Root)
+**Current release:** [186 — Burdock](https://github.com/Defuuls/Orbin/releases/tag/v186-Burdock)
 
-**What's new in 185:** Security hardening across the release pipeline, notification routing, thread archives and backup import.
+**What's new in 186:** Release signing moves out of the build, a strict encrypted DNS option, look-alike link warnings and no more silent data loss when the database key can't be kept.
 
 ---
 
