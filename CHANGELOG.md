@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Release workflow: every third-party action is pinned to a commit SHA, the signing keystore only exists for the Gradle step that uses it and is shredded afterwards, the dispatch tag is validated and never expanded into a script, workflow permissions default to read-only, and TestFlight receives only the App Store Connect secrets.
+- Android: another app can no longer open a thread, switch the active provider or write history through MainActivity's notification extras; only notification taps carrying a per-install token are routed.
+- Saved thread archives store attachments with active-content types (SVG, HTML and similar) as inert `.bin` downloads instead of linking them as pages.
+- Backup import keeps a bookmark thumbnail only if it is an https URL on that provider's own site or media hosts (Android and iOS).
+- iOS: the WebM player's web views use a non-persistent data store, so WebKit keeps no media cache or cookies on disk.
+- vichan/4chan media file names that would add path segments, a query or a fragment to media URLs are dropped.
+- The database passphrase is resolved once per process and shared by the main database and the media cache.
+- Removed the unused "Continue without app lock" path.
+
 ## [184-Taro] - 2026-10-30
 
 ### Fixed
