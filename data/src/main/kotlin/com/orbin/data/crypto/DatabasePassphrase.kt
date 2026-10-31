@@ -13,6 +13,13 @@ import java.security.SecureRandom
  * passphrase can no longer be decrypted (e.g. the Keystore key was lost). In both cases the caller
  * must drop the existing database file before opening with the freshly generated passphrase.
  *
+ * Keystore calls can fail transiently, so reading the stored key and saving a new one are each
+ * tried twice. If a new key still cannot be saved, [Resolved.persisted] is false: keying the
+ * on-disk files with a key that will not exist next launch would make them unopenable (and
+ * [DatabaseKeyRepair][com.orbin.data.database.DatabaseKeyRepair] would then delete them), so the
+ * caller keeps this session in memory instead and leaves the files alone. Either outcome that the
+ * reader would otherwise never learn about is reported through [LocalDataNotices].
+ *
  * Every encrypted database in the process (Room's `orbin.db` and the media cache) shares this one
  * passphrase, so it is resolved once per process and the same [Resolved] - including its
  * [Resolved.wipeDatabase] verdict - is handed to every caller. Resolving independently let two
@@ -27,32 +34,55 @@ internal class DatabasePassphrase(
     fun resolve(): Resolved = synchronized(lock) { resolved ?: resolveOnce().also { resolved = it } }
 
     private fun resolveOnce(): Resolved {
-        prefs.getString(KEY_PASSPHRASE, null)?.let { stored ->
-            runCatching {
-                val decoded = Base64.decode(stored, Base64.NO_WRAP)
-                LocalDataCipher.decrypt(decoded)
-            }.getOrNull()
+        val stored = prefs.getString(KEY_PASSPHRASE, null)
+        if (stored != null) {
+            twice { LocalDataCipher.decrypt(Base64.decode(stored, Base64.NO_WRAP)) }
                 ?.let { return Resolved(it, wipeDatabase = false) }
         }
         val fresh = ByteArray(PASSPHRASE_BYTES).also { SecureRandom().nextBytes(it) }
         val persisted =
-            runCatching {
+            twice {
                 val encrypted = LocalDataCipher.encrypt(fresh)
                 val wrapped = Base64.encodeToString(encrypted, Base64.NO_WRAP)
-                prefs.edit().putString(KEY_PASSPHRASE, wrapped).commit()
-            }.getOrDefault(false)
-        return Resolved(fresh, wipeDatabase = persisted)
+                prefs
+                    .edit()
+                    .putString(KEY_PASSPHRASE, wrapped)
+                    .commit()
+                    .takeIf { it }
+            } == true
+        if (!persisted) {
+            LocalDataNotices.report(LocalDataNotice.NOT_SAVED)
+            return Resolved(fresh, wipeDatabase = false, persisted = false)
+        }
+        // A key existed and is gone: the files it opened are about to be dropped.
+        if (stored != null) LocalDataNotices.report(LocalDataNotice.RESET)
+        return Resolved(fresh, wipeDatabase = true)
     }
 
+    /** [block]'s result, trying once more if it throws or returns null. */
+    private fun <T : Any> twice(block: () -> T?): T? = runCatching(block).getOrNull() ?: runCatching(block).getOrNull()
+
+    /**
+     * @property persisted false when the passphrase could not be saved; the caller must not key
+     *   anything on disk with it, and keeps the session in memory instead.
+     */
     data class Resolved(
         val passphrase: ByteArray,
         val wipeDatabase: Boolean,
+        val persisted: Boolean = true,
     ) {
         override fun equals(other: Any?): Boolean =
             this === other ||
-                (other is Resolved && passphrase.contentEquals(other.passphrase) && wipeDatabase == other.wipeDatabase)
+                (
+                    other is Resolved &&
+                        passphrase.contentEquals(other.passphrase) &&
+                        wipeDatabase == other.wipeDatabase &&
+                        persisted == other.persisted
+                )
 
-        override fun hashCode(): Int = passphrase.contentHashCode() * HASH_MULTIPLIER + wipeDatabase.hashCode()
+        override fun hashCode(): Int =
+            (passphrase.contentHashCode() * HASH_MULTIPLIER + wipeDatabase.hashCode()) * HASH_MULTIPLIER +
+                persisted.hashCode()
     }
 
     private companion object {

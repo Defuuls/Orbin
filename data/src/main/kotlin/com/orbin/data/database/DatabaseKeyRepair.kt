@@ -1,6 +1,8 @@
 package com.orbin.data.database
 
 import android.content.Context
+import com.orbin.data.crypto.LocalDataNotice
+import com.orbin.data.crypto.LocalDataNotices
 import net.zetetic.database.sqlcipher.SQLiteDatabase
 import java.io.File
 
@@ -16,7 +18,9 @@ import java.io.File
  *
  * Anything else that will not open — a plaintext database from a pre-encryption install, or a file
  * whose key is genuinely gone — is deleted so Room recreates it empty. Losing local caches is
- * recoverable; a startup crash on every launch is not.
+ * recoverable; a startup crash on every launch is not. Deleting a file that was there is reported
+ * through [LocalDataNotices] so the reader learns why their bookmarks are gone and can restore a
+ * backup.
  */
 internal class DatabaseKeyRepair(
     private val context: Context,
@@ -25,8 +29,10 @@ internal class DatabaseKeyRepair(
 ) {
     fun repair() {
         val databaseFile = context.getDatabasePath(databaseName)
-        if (databaseFile.exists() && rekeyFromLegacyPassphrase(databaseFile)) return
+        val existed = databaseFile.exists()
+        if (existed && rekeyFromLegacyPassphrase(databaseFile)) return
         context.deleteDatabase(databaseName)
+        if (existed) LocalDataNotices.report(LocalDataNotice.RESET)
     }
 
     private fun rekeyFromLegacyPassphrase(databaseFile: File): Boolean =

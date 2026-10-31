@@ -76,6 +76,12 @@ silently. Signed APKs and checksums are also on the repository Releases page for
 The main local database is encrypted with SQLCipher and preferences use encrypted storage protected
 by Android Keystore material.
 
+If Android loses or refuses to save the Keystore key that protects the database, Orbin tells you.
+When the key is lost, the database cannot be opened and is cleared; import a backup from
+**Settings** to get your boards, bookmarks and saved searches back. When a new key cannot be saved,
+Orbin keeps that session in memory, leaves your existing data untouched, and tries again on the
+next start.
+
 ### Are backups and saved-link files encrypted?
 
 No. Explicit backup JSON and exported link text files are plaintext because they are designed for

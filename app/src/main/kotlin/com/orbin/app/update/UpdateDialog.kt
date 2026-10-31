@@ -92,7 +92,7 @@ fun UpdateDialog(
 
 /** The grouped card every ui-next dialog uses, as in `NextConfirmDialog`, with room for a progress bar. */
 @Composable
-private fun UpdateCard(
+internal fun UpdateCard(
     title: String,
     message: String,
     dismissLabel: String,

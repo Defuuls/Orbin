@@ -29,7 +29,8 @@ object MediaResponseCacheModule {
             val configuration =
                 SupportSQLiteOpenHelper.Configuration
                     .builder(context)
-                    .name(SqliteMediaResponseCache.NAME)
+                    // No name is an in-memory database: without a saved key, nothing goes to disk.
+                    .name(SqliteMediaResponseCache.NAME.takeIf { resolved.persisted })
                     .callback(
                         object : SupportSQLiteOpenHelper.Callback(1) {
                             override fun onCreate(db: SupportSQLiteDatabase) = SqliteMediaResponseCache.createSchema(db)

@@ -47,6 +47,10 @@
     <string name="update_failed_title">Update failed</string>
     <string name="update_action_retry">Try again</string>
     <string name="update_action_close">Close</string>
+    <string name="local_data_reset_title">Your saved data was reset</string>
+    <string name="local_data_reset_message">Android lost the key that protects Orbin\'s data on this device, so bookmarks, history and downloads could not be opened and were cleared. If you exported a backup, you can import it in Settings.</string>
+    <string name="local_data_not_saved_title">Changes won\'t be saved</string>
+    <string name="local_data_not_saved_message">Android couldn\'t save the key that protects Orbin\'s data, so this session won\'t be kept. Your existing data is untouched and Orbin will try again next time it starts.</string>
 
     <!-- Launcher shortcuts -->
     <string name="shortcut_feed_short">Feed</string>

@@ -29,6 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import com.orbin.app.navigation.Route
 import com.orbin.app.routing.IntentRoute
 import com.orbin.app.routing.parseRoute
+import com.orbin.app.update.LocalDataNoticeDialog
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.data.notification.NotificationLaunchToken
 import com.orbin.domain.repository.DiagnosticsRepository
@@ -271,6 +272,7 @@ class MainActivity : FragmentActivity() {
                 val visible = settings.onboardingCompleted && (!shouldLock || unlocked)
                 AppUpdateDialog(viewModel, visible)
                 WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible)
+                LocalDataNoticeDialog(visible, onOpenSettings = { pendingRoute = Route.Settings })
             },
         )
     }
