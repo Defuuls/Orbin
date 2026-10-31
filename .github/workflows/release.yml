@@ -212,7 +212,7 @@ jobs:
           "$build_tools/zipalign" -c -P 16 4 signed/app-release.apk
           certs=$("$build_tools/apksigner" verify --verbose --print-certs signed/app-release.apk)
           echo "$certs"
-          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<< "$certs")
+          actual=$(sed -nE 's/^(Signer #1|V2 Signer):? certificate SHA-256 digest: //p' <<< "$certs")
           signers=$(sed -n 's/^Number of signers: //p' <<< "$certs")
           if [ "$signers" != "1" ] || [ "$actual" != "$RELEASE_CERT_SHA256" ]; then
             echo "::error::Signed APK certificate ${actual:-none} (${signers:-0} signers) is not the release certificate ${RELEASE_CERT_SHA256}"
