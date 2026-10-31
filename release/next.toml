@@ -1,25 +1,29 @@
-# Orbin 184 - Taro
+# Orbin 185 - Lotus Root
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 184
-codename     = "Taro"
-version_code = 202
+number       = 185
+codename     = "Lotus Root"
+version_code = 203
 
-highlight = "Playing a single Android video no longer trips the media CDN's rate limit."
+highlight = "Security hardening across the release pipeline, notification routing, thread archives and backup import."
 
 summary = [
-  "bump Orbin to 184-Taro / versionCode 202",
-  "space out a video's startup requests and stop the preloader's per-video HEAD so one clip no longer trips the CDN rate limit",
-  "show \"rate limited\" only for real HTTP 429 responses, for videos and images",
+  "bump Orbin to 185-Lotus-Root / versionCode 203",
+  "ship the security hardening from #764: pinned and least-privilege release workflow, token-gated notification routing, inert archive attachments, validated backup thumbnails and vichan media names",
 ]
 
 [changelog]
-Fixed = [
-  "Android: playing a single video no longer trips the CDN rate limit. A video's startup requests are now spaced out instead of fired together, the preloader no longer sends a useless request per video and leaves a blocked CDN alone, and a video refused with a 429 retries itself at most three times (with a short random delay) before offering a Retry button.",
-  "Android: a non-429 playback or image error whose text happened to contain \"429\" (for example a file name) is no longer shown as \"rate limited\".",
-  "A `Retry-After` given as an HTTP date is now honoured for videos.",
+Security = [
+  "Release workflow: every third-party action is pinned to a commit SHA, the signing keystore only exists for the Gradle step that uses it and is shredded afterwards, the dispatch tag is validated and never expanded into a script, workflow permissions default to read-only, and TestFlight receives only the App Store Connect secrets.",
+  "Android: another app can no longer open a thread, switch the active provider or write history through MainActivity's notification extras; only notification taps carrying a per-install token are routed.",
+  "Saved thread archives store attachments with active-content types (SVG, HTML and similar) as inert `.bin` downloads instead of linking them as pages.",
+  "Backup import keeps a bookmark thumbnail only if it is an https URL on that provider's own site or media hosts (Android and iOS).",
+  "iOS: the WebM player's web views use a non-persistent data store, so WebKit keeps no media cache or cookies on disk.",
+  "vichan/4chan media file names that would add path segments, a query or a fragment to media URLs are dropped.",
+  "The database passphrase is resolved once per process and shared by the main database and the media cache.",
+  "Removed the unused \"Continue without app lock\" path.",
 ]
 Reliability = [
-  "Added tests for Retry-After parsing, per-URL request pacing under a parallel burst, the bounded retry policy, preload throttling, and HTTP status detection for ExoPlayer and Coil errors.",
-  "Real CDN behaviour still needs confirmation on an affected device.",
+  "Added tests for notification intent routing, provider media-host checks, inert archive attachments, backup thumbnail filtering and hostile vichan media names.",
+  "The iOS player and backup changes are compiled but still need confirmation on a device.",
 ]
