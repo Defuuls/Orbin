@@ -56,8 +56,10 @@ slower by design.
 ### Why does DNS say it fell back to the system resolver?
 
 Some networks block the configured encrypted DNS endpoint. Orbin falls back so browsing does not
-fail completely and reports that privacy degradation. Switching resolver or network may clear it;
-the notice clears after encrypted resolution succeeds again.
+fail completely and reports that privacy degradation under **Settings → Strict encrypted DNS**.
+Switching resolver or network may clear it; the notice clears after encrypted resolution succeeds
+again. Turn **Strict encrypted DNS** on if you would rather nothing load than let the network see
+which sites you open.
 
 ### How do I update Orbin?
 

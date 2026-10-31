@@ -52,6 +52,8 @@ fun NextSettingsScreen(
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
+    val strictDns by viewModel.strictDns.collectAsStateWithLifecycle()
+    val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
     val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -102,7 +104,16 @@ fun NextSettingsScreen(
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel(strings)
     val model =
-        remember(settings, updateCheck, cacheLabel, clearArmed, checkUpdatesOnLaunch, formFactor) {
+        remember(
+            settings,
+            updateCheck,
+            cacheLabel,
+            clearArmed,
+            checkUpdatesOnLaunch,
+            formFactor,
+            strictDns,
+            dnsFallbackActive,
+        ) {
             buildSettings(
                 settings,
                 viewModel,
@@ -112,6 +123,7 @@ fun NextSettingsScreen(
                 clearArmed,
                 checkUpdatesOnLaunch,
                 formFactor,
+                DnsRowState(strict = strictDns, fallbackActive = dnsFallbackActive),
             )
         }
 

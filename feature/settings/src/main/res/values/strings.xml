@@ -13,6 +13,10 @@
     <string name="settings_true_black">True black</string>
     <string name="settings_app_lock">App lock</string>
     <string name="settings_update_on_launch">Tell me about new releases</string>
+    <string name="settings_strict_dns">Strict encrypted DNS</string>
+    <string name="settings_strict_dns_hint_off">If a network blocks encrypted DNS, Orbin uses the network\'s own DNS so pages still load, and the network can see which sites you open. Turn this on to stop loading instead.</string>
+    <string name="settings_strict_dns_hint_fallback">Encrypted DNS is blocked on this network. Orbin is using the network\'s DNS, so the network can see which sites you open. Turn this on to stop loading instead, or switch networks.</string>
+    <string name="settings_strict_dns_hint_on">Orbin never falls back to the network\'s DNS. On a network that blocks encrypted DNS, nothing will load until you switch networks or turn this off.</string>
 
     <!-- Your data -->
     <string name="settings_clear_activity">Clear local activity</string>

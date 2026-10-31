@@ -214,10 +214,18 @@ class FakeDiagnosticsRepository(
 /** Reports DNS as encrypted unless a test says otherwise. */
 class FakeDnsPrivacyMonitor(
     fallbackActive: Boolean = false,
+    strict: Boolean = false,
 ) : DnsPrivacyMonitor {
     private val state = MutableStateFlow(fallbackActive)
+    private val strictState = MutableStateFlow(strict)
 
     override val usingSystemFallback: Flow<Boolean> = state
+
+    override val strictMode: Flow<Boolean> = strictState
+
+    override fun setStrictMode(enabled: Boolean) {
+        strictState.value = enabled
+    }
 
     fun setFallbackActive(active: Boolean) {
         state.value = active
