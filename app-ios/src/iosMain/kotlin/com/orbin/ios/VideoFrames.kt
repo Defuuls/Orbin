@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import platform.AVFoundation.AVAssetImageGenerator
 import platform.AVFoundation.AVURLAsset
+import platform.AVFoundation.cancelLoading
 import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreMedia.CMTimeMakeWithSeconds
