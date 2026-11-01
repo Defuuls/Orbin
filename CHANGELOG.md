@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- iOS: videos (WebM and MP4) no longer stop playing after about ten in a row. Leaving a video now releases its player and decoder straight away, only the video on screen can start Picture in Picture, and video thumbnails free their memory as they are made. Still needs confirmation on a device.
+
 ## [186-Burdock] - 2026-10-31
 
 ### Security
