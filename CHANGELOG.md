@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Build: OpenTelemetry API pinned to 1.67.0 for a tracestate parsing denial-of-service advisory (build tooling only; not in the app).
+
 ## [186-Burdock] - 2026-10-31
 
 ### Security
