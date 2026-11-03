@@ -6,6 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [187-Daikon] - 2026-11-03
+
+### Security
+- Build: OpenTelemetry API pinned to 1.67.0 for a tracestate parsing denial-of-service advisory (build tooling only; not in the app).
+
+### Fixed
+- iOS: videos (WebM and MP4) no longer stop playing after about ten in a row. Leaving a video now releases its player and decoder straight away, only the video on screen can start Picture in Picture, and video thumbnails free their memory as they are made. Still needs confirmation on a device.
+
+
 ## [186-Burdock] - 2026-10-31
 
 ### Security
@@ -2812,7 +2821,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...HEAD
+[187-Daikon]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...v187-Daikon
 [186-Burdock]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...v186-Burdock
 [185-Lotus-Root]: https://github.com/Defuuls/Orbin/compare/v184-Taro...v185-Lotus-Root
 [184-Taro]: https://github.com/Defuuls/Orbin/compare/v183-Chayote...v184-Taro
