@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [186 — Burdock](https://github.com/Defuuls/Orbin/releases/tag/v186-Burdock)
+**Current release:** [187 — Daikon](https://github.com/Defuuls/Orbin/releases/tag/v187-Daikon)
 
-**What's new in 186:** Release signing moves out of the build, a strict encrypted DNS option, look-alike link warnings and no more silent data loss when the database key can't be kept.
+**What's new in 187:** iOS videos no longer stop playing after about ten in a row.
 
 ---
 
