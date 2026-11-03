@@ -57,8 +57,8 @@ ch.qos.logback:logback-*                            | 1.5.35        | Dependabot
 # currently changes nothing — which is the point: it stops a regression, it does not cause one.
 org.apache.httpcomponents:httpclient                | 4.5.13        | Dependabot reports an Apache HttpClient XSS vulnerability (GHSA-7r82-7xv7-xcpj).
 
-io.opentelemetry:opentelemetry-api                  | 1.62.0        | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
-io.opentelemetry:opentelemetry-extension-trace-propagators | 1.62.0  | Dependabot reports an OpenTelemetry unbounded memory allocation vulnerability (GHSA-rcgg-9c38-7xpx).
+io.opentelemetry:opentelemetry-api                  | 1.67.0        | Dependabot reports OpenTelemetry tracestate quadratic CPU parsing (GHSA-ccrj-gw8r-854m, alert 70); 1.62.0 fixed GHSA-rcgg-9c38-7xpx.
+io.opentelemetry:opentelemetry-extension-trace-propagators | 1.67.0  | Kept in step with opentelemetry-api (GHSA-ccrj-gw8r-854m, alert 70).
 
 org.freemarker:freemarker                           | 2.3.35        | Dependabot reports a FreeMarker template-loading path traversal (alert #68), pulled in by Kover's report generator.
 

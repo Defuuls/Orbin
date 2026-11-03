@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Build: OpenTelemetry API pinned to 1.67.0 for a tracestate parsing denial-of-service advisory (build tooling only; not in the app).
+
 ### Fixed
 - iOS: videos (WebM and MP4) no longer stop playing after about ten in a row. Leaving a video now releases its player and decoder straight away, only the video on screen can start Picture in Picture, and video thumbnails free their memory as they are made. Still needs confirmation on a device.
 
