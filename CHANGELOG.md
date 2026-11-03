@@ -6,6 +6,13 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [188-Mizuna] - 2026-11-03
+
+### Refactor
+- Thread: consolidated redundant thread key properties in ThreadViewModel.
+- Storage: modernized test suite to use OkioStorage for cross-platform DataStore file operations.
+
+
 ## [187-Daikon] - 2026-11-03
 
 ### Security
@@ -2821,7 +2828,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...HEAD
+[188-Mizuna]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...v188-Mizuna
 [187-Daikon]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...v187-Daikon
 [186-Burdock]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...v186-Burdock
 [185-Lotus-Root]: https://github.com/Defuuls/Orbin/compare/v184-Taro...v185-Lotus-Root
