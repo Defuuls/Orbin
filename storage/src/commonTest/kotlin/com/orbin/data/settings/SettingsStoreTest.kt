@@ -1,8 +1,10 @@
 package com.orbin.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -21,9 +23,17 @@ import kotlin.test.assertTrue
 /** The shared app settings over a real DataStore file, on the Android host and on iOS. */
 class SettingsStoreTest {
     private fun CoroutineScope.dataStore(): DataStore<Preferences> =
-        PreferenceDataStoreFactory.createWithPath(scope = this) {
-            FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "settings-${Random.nextLong()}.preferences_pb"
-        }
+        PreferenceDataStoreFactory.create(
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.SYSTEM,
+                    serializer = PreferencesSerializer,
+                    producePath = {
+                        FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "settings-${Random.nextLong()}.preferences_pb"
+                    },
+                ),
+            scope = this,
+        )
 
     @Test
     fun everyColorSurvivesAStoreWrapperRecreation() =

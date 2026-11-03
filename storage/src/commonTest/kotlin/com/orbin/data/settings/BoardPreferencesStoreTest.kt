@@ -1,8 +1,10 @@
 package com.orbin.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.BoardId
@@ -23,9 +25,17 @@ class BoardPreferencesStoreTest {
     private val other = ProviderId("other")
 
     private fun CoroutineScope.dataStore(): DataStore<Preferences> =
-        PreferenceDataStoreFactory.createWithPath(scope = this) {
-            FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "board-prefs-${Random.nextLong()}.preferences_pb"
-        }
+        PreferenceDataStoreFactory.create(
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.SYSTEM,
+                    serializer = PreferencesSerializer,
+                    producePath = {
+                        FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "board-prefs-${Random.nextLong()}.preferences_pb"
+                    },
+                ),
+            scope = this,
+        )
 
     @Test
     fun followingABoardIsKeptPerSite() =

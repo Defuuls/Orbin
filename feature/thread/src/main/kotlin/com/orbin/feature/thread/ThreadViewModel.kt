@@ -63,7 +63,6 @@ class ThreadViewModel
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
-        private val threadKey = ThreadKey(provider, board, threadId)
         private val key = ThreadKey(provider, board, threadId)
 
         val threadWebUrl: String?
@@ -116,7 +115,7 @@ class ThreadViewModel
                             ContentPolicy.visibleThread(it)?.let(ThreadUiState::Success) ?: ThreadUiState.Blocked
                         },
                         onFailure = { error ->
-                            val saved = savedThreadRepository.load(threadKey)
+                            val saved = savedThreadRepository.load(key)
                             when {
                                 saved == null -> ThreadUiState.Error(error.message)
                                 else ->
@@ -230,7 +229,7 @@ class ThreadViewModel
 
         val isSaved: StateFlow<Boolean> =
             savedThreadRepository
-                .isSaved(threadKey)
+                .isSaved(key)
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
         fun saveThread() {
@@ -243,7 +242,7 @@ class ThreadViewModel
 
         fun forgetSavedThread() {
             viewModelScope.launch {
-                savedThreadRepository.forget(threadKey)
+                savedThreadRepository.forget(key)
                 _exportMessage.value = "Deleted the saved copy"
             }
         }

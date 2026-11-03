@@ -1,8 +1,10 @@
 package com.orbin.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,9 +19,17 @@ import kotlin.test.assertEquals
 /** Removed sync features must not leave a login or activity copy behind in preferences. */
 class LegacySyncCleanupTest {
     private fun CoroutineScope.dataStore(): DataStore<Preferences> =
-        PreferenceDataStoreFactory.createWithPath(scope = this) {
-            FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "legacy-sync-${Random.nextLong()}.preferences_pb"
-        }
+        PreferenceDataStoreFactory.create(
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.SYSTEM,
+                    serializer = PreferencesSerializer,
+                    producePath = {
+                        FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "legacy-sync-${Random.nextLong()}.preferences_pb"
+                    },
+                ),
+            scope = this,
+        )
 
     @Test
     fun removesEverySyncEntryAndKeepsEverythingElse() =
