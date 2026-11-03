@@ -1,28 +1,21 @@
-# Orbin 186 - Burdock
+# Orbin 187 - Daikon
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 186
-codename     = "Burdock"
-version_code = 204
+number       = 187
+codename     = "Daikon"
+version_code = 205
 
-highlight = "Release signing moves out of the build, a strict encrypted DNS option, look-alike link warnings and no more silent data loss when the database key can't be kept."
+highlight = "iOS videos no longer stop playing after about ten in a row."
 
 summary = [
-  "bump Orbin to 186-Burdock / versionCode 204",
-  "ship the scan fixes from #770: unsigned release build signed by apksigner in a separate job with a certificate pin, step-scoped App Store Connect key and pinned XcodeGen, real host shown after look-alike links, strict encrypted DNS option, and in-memory fallback with a notice when the database key can't be saved",
+  "bump Orbin to 187-Daikon / versionCode 205",
+  "ship the iOS video decoder fix from #774 and the OpenTelemetry build pin from #776",
 ]
 
 [changelog]
 Security = [
-  "Release workflow: the APK is built without any signing secrets and with no write token, then signed with `apksigner` in a separate job that runs no project code and checks the result against the pinned release certificate. Checkouts no longer keep the GitHub token in `.git/config`.",
-  "TestFlight: the App Store Connect key is only given to the steps that upload and set What to Test, is written just before the upload and removed afterwards, and XcodeGen is a pinned release verified by checksum instead of a Homebrew install.",
-  "Post links whose text names a different site than they open now show the real host after the link.",
-  "Settings has a **Strict encrypted DNS** option (off by default) that stops lookups instead of falling back to the network's DNS, and warns while that fallback is happening.",
+  "Build: OpenTelemetry API pinned to 1.67.0 for a tracestate parsing denial-of-service advisory (build tooling only; not in the app).",
 ]
 Fixed = [
-  "Android: if the Keystore can't save the database key, Orbin no longer opens and then deletes your data; that session runs in memory and you are told. If the key is lost and the data has to be cleared, Orbin says so and points you to backup import.",
-]
-Reliability = [
-  "Added tests for look-alike link detection, strict encrypted DNS, the strict DNS settings row and database key loss.",
-  "The Settings row, the database key dialogs and the iOS link change are compiled and tested on the JVM but still need confirmation on a device.",
+  "iOS: videos (WebM and MP4) no longer stop playing after about ten in a row. Leaving a video now releases its player and decoder straight away, only the video on screen can start Picture in Picture, and video thumbnails free their memory as they are made. Still needs confirmation on a device.",
 ]
