@@ -26,6 +26,8 @@ import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
+import platform.AVFoundation.asset
+import platform.AVFoundation.cancelLoading
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.duration
@@ -40,6 +42,7 @@ import platform.CoreGraphics.CGRectMake
 import platform.CoreMedia.CMTime
 import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreMedia.CMTimeMakeWithSeconds
+import platform.Foundation.NSLog
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
@@ -98,7 +101,13 @@ internal actual fun NativePlayer(
     }
     LaunchedEffect(player, active) {
         if (!active) return@LaunchedEffect
+        var reported = false
         while (true) {
+            // Says why a video stays black: decoder exhaustion shows as AVFoundation -11839 or -11819.
+            player.currentItem?.error?.takeIf { !reported }?.let {
+                reported = true
+                NSLog("OrbinVideo AVPlayer failed: %@ %ld", it.domain, it.code)
+            }
             state =
                 VideoState(
                     playing = player.rate > 0f,
@@ -111,6 +120,9 @@ internal actual fun NativePlayer(
     DisposableEffect(player) {
         onDispose {
             player.pause()
+            // Stop the asset's outstanding loads too, so nothing keeps the item's network and
+            // decoder alive until Kotlin's collector releases the player object.
+            player.currentItem?.asset?.cancelLoading()
             player.replaceCurrentItemWithPlayerItem(null)
         }
     }
@@ -120,12 +132,16 @@ internal actual fun NativePlayer(
                 AVPlayerViewController().apply {
                     showsPlaybackControls = false
                     allowsPictureInPicturePlayback = true
-                    canStartPictureInPictureAutomaticallyFromInline = true
                 }
             },
             // The interop factory runs once per host, not once per remembered player. A URL
             // replacement must attach the player that the playback effects and controls use.
-            update = { it.player = player },
+            // Only the page on screen offers picture in picture: neighbours composed by the pager
+            // are not PiP sources.
+            update = {
+                it.player = player
+                it.canStartPictureInPictureAutomaticallyFromInline = active
+            },
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
             properties = PASS_THROUGH,
@@ -180,7 +196,8 @@ internal actual fun NativeWebMPlayer(
                     mediaTypesRequiringUserActionForPlayback = 0uL
                     // In-memory only: the default store keeps WebKit's cache and cookies on disk,
                     // which would undo the app's choice not to persist media (see AppGraph).
-                    websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore()
+                    // One shared store: a new store per view means a new WebContent process per video.
+                    websiteDataStore = mediaDataStore
                 }
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
                 opaque = false
@@ -210,8 +227,7 @@ internal actual fun NativeWebMPlayer(
     DisposableEffect(webView) {
         onDispose {
             // A neighbouring pager page must not keep playing audio or video.
-            webView.stopLoading()
-            webView.loadHTMLString("", baseURL = null)
+            webView.tearDownMedia()
         }
     }
     Box(modifier) {
@@ -238,6 +254,24 @@ internal actual fun NativeWebMPlayer(
     }
 }
 
+/**
+ * Lets go of everything a video page holds. Blanking the page alone is not enough: WebKit keeps
+ * the previous page, media player and decoder included, in its back-forward cache, and the view
+ * itself lives until Kotlin's collector frees the wrapper. Unload the element first, then the page.
+ */
+private fun WKWebView.tearDownMedia() {
+    evaluateJavaScript(
+        "document.querySelectorAll('video').forEach(function(v){v.pause();v.removeAttribute('src');v.load()})",
+        null,
+    )
+    stopLoading()
+    loadHTMLString("", baseURL = null)
+    removeFromSuperview()
+}
+
+/** One in-memory store for every video page, so they share a WebContent process. */
+private val mediaDataStore: WKWebsiteDataStore by lazy { WKWebsiteDataStore.nonPersistentDataStore() }
+
 /** Runs [script] in the page and gives back its result as text, or null if it had none. */
 private suspend fun WKWebView.script(script: String): String? =
     suspendCancellableCoroutine { continuation ->
@@ -259,7 +293,8 @@ internal actual fun NativeInlineLoop(
                     mediaTypesRequiringUserActionForPlayback = 0uL
                     // In-memory only: the default store keeps WebKit's cache and cookies on disk,
                     // which would undo the app's choice not to persist media (see AppGraph).
-                    websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore()
+                    // One shared store: a new store per view means a new WebContent process per video.
+                    websiteDataStore = mediaDataStore
                 }
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
                 scrollView.scrollEnabled = false
@@ -278,10 +313,7 @@ internal actual fun NativeInlineLoop(
             }
         }
     DisposableEffect(webView) {
-        onDispose {
-            webView.stopLoading()
-            webView.loadHTMLString("", baseURL = null)
-        }
+        onDispose { webView.tearDownMedia() }
     }
     // Display only: taps must reach the card or post underneath, which opens the player.
     UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)

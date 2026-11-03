@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -13,6 +14,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import platform.AVFoundation.AVAssetImageGenerator
 import platform.AVFoundation.AVURLAsset
+import platform.AVFoundation.cancelLoading
 import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreMedia.CMTimeMakeWithSeconds
@@ -39,23 +41,32 @@ internal object VideoFrames {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun decode(url: String): ImageBitmap? {
-        val asset = AVURLAsset(uRL = NSURL.URLWithString(url) ?: return null, options = null)
-        val generator =
-            AVAssetImageGenerator(asset).apply {
-                appliesPreferredTrackTransform = true
-                maximumSize = CGSizeMake(MAX_EDGE, MAX_EDGE)
+    private fun decode(url: String): ImageBitmap? =
+        // Kotlin's IO threads never drain an autorelease pool of their own, so without one every
+        // decoded frame's UIImage, JPEG data and AVFoundation internals pile up for the session.
+        autoreleasepool {
+            val asset = AVURLAsset(uRL = NSURL.URLWithString(url) ?: return@autoreleasepool null, options = null)
+            val generator =
+                AVAssetImageGenerator(asset).apply {
+                    appliesPreferredTrackTransform = true
+                    maximumSize = CGSizeMake(MAX_EDGE, MAX_EDGE)
+                }
+            try {
+                val cgImage =
+                    generator.copyCGImageAtTime(
+                        CMTimeMakeWithSeconds(FIRST_FRAME_SECONDS, preferredTimescale = TIMESCALE),
+                        actualTime = null,
+                        error = null,
+                    ) ?: return@autoreleasepool null
+                val jpeg = UIImageJPEGRepresentation(UIImage.imageWithCGImage(cgImage), JPEG_QUALITY)
+                CGImageRelease(cgImage)
+                jpeg?.toByteArray()?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
+            } finally {
+                // Give the decoder back now rather than when the collector frees these objects.
+                generator.cancelAllCGImageGeneration()
+                asset.cancelLoading()
             }
-        val cgImage =
-            generator.copyCGImageAtTime(
-                CMTimeMakeWithSeconds(FIRST_FRAME_SECONDS, preferredTimescale = TIMESCALE),
-                actualTime = null,
-                error = null,
-            ) ?: return null
-        val jpeg = UIImageJPEGRepresentation(UIImage.imageWithCGImage(cgImage), JPEG_QUALITY)
-        CGImageRelease(cgImage)
-        return jpeg?.toByteArray()?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
-    }
+        }
 
     private const val MAX_PARALLEL = 2
     private const val MAX_FRAMES = 60
