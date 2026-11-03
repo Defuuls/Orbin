@@ -1,21 +1,19 @@
-# Orbin 187 - Daikon
+# Orbin 188 - Mizuna
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 187
-codename     = "Daikon"
-version_code = 205
+number       = 188
+codename     = "Mizuna"
+version_code = 206
 
-highlight = "iOS videos no longer stop playing after about ten in a row."
+highlight = "Streamlined ThreadViewModel state and hardened multiplatform DataStore storage tests."
 
 summary = [
-  "bump Orbin to 187-Daikon / versionCode 205",
-  "ship the iOS video decoder fix from #774 and the OpenTelemetry build pin from #776",
+  "bump Orbin to 188-Mizuna / versionCode 206",
+  "streamline thread view model state keys and improve DataStore test storage compatibility",
 ]
 
 [changelog]
-Security = [
-  "Build: OpenTelemetry API pinned to 1.67.0 for a tracestate parsing denial-of-service advisory (build tooling only; not in the app).",
-]
-Fixed = [
-  "iOS: videos (WebM and MP4) no longer stop playing after about ten in a row. Leaving a video now releases its player and decoder straight away, only the video on screen can start Picture in Picture, and video thumbnails free their memory as they are made. Still needs confirmation on a device.",
+Refactor = [
+  "Thread: consolidated redundant thread key properties in ThreadViewModel.",
+  "Storage: modernized test suite to use OkioStorage for cross-platform DataStore file operations.",
 ]
