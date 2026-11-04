@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships signed, tag-driven releases. The **current full-client release is v188 — Mizuna** (`v188-Mizuna` / `1.0.188`).
+Orbin ships signed, tag-driven releases. The **current full-client release is v189 — Tatsoi** (`v189-Tatsoi` / `1.0.189`).
 
 For the complete chronological record, use:
 
@@ -22,8 +22,8 @@ fruit era ran **v136 — Apple** through **v167 — Zwetschge**. The contagious-
 Orbin Minimal uses a separate pool (terminal clinical conditions from its own v17). Names must not be
 reused across the two applications.
 
-The current release is **v188 — Mizuna** (`v188-Mizuna`, version `1.0.188`). Changes merged after
-v188 are documented under the CHANGELOG's Unreleased section until the next release is cut.
+The current release is **v189 — Tatsoi** (`v189-Tatsoi`, version `1.0.189`). Changes merged after
+v189 are documented under the CHANGELOG's Unreleased section until the next release is cut.
 
 ## Release eras
 
