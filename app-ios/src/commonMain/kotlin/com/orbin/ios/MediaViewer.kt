@@ -79,7 +79,10 @@ internal fun MediaViewer(
         LaunchedEffect(Unit) { onClose() }
         return
     }
-    val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, files.lastIndex)) { files.size }
+    val pager =
+        rememberPagerState(
+            initialPage = startIndex.coerceIn(0, (files.size - 1).coerceAtLeast(0)),
+        ) { files.size }
     val reportPage by rememberUpdatedState(onPageChanged)
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { reportPage(it) }
@@ -100,8 +103,9 @@ internal fun MediaViewer(
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
         VerticalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
-            MediaPage(files[page], active = page == pager.currentPage)
+            MediaPage(files[page.coerceIn(0, files.lastIndex)], active = page == pager.currentPage)
         }
+        val current = files[pager.currentPage.coerceIn(0, files.lastIndex)]
         Row(
             modifier = Modifier.fillMaxWidth().safeDrawingPadding().padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -113,7 +117,7 @@ internal fun MediaViewer(
                 modifier = Modifier.padding(start = 8.dp),
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SaveButton(files[pager.currentPage], onSave)
+                SaveButton(current, onSave)
                 NextIconAction(
                     imageVector = Icons.Filled.Close,
                     contentDescription = stringResource(Res.string.ios_media_close),
@@ -122,7 +126,6 @@ internal fun MediaViewer(
                 )
             }
         }
-        val current = files[pager.currentPage]
         PencilMenu(
             expanded = pencilMenu,
             onDismiss = { pencilMenu = false },
@@ -207,7 +210,11 @@ private fun MediaPage(
                 }
             }
         webm != null && supportsWebM && active ->
-            NativeWebMPlayer(webm, Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET))
+            NativeWebMPlayer(
+                url = webm,
+                modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
+                active = active,
+            )
         else -> ExternalFile(file)
     }
 }

@@ -216,6 +216,37 @@ class AppLockTest {
         }
 
     @Test
+    fun goingToTheBackgroundDuringAnUnlockAttemptCancelsItAndAllowsUnlockOnReturn() =
+        runTest {
+            val gate = MutableSharedFlow<AuthResult>()
+            settings.settings.value = AppSettings(biometricLockEnabled = true)
+            var calls = 0
+            val lock =
+                AppLock(
+                    settings.settings,
+                    settings::setBiometricLockEnabled,
+                    {
+                        calls++
+                        if (calls == 1) gate.first() else AuthResult.Success
+                    },
+                    backgroundScope,
+                )
+            runCurrent()
+            assertTrue(lock.state.value.unlocking)
+
+            lock.onBackground()
+            assertTrue(lock.state.value.locked)
+            assertTrue(lock.state.value.obscured)
+            assertFalse(lock.state.value.unlocking)
+
+            lock.onForeground()
+            runCurrent()
+            assertFalse(lock.state.value.locked)
+            assertFalse(lock.state.value.obscured)
+            assertEquals(2, calls)
+        }
+
+    @Test
     fun turningTheLockOnNeedsTheOwnerAndTurningItOffDoesNot() =
         runTest {
             val lock = backgroundScope.lock(enabled = false)

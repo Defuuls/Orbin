@@ -2,7 +2,9 @@ package com.orbin.media.video
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -29,8 +31,10 @@ import androidx.media3.ui.PlayerView
 fun InlineLoop(
     url: String,
     modifier: Modifier = Modifier,
+    active: Boolean = true,
 ) {
     val context = LocalContext.current
+    val currentActive by rememberUpdatedState(active)
     val player =
         remember(url) {
             ExoPlayer
@@ -46,7 +50,7 @@ fun InlineLoop(
                     repeatMode = Player.REPEAT_MODE_ONE
                     setMediaItem(MediaItem.fromUri(url))
                     prepare()
-                    playWhenReady = true
+                    playWhenReady = active
                 }
         }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -55,7 +59,7 @@ fun InlineLoop(
             LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_STOP -> player.pause()
-                    Lifecycle.Event.ON_START -> player.play()
+                    Lifecycle.Event.ON_START -> if (currentActive) player.play()
                     else -> {}
                 }
             }
@@ -64,7 +68,13 @@ fun InlineLoop(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player, url) {
+        onDispose {
+            player.stop()
+            player.clearMediaItems()
+            player.release()
+        }
+    }
     AndroidView(
         modifier = modifier,
         factory = { viewContext ->

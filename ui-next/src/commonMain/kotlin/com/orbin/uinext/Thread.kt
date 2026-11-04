@@ -38,8 +38,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -427,18 +430,24 @@ private fun PostView(
                 }
                 if (collapsed) return@Column
                 Gap(8)
-                if (post.spoiler) {
+                var spoilerRevealed by rememberSaveable(post.id) { mutableStateOf(false) }
+                if (post.spoiler && !spoilerRevealed) {
+                    val revealLabel = stringResource(Res.string.next_spoiler_reveal)
                     Box(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .height(44.dp)
                                 .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                                .background(Color.Black.copy(alpha = SPOILER_SCRIM)),
+                                .background(Color.Black.copy(alpha = SPOILER_SCRIM))
+                                .nextClickable(
+                                    onClickLabel = revealLabel,
+                                    onClick = { spoilerRevealed = true },
+                                ),
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         Text(
-                            text = stringResource(Res.string.next_spoiler_reveal),
+                            text = revealLabel,
                             style = NextType.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = Color.White.copy(alpha = 0.72f),

@@ -19,6 +19,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
@@ -53,7 +54,11 @@ fun orbinHttpClient(
     configProvider: NetworkConfigProvider,
     engineAppliesPolicy: Boolean = false,
 ): HttpClient {
-    if (engineAppliesPolicy) return HttpClient(engine)
+    if (engineAppliesPolicy) {
+        return HttpClient(engine).apply {
+            installHtmlResponseLimit()
+        }
+    }
     val config = configProvider.current()
     return HttpClient(engine) {
         install(HttpTimeout) {
@@ -71,7 +76,12 @@ fun orbinHttpClient(
 /** Refuses cleartext under HTTPS-only and sets the policy's headers on every request. */
 fun requestPolicyPlugin(configProvider: NetworkConfigProvider) =
     createClientPlugin("OrbinRequestPolicy") {
-        onRequest { request, _ -> request.applyPolicy(configProvider) }
+        onRequest { request, _ ->
+            if (!request.attributes.contains(ORIGIN_HOST)) {
+                request.attributes.put(ORIGIN_HOST, request.url.host)
+            }
+            request.applyPolicy(configProvider)
+        }
     }
 
 /**
@@ -85,7 +95,8 @@ fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
     val gates = PowGates()
     plugin(HttpSend).intercept { original ->
         if (original.attributes.contains(GATE_REQUEST)) return@intercept execute(original)
-        val gate = gates.forHost(original.url.host)
+        val originHost = original.attributes.getOrNull(ORIGIN_HOST) ?: original.url.host
+        val gate = gates.forHost(originHost)
         // Read before each request goes out, as on Android: a gate cleared after this point was
         // cleared without this request's challenge, which then is not worth mining.
         var clearancesSeen = gate.clearances
@@ -113,8 +124,8 @@ fun HttpClient.installPowBlockGate(configProvider: NetworkConfigProvider) {
                                 if (solved) gate.clearances++
                             }
                         }
-                    termsPage(call) != null -> {
-                        val disclaimer = termsPage(call)!!
+                    termsPage(call, originHost) != null -> {
+                        val disclaimer = termsPage(call, originHost)!!
                         runGate(
                             gateRequest(
                                 disclaimer.withPath(PowBlock.CONFIRM_PATH),
@@ -153,13 +164,23 @@ private class PowGates {
  * wraps this interceptor, so it sees the 302 itself) or the page itself, when the engine followed
  * the redirect natively.
  */
-private fun termsPage(call: HttpClientCall): Url? {
+private fun termsPage(
+    call: HttpClientCall,
+    originHost: String,
+): Url? {
     val url = call.request.url
-    if (url.encodedPath.endsWith(PowBlock.DISCLAIMER_PATH)) return url
+    if (url.encodedPath.endsWith(PowBlock.DISCLAIMER_PATH)) {
+        return url.takeIf {
+            it.protocol == URLProtocol.HTTPS &&
+                it.host.equals(originHost, ignoreCase = true)
+        }
+    }
     val location = call.response.headers[HttpHeaders.Location] ?: return null
     val target = runCatching { URLBuilder(url).takeFrom(location).build() }.getOrElse { return null }
     return target.takeIf {
         call.response.status.value in REDIRECT_CODES &&
+            it.protocol == URLProtocol.HTTPS &&
+            it.host.equals(originHost, ignoreCase = true) &&
             it.encodedPath.endsWith(PowBlock.DISCLAIMER_PATH)
     }
 }
@@ -251,6 +272,7 @@ private class ReplayResponse(
     override val rawContent: ByteReadChannel get() = ByteReadChannel(bytes)
 }
 
+private val ORIGIN_HOST = AttributeKey<String>("OrbinOriginHost")
 private val GATE_REQUEST = AttributeKey<Unit>("OrbinGateRequest")
 
 /** Runs before Ktor's default SaveBody receive phase, including for non-streaming get calls. */

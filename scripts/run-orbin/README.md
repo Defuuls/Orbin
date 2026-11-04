@@ -1,8 +1,3 @@
----
-name: run-orbin
-description: Build, run, and drive the Orbin Android app headlessly. Use when asked to run or start Orbin, launch the app, click through it, take a screenshot of a screen (feed, thread, onboarding, settings), check a UI change in the real app, or run its tests.
----
-
 Orbin is a Kotlin Multiplatform image board client. Where there is no emulator (no `/dev/kvm`), the
 headless driver path is **`scripts/run-orbin/driver.sh`**. It launches the real `MainActivity` under
 Robolectric: the real Hilt graph, providers, DataStore, navigation and live network. It runs a step

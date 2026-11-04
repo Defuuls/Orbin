@@ -211,7 +211,8 @@ private fun SettingRow(
                         if (item.kind == SettingKind.INFO) {
                             Modifier
                         } else {
-                            Modifier.nextClickable(role = Role.Button, onClick = { onActivate(item) })
+                            val role = if (item.kind == SettingKind.TOGGLE) Role.Switch else Role.Button
+                            Modifier.nextClickable(role = role, onClick = { onActivate(item) })
                         },
                     ),
         )

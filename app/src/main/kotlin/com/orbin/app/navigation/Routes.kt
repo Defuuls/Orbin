@@ -44,7 +44,7 @@ sealed interface Route {
         val provider: String,
         val board: String,
         val thread: Long,
-        val startIndex: Int,
+        val startIndex: Int = 0,
         /**
          * Which file to open at, when the caller knows the attachment but not its index in the
          * thread. A board's media wall is such a caller: it holds a catalog's files, not the

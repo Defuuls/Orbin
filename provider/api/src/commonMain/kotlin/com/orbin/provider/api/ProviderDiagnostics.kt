@@ -8,6 +8,7 @@ import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import kotlinx.coroutines.CancellationException
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.TimeSource
@@ -89,7 +90,16 @@ class InstrumentedImageBoardProvider(
         block: suspend () -> T,
     ): T {
         val started = TimeSource.Monotonic.markNow()
-        val result = runCatching { block() }
+        val result =
+            try {
+                Result.success(block())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Throwable,
+            ) {
+                Result.failure(e)
+            }
         val outcome =
             result.fold(
                 onSuccess = { SUCCESS_OUTCOME },

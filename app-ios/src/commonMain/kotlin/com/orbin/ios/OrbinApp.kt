@@ -58,17 +58,19 @@ fun OrbinApp(
         onBackCompleted = { browser.back() },
     )
 
-    // A home-screen quick action opens its tab, as an Android app shortcut does.
-    val quickAction by QuickActions.pending.collectAsState()
-    LaunchedEffect(quickAction) {
-        quickAction?.let { tab ->
-            browser.openTab(tab)
-            QuickActions.opened()
-        }
-    }
-
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
+
+    // A home-screen quick action opens its tab, as an Android app shortcut does.
+    val quickAction by QuickActions.pending.collectAsState()
+    LaunchedEffect(quickAction, lockState.locked, lockState.obscured) {
+        if (!lockState.locked && !lockState.obscured) {
+            quickAction?.let { tab ->
+                browser.openTab(tab)
+                QuickActions.opened()
+            }
+        }
+    }
     val fontScale = rememberSystemFontScale()
     val dark =
         when (settings.themeMode) {

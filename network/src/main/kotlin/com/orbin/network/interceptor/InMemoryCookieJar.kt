@@ -23,22 +23,28 @@ class InMemoryCookieJar : CookieJar {
         cookies: List<Cookie>,
     ) {
         if (cookies.isEmpty()) return
-        val host = url.host
-        val list = store.getOrPut(host) { mutableListOf() }
-        synchronized(list) {
+        val now = System.currentTimeMillis()
+        store.compute(url.host) { _, existing ->
+            val merged = existing?.toMutableList() ?: mutableListOf()
             for (cookie in cookies) {
-                list.removeAll { it.name == cookie.name && it.path == cookie.path }
-                list.add(cookie)
+                merged.removeAll { it.name == cookie.name && it.path == cookie.path }
+                if (cookie.expiresAt > now) {
+                    merged.add(cookie)
+                }
             }
+            merged.removeAll { it.expiresAt <= now }
+            merged.takeIf { it.isNotEmpty() }
         }
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        val list = store[url.host] ?: return emptyList()
         val now = System.currentTimeMillis()
-        return synchronized(list) {
-            list.removeAll { it.expiresAt < now }
-            list.filter { it.matches(url) }
+        var matched: List<Cookie> = emptyList()
+        store.computeIfPresent(url.host) { _, existing ->
+            val active = existing.filter { it.expiresAt > now }.toMutableList()
+            matched = active.filter { it.expiresAt > now && it.matches(url) }
+            active.takeIf { it.isNotEmpty() }
         }
+        return matched
     }
 }

@@ -47,7 +47,7 @@ class PowBlockInterceptor : Interceptor {
                     clearancesSeen = cleared.first
                     response = cleared.second
                 }
-                response.isTosRedirect() -> {
+                response.isTosRedirect(original.url) -> {
                     val accepted = acceptTos(chain, response.request.url)
                     response.close()
                     if (!accepted) break
@@ -171,7 +171,14 @@ class PowBlockInterceptor : Interceptor {
         return PowBlock.isChallenge(peekBody(MAX_INTERSTITIAL_BYTES).string())
     }
 
-    private fun Response.isTosRedirect(): Boolean = request.url.encodedPath.endsWith(DISCLAIMER_PATH)
+    private fun Response.isTosRedirect(originUrl: HttpUrl): Boolean {
+        val location = header("Location")
+        val target = if (location != null) request.url.resolve(location) else request.url
+        if (target == null) return false
+        return target.host.equals(originUrl.host, ignoreCase = true) &&
+            (target.isHttps || target.scheme.equals(originUrl.scheme, ignoreCase = true)) &&
+            (target.encodedPath.endsWith(DISCLAIMER_PATH) || target.encodedPath.contains("terms.html"))
+    }
 
     private companion object {
         const val MAX_ROUNDS = PowBlock.MAX_ROUNDS

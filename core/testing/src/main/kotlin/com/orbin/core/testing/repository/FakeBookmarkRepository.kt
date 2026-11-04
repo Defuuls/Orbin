@@ -35,6 +35,10 @@ class FakeBookmarkRepository(
         state.value = state.value + (bookmark.key to bookmark)
     }
 
+    override suspend fun replaceBookmarks(bookmarks: List<Bookmark>) {
+        state.value = bookmarks.associateBy { it.key }
+    }
+
     override suspend fun removeBookmark(key: ThreadKey) {
         state.value = state.value - key
     }

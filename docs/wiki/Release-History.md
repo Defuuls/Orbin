@@ -1,6 +1,6 @@
 # Release History
 
-Orbin ships signed, tag-driven releases. The **current full-client release is v135 — Rhinovirus**.
+Orbin ships signed, tag-driven releases. The **current full-client release is v188 — Mizuna** (`v188-Mizuna` / `1.0.188`).
 
 For the complete chronological record, use:
 
@@ -11,25 +11,26 @@ This wiki page is an **era guide and narrative**, not a second changelog. Keepin
 entries synchronized in two places creates documentation drift, so the repository CHANGELOG is the
 single detailed history.
 
-## Current era: fruits
+## Current era: unusual vegetables
 
-From **v136**, full Orbin releases are named after **fruits**, listed under `[fruit]` in
+From **v168**, full Orbin releases are named after **unusual vegetables**, listed under `[vegetable]` in
 [`release/codenames.txt`](https://github.com/Defuuls/Orbin/blob/main/release/codenames.txt). The
-contagious-disease era ran **v129 — Measles** through **v135 — Rhinovirus**. The Japanese-name era
-ran **v100 — Sakura** through **v128 — Rei**.
+fruit era ran **v136 — Apple** through **v167 — Zwetschge**. The contagious-disease era ran
+**v129 — Measles** through **v135 — Rhinovirus**. The Japanese-name era ran **v100 — Sakura** through
+**v128 — Rei**.
 
 Orbin Minimal uses a separate pool (terminal clinical conditions from its own v17). Names must not be
 reused across the two applications.
 
-The current release, **v135 — Rhinovirus**, closes the disease-naming era. Changes merged after v135
-are documented under the CHANGELOG's Unreleased section until the next release is cut (expected first
-fruit-era tag: **v136 — Apple**, unless another unused pool name is chosen).
+The current release is **v188 — Mizuna** (`v188-Mizuna`, version `1.0.188`). Changes merged after
+v188 are documented under the CHANGELOG's Unreleased section until the next release is cut.
 
 ## Release eras
 
 | Range | Theme | Notes |
 | --- | --- | --- |
-| v136+ | Fruits | Current naming era; `[fruit]` pool in `release/codenames.txt` |
+| v168+ | Unusual vegetables | Current naming era; `[vegetable]` pool in `release/codenames.txt` |
+| v136–v167 | Fruits | Closed at v167 — Zwetschge; shipped names kept under `[fruit]` |
 | v129–v135 | Highly contagious diseases | Closed at v135 — Rhinovirus; shipped names kept under `[disease]` |
 | v100–v128 | Popular Japanese female names | Closed at v128 — Rei |
 | v91–v99 | Pasta | Short transitional era after the star releases |

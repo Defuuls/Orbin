@@ -23,7 +23,7 @@ Voice is short and direct, slightly filmic: product copy speaks like a projectio
 - Do not add gradients, inner shadows, outlines, or decorative rings.
 - Retire the orbital / planetary mark for new first-party surfaces.
 
-Production vector path (to be updated when the icon lands): `app/src/main/res/drawable/ic_launcher_orbit_foreground.xml` (rename when the asset is swapped).
+Production vector paths: `app/src/main/res/drawable/ic_launcher_aperture_foreground.xml` (foreground) and `app/src/main/res/drawable/ic_launcher_monochrome.xml` (monochrome).
 
 ## Color system
 

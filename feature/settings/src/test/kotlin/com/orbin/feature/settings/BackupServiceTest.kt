@@ -125,7 +125,7 @@ class BackupServiceTest {
             ).isEqualTo("kotlin")
         }
 
-    /** Importing must merge, never replace: a restore cannot be allowed to destroy existing data. */
+    /** Importing must merge by default, while RestoreMode.REPLACE atomically replaces existing collections. */
     @Test
     fun importAddsToExistingBookmarksRatherThanReplacingThem() =
         runTest {
@@ -138,6 +138,22 @@ class BackupServiceTest {
 
             assertThat(destination.observeBookmarks().first().map { it.key.thread.value })
                 .containsExactly(1L, 2L)
+        }
+
+    @Test
+    fun importWithReplaceModeReplacesExistingCollections() =
+        runTest {
+            val exported =
+                service(FakeSettingsRepository(), bookmarks = FakeBookmarkRepository(listOf(bookmark("g", 1L))))
+                    .exportToJson("test")
+
+            val destination = FakeBookmarkRepository(listOf(bookmark("a", 2L)))
+            service(FakeSettingsRepository(), bookmarks = destination)
+                .importFromJson(exported, mode = RestoreMode.REPLACE)
+                .getOrThrow()
+
+            assertThat(destination.observeBookmarks().first().map { it.key.thread.value })
+                .containsExactly(1L)
         }
 
     /**
@@ -244,6 +260,10 @@ private class FakeBookmarkRepository(
 
     override suspend fun addBookmark(bookmark: Bookmark) {
         state.value = state.value.filterNot { it.key == bookmark.key } + bookmark
+    }
+
+    override suspend fun replaceBookmarks(bookmarks: List<Bookmark>) {
+        state.value = bookmarks
     }
 
     override suspend fun removeBookmark(key: ThreadKey) {

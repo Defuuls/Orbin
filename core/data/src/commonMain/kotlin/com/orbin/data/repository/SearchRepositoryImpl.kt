@@ -84,6 +84,12 @@ class SearchRepositoryImpl(
     override suspend fun saveSearch(search: SavedSearch): Long =
         withContext(ioDispatcher) { savedSearchDao.save(search.toEntity()) }
 
+    override suspend fun replaceSavedSearches(searches: List<SavedSearch>) {
+        withContext(ioDispatcher) {
+            savedSearchDao.replaceAll(searches.map { it.toEntity() })
+        }
+    }
+
     override suspend fun deleteSearch(id: Long) {
         withContext(ioDispatcher) { savedSearchDao.deleteById(id) }
     }

@@ -3,6 +3,7 @@ package com.orbin.data.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.orbin.data.database.entity.SavedSearchEntity
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,15 @@ interface SavedSearchDao {
 
     @Upsert
     suspend fun save(entity: SavedSearchEntity): Long
+
+    @Upsert
+    suspend fun upsertAll(entities: List<SavedSearchEntity>)
+
+    @Transaction
+    suspend fun replaceAll(entities: List<SavedSearchEntity>) {
+        clear()
+        upsertAll(entities)
+    }
 
     @Delete
     suspend fun delete(entity: SavedSearchEntity)

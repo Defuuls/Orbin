@@ -71,6 +71,10 @@ class SearchRepositoryTest {
             return id
         }
 
+        override suspend fun upsertAll(entities: List<SavedSearchEntity>) {
+            entities.forEach { save(it) }
+        }
+
         override suspend fun delete(entity: SavedSearchEntity) {
             deleteById(entity.id)
         }

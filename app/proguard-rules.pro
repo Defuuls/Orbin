@@ -2,6 +2,7 @@
 
 # kotlinx.serialization: keep serializers for @Serializable classes.
 -keepattributes *Annotation*, InnerClasses
+-keepattributes RuntimeVisibleAnnotations,AnnotationDefault
 -dontnote kotlinx.serialization.**
 -keepclassmembers class **$$serializer { *; }
 -keepclasseswithmembers class * {
@@ -10,6 +11,29 @@
 -keep,includedescriptorclasses class com.orbin.**$$serializer { *; }
 -keepclassmembers class com.orbin.** {
     *** Companion;
+}
+
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1> {
+    static <1>$Companion Companion;
+}
+
+-if @kotlinx.serialization.Serializable class ** {
+    static **$* *;
+}
+-keepnames class <2>$<3>
+
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1>$Companion {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+-if @kotlinx.serialization.Serializable class ** {
+    public static ** INSTANCE;
+}
+-keepclassmembers class <1> {
+    public static <1> INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
 }
 
 # Keep navigation route classes (referenced reflectively by type-safe nav).

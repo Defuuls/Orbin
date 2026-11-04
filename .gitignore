@@ -45,12 +45,17 @@ secrets.properties
 *.env
 _site/
 .agents/
+.antigravity/
 .claude/
 .codex/
 .cursor/
 .gemini/
 .windsurf/
 .aider*
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+**/SKILL.md
 
 # Python
 __pycache__/

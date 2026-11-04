@@ -90,6 +90,7 @@ class SettingsRowsTest {
                 .single { it.id == SettingIds.COVER_VIOLENT }
         assertEquals(OFF_LABEL, row.value)
         assertEquals(SettingKind.TOGGLE, row.kind)
+        assertEquals(false, row.checked)
     }
 
     @Test

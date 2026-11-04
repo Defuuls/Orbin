@@ -163,7 +163,7 @@ fun GalleryScreen(
                 modifier = Modifier.fillMaxSize(),
                 beyondViewportPageCount = 0,
             ) { page ->
-                val item = media[page]
+                val item = media[page.coerceIn(0, media.lastIndex)]
                 val isNear = kotlin.math.abs(page - pagerState.settledPage) <= 1
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.Black),
@@ -241,13 +241,14 @@ fun GalleryScreen(
                         modifier = Modifier.semantics { contentDescription = closeLabel },
                     )
                     Spacer(modifier = Modifier.weight(1f))
+                    val currentIndex = pagerState.currentPage.coerceIn(0, media.lastIndex)
                     Text(
-                        text = "${pagerState.currentPage + 1} / ${media.size}",
+                        text = "${currentIndex + 1} / ${media.size}",
                         style = NextType.footnote,
                         color = next.muted,
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    val currentItem = media[pagerState.currentPage]
+                    val currentItem = media[currentIndex]
                     val isImage = currentItem.type == MediaType.IMAGE
                     if (isImage) {
                         InlineAction(

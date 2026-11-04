@@ -11,20 +11,21 @@ The architecture's executable enforcement lives in [engineering quality gates](q
 
 | Layer | Modules | Responsibility | Android? |
 | --- | --- | --- | --- |
-| Presentation | `app`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | yes; `ui-next`, `core:ui` and `core:designsystem` shared with iOS† |
+| Presentation | `app`, `app-ios`, `feature:*`, `ui-next`, `core:ui`, `core:designsystem` | Compose UI, navigation, ViewModels, immutable UI state | `app`, `feature:*` yes; `ui-next`, `core:ui` and `core:designsystem` shared with iOS†; `app-ios` iOS |
+| Composition | `core:graph` | Shared `kotlin-inject` dependency graph (`SharedGraph`) consumed by `:app` and `:app-ios` | shared (Android + iOS) |
 | Domain | `domain` | Use cases, repository **contracts** | no* |
-| Data | `data`, `storage`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | `data`, `network`, `media` yes; `storage` shared with iOS‡; `provider:*` no |
+| Data | `core:data`, `data`, `storage`, `core:network`, `network`, `media`, `provider:*` | Repository implementations, Room/DataStore, HTTP, engines | `data`, `network`, `media` yes; `core:data`, `storage`, `core:network` and `provider:*` shared with iOS‡ |
 | Model | `core:model` | Pure domain entities shared by all layers | no |
 | Cross-cutting | `core:common`, `core:common-android`, `core:testing` | Result types, dispatchers, test fixtures | `core:common` no; others yes |
 
-\* `domain`, `provider:*`, `core:common` and `core:model` are Kotlin Multiplatform
+\* `domain`, `provider:*`, `core:network`, `core:common` and `core:model` are Kotlin Multiplatform
 (`orbin.kmp.library`: a JVM target for Android plus iOS targets), shared with the iOS app. The
 build fails if an Android dependency leaks into them, and the iOS targets reject JVM-only APIs.
-They carry no DI annotations: the Hilt bindings for domain use cases live in `data`
-(`DomainModule`), the providers are registered in `app` (`ProvidersModule`) over a Ktor
-`HttpClient` that `network` builds on the app's OkHttp client, and the Android side of `core:common` — dispatcher qualifiers and their Hilt
-module, external links, the app-lock signal — lives in `core:common-android`, which re-exports
-`core:common`. `domain` exposes `PagingData` through the multiplatform `paging-common`.
+Shared repositories, stores, and providers are wired once in `:core:graph` (`SharedGraph` via
+`kotlin-inject`) and bridged into Hilt on Android via `SharedGraphModule` in `:app`. The Android
+side of `core:common` — dispatcher qualifiers and their Hilt module, external links, the app-lock
+signal — lives in `core:common-android`, which re-exports `core:common`. `domain` exposes
+`PagingData` through the multiplatform `paging-common`.
 
 ‡ `storage` is the Room database shared with iOS (`orbin.kmp.room`): entities, DAOs, the
 `OrbinDatabase` schema (exported to `storage/schemas`) and the repositories built only on it
@@ -107,8 +108,7 @@ graph TD
 ### The interface seam
 
 `ui-next` holds every screen the app shows. It imports no app type — no model, no repository, no
-view model — even though the feature convention plugin puts `core:model` and `core:ui` on its
-classpath; the design system is all it actually uses. A screen
+view model — and depends only on `:core:designsystem` (plus Compose resources and coroutines). A screen
 takes already-formatted rows and hands back an id; the feature module owns the join to its view
 model, and anything behavioural — thumbnails, post bodies, video — is passed in through a slot so
 it is the shipped component rather than a copy of one. That is why the same feed row serves the
@@ -116,10 +116,11 @@ subscribed feed and every board catalog, why the screens can be screenshot witho
 and why a change to how a thread renders cannot reach into how one is loaded.
 
 ### The provider seam
-All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). The app
-holds a `Set<ImageBoardProvider>` (Hilt multibinding) and a `ProviderRegistry` resolves the active
-one. `provider:vichan` (4chan) and `provider:lynxchan` (BBW Chan) are the two engines shipped
-today; adding TinyIB/etc. means adding another `provider:*` module — **nothing else changes**.
+All engine-specific behavior is hidden behind `ImageBoardProvider` (`provider:api`). `:core:graph`
+wires the active `Set<ImageBoardProvider>` (`orbinProviders`) and `ProviderRegistry` resolves the
+active one. Orbin ships two engine modules today — `provider:vichan` (Vichan engine) and
+`provider:lynxchan` (LynxChan engine); adding TinyIB/etc. means adding another `provider:*` module —
+**nothing else changes**.
 Every provider result is checked against the shared [provider contract](../provider-api/contract.md)
 at the registry boundary. See
 [`docs/provider-api/adding-a-provider.md`](../provider-api/adding-a-provider.md).

@@ -39,6 +39,24 @@ class BoardPreferencesStore(
         subscribed: Boolean,
     ) = setBoardFlag(subscribedBoards(provider), board, subscribed)
 
+    override suspend fun replaceFavoriteBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        dataStore.edit { preferences ->
+            preferences[favoriteBoards(provider)] = boards.map { it.value }.toSet()
+        }
+    }
+
+    override suspend fun replaceSubscribedBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        dataStore.edit { preferences ->
+            preferences[subscribedBoards(provider)] = boards.map { it.value }.toSet()
+        }
+    }
+
     override fun observeFeedThreadLimit(
         provider: ProviderId,
         board: BoardId,

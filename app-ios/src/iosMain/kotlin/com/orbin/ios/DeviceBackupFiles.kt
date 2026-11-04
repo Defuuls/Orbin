@@ -85,7 +85,10 @@ class DeviceBackupFiles : BackupFiles {
                 val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeJSON), asCopy = true)
                 val delegate =
                     PickerDelegate { url ->
-                        if (!continuation.isActive) return@PickerDelegate
+                        if (!continuation.isActive) {
+                            url?.let { NSFileManager.defaultManager.removeItemAtURL(it, error = null) }
+                            return@PickerDelegate
+                        }
                         pickerDelegate = null
                         continuation.resume(url)
                     }
@@ -102,9 +105,13 @@ class DeviceBackupFiles : BackupFiles {
                 if (continuation.isActive) presenter.presentViewController(picker, animated = true, completion = null)
             } ?: return null
         return withContext(Dispatchers.IO) {
-            val path = checkNotNull(selected.path) { "Could not read the selected backup" }.toPath()
-            FileSystem.SYSTEM.source(path).buffer().use {
-                it.readBoundedBytes(MAX_BACKUP_INPUT_BYTES).decodeToString(throwOnInvalidSequence = true)
+            try {
+                val path = checkNotNull(selected.path) { "Could not read the selected backup" }.toPath()
+                FileSystem.SYSTEM.source(path).buffer().use {
+                    it.readBoundedBytes(MAX_BACKUP_INPUT_BYTES).decodeToString(throwOnInvalidSequence = true)
+                }
+            } finally {
+                NSFileManager.defaultManager.removeItemAtURL(selected, error = null)
             }
         }
     }

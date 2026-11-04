@@ -46,6 +46,8 @@ class BookmarkRepositoryImpl(
 
     override suspend fun addBookmark(bookmark: Bookmark) = dao.upsert(bookmark.toEntity())
 
+    override suspend fun replaceBookmarks(bookmarks: List<Bookmark>) = dao.replaceAll(bookmarks.map { it.toEntity() })
+
     override suspend fun removeBookmark(key: ThreadKey) =
         dao.deleteByKey(key.provider.value, key.board.value, key.thread.value)
 

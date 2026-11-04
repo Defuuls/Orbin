@@ -95,10 +95,18 @@ fun OrbinNavHost(
         composable<Route.BoardMedia> { backStackEntry ->
             NextAllMediaScreen(
                 title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
-                onOpenMedia = { provider, board, thread, _ ->
-                    openThread(provider, board, thread, "No.$thread")
+                onOpenMedia = { provider, board, thread, attachmentId ->
+                    navController.navigate(
+                        Route.Gallery(
+                            provider = provider,
+                            board = board,
+                            thread = thread,
+                            startIndex = 0,
+                            attachmentId = attachmentId,
+                        ),
+                    )
                 },
-                onOpenSaved = { navController.navigate(Route.Downloads) },
+                onOpenSaved = { navController.navigateToTab(Route.Downloads) },
             )
         }
 

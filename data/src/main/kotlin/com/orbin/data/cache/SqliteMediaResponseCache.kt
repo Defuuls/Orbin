@@ -10,13 +10,17 @@ import java.util.UUID
 
 /** Chunked media store over an encrypted SQLCipher database; no whole-file byte arrays. */
 internal class SqliteMediaResponseCache(
-    private val database: () -> SupportSQLiteDatabase,
+    private val openDatabase: () -> SupportSQLiteDatabase,
     private val maxBytes: Long = DEFAULT_MAX_BYTES,
     private val maxEntryBytes: Long = DEFAULT_MAX_ENTRY_BYTES,
 ) : MediaResponseCache {
+    private val lock = this
     private val readers = mutableMapOf<String, Int>()
     private val writers = mutableSetOf<String>()
+    private val retired = HashSet<String>()
     private var generation = 0L
+
+    private fun database(): SupportSQLiteDatabase = synchronized(lock) { openDatabase() }
 
     @Synchronized
     override fun open(
@@ -43,11 +47,11 @@ internal class SqliteMediaResponseCache(
                     )
                 }
         if (row.expires <= nowMillis) {
-            if (row.token !in readers) delete(row.token)
+            retire(row.token)
             return null
         }
-        readers[row.token] = (readers[row.token] ?: 0) + 1
         db.execSQL("UPDATE media_entries SET touched = ? WHERE token = ?", arrayOf<Any?>(nowMillis, row.token))
+        readers[row.token] = (readers[row.token] ?: 0) + 1
         return MediaResponseCache.Entry(
             row.type,
             row.bytes,
@@ -95,7 +99,14 @@ internal class SqliteMediaResponseCache(
                             closed = true
                             pending.clear()
                             val count = (readers[row.token] ?: 1) - 1
-                            if (count == 0) readers.remove(row.token) else readers[row.token] = count
+                            if (count <= 0) {
+                                readers.remove(row.token)
+                                if (retired.remove(row.token)) {
+                                    delete(row.token)
+                                }
+                            } else {
+                                readers[row.token] = count
+                            }
                         }
                     }
             },
@@ -114,6 +125,24 @@ internal class SqliteMediaResponseCache(
         contentRange: String?,
     ): MediaResponseCache.Write {
         val db = database()
+        val activeForKey =
+            db
+                .query(
+                    "SELECT token FROM media_entries WHERE cache_key = ?",
+                    arrayOf<Any?>(key),
+                ).use { cursor ->
+                    var active = false
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(0) in writers) {
+                            active = true
+                            break
+                        }
+                    }
+                    active
+                }
+        if (activeForKey) {
+            throw IOException("Cache write already in progress for key")
+        }
         val token = UUID.randomUUID().toString()
         val epoch = generation
         db.execSQL(
@@ -211,6 +240,7 @@ internal class SqliteMediaResponseCache(
             db.endTransaction()
         }
         writers.clear()
+        retired.clear()
     }
 
     @Synchronized
@@ -241,7 +271,8 @@ internal class SqliteMediaResponseCache(
         }
 
     private fun retire(token: String) {
-        if (token in readers) {
+        if ((readers[token] ?: 0) > 0) {
+            retired.add(token)
             database().execSQL("UPDATE media_entries SET complete = 0 WHERE token = ?", arrayOf<Any?>(token))
         } else {
             delete(token)
@@ -249,6 +280,7 @@ internal class SqliteMediaResponseCache(
     }
 
     private fun delete(token: String) {
+        retired.remove(token)
         val db = database()
         val ownsTransaction = !db.inTransaction()
         if (ownsTransaction) db.beginTransaction()

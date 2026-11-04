@@ -97,25 +97,27 @@ class TinyIbProvider(
 - Only advertise a capability in `capabilities` if the corresponding method is implemented.
 - Return fully resolved models (absolute URLs, parsed comments).
 
-## 6. Register it in the app
+## 6. Register it in the shared graph
 
-The provider module carries no DI annotations. On Android, contribute it to the provider set from
-`app/src/main/kotlin/com/orbin/app/di/ProvidersModule.kt`, using the shared Ktor `HttpClient`
-(which runs on the app's OkHttp client, so DoH and the HTTPS-only policy apply):
+The provider module carries no DI annotations. Orbin ships Vichan (`:provider:vichan`) and LynxChan
+(`:provider:lynxchan`) engines, wired once in `:core:graph` (`core/graph/src/commonMain/kotlin/com/orbin/graph/SharedGraph.kt`)
+inside `orbinProviders(...)` over the shared Ktor `HttpClient` (which runs on OkHttp on Android and
+Darwin on iOS, with the shared request policy from `:core:network`):
 
 ```kotlin
-@Provides
-@IntoSet
-@Singleton
-fun providesTinyIbProvider(
+fun orbinProviders(
     client: HttpClient,
-    json: Json,
-    @Dispatcher(OrbinDispatcher.IO) io: CoroutineDispatcher,
-): ImageBoardProvider = TinyIbProvider(KtorTinyIbApi(client, "https://example.org/api/", json), io)
+    json: Json = OrbinJson,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+): List<ImageBoardProvider> = listOf(
+    // ...
+    TinyIbProvider(KtorTinyIbApi(client, "https://example.org/api/", json), dispatcher),
+)
 ```
 
-Add the module to the app's dependencies in `app/build.gradle.kts`. The provider now appears in
-the `ProviderRegistry` and the provider picker automatically.
+Add the module to `core/graph/build.gradle.kts` (`implementation(project(":provider:tinyib"))`).
+Both `:app` (via `SharedGraphModule`) and `:app-ios` (via `AppGraph`) consume `SharedGraph`, so the
+provider appears in `ProviderRegistry` and the provider picker on both platforms automatically.
 
 ## 7. Test it
 
@@ -130,6 +132,6 @@ the `ProviderRegistry` and the provider picker automatically.
 - [ ] Mapper produces domain models with absolute URLs and parsed comments
 - [ ] `ImageBoardProvider` implemented; all failures mapped to `ProviderException`
 - [ ] `capabilities` reflect only implemented features
-- [ ] `@IntoSet` registration added to `ProvidersModule`; module wired into `:app`
+- [ ] Registered in `orbinProviders` in `:core:graph`; module wired into `core/graph/build.gradle.kts`
 - [ ] Unit + `MockEngine` transport tests passing
 - [ ] Compiles for iOS (the Shared code CI job)

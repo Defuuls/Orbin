@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /** Proves the device's owner is here: Face ID, Touch ID or the passcode on iOS. */
@@ -74,6 +75,8 @@ class AppLock(
                     }
                 } else if (!on) {
                     // Turning it off lets the reader in; turning it on waits for the background.
+                    attempt?.cancel()
+                    attempt = null
                     _state.update { LockState(obscured = !foreground) }
                 }
             }
@@ -87,6 +90,7 @@ class AppLock(
         return scope
             .launch {
                 val result = authenticator.authenticate()
+                if (!isActive) return@launch
                 _state.update {
                     when (result) {
                         AuthResult.Success -> it.copy(locked = false, unlocking = false)
@@ -112,8 +116,10 @@ class AppLock(
     fun onBackground() {
         foreground = false
         if (!enabled) return
+        attempt?.cancel()
+        attempt = null
         askOnReturn = true
-        _state.update { it.copy(locked = true, obscured = true, message = null) }
+        _state.value = LockState(locked = true, obscured = true, unlocking = false)
     }
 
     /** The app is back on screen: show it, and ask to unlock it if it was in the background. */

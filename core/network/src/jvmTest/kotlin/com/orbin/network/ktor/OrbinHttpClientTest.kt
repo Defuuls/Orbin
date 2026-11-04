@@ -161,6 +161,62 @@ class OrbinHttpClientTest {
     }
 
     @Test
+    fun `enforces html limit even when engine applies policy`() {
+        val client =
+            orbinHttpClient(
+                MockEngine {
+                    respond("x".repeat(PowBlock.MAX_INTERSTITIAL_BYTES.toInt() + 1), headers = HTML)
+                },
+                { config },
+                engineAppliesPolicy = true,
+            )
+        try {
+            assertThrows(IOException::class.java) {
+                runBlocking { client.get("https://a.example.org/").bodyAsText() }
+            }
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun `ignores cross-origin or non-https terms redirects`() {
+        val locations =
+            listOf(
+                "https://evil.example/.static/pages/disclaimer.html",
+                "http://8chan.example/.static/pages/disclaimer.html",
+            )
+        for (location in locations) {
+            var confirmHits = 0
+            val client =
+                orbinHttpClient(
+                    MockEngine { request ->
+                        when {
+                            request.url.encodedPath.endsWith("/.static/pages/confirmed.html") -> {
+                                confirmHits++
+                                respond("ok")
+                            }
+                            request.url.encodedPath == "/boards.js" ->
+                                respond(
+                                    "",
+                                    HttpStatusCode.Found,
+                                    headersOf(HttpHeaders.Location, location),
+                                )
+                            else -> respond("landed")
+                        }
+                    },
+                    { config },
+                )
+            try {
+                runBlocking { client.get("https://8chan.example/boards.js?json=1") }
+                assertThat(confirmHits).isEqualTo(0)
+            } finally {
+                client.close()
+            }
+        }
+    }
+
+    @Test
     fun `clearance response bodies are discarded without saving`() {
         var cleared = false
         val client =

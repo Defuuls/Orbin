@@ -89,4 +89,12 @@ class RequestThrottlerTest {
         throttler.release()
         assertThat(throttler.acquiresWithin()).isTrue()
     }
+
+    @Test
+    fun `parseRetryAfterMs is capped at 60 seconds`() {
+        val throttler = throttler()
+
+        assertThat(throttler.parseRetryAfterMs("3600")).isEqualTo(60_000L)
+        assertThat(throttler.parseRetryAfterMs("30")).isEqualTo(30_000L)
+    }
 }

@@ -7,8 +7,11 @@ import kotlinx.cinterop.usePinned
 import platform.Foundation.NSData
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileProtectionCompleteUntilFirstUserAuthentication
+import platform.Foundation.NSFileProtectionKey
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
+import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUUID
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.create
@@ -104,10 +107,24 @@ class DeviceMediaStore : MediaStore {
                 .map { it.replace("..", "_").trim() }
                 .filter { it.isNotEmpty() && it != "." }
                 .joinToString("/")
-        val directory = NSURL.fileURLWithPath("$basePath/Orbin/$cleanFolder", isDirectory = true)
-        manager.createDirectoryAtURL(directory, withIntermediateDirectories = true, attributes = null, error = null)
+        val rootPath = "$basePath/Orbin"
+        val rootDirectory = NSURL.fileURLWithPath(rootPath, isDirectory = true)
+        val directory = NSURL.fileURLWithPath("$rootPath/$cleanFolder", isDirectory = true)
+        val protection =
+            mapOf<Any?, Any?>(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication)
+        manager.createDirectoryAtURL(
+            directory,
+            withIntermediateDirectories = true,
+            attributes = protection,
+            error = null,
+        )
+        rootDirectory.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
+        directory.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
+        manager.setAttributes(attributes = protection, ofItemAtPath = rootPath, error = null)
+        directory.path?.let { manager.setAttributes(attributes = protection, ofItemAtPath = it, error = null) }
         val destination = checkNotNull(freeName(directory, fileName)) { "No file name free for $fileName" }
         check(bytes.toNSData().writeToURL(destination, atomically = true)) { "Could not write $fileName" }
+        destination.path?.let { manager.setAttributes(attributes = protection, ofItemAtPath = it, error = null) }
     }
 
     /** [fileName] in [directory], or "name (2).ext" and so on when a file of that name is there. */

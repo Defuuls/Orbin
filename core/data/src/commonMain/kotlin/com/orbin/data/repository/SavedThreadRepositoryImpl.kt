@@ -16,11 +16,15 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import okio.FileSystem
+import okio.Path
 import kotlin.time.Clock
 
 class SavedThreadRepositoryImpl(
     private val savedThreadDao: SavedThreadDao,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val storageDir: Path? = null,
+    private val fileSystem: FileSystem = com.orbin.data.util.defaultFileSystem,
 ) : SavedThreadRepository {
     override fun observeSaved(): Flow<List<SavedThreadSummary>> =
         savedThreadDao.observeSavedThreads().map { threads ->
@@ -60,6 +64,17 @@ class SavedThreadRepositoryImpl(
     override suspend fun forget(key: ThreadKey) {
         withContext(ioDispatcher) {
             savedThreadDao.delete(key.provider.value, key.board.value, key.thread.value)
+            val root = storageDir
+            if (root != null) {
+                val safeSegment =
+                    "${key.provider.value}_${key.board.value}_${key.thread.value}"
+                        .map { if (it.isLetterOrDigit() || it == '_' || it == '-') it else '_' }
+                        .joinToString("")
+                val dir = root / safeSegment
+                if (dir != root && dir.parent == root) {
+                    fileSystem.deleteRecursively(dir, mustExist = false)
+                }
+            }
         }
     }
 }

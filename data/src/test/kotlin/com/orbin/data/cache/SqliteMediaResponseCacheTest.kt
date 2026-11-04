@@ -100,4 +100,19 @@ class SqliteMediaResponseCacheTest {
         reading.source.buffer().use { assertThat(it.readByteArray()).hasLength(8) }
         assertThat(cache.usageBytes()).isAtMost(16)
     }
+
+    @Test
+    fun `retired entry is deleted once its active reader closes`() {
+        cache.start("k", "image/gif", Long.MAX_VALUE).apply {
+            append(ByteArray(8))
+            commit()
+        }
+        val reading = cache.open("k", 0)!!
+        cache.start("k", "image/gif", Long.MAX_VALUE).apply {
+            append(ByteArray(8))
+            commit()
+        }
+        reading.source.buffer().use { assertThat(it.readByteArray()).hasLength(8) }
+        assertThat(cache.usageBytes()).isEqualTo(8)
+    }
 }
