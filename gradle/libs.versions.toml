@@ -1,6 +1,6 @@
 [versions]
 # Android / Build
-agp = "9.4.1"
+agp = "9.5.0"
 # Kotlin 2.4.20+ fixes CVE-2026-53914 (unsafe build-cache metadata deserialization).
 # Keep production at or above 2.4.20; `.github/workflows/codeql.yml` steps down its isolated
 # analysis checkout to 2.4.10 until the runner's CodeQL extractor bundle supports 2.4.20+.
