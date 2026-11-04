@@ -26,6 +26,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,6 +38,7 @@ MAX_NOTES = 4000
 # How long to wait for an uploaded build to show up in App Store Connect.
 BUILD_WAIT_SECONDS = 30 * 60
 BUILD_POLL_SECONDS = 30
+TOKEN_REFRESH_SECONDS = 15 * 60
 
 SECTION = re.compile(r"^## \[(?P<name>[^\]]+)\]")
 LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
@@ -129,8 +131,28 @@ def request(method: str, path: str, bearer: str, body: dict | None = None) -> di
     return json.loads(payload) if payload else {}
 
 
-def find_build(bearer: str, bundle_id: str, marketing: str, build: str) -> str:
+def find_build(
+    bearer_or_factory: str | Callable[[], str],
+    bundle_id: str,
+    marketing: str,
+    build: str,
+    *,
+    key_id: str | None = None,
+    issuer_id: str | None = None,
+    key_path: str | None = None,
+) -> str:
     """The App Store Connect id of the build just uploaded, waiting for it to register."""
+    if callable(bearer_or_factory):
+        make_token: Callable[[], str] | None = bearer_or_factory
+        bearer = make_token()
+    elif key_id and issuer_id and key_path:
+        make_token = lambda: token(key_id, issuer_id, key_path)
+        bearer = bearer_or_factory
+    else:
+        make_token = None
+        bearer = bearer_or_factory
+
+    token_issued_at = time.monotonic()
     query = urllib.parse.urlencode({"filter[bundleId]": bundle_id, "limit": 1})
     apps = request("GET", f"/apps?{query}", bearer)["data"]
     if not apps:
@@ -146,6 +168,9 @@ def find_build(bearer: str, bundle_id: str, marketing: str, build: str) -> str:
     )
     deadline = time.monotonic() + BUILD_WAIT_SECONDS
     while True:
+        if make_token is not None and (time.monotonic() - token_issued_at) >= TOKEN_REFRESH_SECONDS:
+            bearer = make_token()
+            token_issued_at = time.monotonic()
         builds = request("GET", f"/builds?{query}", bearer)["data"]
         if builds:
             return builds[0]["id"]
@@ -196,11 +221,11 @@ def main() -> int:
     if not (args.marketing and args.build and args.bundle_id):
         parser.error("--marketing, --build and --bundle-id are needed unless --print")
 
-    bearer = token(os.environ["KEY_ID"], os.environ["ISSUER_ID"], os.environ["API_KEY_PATH"])
+    make_token = lambda: token(os.environ["KEY_ID"], os.environ["ISSUER_ID"], os.environ["API_KEY_PATH"])
     try:
-        build_id = find_build(bearer, args.bundle_id, args.marketing, args.build)
+        build_id = find_build(make_token, args.bundle_id, args.marketing, args.build)
         # The wait can outlast a token; sign a fresh one to write.
-        bearer = token(os.environ["KEY_ID"], os.environ["ISSUER_ID"], os.environ["API_KEY_PATH"])
+        bearer = make_token()
         write_notes(bearer, build_id, notes)
     except urllib.error.HTTPError as error:
         detail = error.read().decode(errors="replace")

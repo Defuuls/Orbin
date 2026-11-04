@@ -27,9 +27,10 @@ buildscript {
         .toList()
 
     // Numeric segments, compared left to right and zero-padded: 2.0.6 < 2.0.6.1, 4.5.13 < 4.5.14.
-    // Non-numeric parts (".Final", "-alpha") are ignored — no pin here distinguishes on them.
-    fun segments(value: String): List<Long> =
-        Regex("""\d+""").findAll(value).map { it.value.toLongOrNull() ?: 0L }.toList()
+    // Pre-release suffixes ("-alpha1", "-beta1") are stripped before splitting, and a pre-release
+    // candidate ranks lower than the same numeric stable version (so 1.85-beta1 < 1.85).
+    fun segments(version: String): List<Long> =
+        version.substringBefore('-').split('.', '-').mapNotNull { it.toLongOrNull() }
 
     fun outranks(pinned: String, requested: String): Boolean {
         val left = segments(pinned)
@@ -39,7 +40,9 @@ buildscript {
             val b = right.getOrElse(index) { 0L }
             if (a != b) return a > b
         }
-        return false
+        val pinnedPreRelease = '-' in pinned
+        val requestedPreRelease = '-' in requested
+        return !pinnedPreRelease && requestedPreRelease
     }
 
     // A pin is a floor, not an exact version. Forcing exactly downgrades anything that already

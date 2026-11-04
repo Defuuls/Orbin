@@ -189,7 +189,7 @@ internal object LynxChanCommentParser {
         out: MutableList<PostNode>,
         context: Context,
     ): Int {
-        if (depth >= MAX_DEPTH) return openIndex + 1
+        if (depth >= MAX_NESTING_DEPTH) return openIndex + 1
         val (children, next) = parseNodes(tokens, openIndex + 1, open.name, depth + 1, context)
         val node = buildNode(open, children, context)
         if (node != null) out.add(node) else out.addAll(children)
@@ -361,5 +361,5 @@ internal object LynxChanCommentParser {
     private const val MIN_VISIBLE_CODE_POINT = 0x20
 
     /** Hard cap on tag nesting; pathological input beyond this is flattened, not recursed. */
-    private const val MAX_DEPTH = 64
+    private const val MAX_NESTING_DEPTH = 32
 }

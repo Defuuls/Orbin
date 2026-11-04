@@ -3,6 +3,7 @@ package com.orbin.data.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.orbin.data.database.entity.BookmarkEntity
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +43,18 @@ interface BookmarkDao {
 
     @Upsert
     suspend fun upsert(bookmark: BookmarkEntity)
+
+    @Upsert
+    suspend fun upsertAll(bookmarks: List<BookmarkEntity>)
+
+    @Query("DELETE FROM bookmarks")
+    suspend fun deleteAll()
+
+    @Transaction
+    suspend fun replaceAll(bookmarks: List<BookmarkEntity>) {
+        deleteAll()
+        upsertAll(bookmarks)
+    }
 
     @Delete
     suspend fun delete(bookmark: BookmarkEntity)

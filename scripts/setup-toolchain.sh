@@ -16,6 +16,7 @@ log() { echo "[setup-toolchain] $*" >&2; }
 PROJECT_DIR="${ORBIN_PROJECT_DIR:-$(pwd)}"
 SDK_DIR="${ANDROID_SDK_ROOT:-$HOME/android-sdk}"
 CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+CMDLINE_TOOLS_SHA256="7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee"
 GRADLE_MIRROR_BASE="https://mirrors.cloud.tencent.com/gradle"
 
 # ---------------------------------------------------------------------------
@@ -32,6 +33,7 @@ if [ ! -x "$SDKMANAGER" ]; then
   mkdir -p "$SDK_DIR/cmdline-tools"
   tmp_zip="$(mktemp --suffix=.zip)"
   curl -fsSL --retry 3 --max-time 300 -o "$tmp_zip" "$CMDLINE_TOOLS_URL"
+  echo "$CMDLINE_TOOLS_SHA256  $tmp_zip" | sha256sum -c -
   rm -rf "$SDK_DIR/cmdline-tools/latest"
   unzip -q "$tmp_zip" -d "$SDK_DIR/cmdline-tools"
   mv "$SDK_DIR/cmdline-tools/cmdline-tools" "$SDK_DIR/cmdline-tools/latest"
@@ -84,17 +86,20 @@ PY
 
 DEST="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists/$DIST_NAME/$HASH"
 if [ ! -x "$DEST/$GRADLE_DIR_NAME/bin/gradle" ]; then
+  if [ -z "$EXPECTED_SHA" ]; then
+    log "missing distributionSha256Sum"
+    exit 1
+  fi
   log "seeding Gradle wrapper cache ($DIST_NAME) from mirror"
   mkdir -p "$DEST"
   rm -f "$DEST/$GRADLE_ZIP" "$DEST/$GRADLE_ZIP.part" "$DEST/$GRADLE_ZIP.lck"
-  curl -fsSL --retry 3 --max-time 300 -o "$DEST/$GRADLE_ZIP" "$GRADLE_MIRROR_BASE/$GRADLE_ZIP"
-  if [ -n "$EXPECTED_SHA" ]; then
-    ACTUAL_SHA="$(sha256sum "$DEST/$GRADLE_ZIP" | cut -d' ' -f1)"
-    if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-      log "checksum mismatch for $GRADLE_ZIP: expected $EXPECTED_SHA, got $ACTUAL_SHA"
-      rm -f "$DEST/$GRADLE_ZIP"
-      exit 1
-    fi
+  curl -fsSL --retry 3 --max-time 300 -o "$DEST/$GRADLE_ZIP" "$GRADLE_MIRROR_BASE/$GRADLE_ZIP" ||
+    curl -fsSL --retry 3 --max-time 300 -o "$DEST/$GRADLE_ZIP" "$DIST_URL"
+  ACTUAL_SHA="$(sha256sum "$DEST/$GRADLE_ZIP" | cut -d' ' -f1)"
+  if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+    log "checksum mismatch for $GRADLE_ZIP: expected $EXPECTED_SHA, got $ACTUAL_SHA"
+    rm -f "$DEST/$GRADLE_ZIP"
+    exit 1
   fi
   (cd "$DEST" && unzip -q "$GRADLE_ZIP")
   touch "$DEST/$GRADLE_ZIP.ok"   # marker the wrapper checks to skip re-downloading

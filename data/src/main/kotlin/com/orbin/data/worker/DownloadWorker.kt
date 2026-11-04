@@ -1,7 +1,9 @@
 package com.orbin.data.worker
 
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.hilt.work.HiltWorker
@@ -14,11 +16,15 @@ import com.orbin.data.repository.downloadRequestHeaders
 import com.orbin.network.di.BaseOkHttp
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.ResponseBody
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -58,55 +64,10 @@ class DownloadWorker
                             dao.updateStatus(id, DownloadStatus.FAILED.name)
                             return@withContext Result.failure()
                         }
-
-                        val body = response.body
-
-                        val path = "${Environment.DIRECTORY_DOWNLOADS}/Orbin/$relativeDir".trimEnd('/')
-                        val values =
-                            ContentValues().apply {
-                                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                                put(
-                                    MediaStore.Downloads.MIME_TYPE,
-                                    body.contentType()?.toString() ?: "application/octet-stream",
-                                )
-                                put(MediaStore.Downloads.RELATIVE_PATH, path)
-                                put(MediaStore.Downloads.IS_PENDING, 1)
-                            }
-
-                        val resolver = context.contentResolver
-                        val target = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                        if (target == null) {
-                            dao.updateStatus(id, DownloadStatus.FAILED.name)
-                            return@withContext Result.failure()
-                        }
-
-                        var success = false
-                        try {
-                            val outputStream = resolver.openOutputStream(target) ?: return@withContext Result.failure()
-                            outputStream.use { output: OutputStream ->
-                                body.byteStream().use { input: InputStream ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            success = true
-                        } finally {
-                            withContext(NonCancellable) {
-                                if (success) {
-                                    val updateValues =
-                                        ContentValues().apply {
-                                            put(MediaStore.Downloads.IS_PENDING, 0)
-                                        }
-                                    resolver.update(target, updateValues, null, null)
-                                    dao.updateStatus(id, DownloadStatus.COMPLETED.name)
-                                } else {
-                                    resolver.delete(target, null, null)
-                                    dao.updateStatus(id, DownloadStatus.FAILED.name)
-                                }
-                            }
-                        }
-
-                        if (success) Result.success() else Result.failure()
+                        writeToMediaStore(id, fileName, relativeDir, response.body)
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: IOException) {
                     Logger.e(tag = TAG) { "Download failed for id=$id (${e::class.simpleName})" }
                     dao.updateStatus(id, DownloadStatus.FAILED.name)
@@ -121,6 +82,96 @@ class DownloadWorker
                     Result.failure()
                 }
             }
+
+        private suspend fun writeToMediaStore(
+            id: Long,
+            fileName: String,
+            relativeDir: String,
+            body: ResponseBody,
+        ): Result {
+            val path = "${Environment.DIRECTORY_DOWNLOADS}/Orbin/$relativeDir".trimEnd('/')
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                    put(
+                        MediaStore.Downloads.MIME_TYPE,
+                        body.contentType()?.toString() ?: "application/octet-stream",
+                    )
+                    put(MediaStore.Downloads.RELATIVE_PATH, path)
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+
+            val resolver = context.contentResolver
+            val target = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            if (target == null) {
+                dao.updateStatus(id, DownloadStatus.FAILED.name)
+                return Result.failure()
+            }
+
+            var success = false
+            var cancelled = false
+            try {
+                success = copyStreamToTarget(resolver, target, body)
+            } catch (e: CancellationException) {
+                cancelled = true
+                throw e
+            } finally {
+                withContext(NonCancellable) {
+                    finalizeTarget(resolver, target, id, success, cancelled)
+                }
+            }
+
+            return if (success) Result.success() else Result.failure()
+        }
+
+        private suspend fun copyStreamToTarget(
+            resolver: ContentResolver,
+            target: Uri,
+            body: ResponseBody,
+        ): Boolean {
+            val outputStream = resolver.openOutputStream(target) ?: return false
+            outputStream.use { output: OutputStream ->
+                body.byteStream().use { input: InputStream ->
+                    copyStreamCancellable(input, output)
+                }
+            }
+            return true
+        }
+
+        private suspend fun copyStreamCancellable(
+            input: InputStream,
+            output: OutputStream,
+        ) {
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val read = input.read(buffer)
+                if (read < 0) break
+                output.write(buffer, 0, read)
+            }
+        }
+
+        private suspend fun finalizeTarget(
+            resolver: ContentResolver,
+            target: Uri,
+            id: Long,
+            success: Boolean,
+            cancelled: Boolean,
+        ) {
+            if (success) {
+                val updateValues =
+                    ContentValues().apply {
+                        put(MediaStore.Downloads.IS_PENDING, 0)
+                    }
+                resolver.update(target, updateValues, null, null)
+                dao.updateStatus(id, DownloadStatus.COMPLETED.name)
+            } else {
+                resolver.delete(target, null, null)
+                if (!cancelled) {
+                    dao.updateStatus(id, DownloadStatus.FAILED.name)
+                }
+            }
+        }
 
         companion object {
             private const val TAG = "DownloadWorker"

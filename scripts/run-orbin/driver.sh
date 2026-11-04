@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Drive the real Orbin Android app headlessly (Robolectric + Roborazzi), from the repo root.
-#   scripts/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'   (steps: see SKILL.md)
+#   scripts/run-orbin/driver.sh 'wait:/an/;shot:boards;tree'   (steps: see README.md)
 # Env: OUT=<dir> (default build/orbin-drive), DARK=true for night mode.
 set -euo pipefail
 cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
@@ -13,15 +13,23 @@ mkdir -p "$OUT"
 RV=15-robolectric-13954326-i7   # android-all for sdk 35 under robolectric 4.17
 RD=~/.m2/repository/org/robolectric/android-all-instrumented/$RV
 mkdir -p "$RD"
+ROBO_BASE="https://repo1.maven.org/maven2/org/robolectric/android-all-instrumented/$RV"
+ROBO_URL="$ROBO_BASE/android-all-instrumented-$RV.jar"
+ROBO_JAR="$RD/android-all-instrumented-$RV.jar"
 for f in jar jar.sha512 pom pom.sha512; do
   dest="$RD/android-all-instrumented-$RV.$f"
   [ -s "$dest" ] && continue
   echo "[driver] seeding Robolectric runtime: $(basename "$dest")"
   curl -fsS --retry 20 --retry-all-errors --retry-delay 10 --retry-max-time 900 -o "$dest.part" \
-    "https://repo1.maven.org/maven2/org/robolectric/android-all-instrumented/$RV/android-all-instrumented-$RV.$f" \
+    "$ROBO_BASE/android-all-instrumented-$RV.$f" \
     && mv "$dest.part" "$dest" \
     || { echo "[driver] could not download $(basename "$dest") (Maven Central 429s?) - rerun in a minute" >&2; exit 1; }
 done
+echo "$(cat "$ROBO_JAR.sha512")  $ROBO_JAR" | sha512sum -c - >/dev/null || {
+  echo "[driver] checksum mismatch for $(basename "$ROBO_JAR")" >&2
+  rm -f "$ROBO_JAR" "$ROBO_JAR.sha512"
+  exit 1
+}
 RESULT=app/build/test-results/testDebugUnitTest/TEST-com.orbin.app.drive.DriveOrbin.xml
 for attempt in 1 2 3 4; do
   rm -f "$RESULT" "$OUT"/*.png

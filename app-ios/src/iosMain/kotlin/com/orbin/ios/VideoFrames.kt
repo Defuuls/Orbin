@@ -19,6 +19,7 @@ import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreMedia.CMTimeMakeWithSeconds
 import platform.Foundation.NSData
+import platform.Foundation.NSLock
 import platform.Foundation.NSURL
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
@@ -27,16 +28,19 @@ import platform.posix.memcpy
 /** Videos' first frames, decoded once and kept for the session, newest kept when full. */
 internal object VideoFrames {
     private val frames = LinkedHashMap<String, ImageBitmap>()
+    private val framesMutex = NSLock()
     private val decoding = Semaphore(MAX_PARALLEL)
 
-    fun cached(url: String): ImageBitmap? = frames[url]
+    fun cached(url: String): ImageBitmap? = framesMutex.withLock { frames[url] }
 
     /** The frame for [url], or null if it can't be read (a broken file, no network). */
     suspend fun load(url: String): ImageBitmap? {
-        frames[url]?.let { return it }
+        framesMutex.withLock { frames[url] }?.let { return it }
         val frame = decoding.withPermit { withContext(Dispatchers.IO) { decode(url) } } ?: return null
-        frames[url] = frame
-        while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+        framesMutex.withLock {
+            frames[url] = frame
+            while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+        }
         return frame
     }
 
@@ -86,3 +90,12 @@ private fun NSData.toByteArray(): ByteArray {
 
 /** WebM, which AVFoundation can't open. */
 internal fun isWebMUrl(url: String): Boolean = url.substringBefore('?').endsWith(".webm", ignoreCase = true)
+
+private inline fun <T> NSLock.withLock(block: () -> T): T {
+    lock()
+    return try {
+        block()
+    } finally {
+        unlock()
+    }
+}

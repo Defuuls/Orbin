@@ -185,6 +185,10 @@ class SettingsViewModel
             _backupStatus.value = null
         }
 
+        fun clearUpdateCheck() {
+            _updateCheck.value = UpdateCheckState.Idle
+        }
+
         private fun update(block: suspend () -> Unit) {
             viewModelScope.launch { block() }
         }

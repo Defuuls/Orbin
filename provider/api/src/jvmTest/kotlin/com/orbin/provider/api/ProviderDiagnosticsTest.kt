@@ -8,7 +8,9 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ProviderDiagnosticsTest {
@@ -54,6 +56,21 @@ class ProviderDiagnosticsTest {
             assertThat(event.outcome).isEqualTo("success")
             assertThat(event.durationMillis).isAtLeast(0L)
         }
+
+    @Test
+    fun `instrumented provider does not record cancellation as a failure`() {
+        val diagnostics = InMemoryProviderDiagnostics()
+        val cancellingProvider =
+            object : ImageBoardProvider by FakeProvider() {
+                override suspend fun getBoards(): List<Board> = throw CancellationException("cancelled")
+            }
+        val provider = InstrumentedImageBoardProvider(cancellingProvider, diagnostics)
+
+        assertThrows(CancellationException::class.java) {
+            runTest { provider.getBoards() }
+        }
+        assertThat(diagnostics.snapshot()).isEmpty()
+    }
 
     private class FakeProvider : ImageBoardProvider {
         override val metadata = ProviderMetadata(ProviderId("test"), "Test", "https://example.test")

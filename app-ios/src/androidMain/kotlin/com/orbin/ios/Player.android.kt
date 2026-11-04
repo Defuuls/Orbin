@@ -21,6 +21,7 @@ internal actual val supportsWebM: Boolean = false
 internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
+    active: Boolean,
 ) {
     Box(modifier)
 }

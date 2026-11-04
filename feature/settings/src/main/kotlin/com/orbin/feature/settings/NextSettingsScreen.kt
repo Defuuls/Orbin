@@ -100,6 +100,7 @@ fun NextSettingsScreen(
     LaunchedEffect(updateCheck) {
         val message = updateCheck.snackbarMessage(strings) ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message = message, withDismissAction = true)
+        viewModel.clearUpdateCheck()
     }
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel(strings)

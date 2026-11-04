@@ -6,6 +6,7 @@
 - **Android SDK** with platform **API 37** (`compileSdk` 37, `targetSdk` 37, `minSdk` 31) and
   matching build-tools.
 - **Android Studio Ladybug (2024.2)** or newer is recommended; the CLI works too.
+- **Toolchain baseline** (see `gradle/libs.versions.toml` for current pins): AGP `9.1.1`+, Kotlin `2.3.20`+, KSP `2.3.6`+, Compose BOM `2026.03.01`+, Room `2.8.4`+, Ktor `3.4.2`+, Hilt `2.59.2`+.
 
 Set `ANDROID_HOME` (or create `local.properties` with `sdk.dir=/path/to/Android/sdk`).
 

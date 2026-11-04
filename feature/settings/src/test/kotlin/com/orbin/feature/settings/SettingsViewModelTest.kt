@@ -169,6 +169,21 @@ class SettingsViewModelTest {
             assertThat(updater.state.value).isEqualTo(AppUpdateState.Available(release))
         }
 
+    @Test
+    fun `clearUpdateCheck resets updateCheck to Idle`() =
+        runTest {
+            val viewModel =
+                createViewModel(updateRepository = FakeUpdateRepository(OrbinResult.Success(UpdateStatus.UpToDate)))
+
+            viewModel.updateCheck.test {
+                assertThat(awaitItem()).isEqualTo(UpdateCheckState.Idle)
+                viewModel.checkForUpdate("1.0")
+                assertThat(awaitItem()).isEqualTo(UpdateCheckState.Result(UpdateStatus.UpToDate))
+                viewModel.clearUpdateCheck()
+                assertThat(awaitItem()).isEqualTo(UpdateCheckState.Idle)
+            }
+        }
+
     private fun createViewModel(
         settings: FakeSettingsRepository = FakeSettingsRepository(),
         history: FakeHistoryRepository = FakeHistoryRepository(),

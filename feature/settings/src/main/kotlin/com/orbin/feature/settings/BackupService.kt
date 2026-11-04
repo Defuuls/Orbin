@@ -50,10 +50,14 @@ class BackupService
         }
 
         /**
-         * Restores [backupJson]. Boards are added, never removed, so importing merges into whatever
-         * is already subscribed rather than destroying it.
+         * Restores [backupJson]. By default boards and bookmarks are added, never removed, so
+         * importing merges into whatever is already subscribed rather than destroying it; when
+         * [mode] is [RestoreMode.REPLACE], each collection is replaced atomically.
          */
-        suspend fun importFromJson(backupJson: String): Result<BackupSummary> =
+        suspend fun importFromJson(
+            backupJson: String,
+            mode: RestoreMode = RestoreMode.MERGE,
+        ): Result<BackupSummary> =
             runCatching {
                 require(backupJson.length <= MAX_BACKUP_JSON_CHARS) {
                     "Backup file is too large to import."
@@ -70,29 +74,55 @@ class BackupService
                     document.subscribedBoards
                         .filter { isValidBoardSlug(it.boardId) }
                         .partition { registry.get(ProviderId(it.providerId)) != null }
-                subscribedBoards.forEach { ref ->
-                    boardPreferences.setSubscribedBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
-                }
                 val (favoriteBoards, unknownFavorite) =
                     document.favoriteBoards
                         .filter { isValidBoardSlug(it.boardId) }
                         .partition { registry.get(ProviderId(it.providerId)) != null }
-                favoriteBoards.forEach { ref ->
-                    boardPreferences.setFavoriteBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
-                }
-
                 val (bookmarks, unknownBookmarks) =
                     document.bookmarks
                         .filter { isValidBoardSlug(it.boardId) && it.threadId > 0 }
                         .partition { registry.get(ProviderId(it.providerId)) != null }
-                bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+                val validSearches =
+                    document.savedSearches
+                        .filter { it.boardId?.let(::isValidBoardSlug) ?: true }
+                        .map { it.toSavedSearch() }
 
-                // Saved searches carry only a board id, not a provider id (a search isn't scoped to
-                // one provider the way a bookmark or subscription is), so there is nothing to
-                // validate against the registry here.
-                document.savedSearches
-                    .filter { it.boardId?.let(::isValidBoardSlug) ?: true }
-                    .forEach { searchRepository.saveSearch(it.toSavedSearch()) }
+                if (mode == RestoreMode.REPLACE) {
+                    val subscribedByProvider =
+                        subscribedBoards.groupBy(
+                            { ProviderId(it.providerId) },
+                            { BoardId(it.boardId) },
+                        )
+                    val favoritesByProvider =
+                        favoriteBoards.groupBy(
+                            { ProviderId(it.providerId) },
+                            { BoardId(it.boardId) },
+                        )
+                    registry.all().map { it.metadata.id }.forEach { providerId ->
+                        boardPreferences.replaceSubscribedBoards(
+                            providerId,
+                            subscribedByProvider[providerId].orEmpty().toSet(),
+                        )
+                        boardPreferences.replaceFavoriteBoards(
+                            providerId,
+                            favoritesByProvider[providerId].orEmpty().toSet(),
+                        )
+                    }
+                    bookmarkRepository.replaceBookmarks(bookmarks.map { it.toBookmark() })
+                    searchRepository.replaceSavedSearches(validSearches)
+                } else {
+                    subscribedBoards.forEach { ref ->
+                        boardPreferences.setSubscribedBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
+                    }
+                    favoriteBoards.forEach { ref ->
+                        boardPreferences.setFavoriteBoard(ProviderId(ref.providerId), BoardId(ref.boardId), true)
+                    }
+                    bookmarks.forEach { bookmarkRepository.addBookmark(it.toBookmark()) }
+                    // Saved searches carry only a board id, not a provider id (a search isn't scoped to
+                    // one provider the way a bookmark or subscription is), so there is nothing to
+                    // validate against the registry here.
+                    validSearches.forEach { searchRepository.saveSearch(it) }
+                }
 
                 BackupSummary(
                     exportedAt = document.exportedAt,
@@ -103,6 +133,11 @@ class BackupService
                     skippedUnknownProvider = unknownSubscribed.size + unknownFavorite.size + unknownBookmarks.size,
                 )
             }.onFailure { if (it is CancellationException) throw it }
+
+        suspend fun importBackup(
+            backupJson: String,
+            mode: RestoreMode = RestoreMode.MERGE,
+        ): Result<BackupSummary> = importFromJson(backupJson, mode)
 
         private suspend fun ProviderId.refs(subscribed: Boolean): List<BackupBoardRef> {
             val boards =
@@ -228,3 +263,8 @@ data class BackupSummary(
     /** Board refs and bookmarks skipped because their provider is no longer registered in this build. */
     val skippedUnknownProvider: Int = 0,
 )
+
+enum class RestoreMode {
+    MERGE,
+    REPLACE,
+}

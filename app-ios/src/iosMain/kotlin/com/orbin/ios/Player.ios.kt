@@ -46,6 +46,8 @@ import platform.Foundation.NSLog
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
+import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
 import platform.WebKit.WKWebView
@@ -74,8 +76,9 @@ internal actual fun NativePlayer(
     val currentActive = rememberUpdatedState(active)
     var state by remember(player) { mutableStateOf(VideoState()) }
     DisposableEffect(player) {
+        val center = NSNotificationCenter.defaultCenter
         val observer =
-            NSNotificationCenter.defaultCenter.addObserverForName(
+            center.addObserverForName(
                 name = AVPlayerItemDidPlayToEndTimeNotification,
                 `object` = player.currentItem,
                 queue = NSOperationQueue.mainQueue,
@@ -85,7 +88,27 @@ internal actual fun NativePlayer(
                     player.play()
                 }
             }
-        onDispose { NSNotificationCenter.defaultCenter.removeObserver(observer) }
+        val resignObserver =
+            center.addObserverForName(
+                name = UIApplicationWillResignActiveNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                player.pause()
+            }
+        val backgroundObserver =
+            center.addObserverForName(
+                name = UIApplicationDidEnterBackgroundNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                player.pause()
+            }
+        onDispose {
+            center.removeObserver(observer)
+            center.removeObserver(resignObserver)
+            center.removeObserver(backgroundObserver)
+        }
     }
     LaunchedEffect(player, active) {
         if (active) {
@@ -185,6 +208,7 @@ internal actual val supportsWebM: Boolean
 internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
+    active: Boolean,
 ) {
     var muted by remember(url) { mutableStateOf(SessionAudio.muted) }
     val currentMuted = rememberUpdatedState(muted)
@@ -212,20 +236,47 @@ internal actual fun NativeWebMPlayer(
                         "background:#000;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
                         "</head><body><video id=\"v\" src=\"${url.escapeHtmlAttribute()}\" " +
-                        "autoplay ${if (muted) "muted" else ""} loop playsinline>" +
+                        "${if (active) "autoplay " else ""}${if (muted) "muted " else ""}loop playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
         }
     var state by remember(webView) { mutableStateOf(VideoState()) }
-    LaunchedEffect(webView) {
+    LaunchedEffect(webView, active) {
+        if (active) {
+            webView.evaluateJavaScript("document.querySelector('video')?.play()", completionHandler = null)
+        } else {
+            webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+        }
+    }
+    LaunchedEffect(webView, active) {
+        if (!active) return@LaunchedEffect
         while (true) {
             webView.script(webMStateScript(currentMuted.value))?.let(::parseWebMState)?.let { state = it }
             delay(CONTROLS_REFRESH_MS)
         }
     }
     DisposableEffect(webView) {
+        val center = NSNotificationCenter.defaultCenter
+        val resignObserver =
+            center.addObserverForName(
+                name = UIApplicationWillResignActiveNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+            }
+        val backgroundObserver =
+            center.addObserverForName(
+                name = UIApplicationDidEnterBackgroundNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+            }
         onDispose {
+            center.removeObserver(resignObserver)
+            center.removeObserver(backgroundObserver)
             // A neighbouring pager page must not keep playing audio or video.
             webView.tearDownMedia()
         }

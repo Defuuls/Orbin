@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.SystemClock
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
+import com.orbin.data.cache.SqliteMediaResponseCache
 import com.orbin.data.crypto.LocalDataCipher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.domain.repository.DiagnosticsRepository
@@ -13,6 +14,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okio.Path.Companion.toPath
+import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -111,6 +113,13 @@ class DiagnosticsRepositoryImpl
         override suspend fun resetLocalData() {
             withContext(ioDispatcher) {
                 context.deleteDatabase(OrbinDatabase.NAME)
+                val mediaCacheDb = context.getDatabasePath(SqliteMediaResponseCache.NAME)
+                mediaCacheDb.delete()
+                File(mediaCacheDb.path + "-wal").delete()
+                File(mediaCacheDb.path + "-shm").delete()
+                context.deleteDatabase(SqliteMediaResponseCache.NAME)
+                File(context.cacheDir, "clipboard_images").deleteRecursively()
+                File(context.cacheDir, "updates").deleteRecursively()
                 store.clear()
                 providerDiagnostics.clear()
                 prefs.edit().putInt(KEY_STARTUP_CRASHES, 0).commit()

@@ -34,6 +34,15 @@ interface BoardDao {
     @Query("DELETE FROM boards WHERE provider = :provider")
     suspend fun deleteBoards(provider: String)
 
+    @Query("DELETE FROM boards")
+    suspend fun deleteAll()
+
+    @Transaction
+    suspend fun replaceAll(boards: List<BoardEntity>) {
+        deleteAll()
+        insertBoards(boards)
+    }
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBoards(boards: List<BoardEntity>)
 }

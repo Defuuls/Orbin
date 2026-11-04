@@ -235,7 +235,7 @@ private fun toggle(
     id: String,
     label: String,
     on: Boolean,
-) = SettingItem(id, label, if (on) ON_LABEL else OFF_LABEL, SettingKind.TOGGLE)
+) = SettingItem(id, label, if (on) ON_LABEL else OFF_LABEL, SettingKind.TOGGLE, checked = on)
 
 /** SYSTEM -> "System", as Android labels it. */
 private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar(Char::uppercase)

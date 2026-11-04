@@ -8,7 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.ComposeUIViewController
 import coil3.ImageLoader
 import coil3.PlatformContext
-import coil3.compose.setSingletonImageLoaderFactory
+import coil3.SingletonImageLoader
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.orbin.core.model.FormFactor
@@ -54,8 +54,7 @@ fun MainViewController(): UIViewController {
                 onContinue = { safeMode = false },
             )
         } else {
-            val app = remember { startApp() }
-            setSingletonImageLoaderFactory { context -> imageLoader(context, app.graph) }
+            val app = remember { sharedStartedApp }
             // A launch that stays up this long got going: it no longer counts towards safe mode.
             LaunchedEffect(Unit) {
                 delay(StartupCrashes.STARTUP_WINDOW_MILLIS)
@@ -75,6 +74,8 @@ fun MainViewController(): UIViewController {
     }.also { controller -> attachPencil(controller.view) }
 }
 
+private val sharedStartedApp: StartedApp by lazy { startApp() }
+
 /** What the app runs on, made once safe mode is out of the way. */
 private class StartedApp(
     val graph: AppGraph,
@@ -90,6 +91,7 @@ private class StartedApp(
  */
 private fun startApp(): StartedApp {
     val graph = AppGraph
+    SingletonImageLoader.setSafe { context -> imageLoader(context, graph) }
     val browser =
         Browser(
             providers = graph.providers,

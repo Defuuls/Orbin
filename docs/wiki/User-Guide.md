@@ -128,8 +128,8 @@ Recent searches are stored on this device; **Clear local activity** in Settings 
 
 ## Providers
 
-Orbin currently ships Vichan/4chan-compatible and LynxChan providers. BBW Chan uses the LynxChan
-implementation.
+Orbin ships Vichan and LynxChan engine providers (`:provider:vichan` and `:provider:lynxchan`).
+Archived/removed providers (such as FoolFuuka / 4plebs) are not active providers in the app.
 
 Provider-specific JSON and URL quirks are normalized before data reaches the rest of the app. For
 example, LynxChan handling tolerates absolute/relative media paths, missing paths, inactive boards,

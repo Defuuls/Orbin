@@ -9,8 +9,9 @@ publishing its wiki and landing page. All workflows live in
 ### `ci.yml` — on every push to `main` and every PR
 Three jobs, the last gated on the first two. JDK 17 + Gradle setup is shared via the composite
 action [`.github/actions/setup-jdk-gradle`](../../.github/actions/setup-jdk-gradle/action.yml)
-(jobs still set up independently — Actions isolation — but the steps stay DRY and the Gradle
-action's cache is shared across jobs on the same runner image).
+(`actions/checkout@v6`, `gradle/actions/setup-gradle@v6`, `actions/upload-artifact@v7`, and
+`actions/download-artifact@v8`; jobs still set up independently — Actions isolation — but the steps
+stay DRY and the Gradle action's cache is shared across jobs on the same runner image).
 1. **static-analysis** — architecture/repo checks, `ktlintCheck` + `detekt` + Android Lint, plus
    an advice-only `./gradlew buildHealth` (dependency-analysis; `continue-on-error`).
 2. **unit-tests** — `./gradlew test -Porbin.warningsAsErrors=true`, uploads HTML test reports.
@@ -18,6 +19,10 @@ action's cache is shared across jobs on the same runner image).
    test sources, then uploads the APK as an artifact.
 
 Runs are cancelled when superseded on the same ref (`concurrency`).
+
+### `ios.yml` — on push to `main` and PRs touching shared/iOS modules
+Builds and tests the shared KMP modules and Xcode project on macOS (`Xcode 16.4`) for the iOS
+simulator without requiring signing secrets.
 
 ### `instrumentation.yml` — on every push to `main` and every PR
 Boots API 31 and API 35 emulators (KVM on the GitHub runner) and runs `connectedDebugAndroidTest` for the

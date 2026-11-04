@@ -213,11 +213,12 @@ def check_release_tooling() -> None:
 
 def check_tracked_hygiene() -> None:
     tracked = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
-    forbidden_prefixes = (".agents/", ".claude/", ".codex/", ".cursor/", ".gemini/", ".windsurf/")
+    forbidden_prefixes = (".agents/", ".antigravity/", ".claude/", ".codex/", ".cursor/", ".gemini/", ".windsurf/")
+    forbidden_names = {"CLAUDE.md", "AGENTS.md", "GEMINI.md", "SKILL.md"}
     for rel in tracked:
         if "__pycache__/" in rel or rel.endswith((".pyc", ".pyo")):
             fail("hygiene", f"tracked Python bytecode artifact: {rel}")
-        if rel.startswith(forbidden_prefixes):
+        if rel.startswith(forbidden_prefixes) or Path(rel).name in forbidden_names:
             fail("hygiene", f"tracked assistant/scratchpad file: {rel}")
 
 

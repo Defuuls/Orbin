@@ -19,6 +19,7 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
@@ -51,6 +52,24 @@ interface BoardPreferencesRepository {
         board: BoardId,
         subscribed: Boolean,
     )
+
+    suspend fun replaceFavoriteBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        val existing = observeFavoriteBoards(provider).first()
+        (existing - boards).forEach { setFavoriteBoard(provider, it, false) }
+        (boards - existing).forEach { setFavoriteBoard(provider, it, true) }
+    }
+
+    suspend fun replaceSubscribedBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        val existing = observeSubscribedBoards(provider).first()
+        (existing - boards).forEach { setSubscribedBoard(provider, it, false) }
+        (boards - existing).forEach { setSubscribedBoard(provider, it, true) }
+    }
 
     /** Per-board override for how many threads the subscribed feed shows; null uses the global default. */
     fun observeFeedThreadLimit(
@@ -135,6 +154,11 @@ interface BookmarkRepository {
 
     suspend fun addBookmark(bookmark: Bookmark)
 
+    suspend fun replaceBookmarks(bookmarks: List<Bookmark>) {
+        observeBookmarks().first().forEach { removeBookmark(it.key) }
+        bookmarks.forEach { addBookmark(it) }
+    }
+
     suspend fun removeBookmark(key: ThreadKey)
 
     suspend fun setWatched(
@@ -204,6 +228,11 @@ interface SearchRepository {
     fun observeSavedSearches(): Flow<List<SavedSearch>>
 
     suspend fun saveSearch(search: SavedSearch): Long
+
+    suspend fun replaceSavedSearches(searches: List<SavedSearch>) {
+        observeSavedSearches().first().forEach { deleteSearch(it.id) }
+        searches.forEach { saveSearch(it) }
+    }
 
     suspend fun deleteSearch(id: Long)
 }

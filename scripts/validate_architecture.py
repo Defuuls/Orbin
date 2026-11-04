@@ -80,6 +80,22 @@ def fail(errors: list[str], message: str) -> None:
     errors.append(message)
 
 
+def check_core_model_purity(errors: list[str]) -> None:
+    """Prevent Android/infrastructure imports from slipping into the pure core model source tree."""
+    forbidden_prefixes = (
+        "android.",
+        "androidx.",
+        "com.orbin.data.",
+        "com.orbin.domain.",
+        "com.orbin.feature.",
+        "com.orbin.network.",
+        "com.orbin.provider.",
+    )
+    for file, imported in source_imports(":core:model"):
+        if imported.startswith(forbidden_prefixes):
+            fail(errors, f"{file.relative_to(ROOT)} imports forbidden outer layer: import {imported}")
+
+
 def main() -> int:
     errors: list[str] = []
     modules = included_modules()
@@ -105,10 +121,26 @@ def main() -> int:
     if deps.get(":core:model"):
         fail(errors, f":core:model must remain dependency-free, found {sorted(deps[':core:model'])}")
 
-    # Domain may depend only inward on core and the provider SPI, never concrete infrastructure.
-    allowed_domain_prefixes = (":core:", ":provider:api")
+    # :core:common is platform-neutral primitives and may not acquire project dependencies.
+    if deps.get(":core:common"):
+        fail(errors, f":core:common must remain dependency-free, found {sorted(deps[':core:common'])}")
+
+    # :core:network may depend only on :core:model and :core:common.
+    allowed_core_network = {":core:model", ":core:common"}
+    for dep in sorted(deps.get(":core:network", set())):
+        if dep not in allowed_core_network:
+            fail(errors, f":core:network has forbidden dependency {dep}")
+
+    # :core:data may depend only on shared inner modules.
+    allowed_core_data = {":core:model", ":core:common", ":core:network", ":domain", ":storage", ":provider:api"}
+    for dep in sorted(deps.get(":core:data", set())):
+        if dep not in allowed_core_data:
+            fail(errors, f":core:data has forbidden dependency {dep}")
+
+    # Domain may depend only inward on :core:model, :core:common and the provider SPI, never concrete infrastructure.
+    allowed_domain = {":core:model", ":core:common", ":provider:api"}
     for dep in sorted(deps.get(":domain", set())):
-        if not dep.startswith(allowed_domain_prefixes):
+        if dep not in allowed_domain:
             fail(errors, f":domain must not depend on infrastructure module {dep}")
 
     # Provider implementations may use the SPI/core/network plumbing, but never app/features/data
@@ -165,21 +197,7 @@ def main() -> int:
             fail(errors, f":storage may depend only on :domain and :core:model, found {dep}")
 
     # Prevent Android/infrastructure imports from slipping into the pure core model source tree.
-    model_root = module_path(":core:model") / "src/commonMain/kotlin"
-    forbidden_imports = (
-        "import android.",
-        "import androidx.",
-        "import com.orbin.data.",
-        "import com.orbin.domain.",
-        "import com.orbin.feature.",
-        "import com.orbin.network.",
-        "import com.orbin.provider.",
-    )
-    for file in model_root.rglob("*.kt"):
-        text = file.read_text(encoding="utf-8")
-        for needle in forbidden_imports:
-            if needle in text:
-                fail(errors, f"{file.relative_to(ROOT)} imports forbidden outer layer: {needle}")
+    check_core_model_purity(errors)
 
     if errors:
         print("Architecture validation failed:")

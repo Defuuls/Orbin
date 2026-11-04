@@ -92,6 +92,10 @@ class FakeSearchRepository(
         return id
     }
 
+    override suspend fun replaceSavedSearches(searches: List<SavedSearch>) {
+        this.saved.value = searches.map { it.copy(id = nextSavedId++) }
+    }
+
     override suspend fun deleteSearch(id: Long) {
         saved.value = saved.value.filterNot { it.id == id }
     }
@@ -106,26 +110,46 @@ class FakeBoardRepository(
 }
 
 class FakeBoardPreferencesRepository(
-    private val subscribed: Set<BoardId> = setOf(BoardId("g")),
-    private val favorites: Set<BoardId> = emptySet(),
+    subscribed: Set<BoardId> = setOf(BoardId("g")),
+    favorites: Set<BoardId> = emptySet(),
 ) : BoardPreferencesRepository {
+    private val subscribedState = MutableStateFlow(subscribed)
+    private val favoritesState = MutableStateFlow(favorites)
     private val threadLimits = MutableStateFlow<Map<BoardId, FeedThreadLimit?>>(emptyMap())
 
-    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(favorites)
+    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = favoritesState
 
-    override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> = flowOf(subscribed)
+    override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> = subscribedState
 
     override suspend fun setFavoriteBoard(
         provider: ProviderId,
         board: BoardId,
         favorite: Boolean,
-    ) = Unit
+    ) {
+        favoritesState.update { if (favorite) it + board else it - board }
+    }
 
     override suspend fun setSubscribedBoard(
         provider: ProviderId,
         board: BoardId,
         subscribed: Boolean,
-    ) = Unit
+    ) {
+        subscribedState.update { if (subscribed) it + board else it - board }
+    }
+
+    override suspend fun replaceFavoriteBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        favoritesState.value = boards
+    }
+
+    override suspend fun replaceSubscribedBoards(
+        provider: ProviderId,
+        boards: Set<BoardId>,
+    ) {
+        subscribedState.value = boards
+    }
 
     override fun observeFeedThreadLimit(
         provider: ProviderId,

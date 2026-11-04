@@ -38,14 +38,18 @@ internal class SelfHealingOpenHelper(
     private var repaired = false
 
     override val databaseName: String?
-        get() = delegate.databaseName
+        @Synchronized
+        get() = synchronized(lock) { delegate.databaseName }
 
     override val writableDatabase: SupportSQLiteDatabase
+        @Synchronized
         get() = open { it.writableDatabase }
 
     override val readableDatabase: SupportSQLiteDatabase
+        @Synchronized
         get() = open { it.readableDatabase }
 
+    @Synchronized
     override fun setWriteAheadLoggingEnabled(enabled: Boolean) {
         synchronized(lock) {
             writeAheadLoggingEnabled = enabled
@@ -53,10 +57,12 @@ internal class SelfHealingOpenHelper(
         }
     }
 
+    @Synchronized
     override fun close() {
         synchronized(lock) { delegate.close() }
     }
 
+    @Synchronized
     private fun open(openDatabase: (SupportSQLiteOpenHelper) -> SupportSQLiteDatabase): SupportSQLiteDatabase =
         synchronized(lock) {
             try {

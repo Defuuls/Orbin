@@ -37,6 +37,22 @@ class MediaPreloader
         private val imageLoader: ImageLoader,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
     ) {
+        private val backingUrls = LinkedHashSet<String>()
+        private val preloadedUrls =
+            object : MutableSet<String> by backingUrls {
+                override fun add(element: String): Boolean {
+                    if (contains(element)) return false
+                    if (size >= MAX_TRACKED_URLS) {
+                        val iterator = iterator()
+                        if (iterator.hasNext()) {
+                            iterator.next()
+                            iterator.remove()
+                        }
+                    }
+                    return backingUrls.add(element)
+                }
+            }
+
         suspend fun preload(
             attachments: List<MediaAttachment>,
             option: PreloadOption = PreloadOption.IMAGES,
@@ -114,6 +130,8 @@ class MediaPreloader
             }
 
         private suspend fun preloadImage(url: String) {
+            val alreadyPreloaded = synchronized(preloadedUrls) { !preloadedUrls.add(url) }
+            if (alreadyPreloaded) return
             val request =
                 ImageRequest
                     .Builder(context)
@@ -124,9 +142,11 @@ class MediaPreloader
             runCatching { imageLoader.execute(request) }
                 .onSuccess { result ->
                     if (result is ErrorResult) {
+                        synchronized(preloadedUrls) { preloadedUrls.remove(url) }
                         Logger.w(tag = TAG) { "Failed to preload image: ${url.redactForLog()}" }
                     }
                 }.onFailure { error ->
+                    synchronized(preloadedUrls) { preloadedUrls.remove(url) }
                     if (error is CancellationException) throw error
                     Logger.w(tag = TAG) { "Failed to preload image: ${url.redactForLog()}" }
                 }
@@ -164,6 +184,7 @@ class MediaPreloader
 
         private companion object {
             const val TAG = "OrbinMediaPreloader"
+            const val MAX_TRACKED_URLS = 512
         }
     }
 

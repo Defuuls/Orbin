@@ -26,6 +26,13 @@ class HeadersInterceptor(
         val builder = original.newBuilder()
         edits.remove.forEach { builder.removeHeader(it) }
         edits.set.forEach { (name, value) -> builder.header(name, value) }
+        val existingReferer = original.header("Referer")
+        if ("Referer" !in edits.set &&
+            existingReferer != null &&
+            !existingReferer.startsWith(original.url.originReferer(), ignoreCase = true)
+        ) {
+            builder.header("Referer", original.url.originReferer())
+        }
         return chain.proceed(builder.build())
     }
 

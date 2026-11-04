@@ -94,19 +94,27 @@ class ImageClipboard
                         purgeClipboardCache(directory)
                         val file = File(directory, "${imageUrl.sha256()}.$extension")
 
-                        body.byteStream().use { input ->
-                            file.outputStream().use { output ->
-                                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                                var total = 0L
-                                while (true) {
-                                    val read = input.read(buffer)
-                                    if (read < 0) break
-                                    total += read
-                                    check(total <= MAX_IMAGE_BYTES) {
-                                        "Image exceeds clipboard cache limit"
+                        var completed = false
+                        try {
+                            body.byteStream().use { input ->
+                                file.outputStream().use { output ->
+                                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                    var total = 0L
+                                    while (true) {
+                                        val read = input.read(buffer)
+                                        if (read < 0) break
+                                        total += read
+                                        check(total <= MAX_IMAGE_BYTES) {
+                                            "Image exceeds clipboard cache limit"
+                                        }
+                                        output.write(buffer, 0, read)
                                     }
-                                    output.write(buffer, 0, read)
                                 }
+                            }
+                            completed = true
+                        } finally {
+                            if (!completed) {
+                                file.delete()
                             }
                         }
 

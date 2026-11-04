@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -244,8 +245,8 @@ class Browser(
         ) { perSite -> perSite.flatMap { it }.toSet() }
             .stateIn(scope, SharingStarted.Eagerly, emptySet())
 
-    // What the feed holds: the followed boards, and whether NSFW ones were hidden.
-    private var feedFor: Pair<Set<FollowedBoard>, Boolean>? = null
+    // What the feed holds: the followed boards, whether NSFW ones were hidden, and the violent-media cover.
+    private var feedFor: Triple<Set<FollowedBoard>, Boolean, Boolean>? = null
     private var feedLoad: Job? = null
     private val feedLoader = SubscribedFeedLoader()
 
@@ -267,10 +268,14 @@ class Browser(
         scope.launch {
             this@Browser
                 .settings.current
-                .map { it.hideNsfwBoards }
-                .distinctUntilChanged()
+                .distinctUntilChangedBy { it.hideNsfwBoards to it.coverViolentMedia }
                 .drop(1)
-                .collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+                .collect {
+                    lastFeed = null
+                    catalogShown = null
+                    threadShown = null
+                    if (_backStack.value.last() == Route.Feed) loadFeed(force = true) else loadCurrent(force = true)
+                }
         }
         scope.launch {
             activeSite.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
@@ -400,7 +405,8 @@ class Browser(
 
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
-            Route.Feed, Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
+            Route.Feed -> loadFeed(force)
+            Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return
                 if (force || catalogShown != board || _catalog.value !is Load.Ready) {
@@ -445,7 +451,8 @@ class Browser(
         // The active site's followed boards, as Android's feed follows its site switcher.
         val site = activeSite.value
         val boards = followed.value.filterTo(mutableSetOf()) { it.provider == site }
-        val shown = boards to settings.current.value.hideNsfwBoards
+        val currentSettings = settings.current.value
+        val shown = Triple(boards, currentSettings.hideNsfwBoards, currentSettings.coverViolentMedia)
         if (!force && shown == feedFor && _feed.value is Load.Ready) return
         feedFor = shown
         feedLoad?.cancel()

@@ -46,8 +46,12 @@ fun BoardDetailTwoPane(
 
     LaunchedEffect(selectedThread) {
         selectedThread?.let { thread ->
-            detailNavController.navigate(thread) {
-                popUpTo<DetailPaneEmpty> { inclusive = false }
+            val currentThread =
+                runCatching { detailNavController.currentBackStackEntry?.toRoute<Route.Thread>() }.getOrNull()
+            if (currentThread != thread) {
+                detailNavController.navigate(thread) {
+                    popUpTo<DetailPaneEmpty> { inclusive = false }
+                }
             }
         }
     }

@@ -71,7 +71,14 @@ private class Rows(
         hint: String? = null,
     ): SettingItem {
         toggles[id] = { onChange(!value) }
-        return SettingItem(id, label, if (value) ON_LABEL else OFF_LABEL, SettingKind.TOGGLE, hint = hint)
+        return SettingItem(
+            id = id,
+            label = label,
+            value = if (value) ON_LABEL else OFF_LABEL,
+            kind = SettingKind.TOGGLE,
+            hint = hint,
+            checked = value,
+        )
     }
 
     /**

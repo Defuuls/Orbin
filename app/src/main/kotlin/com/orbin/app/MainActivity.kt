@@ -1,7 +1,6 @@
 package com.orbin.app
 
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -96,6 +95,9 @@ class MainActivity : FragmentActivity() {
     /** The recovery UI shown when startup has been crash-looping. */
     @Composable
     private fun SafeMode() {
+        SideEffect {
+            setSecureContent(enabled = true)
+        }
         SafeModeScreen(
             onExportDiagnostics = { exportDiagnostics() },
             onResetLocalData = {
@@ -150,6 +152,9 @@ class MainActivity : FragmentActivity() {
         // which is all safe mode needs.
         safeMode = diagnosticsRepository.isCrashLooping()
         downgradeBlocked = versionGuardRepository.isDowngrade()
+        if (safeMode) {
+            setSecureContent(enabled = true)
+        }
         if (savedInstanceState == null) {
             handleIncomingIntent(intent)
         }
@@ -283,20 +288,10 @@ class MainActivity : FragmentActivity() {
         handleIncomingIntent(intent)
     }
 
-    override fun onPictureInPictureModeChanged(
-        isInPictureInPictureMode: Boolean,
-        newConfig: Configuration,
-    ) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        if (isInPictureInPictureMode) {
-            relockOnResume = false
-        }
-    }
-
     override fun onStop() {
         cancelActiveAuthentication()
         super.onStop()
-        if (biometricLockActive) {
+        if (biometricLockActive && !isChangingConfigurations) {
             unlocked = false
             // Cancel defensively rather than relying on the system to always deliver a
             // cancellation callback before the activity fully stops — that race can leave

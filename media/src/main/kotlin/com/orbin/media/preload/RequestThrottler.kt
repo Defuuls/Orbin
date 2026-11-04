@@ -44,12 +44,19 @@ class RequestThrottler(
         retryAfter: String?,
     ) {
         if (statusCode != RetryAfter.HTTP_TOO_MANY_REQUESTS && statusCode != HTTP_SERVICE_UNAVAILABLE) return
-        val cooldownMillis =
-            RetryAfter.parseSeconds(retryAfter)?.times(MILLIS_PER_SECOND) ?: defaultRateLimitCooldownMillis
-        val until = System.currentTimeMillis() + cooldownMillis.coerceAtLeast(MIN_RATE_LIMIT_COOLDOWN_MILLIS)
+        val cooldownMillis = parseRetryAfterMs(retryAfter)
+        val until =
+            System.currentTimeMillis() +
+                cooldownMillis.coerceIn(MIN_RATE_LIMIT_COOLDOWN_MILLIS, MAX_COOLDOWN_MS)
         synchronized(lock) {
             cooldownUntilMillis = maxOf(cooldownUntilMillis, until)
         }
+    }
+
+    internal fun parseRetryAfterMs(retryAfter: String?): Long {
+        val parsed =
+            RetryAfter.parseSeconds(retryAfter)?.times(MILLIS_PER_SECOND) ?: defaultRateLimitCooldownMillis
+        return parsed.coerceAtMost(MAX_COOLDOWN_MS)
     }
 
     private suspend fun throttleCooldown() {
@@ -87,6 +94,7 @@ class RequestThrottler(
         const val MILLIS_PER_SECOND = 1_000L
         const val HTTP_SERVICE_UNAVAILABLE = 503
         const val MIN_RATE_LIMIT_COOLDOWN_MILLIS = 5_000L
+        const val MAX_COOLDOWN_MS = 60_000L
         const val DEFAULT_RATE_LIMIT_COOLDOWN_MILLIS = RetryAfter.DEFAULT_SECONDS * MILLIS_PER_SECOND
     }
 }

@@ -323,6 +323,39 @@ def _update_release_docs(release: Release, today: str) -> None:
     _write(HERO_SVG, svg)
 
 
+def update_changelog(changelog: str, release: Release, sections: dict[str, list[str]], today: str) -> str:
+    """Insert or replace the release section in CHANGELOG.md."""
+    marker = f"## [{release.version_name}]"
+    body = "".join(
+        f"### {heading}\n" + "".join(f"- {entry}\n" for entry in entries) + "\n"
+        for heading, entries in sections.items()
+    )
+    rendered_section = f"{marker} - {today}\n\n{body}"
+
+    if marker in changelog:
+        pattern = re.compile(
+            rf"^## \[{re.escape(release.version_name)}\][^\n]*\n.*?(?=^## \[|\Z)",
+            flags=re.M | re.S,
+        )
+        return pattern.sub(lambda _: rendered_section, changelog, count=1)
+
+    previous = _previous_released_version(changelog)
+    changelog = changelog.replace(
+        "## [Unreleased]\n",
+        f"## [Unreleased]\n\n{rendered_section}",
+        1,
+    )
+    changelog = re.sub(
+        r"^\[Unreleased\]: .*$",
+        f"[Unreleased]: {BASE_URL}/compare/{release.tag}...HEAD\n"
+        f"[{release.version_name}]: {BASE_URL}/compare/v{previous}...{release.tag}",
+        changelog,
+        count=1,
+        flags=re.M,
+    )
+    return changelog
+
+
 def apply(release: Release, sections: dict[str, list[str]]) -> None:
     """Apply every edit a release needs. Safe to re-run on a prepared tree."""
     today = date.today().isoformat()
@@ -333,26 +366,7 @@ def apply(release: Release, sections: dict[str, list[str]]) -> None:
     _write("gradle.properties", text)
 
     changelog = _read("CHANGELOG.md")
-    if f"## [{release.version_name}]" not in changelog:
-        previous = _previous_released_version(changelog)
-        body = "".join(
-            f"### {heading}\n" + "".join(f"- {entry}\n" for entry in entries) + "\n"
-            for heading, entries in sections.items()
-        )
-        changelog = changelog.replace(
-            "## [Unreleased]\n",
-            f"## [Unreleased]\n\n## [{release.version_name}] - {today}\n\n{body}",
-            1,
-        )
-        changelog = re.sub(
-            r"^\[Unreleased\]: .*$",
-            f"[Unreleased]: {BASE_URL}/compare/{release.tag}...HEAD\n"
-            f"[{release.version_name}]: {BASE_URL}/compare/v{previous}...{release.tag}",
-            changelog,
-            count=1,
-            flags=re.M,
-        )
-        _write("CHANGELOG.md", changelog)
+    _write("CHANGELOG.md", update_changelog(changelog, release, sections, today))
 
     _update_release_docs(release, today)
 

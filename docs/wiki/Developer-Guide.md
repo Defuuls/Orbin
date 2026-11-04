@@ -94,12 +94,14 @@ The project is on the AGP 9 generation of the Android toolchain. At the time of 
 
 | Component | Version |
 | --- | --- |
-| AGP | 9.3.1 |
+| AGP | 9.1.1+ (9.4.1 in catalog) |
 | Gradle | 9.6.1 |
-| Kotlin | 2.4.10 |
-| KSP | 2.3.10 |
-| Room | 2.8.4 |
-| Hilt | 2.60.1 |
+| Kotlin | 2.3.20+ (2.4.21 in catalog) |
+| KSP | 2.3.6+ (2.3.12 in catalog) |
+| Compose BOM | 2026.03.01+ (2026.09.00 in catalog) |
+| Room | 2.8.4+ (2.8.5 in catalog) |
+| Ktor | 3.4.2+ (3.6.0 in catalog) |
+| Hilt | 2.59.2+ (2.60.1 in catalog) |
 
 Always verify the version catalog/wrapper before diagnosing a mismatch. Historical AGP 9 migration
 notes live in `docs/agp-9-upgrade.md`.

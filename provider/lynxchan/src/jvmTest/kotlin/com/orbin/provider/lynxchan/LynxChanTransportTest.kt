@@ -129,4 +129,17 @@ class LynxChanTransportTest {
             val error = runCatching { provider { throw IOException("connection reset") }.getBoards() }.exceptionOrNull()
             assertThat(error).isInstanceOf(ProviderException.Network::class.java)
         }
+
+    @Test
+    fun `rejects invalid board segments`() =
+        runTest {
+            val p = provider { json("[]") }
+            for (bad in listOf("", "../etc", "a/b", "b?x=1")) {
+                val error =
+                    runCatching {
+                        p.getCatalog(CatalogRequest(p.metadata.id, BoardId(bad)))
+                    }.exceptionOrNull()
+                assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+            }
+        }
 }

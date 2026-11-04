@@ -23,6 +23,7 @@ internal expect val supportsWebM: Boolean
 internal expect fun NativeWebMPlayer(
     url: String,
     modifier: Modifier = Modifier,
+    active: Boolean = true,
 )
 
 internal val MediaAttachment.isWebM: Boolean

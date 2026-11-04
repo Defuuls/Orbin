@@ -28,6 +28,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -289,7 +291,12 @@ class ThreadViewModel
         fun flushScrollPosition() {
             val position = _initialScrollPosition.value ?: return
             scrollPersistJob?.cancel()
-            scrollPersistJob = viewModelScope.launch { persistScrollPosition(position) }
+            scrollPersistJob =
+                viewModelScope.launch {
+                    withContext(NonCancellable) {
+                        persistScrollPosition(position)
+                    }
+                }
         }
 
         private suspend fun persistScrollPosition(position: ThreadScrollPosition) {
