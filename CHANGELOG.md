@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [189-Tatsoi] - 2026-11-03
+
+### Security
+- Network: enforced bounded 16 MiB JSON reads across Vichan and LynxChan APIs, installed HTML response limits on Android Ktor clients, restricted ToS gate redirects to same-origin HTTPS, and rewrote cross-origin Referer headers.
+- App Lock: cancelled in-flight biometric unlock attempts when backgrounding on iOS, gated Home Screen quick actions while locked or obscured, and applied FLAG_SECURE during Android Safe Mode.
+- Storage: excluded iOS media downloads from iCloud backups with CompleteUntilFirstUserAuthentication protection, verified parent paths on saved thread deletion, and wiped SQLite media cache and clipboard temp directories on local data reset.
+
+### Fixed
+- Cache: synchronized SqliteMediaResponseCache database initialization, deferred deletion of retired chunks until active readers close, and prevented concurrent writers from clobbering in-progress entries.
+- iOS: cached StartedApp as a process-level singleton in MainViewController, paused AVPlayer and WebM video playback when inactive or backgrounded, cleaned up temporary backup picker files, and observed violent media cover toggles in Browser.
+- Android & UI: prevented duplicate Thread destination recreation on return from Gallery in two-pane mode, coerced pager indices in GalleryScreen and MediaViewer, persisted thread scroll positions under NonCancellable, added tap-to-reveal for spoiler post bodies, and exposed Switch accessibility roles on toggle rows.
+- Providers & Media: rethrew CancellationException in ProviderDiagnostics and DownloadWorker without recording false failures, capped HTML parser nesting depth and Retry-After cooldowns, and added atomic Room transactions for REPLACE backup restores.
+
+
 ## [188-Mizuna] - 2026-11-03
 
 ### Refactor
@@ -2828,7 +2842,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...HEAD
+[189-Tatsoi]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...v189-Tatsoi
 [188-Mizuna]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...v188-Mizuna
 [187-Daikon]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...v187-Daikon
 [186-Burdock]: https://github.com/Defuuls/Orbin/compare/v185-Lotus-Root...v186-Burdock
