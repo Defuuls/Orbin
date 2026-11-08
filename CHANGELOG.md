@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [191-Agretti] - 2026-11-08
+
+### Added
+- OPTIC-26 industrial design system across Android and iOS: machined physical corner radii, custom tabular numerals, critically damped zero-bounce motion, high-contrast dark/AMOLED surfaces, and optical aperture crosshair reticle.
+
+### Fixed
+- Audio: muted video playback across Android and iOS no longer requests system audio focus or interrupts background audio; ended clips seek back to zero on replay.
+- Diagnostics & Recovery: deferred SharedGraph instantiation until crash-loop checks run, and ensured complete local database/datastore reset during data clearing.
+- UI Unification: eliminated double card borders on DownloadRow, brought multi-attachment horizontal pager parity to iOS threads, and fixed dynamic greentext/quotelink contrast.
+- Networking & Storage: removed duplicate network interceptors, preserved explicit media Accept headers, and prevented filename index drift on multi-file attachment imports.
+
+### Dependencies
+- Bumped KSP from 2.3.12 to 2.3.13 and serialized KSP tasks to eliminate concurrency races.
+
+
 ## [190-Puntarelle] - 2026-11-08
 
 ### Fixed
@@ -2854,7 +2869,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...HEAD
+[191-Agretti]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...v191-Agretti
 [190-Puntarelle]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...v190-Puntarelle
 [189-Tatsoi]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...v189-Tatsoi
 [188-Mizuna]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...v188-Mizuna
