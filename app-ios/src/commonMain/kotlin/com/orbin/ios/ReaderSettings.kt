@@ -126,111 +126,123 @@ internal fun settingsGroups(
     version: AppVersion = AppVersion(),
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
-        "" to
-            listOfNotNull(
-                toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
-                toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
-                SettingItem(
-                    id = SettingIds.THEME,
-                    label = "Theme",
-                    value = settings.themeMode.label,
-                    kind = SettingKind.CHOICE,
-                    options = AppThemeMode.entries.map { it.label },
-                    selected = settings.themeMode.ordinal,
-                ),
-                colorThemeChoice(settings.colorTheme),
-                toggle(SettingIds.AMOLED, "True black", settings.amoled),
-                feedColumns(settings, formFactor),
-                catalogColumns(settings, formFactor),
-                toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
-                toggle(
-                    SettingIds.SCREEN_PRIVACY,
-                    "Screen privacy shield",
-                    settings.screenPrivacyEnabled,
-                    hint = "Hides app preview in app switcher",
-                ),
-                SettingItem(
-                    id = SettingIds.DOH_PROVIDER,
-                    label = "Encrypted DNS provider",
-                    value = settings.dohProvider.label,
-                    kind = SettingKind.CHOICE,
-                    options = DohProvider.entries.map { it.label },
-                    selected = settings.dohProvider.ordinal,
-                ),
-                toggle(
-                    SettingIds.STRICT_DOH,
-                    "Strict encrypted DNS",
-                    settings.strictDohEnabled,
-                    hint = "Stop loading if encrypted DNS is blocked",
-                ),
-                toggle(
-                    SettingIds.SAVE_SEARCH_HISTORY,
-                    "Save search history",
-                    settings.saveSearchHistory,
-                    hint = "Store recent searches locally",
-                ),
-                toggle(
-                    SettingIds.SAVE_BROWSING_HISTORY,
-                    "Save browsing history",
-                    settings.saveBrowsingHistory,
-                    hint = "Record visited threads in local history",
-                ),
-            ),
-        "" to
-            listOf(
-                SettingItem(
-                    id = SettingIds.CLEAR_ACTIVITY,
-                    label = "Clear local activity",
-                    value = if (clearArmed) "Tap again to delete" else "Delete",
-                    kind = SettingKind.ACTION,
-                    hint = "Deletes browsing history, download records and cached images on this device.",
-                    destructive = true,
-                ),
-                SettingItem(
-                    id = SettingIds.CLEAR_IMAGE_CACHE,
-                    label = "Clear image cache",
-                    value = if (imageCacheCleared) "Cleared" else "Clear",
-                    kind = SettingKind.ACTION,
-                    destructive = true,
-                ),
-                SettingItem(
-                    id = SettingIds.EXPORT_BACKUP,
-                    label = "Export data",
-                    value =
-                        when (backup) {
-                            BackupState.Working -> "Working…"
-                            BackupState.Exported -> "Saved"
-                            else -> "Save"
-                        },
-                    kind = SettingKind.ACTION,
-                    hint = "Followed boards, watched threads and settings, as a file Android can restore too.",
-                ),
-                SettingItem(
-                    id = SettingIds.IMPORT_BACKUP,
-                    label = "Import data",
-                    value =
-                        when (backup) {
-                            is BackupState.Imported -> "Restored ${backup.boards} boards, ${backup.bookmarks} threads"
-                            is BackupState.Failed -> backup.message
-                            else -> "Restore"
-                        },
-                    kind = SettingKind.ACTION,
-                ),
-                SettingItem(
-                    id = SettingIds.PRIVACY,
-                    label = "Privacy policy",
-                    value = "Open",
-                    kind = SettingKind.ACTION,
-                ),
-                SettingItem(
-                    id = SettingIds.CONTACT,
-                    label = "Project on GitHub",
-                    value = "GitHub",
-                    kind = SettingKind.ACTION,
-                ),
-                versionRow(version),
-            ).filterNotNull(),
+        "" to appearanceAndPrivacyRows(settings, formFactor),
+        "" to storageAndAboutRows(clearArmed, imageCacheCleared, backup, version),
     ).let(::settingsSections)
+
+private fun appearanceAndPrivacyRows(
+    settings: AppSettings,
+    formFactor: FormFactor,
+): List<SettingItem> =
+    listOfNotNull(
+        toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
+        toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
+        SettingItem(
+            id = SettingIds.THEME,
+            label = "Theme",
+            value = settings.themeMode.label,
+            kind = SettingKind.CHOICE,
+            options = AppThemeMode.entries.map { it.label },
+            selected = settings.themeMode.ordinal,
+        ),
+        colorThemeChoice(settings.colorTheme),
+        toggle(SettingIds.AMOLED, "True black", settings.amoled),
+        feedColumns(settings, formFactor),
+        catalogColumns(settings, formFactor),
+        toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
+        toggle(
+            SettingIds.SCREEN_PRIVACY,
+            "Screen privacy shield",
+            settings.screenPrivacyEnabled,
+            hint = "Hides app preview in app switcher",
+        ),
+        SettingItem(
+            id = SettingIds.DOH_PROVIDER,
+            label = "Encrypted DNS provider",
+            value = settings.dohProvider.label,
+            kind = SettingKind.CHOICE,
+            options = DohProvider.entries.map { it.label },
+            selected = settings.dohProvider.ordinal,
+        ),
+        toggle(
+            SettingIds.STRICT_DOH,
+            "Strict encrypted DNS",
+            settings.strictDohEnabled,
+            hint = "Stop loading if encrypted DNS is blocked",
+        ),
+        toggle(
+            SettingIds.SAVE_SEARCH_HISTORY,
+            "Save search history",
+            settings.saveSearchHistory,
+            hint = "Store recent searches locally",
+        ),
+        toggle(
+            SettingIds.SAVE_BROWSING_HISTORY,
+            "Save browsing history",
+            settings.saveBrowsingHistory,
+            hint = "Record visited threads in local history",
+        ),
+    )
+
+private fun storageAndAboutRows(
+    clearArmed: Boolean,
+    imageCacheCleared: Boolean,
+    backup: BackupState,
+    version: AppVersion,
+): List<SettingItem> =
+    listOfNotNull(
+        SettingItem(
+            id = SettingIds.CLEAR_ACTIVITY,
+            label = "Clear local activity",
+            value = if (clearArmed) "Tap again to delete" else "Delete",
+            kind = SettingKind.ACTION,
+            hint = "Deletes browsing history, download records and cached images on this device.",
+            destructive = true,
+        ),
+        SettingItem(
+            id = SettingIds.CLEAR_IMAGE_CACHE,
+            label = "Clear image cache",
+            value = if (imageCacheCleared) "Cleared" else "Clear",
+            kind = SettingKind.ACTION,
+            destructive = true,
+        ),
+        SettingItem(
+            id = SettingIds.EXPORT_BACKUP,
+            label = "Export data",
+            value =
+                when (backup) {
+                    BackupState.Working -> "Working…"
+                    BackupState.Exported -> "Saved"
+                    else -> "Save"
+                },
+            kind = SettingKind.ACTION,
+            hint = "Followed boards, watched threads and settings, as a file Android can restore too.",
+        ),
+        SettingItem(
+            id = SettingIds.IMPORT_BACKUP,
+            label = "Import data",
+            value =
+                when (backup) {
+                    is BackupState.Imported -> "Restored ${backup.boards} boards, ${backup.bookmarks} threads"
+                    is BackupState.Failed -> backup.message
+                    else -> "Restore"
+                },
+            kind = SettingKind.ACTION,
+        ),
+        SettingItem(
+            id = SettingIds.PRIVACY,
+            label = "Privacy policy",
+            value = "Open",
+            kind = SettingKind.ACTION,
+        ),
+        SettingItem(
+            id = SettingIds.CONTACT,
+            label = "Project on GitHub",
+            value = "GitHub",
+            kind = SettingKind.ACTION,
+        ),
+        versionRow(version),
+    )
 
 private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): List<Pair<String, List<SettingItem>>> {
     val rows = groups.flatMap { it.second }
