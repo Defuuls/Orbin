@@ -58,8 +58,9 @@ A toggle row owns one action and its checked semantics. Its visual switch is
 passive. Keep an independent switch action only when it does something
 different from opening the containing row, as in the Boards browser.
 
-The dock measures its rendered height so larger labels cannot cover the final
-content rows. Compact-title clearance follows actual text metrics.
+The dock measures label widths and switches from columns to full-width rows when
+needed. It also measures its rendered height so larger labels cannot cover the
+final content rows. Compact-title clearance follows actual text metrics.
 
 Feed cards use board-color accent rules and inset metadata footers. Boards have
 larger identity badges and followed-state outlines. Threads use individual tonal
