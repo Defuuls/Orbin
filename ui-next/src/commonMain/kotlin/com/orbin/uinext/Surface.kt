@@ -231,7 +231,12 @@ private fun DockTab(
                 style = NextType.telemetry,
                 color = if (selected) next.accent else next.faint,
             )
-            Icon(imageVector = icon, contentDescription = null, tint = if (selected) next.accent else ink, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) next.accent else ink,
+                modifier = Modifier.size(20.dp),
+            )
             Text(
                 text = label,
                 style = NextType.tab,
@@ -272,7 +277,12 @@ private fun DockTab(
                 )
             }
             Gap(2)
-            Icon(imageVector = icon, contentDescription = null, tint = if (selected) next.accent else ink, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) next.accent else ink,
+                modifier = Modifier.size(20.dp),
+            )
             Gap(2)
             Text(
                 text = label,
@@ -396,8 +406,7 @@ fun CompactTitleBar(
                     .fillMaxWidth()
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    )
-                    .clip(shape)
+                    ).clip(shape)
                     .background(next.elevated)
                     .border(1.dp, next.hairline, shape)
                     .padding(horizontal = 14.dp, vertical = 8.dp)

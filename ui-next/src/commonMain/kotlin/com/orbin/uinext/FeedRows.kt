@@ -270,7 +270,13 @@ internal fun FeedGridCell(
             HorizontalDivider(thickness = 1.dp, color = next.hairline)
 
             // Spec-Sheet Body Cassette
-            Column(modifier = Modifier.padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp, vertical = 8.dp)) {
+            Column(
+                modifier =
+                    Modifier.padding(
+                        horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp,
+                        vertical = 8.dp,
+                    ),
+            ) {
                 Text(
                     text = row.subject,
                     style = if (tallMedia) NextType.title3 else NextType.headline,
