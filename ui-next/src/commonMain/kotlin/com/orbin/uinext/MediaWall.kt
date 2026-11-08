@@ -82,6 +82,7 @@ fun MediaWallScreen(
     val imageCellMinSize = imageCellSize.dp
     val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 156.dp
     val imageSizeDescription = stringResource(Res.string.next_media_size_control)
+    val hasScanStatus = scanning || deepScanning || failed > 0
     val railVisible =
         if (hideRailOnScroll) {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
@@ -137,7 +138,7 @@ fun MediaWallScreen(
                             }
                             Gap(8)
                         }
-                        if (showSizeControl || scanning || deepScanning || failed > 0) {
+                        if (showSizeControl || hasScanStatus) {
                             Column(
                                 modifier =
                                     Modifier
@@ -179,7 +180,7 @@ fun MediaWallScreen(
                                     }
                                     Gap(8)
                                 }
-                                if (scanning || deepScanning || failed > 0) {
+                                if (hasScanStatus) {
                                     FlowRow(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),

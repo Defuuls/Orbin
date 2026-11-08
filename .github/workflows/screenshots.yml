@@ -58,15 +58,14 @@ jobs:
           test "$(git rev-parse HEAD)" = "$AUDIT_SOURCE_SHA"
           record_status=0
           ./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest --continue || record_status=$?
+          export AUDIT_RECORD_EXIT="$record_status"
           python3 - <<'PY'
-          import base64
           import hashlib
           import json
           import os
           import subprocess
           from pathlib import Path
 
-          source = os.environ["AUDIT_SOURCE_SHA"]
           prefixes = (
               "ui-next/src/androidHostTest/screenshots/",
               "feature/gallery/src/test/screenshots/",
@@ -78,31 +77,24 @@ jobs:
           changed += subprocess.check_output([
               "git", "ls-files", "--others", "--exclude-standard", "-z", "--", *prefixes,
           ]).decode().split("\0")
-          images = []
+          files = []
           total = 0
           for name in sorted(set(filter(None, changed))):
               path = Path(name)
               if not name.startswith(prefixes) or path.suffix != ".png" or path.is_symlink():
                   raise SystemExit("Unexpected changed fixture: " + name)
-              if path.stat().st_size > 2 * 1024 * 1024:
-                  raise SystemExit("Fixture too large: " + name)
               data = path.read_bytes()
+              total += len(data)
+              if len(data) > 2 * 1024 * 1024 or total > 32 * 1024 * 1024:
+                  raise SystemExit("Fixture payload exceeds diagnostic limit")
               if not data.startswith(b"\x89PNG\r\n\x1a\n"):
                   raise SystemExit("Not a PNG: " + name)
-              total += len(data)
-              if total > 32 * 1024 * 1024:
-                  raise SystemExit("Fixture payload exceeds diagnostic limit")
-              images.append((name, data))
-          print("ORBIN_GOLDEN_SOURCE " + json.dumps({"sha": source, "count": len(images), "bytes": total}))
-          for name, data in images:
-              encoded = base64.b64encode(data).decode("ascii")
-              parts = (len(encoded) + 8191) // 8192
               blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-              print("ORBIN_GOLDEN_FILE " + json.dumps({"path": name, "size": len(data), "sha256": hashlib.sha256(data).hexdigest(), "blob_sha": blob, "parts": parts}))
-              for part in range(parts):
-                  print("ORBIN_GOLDEN_CHUNK " + json.dumps({"path": name, "part": part, "base64": encoded[part * 8192:(part + 1) * 8192]}))
+              files.append({"path": name, "size": len(data), "sha256": hashlib.sha256(data).hexdigest(), "blob_sha": blob})
+          manifest = {"sha": os.environ["AUDIT_SOURCE_SHA"], "record_exit": int(os.environ["AUDIT_RECORD_EXIT"]), "files": files}
+          Path("audit-fixture-manifest.json").write_text(json.dumps(manifest))
+          print("Recorded fixture evidence:", len(files), "files,", total, "bytes; test exit", manifest["record_exit"])
           PY
-          echo "ORBIN_RECORD_EXIT $record_status"
           exit "$record_status"
 
       - name: Upload comparison images
@@ -112,7 +104,64 @@ jobs:
         with:
           name: roborazzi-diffs
           path: |
+            audit-fixture-manifest.json
+            **/build/test-results/**/*.xml
             **/build/outputs/roborazzi/**
             **/src/test/screenshots/**
             **/src/androidHostTest/screenshots/**
           if-no-files-found: ignore
+
+  export-audit-evidence:
+    name: Review fixtures ${{ matrix.bucket }}
+    needs: verify
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.number == 791 && github.event.pull_request.head.repo.full_name == github.repository && needs.verify.result == 'failure'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bucket: [0, 1, 2, 3, 4, 5, 6, 7]
+      max-parallel: 4
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: roborazzi-diffs
+          path: review-fixtures
+      - name: Export bounded fixture evidence
+        env:
+          AUDIT_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          AUDIT_BUCKET: ${{ matrix.bucket }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          root = Path("review-fixtures")
+          manifest = json.loads((root / "audit-fixture-manifest.json").read_text())
+          if manifest["sha"] != os.environ["AUDIT_SOURCE_SHA"]:
+              raise SystemExit("Unexpected fixture source")
+          bucket = int(os.environ["AUDIT_BUCKET"])
+          print("ORBIN_GOLDEN_SOURCE " + json.dumps({"sha": manifest["sha"], "bucket": bucket, "total": len(manifest["files"]), "record_exit": manifest["record_exit"]}))
+          if bucket == 0:
+              for report in root.glob("**/build/test-results/**/TEST-*.xml"):
+                  for case in ET.parse(report).getroot().iter("testcase"):
+                      for failure in case.findall("failure"):
+                          print("ORBIN_TEST_FAILURE " + json.dumps({"class": case.get("classname"), "name": case.get("name"), "message": failure.get("message", "")[:6000]}))
+          for index, item in enumerate(manifest["files"]):
+              if index % 8 != bucket:
+                  continue
+              name = item["path"]
+              path = root / name
+              if not name.startswith(("ui-next/src/androidHostTest/screenshots/", "feature/gallery/src/test/screenshots/", "core/designsystem/src/androidHostTest/screenshots/")) or path.is_symlink():
+                  raise SystemExit("Unexpected evidence path")
+              data = path.read_bytes()
+              if len(data) != item["size"] or hashlib.sha256(data).hexdigest() != item["sha256"]:
+                  raise SystemExit("Fixture checksum mismatch")
+              encoded = base64.b64encode(data).decode("ascii")
+              parts = (len(encoded) + 8191) // 8192
+              print("ORBIN_GOLDEN_FILE " + json.dumps({**item, "parts": parts}))
+              for part in range(parts):
+                  print("ORBIN_GOLDEN_CHUNK " + json.dumps({"path": name, "part": part, "base64": encoded[part * 8192:(part + 1) * 8192]}))
+          PY
