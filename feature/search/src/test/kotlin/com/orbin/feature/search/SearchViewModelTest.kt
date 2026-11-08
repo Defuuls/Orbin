@@ -79,6 +79,23 @@ class SearchViewModelTest {
         }
 
     @Test
+    fun `a search is stored when saveSearchHistory is enabled`() =
+        runTest {
+            val repo = FakeSearchRepository(listOf(result))
+            val viewModel =
+                createViewModel(
+                    repo,
+                    settings = AppSettings.Default.copy(saveSearchHistory = true),
+                )
+            viewModel.searchableBoards.first { it.isNotEmpty() }
+
+            viewModel.search("kotlin")
+            viewModel.state.first { it is SearchUiState.Results }
+
+            assertThat(repo.observeRecentQueries().first()).containsExactly("kotlin")
+        }
+
+    @Test
     fun `nsfw boards are skipped when settings hides them`() =
         runTest {
             val boards = listOf(Board(BoardId("g"), "Technology"), Board(BoardId("b"), "Random", isNsfw = true))

@@ -112,7 +112,7 @@ data class AppSettings(
     val screenPrivacyEnabled: Boolean = false,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val strictDohEnabled: Boolean = false,
-    val saveSearchHistory: Boolean = true,
+    val saveSearchHistory: Boolean = false,
     val saveBrowsingHistory: Boolean = true,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,

@@ -113,14 +113,14 @@ class SettingsStoreTest {
             store.setScreenPrivacyEnabled(true)
             store.setDohProvider(DohProvider.NEXTDNS)
             store.setStrictDohEnabled(true)
-            store.setSaveSearchHistory(false)
+            store.setSaveSearchHistory(true)
             store.setSaveBrowsingHistory(false)
 
             val settings = store.settings.first()
             assertTrue(settings.screenPrivacyEnabled)
             assertEquals(DohProvider.NEXTDNS, settings.dohProvider)
             assertTrue(settings.strictDohEnabled)
-            assertEquals(false, settings.saveSearchHistory)
+            assertEquals(true, settings.saveSearchHistory)
             assertEquals(false, settings.saveBrowsingHistory)
         }
 }

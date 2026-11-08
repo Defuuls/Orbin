@@ -125,7 +125,7 @@ class SettingsStore(
                 DohProvider.entries.firstOrNull { it.name == this[Keys.dohProvider] }
                     ?: DohProvider.CLOUDFLARE,
             strictDohEnabled = this[Keys.strictDoh] ?: false,
-            saveSearchHistory = this[Keys.saveSearchHistory] ?: true,
+            saveSearchHistory = this[Keys.saveSearchHistory] ?: false,
             saveBrowsingHistory = this[Keys.saveBrowsingHistory] ?: true,
             activeProviderId = this[Keys.activeProviderId] ?: "",
             onboardingCompleted = this[Keys.onboardingCompleted] ?: false,

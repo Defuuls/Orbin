@@ -232,8 +232,8 @@ class SettingsViewModelTest {
             viewModel.setDohProvider(DohProvider.NEXTDNS)
             assertThat(repository.current.dohProvider).isEqualTo(DohProvider.NEXTDNS)
 
-            viewModel.setSaveSearchHistory(false)
-            assertThat(repository.current.saveSearchHistory).isFalse()
+            viewModel.setSaveSearchHistory(true)
+            assertThat(repository.current.saveSearchHistory).isTrue()
 
             viewModel.setSaveBrowsingHistory(false)
             assertThat(repository.current.saveBrowsingHistory).isFalse()

@@ -71,7 +71,7 @@ class AppLock(
                 val on = enabled
                 if (!settingsLoaded) {
                     settingsLoaded = true
-                    _state.update { it.copy(locked = on, obscured = !foreground && (on || screenPrivacy)) }
+                    _state.update { it.copy(locked = on, obscured = !foreground) }
                     if (on) {
                         if (foreground) unlock() else askOnReturn = true
                     }
@@ -79,7 +79,7 @@ class AppLock(
                     // Turning it off lets the reader in; turning it on waits for the background.
                     attempt?.cancel()
                     attempt = null
-                    _state.update { LockState(obscured = !foreground && screenPrivacy) }
+                    _state.update { LockState(obscured = !foreground) }
                 }
             }
         }
@@ -117,11 +117,11 @@ class AppLock(
     /** The app went to the background: it is locked when it comes back. */
     fun onBackground() {
         foreground = false
-        if (!enabled) return
+        if (!enabled && !screenPrivacy) return
         attempt?.cancel()
         attempt = null
-        askOnReturn = true
-        _state.value = LockState(locked = true, obscured = true, unlocking = false)
+        if (enabled) askOnReturn = true
+        _state.value = LockState(locked = enabled, obscured = true, unlocking = false)
     }
 
     /** The app is back on screen: show it, and ask to unlock it if it was in the background. */
