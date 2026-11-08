@@ -20,6 +20,7 @@ import io.ktor.util.date.GMTDate
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Source
 import kotlinx.serialization.json.Json
@@ -154,8 +155,9 @@ class VichanTransportTest {
                     override val isClosedForRead: Boolean = false
 
                     override suspend fun awaitContent(min: Int): Boolean {
-                        check(!prefix.isClosedForRead) { "Transport tried to buffer past the size limit" }
-                        return prefix.awaitContent(min)
+                        if (prefix.awaitContent(min)) return true
+                        // The server keeps the connection open after the oversized prefix.
+                        awaitCancellation()
                     }
                 }
             val error =
