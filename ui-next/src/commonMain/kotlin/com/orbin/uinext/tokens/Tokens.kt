@@ -14,22 +14,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * M3-aligned spatial rhythm for ui-next.
+ * OPTIC-26 spatial rhythm for ui-next.
  *
- * Based on the Material 3 4dp/8dp grid. 16dp screen margins, 8dp between related items,
- * 24dp between sections. Replaced the Apple-style grouped-sections metaphor with a flat
- * card-on-surface layout where tonal fills create hierarchy instead of inset depth.
+ * Precision 4dp/8dp grid with 16dp viewport gutters, 8dp modular cell gaps, and 1dp structural
+ * hairline chassis borders.
  */
 @Immutable
 object NextSpace {
     val gutter: Dp = 16.dp
     val gutterTight: Dp = 16.dp
-    val section: Dp = 24.dp
-    val groupGap: Dp = 16.dp
-    val rowY: Dp = 14.dp
+    val section: Dp = 28.dp
+    val groupGap: Dp = 20.dp
+    val rowY: Dp = 16.dp
     val rowX: Dp = 16.dp
-    val titleTop: Dp = 22.dp
-    val titleBottom: Dp = 16.dp
+    val titleTop: Dp = 24.dp
+    val titleBottom: Dp = 20.dp
     val chromeInset: Dp = 16.dp
     val chromeBottom: Dp = 12.dp
     val pillPadX: Dp = 12.dp
@@ -39,46 +38,39 @@ object NextSpace {
 }
 
 /**
- * M3 Expressive corner radii — aligned with [OrbinShapes] / [MaterialTheme.shapes].
+ * OPTIC-26 machined hardware radii.
  *
- * - [tight] (8.dp) aligns with [Shapes.extraSmall]
- * - [control] (12.dp) aligns with [Shapes.small]
- * - [tile] (20.dp) rounded tile
- * - [card] (24.dp) aligns with [Shapes.large]
- * - [sheet] (28.dp) and [continuous] (28.dp) modal surface
- * - [pill] (100.dp) full round pill
+ * Replaces bulbous 32dp Material Expressive blobs and iOS squircles with tight CNC-machined
+ * micro-radii (`2dp`–`8dp`) inspired by Leica/Teenage Engineering/Hasselblad optical instruments.
  */
 @Immutable
 object NextRadius {
-    val tight: Dp = 8.dp
-    val control: Dp = 12.dp
-    val tile: Dp = 20.dp
-    val card: Dp = 24.dp
-    val sheet: Dp = 28.dp
-    val continuous: Dp = 28.dp
-    val pill: Dp = 100.dp
+    val tight: Dp = 2.dp
+    val control: Dp = 4.dp
+    val tile: Dp = 4.dp
+    val card: Dp = 6.dp
+    val sheet: Dp = 8.dp
+    val continuous: Dp = 6.dp
+    val pill: Dp = 4.dp
 }
 
 /**
- * Solid matte surface fills — no translucency, no frosted glass, no blur.
- *
- * M3 uses tonal elevation (a colored fill derived from primary) rather than shadows or
- * transparency to convey surface hierarchy. All values here are fully opaque.
+ * Solid matte anodized surface fills — no translucency, no frosted glass, no blur.
  */
 @Immutable
 object NextMaterials {
-    /** Press highlight alpha — used by M3-style ripple indication. */
+    /** Press highlight alpha — crisp mechanical detent state layer. */
     const val PRESS_LIGHT = 0.08f
     const val PRESS_DARK = 0.16f
 
-    /** Selected fill for nav indicator pills. */
+    /** Selected fill for nav indicator switches. */
     const val SELECTED_FILL_LIGHT = 0.14f
     const val SELECTED_FILL_DARK = 0.24f
 
     /** Scrim behind modal sheets. */
-    const val SCRIM = 0.32f
+    const val SCRIM = 0.42f
 
-    /** Subtle state-layer alpha for hover/focused states (M3 state layer). */
+    /** Subtle state-layer alpha for hover/focused states. */
     const val STATE_HOVER = 0.08f
     const val STATE_FOCUS = 0.12f
     const val STATE_PRESSED = 0.12f
@@ -86,96 +78,102 @@ object NextMaterials {
 }
 
 /**
- * M3 typography scale — platform default [FontFamily.SansSerif], M3 type roles.
- *
- * On Android SansSerif resolves to Roboto; on iOS Compose Multiplatform maps it to the
- * system sans (San Francisco). Type role names and letterspacing follow M3 rather than
- * the old Apple-named ramp. Display/Headline use slightly negative tracking at large sizes;
- * Body and Label stay at default 0sp.
+ * OPTIC-26 Dual-Channel Typography:
+ * - Proportional Sans (`FontFamily.Default` with `tnum` tabular numerals) for human discourse.
+ * - Technical Monospace (`FontFamily.Monospace` with `tnum`) for telemetry, board codes, post IDs,
+ *   timestamps, byte sizes, and index counters.
  */
 @Immutable
 object NextType {
-    // The platform's own UI font: Roboto on Android, San Francisco on iOS. SansSerif resolved to a
-    // different face on iOS than the Material components' default, so text changed font between
-    // Orbin's own rows and Material controls on the same screen.
     private val sans = FontFamily.Default
+    private val mono = FontFamily.Monospace
+    private const val TNUM = "tnum"
 
-    // Display — M3 displayLarge / displayMedium / displaySmall
+    // Display — instrument bay & primary screen readouts
     val displayLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
+            fontWeight = FontWeight.Black,
             fontSize = 57.sp,
             lineHeight = 64.sp,
-            letterSpacing = (-0.25).sp,
+            letterSpacing = (-1.7).sp,
+            fontFeatureSettings = TNUM,
         )
     val displayMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
-            fontSize = 45.sp,
-            lineHeight = 52.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 36.sp,
+            lineHeight = 40.sp,
+            letterSpacing = (-0.8).sp,
+            fontFeatureSettings = TNUM,
         )
     val displaySmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
-            fontSize = 36.sp,
-            lineHeight = 44.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp,
+            lineHeight = 38.sp,
+            letterSpacing = (-0.8).sp,
+            fontFeatureSettings = TNUM,
         )
 
     // Headline — screen titles, section headers
     val headlineLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 32.sp,
-            lineHeight = 40.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 30.sp,
+            lineHeight = 36.sp,
+            letterSpacing = (-0.6).sp,
+            fontFeatureSettings = TNUM,
         )
     val headlineMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 28.sp,
-            lineHeight = 36.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 26.sp,
+            lineHeight = 32.sp,
+            letterSpacing = (-0.4).sp,
+            fontFeatureSettings = TNUM,
         )
     val headlineSmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 24.sp,
-            lineHeight = 32.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            lineHeight = 28.sp,
+            letterSpacing = (-0.3).sp,
+            fontFeatureSettings = TNUM,
         )
 
     // Title — card titles, row primary text
     val titleLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
-            fontSize = 22.sp,
-            lineHeight = 28.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp,
+            lineHeight = 26.sp,
+            letterSpacing = (-0.2).sp,
+            fontFeatureSettings = TNUM,
         )
     val titleMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
-            lineHeight = 24.sp,
-            letterSpacing = 0.15.sp,
+            lineHeight = 22.sp,
+            letterSpacing = (-0.1).sp,
+            fontFeatureSettings = TNUM,
         )
     val titleSmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp,
             lineHeight = 20.sp,
-            letterSpacing = 0.1.sp,
+            letterSpacing = 0.sp,
+            fontFeatureSettings = TNUM,
         )
 
     // Body — post content, descriptions
@@ -183,9 +181,10 @@ object NextType {
         TextStyle(
             fontFamily = sans,
             fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-            letterSpacing = 0.5.sp,
+            fontSize = 15.sp,
+            lineHeight = 22.sp,
+            letterSpacing = 0.15.sp,
+            fontFeatureSettings = TNUM,
         )
     val bodyMedium =
         TextStyle(
@@ -193,7 +192,8 @@ object NextType {
             fontWeight = FontWeight.Normal,
             fontSize = 14.sp,
             lineHeight = 20.sp,
-            letterSpacing = 0.25.sp,
+            letterSpacing = 0.1.sp,
+            fontFeatureSettings = TNUM,
         )
     val bodySmall =
         TextStyle(
@@ -201,33 +201,58 @@ object NextType {
             fontWeight = FontWeight.Normal,
             fontSize = 12.sp,
             lineHeight = 16.sp,
-            letterSpacing = 0.4.sp,
+            letterSpacing = 0.2.sp,
+            fontFeatureSettings = TNUM,
         )
 
-    // Label — chips, badges, captions, nav labels
+    // Label — chips, badges, captions, nav labels, telemetry readouts
     val labelLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
-            letterSpacing = 0.1.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            letterSpacing = 0.3.sp,
+            fontFeatureSettings = TNUM,
         )
     val labelMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             lineHeight = 16.sp,
-            letterSpacing = 0.5.sp,
+            letterSpacing = 0.4.sp,
+            fontFeatureSettings = TNUM,
         )
     val labelSmall =
         TextStyle(
-            fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontFamily = mono,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
-            lineHeight = 16.sp,
+            lineHeight = 15.sp,
+            letterSpacing = 0.6.sp,
+            fontFeatureSettings = TNUM,
+        )
+
+    /** Dedicated monospace telemetry styles for board codes, post numbers, byte counts, and HUD tags. */
+    val telemetry =
+        TextStyle(
+            fontFamily = mono,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            lineHeight = 15.sp,
+            letterSpacing = 0.7.sp,
+            fontFeatureSettings = TNUM,
+        )
+
+    val telemetryLarge =
+        TextStyle(
+            fontFamily = mono,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
             letterSpacing = 0.5.sp,
+            fontFeatureSettings = TNUM,
         )
 
     /**
@@ -255,107 +280,92 @@ object NextType {
 
     // Convenience aliases used in ui-next components
 
-    /** Screen/section primary title (maps to headlineMedium). */
-    val largeTitle = headlineMedium
+    /** Screen/section primary title. */
+    val largeTitle = displayMedium
 
     val title1 = headlineLarge
     val title2 = headlineMedium
     val title3 = headlineSmall
 
-    /** Row primary text (maps to bodyLarge). */
+    /** Row primary text. */
     val body = bodyLarge
 
-    /** Secondary row text, timestamps (maps to bodySmall). */
+    /** Secondary row text, timestamps. */
     val footnote = bodySmall
 
-    /** Navigation bar label, chip text (maps to labelMedium). */
+    /** Navigation bar label, chip text. */
     val tab = labelMedium
 
-    /** Section header — sentence case, M3 label style (maps to labelSmall). */
-    val sectionHeader = labelSmall
+    /** Section header — technical index header. */
+    val sectionHeader = telemetry
 
-    /** Inline action label (maps to labelLarge). */
+    /** Inline action label. */
     val callout = labelLarge
 
-    /** Caption / badge text (maps to labelSmall). */
+    /** Caption / badge text. */
     val caption1 = labelSmall
 
-    /** Tight badge (maps to labelSmall). */
+    /** Tight badge. */
     val caption2 = labelSmall
 
-    /** Subheadline (maps to titleSmall). */
+    /** Subheadline. */
     val subheadline = titleSmall
 
-    /** Headline row text (maps to titleMedium). */
+    /** Headline row text. */
     val headline = titleMedium
 
-    /**
-     * Dense list primary text — mapped to standard M3 bodyMedium (14sp).
-     */
+    /** Dense list primary text (14sp). */
     val bodyDense = bodyMedium
 
-    /**
-     * Dense secondary text — mapped to standard M3 bodySmall (12sp).
-     */
+    /** Dense secondary text (12sp). */
     val footnoteDense = bodySmall
 
-    /**
-     * Extra-small caption — mapped to standard M3 labelSmall (11sp).
-     */
+    /** Extra-small telemetry caption (11sp). */
     val captionDense = labelSmall
 }
 
 /**
- * M3 spring motion — replaces the iOS parallax cubic-bezier push.
+ * OPTIC-26 critically damped mechanical motion.
  *
- * Material 3 Expressive uses spring physics with perceptible bounce for taps and
- * navigation. No fixed millisecond durations — spring settling time is emergent.
- * PUSH_PARALLAX is removed entirely (no iOS-style outgoing screen drift on Android).
+ * Zero bounce (`DampingRatioNoBouncy`) across every transition, toggle, and dock switch so the UI
+ * responds like a precision optical shutter rather than a playful spring.
  */
 @Immutable
 object NextMotion {
-    /** M3 emphasized easing — standard smooth deceleration */
-    val Ease: Easing = CubicBezierEasing(0.2f, 0.0f, 0f, 1.0f)
+    /** Mechanical shutter easing — fast lock-in deceleration. */
+    val Ease: Easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f)
 
-    /** Standard navigation push — medium-low stiffness, no bounce. */
+    /** Standard navigation push — critically damped, zero bounce. */
     val pushSpec: SpringSpec<Float> =
         SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow,
+            stiffness = Spring.StiffnessMedium,
         )
 
-    /** Primary tab crossfade — slightly stiffer for snappy feel. */
+    /** Primary tab crossfade — stiff, zero-overshoot mechanical switch. */
     val tabSpec: SpringSpec<Float> =
         SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium,
         )
 
-    /** FAB / button expansion — medium bounce for M3 Expressive expressiveness. */
+    /** Control / switch actuation — high-stiffness detent with zero bounce. */
     val expressiveSpec: SpringSpec<Float> =
         SpringSpec(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh,
         )
 
-    /** Chrome show/hide — quick, no bounce. */
+    /** Chrome show/hide — quick, critically damped. */
     val chromeSpec: SpringSpec<Float> =
         SpringSpec(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow,
+            stiffness = Spring.StiffnessMedium,
         )
 
-    // Legacy numeric constants — kept for call sites that haven't migrated to SpringSpec yet.
-    // Remove these once Controls.kt and all callers use the spring specs above directly.
-    const val PUSH_MS = 350
-    const val TAB_MS = 200
-    const val CHROME_MS = 180
+    const val PUSH_MS = 220
+    const val TAB_MS = 150
+    const val CHROME_MS = 140
 
-    /**
-     * Sibling-tab slide offset as a fraction of container width.
-     *
-     * M3 shared-axis transitions nudge sibling panes a short distance rather than sliding a
-     * full width, which is what distinguishes a lateral tab swap from a hierarchical push.
-     */
-    const val TAB_NUDGE = 0.06f
+    const val TAB_NUDGE = 0.04f
 }

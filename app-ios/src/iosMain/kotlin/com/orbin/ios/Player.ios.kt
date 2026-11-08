@@ -23,6 +23,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryAmbient
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
@@ -115,8 +116,8 @@ internal actual fun NativePlayer(
             // A neighbouring page may have been composed before the last audio choice.
             muted = SessionAudio.muted
             player.muted = muted
-            // Plays with the ringer switch on silent, as video in Safari and Photos does.
-            AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback, error = null)
+            val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+            AVAudioSession.sharedInstance().setCategory(category, error = null)
             player.play()
         } else {
             player.pause()
@@ -171,10 +172,21 @@ internal actual fun NativePlayer(
         )
         VideoControls(
             state = state.copy(muted = muted),
-            onTogglePlay = { if (player.rate > 0f) player.pause() else player.play() },
+            onTogglePlay = {
+                if (player.rate > 0f) {
+                    player.pause()
+                } else {
+                    if (state.duration > 0.0 && state.position >= state.duration - 0.1) {
+                        player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
+                    }
+                    player.play()
+                }
+            },
             onToggleMute = {
                 muted = SessionAudio.toggle(muted)
                 player.muted = muted
+                val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+                AVAudioSession.sharedInstance().setCategory(category, error = null)
             },
             onSeekTo = { target ->
                 player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
@@ -317,7 +329,8 @@ private fun WKWebView.tearDownMedia() {
     )
     stopLoading()
     loadHTMLString("", baseURL = null)
-    removeFromSuperview()
+    // UIKit interop owns attachment/removal of this view. Only stop its media here;
+    // Compose may still have a queued interop transaction for the host.
 }
 
 /** One in-memory store for every video page, so they share a WebContent process. */

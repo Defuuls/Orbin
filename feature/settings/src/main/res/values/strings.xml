@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Settings sections -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_privacy">Privacy and safety</string>
+    <string name="settings_section_data">Data and storage</string>
+    <string name="settings_section_updates">Updates</string>
+
     <!-- Preferences -->
     <string name="settings_hide_nsfw">Hide NSFW boards</string>
     <string name="settings_cover_violent">Cover violent media</string>
@@ -22,8 +28,9 @@
     <string name="settings_clear_activity">Clear local activity</string>
     <string name="settings_clear_activity_armed">Tap again to delete</string>
     <string name="settings_clear_activity_action">Delete</string>
-    <string name="settings_clear_activity_hint">Deletes browsing history, recent searches and download history on this device.</string>
+    <string name="settings_clear_activity_hint">Deletes browsing history, recent searches, download history and cached images on this device.</string>
     <string name="settings_clear_activity_done">Local activity cleared</string>
+    <string name="settings_clear_activity_failed">Could not clear all local activity. Try again.</string>
     <string name="settings_clear_image_cache">Clear image cache</string>
     <string name="settings_image_cache_empty">Empty · Clear</string>
     <string name="settings_image_cache_small">&lt;1 MB · Clear</string>

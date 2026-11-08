@@ -145,11 +145,18 @@ fun NextSettingsScreen(
                             onClear = {
                                 if (clearArmed) {
                                     clearArmed = false
-                                    viewModel.clearLocalActivity()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            strings.get(R.string.settings_clear_activity_done),
-                                        )
+                                    viewModel.clearLocalActivity { cleared ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                strings.get(
+                                                    if (cleared) {
+                                                        R.string.settings_clear_activity_done
+                                                    } else {
+                                                        R.string.settings_clear_activity_failed
+                                                    },
+                                                ),
+                                            )
+                                        }
                                     }
                                 } else {
                                     clearArmed = true

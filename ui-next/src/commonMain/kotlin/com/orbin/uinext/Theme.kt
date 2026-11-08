@@ -114,8 +114,11 @@ fun NextTheme(
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale
 
+    val effectivePalette =
+        palette ?: inherited?.takeIf { it.dark == dark && it.amoled == (dark && black) }
+
     val fallbackPalette =
-        palette ?: when {
+        effectivePalette ?: when {
             dark && black -> AmoledPalette
             dark -> DarkPalette
             else -> LightPalette
@@ -128,12 +131,12 @@ fun NextTheme(
     // Explicit palettes must use the same effective ground as Material components. Otherwise
     // an AMOLED override blackens Material backgrounds but screens reading `next` ignore it.
     val resolvedPalette =
-        palette?.copy(
+        effectivePalette?.copy(
             background = m3Scheme.background,
             dark = dark,
             amoled = dark && black,
-        ) ?: nextPaletteFromColorScheme(
-            colorScheme = m3Scheme,
+        ) ?: fallbackPalette.copy(
+            background = m3Scheme.background,
             dark = dark,
             amoled = dark && black,
         )
@@ -228,16 +231,16 @@ internal data class BoardHue(
  */
 internal val BoardHues =
     listOf(
-        BoardHue(light = Color(0xFF2C6BC4), dark = Color(0xFF74A9F8)), // blue
-        BoardHue(light = Color(0xFF8F6206), dark = Color(0xFFE9B54C)), // amber
-        BoardHue(light = Color(0xFF1B7A55), dark = Color(0xFF5FC79A)), // green
-        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // violet
-        BoardHue(light = Color(0xFFB83A6E), dark = Color(0xFFEE87B4)), // magenta
-        BoardHue(light = Color(0xFF116C74), dark = Color(0xFF5CC6D0)), // teal
-        BoardHue(light = Color(0xFFA6491F), dark = Color(0xFFEE9468)), // rust
-        BoardHue(light = Color(0xFF4A54C6), dark = Color(0xFF93A0F5)), // indigo
-        BoardHue(light = Color(0xFF5F6F14), dark = Color(0xFFB6CB55)), // olive
-        BoardHue(light = Color(0xFF8C3A8C), dark = Color(0xFFD98BD9)), // plum
+        BoardHue(light = Color(0xFF255EB0), dark = Color(0xFF74A9F8)), // cobalt blue
+        BoardHue(light = Color(0xFF855A04), dark = Color(0xFFE9B54C)), // signal amber
+        BoardHue(light = Color(0xFF166E4C), dark = Color(0xFF5FC79A)), // phosphor green
+        BoardHue(light = Color(0xFF6D45C0), dark = Color(0xFFB18CF0)), // ultraviolet
+        BoardHue(light = Color(0xFFB83A6E), dark = Color(0xFFEE87B4)), // laser magenta
+        BoardHue(light = Color(0xFF116C74), dark = Color(0xFF5CC6D0)), // telemetry cyan
+        BoardHue(light = Color(0xFFA6491F), dark = Color(0xFFEE9468)), // international rust
+        BoardHue(light = Color(0xFF4A54C6), dark = Color(0xFF93A0F5)), // deep indigo
+        BoardHue(light = Color(0xFF5F6F14), dark = Color(0xFFB6CB55)), // tactical olive
+        BoardHue(light = Color(0xFF8C3A8C), dark = Color(0xFFD98BD9)), // anodized plum
     )
 
 private val PinnedBoardHues =
@@ -255,8 +258,7 @@ fun boardHue(board: String): Color {
 /**
  * Placeholder artwork for unloaded thumbnails.
  *
- * Soft two-stop gradients varied by position. Light gradients use forest-adjacent
- * tints (mint/sage/moss); dark gradients are deep muted fills matching the dark surface.
+ * Industrial anodized slate and brushed titanium gradients varied by position.
  */
 @Composable
 fun placeholderArt(seed: Int): Brush {
@@ -264,19 +266,19 @@ fun placeholderArt(seed: Int): Brush {
     val pairs =
         if (dark) {
             listOf(
-                Color(0xFF1F3A28) to Color(0xFF142018),
-                Color(0xFF243526) to Color(0xFF152019),
-                Color(0xFF2A3545) to Color(0xFF192130),
-                Color(0xFF2E3A22) to Color(0xFF1C2714),
-                Color(0xFF2E3520) to Color(0xFF1C2113),
+                Color(0xFF1C2029) to Color(0xFF12151C),
+                Color(0xFF231C1A) to Color(0xFF161211),
+                Color(0xFF1A2226) to Color(0xFF11171A),
+                Color(0xFF20221C) to Color(0xFF141612),
+                Color(0xFF221E26) to Color(0xFF151318),
             )
         } else {
             listOf(
-                Color(0xFFC8EAD4) to Color(0xFFA8D8B8), // mint
-                Color(0xFFD4E8D6) to Color(0xFFB8D4BA), // sage
-                Color(0xFFE8F5E9) to Color(0xFFCAE6CB), // soft green
-                Color(0xFFDCE5DB) to Color(0xFFC0C9BF), // moss
-                Color(0xFFFFEDD5) to Color(0xFFF2D8BA), // warm cream
+                Color(0xFFE4E1D8) to Color(0xFFD5D1C7),
+                Color(0xFFE8DDD5) to Color(0xFFD8C8BD),
+                Color(0xFFDCE2E4) to Color(0xFFC8D1D4),
+                Color(0xFFE0E2D8) to Color(0xFFCFD2C4),
+                Color(0xFFE5DFD5) to Color(0xFFD4CCC0),
             )
         }
     val (start, end) = pairs[((seed % pairs.size) + pairs.size) % pairs.size]

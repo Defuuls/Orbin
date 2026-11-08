@@ -16,6 +16,12 @@ on:
     paths:
       # Keep this list aligned with modules that own Roborazzi coverage, plus
       # shared UI dependencies whose changes can alter those captured screens.
+      - '.github/workflows/screenshots.yml'
+      - '.github/actions/setup-jdk-gradle/**'
+      - 'build-logic/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
       - 'core/designsystem/**'
       - 'core/ui/**'
       - 'feature/gallery/**'
@@ -36,6 +42,7 @@ jobs:
         uses: ./.github/actions/setup-jdk-gradle
 
       - name: Verify Roborazzi screenshots
+        id: verify
         # Android modules have a debug variant; multiplatform modules run their Android host tests.
         run: ./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest
 
@@ -46,6 +53,7 @@ jobs:
         with:
           name: roborazzi-diffs
           path: |
+            **/build/test-results/**/*.xml
             **/build/outputs/roborazzi/**
             **/src/test/screenshots/**
             **/src/androidHostTest/screenshots/**

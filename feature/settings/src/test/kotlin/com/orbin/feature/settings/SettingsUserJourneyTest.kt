@@ -6,9 +6,9 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -193,7 +193,7 @@ class SettingsUserJourneyTest {
     ) {
         row(label).performClick()
         composeRule.waitForIdle()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(isOption(option))
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(isOption(option))
         composeRule.onNode(isOption(option)).performClick()
         composeRule.waitForIdle()
         row(label).assertTextContains(option)
@@ -201,7 +201,7 @@ class SettingsUserJourneyTest {
 
     /** A row, scrolled into composition first: the list is lazy. */
     private fun row(label: String): SemanticsNodeInteraction {
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(label))
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
         return composeRule.onNode(hasText(label) and hasClickAction())
     }
 

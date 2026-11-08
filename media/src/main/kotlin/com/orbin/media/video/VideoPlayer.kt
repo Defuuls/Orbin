@@ -128,7 +128,7 @@ fun VideoPlayer(
                         .setUsage(C.USAGE_MEDIA)
                         .build(),
                     // handleAudioFocus =
-                    true,
+                    !muted,
                 ).build()
                 .apply {
                     repeatMode = repeatModeFor(shouldLoop(0L))
@@ -218,6 +218,7 @@ fun VideoPlayer(
 
     LaunchedEffect(isMuted) {
         exoPlayer.volume = if (isMuted) 0f else 1f
+        exoPlayer.setAudioAttributes(exoPlayer.audioAttributes, !isMuted)
     }
 
     // Short clips loop like GIFs; anything longer plays once. Decided by length, not a setting.
@@ -451,6 +452,9 @@ fun VideoPlayer(
                 positionMs = positionMs,
                 durationMs = durationMs,
                 onPlayPause = {
+                    if (!isPlaying && exoPlayer.playbackState == Player.STATE_ENDED) {
+                        exoPlayer.seekTo(0L)
+                    }
                     exoPlayer.playWhenReady = !isPlaying
                     if (!isPlaying) {
                         controlsVisible = false

@@ -3,14 +3,16 @@ package com.orbin.uinext
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -24,22 +26,20 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The app's palette for [dark] / [amoled], the same forest-green palettes iOS draws with. Android
- * used to substitute Material's baseline purple here while keeping the green containers, so the
- * two apps differed and Android mixed purple accents with green surfaces.
+ * The app's OPTIC-26 palette for [dark] / [amoled], shared across Android and iOS.
  */
 fun materialPalette(
     dark: Boolean,
@@ -54,14 +54,17 @@ fun materialPalette(
 @Composable
 fun PlatformSwitch(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val toggle: (Boolean) -> Unit = {
-        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
-        onCheckedChange(it)
-    }
+    val toggle: ((Boolean) -> Unit)? =
+        onCheckedChange?.let { onChange ->
+            { value ->
+                haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
+                onChange(value)
+            }
+        }
     if (LocalNextPlatform.current == NextPlatform.IOS) {
         IosSwitch(checked = checked, onCheckedChange = toggle, modifier = modifier)
     } else {
@@ -82,37 +85,51 @@ fun PlatformSwitch(
 }
 
 /**
- * UISwitch-like metrics and colors for iOS. Brand forest green stays elsewhere in the shell;
- * the switch itself uses system green / grey chrome so it reads as a native control.
+ * OPTIC-26 machined toggle switch for iOS with accessible 48dp hit target.
  */
 @Composable
 private fun IosSwitch(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val trackOn = next.accent
-    val trackOff = next.hairline
+    val trackOff = next.elevated
     val trackColor = animateColorAsState(if (checked) trackOn else trackOff, label = "ios-switch-track")
     val thumbOffset = animateDpAsState(if (checked) 20.dp else 0.dp, label = "ios-switch-thumb")
+    val trackShape = RoundedCornerShape(NextRadius.control)
+    val thumbShape = RoundedCornerShape(NextRadius.tight)
     Box(
         modifier =
             modifier
-                .width(IOS_SWITCH_WIDTH)
-                .height(IOS_SWITCH_HEIGHT)
-                .clip(RoundedCornerShape(percent = 50))
-                .background(trackColor.value)
-                .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
-                .padding(2.dp),
+                .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
+                .then(
+                    if (onCheckedChange != null) {
+                        Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+                    } else {
+                        Modifier
+                    },
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier
-                .offset(x = thumbOffset.value)
-                .size(IOS_SWITCH_THUMB)
-                .shadow(2.dp, CircleShape)
-                .clip(CircleShape)
-                .background(Color.White),
-        )
+            modifier =
+                Modifier
+                    .width(IOS_SWITCH_WIDTH)
+                    .height(IOS_SWITCH_HEIGHT)
+                    .clip(trackShape)
+                    .background(trackColor.value)
+                    .border(1.dp, if (checked) next.accent else next.hairline, trackShape)
+                    .padding(2.dp),
+        ) {
+            Box(
+                Modifier
+                    .offset(x = thumbOffset.value)
+                    .size(IOS_SWITCH_THUMB)
+                    .clip(thumbShape)
+                    .background(if (checked) next.onAccent else next.ink),
+            )
+        }
     }
 }
 

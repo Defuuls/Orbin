@@ -6,9 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -58,7 +58,7 @@ class NextSettingsListTest {
     /** Brings a row into composition — in a lazy list an off-screen row is not there to be found. */
     private fun scrollTo(label: String) =
         composeTestRule
-            .onNode(hasScrollAction())
+            .onNodeWithTag("settings-list")
             .performScrollToNode(hasText(label))
             .run { composeTestRule.onNodeWithText(label) }
 

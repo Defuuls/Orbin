@@ -25,7 +25,12 @@ const val MAX_FEED_AUTOPLAY_PLAYERS = 1
 fun canAutoplayInFeed(
     attachment: MediaAttachment,
     autoplayEnabled: Boolean,
-): Boolean = autoplayEnabled && attachment.type == MediaType.VIDEO && !attachment.isSpoiler
+): Boolean =
+    autoplayEnabled &&
+        attachment.type == MediaType.VIDEO &&
+        !attachment.isSpoiler &&
+        attachment.sourceUrl.isNotBlank() &&
+        attachment.sourceUrl != attachment.thumbnailUrl
 
 /**
  * Picks at most [MAX_FEED_AUTOPLAY_PLAYERS] row id from [visibleCandidateIds] (already ordered

@@ -1,3 +1,7 @@
+import com.google.devtools.ksp.gradle.KspAATask
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+
 // Top-level build file. Convention plugins live in `build-logic` and are applied per-module.
 //
 // Security dependency pins are declared once, as data, in `gradle/security-pins.txt`, and applied
@@ -84,6 +88,18 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// KSP 2.3.13 clears shared library-symbol caches during concurrent executions.
+// Keep processors serialized until https://github.com/google/ksp/issues/3286 is fixed.
+abstract class OrbinKspExecutionGate : BuildService<BuildServiceParameters.None>
+
+val kspExecutionGate =
+    gradle.sharedServices.registerIfAbsent(
+        "orbinKspExecutionGate",
+        OrbinKspExecutionGate::class.java,
+    ) {
+        maxParallelUsages.set(1)
+    }
+
 // The very same rule the plugin classpath was patched with, reused rather than restated.
 @Suppress("UNCHECKED_CAST")
 val applySecurityPin = extra["orbin.securityPinRule"] as (DependencyResolveDetails) -> Unit
@@ -142,6 +158,12 @@ kover {
 }
 
 subprojects {
+    tasks.withType<KspAATask>().configureEach {
+        usesService(kspExecutionGate)
+        // Invalidate outputs cached before the processor concurrency guard existed.
+        inputs.property("orbin.ksp.executionGateVersion", 1)
+    }
+
     configurations.configureEach {
         resolutionStrategy.applySecurityDependencyPatches()
     }

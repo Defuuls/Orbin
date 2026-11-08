@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,11 +37,14 @@ import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
+
+private const val CLEAR_ARMED_MS = 4_000L
 
 // The tabs and the pages over them: feed, boards, downloads, settings and search.
 
@@ -182,6 +186,12 @@ internal fun SettingsDestination(
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf<String?>(null) }
     var clearArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(clearArmed) {
+        if (clearArmed) {
+            delay(CLEAR_ARMED_MS)
+            clearArmed = false
+        }
+    }
     var imageCacheCleared by remember { mutableStateOf(false) }
     SettingsScreen(
         groups =

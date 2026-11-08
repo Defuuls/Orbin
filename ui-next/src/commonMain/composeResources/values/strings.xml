@@ -28,6 +28,8 @@
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
     <string name="next_settings_title">Settings</string>
+    <string name="next_settings_search">Search settings</string>
+    <string name="next_settings_no_matches">No settings match your search</string>
 
     <string name="next_launchpad_boards">Boards</string>
     <string name="next_boards_search">Search boards</string>
@@ -102,6 +104,7 @@
     <string name="next_confirm_cancel">Cancel</string>
     <string name="next_confirm_delete">Delete</string>
     <string name="next_status_retry">Retry</string>
+    <string name="next_refresh">Refresh</string>
     <string name="next_status_loading">Loading</string>
     <string name="next_snackbar_dismiss">Dismiss</string>
 

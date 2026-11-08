@@ -44,6 +44,8 @@ jobs:
   build:
     name: Build unsigned release APK
     runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
     permissions:
       contents: read
     env:
@@ -56,6 +58,10 @@ jobs:
           # Nothing in this job pushes, so the token is not written into .git/config for the build
           # to read.
           persist-credentials: false
+
+      - name: Record the build source
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Validate the release tag
         run: |
@@ -134,7 +140,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.base_ref || github.ref }}
+          ref: ${{ needs.build.outputs.source_sha }}
           # The write token is given to the one git command that needs it, below.
           persist-credentials: false
 
@@ -230,7 +236,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" > /dev/null; then
-            echo "Tag ${RELEASE_TAG} already exists on remote — skipping creation."
+            git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+            tagged_source=$(git rev-parse "${RELEASE_TAG}^{commit}")
+            built_source=$(git rev-parse HEAD)
+            if [ "$tagged_source" != "$built_source" ]; then
+              echo "::error::Tag ${RELEASE_TAG} points at ${tagged_source}, but the APK was built from ${built_source}"
+              exit 1
+            fi
+            echo "Tag ${RELEASE_TAG} already identifies the build source — skipping creation."
           else
             git tag -a "${RELEASE_TAG}" -m "$RELEASE_NAME"
             auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
@@ -251,6 +264,10 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+          if [ "$(git rev-parse "${RELEASE_TAG}^{commit}")" != "$(git rev-parse HEAD)" ]; then
+            echo "::error::Release tag changed after the APK source was selected"
+            exit 1
+          fi
           PREV_TAG=$(git describe --tags --abbrev=0 --match 'v*' "${RELEASE_TAG}^" 2>/dev/null || true)
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
           {

@@ -10,7 +10,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.domain.media.AllMediaItem
@@ -21,6 +20,7 @@ import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.tokens.NextRadius
 
 /**
  * The redesigned media wall, wired to the same [AllMediaViewModel] the current one uses.
@@ -138,7 +138,7 @@ fun NextAllMediaContent(
                     byId[cell.id]?.let { item ->
                         MediaThumbnail(
                             attachment = item.attachment,
-                            modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
+                            modifier = tileModifier.clip(RoundedCornerShape(NextRadius.tile)),
                         )
                     }
                 },

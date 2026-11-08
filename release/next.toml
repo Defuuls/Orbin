@@ -1,27 +1,22 @@
-# Orbin 189 - Tatsoi
+# Orbin 190 - Puntarelle
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 189
-codename     = "Tatsoi"
-version_code = 207
+number       = 190
+codename     = "Puntarelle"
+version_code = 208
 
-highlight = "Hardened network response bounds, SQLite media cache concurrency, iOS and Android app lock, and two-pane navigation."
+highlight = "Fixed the iOS crash when jumping to the bottom of a thread and then playing a video."
 
 summary = [
-  "bump Orbin to 189-Tatsoi / versionCode 207",
-  "close the [Unreleased] changelog section as 189-Tatsoi",
+  "bump Orbin to 190-Puntarelle / versionCode 208",
+  "close the [Unreleased] changelog section as 190-Puntarelle",
   "update README.md, docs/wiki/Home.md, and the README hero SVG for the new release",
 ]
 
 [changelog]
-Security = [
-  "Network: enforced bounded 16 MiB JSON reads across Vichan and LynxChan APIs, installed HTML response limits on Android Ktor clients, restricted ToS gate redirects to same-origin HTTPS, and rewrote cross-origin Referer headers.",
-  "App Lock: cancelled in-flight biometric unlock attempts when backgrounding on iOS, gated Home Screen quick actions while locked or obscured, and applied FLAG_SECURE during Android Safe Mode.",
-  "Storage: excluded iOS media downloads from iCloud backups with CompleteUntilFirstUserAuthentication protection, verified parent paths on saved thread deletion, and wiped SQLite media cache and clipboard temp directories on local data reset.",
-]
 Fixed = [
-  "Cache: synchronized SqliteMediaResponseCache database initialization, deferred deletion of retired chunks until active readers close, and prevented concurrent writers from clobbering in-progress entries.",
-  "iOS: cached StartedApp as a process-level singleton in MainViewController, paused AVPlayer and WebM video playback when inactive or backgrounded, cleaned up temporary backup picker files, and observed violent media cover toggles in Browser.",
-  "Android & UI: prevented duplicate Thread destination recreation on return from Gallery in two-pane mode, coerced pager indices in GalleryScreen and MediaViewer, persisted thread scroll positions under NonCancellable, added tap-to-reveal for spoiler post bodies, and exposed Switch accessibility roles on toggle rows.",
-  "Providers & Media: rethrew CancellationException in ProviderDiagnostics and DownloadWorker without recording false failures, capped HTML parser nesting depth and Retry-After cooldowns, and added atomic Room transactions for REPLACE backup restores.",
+  "iOS: stopped thread thumbnails from decoding full videos, created native video players only for the visible media viewer page, and left WKWebView removal to Compose, to stop the crash when jumping to the bottom of a thread and then playing a video.",
+]
+Dependencies = [
+  "Bumped Ktor to 3.6.1, sqlcipher-android to 4.20.0, the dependency-analysis plugin to 3.20.1, and the android-build group.",
 ]

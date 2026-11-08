@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [190-Puntarelle] - 2026-11-08
+
+### Fixed
+- iOS: stopped thread thumbnails from decoding full videos, created native video players only for the visible media viewer page, and left WKWebView removal to Compose, to stop the crash when jumping to the bottom of a thread and then playing a video.
+
+### Dependencies
+- Bumped Ktor to 3.6.1, sqlcipher-android to 4.20.0, the dependency-analysis plugin to 3.20.1, and the android-build group.
+
+
+### Fixed
+- iOS: stopped thread thumbnails from decoding full videos, created native video players only for the visible media viewer page, and left WKWebView removal to Compose, to stop the crash when jumping to the bottom of a thread and then playing a video.
+
 ## [189-Tatsoi] - 2026-11-03
 
 ### Security
@@ -2842,7 +2854,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...HEAD
+[190-Puntarelle]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...v190-Puntarelle
 [189-Tatsoi]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...v189-Tatsoi
 [188-Mizuna]: https://github.com/Defuuls/Orbin/compare/v187-Daikon...v188-Mizuna
 [187-Daikon]: https://github.com/Defuuls/Orbin/compare/v186-Burdock...v187-Daikon

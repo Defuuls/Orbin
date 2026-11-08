@@ -1,6 +1,8 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -98,16 +100,22 @@ internal fun FeedGridCell(
     uniform: Boolean = false,
 ) {
     if (row.muted) {
-        CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
+        CollapsedFeedRow(
+            row = row,
+            modifier = modifier.padding(if (tallMedia) GRID_CELL_PADDING else 4.dp),
+            showBoard = showBoard,
+            onClick = onClick,
+        )
         return
     }
     Card(
         onClick = { onClick(row) },
         modifier =
             modifier
-                .padding(GRID_CELL_PADDING)
+                .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
                 .semantics { role = Role.Button },
-        shape = RoundedCornerShape(GRID_TILE_RADIUS),
+        shape = RoundedCornerShape(NextRadius.card),
+        border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
                 containerColor = next.raised,
@@ -116,6 +124,12 @@ internal fun FeedGridCell(
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(if (row.read) next.hairline else boardHue(row.board)),
+            )
             val tile =
                 Modifier.fillMaxWidth().let {
                     if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
@@ -136,7 +150,7 @@ internal fun FeedGridCell(
                 }
             }
             // One inset for every line of text, so the board, subject and counts share a left edge.
-            Column(modifier = Modifier.padding(horizontal = GRID_TEXT_INSET)) {
+            Column(modifier = Modifier.padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp)) {
                 Gap(10)
                 if (showBoard) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -155,10 +169,10 @@ internal fun FeedGridCell(
                 Gap(6)
                 Text(
                     text = row.subject,
-                    style = NextType.body,
-                    fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
+                    style = if (tallMedia) NextType.title3 else NextType.headline,
+                    fontWeight = if (row.read) FontWeight.Medium else FontWeight.Bold,
                     color = if (row.read) next.muted else next.ink,
-                    maxLines = 2,
+                    maxLines = if (tallMedia && !uniform) 3 else 2,
                     minLines = if (uniform) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -172,7 +186,21 @@ internal fun FeedGridCell(
                 }
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                if (tallMedia) {
+                    val footerShape = RoundedCornerShape(NextRadius.control)
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(footerShape)
+                            .background(next.background)
+                            .border(1.dp, next.hairline, footerShape)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                    ) {
+                        MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                    }
+                } else {
+                    MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                }
             }
             Gap(12)
         }
@@ -223,6 +251,7 @@ private fun CollapsedFeedRow(
                 .fillMaxWidth()
                 .semantics { role = Role.Button },
         shape = RoundedCornerShape(NextRadius.tight),
+        border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
                 containerColor = next.raised,

@@ -15,23 +15,23 @@ import kotlin.math.pow
  */
 class UniformityTest {
     @Test
-    fun `corner radius tokens maintain expressive roundness and uniformity`() {
-        assertThat(NextRadius.tight).isEqualTo(8.dp)
-        assertThat(NextRadius.control).isEqualTo(12.dp)
-        assertThat(NextRadius.tile).isEqualTo(20.dp)
-        assertThat(NextRadius.card).isEqualTo(24.dp)
-        assertThat(NextRadius.sheet).isEqualTo(28.dp)
-        assertThat(NextRadius.continuous).isEqualTo(28.dp)
-        assertThat(NextRadius.pill).isEqualTo(100.dp)
+    fun `corner radius tokens maintain machined industrial geometry and uniformity`() {
+        assertThat(NextRadius.tight).isEqualTo(2.dp)
+        assertThat(NextRadius.control).isEqualTo(4.dp)
+        assertThat(NextRadius.tile).isEqualTo(4.dp)
+        assertThat(NextRadius.card).isEqualTo(6.dp)
+        assertThat(NextRadius.sheet).isEqualTo(8.dp)
+        assertThat(NextRadius.continuous).isEqualTo(6.dp)
+        assertThat(NextRadius.pill).isEqualTo(4.dp)
     }
 
     @Test
     fun `spacing tokens maintain consistent grid and gutter rhythm`() {
         assertThat(NextSpace.gutter).isEqualTo(16.dp)
         assertThat(NextSpace.gutterTight).isEqualTo(16.dp)
-        assertThat(NextSpace.section).isEqualTo(24.dp)
-        assertThat(NextSpace.groupGap).isEqualTo(16.dp)
-        assertThat(NextSpace.rowY).isEqualTo(14.dp)
+        assertThat(NextSpace.section).isEqualTo(28.dp)
+        assertThat(NextSpace.groupGap).isEqualTo(20.dp)
+        assertThat(NextSpace.rowY).isEqualTo(16.dp)
         assertThat(NextSpace.rowX).isEqualTo(16.dp)
         assertThat(NextSpace.chromeInset).isEqualTo(16.dp)
         assertThat(NextSpace.chromeBottom).isEqualTo(12.dp)

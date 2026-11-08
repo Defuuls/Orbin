@@ -88,6 +88,23 @@ class BackupServiceTest {
         }
 
     @Test
+    fun importSummaryCountsOnlyValidSavedSearches() =
+        runTest {
+            val backupJson =
+                """{"savedSearches":[{"text":"all boards"},{"text":"valid board","boardId":"g"},{"text":"invalid board","boardId":"../g"}]}"""
+            for (mode in RestoreMode.entries) {
+                val searches = FakeSearchRepository()
+                val summary =
+                    service(FakeSettingsRepository(), searches = searches)
+                        .importFromJson(backupJson, mode)
+                        .getOrThrow()
+                assertThat(summary.savedSearches).isEqualTo(2)
+                assertThat(searches.observeSavedSearches().first().map { it.text })
+                    .containsExactly("all boards", "valid board")
+            }
+        }
+
+    @Test
     fun bookmarksAndSavedSearchesSurviveExportAndImport() =
         runTest {
             val bookmarks = FakeBookmarkRepository(listOf(bookmark("g", 42L, watched = true)))

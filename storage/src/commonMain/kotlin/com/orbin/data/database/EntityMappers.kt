@@ -201,15 +201,23 @@ private fun SavedPostEntity.toDomain(key: ThreadKey): Post =
 
 /** Rebuilds the attachment links kept alongside a saved post, paired by position. */
 private fun SavedPostEntity.savedAttachments(): List<MediaAttachment> {
-    val urls = attachmentUrls.split("\n").filter { it.isNotBlank() }
-    val names = attachmentNames.split("\n").filter { it.isNotBlank() }
-    return urls.mapIndexed { index, url ->
-        val name = names.getOrElse(index) { url.substringAfterLast('/') }
-        val extension = name.substringAfterLast('.', "")
+    if (attachmentUrls.isBlank()) return emptyList()
+    val urls = attachmentUrls.split("\n")
+    val names = attachmentNames.split("\n")
+    return urls.mapIndexedNotNull { index, rawUrl ->
+        val url = rawUrl.trim()
+        if (url.isEmpty()) return@mapIndexedNotNull null
+        val urlFileName = url.substringAfterLast('/')
+        val name = names.getOrNull(index)?.takeIf { it.isNotBlank() } ?: urlFileName
+        val extension =
+            name
+                .substringAfterLast('.', "")
+                .ifBlank { urlFileName.substringAfterLast('.', "") }
         val type =
             when (extension.lowercase().trimStart('.')) {
-                "webm", "mp4" -> MediaType.VIDEO
-                "gif" -> MediaType.ANIMATED_IMAGE
+                "webm", "mp4", "m4v", "mov", "mkv", "ogv" -> MediaType.VIDEO
+                "mp3", "ogg", "oga", "opus", "flac", "wav", "m4a", "aac" -> MediaType.AUDIO
+                "gif", "apng" -> MediaType.ANIMATED_IMAGE
                 else -> MediaType.IMAGE
             }
         MediaAttachment(

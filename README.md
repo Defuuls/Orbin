@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [189 — Tatsoi](https://github.com/Defuuls/Orbin/releases/tag/v189-Tatsoi)
+**Current release:** [190 — Puntarelle](https://github.com/Defuuls/Orbin/releases/tag/v190-Puntarelle)
 
-**What's new in 189:** Hardened network response bounds, SQLite media cache concurrency, iOS and Android app lock, and two-pane navigation.
+**What's new in 190:** Fixed the iOS crash when jumping to the bottom of a thread and then playing a video.
 
 ---
 
@@ -19,7 +19,7 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 | **Browsing & Layout** | Adaptive grid-first catalogs with uncropped aspect-ratio previews, A–Z subscribed board feed, 840dp+ two-pane split view, and explicit offline/error states across **Feed**, **Media**, and **Boards**. |
 | **Thread Reader** | Structured posts (greentext, quotes, inline quote previews, backlinks, spoilers, cross-board links), multi-attachment carousels, Files sheet, scroll restore, watched-thread notifications, and deduplicated link export. |
 | **Media & Downloads** | Coil 3 images + Media3 / AVPlayer video with caching, preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
-| **Themes & Accessibility** | Material 3 Expressive (`#276A3C` forest seed), Dynamic Color, Light / Dark / AMOLED modes, classic board palettes (Yotsuba, Warosu, Miku, Lain), global font scaling, and searchable settings. |
+| **Themes & Accessibility** | Material 3 Expressive with eight color themes, Light / Dark / AMOLED modes, system text scaling, accessible controls, and searchable settings grouped by task. |
 | **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy cover (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and cloud-backup exclusion. |
 | **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBW Chan** (`provider:lynxchan`). |
 

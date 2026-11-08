@@ -288,7 +288,7 @@ internal object LynxChanCommentParser {
         return trimmed.takeIf { scheme in SAFE_LINK_SCHEMES }
     }
 
-    private fun decodeEntities(input: String): String {
+    internal fun decodeEntities(input: String): String {
         if ('&' !in input) return input
         return buildString(input.length) {
             var i = 0

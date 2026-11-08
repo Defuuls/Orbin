@@ -22,6 +22,7 @@ import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -135,13 +136,19 @@ class SettingsViewModel
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
 
-        fun clearLocalActivity() =
+        fun clearLocalActivity(onComplete: (Boolean) -> Unit = {}) =
             update {
-                historyRepository.clear()
-                searchRepository.clearRecentQueries()
-                downloadRepository.clearHistory()
-                imageCacheRepository.clear()
-                _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+                val result =
+                    runCatching {
+                        historyRepository.clear()
+                        searchRepository.clearRecentQueries()
+                        downloadRepository.clearHistory()
+                        imageCacheRepository.clear()
+                        _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+                    }
+                val failure = result.exceptionOrNull()
+                if (failure is CancellationException) throw failure
+                onComplete(result.isSuccess)
             }
 
         fun exportBackup(

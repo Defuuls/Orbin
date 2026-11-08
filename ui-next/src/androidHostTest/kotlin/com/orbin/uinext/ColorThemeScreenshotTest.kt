@@ -65,7 +65,7 @@ class ColorThemeScreenshotTest(
             SettingsScreen(
                 groups =
                     listOf(
-                        "" to
+                        "Appearance" to
                             listOf(
                                 SettingItem(
                                     id = "colorTheme",
@@ -85,7 +85,7 @@ class ColorThemeScreenshotTest(
                                 ),
                                 SettingItem("amoled", "True black", if (mode == "amoled") "On" else "Off"),
                             ),
-                        "" to
+                        "Data and storage" to
                             listOf(
                                 SettingItem(
                                     id = "clearActivity",

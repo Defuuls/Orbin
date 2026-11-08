@@ -14,10 +14,10 @@ fun canonicalNextPalette(
         else -> LightPalette
     }
 
-private val AmoledRaised = Color(0xFF1D1B1E)
-private val AmoledElevated = Color(0xFF221F24)
-private const val FAINT_ALPHA_DARK = 0.60f
-private const val FAINT_ALPHA_LIGHT = 0.62f
+private val AmoledRaised = Color(0xFF0E1015)
+private val AmoledElevated = Color(0xFF151820)
+private const val FAINT_ALPHA_DARK = 0.62f
+private const val FAINT_ALPHA_LIGHT = 0.66f
 
 private val DestructiveLight = Color(0xFFBA1A1A)
 private val OnDestructiveLight = Color(0xFFFFFFFF)
@@ -54,50 +54,59 @@ fun nextPaletteFromColorScheme(
     )
 
 /**
- * Fallback static palette (used when M3 color scheme is not yet available, e.g. preview context).
- * These mirror the forest green static scheme values from Color.kt.
+ * OPTIC-26 Light Mode — Raw Titanium & Field Paper.
+ * High-contrast dark ink on warm brushed titanium / drafting vellum with International Orange
+ * optical shutter accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
  */
 internal val LightPalette =
     NextPalette(
-        background = Color(0xFFF7FBF7),
-        raised = Color(0xFFF1F7F1),
-        elevated = Color(0xFFECF2EC),
-        ink = Color(0xFF191C19),
-        muted = Color(0xFF191C19).copy(alpha = 0.75f),
-        faint = Color(0xFF191C19).copy(alpha = 0.62f),
-        hairline = Color(0xFFC0C9BF),
-        accent = Color(0xFF276A3C),
-        accentSoft = Color(0xFFC8EAD4),
+        background = Color(0xFFF4F2ED),
+        raised = Color(0xFFFAF9F6),
+        elevated = Color(0xFFEAE7E0),
+        ink = Color(0xFF121417),
+        muted = Color(0xFF3D424A),
+        faint = Color(0xFF535861),
+        hairline = Color(0xFFC8C4BA),
+        accent = Color(0xFF9E3608),
+        accentSoft = Color(0xFFF9D6C4),
         onAccent = Color(0xFFFFFFFF),
-        accentContainer = Color(0xFFC8EAD4),
-        onAccentContainer = Color(0xFF00210E),
+        accentContainer = Color(0xFFF9D6C4),
+        onAccentContainer = Color(0xFF330E00),
         destructive = DestructiveLight,
         onDestructive = OnDestructiveLight,
         dark = false,
         amoled = false,
     )
 
+/**
+ * OPTIC-26 Dark Mode — Obsidian Anodized.
+ * Deep anodized carbon-slate chassis with warm optical phosphor ink and International Orange
+ * indicator accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
+ */
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF101A12),
-        raised = Color(0xFF182019),
-        elevated = Color(0xFF1C271E),
-        ink = Color(0xFFE0E8E0),
-        muted = Color(0xFFE0E8E0).copy(alpha = 0.75f),
-        faint = Color(0xFFE0E8E0).copy(alpha = 0.60f),
-        hairline = Color(0xFF404941),
-        accent = Color(0xFFA3D4AF),
-        accentSoft = Color(0xFF1F5D3A),
-        onAccent = Color(0xFF00391A),
-        accentContainer = Color(0xFF1F5D3A),
-        onAccentContainer = Color(0xFFC8EAD4),
+        background = Color(0xFF0A0A0C),
+        raised = Color(0xFF12141A),
+        elevated = Color(0xFF181B22),
+        ink = Color(0xFFE8E4DC),
+        muted = Color(0xFFB6B3AC),
+        faint = Color(0xFF8E8B85),
+        hairline = Color(0xFF282C37),
+        accent = Color(0xFFFF7A3D),
+        accentSoft = Color(0xFF4A1D06),
+        onAccent = Color(0xFF1A0700),
+        accentContainer = Color(0xFF4A1D06),
+        onAccentContainer = Color(0xFFFFD5C2),
         destructive = DestructiveDark,
         onDestructive = OnDestructiveDark,
         dark = true,
         amoled = false,
     )
 
-// Dark mode is deep forest; only the AMOLED option keeps a true-black ground.
+/**
+ * OPTIC-26 AMOLED Mode — True-Zero Carbon.
+ * Pure `#000000` OLED ground with anodized carbon-slate cells and `1dp` structural borders.
+ */
 internal val AmoledPalette =
     DarkPalette.copy(
         background = Color.Black,

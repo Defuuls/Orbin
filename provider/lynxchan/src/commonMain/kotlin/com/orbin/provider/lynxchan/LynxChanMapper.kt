@@ -39,8 +39,8 @@ class LynxChanMapper(
     private fun mapBoard(dto: LynxChanBoard): Board =
         Board(
             id = BoardId(dto.boardUri),
-            title = dto.boardName,
-            description = dto.boardDescription,
+            title = LynxChanCommentParser.decodeEntities(dto.boardName),
+            description = LynxChanCommentParser.decodeEntities(dto.boardDescription),
             isNsfw = site.nsfwByDefault,
         )
 
@@ -77,7 +77,7 @@ class LynxChanMapper(
             board = board,
             threadId = threadId,
             isOriginalPost = true,
-            subject = dto.subject?.takeIf { it.isNotBlank() },
+            subject = dto.subject?.takeIf { it.isNotBlank() }?.let(LynxChanCommentParser::decodeEntities),
             comment = comment,
             createdAtMillis = dto.creation.parseIsoOrNull() ?: dto.lastBump.parseIsoOrZero(),
             attachments = mapCatalogAttachments(dto),
@@ -147,11 +147,11 @@ class LynxChanMapper(
             board = board,
             threadId = threadId,
             isOriginalPost = true,
-            subject = response.subject?.takeIf { it.isNotBlank() },
+            subject = response.subject?.takeIf { it.isNotBlank() }?.let(LynxChanCommentParser::decodeEntities),
             comment = comment,
             poster =
                 PosterInfo(
-                    name = response.name?.takeIf { it.isNotBlank() },
+                    name = response.name?.takeIf { it.isNotBlank() }?.let(LynxChanCommentParser::decodeEntities),
                     posterId = response.id,
                     capcode = response.signedRole,
                 ),
@@ -173,11 +173,11 @@ class LynxChanMapper(
             board = board,
             threadId = threadId,
             isOriginalPost = false,
-            subject = dto.subject?.takeIf { it.isNotBlank() },
+            subject = dto.subject?.takeIf { it.isNotBlank() }?.let(LynxChanCommentParser::decodeEntities),
             comment = comment,
             poster =
                 PosterInfo(
-                    name = dto.name?.takeIf { it.isNotBlank() },
+                    name = dto.name?.takeIf { it.isNotBlank() }?.let(LynxChanCommentParser::decodeEntities),
                     posterId = dto.id,
                     capcode = dto.signedRole,
                 ),
