@@ -161,7 +161,7 @@ private val PROGRESS_HEIGHT = 3.dp
 @Composable
 fun NextToggle(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     PlatformSwitch(checked, onCheckedChange, modifier)

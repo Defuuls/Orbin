@@ -2,11 +2,13 @@ package com.orbin.provider.lynxchan.api
 
 import com.orbin.provider.api.ProviderException
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.expectSuccess
-import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.appendPathSegments
+import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.utils.io.readBuffer
 import kotlinx.io.readByteArray
@@ -63,24 +65,25 @@ class KtorLynxChanApi(
         deserializer: DeserializationStrategy<T>,
         path: List<String>,
         query: Map<String, String> = emptyMap(),
-    ): T {
-        val response =
-            client.get {
-                expectSuccess = true
-                url {
-                    takeFrom(baseUrl)
-                    appendPathSegments(path)
-                }
-                query.forEach { (name, value) -> parameter(name, value) }
+    ): T =
+        client.prepareGet {
+            // Keep both success and error bodies out of Ktor's unbounded saved-response path.
+            expectSuccess = false
+            url {
+                takeFrom(baseUrl)
+                appendPathSegments(path)
             }
-        val channel = response.bodyAsChannel()
-        val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
-        if (bytes.size > MAX_JSON_BYTES) {
-            channel.cancel(null)
-            throw ProviderException.Parse("Response exceeded maximum allowed size")
+            query.forEach { (name, value) -> parameter(name, value) }
+        }.execute { response ->
+            if (!response.status.isSuccess()) throw ResponseException(response, "")
+            val channel = response.bodyAsChannel()
+            val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
+            if (bytes.size > MAX_JSON_BYTES) {
+                channel.cancel(null)
+                throw ProviderException.Parse("Response exceeded maximum allowed size")
+            }
+            json.decodeFromString(deserializer, bytes.decodeToString())
         }
-        return json.decodeFromString(deserializer, bytes.decodeToString())
-    }
 
     private fun requireSafeSegment(board: String) {
         require(board.isNotEmpty() && board.all { it.isLetterOrDigit() || it == '_' || it == '-' }) {

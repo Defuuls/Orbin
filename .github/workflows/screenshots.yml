@@ -16,6 +16,12 @@ on:
     paths:
       # Keep this list aligned with modules that own Roborazzi coverage, plus
       # shared UI dependencies whose changes can alter those captured screens.
+      - '.github/workflows/screenshots.yml'
+      - '.github/actions/setup-jdk-gradle/**'
+      - 'build-logic/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
       - 'core/designsystem/**'
       - 'core/ui/**'
       - 'feature/gallery/**'

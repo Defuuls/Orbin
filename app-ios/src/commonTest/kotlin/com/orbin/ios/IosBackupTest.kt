@@ -96,6 +96,20 @@ class IosBackupTest {
         }
 
     @Test
+    fun importingAnOlderBackupCompletesSetupWithoutChangingTheAppLock() =
+        runTest {
+            for (json in listOf("{}", """{"settings":{"onboardingCompleted":false}}""")) {
+                val stores = Stores()
+                stores.settings.setOnboardingCompleted(true)
+                stores.settings.setBiometricLockEnabled(true)
+                backup(stores).importFromJson(json).getOrThrow()
+                val restored = stores.settings.settings.first()
+                assertTrue(restored.onboardingCompleted)
+                assertTrue(restored.biometricLockEnabled)
+            }
+        }
+
+    @Test
     fun importingMergesAndSkipsSitesThisBuildDoesNotHave() =
         runTest {
             val from = Stores()

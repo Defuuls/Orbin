@@ -17,8 +17,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.http.toHttpDate
 import io.ktor.util.date.GMTDate
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.Source
 import kotlinx.serialization.json.Json
 import org.junit.Test
 import java.io.IOException
@@ -140,6 +143,51 @@ class VichanTransportTest {
         runTest {
             val error = runCatching { provider { throw IOException("connection reset") }.getBoards() }.exceptionOrNull()
             assertThat(error).isInstanceOf(ProviderException.Network::class.java)
+        }
+
+    @Test
+    fun `oversized JSON is rejected before waiting for the rest of the body`() =
+        runTest {
+            val prefix = ByteReadChannel(ByteArray(16 * 1024 * 1024 + 1))
+            val body =
+                object : ByteReadChannel by prefix {
+                    override val isClosedForRead: Boolean = false
+
+                    override suspend fun awaitContent(min: Int): Boolean {
+                        check(!prefix.isClosedForRead) { "Transport tried to buffer past the size limit" }
+                        return prefix.awaitContent(min)
+                    }
+                }
+            val error =
+                runCatching {
+                    provider {
+                        respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+                    }.getBoards()
+                }.exceptionOrNull()
+
+            assertThat(error).isInstanceOf(ProviderException.Parse::class.java)
+        }
+
+    @OptIn(InternalAPI::class)
+    @Test
+    fun `HTTP errors are classified without reading their bodies`() =
+        runTest {
+            val body =
+                object : ByteReadChannel by ByteReadChannel.Empty {
+                    override val isClosedForRead: Boolean = false
+
+                    override val readBuffer: Source
+                        get() = error("Error response body must not be buffered")
+
+                    override suspend fun awaitContent(min: Int): Boolean =
+                        error("Error response body must not be read")
+                }
+            val error =
+                runCatching {
+                    provider { respond(body, HttpStatusCode.NotFound) }.getBoards()
+                }.exceptionOrNull()
+
+            assertThat(error).isInstanceOf(ProviderException.NotFound::class.java)
         }
 
     @Test

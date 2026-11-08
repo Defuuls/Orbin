@@ -238,7 +238,8 @@ class IosBackup(
             requireAuthorization()
             if (restored.activeProviderId.isNotBlank()) setActiveProviderId(ProviderId(restored.activeProviderId))
             requireAuthorization()
-            setOnboardingCompleted(restored.onboardingCompleted)
+            // Restoring data completes setup on this install.
+        setOnboardingCompleted(true)
         }
 
     private fun fileName(): String = "orbin-backup-${now().take(DATE_LENGTH)}.json"

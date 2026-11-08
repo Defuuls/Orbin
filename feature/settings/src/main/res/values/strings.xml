@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Settings sections -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_privacy">Privacy and safety</string>
+    <string name="settings_section_data">Data and storage</string>
+    <string name="settings_section_updates">Updates</string>
+
     <!-- Preferences -->
     <string name="settings_hide_nsfw">Hide NSFW boards</string>
     <string name="settings_cover_violent">Cover violent media</string>

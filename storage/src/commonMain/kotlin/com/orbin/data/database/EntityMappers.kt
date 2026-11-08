@@ -208,8 +208,9 @@ private fun SavedPostEntity.savedAttachments(): List<MediaAttachment> {
         val extension = name.substringAfterLast('.', "")
         val type =
             when (extension.lowercase().trimStart('.')) {
-                "webm", "mp4" -> MediaType.VIDEO
-                "gif" -> MediaType.ANIMATED_IMAGE
+                "webm", "mp4", "m4v", "mov", "mkv", "ogv" -> MediaType.VIDEO
+                "mp3", "ogg", "oga", "opus", "flac", "wav", "m4a", "aac" -> MediaType.AUDIO
+                "gif", "apng" -> MediaType.ANIMATED_IMAGE
                 else -> MediaType.IMAGE
             }
         MediaAttachment(

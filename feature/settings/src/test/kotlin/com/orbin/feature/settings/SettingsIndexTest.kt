@@ -21,28 +21,22 @@ class SettingsIndexTest {
         assertThat(allRows().filterNot { it.kind in inPlace }).isEmpty()
     }
 
-    /** The whole surface: preferences, then data, with nothing else on it. */
     @Test
-    fun `settings is a short list with nothing hidden behind it`() {
+    fun `settings groups keep every preference editable in place`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf(
-                    "hideNsfw",
-                    "coverViolent",
-                    "themeMode",
-                    "colorTheme",
-                    "amoled",
-                    "biometric",
-                    "updateOnLaunch",
-                    "strictDns",
-                ),
-                listOf("clearActivity", "clearImageCache", "checkUpdates", "exportBackup", "importBackup"),
+                listOf("themeMode", "colorTheme", "amoled"),
+                listOf("hideNsfw", "coverViolent", "biometric", "strictDns"),
+                listOf("clearActivity", "clearImageCache", "exportBackup", "importBackup"),
+                listOf("updateOnLaunch", "checkUpdates"),
             ).inOrder()
     }
 
     @Test
-    fun `the cards carry no headings`() {
-        assertThat(buildModel().groups.map { it.first }.toSet()).containsExactly(NO_HEADING)
+    fun `settings have named sections for each task`() {
+        assertThat(buildModel().groups.map { it.first })
+            .containsExactly("Appearance", "Privacy and safety", "Data and storage", "Updates")
+            .inOrder()
     }
 
     /** No heading may end up empty: a heading with nothing under it is a heading you scroll past. */

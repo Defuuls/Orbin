@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +27,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +35,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +51,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
+import com.orbin.uinext.resources.next_settings_no_matches
+import com.orbin.uinext.resources.next_settings_search
 import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
@@ -85,15 +96,18 @@ fun SettingsScreen(
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
 ) {
     val state = rememberLazyListState()
-    LaunchedEffect(expandedId, groups) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val visibleGroups = remember(groups, query) { filterSettings(groups, query) }
+    LaunchedEffect(expandedId, query) {
         val targetId = expandedId ?: return@LaunchedEffect
-        val groupIndex = groups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
+        val groupIndex = visibleGroups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
         if (groupIndex >= 0) {
-            val lazyItemIndex = 1 + groupIndex
+            val lazyItemIndex = 2 + groupIndex
             state.scrollToItem(lazyItemIndex)
         }
     }
     val settingsTitle = stringResource(Res.string.next_settings_title)
+    val searchLabel = stringResource(Res.string.next_settings_search)
     val showCompactTitle by remember {
         derivedStateOf {
             state.firstVisibleItemIndex > 0 ||
@@ -108,7 +122,7 @@ fun SettingsScreen(
         ) { bottomPad ->
             LazyColumn(
                 state = state,
-                modifier = Modifier.fillMaxSize().contentInsets().imePadding(),
+                modifier = Modifier.fillMaxSize().contentInsets().imePadding().testTag("settings-list"),
                 contentPadding =
                     PaddingValues(
                         bottom = bottomPad.calculateBottomPadding(),
@@ -122,7 +136,25 @@ fun SettingsScreen(
                         subtitle = subtitle,
                     )
                 }
-                groups.forEachIndexed { groupIndex, (heading, rows) ->
+                item(key = "search") {
+                    SchematicSearch(
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = searchLabel,
+                        modifier = Modifier.padding(horizontal = GUTTER).semantics { contentDescription = searchLabel },
+                    )
+                }
+                if (visibleGroups.isEmpty()) {
+                    item(key = "empty") {
+                        Text(
+                            text = stringResource(Res.string.next_settings_no_matches),
+                            style = NextType.body,
+                            color = next.muted,
+                            modifier = Modifier.padding(horizontal = GUTTER),
+                        )
+                    }
+                }
+                visibleGroups.forEachIndexed { groupIndex, (heading, rows) ->
                     item(key = "group:$groupIndex") {
                         GroupedSection(header = heading.takeIf { it.isNotBlank() }) {
                             rows.forEachIndexed { index, item ->
@@ -157,7 +189,11 @@ private fun SettingRow(
     onSelectOption: (SettingItem, Int) -> Unit,
     onCommitText: (SettingItem, String) -> Unit,
 ) {
-    Column {
+    val bringIntoView = remember { BringIntoViewRequester() }
+    LaunchedEffect(expanded) {
+        if (expanded) bringIntoView.bringIntoView()
+    }
+    Column(Modifier.bringIntoViewRequester(bringIntoView)) {
         ListItem(
             headlineContent = {
                 Text(
@@ -181,7 +217,9 @@ private fun SettingRow(
                 },
             trailingContent = {
                 if (item.kind == SettingKind.TOGGLE) {
-                    NextToggle(checked = item.isOn(), onCheckedChange = { onActivate(item) })
+                    Box(Modifier.clearAndSetSemantics {}) {
+                        NextToggle(checked = item.isOn(), onCheckedChange = null)
+                    }
                 } else {
                     SelectionContainer {
                         Text(
@@ -212,7 +250,13 @@ private fun SettingRow(
                             Modifier
                         } else {
                             val role = if (item.kind == SettingKind.TOGGLE) Role.Switch else Role.Button
-                            Modifier.nextClickable(role = role, onClick = { onActivate(item) })
+                            Modifier
+                                .nextClickable(role = role, onClick = { onActivate(item) })
+                                .semantics {
+                                    if (item.kind == SettingKind.TOGGLE) {
+                                        toggleableState = ToggleableState(item.isOn())
+                                    }
+                                }
                         },
                     ),
         )

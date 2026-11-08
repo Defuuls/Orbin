@@ -135,7 +135,7 @@ internal fun settingsGroups(
                     label = "Clear local activity",
                     value = if (clearArmed) "Tap again to delete" else "Delete",
                     kind = SettingKind.ACTION,
-                    hint = "Deletes browsing history on this device.",
+                    hint = "Deletes browsing history, download records and cached images on this device.",
                     destructive = true,
                 ),
                 SettingItem(
@@ -182,7 +182,19 @@ internal fun settingsGroups(
                 ),
                 versionRow(version),
             ).filterNotNull(),
-    )
+    ).let { groups ->
+        val rows = groups.flatMap { it.second }
+        val appearanceIds =
+            setOf(SettingIds.THEME, SettingIds.COLOR_THEME, SettingIds.AMOLED, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS)
+        val privacyIds = setOf(SettingIds.HIDE_NSFW, SettingIds.COVER_VIOLENT, SettingIds.APP_LOCK)
+        val aboutIds = setOf(SettingIds.PRIVACY, SettingIds.CONTACT, SettingIds.VERSION)
+        listOf(
+            "Appearance" to rows.filter { it.id in appearanceIds },
+            "Privacy and safety" to rows.filter { it.id in privacyIds },
+            "Data and storage" to rows.filterNot { it.id in appearanceIds || it.id in privacyIds || it.id in aboutIds },
+            "About" to rows.filter { it.id in aboutIds },
+        )
+    }
 
 /** The release, as Android's settings name it, and the TestFlight build under it. */
 private fun versionRow(version: AppVersion): SettingItem? {

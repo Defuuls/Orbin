@@ -17,12 +17,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -198,7 +201,7 @@ private fun BoardRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .nextClickable(onClick = { onFollow(board.id, !isFollowed) })
+                .toggleable(value = isFollowed, role = Role.Switch, onValueChange = { onFollow(board.id, it) })
                 .padding(horizontal = NextSpace.gutter, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -227,7 +230,9 @@ private fun BoardRow(
                 style = NextType.footnote,
             )
         }
-        NextToggle(checked = isFollowed, onCheckedChange = { onFollow(board.id, it) })
+        Box(Modifier.clearAndSetSemantics {}) {
+            NextToggle(checked = isFollowed, onCheckedChange = null)
+        }
     }
 }
 

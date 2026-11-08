@@ -83,7 +83,7 @@ because they are the same code, not because they were copied.
 
 **One vocabulary, in `ui-next/.../Surface.kt` and `tokens/`.** `DestinationPill` is the permanent
 chrome for Feed, Media and Boards; every other screen (Settings, threads, catalogs, Search,
-Downloads) draws no bottom chrome, because its large title already says where you are. `GroupedSection` draws Settings-style inset cards. Soft `Hairline` / `GroupedDivider`
+Downloads) draws no bottom chrome, because its large title already says where you are. `GroupedSection` draws Settings-style inset cards. Settings uses named Appearance, Privacy and safety, Data and storage, and Updates/About sections with an inline search field. Search checks display labels, hints and choices without inspecting secret values. Soft `Hairline` / `GroupedDivider`
 separators — not Material elevation theatre. `InlineAction` is how an action is drawn — as a word,
 with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
 away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.

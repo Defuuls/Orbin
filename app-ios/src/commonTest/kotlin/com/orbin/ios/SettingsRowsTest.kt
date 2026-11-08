@@ -13,6 +13,16 @@ import kotlin.test.assertTrue
 
 class SettingsRowsTest {
     @Test
+    fun sectionsKeepEverySettingReachableExactlyOnce() {
+        val groups = settingsGroups(AppSettings.Default, false, false)
+        assertEquals(listOf("Appearance", "Privacy and safety", "Data and storage", "About"), groups.map { it.first })
+        assertTrue(groups.all { it.second.isNotEmpty() })
+        val ids = groups.flatMap { it.second }.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
+        assertEquals(12, ids.size)
+    }
+
+    @Test
     fun everyColorIsSelectableAndShowsItsSavedSelection() {
         AppColorTheme.entries.forEach { theme ->
             val row =
