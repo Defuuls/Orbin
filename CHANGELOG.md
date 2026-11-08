@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [193-Purslane] - 2026-11-08
+
+### Added
+- Configurable privacy and security controls across Android and iOS: screen privacy shield to obscure app switcher previews and block screen capture (FLAG_SECURE on Android and active cover on iOS), runtime DNS-over-HTTPS provider choice (Cloudflare, OpenDNS, NextDNS, Google), strict DoH mode to prevent unencrypted system DNS fallback, and incognito toggles for search and browsing history.
+
+
 ## [192-Sea-Kale] - 2026-11-08
 
 ### Added
@@ -2875,7 +2881,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...HEAD
+[193-Purslane]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...v193-Purslane
 [192-Sea-Kale]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...v192-Sea-Kale
 [191-Agretti]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...v191-Agretti
 [190-Puntarelle]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...v190-Puntarelle
