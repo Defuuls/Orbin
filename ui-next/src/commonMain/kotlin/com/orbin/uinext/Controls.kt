@@ -45,13 +45,19 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_refresh
 import com.orbin.uinext.resources.next_snackbar_dismiss
 import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextRadius
@@ -159,6 +165,7 @@ fun NextPullToRefresh(
     // value each time, and the pull itself recomposes), the list could lose it mid-drag.
     val refreshing by rememberUpdatedState(isRefreshing)
     val refresh by rememberUpdatedState(onRefresh)
+    val refreshLabel = stringResource(Res.string.next_refresh)
     val connection =
         remember(thresholdPx, haptics) {
             object : NestedScrollConnection {
@@ -214,7 +221,25 @@ fun NextPullToRefresh(
             else -> (animatedPull.value / thresholdPx).coerceIn(0f, 1f)
         }
 
-    Box(modifier = modifier.fillMaxSize().nestedScroll(connection)) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .nestedScroll(connection)
+                .semantics {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction(refreshLabel) {
+                                if (refreshing) {
+                                    false
+                                } else {
+                                    refresh()
+                                    true
+                                }
+                            },
+                        )
+                },
+    ) {
         content()
         AnimatedVisibility(
             visible = showBar,
@@ -301,6 +326,7 @@ fun NextSnackbarHost(
     modifier: Modifier = Modifier,
 ) {
     val data = hostState.current
+    val accessibilityManager = LocalAccessibilityManager.current
     Box(modifier = modifier.fillMaxWidth()) {
         AnimatedVisibility(
             visible = data != null,
@@ -319,8 +345,15 @@ fun NextSnackbarHost(
             val snack = data
             if (snack != null) {
                 NextSnackbarToast(data = snack)
-                LaunchedEffect(snack) {
-                    kotlinx.coroutines.delay(SNACKBAR_MS)
+                LaunchedEffect(snack, accessibilityManager) {
+                    val timeoutMillis =
+                        accessibilityManager?.calculateRecommendedTimeoutMillis(
+                            originalTimeoutMillis = SNACKBAR_MS,
+                            containsIcons = false,
+                            containsText = true,
+                            containsControls = snack.actionLabel != null || snack.withDismissAction,
+                        ) ?: SNACKBAR_MS
+                    kotlinx.coroutines.delay(timeoutMillis)
                     snack.dismiss()
                 }
             }
@@ -339,7 +372,10 @@ private fun NextSnackbarToast(data: NextSnackbarData) {
                 .background(next.elevated)
                 .border(0.5.dp, next.hairline, shape)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
-                .semantics { contentDescription = data.message },
+                .semantics {
+                    contentDescription = data.message
+                    liveRegion = LiveRegionMode.Polite
+                },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

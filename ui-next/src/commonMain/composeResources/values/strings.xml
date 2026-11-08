@@ -104,6 +104,7 @@
     <string name="next_confirm_cancel">Cancel</string>
     <string name="next_confirm_delete">Delete</string>
     <string name="next_status_retry">Retry</string>
+    <string name="next_refresh">Refresh</string>
     <string name="next_status_loading">Loading</string>
     <string name="next_snackbar_dismiss">Dismiss</string>
 
