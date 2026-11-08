@@ -56,7 +56,8 @@ jobs:
           git fetch --no-tags --depth=1 origin "$AUDIT_SOURCE_SHA"
           git checkout --detach "$AUDIT_SOURCE_SHA"
           test "$(git rev-parse HEAD)" = "$AUDIT_SOURCE_SHA"
-          ./gradlew :ui-next:recordRoborazziAndroidHostTest
+          record_status=0
+          ./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest --continue || record_status=$?
           python3 - <<'PY'
           import base64
           import hashlib
@@ -66,15 +67,22 @@ jobs:
           from pathlib import Path
 
           source = os.environ["AUDIT_SOURCE_SHA"]
-          prefix = "ui-next/src/androidHostTest/screenshots/"
+          prefixes = (
+              "ui-next/src/androidHostTest/screenshots/",
+              "feature/gallery/src/test/screenshots/",
+              "core/designsystem/src/androidHostTest/screenshots/",
+          )
           changed = subprocess.check_output([
-              "git", "diff", "--name-only", "--diff-filter=M", "-z", "HEAD", "--", prefix,
+              "git", "diff", "--name-only", "--diff-filter=M", "-z", "HEAD", "--", *prefixes,
+          ]).decode().split("\0")
+          changed += subprocess.check_output([
+              "git", "ls-files", "--others", "--exclude-standard", "-z", "--", *prefixes,
           ]).decode().split("\0")
           images = []
           total = 0
-          for name in sorted(filter(None, changed)):
+          for name in sorted(set(filter(None, changed))):
               path = Path(name)
-              if not name.startswith(prefix) or path.suffix != ".png" or path.is_symlink():
+              if not name.startswith(prefixes) or path.suffix != ".png" or path.is_symlink():
                   raise SystemExit("Unexpected changed fixture: " + name)
               if path.stat().st_size > 2 * 1024 * 1024:
                   raise SystemExit("Fixture too large: " + name)
@@ -94,6 +102,8 @@ jobs:
               for part in range(parts):
                   print("ORBIN_GOLDEN_CHUNK " + json.dumps({"path": name, "part": part, "base64": encoded[part * 8192:(part + 1) * 8192]}))
           PY
+          echo "ORBIN_RECORD_EXIT $record_status"
+          exit "$record_status"
 
       - name: Upload comparison images
         if: failure()

@@ -1,9 +1,11 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -228,6 +230,14 @@ class ProposalScreenshotTest {
                 layout = ThreadLayout.FILES,
                 files = mediaCells().take(7),
             )
+        }
+
+    @Test
+    fun navigationMaxText() =
+        capture("next_navigation_max_text", fontScale = MAX_FONT_SCALE) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                DestinationPill(selected = NextDestination.DOWNLOADS, onSelect = {})
+            }
         }
 
     /** The list at rest: every row closed. */

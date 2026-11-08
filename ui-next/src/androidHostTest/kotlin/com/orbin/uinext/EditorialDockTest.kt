@@ -51,7 +51,12 @@ class EditorialDockTest {
                 .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
                     val layouts = mutableListOf<TextLayoutResult>()
                     action(layouts)
-                    assertFalse(layouts.single().hasVisualOverflow)
+                    val layout = layouts.single()
+                    assertFalse(
+                        "$label: size=${layout.size}, lines=${layout.lineCount}, " +
+                            "width=${layout.didOverflowWidth}, height=${layout.didOverflowHeight}",
+                        layout.hasVisualOverflow,
+                    )
                 }
         }
     }

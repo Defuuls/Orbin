@@ -191,8 +191,6 @@ private fun DockTab(
             style = NextType.tab,
             fontWeight = FontWeight.Bold,
             color = ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
         )
     }
