@@ -7,7 +7,7 @@ agp = "9.5.0"
 kotlin = "2.4.21"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
-ksp = "2.3.12"
+ksp = "2.3.13"
 kotlinInject = "0.9.0"
 kermit = "2.2.0"
 kotlincrypto = "0.8.0"
