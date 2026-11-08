@@ -27,6 +27,8 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
 
             add("implementation", libs.findLibrary("androidx-lifecycle-runtime-compose").get())
             add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-compose").get())
+            // KSP 2.3.13 no longer resolves SavedStateHandle through transitive deps; Hilt ViewModels need it directly.
+            add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-savedstate").get())
             add("implementation", libs.findLibrary("androidx-hilt-navigation-compose").get())
             add("implementation", libs.findLibrary("androidx-hilt-lifecycle-viewmodel-compose").get())
             add("implementation", libs.findLibrary("androidx-navigation-compose").get())
