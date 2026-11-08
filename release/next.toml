@@ -1,22 +1,28 @@
-# Orbin 190 - Puntarelle
+# Orbin 191 - Agretti
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 190
-codename     = "Puntarelle"
-version_code = 208
+number       = 191
+codename     = "Agretti"
+version_code = 209
 
-highlight = "Fixed the iOS crash when jumping to the bottom of a thread and then playing a video."
+highlight = "Introduced the OPTIC-26 industrial design system, unified cross-platform components, and fixed core audio/diagnostics issues."
 
 summary = [
-  "bump Orbin to 190-Puntarelle / versionCode 208",
-  "close the [Unreleased] changelog section as 190-Puntarelle",
+  "bump Orbin to 191-Agretti / versionCode 209",
+  "close the [Unreleased] changelog section as 191-Agretti",
   "update README.md, docs/wiki/Home.md, and the README hero SVG for the new release",
 ]
 
 [changelog]
+Added = [
+  "OPTIC-26 industrial design system across Android and iOS: machined physical corner radii, custom tabular numerals, critically damped zero-bounce motion, high-contrast dark/AMOLED surfaces, and optical aperture crosshair reticle.",
+]
 Fixed = [
-  "iOS: stopped thread thumbnails from decoding full videos, created native video players only for the visible media viewer page, and left WKWebView removal to Compose, to stop the crash when jumping to the bottom of a thread and then playing a video.",
+  "Audio: muted video playback across Android and iOS no longer requests system audio focus or interrupts background audio; ended clips seek back to zero on replay.",
+  "Diagnostics & Recovery: deferred SharedGraph instantiation until crash-loop checks run, and ensured complete local database/datastore reset during data clearing.",
+  "UI Unification: eliminated double card borders on DownloadRow, brought multi-attachment horizontal pager parity to iOS threads, and fixed dynamic greentext/quotelink contrast.",
+  "Networking & Storage: removed duplicate network interceptors, preserved explicit media Accept headers, and prevented filename index drift on multi-file attachment imports.",
 ]
 Dependencies = [
-  "Bumped Ktor to 3.6.1, sqlcipher-android to 4.20.0, the dependency-analysis plugin to 3.20.1, and the android-build group.",
+  "Bumped KSP from 2.3.12 to 2.3.13 and serialized KSP tasks to eliminate concurrency races.",
 ]
