@@ -48,7 +48,11 @@ class SettingsInteractionAccessibilityTest {
         }
         composeRule.onNode(hasSetTextAction()).performTextInput("lock")
         composeRule.onAllNodes(isSwitch).assertCountEquals(1)
-        composeRule.onNodeWithText("App lock").assertIsOff().performClick().assertIsOn()
+        composeRule
+            .onNodeWithText("App lock")
+            .assertIsOff()
+            .performClick()
+            .assertIsOn()
         assertEquals(1, calls)
     }
 
@@ -74,7 +78,11 @@ class SettingsInteractionAccessibilityTest {
             }
         }
         composeRule.onAllNodes(isSwitch).assertCountEquals(1)
-        composeRule.onNode(isSwitch).assertIsOff().performClick().assertIsOn()
+        composeRule
+            .onNode(isSwitch)
+            .assertIsOff()
+            .performClick()
+            .assertIsOn()
         assertEquals(1, calls)
     }
 }

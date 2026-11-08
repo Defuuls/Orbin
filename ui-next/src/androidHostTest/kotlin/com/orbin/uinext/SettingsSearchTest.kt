@@ -14,7 +14,14 @@ class SettingsSearchTest {
             "Privacy and safety" to
                 listOf(
                     SettingItem("lock", "App lock", "Off", hint = "Authenticate before browsing"),
-                    SettingItem("secret", "Password", "hidden-token", SettingKind.TEXT, text = "hidden-token", secret = true),
+                    SettingItem(
+                        "secret",
+                        "Password",
+                        "hidden-token",
+                        SettingKind.TEXT,
+                        text = "hidden-token",
+                        secret = true,
+                    ),
                 ),
         )
 

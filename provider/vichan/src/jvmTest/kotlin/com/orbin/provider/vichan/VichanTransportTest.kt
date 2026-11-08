@@ -179,8 +179,7 @@ class VichanTransportTest {
                     override val readBuffer: Source
                         get() = error("Error response body must not be buffered")
 
-                    override suspend fun awaitContent(min: Int): Boolean =
-                        error("Error response body must not be read")
+                    override suspend fun awaitContent(min: Int): Boolean = error("Error response body must not be read")
                 }
             val error =
                 runCatching {

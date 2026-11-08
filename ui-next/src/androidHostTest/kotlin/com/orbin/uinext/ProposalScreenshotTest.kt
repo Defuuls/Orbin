@@ -387,12 +387,11 @@ class ProposalScreenshotTest {
             ),
         )
 
-    /** Mirrors the real list: two untitled cards, preferences then data. */
+    /** Representative task sections from the shipped settings surface. */
     private fun settingsGroups() =
         listOf(
-            "" to
+            "Appearance" to
                 listOf(
-                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
                     SettingItem(
                         id = "themeMode",
                         label = "Theme",
@@ -401,10 +400,14 @@ class ProposalScreenshotTest {
                         options = listOf("System", "Light", "Dark"),
                         selected = 0,
                     ),
-                    SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
-                    SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
+                    SettingItem("amoled", "True black", "Off", checked = false),
                 ),
-            "" to
+            "Privacy and safety" to
+                listOf(
+                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", checked = false),
+                    SettingItem("biometric", "App lock", "Off", checked = false),
+                ),
+            "Data and storage" to
                 listOf(
                     SettingItem(
                         id = "clearActivity",
@@ -412,12 +415,19 @@ class ProposalScreenshotTest {
                         value = "Delete",
                         kind = SettingKind.ACTION,
                         hint = "Deletes browsing history, recent searches and download history on this device.",
+                        destructive = true,
                     ),
-                    SettingItem("clearImageCache", "Clear image cache", "12 MB · Clear", SettingKind.ACTION),
-                    SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION),
+                    SettingItem(
+                        "clearImageCache",
+                        "Clear image cache",
+                        "12 MB · Clear",
+                        SettingKind.ACTION,
+                        destructive = true,
+                    ),
                     SettingItem("exportBackup", "Export data", "Save", SettingKind.ACTION),
                     SettingItem("importBackup", "Import data", "Restore", SettingKind.ACTION),
                 ),
+            "Updates" to listOf(SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION)),
         )
 
     /**

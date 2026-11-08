@@ -66,24 +66,25 @@ class KtorLynxChanApi(
         path: List<String>,
         query: Map<String, String> = emptyMap(),
     ): T =
-        client.prepareGet {
-            // Keep both success and error bodies out of Ktor's unbounded saved-response path.
-            expectSuccess = false
-            url {
-                takeFrom(baseUrl)
-                appendPathSegments(path)
+        client
+            .prepareGet {
+                // Keep both success and error bodies out of Ktor's unbounded saved-response path.
+                expectSuccess = false
+                url {
+                    takeFrom(baseUrl)
+                    appendPathSegments(path)
+                }
+                query.forEach { (name, value) -> parameter(name, value) }
+            }.execute { response ->
+                if (!response.status.isSuccess()) throw ResponseException(response, "")
+                val channel = response.bodyAsChannel()
+                val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
+                if (bytes.size > MAX_JSON_BYTES) {
+                    channel.cancel(null)
+                    throw ProviderException.Parse("Response exceeded maximum allowed size")
+                }
+                json.decodeFromString(deserializer, bytes.decodeToString())
             }
-            query.forEach { (name, value) -> parameter(name, value) }
-        }.execute { response ->
-            if (!response.status.isSuccess()) throw ResponseException(response, "")
-            val channel = response.bodyAsChannel()
-            val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
-            if (bytes.size > MAX_JSON_BYTES) {
-                channel.cancel(null)
-                throw ProviderException.Parse("Response exceeded maximum allowed size")
-            }
-            json.decodeFromString(deserializer, bytes.decodeToString())
-        }
 
     private fun requireSafeSegment(board: String) {
         require(board.isNotEmpty() && board.all { it.isLetterOrDigit() || it == '_' || it == '-' }) {

@@ -47,7 +47,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
@@ -122,7 +121,12 @@ fun SettingsScreen(
         ) { bottomPad ->
             LazyColumn(
                 state = state,
-                modifier = Modifier.fillMaxSize().contentInsets().imePadding().testTag("settings-list"),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .contentInsets()
+                        .imePadding()
+                        .testTag("settings-list"),
                 contentPadding =
                     PaddingValues(
                         bottom = bottomPad.calculateBottomPadding(),
@@ -203,41 +207,41 @@ private fun SettingRow(
                 )
             },
             supportingContent =
-                if (item.hint != null && item.kind != SettingKind.TEXT) {
+                if (item.kind != SettingKind.TOGGLE || item.hint != null) {
                     {
-                        Text(
-                            text = item.hint,
-                            style = NextType.footnote,
-                            color = next.muted,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            if (item.kind != SettingKind.TOGGLE && item.value.isNotBlank()) {
+                                SelectionContainer {
+                                    Text(
+                                        text = item.value,
+                                        style = NextType.callout,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (item.destructive) nextDestructiveRed else next.muted,
+                                    )
+                                }
+                            }
+                            if (item.hint != null && item.kind != SettingKind.TEXT) {
+                                Text(
+                                    text = item.hint,
+                                    style = NextType.footnote,
+                                    color = next.muted,
+                                )
+                            }
+                        }
                     }
                 } else {
                     null
                 },
-            trailingContent = {
+            trailingContent =
                 if (item.kind == SettingKind.TOGGLE) {
-                    Box(Modifier.clearAndSetSemantics {}) {
-                        NextToggle(checked = item.isOn(), onCheckedChange = null)
+                    {
+                        Box(Modifier.clearAndSetSemantics {}) {
+                            NextToggle(checked = item.isOn(), onCheckedChange = null)
+                        }
                     }
                 } else {
-                    SelectionContainer {
-                        Text(
-                            text = item.value,
-                            style = NextType.callout,
-                            fontWeight = FontWeight.SemiBold,
-                            color =
-                                when {
-                                    item.destructive -> nextDestructiveRed
-                                    item.isOn() -> next.accent
-                                    else -> next.muted
-                                },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            },
+                    null
+                },
             colors =
                 ListItemDefaults.colors(
                     containerColor = Color.Transparent,

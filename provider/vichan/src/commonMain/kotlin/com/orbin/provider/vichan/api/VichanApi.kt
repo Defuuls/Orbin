@@ -72,23 +72,24 @@ class KtorVichanApi(
         deserializer: DeserializationStrategy<T>,
         vararg path: String,
     ): T =
-        client.prepareGet {
-            // Keep both success and error bodies out of Ktor's unbounded saved-response path.
-            expectSuccess = false
-            url {
-                takeFrom(baseUrl)
-                appendPathSegments(*path)
+        client
+            .prepareGet {
+                // Keep both success and error bodies out of Ktor's unbounded saved-response path.
+                expectSuccess = false
+                url {
+                    takeFrom(baseUrl)
+                    appendPathSegments(*path)
+                }
+            }.execute { response ->
+                if (!response.status.isSuccess()) throw ResponseException(response, "")
+                val channel = response.bodyAsChannel()
+                val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
+                if (bytes.size > MAX_JSON_BYTES) {
+                    channel.cancel(null)
+                    throw ProviderException.Parse("Response exceeded maximum allowed size")
+                }
+                json.decodeFromString(deserializer, bytes.decodeToString())
             }
-        }.execute { response ->
-            if (!response.status.isSuccess()) throw ResponseException(response, "")
-            val channel = response.bodyAsChannel()
-            val bytes = channel.readBuffer(MAX_JSON_BYTES.toLong() + 1).readByteArray()
-            if (bytes.size > MAX_JSON_BYTES) {
-                channel.cancel(null)
-                throw ProviderException.Parse("Response exceeded maximum allowed size")
-            }
-            json.decodeFromString(deserializer, bytes.decodeToString())
-        }
 
     private fun requireSafeSegment(board: String) {
         require(board.isNotEmpty() && board.all { it.isLetterOrDigit() || it == '_' || it == '-' }) {

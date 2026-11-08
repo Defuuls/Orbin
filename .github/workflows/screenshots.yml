@@ -42,8 +42,58 @@ jobs:
         uses: ./.github/actions/setup-jdk-gradle
 
       - name: Verify Roborazzi screenshots
+        id: verify
         # Android modules have a debug variant; multiplatform modules run their Android host tests.
         run: ./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest
+
+      - name: Record audit fixtures for review
+        if: failure() && steps.verify.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.number == 791 && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          AUDIT_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --quiet HEAD
+          git fetch --no-tags --depth=1 origin "$AUDIT_SOURCE_SHA"
+          git checkout --detach "$AUDIT_SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$AUDIT_SOURCE_SHA"
+          ./gradlew :ui-next:recordRoborazziAndroidHostTest
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          source = os.environ["AUDIT_SOURCE_SHA"]
+          prefix = "ui-next/src/androidHostTest/screenshots/"
+          changed = subprocess.check_output([
+              "git", "diff", "--name-only", "--diff-filter=M", "-z", "HEAD", "--", prefix,
+          ]).decode().split("\0")
+          images = []
+          total = 0
+          for name in sorted(filter(None, changed)):
+              path = Path(name)
+              if not name.startswith(prefix) or path.suffix != ".png" or path.is_symlink():
+                  raise SystemExit("Unexpected changed fixture: " + name)
+              if path.stat().st_size > 2 * 1024 * 1024:
+                  raise SystemExit("Fixture too large: " + name)
+              data = path.read_bytes()
+              if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                  raise SystemExit("Not a PNG: " + name)
+              total += len(data)
+              if total > 12 * 1024 * 1024:
+                  raise SystemExit("Fixture payload exceeds diagnostic limit")
+              images.append((name, data))
+          print("ORBIN_GOLDEN_SOURCE " + json.dumps({"sha": source, "count": len(images), "bytes": total}))
+          for name, data in images:
+              encoded = base64.b64encode(data).decode("ascii")
+              parts = (len(encoded) + 8191) // 8192
+              blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+              print("ORBIN_GOLDEN_FILE " + json.dumps({"path": name, "size": len(data), "sha256": hashlib.sha256(data).hexdigest(), "blob_sha": blob, "parts": parts}))
+              for part in range(parts):
+                  print("ORBIN_GOLDEN_CHUNK " + json.dumps({"path": name, "part": part, "base64": encoded[part * 8192:(part + 1) * 8192]}))
+          PY
 
       - name: Upload comparison images
         if: failure()

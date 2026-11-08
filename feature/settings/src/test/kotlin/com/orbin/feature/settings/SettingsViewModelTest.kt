@@ -20,6 +20,10 @@ import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.ImageCacheRepository
+import io.mockk.coEvery
+import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -70,6 +74,37 @@ class SettingsViewModelTest {
             // No direct getter for "cleared" beyond re-observing; each fake starts empty and the
             // call must not throw, which is the behavior worth locking down here.
             assertThat(history.observeHistory().first()).isEmpty()
+        }
+
+    @Test
+    fun `clearing reports success only after the cache finishes`() =
+        runTest {
+            val completion = CompletableDeferred<Unit>()
+            val cache = mockk<ImageCacheRepository>()
+            coEvery { cache.usageBytes() } returns 0L
+            coEvery { cache.clear() } coAnswers { completion.await() }
+            val viewModel = createViewModel(imageCache = cache)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+            assertThat(results).isEmpty()
+            completion.complete(Unit)
+
+            assertThat(results).containsExactly(true)
+        }
+
+    @Test
+    fun `clearing reports failure when some local data cannot be deleted`() =
+        runTest {
+            val cache = mockk<ImageCacheRepository>()
+            coEvery { cache.usageBytes() } returns 0L
+            coEvery { cache.clear() } throws IllegalStateException("disk unavailable")
+            val viewModel = createViewModel(imageCache = cache)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+
+            assertThat(results).containsExactly(false)
         }
 
     @Test
@@ -193,6 +228,7 @@ class SettingsViewModelTest {
         updateRepository: FakeUpdateRepository = FakeUpdateRepository(),
         registry: FakeProviderRegistry = FakeProviderRegistry(),
         appUpdater: FakeAppUpdater = FakeAppUpdater(),
+        imageCache: ImageCacheRepository = mockk(relaxed = true),
     ) = SettingsViewModel(
         repository = settings,
         historyRepository = history,
@@ -204,5 +240,6 @@ class SettingsViewModelTest {
         appUpdater = appUpdater,
         dnsPrivacyMonitor = FakeDnsPrivacyMonitor(),
         registry = registry,
+        imageCacheRepository = imageCache,
     )
 }

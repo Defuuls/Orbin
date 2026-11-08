@@ -299,4 +299,3 @@ internal data class DnsRowState(
     val strict: Boolean = false,
     val fallbackActive: Boolean = false,
 )
-

@@ -185,7 +185,13 @@ internal fun settingsGroups(
     ).let { groups ->
         val rows = groups.flatMap { it.second }
         val appearanceIds =
-            setOf(SettingIds.THEME, SettingIds.COLOR_THEME, SettingIds.AMOLED, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS)
+            setOf(
+                SettingIds.THEME,
+                SettingIds.COLOR_THEME,
+                SettingIds.AMOLED,
+                SettingIds.FEED_COLUMNS,
+                SettingIds.CATALOG_COLUMNS,
+            )
         val privacyIds = setOf(SettingIds.HIDE_NSFW, SettingIds.COVER_VIOLENT, SettingIds.APP_LOCK)
         val aboutIds = setOf(SettingIds.PRIVACY, SettingIds.CONTACT, SettingIds.VERSION)
         listOf(

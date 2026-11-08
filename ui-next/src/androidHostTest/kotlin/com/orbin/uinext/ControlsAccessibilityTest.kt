@@ -51,8 +51,11 @@ class ControlsAccessibilityTest {
             }
         }
         val action =
-            composeRule.onNodeWithTag("refresh").fetchSemanticsNode()
-                .config[SemanticsActions.CustomActions].single()
+            composeRule
+                .onNodeWithTag("refresh")
+                .fetchSemanticsNode()
+                .config[SemanticsActions.CustomActions]
+                .single()
         assertEquals("Refresh", action.label)
         composeRule.runOnIdle {
             assertTrue(action.action())
