@@ -143,7 +143,7 @@ fun DestinationPill(
                 .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        val cellWidth = (minOf(maxWidth, 560.dp) - 20.dp) / destinations.size - 12.dp
+        val cellWidth = (minOf(maxWidth, 560.dp) - 20.dp) / destinations.size.toFloat() - 12.dp
         val useRows = widestLabel > with(density) { cellWidth.toPx() }
         val dock =
             Modifier
@@ -194,6 +194,7 @@ private fun DockTab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    horizontal: Boolean = false,
 ) {
     val ink = if (selected) next.onAccent else next.muted
     val target =
