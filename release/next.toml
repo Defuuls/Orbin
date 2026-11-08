@@ -1,19 +1,19 @@
-# Orbin 192 - Sea Kale
+# Orbin 193 - Purslane
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 192
-codename     = "Sea Kale"
-version_code = 210
+number       = 193
+codename     = "Purslane"
+version_code = 211
 
-highlight = "Full structural industrial overhaul across Android and iOS (OPTIC-26 instrument chassis, modular milled baffles, tactile switchboard dock, mechanical thread bus)."
+highlight = "Configurable screen privacy shield, encrypted DNS resolver selection, and incognito controls across Android and iOS."
 
 summary = [
-  "bump Orbin to 192-Sea-Kale / versionCode 210",
-  "close the [Unreleased] changelog section as 192-Sea-Kale",
+  "bump Orbin to 193-Purslane / versionCode 211",
+  "close the [Unreleased] changelog section as 193-Purslane",
   "update README.md, docs/wiki/Home.md, and the README hero SVG for the new release",
 ]
 
 [changelog]
 Added = [
-  "Full structural industrial redesign overhaul across Android and iOS (OPTIC-26): instrument chassis header with live telemetry and optical aperture emblem, modular machined spec-sheet feed cassettes with viewfinder reticles, flush tactile switchboard dock with mechanical detents and active LED bars, and multi-lane mechanical thread reply trace bus.",
+  "Configurable privacy and security controls across Android and iOS: screen privacy shield to obscure app switcher previews and block screen capture (FLAG_SECURE on Android and active cover on iOS), runtime DNS-over-HTTPS provider choice (Cloudflare, OpenDNS, NextDNS, Google), strict DoH mode to prevent unencrypted system DNS fallback, and incognito toggles for search and browsing history.",
 ]
