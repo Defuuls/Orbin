@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -77,6 +78,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -118,7 +120,22 @@ fun DestinationPill(
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     val shape = RoundedCornerShape(NextRadius.continuous)
-    Box(
+    val destinations = listOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
+    val labels =
+        listOf(
+            stringResource(Res.string.next_feed_title),
+            stringResource(Res.string.next_downloads_tab),
+            stringResource(Res.string.next_launchpad_boards),
+        )
+    val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Download, Icons.Outlined.GridView)
+    val measurer = rememberTextMeasurer()
+    val labelStyle = NextType.tab.copy(fontWeight = FontWeight.Bold)
+    val widestLabel =
+        labels.maxOf { label ->
+            measurer.measure(text = label, style = labelStyle, maxLines = 1, softWrap = false).size.width
+        }
+    val density = LocalDensity.current
+    BoxWithConstraints(
         modifier =
             modifier
                 .fillMaxWidth()
@@ -126,40 +143,46 @@ fun DestinationPill(
                 .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .widthIn(max = 560.dp)
-                    .fillMaxWidth()
-                    .clip(shape)
-                    .background(next.elevated)
-                    .border(0.75.dp, next.hairline, shape)
-                    .selectableGroup()
-                    .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DockTab(
-                label = stringResource(Res.string.next_feed_title),
-                icon = Icons.Outlined.Home,
-                selected = selected == NextDestination.FEED,
-                onClick = { onSelect(NextDestination.FEED) },
-                modifier = Modifier.weight(1f),
-            )
-            DockTab(
-                label = stringResource(Res.string.next_downloads_tab),
-                icon = Icons.Outlined.Download,
-                selected = selected == NextDestination.DOWNLOADS,
-                onClick = { onSelect(NextDestination.DOWNLOADS) },
-                modifier = Modifier.weight(1f),
-            )
-            DockTab(
-                label = stringResource(Res.string.next_launchpad_boards),
-                icon = Icons.Outlined.GridView,
-                selected = selected == NextDestination.BOARDS,
-                onClick = { onSelect(NextDestination.BOARDS) },
-                modifier = Modifier.weight(1f),
-            )
+        val cellWidth = (minOf(maxWidth, 560.dp) - 20.dp) / destinations.size - 12.dp
+        val useRows = widestLabel > with(density) { cellWidth.toPx() }
+        val dock =
+            Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxWidth()
+                .clip(shape)
+                .background(next.elevated)
+                .border(0.75.dp, next.hairline, shape)
+                .selectableGroup()
+                .padding(6.dp)
+        if (useRows) {
+            Column(modifier = dock, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                destinations.forEachIndexed { index, destination ->
+                    DockTab(
+                        label = labels[index],
+                        icon = icons[index],
+                        selected = selected == destination,
+                        onClick = { onSelect(destination) },
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontal = true,
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = dock,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                destinations.forEachIndexed { index, destination ->
+                    DockTab(
+                        label = labels[index],
+                        icon = icons[index],
+                        selected = selected == destination,
+                        onClick = { onSelect(destination) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }
@@ -173,26 +196,44 @@ private fun DockTab(
     modifier: Modifier = Modifier,
 ) {
     val ink = if (selected) next.onAccent else next.muted
-    Column(
-        modifier =
-            modifier
-                .heightIn(min = RAIL_HEIGHT)
-                .clip(RoundedCornerShape(NextRadius.pill))
-                .background(if (selected) next.accent else Color.Transparent)
-                .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-                .padding(horizontal = 6.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
-        Gap(4)
-        Text(
-            text = label,
-            style = NextType.tab,
-            fontWeight = FontWeight.Bold,
-            color = ink,
-            textAlign = TextAlign.Center,
-        )
+    val target =
+        modifier
+            .heightIn(min = RAIL_HEIGHT)
+            .clip(RoundedCornerShape(NextRadius.pill))
+            .background(if (selected) next.accent else Color.Transparent)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(horizontal = if (horizontal) 16.dp else 6.dp, vertical = 10.dp)
+    if (horizontal) {
+        Row(
+            modifier = target,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Text(
+                text = label,
+                style = NextType.tab,
+                fontWeight = FontWeight.Bold,
+                color = ink,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    } else {
+        Column(
+            modifier = target,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Gap(4)
+            Text(
+                text = label,
+                style = NextType.tab,
+                fontWeight = FontWeight.Bold,
+                color = ink,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
