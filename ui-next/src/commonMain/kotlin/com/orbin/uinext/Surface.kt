@@ -117,8 +117,9 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val shape = RoundedCornerShape(NextRadius.continuous)
+    val shape = RoundedCornerShape(topStart = NextRadius.tight, topEnd = NextRadius.tight)
     val destinations = listOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
+    val channelCodes = listOf("01", "02", "03")
     val labels =
         listOf(
             stringResource(Res.string.next_feed_title),
@@ -137,26 +138,26 @@ fun DestinationPill(
         modifier =
             modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(railInsets)
-                .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
+                .windowInsetsPadding(railInsets),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        val cellWidth = (minOf(maxWidth, 560.dp) - 20.dp) / destinations.size.toFloat() - 12.dp
+        val cellWidth = (minOf(maxWidth, 640.dp) - 20.dp) / destinations.size.toFloat() - 12.dp
         val useRows = widestLabel > with(density) { cellWidth.toPx() }
         val dock =
             Modifier
-                .widthIn(max = 560.dp)
+                .widthIn(max = 640.dp)
                 .fillMaxWidth()
                 .clip(shape)
                 .background(next.elevated)
                 .border(1.dp, next.hairline, shape)
                 .selectableGroup()
-                .padding(6.dp)
+                .padding(horizontal = 6.dp, vertical = 4.dp)
         if (useRows) {
             Column(modifier = dock, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 destinations.forEachIndexed { index, destination ->
                     DockTab(
                         label = labels[index],
+                        channelCode = channelCodes[index],
                         icon = icons[index],
                         selected = selected == destination,
                         onClick = { onSelect(destination) },
@@ -168,12 +169,21 @@ fun DestinationPill(
         } else {
             Row(
                 modifier = dock,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 destinations.forEachIndexed { index, destination ->
+                    if (index > 0) {
+                        Box(
+                            Modifier
+                                .width(1.dp)
+                                .height(40.dp)
+                                .background(next.hairline),
+                        )
+                    }
                     DockTab(
                         label = labels[index],
+                        channelCode = channelCodes[index],
                         icon = icons[index],
                         selected = selected == destination,
                         onClick = { onSelect(destination) },
@@ -188,28 +198,40 @@ fun DestinationPill(
 @Composable
 private fun DockTab(
     label: String,
+    channelCode: String,
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     horizontal: Boolean = false,
 ) {
-    val ink = if (selected) next.onAccent else next.muted
-    val tabShape = RoundedCornerShape(NextRadius.control)
+    val ink = if (selected) next.ink else next.muted
+    val tabShape = RoundedCornerShape(NextRadius.tight)
     val target =
         modifier
             .heightIn(min = RAIL_HEIGHT)
             .clip(tabShape)
-            .background(if (selected) next.accent else Color.Transparent)
+            .background(if (selected) next.accentContainer else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = if (horizontal) 16.dp else 6.dp, vertical = 10.dp)
+            .padding(horizontal = if (horizontal) 16.dp else 4.dp, vertical = 6.dp)
     if (horizontal) {
         Row(
             modifier = target,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(if (selected) next.accent else next.hairline),
+            )
+            Text(
+                text = channelCode,
+                style = NextType.telemetry,
+                color = if (selected) next.accent else next.faint,
+            )
+            Icon(imageVector = icon, contentDescription = null, tint = if (selected) next.accent else ink, modifier = Modifier.size(20.dp))
             Text(
                 text = label,
                 style = NextType.tab,
@@ -224,8 +246,34 @@ private fun DockTab(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            // Mechanical detent status bar
+            Box(
+                Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(if (selected) next.accent else next.hairline.copy(alpha = 0.4f)),
+            )
             Gap(4)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(4.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(if (selected) next.accent else next.hairline),
+                )
+                Text(
+                    text = channelCode,
+                    style = NextType.telemetry,
+                    color = if (selected) next.accent else next.faint,
+                )
+            }
+            Gap(2)
+            Icon(imageVector = icon, contentDescription = null, tint = if (selected) next.accent else ink, modifier = Modifier.size(20.dp))
+            Gap(2)
             Text(
                 text = label,
                 style = NextType.tab,
@@ -341,23 +389,34 @@ fun CompactTitleBar(
         exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 2 } + fadeOut(),
         modifier = modifier.fillMaxWidth(),
     ) {
-        val shape = RoundedCornerShape(NextRadius.control)
+        val shape = RoundedCornerShape(bottomStart = NextRadius.tight, bottomEnd = NextRadius.tight)
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ).padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
                     .clip(shape)
                     .background(next.elevated)
                     .border(1.dp, next.hairline, shape)
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
                     .testTag(NextTitleTags.COMPACT),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            OrbitEmblem(size = 24.dp)
+            OrbitEmblem(size = 22.dp)
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(next.accent),
+            )
+            Text(
+                text = "HUD //",
+                style = NextType.telemetry,
+                color = next.accent,
+            )
             Text(
                 text = title,
                 style = NextType.headline,
@@ -365,6 +424,11 @@ fun CompactTitleBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "[SIG:OK]",
+                style = NextType.telemetry,
+                color = next.muted,
             )
         }
     }
@@ -393,7 +457,7 @@ fun ScreenTitle(
             else -> NextType.title2
         }
     val showEmblem = size >= 32 && LocalDensity.current.fontScale < 1.4f
-    Row(
+    Column(
         modifier =
             modifier.fillMaxWidth().padding(
                 start = inset,
@@ -401,34 +465,79 @@ fun ScreenTitle(
                 top = NextSpace.titleTop,
                 bottom = NextSpace.titleBottom,
             ),
-        verticalAlignment = Alignment.Bottom,
     ) {
-        Column(Modifier.weight(1f)) {
+        // Machined Telemetry Header Strip
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Box(
                 Modifier
-                    .width(24.dp)
-                    .height(3.dp)
+                    .size(6.dp)
                     .clip(RoundedCornerShape(1.dp))
                     .background(next.accent),
             )
-            Gap(12)
             Text(
-                text = text,
-                style = titleStyle,
-                color = next.ink,
-                modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
+                text = "CH-01 // INSTRUMENT",
+                style = NextType.telemetry,
+                color = next.accent,
             )
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = NextType.subheadline,
-                    color = next.muted,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
+            Text(
+                text = "·",
+                style = NextType.telemetry,
+                color = next.hairline,
+            )
+            Text(
+                text = "SIG:NOMINAL",
+                style = NextType.telemetry,
+                color = next.muted,
+            )
+            Box(Modifier.weight(1f))
+            Text(
+                text = "[OPTIC-26]",
+                style = NextType.telemetry,
+                color = next.faint,
+            )
         }
-        if (showEmblem) {
-            OrbitEmblem(modifier = Modifier.padding(start = 16.dp, bottom = 4.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(next.hairline),
+        )
+        Gap(10)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Box(
+                    Modifier
+                        .width(28.dp)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(next.accent),
+                )
+                Gap(10)
+                Text(
+                    text = text,
+                    style = titleStyle,
+                    color = next.ink,
+                    modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = NextType.subheadline,
+                        color = next.muted,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+            if (showEmblem) {
+                OrbitEmblem(modifier = Modifier.padding(start = 16.dp, bottom = 4.dp))
+            }
         }
     }
 }

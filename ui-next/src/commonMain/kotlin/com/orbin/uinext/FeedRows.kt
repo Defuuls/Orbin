@@ -1,25 +1,31 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -68,13 +74,58 @@ internal fun FeedHeader(
                 )
             }
         }
+        // Machine telemetry status bar
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(NextRadius.tight))
+                    .background(next.raised)
+                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(6.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(next.accent),
+                )
+                Text(
+                    text = "CH-01: MULTI-CHANNEL // LIVE",
+                    style = NextType.telemetry,
+                    color = next.accent,
+                )
+                Text(
+                    text = "·",
+                    style = NextType.telemetry,
+                    color = next.hairline,
+                )
+                Text(
+                    text = "PROVIDER: 4CHAN/LYNX",
+                    style = NextType.telemetry,
+                    color = next.muted,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "SIG:NOMINAL",
+                    style = NextType.telemetry,
+                    color = next.faint,
+                )
+            }
+        }
+        Gap(10)
         Column(Modifier.padding(horizontal = 0.dp)) {
             headerContent()
-            Gap(12)
+            Gap(10)
             SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
             Gap(8)
         }
-        Gap(12)
+        Gap(10)
         Hairline()
     }
 }
@@ -114,7 +165,7 @@ internal fun FeedGridCell(
             modifier
                 .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
                 .semantics { role = Role.Button },
-        shape = RoundedCornerShape(NextRadius.card),
+        shape = RoundedCornerShape(NextRadius.tight),
         border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
@@ -124,49 +175,102 @@ internal fun FeedGridCell(
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            // Machined top color band
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(3.dp)
+                    .height(2.dp)
                     .background(if (row.read) next.hairline else boardHue(row.board)),
             )
+
+            // Technical Spec Header Strip
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (showBoard) {
+                    BoardDot(row.board, size = 6.dp)
+                    Text(
+                        text = row.board,
+                        style = NextType.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (row.read) next.muted else boardHue(row.board),
+                    )
+                    Text(
+                        text = "·",
+                        style = NextType.telemetry,
+                        color = next.hairline,
+                    )
+                }
+                if (row.threadNumber.isNotBlank()) {
+                    Text(
+                        text = "#${row.threadNumber}",
+                        style = NextType.telemetry,
+                        color = if (row.read) next.muted else next.accent,
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                MetaLine(activityText(row), color = next.faint)
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(if (row.unread > 0) next.accent else next.hairline.copy(alpha = 0.4f)),
+                )
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = next.hairline)
+
             val tile =
                 Modifier.fillMaxWidth().let {
                     if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
                 }
-            if (row.hasPreview && thumbnail != null) {
-                thumbnail(row, tile)
-            } else if (row.hasPreview) {
-                MediaTile(modifier = tile, seed = seed, radius = GRID_TILE_RADIUS)
-            } else {
-                Box(
-                    modifier =
-                        tile
-                            .clip(RoundedCornerShape(GRID_TILE_RADIUS))
-                            .background(next.ink.copy(alpha = 0.05f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
+            Box(modifier = tile) {
+                if (row.hasPreview && thumbnail != null) {
+                    thumbnail(row, Modifier.matchParentSize())
+                } else if (row.hasPreview) {
+                    MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = NextRadius.tight)
+                } else {
+                    Box(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .clip(RoundedCornerShape(NextRadius.tight))
+                                .background(next.ink.copy(alpha = 0.05f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
+                    }
+                }
+                if (row.hasPreview) {
+                    val reticleColor = next.accent.copy(alpha = 0.55f)
+                    Canvas(Modifier.matchParentSize()) {
+                        val stroke = 1.25.dp.toPx()
+                        val arm = 8.dp.toPx()
+                        val pad = 6.dp.toPx()
+                        val w = size.width
+                        val h = size.height
+                        // 4 corner viewfinder brackets
+                        drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
+                        drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
+                        drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
+                        drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
+                        drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
+                        drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
+                        drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
+                        drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
+                    }
                 }
             }
-            // One inset for every line of text, so the board, subject and counts share a left edge.
-            Column(modifier = Modifier.padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp)) {
-                Gap(10)
-                if (showBoard) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        BoardDot(row.board, size = 7.dp)
-                        WidthSpacer(6)
-                        Text(
-                            text = row.board,
-                            style = NextType.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (row.read) next.muted else boardHue(row.board),
-                        )
-                    }
-                    Gap(3)
-                }
-                MetaLine(activityText(row), color = next.faint)
-                Gap(6)
+
+            HorizontalDivider(thickness = 1.dp, color = next.hairline)
+
+            // Spec-Sheet Body Cassette
+            Column(modifier = Modifier.padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp, vertical = 8.dp)) {
                 Text(
                     text = row.subject,
                     style = if (tallMedia) NextType.title3 else NextType.headline,
@@ -186,23 +290,18 @@ internal fun FeedGridCell(
                 }
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                if (tallMedia) {
-                    val footerShape = RoundedCornerShape(NextRadius.control)
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(footerShape)
-                            .background(next.background)
-                            .border(1.dp, next.hairline, footerShape)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                    ) {
-                        MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
-                    }
-                } else {
+                val footerShape = RoundedCornerShape(NextRadius.tight)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(footerShape)
+                        .background(next.background)
+                        .border(1.dp, next.hairline, footerShape)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
                     MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
                 }
             }
-            Gap(12)
         }
     }
 }
@@ -260,19 +359,29 @@ private fun CollapsedFeedRow(
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(next.hairline),
+            )
+            Text(
+                text = "[MUTED]",
+                style = NextType.telemetry,
+                color = next.muted,
+            )
             if (showBoard) {
                 BoardDot(row.board, size = 5.dp)
-                WidthSpacer(7)
                 Text(
                     text = row.board,
                     style = NextType.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = next.muted,
                 )
-                WidthSpacer(9)
             }
             Text(
                 text = row.subject,
