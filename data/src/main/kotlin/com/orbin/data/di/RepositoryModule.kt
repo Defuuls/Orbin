@@ -27,7 +27,11 @@ import javax.inject.Singleton
 object RepositoryModule {
     @Provides
     @Singleton
-    fun providesNetworkConfigProvider(): NetworkConfigProvider = FixedNetworkConfigProvider()
+    fun providesFixedNetworkConfigProvider(): FixedNetworkConfigProvider = FixedNetworkConfigProvider()
+
+    @Provides
+    @Singleton
+    fun providesNetworkConfigProvider(provider: FixedNetworkConfigProvider): NetworkConfigProvider = provider
 
     @Provides
     @Singleton

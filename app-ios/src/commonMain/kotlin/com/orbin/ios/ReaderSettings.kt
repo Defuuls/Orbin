@@ -3,6 +3,7 @@ package com.orbin.ios
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
@@ -59,6 +60,16 @@ class ReaderSettings(
         columns: Int,
     ): Job = scope.launch { repository.setFeedColumns(formFactor, columns) }
 
+    fun setScreenPrivacy(enabled: Boolean): Job = scope.launch { repository.setScreenPrivacyEnabled(enabled) }
+
+    fun setDohProvider(provider: DohProvider): Job = scope.launch { repository.setDohProvider(provider) }
+
+    fun setStrictDns(enabled: Boolean): Job = scope.launch { repository.setStrictDohEnabled(enabled) }
+
+    fun setSaveSearchHistory(enabled: Boolean): Job = scope.launch { repository.setSaveSearchHistory(enabled) }
+
+    fun setSaveBrowsingHistory(enabled: Boolean): Job = scope.launch { repository.setSaveBrowsingHistory(enabled) }
+
     /** Deletes the reading history, download records, and invokes cache clearance. */
     fun clearActivity(onClearCaches: (suspend () -> Unit)? = null): Job =
         scope.launch {
@@ -80,6 +91,11 @@ internal object SettingIds {
     const val FEED_COLUMNS = "feedColumns"
     const val CATALOG_COLUMNS = "catalogColumns"
     const val APP_LOCK = "biometric"
+    const val SCREEN_PRIVACY = "screenPrivacy"
+    const val DOH_PROVIDER = "dohProvider"
+    const val STRICT_DOH = "strictDns"
+    const val SAVE_SEARCH_HISTORY = "saveSearchHistory"
+    const val SAVE_BROWSING_HISTORY = "saveBrowsingHistory"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
     const val EXPORT_BACKUP = "exportBackup"
@@ -127,6 +143,38 @@ internal fun settingsGroups(
                 feedColumns(settings, formFactor),
                 catalogColumns(settings, formFactor),
                 toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
+                toggle(
+                    SettingIds.SCREEN_PRIVACY,
+                    "Screen privacy shield",
+                    settings.screenPrivacyEnabled,
+                    hint = "Hides app preview in app switcher",
+                ),
+                SettingItem(
+                    id = SettingIds.DOH_PROVIDER,
+                    label = "Encrypted DNS provider",
+                    value = settings.dohProvider.label,
+                    kind = SettingKind.CHOICE,
+                    options = DohProvider.entries.map { it.label },
+                    selected = settings.dohProvider.ordinal,
+                ),
+                toggle(
+                    SettingIds.STRICT_DOH,
+                    "Strict encrypted DNS",
+                    settings.strictDohEnabled,
+                    hint = "Stop loading if encrypted DNS is blocked",
+                ),
+                toggle(
+                    SettingIds.SAVE_SEARCH_HISTORY,
+                    "Save search history",
+                    settings.saveSearchHistory,
+                    hint = "Store recent searches locally",
+                ),
+                toggle(
+                    SettingIds.SAVE_BROWSING_HISTORY,
+                    "Save browsing history",
+                    settings.saveBrowsingHistory,
+                    hint = "Record visited threads in local history",
+                ),
             ),
         "" to
             listOf(
@@ -194,7 +242,17 @@ private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): Lis
             SettingIds.FEED_COLUMNS,
             SettingIds.CATALOG_COLUMNS,
         )
-    val privacyIds = setOf(SettingIds.HIDE_NSFW, SettingIds.COVER_VIOLENT, SettingIds.APP_LOCK)
+    val privacyIds =
+        setOf(
+            SettingIds.HIDE_NSFW,
+            SettingIds.COVER_VIOLENT,
+            SettingIds.APP_LOCK,
+            SettingIds.SCREEN_PRIVACY,
+            SettingIds.DOH_PROVIDER,
+            SettingIds.STRICT_DOH,
+            SettingIds.SAVE_SEARCH_HISTORY,
+            SettingIds.SAVE_BROWSING_HISTORY,
+        )
     val aboutIds = setOf(SettingIds.PRIVACY, SettingIds.CONTACT, SettingIds.VERSION)
     return listOf(
         "Appearance" to rows.filter { it.id in appearanceIds },

@@ -3,6 +3,7 @@ package com.orbin.feature.settings
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
@@ -172,6 +173,35 @@ private class Rows(
             strings.get(R.string.settings_app_lock),
             settings.biometricLockEnabled,
             vm::setBiometricLock,
+        ),
+        toggle(
+            "screenPrivacy",
+            strings.get(R.string.settings_screen_privacy),
+            settings.screenPrivacyEnabled,
+            vm::setScreenPrivacy,
+            hint = strings.get(R.string.settings_screen_privacy_hint),
+        ),
+        choice(
+            "dohProvider",
+            strings.get(R.string.settings_doh_provider),
+            DohProvider.entries,
+            settings.dohProvider,
+            DohProvider::label,
+            vm::setDohProvider,
+        ),
+        toggle(
+            "saveSearchHistory",
+            strings.get(R.string.settings_save_search_history),
+            settings.saveSearchHistory,
+            vm::setSaveSearchHistory,
+            hint = strings.get(R.string.settings_save_search_history_hint),
+        ),
+        toggle(
+            "saveBrowsingHistory",
+            strings.get(R.string.settings_save_browsing_history),
+            settings.saveBrowsingHistory,
+            vm::setSaveBrowsingHistory,
+            hint = strings.get(R.string.settings_save_browsing_history_hint),
         ),
         toggle(
             "updateOnLaunch",

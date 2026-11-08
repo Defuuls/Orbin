@@ -6,6 +6,7 @@ import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppUpdateState
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeAppUpdater
@@ -217,6 +218,25 @@ class SettingsViewModelTest {
                 viewModel.clearUpdateCheck()
                 assertThat(awaitItem()).isEqualTo(UpdateCheckState.Idle)
             }
+        }
+
+    @Test
+    fun `privacy and security settings update repository`() =
+        runTest {
+            val repository = FakeSettingsRepository()
+            val viewModel = createViewModel(settings = repository)
+
+            viewModel.setScreenPrivacy(true)
+            assertThat(repository.current.screenPrivacyEnabled).isTrue()
+
+            viewModel.setDohProvider(DohProvider.NEXTDNS)
+            assertThat(repository.current.dohProvider).isEqualTo(DohProvider.NEXTDNS)
+
+            viewModel.setSaveSearchHistory(false)
+            assertThat(repository.current.saveSearchHistory).isFalse()
+
+            viewModel.setSaveBrowsingHistory(false)
+            assertThat(repository.current.saveBrowsingHistory).isFalse()
         }
 
     private fun createViewModel(

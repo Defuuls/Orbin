@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -102,5 +103,24 @@ class SettingsStoreTest {
             assertTrue(settings.hideNsfwBoards)
             assertEquals(AppThemeMode.LIGHT, settings.themeMode)
             assertEquals(AppColorTheme.ORBIN, settings.colorTheme)
+        }
+
+    @Test
+    fun privacyAndSecuritySettingsPersistAndReadBack() =
+        runTest {
+            val store = SettingsStore(backgroundScope.dataStore())
+
+            store.setScreenPrivacyEnabled(true)
+            store.setDohProvider(DohProvider.NEXTDNS)
+            store.setStrictDohEnabled(true)
+            store.setSaveSearchHistory(false)
+            store.setSaveBrowsingHistory(false)
+
+            val settings = store.settings.first()
+            assertTrue(settings.screenPrivacyEnabled)
+            assertEquals(DohProvider.NEXTDNS, settings.dohProvider)
+            assertTrue(settings.strictDohEnabled)
+            assertEquals(false, settings.saveSearchHistory)
+            assertEquals(false, settings.saveBrowsingHistory)
         }
 }

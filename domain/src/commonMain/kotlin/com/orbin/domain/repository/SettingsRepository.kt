@@ -3,6 +3,7 @@ package com.orbin.domain.repository
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,16 @@ interface SettingsRepository {
     suspend fun setAmoled(enabled: Boolean)
 
     suspend fun setBiometricLockEnabled(enabled: Boolean)
+
+    suspend fun setScreenPrivacyEnabled(enabled: Boolean)
+
+    suspend fun setDohProvider(provider: DohProvider)
+
+    suspend fun setStrictDohEnabled(enabled: Boolean)
+
+    suspend fun setSaveSearchHistory(enabled: Boolean)
+
+    suspend fun setSaveBrowsingHistory(enabled: Boolean)
 
     suspend fun setOnboardingCompleted(completed: Boolean)
 

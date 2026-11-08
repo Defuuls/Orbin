@@ -12,6 +12,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DEFAULT_TABLET_CATALOG_COLUMNS
 import com.orbin.core.model.DEFAULT_WIDE_FEED_COLUMNS
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
@@ -59,6 +60,26 @@ class SettingsStore(
         edit { it[Keys.biometricLock] = enabled }
     }
 
+    override suspend fun setScreenPrivacyEnabled(enabled: Boolean) {
+        edit { it[Keys.screenPrivacy] = enabled }
+    }
+
+    override suspend fun setDohProvider(provider: DohProvider) {
+        edit { it[Keys.dohProvider] = provider.name }
+    }
+
+    override suspend fun setStrictDohEnabled(enabled: Boolean) {
+        edit { it[Keys.strictDoh] = enabled }
+    }
+
+    override suspend fun setSaveSearchHistory(enabled: Boolean) {
+        edit { it[Keys.saveSearchHistory] = enabled }
+    }
+
+    override suspend fun setSaveBrowsingHistory(enabled: Boolean) {
+        edit { it[Keys.saveBrowsingHistory] = enabled }
+    }
+
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         edit { it[Keys.onboardingCompleted] = completed }
     }
@@ -99,6 +120,13 @@ class SettingsStore(
             colorTheme = AppColorTheme.entries.firstOrNull { it.name == this[Keys.colorTheme] } ?: AppColorTheme.ORBIN,
             amoled = this[Keys.amoled] ?: false,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
+            screenPrivacyEnabled = this[Keys.screenPrivacy] ?: false,
+            dohProvider =
+                DohProvider.entries.firstOrNull { it.name == this[Keys.dohProvider] }
+                    ?: DohProvider.CLOUDFLARE,
+            strictDohEnabled = this[Keys.strictDoh] ?: false,
+            saveSearchHistory = this[Keys.saveSearchHistory] ?: true,
+            saveBrowsingHistory = this[Keys.saveBrowsingHistory] ?: true,
             activeProviderId = this[Keys.activeProviderId] ?: "",
             onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
@@ -114,6 +142,11 @@ class SettingsStore(
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")
         val biometricLock = booleanPreferencesKey("biometric_lock")
+        val screenPrivacy = booleanPreferencesKey("screen_privacy")
+        val dohProvider = stringPreferencesKey("doh_provider")
+        val strictDoh = booleanPreferencesKey("strict_doh")
+        val saveSearchHistory = booleanPreferencesKey("save_search_history")
+        val saveBrowsingHistory = booleanPreferencesKey("save_browsing_history")
         val activeProviderId = stringPreferencesKey("active_provider_id")
         val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
         val unfoldedFeedColumns = intPreferencesKey("unfolded_feed_columns")

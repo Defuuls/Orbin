@@ -240,11 +240,12 @@ class MainActivity : FragmentActivity() {
             previousShouldLock = shouldLock
         }
 
-        LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState) {
+        LaunchedEffect(ready, shouldLock, relockOnResume, lifecycleState, settings.screenPrivacyEnabled) {
             if (!ready) return@LaunchedEffect
 
+            setSecureContent(enabled = shouldLock || settings.screenPrivacyEnabled)
+
             if (shouldLock) {
-                setSecureContent(enabled = true)
                 if (relockOnResume) {
                     relockOnResume = false
                     unlocked = false
@@ -254,7 +255,6 @@ class MainActivity : FragmentActivity() {
                     requestUnlock()
                 }
             } else {
-                setSecureContent(enabled = false)
                 relockOnResume = false
                 unlocked = false
                 unlockMessage = null

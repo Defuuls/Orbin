@@ -53,6 +53,7 @@ class AppLock(
     val state: StateFlow<LockState> = _state.asStateFlow()
 
     private var enabled = false
+    private var screenPrivacy = false
     private var settingsLoaded = false
 
     // Startup may already be active before observers attach; only a lifecycle event hides it.
@@ -65,11 +66,13 @@ class AppLock(
 
     init {
         scope.launch {
-            settings.map { it.biometricLockEnabled }.collect { on ->
-                enabled = on
+            settings.collect { current ->
+                enabled = current.biometricLockEnabled
+                screenPrivacy = current.screenPrivacyEnabled
+                val on = enabled
                 if (!settingsLoaded) {
                     settingsLoaded = true
-                    _state.update { it.copy(locked = on, obscured = !foreground) }
+                    _state.update { it.copy(locked = on, obscured = !foreground && (on || screenPrivacy)) }
                     if (on) {
                         if (foreground) unlock() else askOnReturn = true
                     }
@@ -77,7 +80,7 @@ class AppLock(
                     // Turning it off lets the reader in; turning it on waits for the background.
                     attempt?.cancel()
                     attempt = null
-                    _state.update { LockState(obscured = !foreground) }
+                    _state.update { LockState(obscured = !foreground && screenPrivacy) }
                 }
             }
         }
@@ -109,7 +112,7 @@ class AppLock(
     /** The app is leaving the screen for a moment: hide it, as Android's secure window does. */
     fun onResignActive() {
         foreground = false
-        if (enabled && attempt?.isActive != true) _state.update { it.copy(obscured = true) }
+        if ((enabled || screenPrivacy) && attempt?.isActive != true) _state.update { it.copy(obscured = true) }
     }
 
     /** The app went to the background: it is locked when it comes back. */
