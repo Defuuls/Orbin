@@ -1,6 +1,6 @@
-<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="192-Sea-Kale">
+<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="193-Purslane">
   <title id="title">Orbin single-column feed on a compact Android phone</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 192 Sea Kale showing the single-column card feed on a compact phone, Color themes, Downloads tab, and privacy defaults.</desc>
+  <desc id="desc">Screenshot-style illustration of Orbin 193 Purslane showing the single-column card feed on a compact phone, Color themes, Downloads tab, and privacy defaults.</desc>
   <rect width="1200" height="760" fill="#0A0A0C"/>
   <rect x="64" y="72" width="1072" height="616" rx="16" fill="#12141A" stroke="#1C1E26" stroke-width="1.5"/>
 
@@ -10,7 +10,7 @@
   <text x="96" y="194" font-family="'Inter', sans-serif" font-size="15" fill="#8B919C">industrial imageboard browser</text>
   <rect x="96" y="218" width="144" height="32" rx="2" fill="#1C1E26" stroke="#2B2F3A" stroke-width="1"/>
   <circle cx="110" cy="234" r="3" fill="#22C55E"/>
-  <text id="release-label" x="175" y="239" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#E8E4DC">192 · Sea Kale</text>
+  <text id="release-label" x="175" y="239" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#E8E4DC">193 · Purslane</text>
 
   <text x="96" y="296" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#E8E4DC">• OPTIC-26 Instrument HUD</text>
   <text x="96" y="322" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">• Modular milled baffles</text>
