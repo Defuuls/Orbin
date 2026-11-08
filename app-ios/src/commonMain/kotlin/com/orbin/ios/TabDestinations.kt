@@ -21,6 +21,7 @@ import coil3.SingletonImageLoader
 import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
@@ -225,7 +226,28 @@ internal fun SettingsDestination(
                     Haptics.light()
                     lock.setLockEnabled(!settings.biometricLockEnabled)
                 }
-                SettingIds.COLOR_THEME, SettingIds.THEME, SettingIds.FEED_COLUMNS, SettingIds.CATALOG_COLUMNS -> {
+                SettingIds.SCREEN_PRIVACY -> {
+                    Haptics.light()
+                    browser.settings.setScreenPrivacy(!settings.screenPrivacyEnabled)
+                }
+                SettingIds.STRICT_DOH -> {
+                    Haptics.light()
+                    browser.settings.setStrictDns(!settings.strictDohEnabled)
+                }
+                SettingIds.SAVE_SEARCH_HISTORY -> {
+                    Haptics.light()
+                    browser.settings.setSaveSearchHistory(!settings.saveSearchHistory)
+                }
+                SettingIds.SAVE_BROWSING_HISTORY -> {
+                    Haptics.light()
+                    browser.settings.setSaveBrowsingHistory(!settings.saveBrowsingHistory)
+                }
+                SettingIds.DOH_PROVIDER,
+                SettingIds.COLOR_THEME,
+                SettingIds.THEME,
+                SettingIds.FEED_COLUMNS,
+                SettingIds.CATALOG_COLUMNS,
+                -> {
                     Haptics.light()
                     expanded = if (expanded == item.id) null else item.id
                 }
@@ -263,6 +285,7 @@ internal fun SettingsDestination(
         onSelectOption = { item, index ->
             Haptics.light()
             when (item.id) {
+                SettingIds.DOH_PROVIDER -> DohProvider.entries.getOrNull(index)?.let(browser.settings::setDohProvider)
                 SettingIds.COLOR_THEME -> AppColorTheme.entries.getOrNull(index)?.let(browser.settings::setColorTheme)
                 SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                 SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)

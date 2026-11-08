@@ -38,6 +38,7 @@ enum class DohProvider(
     CLOUDFLARE("Cloudflare"),
     OPENDNS("OpenDNS"),
     NEXTDNS("NextDNS"),
+    GOOGLE("Google"),
 }
 
 /** How a tapped thread is presented. */
@@ -108,6 +109,11 @@ data class AppSettings(
     val colorTheme: AppColorTheme = AppColorTheme.ORBIN,
     val amoled: Boolean = false,
     val biometricLockEnabled: Boolean = false,
+    val screenPrivacyEnabled: Boolean = false,
+    val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
+    val strictDohEnabled: Boolean = false,
+    val saveSearchHistory: Boolean = false,
+    val saveBrowsingHistory: Boolean = true,
     val activeProviderId: String = "",
     val onboardingCompleted: Boolean = false,
     /** Feed columns on an unfolded foldable's inner screen, 1–3. The front screen is always one. */

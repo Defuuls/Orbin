@@ -26,7 +26,16 @@ class SettingsIndexTest {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
                 listOf("themeMode", "colorTheme", "amoled"),
-                listOf("hideNsfw", "coverViolent", "biometric", "strictDns"),
+                listOf(
+                    "hideNsfw",
+                    "coverViolent",
+                    "biometric",
+                    "screenPrivacy",
+                    "dohProvider",
+                    "saveSearchHistory",
+                    "saveBrowsingHistory",
+                    "strictDns",
+                ),
                 listOf("clearActivity", "clearImageCache", "exportBackup", "importBackup"),
                 listOf("updateOnLaunch", "checkUpdates"),
             ).inOrder()

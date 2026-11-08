@@ -549,6 +549,7 @@ class Browser(
     // this. A failed write only loses the read mark, so it never fails the load.
     private suspend fun recordVisit(thread: Thread) {
         if (thread.isPermanentlyFiltered()) return
+        if (!settings.current.value.saveBrowsingHistory) return
         runCatching { history.record(thread.toHistoryEntry(now())) }
     }
 

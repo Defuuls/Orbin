@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.NetworkMonitor
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppUpdateState
+import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +24,16 @@ class MainViewModel
         settingsRepository: SettingsRepository,
         networkMonitor: NetworkMonitor,
         private val appUpdater: AppUpdater,
+        networkConfigProvider: FixedNetworkConfigProvider = FixedNetworkConfigProvider(),
     ) : ViewModel() {
+        init {
+            viewModelScope.launch {
+                settingsRepository.settings.collect { settings ->
+                    networkConfigProvider.updateDoh(settings.dohProvider, settings.strictDohEnabled)
+                }
+            }
+        }
+
         val uiState: StateFlow<MainUiState> =
             settingsRepository.settings
                 .map { MainUiState(settings = it, ready = true) }

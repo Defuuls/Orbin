@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -48,7 +49,7 @@ class SearchViewModel
         private val searchRepository: SearchRepository,
         private val boardRepository: BoardRepository,
         boardPreferencesRepository: BoardPreferencesRepository,
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
         registry: ProviderRegistry,
         observeActiveProvider: ObserveActiveProviderUseCase,
     ) : ViewModel() {
@@ -111,6 +112,9 @@ class SearchViewModel
                     if (outcome.allFailed) {
                         _state.value = SearchUiState.Error(outcome.firstError?.message ?: "Search failed")
                         return@launch
+                    }
+                    if (settingsRepository.settings.first().saveSearchHistory) {
+                        searchRepository.recordQuery(trimmed)
                     }
                     val results = outcome.results
                     _state.value = SearchUiState.Results(results.toImmutableList())

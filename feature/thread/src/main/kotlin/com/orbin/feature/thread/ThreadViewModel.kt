@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -321,18 +322,20 @@ class ThreadViewModel
                 } else {
                     _firstUnreadPostId.value = null
                 }
-                historyRepository.record(
-                    HistoryEntry(
-                        key = key,
-                        title = title.ifBlank { visible.subject ?: "/${board.value}/" },
-                        thumbnailUrl =
-                            visible.originalPost.attachments
-                                .firstOrNull()
-                                ?.thumbnailUrl,
-                        lastVisitedMillis = System.currentTimeMillis(),
-                        lastReadPostId = visible.originalPost.id,
-                    ),
-                )
+                if (settingsRepository.settings.first().saveBrowsingHistory) {
+                    historyRepository.record(
+                        HistoryEntry(
+                            key = key,
+                            title = title.ifBlank { visible.subject ?: "/${board.value}/" },
+                            thumbnailUrl =
+                                visible.originalPost.attachments
+                                    .firstOrNull()
+                                    ?.thumbnailUrl,
+                            lastVisitedMillis = System.currentTimeMillis(),
+                            lastReadPostId = visible.originalPost.id,
+                        ),
+                    )
+                }
             }
         }
 

@@ -7,6 +7,7 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
@@ -80,7 +81,10 @@ class SettingsViewModel
             dnsPrivacyMonitor.strictMode
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
-        fun setStrictDns(enabled: Boolean) = dnsPrivacyMonitor.setStrictMode(enabled)
+        fun setStrictDns(enabled: Boolean) {
+            dnsPrivacyMonitor.setStrictMode(enabled)
+            update { repository.setStrictDohEnabled(enabled) }
+        }
 
         val settings: StateFlow<AppSettings> =
             repository.settings
@@ -135,6 +139,14 @@ class SettingsViewModel
             }
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
+
+        fun setScreenPrivacy(enabled: Boolean) = update { repository.setScreenPrivacyEnabled(enabled) }
+
+        fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
+
+        fun setSaveSearchHistory(enabled: Boolean) = update { repository.setSaveSearchHistory(enabled) }
+
+        fun setSaveBrowsingHistory(enabled: Boolean) = update { repository.setSaveBrowsingHistory(enabled) }
 
         fun clearLocalActivity(onComplete: (Boolean) -> Unit = {}) =
             update {

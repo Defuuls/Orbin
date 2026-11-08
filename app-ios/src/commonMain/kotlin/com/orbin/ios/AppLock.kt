@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -53,6 +52,7 @@ class AppLock(
     val state: StateFlow<LockState> = _state.asStateFlow()
 
     private var enabled = false
+    private var screenPrivacy = false
     private var settingsLoaded = false
 
     // Startup may already be active before observers attach; only a lifecycle event hides it.
@@ -65,8 +65,10 @@ class AppLock(
 
     init {
         scope.launch {
-            settings.map { it.biometricLockEnabled }.collect { on ->
-                enabled = on
+            settings.collect { current ->
+                enabled = current.biometricLockEnabled
+                screenPrivacy = current.screenPrivacyEnabled
+                val on = enabled
                 if (!settingsLoaded) {
                     settingsLoaded = true
                     _state.update { it.copy(locked = on, obscured = !foreground) }
@@ -109,17 +111,17 @@ class AppLock(
     /** The app is leaving the screen for a moment: hide it, as Android's secure window does. */
     fun onResignActive() {
         foreground = false
-        if (enabled && attempt?.isActive != true) _state.update { it.copy(obscured = true) }
+        if ((enabled || screenPrivacy) && attempt?.isActive != true) _state.update { it.copy(obscured = true) }
     }
 
     /** The app went to the background: it is locked when it comes back. */
     fun onBackground() {
         foreground = false
-        if (!enabled) return
+        if (!enabled && !screenPrivacy) return
         attempt?.cancel()
         attempt = null
-        askOnReturn = true
-        _state.value = LockState(locked = true, obscured = true, unlocking = false)
+        if (enabled) askOnReturn = true
+        _state.value = LockState(locked = enabled, obscured = true, unlocking = false)
     }
 
     /** The app is back on screen: show it, and ask to unlock it if it was in the background. */

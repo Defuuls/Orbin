@@ -19,7 +19,7 @@ class SettingsRowsTest {
         assertTrue(groups.all { it.second.isNotEmpty() })
         val ids = groups.flatMap { it.second }.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
-        assertEquals(12, ids.size)
+        assertEquals(17, ids.size)
     }
 
     @Test
@@ -150,5 +150,29 @@ class SettingsRowsTest {
         assertTrue(rows.getValue(SettingIds.CLEAR_ACTIVITY).destructive)
         assertTrue(rows.getValue(SettingIds.CLEAR_IMAGE_CACHE).destructive)
         assertTrue(!rows.getValue(SettingIds.EXPORT_BACKUP).destructive)
+    }
+
+    @Test
+    fun privacySettingsIncludeShieldDohAndHistoryToggles() {
+        val rows =
+            settingsGroups(
+                AppSettings(
+                    screenPrivacyEnabled = true,
+                    strictDohEnabled = true,
+                    saveSearchHistory = false,
+                    saveBrowsingHistory = false,
+                ),
+                clearArmed = false,
+                imageCacheCleared = false,
+            ).flatMap { it.second }.associateBy { it.id }
+
+        assertEquals(ON_LABEL, rows.getValue(SettingIds.SCREEN_PRIVACY).value)
+        assertEquals(true, rows.getValue(SettingIds.SCREEN_PRIVACY).checked)
+        assertEquals(SettingKind.CHOICE, rows.getValue(SettingIds.DOH_PROVIDER).kind)
+        assertEquals(ON_LABEL, rows.getValue(SettingIds.STRICT_DOH).value)
+        assertEquals(OFF_LABEL, rows.getValue(SettingIds.SAVE_SEARCH_HISTORY).value)
+        assertEquals(false, rows.getValue(SettingIds.SAVE_SEARCH_HISTORY).checked)
+        assertEquals(OFF_LABEL, rows.getValue(SettingIds.SAVE_BROWSING_HISTORY).value)
+        assertEquals(false, rows.getValue(SettingIds.SAVE_BROWSING_HISTORY).checked)
     }
 }

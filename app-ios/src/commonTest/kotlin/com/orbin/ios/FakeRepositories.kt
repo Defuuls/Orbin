@@ -5,6 +5,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HistoryEntry
@@ -135,6 +136,31 @@ class FakeSettings : SettingsRepository {
     override suspend fun setBiometricLockEnabled(enabled: Boolean) =
         settings.update {
             it.copy(biometricLockEnabled = enabled)
+        }
+
+    override suspend fun setScreenPrivacyEnabled(enabled: Boolean) =
+        settings.update {
+            it.copy(screenPrivacyEnabled = enabled)
+        }
+
+    override suspend fun setDohProvider(provider: DohProvider) =
+        settings.update {
+            it.copy(dohProvider = provider)
+        }
+
+    override suspend fun setStrictDohEnabled(enabled: Boolean) =
+        settings.update {
+            it.copy(strictDohEnabled = enabled)
+        }
+
+    override suspend fun setSaveSearchHistory(enabled: Boolean) =
+        settings.update {
+            it.copy(saveSearchHistory = enabled)
+        }
+
+    override suspend fun setSaveBrowsingHistory(enabled: Boolean) =
+        settings.update {
+            it.copy(saveBrowsingHistory = enabled)
         }
 
     override suspend fun setOnboardingCompleted(completed: Boolean) =

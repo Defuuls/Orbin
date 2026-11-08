@@ -8,6 +8,7 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
+import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
@@ -199,6 +200,26 @@ class FakeSettingsRepository(
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         update { copy(biometricLockEnabled = enabled) }
+    }
+
+    override suspend fun setScreenPrivacyEnabled(enabled: Boolean) {
+        update { copy(screenPrivacyEnabled = enabled) }
+    }
+
+    override suspend fun setDohProvider(provider: DohProvider) {
+        update { copy(dohProvider = provider) }
+    }
+
+    override suspend fun setStrictDohEnabled(enabled: Boolean) {
+        update { copy(strictDohEnabled = enabled) }
+    }
+
+    override suspend fun setSaveSearchHistory(enabled: Boolean) {
+        update { copy(saveSearchHistory = enabled) }
+    }
+
+    override suspend fun setSaveBrowsingHistory(enabled: Boolean) {
+        update { copy(saveBrowsingHistory = enabled) }
     }
 
     override suspend fun setOnboardingCompleted(completed: Boolean) {
