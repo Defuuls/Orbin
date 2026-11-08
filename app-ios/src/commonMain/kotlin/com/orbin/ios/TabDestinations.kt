@@ -246,7 +246,8 @@ internal fun SettingsDestination(
                 SettingIds.COLOR_THEME,
                 SettingIds.THEME,
                 SettingIds.FEED_COLUMNS,
-                SettingIds.CATALOG_COLUMNS -> {
+                SettingIds.CATALOG_COLUMNS,
+                -> {
                     Haptics.light()
                     expanded = if (expanded == item.id) null else item.id
                 }
