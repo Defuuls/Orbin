@@ -137,7 +137,9 @@ class LynxChanTransportTest {
     @Test
     fun `oversized JSON is rejected before waiting for the rest of the body`() =
         runTest {
-            val prefix = ByteReadChannel(ByteArray(16 * 1024 * 1024 + 1))
+            val prefixBytes = ByteArray(16 * 1024 * 1024 + 1) { ' '.code.toByte() }
+            """{"status":"ok","data":{"boards":[]}}""".encodeToByteArray().copyInto(prefixBytes)
+            val prefix = ByteReadChannel(prefixBytes)
             val body =
                 object : ByteReadChannel by prefix {
                     override val isClosedForRead: Boolean = false
