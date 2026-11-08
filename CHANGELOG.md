@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- iOS: stopped thread thumbnails from decoding full videos, created native video players only for the visible media viewer page, and left WKWebView removal to Compose, to stop the crash when jumping to the bottom of a thread and then playing a video.
+
 ## [189-Tatsoi] - 2026-11-03
 
 ### Security

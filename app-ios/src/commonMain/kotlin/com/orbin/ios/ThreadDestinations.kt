@@ -156,6 +156,8 @@ private fun ThreadContent(
                             attachment.originalFileName,
                             Modifier.fillMaxSize(),
                             fill = Modifier.fillMaxSize(),
+                            // Thread jumps must not start full-video thumbnail decoders.
+                            videoFrame = false,
                         )
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                     }
@@ -185,7 +187,14 @@ private fun ThreadContent(
             media = { post, modifier ->
                 byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
                     Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
-                        SharpImage(attachment, attachment.originalFileName, Modifier.fillMaxWidth())
+                        // Use the site's thumbnail: a long jump can compose several video posts
+                        // just before the viewer needs the same limited decoder resources.
+                        SharpImage(
+                            attachment,
+                            attachment.originalFileName,
+                            Modifier.fillMaxWidth(),
+                            videoFrame = false,
+                        )
                         // Opening it still asks again in the viewer: the cover is lifted per file there.
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                     }

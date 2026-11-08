@@ -185,7 +185,8 @@ private fun MediaPage(
     when {
         file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file, active)
         // Below the top bar, so the player's own controls never sit under the close button.
-        playable != null ->
+        // Only the visible page owns a native player; pager neighbours need no decoder.
+        playable != null && active ->
             Box(Modifier.fillMaxSize()) {
                 NativePlayer(
                     url = playable,

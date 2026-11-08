@@ -317,7 +317,8 @@ private fun WKWebView.tearDownMedia() {
     )
     stopLoading()
     loadHTMLString("", baseURL = null)
-    removeFromSuperview()
+    // UIKit interop owns attachment/removal of this view. Only stop its media here;
+    // Compose may still have a queued interop transaction for the host.
 }
 
 /** One in-memory store for every video page, so they share a WebContent process. */
