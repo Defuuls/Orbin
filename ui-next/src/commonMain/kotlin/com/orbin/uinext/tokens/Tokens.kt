@@ -111,7 +111,7 @@ object NextType {
             fontWeight = FontWeight.ExtraBold,
             fontSize = 40.sp,
             lineHeight = 44.sp,
-            letterSpacing = (-1.2).sp,
+            letterSpacing = 0.sp,
         )
     val displaySmall =
         TextStyle(
