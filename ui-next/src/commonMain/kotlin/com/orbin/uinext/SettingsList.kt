@@ -35,6 +35,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -97,12 +98,14 @@ fun SettingsScreen(
     val state = rememberLazyListState()
     var query by rememberSaveable { mutableStateOf("") }
     val visibleGroups = remember(groups, query) { filterSettings(groups, query) }
-    LaunchedEffect(expandedId, query) {
+    val clearance = compactTitleClearance()
+    val compactClearance = with(LocalDensity.current) { clearance.roundToPx() }
+    LaunchedEffect(expandedId, query, compactClearance) {
         val targetId = expandedId ?: return@LaunchedEffect
         val groupIndex = visibleGroups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
         if (groupIndex >= 0) {
             val lazyItemIndex = 2 + groupIndex
-            state.scrollToItem(lazyItemIndex)
+            state.scrollToItem(lazyItemIndex, scrollOffset = -compactClearance)
         }
     }
     val settingsTitle = stringResource(Res.string.next_settings_title)

@@ -155,8 +155,8 @@ fun NextLinearProgress(
 private val PROGRESS_HEIGHT = 3.dp
 
 /**
- * Settings-style On/Off control. Prefer this over Material Switch so preference rows match the
- * grouped Settings language (word toggles, not thumb tracks).
+ * Platform switch used by shared preference rows. Pass a null callback when the containing
+ * row owns the action and accessibility semantics.
  */
 @Composable
 fun NextToggle(

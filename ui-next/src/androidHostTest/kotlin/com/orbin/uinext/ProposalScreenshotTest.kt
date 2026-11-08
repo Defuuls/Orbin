@@ -414,7 +414,8 @@ class ProposalScreenshotTest {
                         label = "Clear local activity",
                         value = "Delete",
                         kind = SettingKind.ACTION,
-                        hint = "Deletes browsing history, recent searches and download history on this device.",
+                        hint =
+                            "Deletes browsing history, recent searches, download history and cached images on this device.",
                         destructive = true,
                     ),
                     SettingItem(

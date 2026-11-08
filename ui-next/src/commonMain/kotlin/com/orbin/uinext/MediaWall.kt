@@ -1,13 +1,14 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -45,6 +46,7 @@ import com.orbin.uinext.resources.next_open_file
 import com.orbin.uinext.resources.next_sweep_progress
 import com.orbin.uinext.resources.next_sweep_reading
 import com.orbin.uinext.resources.next_sweep_unreachable
+import com.orbin.uinext.tokens.NextRadius
 import org.jetbrains.compose.resources.stringResource
 
 data class MediaCell(
@@ -78,7 +80,7 @@ fun MediaWallScreen(
     val gridState = rememberLazyGridState()
     var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
     val imageCellMinSize = imageCellSize.dp
-    val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 124.dp
+    val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 156.dp
     val imageSizeDescription = stringResource(Res.string.next_media_size_control)
     val railVisible =
         if (hideRailOnScroll) {
@@ -124,61 +126,86 @@ fun MediaWallScreen(
                             inset = 0.dp,
                         )
                         if (onOpenSaved != null) {
-                            Box(modifier = Modifier.offset(x = (-4).dp)) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .clip(RoundedCornerShape(NextRadius.pill))
+                                        .background(next.raised)
+                                        .padding(horizontal = 6.dp),
+                            ) {
                                 InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
                             }
                             Gap(8)
                         }
-                        if (showSizeControl) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
+                        if (showSizeControl || scanning || deepScanning || failed > 0) {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = NextRadius.card,
+                                                topEnd = NextRadius.control,
+                                                bottomEnd = NextRadius.card,
+                                                bottomStart = NextRadius.control,
+                                            ),
+                                        ).background(next.raised)
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
                             ) {
-                                MetaLine(stringResource(Res.string.next_media_size_small))
-                                NextSlider(
-                                    value = imageCellSize,
-                                    onValueChange = {
-                                        imageCellSize =
-                                            it.coerceIn(
-                                                MEDIA_CELL_MIN_DP,
-                                                MEDIA_CELL_MAX_DP,
+                                if (showSizeControl) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        MetaLine(stringResource(Res.string.next_media_size_small))
+                                        NextSlider(
+                                            value = imageCellSize,
+                                            onValueChange = {
+                                                imageCellSize =
+                                                    it.coerceIn(
+                                                        MEDIA_CELL_MIN_DP,
+                                                        MEDIA_CELL_MAX_DP,
+                                                    )
+                                            },
+                                            valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                            steps = MEDIA_CELL_STEPS,
+                                            modifier =
+                                                Modifier
+                                                    .weight(1f)
+                                                    .padding(horizontal = 12.dp)
+                                                    .semantics { contentDescription = imageSizeDescription },
+                                        )
+                                        MetaLine(stringResource(Res.string.next_media_size_large))
+                                    }
+                                    Gap(8)
+                                }
+                                if (scanning || deepScanning || failed > 0) {
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        if (deepScanning) {
+                                            SweepBar(scanned = deepScanned, total = deepTotal)
+                                            MetaLine(
+                                                stringResource(Res.string.next_sweep_reading, deepScanned, deepTotal),
+                                                maxLines = 2,
                                             )
-                                    },
-                                    valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
-                                    steps = MEDIA_CELL_STEPS,
-                                    modifier =
-                                        Modifier
-                                            .weight(1f)
-                                            .padding(horizontal = 12.dp)
-                                            .semantics { contentDescription = imageSizeDescription },
-                                )
-                                MetaLine(stringResource(Res.string.next_media_size_large))
-                            }
-                            Gap(8)
-                        }
-                        if (scanning || deepScanning || failed > 0) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                if (deepScanning) {
-                                    SweepBar(scanned = deepScanned, total = deepTotal)
-                                    WidthSpacer(12)
-                                    MetaLine(stringResource(Res.string.next_sweep_reading, deepScanned, deepTotal))
-                                } else if (scanning) {
-                                    SweepBar(scanned = scanned, total = total)
-                                    WidthSpacer(12)
-                                    MetaLine(stringResource(Res.string.next_sweep_progress, scanned, total))
-                                }
-                                Box(modifier = Modifier.weight(1f))
-                                if (failed > 0) {
-                                    MetaLine(
-                                        stringResource(Res.string.next_sweep_unreachable, failed),
-                                        color = next.accent,
-                                    )
+                                        } else if (scanning) {
+                                            SweepBar(scanned = scanned, total = total)
+                                            MetaLine(stringResource(Res.string.next_sweep_progress, scanned, total), maxLines = 2)
+                                        }
+                                        if (failed > 0) {
+                                            MetaLine(
+                                                stringResource(Res.string.next_sweep_unreachable, failed),
+                                                color = next.accent,
+                                            )
+                                        }
+                                    }
+                                    Gap(16)
                                 }
                             }
-                            Gap(16)
+                            Gap(12)
                         }
                     }
                 }
@@ -188,8 +215,8 @@ fun MediaWallScreen(
                     Box(
                         modifier =
                             Modifier
-                                .padding(2.5.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .padding(4.dp)
+                                .clip(RoundedCornerShape(NextRadius.tile))
                                 .nextClickable(
                                     role = Role.Button,
                                     onClickLabel = stringResource(Res.string.next_open_file),
@@ -203,7 +230,7 @@ fun MediaWallScreen(
                         if (tile != null) {
                             tile(cell, shape)
                         } else {
-                            MediaTile(modifier = shape, seed = index, radius = 16.dp)
+                            MediaTile(modifier = shape, seed = index, radius = NextRadius.tile)
                         }
                         MediaBadge(
                             text = cell.board,
@@ -230,16 +257,16 @@ internal fun SweepBar(
         modifier =
             Modifier
                 .width(96.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
                 .background(next.hairline),
     ) {
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth(scanned.toFloat() / total.coerceAtLeast(1))
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
                     .background(next.accent),
         )
     }

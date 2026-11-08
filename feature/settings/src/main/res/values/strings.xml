@@ -28,7 +28,7 @@
     <string name="settings_clear_activity">Clear local activity</string>
     <string name="settings_clear_activity_armed">Tap again to delete</string>
     <string name="settings_clear_activity_action">Delete</string>
-    <string name="settings_clear_activity_hint">Deletes browsing history, recent searches and download history on this device.</string>
+    <string name="settings_clear_activity_hint">Deletes browsing history, recent searches, download history and cached images on this device.</string>
     <string name="settings_clear_activity_done">Local activity cleared</string>
     <string name="settings_clear_activity_failed">Could not clear all local activity. Try again.</string>
     <string name="settings_clear_image_cache">Clear image cache</string>

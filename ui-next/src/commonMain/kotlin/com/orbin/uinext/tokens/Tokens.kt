@@ -24,12 +24,12 @@ import androidx.compose.ui.unit.sp
 object NextSpace {
     val gutter: Dp = 16.dp
     val gutterTight: Dp = 16.dp
-    val section: Dp = 24.dp
-    val groupGap: Dp = 16.dp
-    val rowY: Dp = 14.dp
+    val section: Dp = 28.dp
+    val groupGap: Dp = 20.dp
+    val rowY: Dp = 16.dp
     val rowX: Dp = 16.dp
-    val titleTop: Dp = 22.dp
-    val titleBottom: Dp = 16.dp
+    val titleTop: Dp = 24.dp
+    val titleBottom: Dp = 20.dp
     val chromeInset: Dp = 16.dp
     val chromeBottom: Dp = 12.dp
     val pillPadX: Dp = 12.dp
@@ -39,23 +39,19 @@ object NextSpace {
 }
 
 /**
- * M3 Expressive corner radii — aligned with [OrbinShapes] / [MaterialTheme.shapes].
+ * Shared radii for editorial cards, tonal control decks and the floating navigation dock.
  *
- * - [tight] (8.dp) aligns with [Shapes.extraSmall]
- * - [control] (12.dp) aligns with [Shapes.small]
- * - [tile] (20.dp) rounded tile
- * - [card] (24.dp) aligns with [Shapes.large]
- * - [sheet] (28.dp) and [continuous] (28.dp) modal surface
- * - [pill] (100.dp) full round pill
+ * Combine [card] and [control] diagonally for asymmetric cards. Controls and sheets retain
+ * a clear family of rounded shapes; [pill] is reserved for selection and metadata capsules.
  */
 @Immutable
 object NextRadius {
-    val tight: Dp = 8.dp
-    val control: Dp = 12.dp
-    val tile: Dp = 20.dp
-    val card: Dp = 24.dp
-    val sheet: Dp = 28.dp
-    val continuous: Dp = 28.dp
+    val tight: Dp = 10.dp
+    val control: Dp = 14.dp
+    val tile: Dp = 24.dp
+    val card: Dp = 32.dp
+    val sheet: Dp = 32.dp
+    val continuous: Dp = 32.dp
     val pill: Dp = 100.dp
 }
 
@@ -86,7 +82,7 @@ object NextMaterials {
 }
 
 /**
- * M3 typography scale — platform default [FontFamily.SansSerif], M3 type roles.
+ * Editorial type hierarchy on the platform font, with readable body text and expressive titles.
  *
  * On Android SansSerif resolves to Roboto; on iOS Compose Multiplatform maps it to the
  * system sans (San Francisco). Type role names and letterspacing follow M3 rather than
@@ -104,75 +100,75 @@ object NextType {
     val displayLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
+            fontWeight = FontWeight.Black,
             fontSize = 57.sp,
             lineHeight = 64.sp,
-            letterSpacing = (-0.25).sp,
+            letterSpacing = (-1.7).sp,
         )
     val displayMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
-            fontSize = 45.sp,
-            lineHeight = 52.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 40.sp,
+            lineHeight = 44.sp,
+            letterSpacing = (-1.2).sp,
         )
     val displaySmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Normal,
-            fontSize = 36.sp,
-            lineHeight = 44.sp,
-            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = 34.sp,
+            lineHeight = 40.sp,
+            letterSpacing = (-0.8).sp,
         )
 
     // Headline — screen titles, section headers
     val headlineLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             fontSize = 32.sp,
-            lineHeight = 40.sp,
-            letterSpacing = 0.sp,
+            lineHeight = 38.sp,
+            letterSpacing = (-0.6).sp,
         )
     val headlineMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             fontSize = 28.sp,
-            lineHeight = 36.sp,
-            letterSpacing = 0.sp,
+            lineHeight = 34.sp,
+            letterSpacing = (-0.4).sp,
         )
     val headlineSmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
-            lineHeight = 32.sp,
-            letterSpacing = 0.sp,
+            lineHeight = 30.sp,
+            letterSpacing = (-0.3).sp,
         )
 
     // Title — card titles, row primary text
     val titleLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 22.sp,
             lineHeight = 28.sp,
-            letterSpacing = 0.sp,
+            letterSpacing = (-0.2).sp,
         )
     val titleMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 17.sp,
             lineHeight = 24.sp,
-            letterSpacing = 0.15.sp,
+            letterSpacing = 0.sp,
         )
     val titleSmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             letterSpacing = 0.1.sp,
@@ -208,7 +204,7 @@ object NextType {
     val labelLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             letterSpacing = 0.1.sp,
@@ -216,15 +212,15 @@ object NextType {
     val labelMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             lineHeight = 16.sp,
-            letterSpacing = 0.5.sp,
+            letterSpacing = 0.3.sp,
         )
     val labelSmall =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.5.sp,
@@ -256,7 +252,7 @@ object NextType {
     // Convenience aliases used in ui-next components
 
     /** Screen/section primary title (maps to headlineMedium). */
-    val largeTitle = headlineMedium
+    val largeTitle = displayMedium
 
     val title1 = headlineLarge
     val title2 = headlineMedium

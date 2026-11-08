@@ -1,55 +1,61 @@
 # Settings Guide
 
-Settings opens from the gear in the Feed header. It is deliberately short: a few preferences, the
-things you do to your data, and nothing else. Everything else is decided by the app, so there is
-nothing to tune before browsing. Settings take effect immediately, and local preference storage is
-encrypted.
+Open Settings from the gear in the Feed header. Changes take effect immediately.
+Use **Search settings** to find a label, a choice, an explanation or a section.
+Words can match different parts of the same row: “appearance dark” finds Theme.
+Clear the search to return to the complete list.
 
-## Preferences
+Choices expand below their row. Current values wrap below labels so they remain
+readable at large system text sizes. Toggle rows have one accessible action that
+announces their current state.
 
-| Setting | What it does |
-| --- | --- |
-| Hide NSFW boards | Removes NSFW boards from the board list and the feed. |
-| Cover violent media | On by default. Puts a spoiler cover over the images and videos of posts whose subject, text or filename mentions violence, accidents or graphic footage (for example *fight*, *car crash*, *bodycam*, *nsfl*). If a thread's opening post does, every file in the thread is covered. Open the post to see the media. It reads text only, so unlabelled media is not covered. Clearly labelled gore is hidden outright by a filter that cannot be turned off. |
-| Theme | Light, dark, or follow the system. |
-| True black | Uses pure black surfaces in dark mode. |
-| Feed columns | Foldables and tablets only. How many columns the feed shows on a wide screen: 1–3 on an unfolded foldable ("Feed columns when unfolded"), 1–4 on a tablet. Starts at 2. A foldable's front screen (either way up), a phone, and any window narrower or shorter than 600dp always show one column. |
-| Catalog columns | Tablets only. How many columns a board's catalog shows on the tablet's full width, 2–8. Starts at 4. Everywhere else, and in a window narrower or shorter than 600dp, the catalog fits its tiles to the width. |
-| App lock | Requires device authentication before Orbin's content is shown. |
-| Tell me about new releases | When on (the default), Orbin checks for a new release at most once a day when it opens and offers to install it. |
-
-## Your data
+## Appearance
 
 | Setting | What it does |
 | --- | --- |
-| Clear local activity | Deletes browsing history, recent searches and download history stored on this device. Tap once and the row reads "Tap again to delete"; a second tap within a few seconds clears it. |
-| Clear image cache | Shows the image cache size and clears it. Images download again when needed. |
-| Check for updates | Asks GitHub whether a newer release exists and, if one does, offers to download and install it from the app. |
-| Export data | Writes settings, boards, bookmarks and saved searches to a file you choose. |
-| Import data | Merges a backup into the existing setup rather than replacing it. |
+| Theme | Follows the system, or uses Light or Dark. |
+| Color theme | Selects Orbin (green), Blue, Red, White, Black, Purple, Orange or Teal independently of brightness. |
+| True black | Uses pure black backgrounds in dark mode. |
+| Feed columns | Shown on foldables and tablets: 1–3 columns when unfolded, or 1–4 on a tablet. Phones and narrow windows use one column. |
+| Catalog columns | Tablets can choose 2–8 columns. Smaller windows adapt to the available width. |
 
-**Important:** exported backup files are plain JSON and are not encrypted. The live app database
-and preferences are encrypted, but portable exports are intentionally readable outside Orbin.
+Text size follows Android's system font setting or iOS Dynamic Type.
 
-## Elsewhere
+## Privacy and safety
 
-- **Saved files** are listed in the **Downloads** tab.
-- **Search** opens from **Search threads ›** under the Boards title.
+| Setting | What it does |
+| --- | --- |
+| Hide NSFW boards | Hides NSFW boards from browsing surfaces. |
+| Cover violent media | Uses text and filenames to cover potentially violent media. It cannot identify unlabeled content from pixels. |
+| App lock | Requires device authentication before showing content. Importing a backup does not change the existing lock policy. |
+| Strict encrypted DNS | Android only. Stops loading when encrypted DNS is unavailable, instead of falling back to the network's resolver. The row warns when fallback is active. |
 
-## Decided for you
+## Data and storage
 
-- **Text size** follows your phone's font size.
-- **Colours** use Orbin's one palette, in light or dark.
-- **Video** starts muted. Unmute one and the next video plays with sound until Orbin closes.
-- **Downloads** go to `Downloads/Orbin`, in a folder per board and thread.
-- **Networking** is HTTPS only, with DNS over HTTPS. Private app state is excluded from Android
-  cloud backup and device transfer.
+| Action | What it does |
+| --- | --- |
+| Clear local activity | Clears browsing history, download records and cached images; Android also clears recent searches. Tap again within four seconds to confirm. Android reports completion only after clearing finishes. This does not delete saved files from system storage. |
+| Clear image cache | Clears cached images, which can download again when needed. Android shows the current cache size. |
+| Export data | Exports portable settings and followed boards/bookmarks. Android also includes saved searches. |
+| Import data | Restores a compatible backup into this installation. iOS treats restoration as completed setup. Invalid entries are skipped; Android's summary counts accepted saved searches. |
 
-Preferences that earlier versions offered are ignored when an older backup is imported, so a restore
-never fails because of them.
+Exported backups are plain JSON files. Keep them in a trusted location. They do
+not inherit the encryption of the app's live settings and database.
+
+## Updates and project information
+
+Android's **Updates** section contains **Tell me about new releases** and
+**Check for updates**. iOS updates come through the App Store or TestFlight;
+its **About** section links to the privacy policy and project repository and
+shows version information when available.
+
+## Other destinations
+
+Downloads opens from Media. Thread search opens from Boards. Settings search
+only filters preferences and actions; it does not search browsing history,
+passwords or text drafts.
 
 ## Developer note
 
-If this page and the app disagree, treat the shipped UI and repository source as authoritative and
-update this document in the same PR. `docs/wiki/` is mirrored automatically to the public GitHub
-Wiki after changes reach `main`.
+Keep this guide aligned with the shipped settings registries and shared screen.
+`docs/wiki/` is mirrored to the GitHub Wiki after changes reach `main`.

@@ -107,7 +107,13 @@ internal fun FeedGridCell(
             modifier
                 .padding(GRID_CELL_PADDING)
                 .semantics { role = Role.Button },
-        shape = RoundedCornerShape(GRID_TILE_RADIUS),
+        shape =
+            RoundedCornerShape(
+                topStart = NextRadius.card,
+                topEnd = NextRadius.control,
+                bottomEnd = NextRadius.card,
+                bottomStart = NextRadius.control,
+            ),
         colors =
             CardDefaults.cardColors(
                 containerColor = next.raised,
@@ -116,6 +122,12 @@ internal fun FeedGridCell(
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(if (row.read) next.hairline else boardHue(row.board)),
+            )
             val tile =
                 Modifier.fillMaxWidth().let {
                     if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
@@ -155,10 +167,10 @@ internal fun FeedGridCell(
                 Gap(6)
                 Text(
                     text = row.subject,
-                    style = NextType.body,
-                    fontWeight = if (row.read) FontWeight.Normal else FontWeight.SemiBold,
+                    style = if (tallMedia) NextType.title3 else NextType.headline,
+                    fontWeight = if (row.read) FontWeight.Medium else FontWeight.Bold,
                     color = if (row.read) next.muted else next.ink,
-                    maxLines = 2,
+                    maxLines = if (tallMedia && !uniform) 3 else 2,
                     minLines = if (uniform) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -172,7 +184,15 @@ internal fun FeedGridCell(
                 }
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(NextRadius.control))
+                        .background(next.background)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                }
             }
             Gap(12)
         }

@@ -82,7 +82,7 @@ jobs:
               if not data.startswith(b"\x89PNG\r\n\x1a\n"):
                   raise SystemExit("Not a PNG: " + name)
               total += len(data)
-              if total > 12 * 1024 * 1024:
+              if total > 32 * 1024 * 1024:
                   raise SystemExit("Fixture payload exceeds diagnostic limit")
               images.append((name, data))
           print("ORBIN_GOLDEN_SOURCE " + json.dumps({"sha": source, "count": len(images), "bytes": total}))

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +29,6 @@ import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -70,6 +71,7 @@ import com.orbin.uinext.resources.next_thread_save_page
 import com.orbin.uinext.resources.next_thread_share
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
@@ -231,10 +233,16 @@ fun ThreadScreen(
                             color = next.faint,
                         )
                     }
-                    ScreenTitle(text = subject, size = 26)
+                    ScreenTitle(text = subject, size = 34)
                     // Two things only: how to read the thread, and whether to be told when it moves.
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = GUTTER)
+                                .clip(RoundedCornerShape(NextRadius.card))
+                                .background(next.raised)
+                                .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val threadSegments =
@@ -261,11 +269,11 @@ fun ThreadScreen(
                                         ),
                                     colors =
                                         SegmentedButtonDefaults.colors(
-                                            activeContainerColor = next.accentSoft,
-                                            activeContentColor = next.accent,
-                                            inactiveContainerColor = next.elevated,
+                                            activeContainerColor = next.accent,
+                                            activeContentColor = next.onAccent,
+                                            inactiveContainerColor = next.raised,
                                             inactiveContentColor = next.ink,
-                                            activeBorderColor = next.hairline,
+                                            activeBorderColor = next.accent,
                                             inactiveBorderColor = next.hairline,
                                         ),
                                     label = {
@@ -325,7 +333,6 @@ fun ThreadScreen(
                             body = body,
                             media = media,
                         )
-                        if (index < posts.lastIndex) Hairline(inset = true)
                     }
                 } else {
                     items(
@@ -380,11 +387,17 @@ private fun PostView(
     val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
     Surface(
         onClick = { onClick(post) },
-        modifier = Modifier.fillMaxWidth(),
-        color = next.background,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        shape =
+            RoundedCornerShape(
+                topStart = NextRadius.card,
+                topEnd = NextRadius.control,
+                bottomEnd = NextRadius.card,
+                bottomStart = NextRadius.control,
+            ),
+        color = if (seed == 0) next.elevated else next.raised,
         contentColor = next.ink,
     ) {
-        HorizontalDivider(color = next.hairline, thickness = 1.dp)
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier =
@@ -401,20 +414,28 @@ private fun PostView(
                 val collapseLabel = stringResource(Res.string.next_post_collapse)
                 val collapsedState = stringResource(Res.string.next_post_collapsed_state)
                 val expandedState = stringResource(Res.string.next_post_expanded_state)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier =
                         Modifier
+                            .clip(RoundedCornerShape(NextRadius.pill))
+                            .background(next.background)
+                            .heightIn(min = 44.dp)
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
                             .nextClickable(
                                 onClickLabel = if (collapsed) expandLabel else collapseLabel,
                                 onClick = { onToggleCollapse(post) },
                             ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
                 ) {
-                    MetaLine(post.number, color = next.faint)
-                    WidthSpacer(8)
+                    Text(
+                        text = post.number,
+                        style = NextType.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (seed == 0) next.accent else next.ink,
+                    )
                     MetaLine(post.time, color = next.faint)
                     if (post.replies > 0) {
-                        WidthSpacer(8)
                         val repliesText =
                             pluralStringResource(
                                 Res.plurals.next_row_replies,
@@ -424,7 +445,6 @@ private fun PostView(
                         Pill(repliesText, tint = next.muted)
                     }
                     if (collapsed) {
-                        WidthSpacer(8)
                         MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
                     }
                 }
