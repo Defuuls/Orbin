@@ -1,28 +1,19 @@
-# Orbin 191 - Agretti
+# Orbin 192 - Sea Kale
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 191
-codename     = "Agretti"
-version_code = 209
+number       = 192
+codename     = "Sea Kale"
+version_code = 210
 
-highlight = "Introduced the OPTIC-26 industrial design system, unified cross-platform components, and fixed core audio/diagnostics issues."
+highlight = "Full structural industrial overhaul across Android and iOS (OPTIC-26 instrument chassis, modular milled baffles, tactile switchboard dock, mechanical thread bus)."
 
 summary = [
-  "bump Orbin to 191-Agretti / versionCode 209",
-  "close the [Unreleased] changelog section as 191-Agretti",
+  "bump Orbin to 192-Sea-Kale / versionCode 210",
+  "close the [Unreleased] changelog section as 192-Sea-Kale",
   "update README.md, docs/wiki/Home.md, and the README hero SVG for the new release",
 ]
 
 [changelog]
 Added = [
-  "OPTIC-26 industrial design system across Android and iOS: machined physical corner radii, custom tabular numerals, critically damped zero-bounce motion, high-contrast dark/AMOLED surfaces, and optical aperture crosshair reticle.",
-]
-Fixed = [
-  "Audio: muted video playback across Android and iOS no longer requests system audio focus or interrupts background audio; ended clips seek back to zero on replay.",
-  "Diagnostics & Recovery: deferred SharedGraph instantiation until crash-loop checks run, and ensured complete local database/datastore reset during data clearing.",
-  "UI Unification: eliminated double card borders on DownloadRow, brought multi-attachment horizontal pager parity to iOS threads, and fixed dynamic greentext/quotelink contrast.",
-  "Networking & Storage: removed duplicate network interceptors, preserved explicit media Accept headers, and prevented filename index drift on multi-file attachment imports.",
-]
-Dependencies = [
-  "Bumped KSP from 2.3.12 to 2.3.13 and serialized KSP tasks to eliminate concurrency races.",
+  "Full structural industrial redesign overhaul across Android and iOS (OPTIC-26): instrument chassis header with live telemetry and optical aperture emblem, modular machined spec-sheet feed cassettes with viewfinder reticles, flush tactile switchboard dock with mechanical detents and active LED bars, and multi-lane mechanical thread reply trace bus.",
 ]
