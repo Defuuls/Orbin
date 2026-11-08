@@ -45,7 +45,7 @@ internal const val MEDIA_SIZE_MIN_DP = 96f
 internal const val MEDIA_SIZE_MAX_DP = 400f
 internal const val MEDIA_SIZE_STEPS = 11
 
-internal val GRID_TILE_RADIUS = 14.dp
+internal val GRID_TILE_RADIUS = 4.dp
 internal val GRID_CELL_PADDING = 8.dp
 
 /** Horizontal inset for the text under a grid card's media, so it never sits on the card edge. */

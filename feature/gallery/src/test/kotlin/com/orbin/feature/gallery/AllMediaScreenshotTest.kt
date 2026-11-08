@@ -13,7 +13,6 @@ import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import coil3.test.FakeImageLoaderEngine
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.orbin.core.designsystem.theme.OrbinPreviewTheme
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -22,6 +21,7 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
+import com.orbin.uinext.NextTheme
 import kotlinx.collections.immutable.toPersistentList
 import org.junit.After
 import org.junit.Before
@@ -153,7 +153,7 @@ class AllMediaScreenshotTest {
     ) {
         val case = content()
         composeRule.setContent {
-            OrbinPreviewTheme(darkTheme = darkTheme) {
+            NextTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box {
                         NextAllMediaContent(

@@ -1,6 +1,8 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -145,6 +146,7 @@ fun ThreadScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             floatingActionButton = {
                 if (layout == ThreadLayout.POSTS && posts.size > 1) {
+                    val jumpShape = RoundedCornerShape(NextRadius.control)
                     Row(
                         modifier =
                             Modifier.padding(
@@ -156,10 +158,11 @@ fun ThreadScreen(
                     ) {
                         ExtendedFloatingActionButton(
                             onClick = { scope.launch { state.animateScrollToItem(0) } },
-                            shape = CircleShape,
+                            shape = jumpShape,
                             containerColor = next.elevated,
                             contentColor = next.ink,
                             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+                            modifier = Modifier.border(1.dp, next.hairline, jumpShape),
                         ) {
                             Text(
                                 text = stringResource(Res.string.next_thread_jump_top),
@@ -172,7 +175,7 @@ fun ThreadScreen(
                                     val target = posts.indexOfFirst { it.id == firstUnreadPostId }
                                     if (target >= 0) scope.launch { state.animateScrollToItem(target + 1) }
                                 },
-                                shape = CircleShape,
+                                shape = jumpShape,
                                 containerColor = next.accent,
                                 contentColor = next.onAccent,
                                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
@@ -185,10 +188,11 @@ fun ThreadScreen(
                         }
                         ExtendedFloatingActionButton(
                             onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
-                            shape = CircleShape,
+                            shape = jumpShape,
                             containerColor = next.elevated,
                             contentColor = next.ink,
                             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+                            modifier = Modifier.border(1.dp, next.hairline, jumpShape),
                         ) {
                             Text(
                                 text = stringResource(Res.string.next_thread_jump_bottom),
@@ -235,13 +239,15 @@ fun ThreadScreen(
                     }
                     ScreenTitle(text = subject, size = 34)
                     // Two things only: how to read the thread, and whether to be told when it moves.
+                    val barShape = RoundedCornerShape(NextRadius.card)
                     Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = GUTTER)
-                                .clip(RoundedCornerShape(NextRadius.card))
+                                .clip(barShape)
                                 .background(next.raised)
+                                .border(1.dp, next.hairline, barShape)
                                 .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -388,13 +394,8 @@ private fun PostView(
     Surface(
         onClick = { onClick(post) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-        shape =
-            RoundedCornerShape(
-                topStart = NextRadius.card,
-                topEnd = NextRadius.control,
-                bottomEnd = NextRadius.card,
-                bottomStart = NextRadius.control,
-            ),
+        shape = RoundedCornerShape(NextRadius.card),
+        border = BorderStroke(1.dp, if (seed == 0) next.accent.copy(alpha = 0.45f) else next.hairline),
         color = if (seed == 0) next.elevated else next.raised,
         contentColor = next.ink,
     ) {
@@ -414,13 +415,15 @@ private fun PostView(
                 val collapseLabel = stringResource(Res.string.next_post_collapse)
                 val collapsedState = stringResource(Res.string.next_post_collapsed_state)
                 val expandedState = stringResource(Res.string.next_post_expanded_state)
+                val metaShape = RoundedCornerShape(NextRadius.control)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier =
                         Modifier
-                            .clip(RoundedCornerShape(NextRadius.pill))
+                            .clip(metaShape)
                             .background(next.background)
+                            .border(1.dp, next.hairline, metaShape)
                             .heightIn(min = MIN_TOUCH_TARGET)
                             .nextClickable(
                                 onClickLabel = if (collapsed) expandLabel else collapseLabel,

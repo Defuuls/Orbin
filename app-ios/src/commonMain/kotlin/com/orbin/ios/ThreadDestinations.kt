@@ -3,10 +3,16 @@ package com.orbin.ios
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +42,9 @@ import com.orbin.uinext.MediaCell
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -150,7 +159,7 @@ private fun ThreadContent(
             },
             fileTile = { cell, tileModifier ->
                 attachmentsById[cell.id]?.let { attachment ->
-                    Box(tileModifier.clip(RoundedCornerShape(10.dp))) {
+                    Box(tileModifier.clip(RoundedCornerShape(NextRadius.tile))) {
                         SharpImage(
                             attachment,
                             attachment.originalFileName,
@@ -185,7 +194,9 @@ private fun ThreadContent(
                 }
             },
             media = { post, modifier ->
-                byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
+                val postAttachments = byId[post.id]?.attachments.orEmpty()
+                if (postAttachments.size == 1) {
+                    val attachment = postAttachments.first()
                     Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
                         // Use the site's thumbnail: a long jump can compose several video posts
                         // just before the viewer needs the same limited decoder resources.
@@ -197,6 +208,37 @@ private fun ThreadContent(
                         )
                         // Opening it still asks again in the viewer: the cover is lifted per file there.
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                    }
+                } else if (postAttachments.size > 1) {
+                    val pagerState = rememberPagerState(pageCount = { postAttachments.size })
+                    val firstIndex = thread.firstFileIndex(post.id)
+                    Column(modifier = modifier) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth(),
+                            beyondViewportPageCount = 0,
+                        ) { page ->
+                            val attachment = postAttachments[page]
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { firstIndex?.let { onOpenFile(it + page) } },
+                            ) {
+                                SharpImage(
+                                    attachment,
+                                    attachment.originalFileName,
+                                    Modifier.fillMaxWidth(),
+                                    videoFrame = false,
+                                )
+                                if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "${pagerState.currentPage + 1} of ${postAttachments.size}",
+                            style = NextType.labelMedium,
+                            color = next.muted,
+                        )
                     }
                 }
             },

@@ -82,4 +82,31 @@ class HeadersInterceptorTest {
             assertThat(request.getHeader("Pragma")).isNull()
         }
     }
+
+    @Test
+    fun `preserves explicit video accept header on extensionless media urls`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse())
+            server.start()
+
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(HeadersInterceptor { NetworkConfig(userAgent = "OrbinTest") })
+                    .addInterceptor { chain ->
+                        chain.proceed(
+                            chain
+                                .request()
+                                .newBuilder()
+                                .header("Accept", "video/webm,video/mp4,video/*,*/*;q=0.9")
+                                .build(),
+                        )
+                    }.build()
+
+            client.newCall(Request.Builder().url(server.url("/.media/abc123def456")).build()).execute().close()
+
+            val request = server.takeRequest()
+            assertThat(request.getHeader("Accept")).isEqualTo("video/webm,video/mp4,video/*,*/*;q=0.9")
+        }
+    }
 }

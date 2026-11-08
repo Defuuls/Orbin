@@ -25,7 +25,10 @@ class HeadersInterceptor(
             )
         val builder = original.newBuilder()
         edits.remove.forEach { builder.removeHeader(it) }
-        edits.set.forEach { (name, value) -> builder.header(name, value) }
+        edits.set.forEach { (name, value) ->
+            if (name.equals("Accept", ignoreCase = true) && original.header("Accept") != null) return@forEach
+            builder.header(name, value)
+        }
         val existingReferer = original.header("Referer")
         if ("Referer" !in edits.set &&
             existingReferer != null &&

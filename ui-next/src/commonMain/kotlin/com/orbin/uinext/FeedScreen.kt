@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,7 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -35,6 +36,7 @@ import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_nothing_here_yet
 import com.orbin.uinext.resources.next_thread_jump_top
 import com.orbin.uinext.resources.next_try_different_search
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -208,11 +210,12 @@ fun FeedScreen(
                     }
                 }
                 if (rows.isNotEmpty()) {
+                    val fabShape = RoundedCornerShape(NextRadius.control)
                     ExtendedFloatingActionButton(
                         onClick = {
                             scope.launch { gridState.animateScrollToItem(0) }
                         },
-                        shape = CircleShape,
+                        shape = fabShape,
                         containerColor = next.accentContainer,
                         contentColor = next.onAccentContainer,
                         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
@@ -235,7 +238,7 @@ fun FeedScreen(
                                 .padding(
                                     end = NextSpace.gutter,
                                     bottom = bottomPad.calculateBottomPadding() + 16.dp,
-                                ),
+                                ).border(1.dp, next.hairline, fabShape),
                     )
                 }
             }
