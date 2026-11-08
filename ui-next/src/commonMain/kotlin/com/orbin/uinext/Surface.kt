@@ -7,10 +7,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,12 +26,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -35,6 +41,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
@@ -44,28 +52,34 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -93,7 +107,7 @@ enum class NextDestination {
 }
 
 /**
- * The permanent chrome: a floating pill with the three places you live — Feed, Downloads, Boards.
+ * The permanent chrome: a floating dock with labeled Feed, Downloads and Boards destinations.
  *
  * Settings is not a tab: it is visited, not lived in, so it opens from the Feed header instead of
  * taking a slot here.
@@ -105,74 +119,167 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(railInsets)
-                    .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NavigationBar(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(RAIL_HEIGHT)
-                        .clip(RoundedCornerShape(NextRadius.pill)),
-                containerColor = next.elevated,
-                contentColor = next.ink,
-                windowInsets = WindowInsets(0, 0, 0, 0),
+    val shape = RoundedCornerShape(NextRadius.continuous)
+    val destinations = listOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
+    val labels =
+        listOf(
+            stringResource(Res.string.next_feed_title),
+            stringResource(Res.string.next_downloads_tab),
+            stringResource(Res.string.next_launchpad_boards),
+        )
+    val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Download, Icons.Outlined.GridView)
+    val measurer = rememberTextMeasurer()
+    val labelStyle = NextType.tab.copy(fontWeight = FontWeight.Bold)
+    val widestLabel =
+        labels.maxOf { label ->
+            measurer.measure(text = label, style = labelStyle, maxLines = 1, softWrap = false).size.width
+        }
+    val density = LocalDensity.current
+    BoxWithConstraints(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(railInsets)
+                .padding(horizontal = NextSpace.chromeInset, vertical = NextSpace.chromeBottom),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        val cellWidth = (minOf(maxWidth, 560.dp) - 20.dp) / destinations.size.toFloat() - 12.dp
+        val useRows = widestLabel > with(density) { cellWidth.toPx() }
+        val dock =
+            Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxWidth()
+                .clip(shape)
+                .background(next.elevated)
+                .border(0.75.dp, next.hairline, shape)
+                .selectableGroup()
+                .padding(6.dp)
+        if (useRows) {
+            Column(modifier = dock, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                destinations.forEachIndexed { index, destination ->
+                    DockTab(
+                        label = labels[index],
+                        icon = icons[index],
+                        selected = selected == destination,
+                        onClick = { onSelect(destination) },
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontal = true,
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = dock,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                NavigationBarItem(
-                    selected = selected == NextDestination.FEED,
-                    onClick = { onSelect(NextDestination.FEED) },
-                    icon = { Icon(Icons.Outlined.Home, contentDescription = null) },
-                    label = { Text(stringResource(Res.string.next_feed_title)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = next.onAccentContainer,
-                            selectedTextColor = next.ink,
-                            indicatorColor = next.accentContainer,
-                            unselectedIconColor = next.muted,
-                            unselectedTextColor = next.muted,
-                        ),
-                )
-                NavigationBarItem(
-                    selected = selected == NextDestination.DOWNLOADS,
-                    onClick = { onSelect(NextDestination.DOWNLOADS) },
-                    icon = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                    label = { Text(stringResource(Res.string.next_downloads_tab)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = next.onAccentContainer,
-                            selectedTextColor = next.ink,
-                            indicatorColor = next.accentContainer,
-                            unselectedIconColor = next.muted,
-                            unselectedTextColor = next.muted,
-                        ),
-                )
-                NavigationBarItem(
-                    selected = selected == NextDestination.BOARDS,
-                    onClick = { onSelect(NextDestination.BOARDS) },
-                    icon = { Icon(Icons.Outlined.GridView, contentDescription = null) },
-                    label = { Text(stringResource(Res.string.next_launchpad_boards)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = next.onAccentContainer,
-                            selectedTextColor = next.ink,
-                            indicatorColor = next.accentContainer,
-                            unselectedIconColor = next.muted,
-                            unselectedTextColor = next.muted,
-                        ),
-                )
+                destinations.forEachIndexed { index, destination ->
+                    DockTab(
+                        label = labels[index],
+                        icon = icons[index],
+                        selected = selected == destination,
+                        onClick = { onSelect(destination) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }
 }
 
+@Composable
+private fun DockTab(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    horizontal: Boolean = false,
+) {
+    val ink = if (selected) next.onAccent else next.muted
+    val target =
+        modifier
+            .heightIn(min = RAIL_HEIGHT)
+            .clip(RoundedCornerShape(NextRadius.pill))
+            .background(if (selected) next.accent else Color.Transparent)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(horizontal = if (horizontal) 16.dp else 6.dp, vertical = 10.dp)
+    if (horizontal) {
+        Row(
+            modifier = target,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Text(
+                text = label,
+                style = NextType.tab,
+                fontWeight = FontWeight.Bold,
+                color = ink,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    } else {
+        Column(
+            modifier = target,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
+            Gap(4)
+            Text(
+                text = label,
+                style = NextType.tab,
+                fontWeight = FontWeight.Bold,
+                color = ink,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun OrbitEmblem(
+    modifier: Modifier = Modifier,
+    size: Dp = 52.dp,
+) {
+    val ink = next.onAccentContainer
+    Box(
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(next.accentContainer)
+                .padding(size * 0.16f)
+                .clearAndSetSemantics {},
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val stroke = Stroke(width = 1.5.dp.toPx())
+            drawCircle(color = ink, radius = this.size.minDimension * 0.33f, style = stroke)
+            drawOval(
+                color = ink,
+                topLeft = Offset(0f, this.size.height * 0.30f),
+                size = Size(this.size.width, this.size.height * 0.40f),
+                style = stroke,
+            )
+            drawCircle(
+                color = ink,
+                radius = this.size.minDimension * 0.08f,
+                center = Offset(this.size.width * 0.92f, this.size.height * 0.50f),
+            )
+        }
+    }
+}
+
 /** Space to keep scrolling content clear of [CompactTitleBar]. */
-val COMPACT_TITLE_CLEARANCE = 52.dp
+val COMPACT_TITLE_CLEARANCE = 56.dp
+
+/** Clearance for compact chrome when text has been enlarged by the system. */
+@Composable
+fun compactTitleClearance(): Dp {
+    val textHeight = with(LocalDensity.current) { NextType.headline.lineHeight.toDp() }
+    return maxOf(24.dp, textHeight) + 32.dp
+}
 
 /** Semantics tags distinguishing the large in-content title from the compact overlay. */
 object NextTitleTags {
@@ -196,24 +303,30 @@ fun CompactTitleBar(
         exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 2 } + fadeOut(),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Box(
+        val shape = RoundedCornerShape(NextRadius.control)
+        Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ).padding(horizontal = 12.dp, vertical = 6.dp)
-                    .nextElevatedSurface(RoundedCornerShape(NextRadius.control))
+                    .clip(shape)
+                    .background(next.elevated)
+                    .border(0.75.dp, next.hairline, shape)
                     .padding(horizontal = 14.dp, vertical = 10.dp)
                     .testTag(NextTitleTags.COMPACT),
-            contentAlignment = Alignment.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            OrbitEmblem(size = 24.dp)
             Text(
                 text = title,
                 style = NextType.headline,
                 color = next.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -241,28 +354,43 @@ fun ScreenTitle(
             size >= 26 -> NextType.title1
             else -> NextType.title2
         }
-    Column(
+    val showEmblem = size >= 32 && LocalDensity.current.fontScale < 1.4f
+    Row(
         modifier =
-            modifier.padding(
+            modifier.fillMaxWidth().padding(
                 start = inset,
                 end = inset,
                 top = NextSpace.titleTop,
                 bottom = NextSpace.titleBottom,
             ),
+        verticalAlignment = Alignment.Bottom,
     ) {
-        Text(
-            text = text,
-            style = titleStyle,
-            color = next.ink,
-            modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = NextType.footnote,
-                color = next.muted,
-                modifier = Modifier.padding(top = 6.dp),
+        Column(Modifier.weight(1f)) {
+            Box(
+                Modifier
+                    .width(28.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(next.accent),
             )
+            Gap(12)
+            Text(
+                text = text,
+                style = titleStyle,
+                color = next.ink,
+                modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = NextType.subheadline,
+                    color = next.muted,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+        if (showEmblem) {
+            OrbitEmblem(modifier = Modifier.padding(start = 16.dp, bottom = 4.dp))
         }
     }
 }
@@ -291,36 +419,49 @@ fun GroupedSection(
     footer: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val shape =
+        RoundedCornerShape(
+            topStart = NextRadius.card,
+            topEnd = NextRadius.control,
+            bottomEnd = NextRadius.card,
+            bottomStart = NextRadius.control,
+        )
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = NextSpace.gutterTight)) {
         if (header != null) {
-            Text(
-                // M3 Expressive: sentence case, not ALL CAPS
-                text = header,
-                style = NextType.labelSmall,
-                color = next.accent,
-                modifier =
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 10.dp, top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
                     Modifier
-                        .padding(start = NextSpace.rowX, end = NextSpace.rowX, bottom = 6.dp, top = 2.dp)
-                        .semantics { heading() },
-            )
+                        .width(4.dp)
+                        .height(18.dp)
+                        .clip(CircleShape)
+                        .background(next.accent),
+                )
+                Text(
+                    text = header,
+                    style = NextType.headline,
+                    fontWeight = FontWeight.Bold,
+                    color = next.ink,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+            }
         }
         Card(
-            shape = RoundedCornerShape(NextRadius.card),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = next.raised,
-                    contentColor = next.ink,
-                ),
+            shape = shape,
+            colors = CardDefaults.cardColors(containerColor = next.raised, contentColor = next.ink),
             elevation = CardDefaults.cardElevation(0.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().border(0.75.dp, next.hairline, shape),
             content = content,
         )
         if (footer != null) {
             Text(
                 text = footer,
-                style = NextType.bodySmall,
+                style = NextType.footnote,
                 color = next.muted,
-                modifier = Modifier.padding(start = NextSpace.rowX, end = NextSpace.rowX, top = 8.dp),
+                modifier = Modifier.padding(start = NextSpace.rowX, end = NextSpace.rowX, top = 10.dp),
             )
         }
     }
@@ -565,7 +706,15 @@ fun NextScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val pillDestination = destination?.takeIf { it.drawsPill() }?.takeIf { onDestination != null }
-    val bottom = (if (pillDestination != null) RAIL_HEIGHT + RAIL_CLEARANCE else NO_RAIL_CLEARANCE) + bottomInset()
+    val density = LocalDensity.current
+    var measuredChromeHeight by remember { mutableStateOf(0.dp) }
+    val defaultBottom = RAIL_HEIGHT + RAIL_CLEARANCE + bottomInset()
+    val bottom =
+        if (pillDestination != null) {
+            maxOf(defaultBottom, measuredChromeHeight + 12.dp)
+        } else {
+            NO_RAIL_CLEARANCE + bottomInset()
+        }
     Scaffold(
         modifier =
             modifier
@@ -586,7 +735,14 @@ fun NextScaffold(
                     exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
-                    DestinationPill(selected = pillDestination, onSelect = onDestination)
+                    DestinationPill(
+                        selected = pillDestination,
+                        onSelect = onDestination,
+                        modifier =
+                            Modifier.onSizeChanged {
+                                measuredChromeHeight = with(density) { it.height.toDp() }
+                            },
+                    )
                 }
             }
         }
@@ -595,7 +751,7 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-val RAIL_HEIGHT = 56.dp
+val RAIL_HEIGHT = 64.dp
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
 private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)

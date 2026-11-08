@@ -13,14 +13,10 @@ import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 
 /**
- * The whole settings surface: a handful of rows in two untitled cards.
+ * Searchable, in-place settings grouped by the reader's task.
  *
- * Preferences first (what Orbin shows and whether it locks), then the things you do to your data.
- * Places live where they belong: Downloads on the Media tab, Search on the Boards tab. Built from [AppSettings] rather than from category
- * screens, so a row cannot show a stale value or go missing because a screen forgot it. Every row
- * is editable or runnable where it stands.
- *
- * Simple is the rule: anything not listed here is decided by the app, not the reader.
+ * Rows are built from [AppSettings], so the displayed value and its setter stay together.
+ * Appearance comes first; privacy, local data and updates have their own named sections.
  */
 internal fun buildSettings(
     settings: AppSettings,
@@ -34,11 +30,18 @@ internal fun buildSettings(
     dns: DnsRowState = DnsRowState(),
 ): SettingsModel {
     val rows = Rows(strings)
+    val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor) + rows.strictDns(dns, vm)
+    val data = rows.data(updateState, imageCacheLabel, clearArmed)
+    val appearanceIds = setOf("themeMode", "colorTheme", "feedColumns", "catalogColumns", "amoled")
     val groups =
         listOf(
-            rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor) + rows.strictDns(dns, vm),
-            rows.data(updateState, imageCacheLabel, clearArmed),
-        ).map { NO_HEADING to it }
+            strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
+            strings.get(R.string.settings_section_privacy) to
+                preferences.filterNot { it.id in appearanceIds || it.id == "updateOnLaunch" },
+            strings.get(R.string.settings_section_data) to data.filterNot { it.id == "checkUpdates" },
+            strings.get(R.string.settings_section_updates) to
+                (preferences.filter { it.id == "updateOnLaunch" } + data.filter { it.id == "checkUpdates" }),
+        )
     return SettingsModel(groups, rows.toggles.toMap(), rows.choices.toMap(), rows.texts.toMap())
 }
 
@@ -296,6 +299,3 @@ internal data class DnsRowState(
     val strict: Boolean = false,
     val fallbackActive: Boolean = false,
 )
-
-/** The cards carry no headings: a few rows need no sections. */
-internal const val NO_HEADING = ""

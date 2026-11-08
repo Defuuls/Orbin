@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
@@ -216,7 +219,7 @@ fun BoardsScreen(
                         }
                     }
                 } else {
-                    groupedItems(visibleBoards, key = { it.path }) { _, board ->
+                    items(visibleBoards, key = { it.id }) { board ->
                         BoardListRow(
                             board = board,
                             onClick = { onOpenBoard(board) },
@@ -245,20 +248,37 @@ private fun BoardListRow(
 ) {
     val hue = boardHue(board.path)
     val symbol = board.site?.let { boardSymbol(it, board.path.trim('/')) }
+    val shape =
+        RoundedCornerShape(
+            topStart = NextRadius.card,
+            topEnd = NextRadius.control,
+            bottomEnd = NextRadius.card,
+            bottomStart = NextRadius.control,
+        )
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .padding(horizontal = GUTTER, vertical = 6.dp)
+                .clip(shape)
+                .background(next.raised)
+                .border(1.dp, if (board.followed) next.accent else next.hairline, shape)
                 .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
+                .padding(horizontal = NextSpace.rowX, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier =
                 Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(NextRadius.control))
-                    .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
+                    .size(60.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = NextRadius.tile,
+                            topEnd = NextRadius.tight,
+                            bottomEnd = NextRadius.tile,
+                            bottomStart = NextRadius.tight,
+                        ),
+                    ).background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
             if (symbol != null) {
@@ -266,29 +286,30 @@ private fun BoardListRow(
                     imageVector = symbol,
                     contentDescription = null,
                     tint = hue,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(28.dp),
                 )
             } else {
                 Text(
                     text = board.path,
                     style = NextType.headline,
+                    fontWeight = FontWeight.Bold,
                     color = hue,
                 )
             }
         }
-        WidthSpacer(12)
+        WidthSpacer(14)
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column {
                 Text(
                     text = board.title,
-                    style = NextType.headline,
+                    style = NextType.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
                     color = next.ink,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
                 )
                 if (board.nsfw) {
-                    WidthSpacer(8)
+                    Gap(6)
                     Text(
                         text = stringResource(Res.string.next_boards_nsfw),
                         style = NextType.caption2,
@@ -315,7 +336,7 @@ private fun BoardListRow(
                     },
                 style = NextType.footnote,
                 color = next.muted,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }

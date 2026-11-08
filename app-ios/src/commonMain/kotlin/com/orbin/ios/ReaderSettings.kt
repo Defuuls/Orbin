@@ -135,7 +135,7 @@ internal fun settingsGroups(
                     label = "Clear local activity",
                     value = if (clearArmed) "Tap again to delete" else "Delete",
                     kind = SettingKind.ACTION,
-                    hint = "Deletes browsing history on this device.",
+                    hint = "Deletes browsing history, download records and cached images on this device.",
                     destructive = true,
                 ),
                 SettingItem(
@@ -176,13 +176,33 @@ internal fun settingsGroups(
                 ),
                 SettingItem(
                     id = SettingIds.CONTACT,
-                    label = "Contact and feedback",
+                    label = "Project on GitHub",
                     value = "GitHub",
                     kind = SettingKind.ACTION,
                 ),
                 versionRow(version),
             ).filterNotNull(),
+    ).let(::settingsSections)
+
+private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): List<Pair<String, List<SettingItem>>> {
+    val rows = groups.flatMap { it.second }
+    val appearanceIds =
+        setOf(
+            SettingIds.THEME,
+            SettingIds.COLOR_THEME,
+            SettingIds.AMOLED,
+            SettingIds.FEED_COLUMNS,
+            SettingIds.CATALOG_COLUMNS,
+        )
+    val privacyIds = setOf(SettingIds.HIDE_NSFW, SettingIds.COVER_VIOLENT, SettingIds.APP_LOCK)
+    val aboutIds = setOf(SettingIds.PRIVACY, SettingIds.CONTACT, SettingIds.VERSION)
+    return listOf(
+        "Appearance" to rows.filter { it.id in appearanceIds },
+        "Privacy and safety" to rows.filter { it.id in privacyIds },
+        "Data and storage" to rows.filterNot { it.id in appearanceIds || it.id in privacyIds || it.id in aboutIds },
+        "About" to rows.filter { it.id in aboutIds },
     )
+}
 
 /** The release, as Android's settings name it, and the TestFlight build under it. */
 private fun versionRow(version: AppVersion): SettingItem? {
@@ -240,9 +260,9 @@ private fun toggle(
 /** SYSTEM -> "System", as Android labels it. */
 private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar(Char::uppercase)
 
-/** Where the privacy policy and the contact address live: the project's own repository. */
+/** The privacy policy and project information live in the project's own repository. */
 internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
-internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin/issues"
+internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin"
 
 private fun colorThemeChoice(theme: AppColorTheme) =
     SettingItem(

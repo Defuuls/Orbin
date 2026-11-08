@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -54,14 +57,17 @@ fun materialPalette(
 @Composable
 fun PlatformSwitch(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    val toggle: (Boolean) -> Unit = {
-        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
-        onCheckedChange(it)
-    }
+    val toggle: ((Boolean) -> Unit)? =
+        onCheckedChange?.let { onChange ->
+            { value ->
+                haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn)
+                onChange(value)
+            }
+        }
     if (LocalNextPlatform.current == NextPlatform.IOS) {
         IosSwitch(checked = checked, onCheckedChange = toggle, modifier = modifier)
     } else {
@@ -88,7 +94,7 @@ fun PlatformSwitch(
 @Composable
 private fun IosSwitch(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val trackOn = next.accent
@@ -98,21 +104,34 @@ private fun IosSwitch(
     Box(
         modifier =
             modifier
-                .width(IOS_SWITCH_WIDTH)
-                .height(IOS_SWITCH_HEIGHT)
-                .clip(RoundedCornerShape(percent = 50))
-                .background(trackColor.value)
-                .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
-                .padding(2.dp),
+                .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
+                .then(
+                    if (onCheckedChange != null) {
+                        Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+                    } else {
+                        Modifier
+                    },
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier
-                .offset(x = thumbOffset.value)
-                .size(IOS_SWITCH_THUMB)
-                .shadow(2.dp, CircleShape)
-                .clip(CircleShape)
-                .background(Color.White),
-        )
+            modifier =
+                Modifier
+                    .width(IOS_SWITCH_WIDTH)
+                    .height(IOS_SWITCH_HEIGHT)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(trackColor.value)
+                    .padding(2.dp),
+        ) {
+            Box(
+                Modifier
+                    .offset(x = thumbOffset.value)
+                    .size(IOS_SWITCH_THUMB)
+                    .shadow(2.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color.White),
+            )
+        }
     }
 }
 

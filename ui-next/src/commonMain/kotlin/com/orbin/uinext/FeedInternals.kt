@@ -46,10 +46,10 @@ internal const val MEDIA_SIZE_MAX_DP = 400f
 internal const val MEDIA_SIZE_STEPS = 11
 
 internal val GRID_TILE_RADIUS = 14.dp
-internal val GRID_CELL_PADDING = 6.dp
+internal val GRID_CELL_PADDING = 8.dp
 
 /** Horizontal inset for the text under a grid card's media, so it never sits on the card edge. */
-internal val GRID_TEXT_INSET = 10.dp
+internal val GRID_TEXT_INSET = 16.dp
 
 internal fun LazyGridScope.fullWidthItem(content: @Composable () -> Unit) =
     item(key = FEED_HEADER_KEY, span = { GridItemSpan(maxLineSpan) }) { content() }

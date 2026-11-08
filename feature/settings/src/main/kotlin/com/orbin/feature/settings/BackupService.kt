@@ -129,7 +129,7 @@ class BackupService
                     subscribedBoards = subscribedBoards.size,
                     favoriteBoards = favoriteBoards.size,
                     bookmarks = bookmarks.size,
-                    savedSearches = document.savedSearches.size,
+                    savedSearches = validSearches.size,
                     skippedUnknownProvider = unknownSubscribed.size + unknownFavorite.size + unknownBookmarks.size,
                 )
             }.onFailure { if (it is CancellationException) throw it }

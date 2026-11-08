@@ -1,140 +1,111 @@
 # Orbin Design System
 
-There are two layers, and which one applies depends on what you are building.
+Orbin's Android and iOS screens share the Compose Multiplatform `ui-next`
+module. Feature modules and iOS presenters provide formatted rows and callbacks;
+the shared UI does not read repositories or app settings directly.
 
-`core:designsystem` is Jetpack Compose Material 3. Shared Material widgets and palette seeds still
-live here; reachable product surfaces no longer mount `OrbinTheme` / `MaterialOrbinTheme` as a
-shell (`MaterialOrbinTheme` was removed after Next replaced nested Material chrome). Everything
-below this line describes the remaining Material token layer.
+## Visual language
 
-`ui-next` is the interface itself — feed, boards, thread reader, board catalog, settings, media
-wall, search, downloads, gallery, onboarding, and the startup chrome screens. It defines its own
-palette and type rather than reading `MaterialTheme` for those tokens: a shared **M3-expressive /
-forest green** Next shell on Android and iOS (forest green primary, tonal matte surfaces, DestinationPill
-chrome, inset grouped Settings, OLED / true-black option). When `NextPlatform.IOS` is installed,
-control chrome adapts — highlight press instead of Material ripple, UISwitch-like toggles, and
-system sans (SF) via `FontFamily.SansSerif` — while the forest green brand accent stays intentional
-(not system blue). See [the ui-next section](#ui-next) below before changing anything in that
-module. Orbin Minimal draws from this layer too: it is the same screens over the same layers, not
-a second, smaller interface.
+Use `next` for semantic palette roles and `NextType`, `NextSpace`,
+`NextRadius` and `NextMotion` for type, spacing, shape and motion.
+Tokens live in `ui-next/.../tokens/Tokens.kt`. Material primitives inherit a
+complete color scheme installed by `NextTheme`, so their controls match the
+custom surfaces.
 
-## Color
+The default accent is forest green. Eight selectable color themes apply across
+Feed, threads, settings and shared chrome: Orbin, Blue, Red, White, Black, Purple,
+Orange and Teal. Color choice is independent of System/Light/Dark brightness.
+True black applies in dark mode. Reachable shared screens do not substitute
+wallpaper colors or historical imageboard skins.
 
-`core/designsystem/.../theme/Color.kt` defines Orbin's static fallback schemes around the brand color `#4F6BED`. Dynamic color
-is still preferred on Android 12+ when enabled by the user. The fallback scheme includes primary,
-secondary, tertiary, error, surface, inverse, outline, and surface-container roles so components can
-use semantic Material 3 colors consistently.
+The shared editorial design uses 40 sp heavy titles, a decorative orbit emblem,
+a short accent rule, asymmetric 32/14 dp cards, board-color identity rails and
+a floating dock with solid accent selection capsules. Decorative artwork drops
+out at enlarged text sizes so it never competes with reading space.
 
-Post-renderer accents remain centralized:
+Matte tonal fills distinguish background, raised cards and elevated sheets.
+Use `GroupedSection` for related settings and `GroupedDivider` or
+`Hairline` for soft separation. Avoid adding a second palette or nested
+application shell for an individual screen.
 
-- `GreentextColor`
-- `QuoteLinkColor`
-- `SpoilerBackground`
+## Theme inheritance and text
 
-Shared status accents are also available for future component work:
+An explicit `NextTheme` argument wins; otherwise an enclosing theme is
+inherited. A nested no-argument theme reuses the installed theme. This keeps
+screen previews independent without resetting the reader's palette or
+compounding font scaling.
 
-- `SuccessColor`
-- `WarningColor`
-- `InfoColor`
+Android uses system text scaling; iOS maps Dynamic Type into the shared
+density. There is no in-app font-size row. Layouts must accommodate wrapping
+labels and values at 2× text, narrow windows, landscape and tablet widths.
+Avoid single-line truncation for values needed to understand or confirm an action.
 
-## Typography
+`core:designsystem` retains shared Material tokens and helpers. It is not
+a separate product UI or a source of additional user-facing theme controls.
 
-`orbinTypography(fontScale)` scales the full Material 3 type ramp, from display styles down to
-labels. Use `MaterialTheme.typography` in UI code so the user's in-app font-size preference applies
-consistently.
+## Navigation and controls
 
-## Shape
+Feed, Media and Boards use `DestinationPill` chrome. Detail screens such as
+threads, settings, Search and Downloads use their own titles. `ScreenTitle`
+scrolls with content; `CompactTitleBar` provides the compact title when needed.
 
-`OrbinShapes` defines the app-wide corner-radius scale:
+Hierarchical transitions use the shared slide/fade motion; primary tabs
+crossfade. Press indication adapts by platform. Android switches use Material
+controls; iOS uses a native-style track centered in a touch target at least
+48 dp high.
 
-- extra small: `4.dp`
-- small: `8.dp`
-- medium: `12.dp`
-- large: `16.dp`
-- extra large: `24.dp`
+A toggle row owns one action and its checked semantics. Its visual switch is
+passive. Keep an independent switch action only when it does something
+different from opening the containing row, as in the Boards browser.
 
-Prefer `MaterialTheme.shapes` for cards, dialogs, buttons, and custom surfaces.
+The dock measures its rendered height so larger labels cannot cover the final
+content rows. Compact-title clearance follows actual text metrics.
 
-## Theme Behavior
+Feed cards use board-color accent rules and inset metadata footers. Boards have
+larger identity badges and followed-state outlines. Threads use individual tonal
+post cards and wrapping metadata capsules. Media browsing groups scan and size
+controls into a tonal deck; Downloads uses document cards with readable filenames.
 
-`OrbinTheme` preserves the current user-facing theme controls:
+Choices expose selected state. Pull-to-refresh exposes a semantic refresh
+action as well as gestures. Snackbars announce messages politely and honor
+the accessibility service's recommended reading/control timeout.
 
-- system, light, and dark theme modes
-- dynamic color
-- AMOLED-black dark theme
-- in-app font scaling
+## Settings
 
-The AMOLED variant collapses the background and surface hierarchy toward true black while preserving
-readable dark-theme content roles.
+Settings is one searchable screen with inline editing and named sections:
 
-## ui-next
-
-The screens the app actually shows. Three rules hold it together, and breaking any of them is how
-it drifts back into what it replaced.
-
-**It never sees an app type.** A screen takes already-formatted rows and hands back an id; the
-feature module does the join. That is why the same feed row serves the subscribed feed and every
-board catalog, and why the screens can be screenshot without a view model.
-
-**Anything real arrives through a slot.** Thumbnails, post bodies and video come from the shipped
-components — `MediaThumbnail`, `PostCommentText`, `VideoPlayer` — passed in by the connector.
-Nothing behavioural is reimplemented here, so spoilers, greentext and quote links keep working
-because they are the same code, not because they were copied.
-
-**One vocabulary, in `ui-next/.../Surface.kt` and `tokens/`.** `DestinationPill` is the permanent
-chrome for Feed, Media and Boards; every other screen (Settings, threads, catalogs, Search,
-Downloads) draws no bottom chrome, because its large title already says where you are. `GroupedSection` draws Settings-style inset cards. Soft `Hairline` / `GroupedDivider`
-separators — not Material elevation theatre. `InlineAction` is how an action is drawn — as a word,
-with a button role and a 48dp touch target. `ScreenTitle` uses the large-title type ramp and scrolls
-away with content. Tokens live in `NextSpace`, `NextRadius`, `NextType`, `NextMaterials`.
-
-**Motion is Next, not Material.** Hierarchical Feed/Board→Thread (and Search / Downloads / Gallery / two-pane detail) pushes use a soft horizontal slide + fade with parallax (`NextMotion` + `NextMotion.Ease`); primary DestinationPill tabs crossfade with a tiny nudge. Press feedback is platform-aware inside `NextTheme`: `NextHighlightIndication` / highlight `nextClickable` on iOS, forest green Material ripple on Android; `NextIconAction` for icon targets. Progress uses thin `NextLinearProgress` / `NextCircularProgress` rather than Material bars; density uses `NextSlider`; lists refresh with `NextPullToRefresh`; toasts use `NextSnackbarHost`. `PlatformSwitch` is Material on Android and UISwitch-like on iOS.
-
-
-**A screen brings its own theme.** Every one wraps itself in `NextTheme`, so it draws correctly
-wherever it is composed, tests included. That makes nesting the normal case, and every parameter
-resolves the same way: an explicit value wins, an enclosing theme's is inherited, and failing both
-there is a default. Do not give one a hardcoded default again — `darkTheme` had one, and every
-screen inside a theme silently overwrote it.
-
-Inheritance is also how a reader's settings reach this module. The shell states them once at the
-top — `MainActivity` for the full client, `MinimalActivity` for Orbin Minimal — and the screens
-below say nothing. Nested no-arg `NextTheme` calls short-circuit so screens do not re-enter
-`MaterialTheme`. Sliders, snackbars, and pull-to-refresh inside Next screens are Next controls
-(`NextSlider`, `NextSnackbarHost`, `NextPullToRefresh`); Material `Text` / `Icon` remain as type
-primitives under the colorScheme `NextTheme` installs. There is no separate Material shell for
-gallery or onboarding anymore. A screen here has no view model and cannot read a
-setting, for the same reason it takes rows rather than threads. Three settings arrive that way:
-
-| Setting | Effect here |
+| Section | Content |
 | --- | --- |
-| Theme (System / Light / Dark) | `darkTheme` — which of the two palettes |
-| AMOLED black | `amoled` — true black behind the same ink and accent; dark themes only |
-| Font size | `fontScale` — multiplied onto the density, which is what scales the literal `sp` |
+| Appearance | Brightness, color, True black and relevant wide-screen column choices. |
+| Privacy and safety | Content covers, app lock and Android's strict DNS control. |
+| Data and storage | Local activity/cache clearing and backup actions. |
+| Updates / About | Android update actions; iOS project links and version information. |
 
-There is no in-app Font size preference row anymore: Android's shell leaves `fontScale` at `1f` so
-Compose density already carries the system setting, and iOS maps UIKit Dynamic Type
-(`preferredContentSizeCategory`) into `NextTheme(fontScale = …)`.
+Search matches all query words across a row's section, label, hint, current
+display value and choices, ignoring case and extra whitespace. It never
+inspects secret values or text-field drafts. Empty result groups disappear.
 
-`fontScale` multiplies the scale already in force rather than replacing it, and only the *change*
-is applied: a nested theme inherits an already-scaled density, so re-applying the factor there
-would compound it once per screen.
+Current values wrap below non-toggle labels. Editors open beneath their row,
+and the screen brings the editor into view. Destructive actions use the shared
+destructive color and explain what they clear. Activity deletion requires a
+second tap within four seconds.
 
-Dynamic color and the ported imageboard skins deliberately do **not** arrive in ui-next. This
-module's palette is the argument it makes, and recolouring it from the wallpaper would be the old
-interface wearing this one's layout. On Android the Material shell may still resolve wallpaper
-colors when Dynamic color is on; on iOS `dynamicColorScheme` is an intentional null stub, so the
-forest green brand always applies. Gallery, onboarding, dialogs, and snackbars draw through Next
-controls (`NextSnackbarHost` is opaque matte elevated — not frosted glass).
+## Real content and verification
 
-iOS launch chrome (`iosApp/project.yml` `UILaunchScreen`) uses `LaunchScreenBackground` plus the
-`LaunchMark` imageset (resized from `AppIcon`) while Compose loads.
+Pass production thumbnails, post bodies and players through slots. The shared
+screen must not reimplement spoiler, link, media or repository behavior.
 
-Colours come from `next`, not `MaterialTheme`. `boardHue()` gives a board its colour; a merged feed
-is otherwise four grey characters per row. `placeholderArt()` stands in for a thumbnail that has
-not loaded, as a gradient rather than flat grey, so a layout can be judged against something with
-the tonal variety real content has.
+Screenshot fixtures live under `ui-next/src/androidHostTest/screenshots`.
+They are deterministic component examples, not device or persistence tests.
+Pair them with semantic interaction tests and real feature-level journeys.
 
-Every screen is recorded as a golden under `ui-next/src/androidHostTest/screenshots`. Re-record
-with `./gradlew :ui-next:recordRoborazziAndroidHostTest` and commit what changes; CI verifies them, and the
-Screenshots workflow's path filter includes `ui-next/**` so a change here cannot land unverified.
+For a legitimate visual update, record and inspect new fixtures:
+
+```bash
+./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest
+./gradlew verifyRoborazziDebug verifyRoborazziAndroidHostTest
+```
+
+Check normal and 2× text, light/dark/AMOLED, all color themes, and representative
+phone/tablet windows. Commit reviewed goldens and retain screenshot verification
+as a required review signal.

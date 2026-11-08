@@ -1,9 +1,11 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -230,6 +232,14 @@ class ProposalScreenshotTest {
             )
         }
 
+    @Test
+    fun navigationMaxText() =
+        capture("next_navigation_max_text", fontScale = MAX_FONT_SCALE) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                DestinationPill(selected = NextDestination.DOWNLOADS, onSelect = {})
+            }
+        }
+
     /** The list at rest: every row closed. */
     @Test
     fun settings() =
@@ -387,12 +397,11 @@ class ProposalScreenshotTest {
             ),
         )
 
-    /** Mirrors the real list: two untitled cards, preferences then data. */
+    /** Representative task sections from the shipped settings surface. */
     private fun settingsGroups() =
         listOf(
-            "" to
+            "Appearance" to
                 listOf(
-                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", SettingKind.TOGGLE),
                     SettingItem(
                         id = "themeMode",
                         label = "Theme",
@@ -401,23 +410,36 @@ class ProposalScreenshotTest {
                         options = listOf("System", "Light", "Dark"),
                         selected = 0,
                     ),
-                    SettingItem("amoled", "True black", "Off", SettingKind.TOGGLE),
-                    SettingItem("biometric", "App lock", "Off", SettingKind.TOGGLE),
+                    SettingItem("amoled", "True black", "Off", checked = false),
                 ),
-            "" to
+            "Privacy and safety" to
+                listOf(
+                    SettingItem("hideNsfw", "Hide NSFW boards", "Off", checked = false),
+                    SettingItem("biometric", "App lock", "Off", checked = false),
+                ),
+            "Data and storage" to
                 listOf(
                     SettingItem(
                         id = "clearActivity",
                         label = "Clear local activity",
                         value = "Delete",
                         kind = SettingKind.ACTION,
-                        hint = "Deletes browsing history, recent searches and download history on this device.",
+                        hint =
+                            "Deletes browsing history, recent searches, download history " +
+                                "and cached images on this device.",
+                        destructive = true,
                     ),
-                    SettingItem("clearImageCache", "Clear image cache", "12 MB · Clear", SettingKind.ACTION),
-                    SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION),
+                    SettingItem(
+                        "clearImageCache",
+                        "Clear image cache",
+                        "12 MB · Clear",
+                        SettingKind.ACTION,
+                        destructive = true,
+                    ),
                     SettingItem("exportBackup", "Export data", "Save", SettingKind.ACTION),
                     SettingItem("importBackup", "Import data", "Restore", SettingKind.ACTION),
                 ),
+            "Updates" to listOf(SettingItem("checkUpdates", "Check for updates", "Up to date", SettingKind.ACTION)),
         )
 
     /**
