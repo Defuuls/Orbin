@@ -98,14 +98,19 @@ internal fun FeedGridCell(
     uniform: Boolean = false,
 ) {
     if (row.muted) {
-        CollapsedFeedRow(row = row, modifier = modifier.padding(GRID_CELL_PADDING), onClick = onClick)
+        CollapsedFeedRow(
+            row = row,
+            modifier = modifier.padding(if (tallMedia) GRID_CELL_PADDING else 4.dp),
+            showBoard = showBoard,
+            onClick = onClick,
+        )
         return
     }
     Card(
         onClick = { onClick(row) },
         modifier =
             modifier
-                .padding(GRID_CELL_PADDING)
+                .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
                 .semantics { role = Role.Button },
         shape =
             RoundedCornerShape(
@@ -148,7 +153,7 @@ internal fun FeedGridCell(
                 }
             }
             // One inset for every line of text, so the board, subject and counts share a left edge.
-            Column(modifier = Modifier.padding(horizontal = GRID_TEXT_INSET)) {
+            Column(modifier = Modifier.padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp)) {
                 Gap(10)
                 if (showBoard) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -184,13 +189,17 @@ internal fun FeedGridCell(
                 }
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(NextRadius.control))
-                        .background(next.background)
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                ) {
+                if (tallMedia) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(NextRadius.control))
+                            .background(next.background)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                    ) {
+                        MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                    }
+                } else {
                     MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
                 }
             }

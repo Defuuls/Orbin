@@ -193,7 +193,10 @@ fun MediaWallScreen(
                                             )
                                         } else if (scanning) {
                                             SweepBar(scanned = scanned, total = total)
-                                            MetaLine(stringResource(Res.string.next_sweep_progress, scanned, total), maxLines = 2)
+                                            MetaLine(
+                                                stringResource(Res.string.next_sweep_progress, scanned, total),
+                                                maxLines = 2,
+                                            )
                                         }
                                         if (failed > 0) {
                                             MetaLine(

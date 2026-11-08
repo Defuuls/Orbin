@@ -184,9 +184,7 @@ internal fun settingsGroups(
             ).filterNotNull(),
     ).let(::settingsSections)
 
-private fun settingsSections(
-    groups: List<Pair<String, List<SettingItem>>>,
-): List<Pair<String, List<SettingItem>>> {
+private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): List<Pair<String, List<SettingItem>>> {
     val rows = groups.flatMap { it.second }
     val appearanceIds =
         setOf(

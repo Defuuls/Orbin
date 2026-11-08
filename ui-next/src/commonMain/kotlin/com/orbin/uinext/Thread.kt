@@ -421,12 +421,12 @@ private fun PostView(
                         Modifier
                             .clip(RoundedCornerShape(NextRadius.pill))
                             .background(next.background)
-                            .heightIn(min = 44.dp)
-                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                            .heightIn(min = MIN_TOUCH_TARGET)
                             .nextClickable(
                                 onClickLabel = if (collapsed) expandLabel else collapseLabel,
                                 onClick = { onToggleCollapse(post) },
-                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
+                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
                 ) {
                     Text(
                         text = post.number,

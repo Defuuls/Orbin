@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
  * M3-aligned spatial rhythm for ui-next.
  *
  * Based on the Material 3 4dp/8dp grid. 16dp screen margins, 8dp between related items,
- * 24dp between sections. Replaced the Apple-style grouped-sections metaphor with a flat
+ * 28dp between sections. Replaced the Apple-style grouped-sections metaphor with a flat
  * card-on-surface layout where tonal fills create hierarchy instead of inset depth.
  */
 @Immutable

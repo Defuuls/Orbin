@@ -2,6 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,23 +42,25 @@ internal fun FeedGroupHeading(
                 .background(boardHue(board)),
         )
         WidthSpacer(12)
-        Text(
-            if (title == board) board else "$title $board",
-            style = NextType.title2,
-            fontWeight = FontWeight.Bold,
-            color = next.ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        WidthSpacer(8)
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(percent = 50))
-                .background(next.raised)
-                .padding(horizontal = 10.dp, vertical = 7.dp),
-        ) {
-            MetaLine(pluralStringResource(Res.plurals.next_threads_count, count, count))
+        Column(Modifier.weight(1f)) {
+            Text(
+                if (title == board) board else "$title $board",
+                style = NextType.title2,
+                fontWeight = FontWeight.Bold,
+                color = next.ink,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { heading() },
+            )
+            Gap(6)
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(next.raised)
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+            ) {
+                MetaLine(pluralStringResource(Res.plurals.next_threads_count, count, count))
+            }
         }
     }
 }

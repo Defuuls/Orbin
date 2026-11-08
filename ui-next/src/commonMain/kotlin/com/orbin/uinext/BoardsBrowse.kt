@@ -219,7 +219,7 @@ fun BoardsScreen(
                         }
                     }
                 } else {
-                    items(visibleBoards, key = { it.path }) { board ->
+                    items(visibleBoards, key = { it.id }) { board ->
                         BoardListRow(
                             board = board,
                             onClick = { onOpenBoard(board) },
@@ -278,8 +278,7 @@ private fun BoardListRow(
                             bottomEnd = NextRadius.tile,
                             bottomStart = NextRadius.tight,
                         ),
-                    )
-                    .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
+                    ).background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
             if (symbol != null) {
@@ -300,7 +299,7 @@ private fun BoardListRow(
         }
         WidthSpacer(14)
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column {
                 Text(
                     text = board.title,
                     style = NextType.titleLarge,
@@ -308,10 +307,9 @@ private fun BoardListRow(
                     color = next.ink,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
                 )
                 if (board.nsfw) {
-                    WidthSpacer(8)
+                    Gap(6)
                     Text(
                         text = stringResource(Res.string.next_boards_nsfw),
                         style = NextType.caption2,

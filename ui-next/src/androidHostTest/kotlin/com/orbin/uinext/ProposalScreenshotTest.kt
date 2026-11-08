@@ -415,7 +415,8 @@ class ProposalScreenshotTest {
                         value = "Delete",
                         kind = SettingKind.ACTION,
                         hint =
-                            "Deletes browsing history, recent searches, download history and cached images on this device.",
+                            "Deletes browsing history, recent searches, download history " +
+                                "and cached images on this device.",
                         destructive = true,
                     ),
                     SettingItem(

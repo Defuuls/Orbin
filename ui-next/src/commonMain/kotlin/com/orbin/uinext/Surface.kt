@@ -326,7 +326,13 @@ fun ScreenTitle(
         verticalAlignment = Alignment.Bottom,
     ) {
         Column(Modifier.weight(1f)) {
-            Box(Modifier.width(28.dp).height(4.dp).clip(CircleShape).background(next.accent))
+            Box(
+                Modifier
+                    .width(28.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(next.accent),
+            )
             Gap(12)
             Text(
                 text = text,
@@ -387,7 +393,13 @@ fun GroupedSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Box(Modifier.width(4.dp).height(18.dp).clip(CircleShape).background(next.accent))
+                Box(
+                    Modifier
+                        .width(4.dp)
+                        .height(18.dp)
+                        .clip(CircleShape)
+                        .background(next.accent),
+                )
                 Text(
                     text = header,
                     style = NextType.headline,
