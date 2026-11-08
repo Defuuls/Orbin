@@ -1,9 +1,14 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -18,6 +23,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -25,8 +31,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class EditorialDockTest {
     @get:Rule
@@ -38,7 +46,12 @@ class EditorialDockTest {
     fun largeTextKeepsLabelsReadableAndTargetsReachable() {
         composeRule.setContent {
             NextTheme(fontScale = 2f) {
-                DestinationPill(NextDestination.FEED, {})
+                // Match the real-font renderer and viewport used by the screenshot suite.
+                Surface(modifier = Modifier.size(411.dp, 891.dp)) {
+                    Box(contentAlignment = Alignment.BottomCenter) {
+                        DestinationPill(NextDestination.FEED, {})
+                    }
+                }
             }
         }
         listOf("Feed", "Downloads", "Boards").forEach { label ->
