@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [191 — Agretti](https://github.com/Defuuls/Orbin/releases/tag/v191-Agretti)
+**Current release:** [192 — Sea Kale](https://github.com/Defuuls/Orbin/releases/tag/v192-Sea-Kale)
 
-**What's new in 191:** Introduced the OPTIC-26 industrial design system, unified cross-platform components, and fixed core audio/diagnostics issues.
+**What's new in 192:** Full structural industrial overhaul across Android and iOS (OPTIC-26 instrument chassis, modular milled baffles, tactile switchboard dock, mechanical thread bus).
 
 ---
 

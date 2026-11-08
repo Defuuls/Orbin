@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [192-Sea-Kale] - 2026-11-08
+
+### Added
+- Full structural industrial redesign overhaul across Android and iOS (OPTIC-26): instrument chassis header with live telemetry and optical aperture emblem, modular machined spec-sheet feed cassettes with viewfinder reticles, flush tactile switchboard dock with mechanical detents and active LED bars, and multi-lane mechanical thread reply trace bus.
+
+
 ## [191-Agretti] - 2026-11-08
 
 ### Added
@@ -2869,7 +2875,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...HEAD
+[192-Sea-Kale]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...v192-Sea-Kale
 [191-Agretti]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...v191-Agretti
 [190-Puntarelle]: https://github.com/Defuuls/Orbin/compare/v189-Tatsoi...v190-Puntarelle
 [189-Tatsoi]: https://github.com/Defuuls/Orbin/compare/v188-Mizuna...v189-Tatsoi
