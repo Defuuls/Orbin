@@ -18,6 +18,7 @@ import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Source
 import kotlinx.serialization.json.Json
@@ -136,14 +137,17 @@ class LynxChanTransportTest {
     @Test
     fun `oversized JSON is rejected before waiting for the rest of the body`() =
         runTest {
-            val prefix = ByteReadChannel(ByteArray(16 * 1024 * 1024 + 1))
+            val prefixBytes = ByteArray(16 * 1024 * 1024 + 1) { ' '.code.toByte() }
+            """{"status":"ok","data":{"boards":[]}}""".encodeToByteArray().copyInto(prefixBytes)
+            val prefix = ByteReadChannel(prefixBytes)
             val body =
                 object : ByteReadChannel by prefix {
                     override val isClosedForRead: Boolean = false
 
                     override suspend fun awaitContent(min: Int): Boolean {
-                        check(!prefix.isClosedForRead) { "Transport tried to buffer past the size limit" }
-                        return prefix.awaitContent(min)
+                        if (prefix.awaitContent(min)) return true
+                        // The server keeps the connection open after the oversized prefix.
+                        awaitCancellation()
                     }
                 }
             val error =
