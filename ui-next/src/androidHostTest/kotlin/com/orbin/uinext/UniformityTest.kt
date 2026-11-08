@@ -15,14 +15,14 @@ import kotlin.math.pow
  */
 class UniformityTest {
     @Test
-    fun `corner radius tokens maintain expressive roundness and uniformity`() {
-        assertThat(NextRadius.tight).isEqualTo(10.dp)
-        assertThat(NextRadius.control).isEqualTo(14.dp)
-        assertThat(NextRadius.tile).isEqualTo(24.dp)
-        assertThat(NextRadius.card).isEqualTo(32.dp)
-        assertThat(NextRadius.sheet).isEqualTo(32.dp)
-        assertThat(NextRadius.continuous).isEqualTo(32.dp)
-        assertThat(NextRadius.pill).isEqualTo(100.dp)
+    fun `corner radius tokens maintain machined industrial geometry and uniformity`() {
+        assertThat(NextRadius.tight).isEqualTo(2.dp)
+        assertThat(NextRadius.control).isEqualTo(4.dp)
+        assertThat(NextRadius.tile).isEqualTo(4.dp)
+        assertThat(NextRadius.card).isEqualTo(6.dp)
+        assertThat(NextRadius.sheet).isEqualTo(8.dp)
+        assertThat(NextRadius.continuous).isEqualTo(6.dp)
+        assertThat(NextRadius.pill).isEqualTo(4.dp)
     }
 
     @Test

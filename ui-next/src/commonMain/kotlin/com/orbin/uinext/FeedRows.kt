@@ -1,6 +1,8 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -112,13 +114,8 @@ internal fun FeedGridCell(
             modifier
                 .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
                 .semantics { role = Role.Button },
-        shape =
-            RoundedCornerShape(
-                topStart = NextRadius.card,
-                topEnd = NextRadius.control,
-                bottomEnd = NextRadius.card,
-                bottomStart = NextRadius.control,
-            ),
+        shape = RoundedCornerShape(NextRadius.card),
+        border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
                 containerColor = next.raised,
@@ -130,7 +127,7 @@ internal fun FeedGridCell(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
+                    .height(3.dp)
                     .background(if (row.read) next.hairline else boardHue(row.board)),
             )
             val tile =
@@ -190,11 +187,13 @@ internal fun FeedGridCell(
                 val threadInfo =
                     if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
                 if (tallMedia) {
+                    val footerShape = RoundedCornerShape(NextRadius.control)
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(NextRadius.control))
+                            .clip(footerShape)
                             .background(next.background)
+                            .border(1.dp, next.hairline, footerShape)
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                     ) {
                         MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
@@ -252,6 +251,7 @@ private fun CollapsedFeedRow(
                 .fillMaxWidth()
                 .semantics { role = Role.Button },
         shape = RoundedCornerShape(NextRadius.tight),
+        border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
                 containerColor = next.raised,

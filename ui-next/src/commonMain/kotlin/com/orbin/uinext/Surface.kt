@@ -42,7 +42,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
@@ -63,7 +62,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -151,7 +149,7 @@ fun DestinationPill(
                 .fillMaxWidth()
                 .clip(shape)
                 .background(next.elevated)
-                .border(0.75.dp, next.hairline, shape)
+                .border(1.dp, next.hairline, shape)
                 .selectableGroup()
                 .padding(6.dp)
         if (useRows) {
@@ -197,10 +195,11 @@ private fun DockTab(
     horizontal: Boolean = false,
 ) {
     val ink = if (selected) next.onAccent else next.muted
+    val tabShape = RoundedCornerShape(NextRadius.control)
     val target =
         modifier
             .heightIn(min = RAIL_HEIGHT)
-            .clip(RoundedCornerShape(NextRadius.pill))
+            .clip(tabShape)
             .background(if (selected) next.accent else Color.Transparent)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = if (horizontal) 16.dp else 6.dp, vertical = 10.dp)
@@ -244,28 +243,67 @@ private fun OrbitEmblem(
     size: Dp = 52.dp,
 ) {
     val ink = next.onAccentContainer
+    val reticle = next.accent
+    val emblemShape = RoundedCornerShape(NextRadius.control)
     Box(
         modifier =
             modifier
                 .size(size)
-                .clip(CircleShape)
+                .clip(emblemShape)
                 .background(next.accentContainer)
-                .padding(size * 0.16f)
+                .border(1.dp, next.hairline, emblemShape)
+                .padding(size * 0.14f)
                 .clearAndSetSemantics {},
     ) {
         Canvas(Modifier.fillMaxSize()) {
+            val w = this.size.width
+            val h = this.size.height
+            val cx = w * 0.5f
+            val cy = h * 0.5f
+            val minDim = this.size.minDimension
             val stroke = Stroke(width = 1.5.dp.toPx())
-            drawCircle(color = ink, radius = this.size.minDimension * 0.33f, style = stroke)
-            drawOval(
-                color = ink,
-                topLeft = Offset(0f, this.size.height * 0.30f),
-                size = Size(this.size.width, this.size.height * 0.40f),
-                style = stroke,
-            )
+            val thinStroke = Stroke(width = 1.dp.toPx())
+
+            // Outer precision housing ring + inner aperture ring
+            val outerR = minDim * 0.42f
+            val innerR = minDim * 0.20f
+            drawCircle(color = ink, radius = outerR, center = Offset(cx, cy), style = stroke)
+            drawCircle(color = ink, radius = innerR, center = Offset(cx, cy), style = thinStroke)
+
+            // 6-blade tangential aperture chords
+            val cos60 = 0.5f
+            val sin60 = 0.8660254f
+            val dirs =
+                arrayOf(
+                    1f to 0f,
+                    cos60 to sin60,
+                    -cos60 to sin60,
+                    -1f to 0f,
+                    -cos60 to -sin60,
+                    cos60 to -sin60,
+                )
+            for (i in dirs.indices) {
+                val (dx0, dy0) = dirs[i]
+                val (dx1, dy1) = dirs[(i + 1) % dirs.size]
+                drawLine(
+                    color = ink,
+                    start = Offset(cx + dx0 * innerR, cy + dy0 * innerR),
+                    end = Offset(cx + dx1 * outerR, cy + dy1 * outerR),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+
+            // Cardinal reticle ticks + International Orange optical lock dot
+            val tickInner = outerR * 0.82f
+            val tickOuter = minDim * 0.49f
+            drawLine(reticle, Offset(cx, cy - tickOuter), Offset(cx, cy - tickInner), strokeWidth = 1.25.dp.toPx())
+            drawLine(reticle, Offset(cx, cy + tickInner), Offset(cx, cy + tickOuter), strokeWidth = 1.25.dp.toPx())
+            drawLine(reticle, Offset(cx - tickOuter, cy), Offset(cx - tickInner, cy), strokeWidth = 1.25.dp.toPx())
+            drawLine(reticle, Offset(cx + tickInner, cy), Offset(cx + tickOuter, cy), strokeWidth = 1.25.dp.toPx())
             drawCircle(
-                color = ink,
-                radius = this.size.minDimension * 0.08f,
-                center = Offset(this.size.width * 0.92f, this.size.height * 0.50f),
+                color = reticle,
+                radius = minDim * 0.065f,
+                center = Offset(cx, cy),
             )
         }
     }
@@ -313,7 +351,7 @@ fun CompactTitleBar(
                     ).padding(horizontal = 12.dp, vertical = 6.dp)
                     .clip(shape)
                     .background(next.elevated)
-                    .border(0.75.dp, next.hairline, shape)
+                    .border(1.dp, next.hairline, shape)
                     .padding(horizontal = 14.dp, vertical = 10.dp)
                     .testTag(NextTitleTags.COMPACT),
             verticalAlignment = Alignment.CenterVertically,
@@ -368,9 +406,9 @@ fun ScreenTitle(
         Column(Modifier.weight(1f)) {
             Box(
                 Modifier
-                    .width(28.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
+                    .width(24.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(1.dp))
                     .background(next.accent),
             )
             Gap(12)
@@ -395,7 +433,7 @@ fun ScreenTitle(
     }
 }
 
-/** Soft separator — prefer inside [GroupedSection]; full-bleed only between major blocks. */
+/** Structural 1dp hairline separator — prefer inside [GroupedSection]; full-bleed only between major blocks. */
 @Composable
 fun Hairline(
     modifier: Modifier = Modifier,
@@ -406,12 +444,12 @@ fun Hairline(
             modifier
                 .fillMaxWidth()
                 .padding(start = if (inset) NextSpace.gutter else 0.dp),
-        thickness = 0.5.dp,
+        thickness = 1.dp,
         color = next.hairline,
     )
 }
 
-/** M3 tonal card section — flat card on surface background, sentence-case header. */
+/** OPTIC-26 machined card section — flat card on surface background with 1dp structural border. */
 @Composable
 fun GroupedSection(
     modifier: Modifier = Modifier,
@@ -419,13 +457,7 @@ fun GroupedSection(
     footer: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape =
-        RoundedCornerShape(
-            topStart = NextRadius.card,
-            topEnd = NextRadius.control,
-            bottomEnd = NextRadius.card,
-            bottomStart = NextRadius.control,
-        )
+    val shape = RoundedCornerShape(NextRadius.card)
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = NextSpace.gutterTight)) {
         if (header != null) {
             Row(
@@ -435,9 +467,9 @@ fun GroupedSection(
             ) {
                 Box(
                     Modifier
-                        .width(4.dp)
-                        .height(18.dp)
-                        .clip(CircleShape)
+                        .width(3.dp)
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(1.dp))
                         .background(next.accent),
                 )
                 Text(
@@ -453,7 +485,7 @@ fun GroupedSection(
             shape = shape,
             colors = CardDefaults.cardColors(containerColor = next.raised, contentColor = next.ink),
             elevation = CardDefaults.cardElevation(0.dp),
-            modifier = Modifier.fillMaxWidth().border(0.75.dp, next.hairline, shape),
+            modifier = Modifier.fillMaxWidth().border(1.dp, next.hairline, shape),
             content = content,
         )
         if (footer != null) {
@@ -475,7 +507,7 @@ fun GroupedDivider(modifier: Modifier = Modifier) {
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = NextSpace.rowX),
-        thickness = 0.5.dp,
+        thickness = 1.dp,
         color = next.hairline,
     )
 }
@@ -514,7 +546,8 @@ inline fun <T> LazyListScope.groupedItems(
                     .fillMaxWidth()
                     .padding(horizontal = NextSpace.gutterTight)
                     .clip(shape)
-                    .background(next.raised),
+                    .background(next.raised)
+                    .border(1.dp, next.hairline, shape),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 itemContent(index, item)
@@ -546,7 +579,7 @@ fun MetaLine(
     )
 }
 
-/** The small coloured disc that marks which board a row came from. */
+/** The machined indicator mark that identifies which board a row came from. */
 @Composable
 fun BoardDot(
     board: String,
@@ -557,7 +590,7 @@ fun BoardDot(
         modifier =
             modifier
                 .size(size)
-                .clip(RoundedCornerShape(size / 2))
+                .clip(RoundedCornerShape(NextRadius.tight))
                 .background(boardHue(board)),
     )
 }

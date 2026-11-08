@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -127,11 +128,13 @@ fun MediaWallScreen(
                             inset = 0.dp,
                         )
                         if (onOpenSaved != null) {
+                            val savedShape = RoundedCornerShape(NextRadius.control)
                             Box(
                                 modifier =
                                     Modifier
-                                        .clip(RoundedCornerShape(NextRadius.pill))
+                                        .clip(savedShape)
                                         .background(next.raised)
+                                        .border(1.dp, next.hairline, savedShape)
                                         .padding(horizontal = 6.dp),
                             ) {
                                 InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
@@ -139,18 +142,14 @@ fun MediaWallScreen(
                             Gap(8)
                         }
                         if (showSizeControl || hasScanStatus) {
+                            val panelShape = RoundedCornerShape(NextRadius.card)
                             Column(
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .clip(
-                                            RoundedCornerShape(
-                                                topStart = NextRadius.card,
-                                                topEnd = NextRadius.control,
-                                                bottomEnd = NextRadius.card,
-                                                bottomStart = NextRadius.control,
-                                            ),
-                                        ).background(next.raised)
+                                        .clip(panelShape)
+                                        .background(next.raised)
+                                        .border(1.dp, next.hairline, panelShape)
                                         .padding(horizontal = 14.dp, vertical = 12.dp),
                             ) {
                                 if (showSizeControl) {
@@ -257,12 +256,13 @@ internal fun SweepBar(
     scanned: Int,
     total: Int,
 ) {
+    val barShape = RoundedCornerShape(NextRadius.tight)
     Box(
         modifier =
             Modifier
                 .width(96.dp)
                 .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(barShape)
                 .background(next.hairline),
     ) {
         Box(
@@ -270,7 +270,7 @@ internal fun SweepBar(
                 Modifier
                     .fillMaxWidth(scanned.toFloat() / total.coerceAtLeast(1))
                     .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(barShape)
                     .background(next.accent),
         )
     }

@@ -12,28 +12,35 @@ Tokens live in `ui-next/.../tokens/Tokens.kt`. Material primitives inherit a
 complete color scheme installed by `NextTheme`, so their controls match the
 custom surfaces.
 
-The default accent is forest green. Eight selectable color themes apply across
-Feed, threads, settings and shared chrome: Orbin, Blue, Red, White, Black, Purple,
-Orange and Teal. Color choice is independent of System/Light/Dark brightness.
-True black applies in dark mode. Reachable shared screens do not substitute
-wallpaper colors or historical imageboard skins.
+The default `ORBIN` palette uses the **OPTIC-26** industrial system: anodized
+obsidian and raw titanium grounds paired with International Orange (`#9E3608`
+light / `#FF7A3D` dark) optical accents. Eight selectable color themes apply
+across Feed, threads, settings and shared chrome: Orbin, Blue, Red, White,
+Black, Purple, Orange and Teal. Color choice is independent of
+System/Light/Dark brightness. True black (`#000000`) applies in dark mode.
+Reachable shared screens do not substitute wallpaper colors or historical
+imageboard skins.
 
-The shared editorial design uses 40 sp heavy titles, a decorative orbit emblem,
-a short accent rule, asymmetric 32/14 dp cards, board-color identity rails and
-a floating dock with solid accent selection capsules. Decorative artwork drops
-out at enlarged text sizes so it never competes with reading space.
+The shared `OPTIC-26` industrial chassis uses 40 sp heavy titles with a
+precision rectangular accent marker (`24 × 3 dp`), a machined 6-blade optical
+aperture emblem (`OrbitEmblem`), uniform machined corner radii (`NextRadius`:
+`2 dp` tight, `4 dp` control/tile/pill, `6 dp` card/continuous, `8 dp` sheet),
+structural `1 dp` `next.hairline` borders, tabular numerals (`tnum`) across all
+type styles, and critically damped zero-bounce spring motion (`NextMotion`).
+Decorative artwork drops out at enlarged text sizes so it never competes with
+reading space.
 
-Matte tonal fills distinguish background, raised cards and elevated sheets.
-Use `GroupedSection` for related settings and `GroupedDivider` or
-`Hairline` for soft separation. Avoid adding a second palette or nested
-application shell for an individual screen.
+Matte tonal fills and `1 dp` structural borders distinguish background, raised
+cards and elevated sheets. Use `GroupedSection` for related settings or
+download rows and `GroupedDivider` or `Hairline` for `1 dp` separation. Avoid
+adding a second palette or nested application shell for an individual screen.
 
 ## Theme inheritance and text
 
-An explicit `NextTheme` argument wins; otherwise an enclosing theme is
-inherited. A nested no-argument theme reuses the installed theme. This keeps
-screen previews independent without resetting the reader's palette or
-compounding font scaling.
+An explicit `NextTheme` argument wins; otherwise an enclosing theme (including
+any custom `palette`) is inherited when brightness and AMOLED flags match. A
+nested no-argument theme reuses the installed theme. This keeps screen previews
+independent without resetting the reader's palette or compounding font scaling.
 
 Android uses system text scaling; iOS maps Dynamic Type into the shared
 density. There is no in-app font-size row. Layouts must accommodate wrapping
@@ -45,14 +52,14 @@ a separate product UI or a source of additional user-facing theme controls.
 
 ## Navigation and controls
 
-Feed, Media and Boards use `DestinationPill` chrome. Detail screens such as
-threads, settings, Search and Downloads use their own titles. `ScreenTitle`
+Feed, Downloads and Boards use `DestinationPill` chrome. Detail screens such as
+threads, settings, Search and Media Wall use their own titles. `ScreenTitle`
 scrolls with content; `CompactTitleBar` provides the compact title when needed.
 
-Hierarchical transitions use the shared slide/fade motion; primary tabs
+Hierarchical transitions use critically damped slide/fade motion; primary tabs
 crossfade. Press indication adapts by platform. Android switches use Material
-controls; iOS uses a native-style track centered in a touch target at least
-48 dp high.
+controls; iOS uses a machined `OPTIC-26` rectangular toggle track centered in a
+touch target at least 48 dp high.
 
 A toggle row owns one action and its checked semantics. Its visual switch is
 passive. Keep an independent switch action only when it does something
@@ -61,10 +68,12 @@ different from opening the containing row, as in the Boards browser.
 The dock measures its rendered height so larger labels cannot cover the final
 content rows. Compact-title clearance follows actual text metrics.
 
-Feed cards use board-color accent rules and inset metadata footers. Boards have
-larger identity badges and followed-state outlines. Threads use individual tonal
-post cards and wrapping metadata capsules. Media browsing groups scan and size
-controls into a tonal deck; Downloads uses document cards with readable filenames.
+Feed cards use board-color status bars, `1 dp` structural borders and inset
+metadata footers. Boards have machined `4 dp` identity badges and followed-state
+outlines. Threads use individual bordered post cards, `4 dp` metadata capsules,
+and multi-attachment horizontal pagers on both Android and iOS. Media browsing
+groups scan and size controls into a bordered control deck; Downloads groups
+saved files inside a single `GroupedSection` chassis.
 
 Choices expose selected state. Pull-to-refresh exposes a semantic refresh
 action as well as gestures. Snackbars announce messages politely and honor

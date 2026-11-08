@@ -107,11 +107,13 @@ internal val AmoledSurfaceContainerHighest = Color(0xFF252A25)
 
 // ── Semantic accents (post renderer) ──────────────────────────────────────
 
-/** Imageboard greentext — kept period-accurate. */
-val GreentextColor = Color(0xFF5A7A2A)
+/** Imageboard greentext — kept period-accurate and AA contrast-safe on light and dark grounds. */
+val GreentextColor = Color(0xFF43631B)
+val GreentextDarkColor = Color(0xFF8FB855)
 
-/** Quote link — uses the forest primary at legible lightness on white. */
-val QuoteLinkColor = Color(0xFF276A3C)
+/** Quote link — contrast-safe on light and dark grounds. */
+val QuoteLinkColor = Color(0xFF9E3608)
+val QuoteLinkDarkColor = Color(0xFFFF8B55)
 
 /** Spoiler tag — near-black fill, same as before. */
 val SpoilerBackground = Color(0xFF2B2B2B)

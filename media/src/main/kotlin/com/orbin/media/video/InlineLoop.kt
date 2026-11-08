@@ -2,6 +2,7 @@ package com.orbin.media.video
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -53,6 +54,9 @@ fun InlineLoop(
                     playWhenReady = active
                 }
         }
+    LaunchedEffect(player, active) {
+        player.playWhenReady = active
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, player) {
         val observer =

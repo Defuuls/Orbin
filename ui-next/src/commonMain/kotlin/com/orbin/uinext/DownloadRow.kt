@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,20 +42,12 @@ fun DownloadRow(
     retryDescription: String = retryLabel,
     onRetry: (() -> Unit)? = null,
 ) {
+    val iconShape = RoundedCornerShape(NextRadius.control)
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = NextSpace.rowX, vertical = 6.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = NextRadius.card,
-                        topEnd = NextRadius.control,
-                        bottomEnd = NextRadius.card,
-                        bottomStart = NextRadius.control,
-                    ),
-                ).background(next.raised)
-                .padding(14.dp),
+                .padding(horizontal = NextSpace.rowX, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -64,8 +57,9 @@ fun DownloadRow(
             modifier =
                 Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(NextRadius.control))
+                    .clip(iconShape)
                     .background(if (active) next.accentContainer else next.elevated)
+                    .border(1.dp, if (active) next.accent else next.hairline, iconShape)
                     .padding(12.dp),
         )
         WidthSpacer(12)

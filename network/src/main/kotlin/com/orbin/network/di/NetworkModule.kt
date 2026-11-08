@@ -94,7 +94,6 @@ object NetworkModule {
             // configured User-Agent and Accept headers.
             .addInterceptor(PowBlockInterceptor())
             .addInterceptor(HeadersInterceptor(configProvider))
-            .addNetworkInterceptor(HeadersInterceptor(configProvider))
             .addInterceptor(MediaResponseCacheInterceptor(mediaCache, cookieJar))
             .apply {
                 dns(

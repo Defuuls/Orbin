@@ -13,6 +13,7 @@ import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.data.worker.WatchScheduler
+import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,28 +32,28 @@ class OrbinApplication :
     SingletonImageLoader.Factory,
     Configuration.Provider {
     @Inject
-    lateinit var imageLoader: ImageLoader
+    lateinit var imageLoader: Lazy<ImageLoader>
 
     @Inject
-    lateinit var workerFactory: HiltWorkerFactory
+    lateinit var workerFactory: Lazy<HiltWorkerFactory>
 
     @Inject
-    lateinit var watchScheduler: WatchScheduler
+    lateinit var watchScheduler: Lazy<WatchScheduler>
 
     @Inject
     lateinit var diagnosticsRepository: DiagnosticsRepositoryImpl
 
     @Inject
-    lateinit var downloadQueue: AndroidDownloadQueue
+    lateinit var downloadQueue: Lazy<AndroidDownloadQueue>
 
     @Inject
-    lateinit var preferences: DataStore<Preferences>
+    lateinit var preferences: Lazy<DataStore<Preferences>>
 
     override val workManagerConfiguration: Configuration
         get() =
             Configuration
                 .Builder()
-                .setWorkerFactory(workerFactory)
+                .setWorkerFactory(workerFactory.get())
                 .build()
 
     override fun onCreate() {
@@ -69,16 +70,16 @@ class OrbinApplication :
         retireLegacyBrowsingCaches(this)
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
         CoroutineScope(Dispatchers.Default).launch {
-            watchScheduler.ensureScheduled()
+            watchScheduler.get().ensureScheduled()
         }
         // Sync was removed; its saved login and pairing data must not linger on the device.
         CoroutineScope(Dispatchers.IO).launch {
-            downloadQueue.prepare()
-            LegacySyncCleanup.clear(preferences)
+            downloadQueue.get().prepare()
+            LegacySyncCleanup.clear(preferences.get())
         }
     }
 
-    override fun newImageLoader(context: PlatformContext): ImageLoader = imageLoader
+    override fun newImageLoader(context: PlatformContext): ImageLoader = imageLoader.get()
 }
 
 @dagger.Module

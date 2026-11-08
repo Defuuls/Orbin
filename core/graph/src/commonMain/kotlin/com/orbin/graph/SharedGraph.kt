@@ -128,17 +128,16 @@ abstract class SharedGraph(
 
     @AppScope
     @Provides
-    protected fun settingsRepository(
+    protected fun settingsRepositoryImpl(
         settingsStore: SettingsStore,
         boardPreferences: BoardPreferencesStore,
-    ): SettingsRepository = SettingsRepositoryImpl(settingsStore, boardPreferences)
+    ): SettingsRepositoryImpl = SettingsRepositoryImpl(settingsStore, boardPreferences)
 
-    @AppScope
     @Provides
-    protected fun boardPreferencesRepository(
-        settingsStore: SettingsStore,
-        boardPreferences: BoardPreferencesStore,
-    ): BoardPreferencesRepository = SettingsRepositoryImpl(settingsStore, boardPreferences)
+    protected fun settingsRepository(impl: SettingsRepositoryImpl): SettingsRepository = impl
+
+    @Provides
+    protected fun boardPreferencesRepository(impl: SettingsRepositoryImpl): BoardPreferencesRepository = impl
 
     @AppScope
     @Provides

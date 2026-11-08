@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
@@ -27,15 +28,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import com.orbin.core.designsystem.theme.GreentextColor
+import com.orbin.core.designsystem.theme.GreentextDarkColor
 import com.orbin.core.designsystem.theme.QuoteLinkColor
+import com.orbin.core.designsystem.theme.QuoteLinkDarkColor
 import com.orbin.core.designsystem.theme.SpoilerBackground
 import com.orbin.core.model.InlineStyle
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
-
-private val quoteLinkStyle = SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.Underline)
-private val quoteLinkStyles = TextLinkStyles(style = quoteLinkStyle)
 
 /** The real host after a link whose text names another; not a link itself, so it reads as a label. */
 private val realDestinationStyle = SpanStyle(fontStyle = FontStyle.Italic)
@@ -86,9 +86,12 @@ fun PostCommentText(
     var revealedSpoilers by remember(comment) { mutableStateOf(emptySet<Int>()) }
     val haptics = LocalHapticFeedback.current
     val revealedSpoilerBackground = MaterialTheme.colorScheme.surfaceVariant
+    val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val greentextColor = if (isDarkSurface) GreentextDarkColor else GreentextColor
+    val quoteLinkColor = if (isDarkSurface) QuoteLinkDarkColor else QuoteLinkColor
 
     val annotated =
-        remember(comment, revealedSpoilers, revealedSpoilerBackground) {
+        remember(comment, revealedSpoilers, revealedSpoilerBackground, greentextColor, quoteLinkColor) {
             val context =
                 CommentRenderContext(
                     onQuoteClick = { id -> currentOnQuoteClick(id) },
@@ -99,6 +102,8 @@ fun PostCommentText(
                         revealedSpoilers = revealedSpoilers + id
                     },
                     revealedSpoilerBackground = revealedSpoilerBackground,
+                    greentextColor = greentextColor,
+                    quoteLinkColor = quoteLinkColor,
                 )
             buildCommentText(comment, context)
         }
@@ -130,9 +135,19 @@ fun PostCommentPreviewText(
     modifier: Modifier = Modifier,
     maxLines: Int = Int.MAX_VALUE,
 ) {
+    val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val greentextColor = if (isDarkSurface) GreentextDarkColor else GreentextColor
+    val quoteLinkColor = if (isDarkSurface) QuoteLinkDarkColor else QuoteLinkColor
     val annotated =
-        remember(comment) {
-            buildCommentText(comment, CommentRenderContext(), interactive = false)
+        remember(comment, greentextColor, quoteLinkColor) {
+            buildCommentText(
+                comment,
+                CommentRenderContext(
+                    greentextColor = greentextColor,
+                    quoteLinkColor = quoteLinkColor,
+                ),
+                interactive = false,
+            )
         }
     Text(
         text = annotated,
@@ -159,7 +174,11 @@ internal class CommentRenderContext(
     val revealedSpoilers: Set<Int> = emptySet(),
     val onSpoilerClick: (Int) -> Unit = {},
     val revealedSpoilerBackground: Color = Color.Unspecified,
+    val greentextColor: Color = GreentextColor,
+    val quoteLinkColor: Color = QuoteLinkColor,
 ) {
+    val quoteLinkStyle: SpanStyle = SpanStyle(color = quoteLinkColor, textDecoration = TextDecoration.Underline)
+    val quoteLinkStyles: TextLinkStyles = TextLinkStyles(style = quoteLinkStyle)
     private var assignedSpoilers = 0
 
     fun nextSpoilerId(): Int = assignedSpoilers++
@@ -191,12 +210,12 @@ private fun AnnotatedString.Builder.appendNode(
     when (node) {
         is PostNode.Text ->
             if (linkifyPlainText) {
-                appendPlainTextWithLinks(node.text, interactive, ctx.onLinkClick)
+                appendPlainTextWithLinks(node.text, ctx, interactive)
             } else {
                 append(node.text)
             }
         PostNode.LineBreak -> append('\n')
-        is PostNode.QuoteLink -> appendQuoteLink(node, interactive, ctx.onQuoteClick)
+        is PostNode.QuoteLink -> appendQuoteLink(node, ctx, interactive)
         is PostNode.Link -> appendLink(node, ctx, interactive)
         is PostNode.Styled -> appendStyled(node, ctx, interactive, linkifyPlainText)
     }
@@ -215,9 +234,9 @@ private fun AnnotatedString.Builder.appendLink(
         }
     }
     if (interactive) {
-        withLink(clickableLink { ctx.onLinkClick(url) }, children)
+        withLink(clickableLink(ctx.quoteLinkStyles) { ctx.onLinkClick(url) }, children)
     } else {
-        withStyle(quoteLinkStyle, children)
+        withStyle(ctx.quoteLinkStyle, children)
     }
     // Text that reads as one address but links to another shows where it really goes.
     misleadingLinkHost(node.visibleText(), url)?.let { host ->
@@ -227,8 +246,8 @@ private fun AnnotatedString.Builder.appendLink(
 
 private fun AnnotatedString.Builder.appendPlainTextWithLinks(
     text: String,
+    ctx: CommentRenderContext,
     interactive: Boolean,
-    onLinkClick: (String) -> Unit,
 ) {
     var nextStart = 0
     plainTextUrlRegex.findAll(text).forEach { match ->
@@ -240,9 +259,9 @@ private fun AnnotatedString.Builder.appendPlainTextWithLinks(
         val url = normalizePlainTextUrl(displayUrl)
 
         if (interactive) {
-            withLink(clickableLink { onLinkClick(url) }) { append(displayUrl) }
+            withLink(clickableLink(ctx.quoteLinkStyles) { ctx.onLinkClick(url) }) { append(displayUrl) }
         } else {
-            withStyle(quoteLinkStyle) { append(displayUrl) }
+            withStyle(ctx.quoteLinkStyle) { append(displayUrl) }
         }
         append(trailing)
 
@@ -253,8 +272,8 @@ private fun AnnotatedString.Builder.appendPlainTextWithLinks(
 
 private fun AnnotatedString.Builder.appendQuoteLink(
     node: PostNode.QuoteLink,
+    ctx: CommentRenderContext,
     interactive: Boolean,
-    onQuoteClick: (PostId) -> Unit,
 ) {
     // Local val: smart-casting a public property from another module isn't allowed.
     val board = node.board
@@ -262,11 +281,11 @@ private fun AnnotatedString.Builder.appendQuoteLink(
     val label = "$prefix${node.target.value}"
     when {
         node.isDead ->
-            withStyle(SpanStyle(color = QuoteLinkColor, textDecoration = TextDecoration.LineThrough)) {
+            withStyle(SpanStyle(color = ctx.quoteLinkColor, textDecoration = TextDecoration.LineThrough)) {
                 append(label)
             }
-        interactive -> withLink(clickableLink { onQuoteClick(node.target) }) { append(label) }
-        else -> withStyle(quoteLinkStyle) { append(label) }
+        interactive -> withLink(clickableLink(ctx.quoteLinkStyles) { ctx.onQuoteClick(node.target) }) { append(label) }
+        else -> withStyle(ctx.quoteLinkStyle) { append(label) }
     }
 }
 
@@ -283,8 +302,8 @@ private fun AnnotatedString.Builder.appendStyled(
     }
     val span =
         when (node.style) {
-            InlineStyle.GREENTEXT -> SpanStyle(color = GreentextColor)
-            InlineStyle.QUOTE_TEXT -> SpanStyle(color = GreentextColor)
+            InlineStyle.GREENTEXT -> SpanStyle(color = ctx.greentextColor)
+            InlineStyle.QUOTE_TEXT -> SpanStyle(color = ctx.greentextColor)
             InlineStyle.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
             InlineStyle.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
             InlineStyle.UNDERLINE -> SpanStyle(textDecoration = TextDecoration.Underline)
@@ -340,8 +359,10 @@ private fun AnnotatedString.Builder.appendSpoiler(
 }
 
 /** Builds a styled, clickable link annotation that runs [onClick] when tapped. */
-private fun clickableLink(onClick: () -> Unit): LinkAnnotation.Clickable =
-    LinkAnnotation.Clickable(tag = "link", styles = quoteLinkStyles) { onClick() }
+private fun clickableLink(
+    styles: TextLinkStyles,
+    onClick: () -> Unit,
+): LinkAnnotation.Clickable = LinkAnnotation.Clickable(tag = "link", styles = styles) { onClick() }
 
 /**
  * A clickable annotation carrying no styles of its own — the blackout span supplies the appearance,

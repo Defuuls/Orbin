@@ -248,13 +248,8 @@ private fun BoardListRow(
 ) {
     val hue = boardHue(board.path)
     val symbol = board.site?.let { boardSymbol(it, board.path.trim('/')) }
-    val shape =
-        RoundedCornerShape(
-            topStart = NextRadius.card,
-            topEnd = NextRadius.control,
-            bottomEnd = NextRadius.card,
-            bottomStart = NextRadius.control,
-        )
+    val shape = RoundedCornerShape(NextRadius.card)
+    val tileShape = RoundedCornerShape(NextRadius.tile)
     Row(
         modifier =
             Modifier
@@ -271,14 +266,9 @@ private fun BoardListRow(
             modifier =
                 Modifier
                     .size(60.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = NextRadius.tile,
-                            topEnd = NextRadius.tight,
-                            bottomEnd = NextRadius.tile,
-                            bottomStart = NextRadius.tight,
-                        ),
-                    ).background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
+                    .clip(tileShape)
+                    .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f))
+                    .border(1.dp, hue.copy(alpha = 0.45f), tileShape),
             contentAlignment = Alignment.Center,
         ) {
             if (symbol != null) {

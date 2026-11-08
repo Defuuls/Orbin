@@ -16,8 +16,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
@@ -26,16 +29,30 @@ class BoardRepositoryImpl(
     private val boardDao: BoardDao,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BoardRepository {
+    private val refreshMutex = Mutex()
+
     override fun observeBoards(provider: ProviderId): Flow<List<Board>> =
-        boardDao
-            .observeBoards(provider.value)
-            .map { entities ->
-                ContentPolicy.visibleBoards(entities.map { it.toDomain() })
-            }.onStart {
-                if (isStale(provider)) refreshBoards(provider)
+        channelFlow {
+            launch {
+                refreshMutex.withLock {
+                    if (isStale(provider)) {
+                        refreshBoardsInternal(provider)
+                    }
+                }
             }
+            boardDao
+                .observeBoards(provider.value)
+                .map { entities ->
+                    ContentPolicy.visibleBoards(entities.map { it.toDomain() })
+                }.collect { send(it) }
+        }
 
     override suspend fun refreshBoards(provider: ProviderId): OrbinResult<List<Board>> =
+        refreshMutex.withLock {
+            refreshBoardsInternal(provider)
+        }
+
+    private suspend fun refreshBoardsInternal(provider: ProviderId): OrbinResult<List<Board>> =
         withContext(ioDispatcher) {
             val result =
                 runCatchingProvider {

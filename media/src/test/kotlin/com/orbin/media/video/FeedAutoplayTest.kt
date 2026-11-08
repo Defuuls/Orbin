@@ -42,6 +42,16 @@ class FeedAutoplayTest {
         assertThat(pickFeedAutoplayRowId(listOf("a", "b", "c"))).isEqualTo("a")
     }
 
+    @Test
+    fun `a thumbnail-only catalog stub never autoplays`() {
+        val stub =
+            attachment(MediaType.VIDEO).copy(
+                sourceUrl = "https://example.test/t_clip",
+                thumbnailUrl = "https://example.test/t_clip",
+            )
+        assertThat(canAutoplayInFeed(stub, autoplayEnabled = true)).isFalse()
+    }
+
     private fun attachment(
         type: MediaType,
         isSpoiler: Boolean = false,

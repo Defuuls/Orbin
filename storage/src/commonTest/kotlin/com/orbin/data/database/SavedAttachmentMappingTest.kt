@@ -48,6 +48,47 @@ class SavedAttachmentMappingTest {
         assertEquals(attachments.map { it.sourceUrl }, restored.map { it.sourceUrl })
     }
 
+    @Test
+    fun savedAttachmentsPreservePositionalPairingAndFallBackToUrlExtension() {
+        val key = ThreadKey(ProviderId("example"), BoardId("g"), ThreadId(99))
+        val attachments =
+            listOf(
+                MediaAttachment(
+                    id = "1",
+                    originalFileName = "",
+                    extension = "webm",
+                    type = MediaType.VIDEO,
+                    sourceUrl = "https://example.test/first.webm",
+                    thumbnailUrl = "https://example.test/t1.jpg",
+                ),
+                MediaAttachment(
+                    id = "2",
+                    originalFileName = "second_without_ext",
+                    extension = "mp4",
+                    type = MediaType.VIDEO,
+                    sourceUrl = "https://example.test/second.mp4",
+                    thumbnailUrl = "https://example.test/t2.jpg",
+                ),
+            )
+        val thread =
+            Thread(
+                key = key,
+                originalPost =
+                    Post(
+                        id = PostId(99),
+                        board = key.board,
+                        threadId = key.thread,
+                        isOriginalPost = true,
+                        attachments = attachments.toImmutableList(),
+                    ),
+            )
+        val (savedThread, savedPosts) = thread.toSavedEntities(savedAtMillis = 1_000)
+        val restored = savedThread.toDomain(savedPosts).originalPost.attachments
+
+        assertEquals(listOf("first.webm", "second_without_ext"), restored.map { it.originalFileName })
+        assertEquals(listOf(MediaType.VIDEO, MediaType.VIDEO), restored.map { it.type })
+    }
+
     private val formats =
         mapOf(
             "webm" to MediaType.VIDEO,

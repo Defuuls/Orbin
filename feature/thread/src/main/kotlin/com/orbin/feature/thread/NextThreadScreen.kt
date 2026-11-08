@@ -56,6 +56,7 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.next
+import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -232,7 +233,7 @@ private fun LoadedThread(
                     presentation.attachmentsById[cell.id]?.let { attachment ->
                         MediaThumbnail(
                             attachment = attachment,
-                            modifier = tileModifier.clip(RoundedCornerShape(10.dp)),
+                            modifier = tileModifier.clip(RoundedCornerShape(NextRadius.tile)),
                             // Files wall tiles are large; pull source with thumb placeholder.
                             fullResolution = true,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
@@ -320,7 +321,7 @@ private fun PostMedia(
     onOpen: (String) -> Unit,
 ) {
     if (attachments.isEmpty()) return
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(NextRadius.tile)
     if (attachments.size == 1) {
         val only = attachments.first()
         MediaThumbnail(

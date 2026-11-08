@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -34,7 +35,7 @@ class DiagnosticsRepositoryImpl
     constructor(
         @ApplicationContext private val context: Context,
         @Dispatcher(OrbinDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
-        private val providerDiagnostics: ProviderDiagnostics,
+        private val providerDiagnostics: Provider<ProviderDiagnostics>,
     ) : DiagnosticsRepository {
         private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         private var launchStartedAt = SystemClock.elapsedRealtime()
@@ -75,7 +76,7 @@ class DiagnosticsRepositoryImpl
 
         override suspend fun hasReports(): Boolean =
             withContext(ioDispatcher) {
-                store.readAll().isNotEmpty() || providerDiagnostics.snapshot().isNotEmpty()
+                store.readAll().isNotEmpty() || providerDiagnostics.get().snapshot().isNotEmpty()
             }
 
         override suspend fun exportReport(): String? =
@@ -85,7 +86,7 @@ class DiagnosticsRepositoryImpl
                 if (reports.isNotEmpty()) {
                     sections += reports.joinToString("\n\n${"-".repeat(SEPARATOR_WIDTH)}\n\n")
                 }
-                val providerEvents = providerDiagnostics.snapshot()
+                val providerEvents = providerDiagnostics.get().snapshot()
                 if (providerEvents.isNotEmpty()) {
                     sections +=
                         buildString {
@@ -106,7 +107,7 @@ class DiagnosticsRepositoryImpl
         override suspend fun clearReports() {
             withContext(ioDispatcher) {
                 store.clear()
-                providerDiagnostics.clear()
+                providerDiagnostics.get().clear()
             }
         }
 
@@ -118,10 +119,11 @@ class DiagnosticsRepositoryImpl
                 File(mediaCacheDb.path + "-wal").delete()
                 File(mediaCacheDb.path + "-shm").delete()
                 context.deleteDatabase(SqliteMediaResponseCache.NAME)
+                File(context.filesDir, "datastore").deleteRecursively()
                 File(context.cacheDir, "clipboard_images").deleteRecursively()
                 File(context.cacheDir, "updates").deleteRecursively()
                 store.clear()
-                providerDiagnostics.clear()
+                providerDiagnostics.get().clear()
                 prefs.edit().putInt(KEY_STARTUP_CRASHES, 0).commit()
             }
         }

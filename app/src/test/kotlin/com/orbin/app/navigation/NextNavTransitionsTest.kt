@@ -5,16 +5,12 @@ import com.orbin.uinext.tokens.NextMotion
 import org.junit.Test
 
 /**
- * Motion tokens gate the Feed↔Boards↔Thread feel. If PUSH collapses back to a 300ms linear
- * Material default, hierarchical navigation stops reading as a push at all.
- *
- * The M3 Expressive redesign dropped the iOS parallax drift on the outgoing screen, so there is
- * no PUSH_PARALLAX to assert here — a push now slides a full container width.
+ * Motion tokens gate the Feed↔Boards↔Thread feel under OPTIC-26 mechanical transitions.
  */
 class NextNavTransitionsTest {
     @Test
-    fun pushIsSofterAndLongerThanMaterialDefault() {
-        assertThat(NextMotion.PUSH_MS).isAtLeast(350)
+    fun pushUsesCrispMechanicalDuration() {
+        assertThat(NextMotion.PUSH_MS).isEqualTo(220)
     }
 
     @Test
