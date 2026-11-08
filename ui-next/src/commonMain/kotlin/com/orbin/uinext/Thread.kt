@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -146,7 +149,7 @@ fun ThreadScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             floatingActionButton = {
                 if (layout == ThreadLayout.POSTS && posts.size > 1) {
-                    val jumpShape = RoundedCornerShape(NextRadius.control)
+                    val jumpShape = RoundedCornerShape(NextRadius.tight)
                     Row(
                         modifier =
                             Modifier.padding(
@@ -239,7 +242,7 @@ fun ThreadScreen(
                     }
                     ScreenTitle(text = subject, size = 34)
                     // Two things only: how to read the thread, and whether to be told when it moves.
-                    val barShape = RoundedCornerShape(NextRadius.card)
+                    val barShape = RoundedCornerShape(NextRadius.tight)
                     Row(
                         modifier =
                             Modifier
@@ -394,8 +397,8 @@ private fun PostView(
     Surface(
         onClick = { onClick(post) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(NextRadius.card),
-        border = BorderStroke(1.dp, if (seed == 0) next.accent.copy(alpha = 0.45f) else next.hairline),
+        shape = RoundedCornerShape(NextRadius.tight),
+        border = BorderStroke(1.dp, if (seed == 0) next.accent.copy(alpha = 0.65f) else next.hairline),
         color = if (seed == 0) next.elevated else next.raised,
         contentColor = next.ink,
     ) {
@@ -407,15 +410,25 @@ private fun PostView(
                         .padding(
                             start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
                             end = GUTTER,
-                            top = 15.dp,
-                            bottom = 15.dp,
+                            top = 12.dp,
+                            bottom = 12.dp,
                         ),
             ) {
+                if (seed == 0) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .clip(RoundedCornerShape(1.dp))
+                            .background(next.accent),
+                    )
+                    Gap(8)
+                }
                 val expandLabel = stringResource(Res.string.next_post_expand)
                 val collapseLabel = stringResource(Res.string.next_post_collapse)
                 val collapsedState = stringResource(Res.string.next_post_collapsed_state)
                 val expandedState = stringResource(Res.string.next_post_expanded_state)
-                val metaShape = RoundedCornerShape(NextRadius.control)
+                val metaShape = RoundedCornerShape(NextRadius.tight)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -431,9 +444,24 @@ private fun PostView(
                             ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                 ) {
+                    if (seed == 0) {
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(NextRadius.tight))
+                                .background(next.accentContainer)
+                                .border(1.dp, next.accent, RoundedCornerShape(NextRadius.tight))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = "OP // ORIGIN",
+                                style = NextType.telemetry,
+                                color = next.accent,
+                            )
+                        }
+                    }
                     Text(
                         text = post.number,
-                        style = NextType.labelLarge,
+                        style = NextType.telemetryLarge,
                         fontWeight = FontWeight.Bold,
                         color = if (seed == 0) next.accent else next.ink,
                     )
@@ -461,7 +489,7 @@ private fun PostView(
                             Modifier
                                 .fillMaxWidth()
                                 .height(44.dp)
-                                .clip(RoundedCornerShape(GRID_TILE_RADIUS))
+                                .clip(RoundedCornerShape(NextRadius.tight))
                                 .background(Color.Black.copy(alpha = SPOILER_SCRIM))
                                 .nextClickable(
                                     onClickLabel = revealLabel,
@@ -488,31 +516,74 @@ private fun PostView(
                     )
                 }
                 if (post.hasMedia) {
-                    Gap(12)
-                    val tile = Modifier.fillMaxWidth()
-                    if (media != null) {
-                        media(post, tile)
-                    } else {
-                        MediaTile(
-                            modifier = tile.aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
-                            seed = seed + 1,
-                            radius = GRID_TILE_RADIUS,
-                        )
+                    Gap(10)
+                    val tile = Modifier.fillMaxWidth().aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO)
+                    Box(modifier = tile) {
+                        if (media != null) {
+                            media(post, Modifier.matchParentSize())
+                        } else {
+                            MediaTile(
+                                modifier = Modifier.matchParentSize(),
+                                seed = seed + 1,
+                                radius = NextRadius.tight,
+                            )
+                        }
+                        val reticleColor = next.accent.copy(alpha = 0.55f)
+                        Canvas(Modifier.matchParentSize()) {
+                            val stroke = 1.25.dp.toPx()
+                            val arm = 8.dp.toPx()
+                            val pad = 6.dp.toPx()
+                            val w = size.width
+                            val h = size.height
+                            // 4 corner viewfinder brackets
+                            drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
+                            drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
+                            drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
+                            drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
+                            drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
+                            drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
+                            drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
+                            drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
+                        }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(NextRadius.tight))
+                                    .background(Color.Black.copy(alpha = 0.65f))
+                                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = "VIEWFINDER // RAW 16:9",
+                                style = NextType.telemetry,
+                                color = Color.White.copy(alpha = 0.85f),
+                            )
+                        }
                     }
                 }
             }
             if (depthCount > 0) {
-                Row(modifier = Modifier.matchParentSize().padding(top = 14.dp, bottom = 14.dp)) {
+                Row(modifier = Modifier.matchParentSize().padding(top = 12.dp, bottom = 12.dp)) {
                     repeat(depthCount) {
-                        Box(
-                            modifier =
+                        Column(
+                            modifier = Modifier.padding(start = GUTTER).fillMaxHeight().width(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(
                                 Modifier
-                                    .padding(start = GUTTER)
-                                    .fillMaxHeight()
-                                    .width(REPLY_DEPTH_BAR_WIDTH)
+                                    .size(4.dp)
                                     .clip(RoundedCornerShape(1.dp))
-                                    .background(boardHue(board).copy(alpha = 0.30f)),
-                        )
+                                    .background(boardHue(board).copy(alpha = 0.85f)),
+                            )
+                            Box(
+                                Modifier
+                                    .fillMaxHeight()
+                                    .width(1.5.dp)
+                                    .background(boardHue(board).copy(alpha = 0.35f)),
+                            )
+                        }
                     }
                 }
             }
