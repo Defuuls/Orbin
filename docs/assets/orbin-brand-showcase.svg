@@ -1,6 +1,6 @@
 <svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Orbin brand showcase</title>
-  <desc id="desc">Hero showcase of Orbin redesign with frosted glass, floating pill, and night theater identity.</desc>
+  <desc id="desc">Hero showcase of Orbin OPTIC-26 2026 industrial hardware redesign with machined instrument chassis, tactile switchboard deck, and spec-sheet cassettes.</desc>
   <defs>
     <!-- Vector aperture logo -->
     <g id="aperture-mark-vector" fill="#E8E4DC">
@@ -13,175 +13,247 @@
     <clipPath id="phone-clip">
       <rect x="1000" y="80" width="400" height="740" rx="40"/>
     </clipPath>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3D5A80;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#12141A;stop-opacity:1" />
+    <linearGradient id="grad-titanium" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#202431;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0D0F14;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="grad2" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#8B919C;stop-opacity:1" />
+    <linearGradient id="grad-cell1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E293B;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#0A0A0C;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="grad3" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#C45C26;stop-opacity:0.8" />
+    <linearGradient id="grad-cell2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#334155;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad-cell3" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#475569;stop-opacity:0.8" />
       <stop offset="100%" style="stop-color:#12141A;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="grad4" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1C1E26;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0A0A0C;stop-opacity:1" />
-    </linearGradient>
-    
-    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" />
-    </filter>
   </defs>
 
-  <!-- Background -->
+  <!-- Background: Deep Void Industrial Grid -->
   <rect width="1600" height="900" fill="#0A0A0C"/>
-  <rect width="1600" height="900" fill="url(#grad4)" opacity="0.4"/>
+  <!-- Hairline background technical grid -->
+  <g stroke="#161820" stroke-width="1" opacity="0.6">
+    <line x1="0" y1="150" x2="1600" y2="150"/>
+    <line x1="0" y1="300" x2="1600" y2="300"/>
+    <line x1="0" y1="450" x2="1600" y2="450"/>
+    <line x1="0" y1="600" x2="1600" y2="600"/>
+    <line x1="0" y1="750" x2="1600" y2="750"/>
+    <line x1="200" y1="0" x2="200" y2="900"/>
+    <line x1="500" y1="0" x2="500" y2="900"/>
+    <line x1="800" y1="0" x2="800" y2="900"/>
+    <line x1="1100" y1="0" x2="1100" y2="900"/>
+    <line x1="1400" y1="0" x2="1400" y2="900"/>
+  </g>
 
-  <!-- Left Side Text & Typography -->
-  <g transform="translate(180, 200)">
-    <g transform="translate(0, 50) scale(0.6)">
-      <use href="#aperture-mark-vector"/>
+  <!-- Left Side: Industrial Identity & Technical Readout -->
+  <g transform="translate(140, 140)">
+    <!-- Chassis Badge -->
+    <rect x="0" y="0" width="280" height="28" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+    <circle cx="14" cy="14" r="3.5" fill="#22C55E"/>
+    <text x="26" y="19" font-family="'JetBrains Mono', 'SF Mono', Consolas, monospace" font-size="11" font-weight="700" fill="#8B919C" letter-spacing="1.5">SYS:NOMINAL // OPTIC-26 CHASSIS</text>
+
+    <!-- Logo & Product Wordmark -->
+    <g transform="translate(0, 48)">
+      <g transform="translate(0, 24) scale(0.48)">
+        <use href="#aperture-mark-vector"/>
+      </g>
+      <text x="76" y="52" font-family="'Inter', -apple-system, sans-serif" font-size="56" font-weight="800" fill="#E8E4DC" letter-spacing="1">ORBIN</text>
+      <rect x="290" y="24" width="76" height="24" rx="2" fill="#C45C26"/>
+      <text x="328" y="40" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#FFFFFF" letter-spacing="1">2026</text>
     </g>
-    <text x="120" y="80" font-family="Inter, Arial, Helvetica, sans-serif" font-size="64" font-weight="700" fill="#E8E4DC" letter-spacing="1">Orbin</text>
-    <text x="0" y="180" font-family="Inter, Arial, Helvetica, sans-serif" font-size="32" font-weight="600" fill="#E8E4DC">Dim the room. Let the board fill the frame.</text>
-    <text x="0" y="230" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" fill="#8B919C" line-height="1.5">Privacy-focused, read-only imageboard browser with a</text>
-    <text x="0" y="265" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" fill="#8B919C" line-height="1.5">cinematic night theater identity.</text>
 
-    <!-- Palette Swatches -->
-    <g transform="translate(0, 360)">
-      <text x="0" y="-20" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" fill="#3D5A80" letter-spacing="3">PALETTE</text>
-      <rect x="0" y="0" width="60" height="60" rx="12" fill="#0A0A0C" stroke="#1C1E26" stroke-width="2"/>
-      <rect x="80" y="0" width="60" height="60" rx="12" fill="#12141A"/>
-      <rect x="160" y="0" width="60" height="60" rx="12" fill="#8B919C"/>
-      <rect x="240" y="0" width="60" height="60" rx="12" fill="#E8E4DC"/>
-      <rect x="320" y="0" width="60" height="60" rx="12" fill="#C45C26"/>
-      <rect x="400" y="0" width="60" height="60" rx="12" fill="#3D5A80"/>
-      
-      <text x="30" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Void</text>
-      <text x="110" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Stage</text>
-      <text x="190" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Fog</text>
-      <text x="270" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Beam</text>
-      <text x="350" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Ember</text>
-      <text x="430" y="90" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#E8E4DC">Soft key</text>
+    <!-- Punchy Headline & Mission -->
+    <text x="0" y="165" font-family="'Inter', -apple-system, sans-serif" font-size="34" font-weight="700" fill="#E8E4DC" letter-spacing="-0.5">Machined precision. Zero clutter. Pure telemetry.</text>
+    <text x="0" y="206" font-family="'Inter', -apple-system, sans-serif" font-size="18" fill="#8B919C" line-height="1.5">Privacy-focused, read-only imageboard browser engineered with a 2026</text>
+    <text x="0" y="232" font-family="'Inter', -apple-system, sans-serif" font-size="18" fill="#8B919C" line-height="1.5">industrial instrument chassis for Android &amp; iOS.</text>
+
+    <!-- Architecture Spec Readouts -->
+    <g transform="translate(0, 280)">
+      <text x="0" y="0" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#3D5A80" letter-spacing="2">HARDWARE SPECIFICATIONS</text>
+
+      <!-- Spec Row 1 -->
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="700" height="42" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+        <text x="16" y="26" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#E8E4DC">01 // INSTRUMENT HUD</text>
+        <text x="260" y="26" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Machined top bar with live telemetry &amp; optical aperture crosshairs</text>
+      </g>
+
+      <!-- Spec Row 2 -->
+      <g transform="translate(0, 72)">
+        <rect x="0" y="0" width="700" height="42" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+        <text x="16" y="26" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#E8E4DC">02 // SPEC CASSETTES</text>
+        <text x="260" y="26" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">CNC-milled baffles, hairline dividers &amp; 4-corner camera reticles</text>
+      </g>
+
+      <!-- Spec Row 3 -->
+      <g transform="translate(0, 124)">
+        <rect x="0" y="0" width="700" height="42" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+        <text x="16" y="26" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#E8E4DC">03 // SWITCHBOARD DOCK</text>
+        <text x="260" y="26" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Flush tactile deck with [01 · 02 · 03] detents &amp; active LED bars</text>
+      </g>
+
+      <!-- Spec Row 4 -->
+      <g transform="translate(0, 176)">
+        <rect x="0" y="0" width="700" height="42" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+        <text x="16" y="26" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#E8E4DC">04 // MECHANICAL BUS</text>
+        <text x="260" y="26" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Multi-lane thread reply trace, [OP // ORIGIN] beacon &amp; viewfinder HUD</text>
+      </g>
     </g>
 
-    <g transform="translate(0, 520)">
-        <text x="0" y="0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="600" fill="#3D5A80" letter-spacing="3">FEATURES</text>
-        <text x="0" y="30" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Immersive edge-to-edge media</text>
-        <text x="0" y="60" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Frosted glass &amp; floating app bars</text>
-        <text x="0" y="90" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Floating bottom pill navigation</text>
-        <text x="0" y="120" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" fill="#E8E4DC">? Dense multi-column walls</text>
+    <!-- Industrial Color Standard Swatches -->
+    <g transform="translate(0, 540)">
+      <text x="0" y="-14" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#3D5A80" letter-spacing="2">INDUSTRIAL COLOR STANDARD</text>
+      <rect x="0" y="0" width="64" height="48" rx="2" fill="#0A0A0C" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="76" y="0" width="64" height="48" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="152" y="0" width="64" height="48" rx="2" fill="#1C1E26" stroke="#2B2F3A" stroke-width="1"/>
+      <rect x="228" y="0" width="64" height="48" rx="2" fill="#8B919C" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="304" y="0" width="64" height="48" rx="2" fill="#E8E4DC" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="380" y="0" width="64" height="48" rx="2" fill="#C45C26" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="456" y="0" width="64" height="48" rx="2" fill="#22C55E" stroke="#1C1E26" stroke-width="1"/>
+
+      <text x="32" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">VOID</text>
+      <text x="108" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">STAGE</text>
+      <text x="184" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">BAFFLE</text>
+      <text x="260" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">FOG</text>
+      <text x="336" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">BEAM</text>
+      <text x="412" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">EMBER</text>
+      <text x="488" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#8B919C">SIGNAL</text>
     </g>
   </g>
 
-  <!-- Phone Hardware Frame -->
-  <rect x="992" y="72" width="416" height="756" rx="48" fill="#1C1E26" stroke="#2B2F3A" stroke-width="2"/>
-  <rect x="1000" y="80" width="400" height="740" rx="40" fill="#0A0A0C"/>
+  <!-- Right Side: Machined Titanium Device Chassis -->
+  <rect x="980" y="68" width="440" height="764" rx="48" fill="#12141A" stroke="#2B2F3A" stroke-width="2.5"/>
+  <rect x="996" y="84" width="408" height="732" rx="36" fill="#0A0A0C"/>
 
-  <!-- Phone Screen Content (Clipped) -->
+  <!-- Device Screen (Clipped) -->
   <g clip-path="url(#phone-clip)">
-    <!-- 2 Column Feed Gallery -->
+    <!-- Device Background -->
     <rect x="1000" y="80" width="400" height="740" fill="#0A0A0C"/>
 
-    <!-- Left Column -->
-    <!-- Card 1 -->
-    <g transform="translate(1012, 50)">
-        <rect x="0" y="0" width="182" height="240" rx="16" fill="url(#grad1)"/>
-        <rect x="0" y="180" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="204" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Neon cityscapes and long exposures</text>
-        <text x="12" y="222" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/p/ A 42 replies</text>
-        <!-- Ember indicator -->
-        <circle cx="160" cy="215" r="4" fill="#C45C26"/>
+    <!-- 1. Instrument Chassis Header (Item 1) -->
+    <rect x="1000" y="80" width="400" height="88" fill="#12141A"/>
+    <line x1="1000" y1="168" x2="1400" y2="168" stroke="#1C1E26" stroke-width="1.5"/>
+
+    <!-- Telemetry Status Bar -->
+    <rect x="1012" y="92" width="376" height="22" rx="2" fill="#0A0A0C" stroke="#1C1E26" stroke-width="1"/>
+    <circle cx="1024" cy="103" r="3.5" fill="#22C55E"/>
+    <text x="1034" y="107" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#E8E4DC">[CH-01 // INSTRUMENT]</text>
+    <text x="1230" y="107" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="600" fill="#8B919C">SIG:NOMINAL</text>
+    <text x="1334" y="107" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#C45C26">[OPTIC-26]</text>
+
+    <!-- Header Action Bay -->
+    <g transform="translate(1012, 122)">
+      <!-- Aperture mark -->
+      <g transform="translate(14, 18) scale(0.16)">
+        <use href="#aperture-mark-vector"/>
+      </g>
+      <text x="40" y="24" font-family="'Inter', sans-serif" font-size="20" font-weight="800" fill="#E8E4DC">FEED</text>
+
+      <!-- Command search bay with optical reticle crosshair -->
+      <rect x="130" y="4" width="246" height="30" rx="2" fill="#0A0A0C" stroke="#2B2F3A" stroke-width="1"/>
+      <!-- Crosshair symbol -->
+      <circle cx="148" cy="19" r="6" fill="none" stroke="#8B919C" stroke-width="1.2"/>
+      <line x1="148" y1="10" x2="148" y2="28" stroke="#8B919C" stroke-width="1"/>
+      <line x1="139" y1="19" x2="157" y2="19" stroke="#8B919C" stroke-width="1"/>
+      <text x="162" y="23" font-family="'JetBrains Mono', monospace" font-size="10.5" fill="#8B919C">COMMAND // SIFT THREADS</text>
     </g>
 
-    <!-- Card 2 -->
-    <g transform="translate(1012, 300)">
-        <rect x="0" y="0" width="182" height="190" rx="16" fill="url(#grad2)"/>
-        <rect x="0" y="130" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="154" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Mechanical keyboard build log</text>
-        <text x="12" y="172" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/g/ A 120 replies</text>
+    <!-- 2. Modular Spec-Sheet Cassettes (Item 2) -->
+    <!-- Cassette 1 -->
+    <g transform="translate(1012, 178)">
+      <rect x="0" y="0" width="376" height="258" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+
+      <!-- Cassette Spec Header -->
+      <rect x="0" y="0" width="376" height="28" rx="2" fill="#161822"/>
+      <line x1="0" y1="28" x2="376" y2="28" stroke="#1C1E26" stroke-width="1"/>
+      <text x="10" y="18" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E8E4DC">#276A3C2</text>
+      <text x="82" y="18" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="600" fill="#3D5A80">[CH: /g/ - TECHNOLOGY]</text>
+      <text x="312" y="18" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="#8B919C">4m // TEL</text>
+      <!-- Unread LED pip -->
+      <circle cx="362" cy="14" r="3" fill="#C45C26"/>
+
+      <!-- Viewfinder Media Frame with 4-Corner Reticles -->
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="356" height="132" rx="2" fill="url(#grad-cell1)"/>
+        <!-- 4-Corner Viewfinder Reticles -->
+        <!-- Top Left Reticle -->
+        <path d="M6,16 L6,6 L16,6" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <!-- Top Right Reticle -->
+        <path d="M340,6 L350,6 L350,16" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <!-- Bottom Left Reticle -->
+        <path d="M6,116 L6,126 L16,126" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <!-- Bottom Right Reticle -->
+        <path d="M350,116 L350,126 L340,126" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+
+        <!-- Viewfinder HUD Telemetry -->
+        <rect x="12" y="12" width="132" height="18" rx="1" fill="#0A0A0C" opacity="0.8"/>
+        <text x="18" y="24" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#22C55E">VIEWFINDER // RAW 16:9</text>
+      </g>
+
+      <!-- Post Body Text -->
+      <text x="12" y="188" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#E8E4DC">Anyone else running a home server on ARM architecture?</text>
+      <text x="12" y="206" font-family="'Inter', sans-serif" font-size="10.5" fill="#8B919C">Been running a small NAS cluster on custom milled ARM boards...</text>
+
+      <!-- Cassette Spec-Sheet Footer -->
+      <rect x="0" y="226" width="376" height="32" rx="2" fill="#0E1015"/>
+      <line x1="0" y1="226" x2="376" y2="226" stroke="#1C1E26" stroke-width="1"/>
+      <text x="12" y="246" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="600" fill="#8B919C">REPLIES: 218</text>
+      <text x="110" y="246" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="600" fill="#8B919C">FILES: 31</text>
+      <text x="190" y="246" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="600" fill="#8B919C">VOL: 142MB</text>
+      <text x="320" y="246" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="700" fill="#22C55E">[SYNCED]</text>
     </g>
 
-    <!-- Card 3 -->
-    <g transform="translate(1012, 500)">
-        <rect x="0" y="0" width="182" height="280" rx="16" fill="url(#grad3)"/>
-        <rect x="0" y="220" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="244" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Local LLM benchmarking thread</text>
-        <text x="12" y="262" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/g/ A 14 replies</text>
+    <!-- Peeking Cassette 2 -->
+    <g transform="translate(1012, 444)">
+      <rect x="0" y="0" width="376" height="210" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+      <rect x="0" y="0" width="376" height="28" rx="2" fill="#161822"/>
+      <line x1="0" y1="28" x2="376" y2="28" stroke="#1C1E26" stroke-width="1"/>
+      <text x="10" y="18" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E8E4DC">#276B819</text>
+      <text x="82" y="18" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="600" fill="#3D5A80">[CH: /p/ - PHOTO]</text>
+      <text x="312" y="18" font-family="'JetBrains Mono', monospace" font-size="9.5" fill="#8B919C">12m // TEL</text>
+      <circle cx="362" cy="14" r="3" fill="#2B2F3A"/>
+
+      <g transform="translate(10, 36)">
+        <rect x="0" y="0" width="356" height="110" rx="2" fill="url(#grad-cell2)"/>
+        <path d="M6,16 L6,6 L16,6" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <path d="M340,6 L350,6 L350,16" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <path d="M6,94 L6,104 L16,104" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+        <path d="M350,94 L350,104 L340,104" stroke="#E8E4DC" stroke-width="1.8" fill="none"/>
+      </g>
+      <text x="12" y="168" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#E8E4DC">Tokyo night telemetry and 35mm long exposures</text>
     </g>
 
-    <!-- Right Column -->
-    <!-- Card 4 -->
-    <g transform="translate(1206, 120)">
-        <rect x="0" y="0" width="182" height="280" rx="16" fill="url(#grad3)"/>
-        <rect x="0" y="220" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="244" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Arch Linux setup showcase</text>
-        <text x="12" y="262" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/g/ A 300 replies</text>
-    </g>
+    <!-- 3. Hardware Switchboard Dock (Item 3) -->
+    <!-- Flush-Pinned Tactile Switchboard Deck -->
+    <g transform="translate(1000, 752)">
+      <rect x="0" y="0" width="400" height="68" fill="#12141A"/>
+      <line x1="0" y1="0" x2="400" y2="0" stroke="#1C1E26" stroke-width="1.5"/>
 
-    <!-- Card 5 -->
-    <g transform="translate(1206, 410)">
-        <rect x="0" y="0" width="182" height="180" rx="16" fill="url(#grad1)"/>
-        <rect x="0" y="120" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="144" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Retro console restoration</text>
-        <text x="12" y="162" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/vr/ A 18 replies</text>
-    </g>
+      <!-- Vertical Hairline Baffle Dividers -->
+      <line x1="133" y1="0" x2="133" y2="68" stroke="#1C1E26" stroke-width="1"/>
+      <line x1="267" y1="0" x2="267" y2="68" stroke="#1C1E26" stroke-width="1"/>
 
-    <!-- Card 6 -->
-    <g transform="translate(1206, 600)">
-        <rect x="0" y="0" width="182" height="200" rx="16" fill="url(#grad2)"/>
-        <rect x="0" y="140" width="182" height="60" rx="16" fill="#12141A" opacity="0.85"/>
-        <text x="12" y="164" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#E8E4DC">Weekly server administration</text>
-        <text x="12" y="182" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" fill="#8B919C">/g/ A 88 replies</text>
-        <circle cx="160" cy="175" r="4" fill="#C45C26"/>
-    </g>
+      <!-- Detent 01: FEED (Active) -->
+      <g transform="translate(0, 0)">
+        <!-- Active Illuminated Amber/Soft-Key LED Bar -->
+        <rect x="36" y="0" width="60" height="3" fill="#C45C26"/>
+        <text x="66" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#C45C26">01</text>
+        <text x="66" y="44" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#E8E4DC" letter-spacing="1">FEED</text>
+      </g>
 
+      <!-- Detent 02: DOWNLOADS (Inactive) -->
+      <g transform="translate(134, 0)">
+        <text x="66" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="600" fill="#4B5563">02</text>
+        <text x="66" y="44" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#8B919C" letter-spacing="1">DOWNLOADS</text>
+      </g>
 
-    <!-- Frosted Top App Bar -->
-    <g>
-        <rect x="1000" y="80" width="400" height="90" fill="#0A0A0C" opacity="0.6"/>
-        <!-- A simple backdrop filter representation since SVGs can be tricky, we just use a rectangle with opacity -->
-        <rect x="1000" y="80" width="400" height="90" fill="#12141A" opacity="0.65" style="backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);"/>
-        
-        <!-- Header Content -->
-        <g transform="translate(1020, 115) scale(0.25)">
-            <use href="#aperture-mark-vector"/>
-        </g>
-        <text x="1060" y="138" font-family="Inter, Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#E8E4DC">Feed</text>
-        <!-- Search icon -->
-        <circle cx="1350" cy="130" r="8" fill="none" stroke="#E8E4DC" stroke-width="2"/>
-        <line x1="1356" y1="136" x2="1362" y2="142" stroke="#E8E4DC" stroke-width="2" stroke-linecap="round"/>
-        <!-- Settings icon -->
-        <circle cx="1310" cy="130" r="2" fill="#E8E4DC"/>
-        <circle cx="1310" cy="122" r="2" fill="#E8E4DC"/>
-        <circle cx="1310" cy="138" r="2" fill="#E8E4DC"/>
+      <!-- Detent 03: BOARDS (Inactive) -->
+      <g transform="translate(268, 0)">
+        <text x="66" y="24" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="600" fill="#4B5563">03</text>
+        <text x="66" y="44" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#8B919C" letter-spacing="1">BOARDS</text>
+      </g>
     </g>
-
-    <!-- Floating Bottom Pill -->
-    <g transform="translate(1080, 720)">
-        <rect x="0" y="0" width="240" height="64" rx="32" fill="#12141A" stroke="#1C1E26" stroke-width="1.5" style="box-shadow: 0 8px 32px rgba(0,0,0,0.5);"/>
-        
-        <!-- Tab 1: Feed (Active - Soft Key) -->
-        <rect x="8" y="8" width="68" height="48" rx="24" fill="#3D5A80"/>
-        <!-- Feed Icon -->
-        <rect x="36" y="24" width="12" height="16" rx="2" fill="#E8E4DC"/>
-        <rect x="20" y="24" width="12" height="16" rx="2" fill="#E8E4DC"/>
-        
-        <!-- Tab 2: Downloads -->
-        <!-- Download Icon -->
-        <path d="M120 22 L120 34 M114 28 L120 36 L126 28 M112 40 L128 40" fill="none" stroke="#8B919C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        
-        <!-- Tab 3: Boards -->
-        <!-- List Icon -->
-        <line x1="186" y1="24" x2="204" y2="24" stroke="#8B919C" stroke-width="2" stroke-linecap="round"/>
-        <line x1="186" y1="32" x2="204" y2="32" stroke="#8B919C" stroke-width="2" stroke-linecap="round"/>
-        <line x1="186" y1="40" x2="204" y2="40" stroke="#8B919C" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="178" cy="24" r="1.5" fill="#8B919C"/>
-        <circle cx="178" cy="32" r="1.5" fill="#8B919C"/>
-        <circle cx="178" cy="40" r="1.5" fill="#8B919C"/>
-    </g>
-    
   </g>
 </svg>

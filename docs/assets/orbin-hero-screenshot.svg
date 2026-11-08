@@ -1,103 +1,134 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="192-Sea-Kale">
   <title id="title">Orbin single-column feed on a compact Android phone</title>
   <desc id="desc">Screenshot-style illustration of Orbin 192 Sea Kale showing the single-column card feed on a compact phone, Color themes, Downloads tab, and privacy defaults.</desc>
-  <rect width="1200" height="760" fill="#F4F6FA"/>
-  <rect x="64" y="72" width="1072" height="616" rx="40" fill="#FFFFFF"/>
+  <rect width="1200" height="760" fill="#0A0A0C"/>
+  <rect x="64" y="72" width="1072" height="616" rx="16" fill="#12141A" stroke="#1C1E26" stroke-width="1.5"/>
 
   <!-- Left column (x 96–340) -->
-  <text x="96" y="140" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#202431">Orbin</text>
-  <text x="96" y="172" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">Privacy-focused Android</text>
-  <text x="96" y="194" font-family="Arial,sans-serif" font-size="15" fill="#5A6272">imageboard browser</text>
-  <rect x="96" y="218" width="132" height="36" rx="18" fill="#DCE6FF"/>
-  <text id="release-label" x="162" y="241" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#274B9F">192 · Sea Kale</text>
+  <text x="96" y="140" font-family="'Inter', sans-serif" font-size="36" font-weight="800" fill="#E8E4DC">Orbin</text>
+  <text x="96" y="172" font-family="'Inter', sans-serif" font-size="15" fill="#8B919C">Privacy-focused Android &amp; iOS</text>
+  <text x="96" y="194" font-family="'Inter', sans-serif" font-size="15" fill="#8B919C">industrial imageboard browser</text>
+  <rect x="96" y="218" width="144" height="32" rx="2" fill="#1C1E26" stroke="#2B2F3A" stroke-width="1"/>
+  <circle cx="110" cy="234" r="3" fill="#22C55E"/>
+  <text id="release-label" x="175" y="239" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#E8E4DC">192 · Sea Kale</text>
 
-  <text x="96" y="296" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#202431">• One-column feed</text>
-  <text x="96" y="322" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Downloads middle tab</text>
-  <text x="96" y="348" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Uncropped media</text>
-  <text x="96" y="374" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Color themes on Next</text>
-  <text x="96" y="400" font-family="Arial,sans-serif" font-size="13" fill="#5A6272">• Encrypted local storage</text>
-  <text x="96" y="440" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#274B9F">Material 3 Expressive</text>
+  <text x="96" y="296" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#E8E4DC">• OPTIC-26 Instrument HUD</text>
+  <text x="96" y="322" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">• Modular milled baffles</text>
+  <text x="96" y="348" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">• 4-corner camera reticles</text>
+  <text x="96" y="374" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">• Flush switchboard dock</text>
+  <text x="96" y="400" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">• Mechanical trace bus</text>
+  <text x="96" y="440" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#C45C26">OPTIC-26 INDUSTRIAL</text>
 
   <!-- Phone frame (x 360–700, centered) -->
-  <rect x="360" y="88" width="340" height="544" rx="40" fill="#202431"/>
-  <rect x="376" y="104" width="308" height="512" rx="28" fill="#F8F9FC"/>
+  <rect x="360" y="88" width="340" height="544" rx="24" fill="#0A0A0C" stroke="#2B2F3A" stroke-width="2"/>
+  <rect x="372" y="100" width="316" height="520" rx="16" fill="#0A0A0C"/>
 
   <defs>
     <clipPath id="phone-screen-clip">
-      <rect x="376" y="104" width="308" height="512" rx="28"/>
+      <rect x="372" y="100" width="316" height="520" rx="16"/>
     </clipPath>
   </defs>
 
   <g clip-path="url(#phone-screen-clip)">
-    <!-- Header -->
-    <text x="396" y="138" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#1D2233">Feed</text>
-    <text x="396" y="154" font-family="Arial,sans-serif" font-size="10.5" fill="#717A8C">8 threads across 7 boards</text>
-    <!-- Gear icon -->
-    <circle cx="658" cy="140" r="12" fill="#F0F2F7"/>
-    <path d="M658 135v10m-5-5h10m-3.5-3.5l7 7m0-7l-7 7" stroke="#485062" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="658" cy="140" r="4" fill="#F0F2F7" stroke="#485062" stroke-width="1.5"/>
+    <!-- Header: Machined Chassis -->
+    <rect x="372" y="100" width="316" height="66" fill="#12141A"/>
+    <line x1="372" y1="166" x2="688" y2="166" stroke="#1C1E26" stroke-width="1"/>
 
-    <!-- Search box -->
-    <rect x="394" y="166" width="272" height="34" rx="17" fill="#F0F2F7"/>
-    <circle cx="410" cy="183" r="5" fill="none" stroke="#778092" stroke-width="1.8"/>
-    <line x1="414" y1="187" x2="418" y2="191" stroke="#778092" stroke-width="1.8" stroke-linecap="round"/>
-    <text x="424" y="187" font-family="Arial,sans-serif" font-size="11" fill="#778092">Sift through your threads</text>
+    <!-- Telemetry row -->
+    <rect x="382" y="106" width="296" height="18" rx="2" fill="#0A0A0C" stroke="#1C1E26" stroke-width="1"/>
+    <circle cx="392" cy="115" r="3" fill="#22C55E"/>
+    <text x="402" y="119" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="#E8E4DC">[CH-01 // INST]</text>
+    <text x="590" y="119" font-family="'JetBrains Mono', monospace" font-size="8" fill="#8B919C">SIG:NOMINAL</text>
+    <text x="646" y="119" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="#C45C26">OPT-26</text>
 
-    <!-- Divider -->
-    <line x1="394" y1="208" x2="666" y2="208" stroke="#E6E9F0" stroke-width="1"/>
+    <!-- Title row -->
+    <text x="384" y="148" font-family="'Inter', sans-serif" font-size="18" font-weight="800" fill="#E8E4DC">FEED</text>
+    <!-- Command search box -->
+    <rect x="444" y="132" width="234" height="26" rx="2" fill="#0A0A0C" stroke="#2B2F3A" stroke-width="1"/>
+    <circle cx="456" cy="145" r="4.5" fill="none" stroke="#8B919C" stroke-width="1"/>
+    <line x1="456" y1="138" x2="456" y2="152" stroke="#8B919C" stroke-width="0.8"/>
+    <line x1="449" y1="145" x2="463" y2="145" stroke="#8B919C" stroke-width="0.8"/>
+    <text x="466" y="148" font-family="'JetBrains Mono', monospace" font-size="9" fill="#8B919C">COMMAND // SIFT</text>
 
     <!-- Board Section Header -->
-    <text x="394" y="228" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#1D2233">/g/</text>
-    <text x="666" y="228" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#778092">5 threads</text>
+    <rect x="382" y="174" width="296" height="22" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+    <text x="390" y="189" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#E8E4DC">CH: /g/ - TECHNOLOGY</text>
+    <text x="670" y="189" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="9" fill="#8B919C">5 THREADS</text>
 
-    <!-- Single Column Card -->
-    <rect x="394" y="238" width="272" height="268" rx="16" fill="#FFFFFF" stroke="#E5EAF3" stroke-width="1"/>
-    <!-- Uncropped media preview in soft mint -->
-    <rect x="394" y="238" width="272" height="156" rx="16" fill="#C8EAD4"/>
-    <rect x="394" y="378" width="272" height="16" fill="#FFFFFF"/>
-    <!-- Post text and metadata -->
-    <text x="408" y="412" font-family="Arial,sans-serif" font-size="10" fill="#778092">4m</text>
-    <text x="408" y="430" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#1D2233">Anyone else running a home server on ARM?</text>
-    <text x="408" y="448" font-family="Arial,sans-serif" font-size="10" fill="#778092">#276A3C2 · 218 replies · 31 files</text>
-    <text x="408" y="472" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">Been running a small NAS on an ARM board for about</text>
-    <text x="408" y="488" font-family="Arial,sans-serif" font-size="10" fill="#5A6272">8 months now. Idle draw is under four watts...</text>
+    <!-- Single Column Spec Cassette -->
+    <rect x="382" y="202" width="296" height="248" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
+
+    <!-- Cassette header -->
+    <rect x="382" y="202" width="296" height="24" rx="2" fill="#161822"/>
+    <line x1="382" y1="226" x2="678" y2="226" stroke="#1C1E26" stroke-width="1"/>
+    <text x="390" y="218" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#E8E4DC">#276A3C2</text>
+    <text x="446" y="218" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8B919C">4m // TEL</text>
+    <circle cx="666" cy="214" r="3" fill="#C45C26"/>
+
+    <!-- Media frame with 4-corner reticles -->
+    <g transform="translate(390, 232)">
+      <rect x="0" y="0" width="280" height="116" rx="2" fill="#1E293B"/>
+      <!-- Reticles -->
+      <path d="M4,12 L4,4 L12,4" stroke="#E8E4DC" stroke-width="1.5" fill="none"/>
+      <path d="M268,4 L276,4 L276,12" stroke="#E8E4DC" stroke-width="1.5" fill="none"/>
+      <path d="M4,104 L4,112 L12,112" stroke="#E8E4DC" stroke-width="1.5" fill="none"/>
+      <path d="M276,104 L276,112 L268,112" stroke="#E8E4DC" stroke-width="1.5" fill="none"/>
+      <rect x="8" y="8" width="116" height="16" rx="1" fill="#0A0A0C" opacity="0.8"/>
+      <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="7.5" font-weight="700" fill="#22C55E">VIEWFINDER // RAW 16:9</text>
+    </g>
+
+    <!-- Post Text -->
+    <text x="390" y="366" font-family="'Inter', sans-serif" font-size="10.5" font-weight="700" fill="#E8E4DC">Anyone else running a home server on ARM?</text>
+    <text x="390" y="382" font-family="'Inter', sans-serif" font-size="9.5" fill="#8B919C">Been running a small NAS on an ARM board for about</text>
+    <text x="390" y="396" font-family="'Inter', sans-serif" font-size="9.5" fill="#8B919C">8 months now. Idle draw is under four watts...</text>
+
+    <!-- Cassette footer -->
+    <rect x="382" y="420" width="296" height="30" rx="2" fill="#0E1015"/>
+    <line x1="382" y1="420" x2="678" y2="420" stroke="#1C1E26" stroke-width="1"/>
+    <text x="390" y="439" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8B919C">REP: 218</text>
+    <text x="450" y="439" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8B919C">FILES: 31</text>
+    <text x="520" y="439" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#8B919C">VOL: 142MB</text>
+    <text x="635" y="439" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#22C55E">[LIVE]</text>
 
     <!-- Peeking second card -->
-    <rect x="394" y="516" width="272" height="40" rx="16" fill="#FFDDB6"/>
+    <rect x="382" y="458" width="296" height="90" rx="2" fill="#12141A" stroke="#1C1E26" stroke-width="1"/>
 
-    <!-- Bottom Navigation Bar (Feed · Downloads · Boards) -->
-    <rect x="376" y="556" width="308" height="60" fill="#F4F5F9" stroke="#E6E9F0" stroke-width="1"/>
-    <!-- Active Feed tab pill -->
-    <rect x="388" y="562" width="86" height="34" rx="17" fill="#C8EAD4"/>
-    <path d="M431 568l6 5v7h-4v-4h-4v4h-4v-7z" fill="#202431"/>
-    <text x="431" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" font-weight="700" fill="#202431">Feed</text>
-    <!-- Downloads tab -->
-    <path d="M530 568v6m-3-3l3 3 3-3m-5 5h10" stroke="#5A6272" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <text x="530" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#5A6272">Downloads</text>
-    <!-- Boards tab -->
-    <rect x="625" y="569" width="4" height="4" rx="1" fill="#5A6272"/>
-    <rect x="631" y="569" width="4" height="4" rx="1" fill="#5A6272"/>
-    <rect x="625" y="575" width="4" height="4" rx="1" fill="#5A6272"/>
-    <rect x="631" y="575" width="4" height="4" rx="1" fill="#5A6272"/>
-    <text x="630" y="590" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#5A6272">Boards</text>
+    <!-- Bottom Switchboard Deck (Item 3) -->
+    <rect x="372" y="562" width="316" height="58" fill="#12141A"/>
+    <line x1="372" y1="562" x2="688" y2="562" stroke="#1C1E26" stroke-width="1.5"/>
+    <line x1="477" y1="562" x2="477" y2="620" stroke="#1C1E26" stroke-width="1"/>
+    <line x1="582" y1="562" x2="582" y2="620" stroke="#1C1E26" stroke-width="1"/>
+
+    <!-- Bay 1: Feed (Active) -->
+    <rect x="404" y="562" width="46" height="2.5" fill="#C45C26"/>
+    <text x="424" y="582" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#C45C26">01</text>
+    <text x="424" y="598" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#E8E4DC">FEED</text>
+
+    <!-- Bay 2: Downloads -->
+    <text x="530" y="582" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="600" fill="#4B5563">02</text>
+    <text x="530" y="598" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#8B919C">DOWNLOADS</text>
+
+    <!-- Bay 3: Boards -->
+    <text x="635" y="582" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="600" fill="#4B5563">03</text>
+    <text x="635" y="598" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#8B919C">BOARDS</text>
   </g>
 
   <!-- Right column highlights (x 740–1100) -->
-  <text x="740" y="150" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#202431">Current release highlights</text>
+  <text x="740" y="150" font-family="'Inter', sans-serif" font-size="18" font-weight="700" fill="#E8E4DC">OPTIC-26 Industrial Overhaul</text>
 
-  <text x="740" y="204" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Single-column feed</text>
-  <text x="740" y="228" font-family="Arial,sans-serif" font-size="13" fill="#596171">Full-width cards with uncropped</text>
-  <text x="740" y="248" font-family="Arial,sans-serif" font-size="13" fill="#596171">media down to 9:16 and post text</text>
+  <text x="740" y="204" font-family="'Inter', sans-serif" font-size="15" font-weight="700" fill="#E8E4DC">Machined Instrument Chassis</text>
+  <text x="740" y="228" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Real-time telemetry readout,</text>
+  <text x="740" y="248" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">channel badges &amp; optical reticles</text>
 
-  <text x="740" y="298" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Downloads tab</text>
-  <text x="740" y="322" font-family="Arial,sans-serif" font-size="13" fill="#596171">Dedicated middle tab with live</text>
-  <text x="740" y="342" font-family="Arial,sans-serif" font-size="13" fill="#596171">progress and one-tap retry</text>
+  <text x="740" y="298" font-family="'Inter', sans-serif" font-size="15" font-weight="700" fill="#E8E4DC">Modular Spec Cassettes</text>
+  <text x="740" y="322" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">CNC-milled baffles, hairline dividers</text>
+  <text x="740" y="342" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">and 4-corner camera reticles</text>
 
-  <text x="740" y="392" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Color themes</text>
-  <text x="740" y="416" font-family="Arial,sans-serif" font-size="13" fill="#596171">Yotsuba, Warosu, Miku, Lain</text>
-  <text x="740" y="436" font-family="Arial,sans-serif" font-size="13" fill="#596171">and more on the Next shell</text>
+  <text x="740" y="392" font-family="'Inter', sans-serif" font-size="15" font-weight="700" fill="#E8E4DC">Tactile Switchboard Dock</text>
+  <text x="740" y="416" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Flush mechanical toggle detents</text>
+  <text x="740" y="436" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">[01 · 02 · 03] with active LED bars</text>
 
-  <text x="740" y="486" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#202431">Privacy defaults</text>
-  <text x="740" y="510" font-family="Arial,sans-serif" font-size="13" fill="#596171">Encrypted storage at rest and</text>
-  <text x="740" y="530" font-family="Arial,sans-serif" font-size="13" fill="#596171">DNS-over-HTTPS networking</text>
+  <text x="740" y="486" font-family="'Inter', sans-serif" font-size="15" font-weight="700" fill="#E8E4DC">Mechanical Reply Trace Bus</text>
+  <text x="740" y="510" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">Multi-lane thread traces, [OP // ORIGIN]</text>
+  <text x="740" y="530" font-family="'Inter', sans-serif" font-size="13" fill="#8B919C">hardware beacon &amp; viewfinder HUD</text>
 </svg>
