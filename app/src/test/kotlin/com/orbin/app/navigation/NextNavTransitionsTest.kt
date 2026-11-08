@@ -10,7 +10,7 @@ import org.junit.Test
 class NextNavTransitionsTest {
     @Test
     fun pushUsesCrispMechanicalDuration() {
-        assertThat(NextMotion.PUSH_MS).isEqualTo(240)
+        assertThat(NextMotion.PUSH_MS).isEqualTo(220)
     }
 
     @Test
