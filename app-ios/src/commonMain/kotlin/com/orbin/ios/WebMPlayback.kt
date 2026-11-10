@@ -1,6 +1,6 @@
 package com.orbin.ios
 
-/** A playback command is acknowledged only once the page has a video element. */
+/** Play is acknowledged only after WebKit fulfills it; a rejected current request can be retried. */
 internal data class WebMPlaybackRequest(
     val command: Int,
     val play: Boolean,
@@ -22,19 +22,54 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
             var v=document.getElementById('v');
             if(!v)return null;
             function state(){return (v.paused?'0':'1')+','+v.currentTime+','+v.duration+','+(v.muted?'1':'0');}
-            if(window.__orbinPlaybackCommand!==undefined&&window.__orbinPlaybackCommand>$command)return state();
+            var requested=window.__orbinPlaybackRequested;
+            if(requested&&requested.command>$command)return state();
+            window.__orbinPlaybackRequested={command:$command,play:$play};
             v.muted=$muted;
             v.loop=$loop;
-            if(window.__orbinPlaybackCommand!==$command){
+            function applied(play){
+                window.__orbinPlaybackApplied=$command;
+                window.__orbinPlaybackAppliedPlay=play;
                 window.__orbinPlaybackCommand=$command;
-                if($play){
-                    if(v.ended)v.currentTime=0;
-                    var pending=v.play();
-                    if(pending&&pending.catch)pending.catch(function(){});
-                }else{
+            }
+            var alreadyApplied=window.__orbinPlaybackApplied===$command&&window.__orbinPlaybackAppliedPlay===$play;
+            if(!$play){
+                if(!alreadyApplied){
+                    window.__orbinPlaybackPending=null;
+                    v.pause();
+                    applied(false);
+                }
+                return state();
+            }
+            if(alreadyApplied)return state();
+            var pending=window.__orbinPlaybackPending;
+            if(pending&&pending.command===$command)return state();
+            var attempt={command:$command,token:(window.__orbinPlaybackAttempt||0)+1};
+            window.__orbinPlaybackAttempt=attempt.token;
+            window.__orbinPlaybackPending=attempt;
+            function isCurrent(){
+                var latest=window.__orbinPlaybackRequested;
+                return window.__orbinPlaybackPending===attempt&&latest&&latest.command===$command&&latest.play;
+            }
+            function fulfilled(){
+                if(isCurrent()){
+                    window.__orbinPlaybackPending=null;
+                    window.__orbinPlaybackLastRejection=null;
+                    applied(true);
+                }else if(window.__orbinPlaybackRequested&&!window.__orbinPlaybackRequested.play){
                     v.pause();
                 }
             }
+            function rejected(error){
+                if(!isCurrent())return;
+                window.__orbinPlaybackPending=null;
+                window.__orbinPlaybackLastRejection=String(error&&error.name?error.name+': '+error.message:error);
+            }
+            try{
+                if(v.ended)v.currentTime=0;
+                var promise=v.play();
+                if(promise&&promise.then)promise.then(fulfilled,rejected);else fulfilled();
+            }catch(error){rejected(error);}
             return state();
         })()
         """.trimIndent()

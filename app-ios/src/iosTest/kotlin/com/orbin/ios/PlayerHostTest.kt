@@ -388,8 +388,13 @@ class PlayerHostTest {
                 val shown = root.view.webViews().single()
                 assertEquals(warmed.objcPtr(), shown.objcPtr(), "Opening the clip reuses the prepared WebKit view")
                 assertNull(preloader.peekWebM(url))
-                await {
-                    shown.mediaSnapshot()?.let {
+                var lastSnapshot: List<Double>? = null
+                await(failureMessage = {
+                    "WebM did not render: state=$lastSnapshot, window=${shown.window != null}, " +
+                        "bounds=${shown.bounds.useContents { "${size.width}x${size.height}" }}, $lastWebMDetails"
+                }) {
+                    lastSnapshot = shown.mediaSnapshot()
+                    lastSnapshot?.let {
                         it[0] >= 2 && it[1] == 64.0 && it[2] == 64.0 && it[3] > 0.05 && it[4] > 0
                     } == true
                 }
@@ -463,15 +468,32 @@ class PlayerHostTest {
         }
     }
 
+    private var lastWebMDetails = ""
+
     private fun WKWebView.mediaSnapshot(): List<Double>? {
         var completed = false
         var snapshot: String? = null
         var failure: String? = null
         evaluateJavaScript(
-            "(function(){var v=document.getElementById('v');if(!v)return null;" +
-                "var frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:" +
-                "(v.webkitDecodedFrameCount||0);" +
-                "return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')})()",
+            """
+            (function(){
+                var v=document.getElementById('v');if(!v)return null;
+                var frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:(v.webkitDecodedFrameCount||0);
+                var r=v.getBoundingClientRect();
+                var details={
+                    requested:window.__orbinPlaybackRequested,
+                    applied:window.__orbinPlaybackApplied,
+                    pending:window.__orbinPlaybackPending,
+                    rejection:window.__orbinPlaybackLastRejection,
+                    error:v.error?{code:v.error.code,message:v.error.message}:null,
+                    visibility:document.visibilityState,focused:document.hasFocus(),
+                    rect:[r.x,r.y,r.width,r.height],network:v.networkState,
+                    duration:v.duration,ended:v.ended,
+                    codec:v.canPlayType('video/webm; codecs="vp9"')
+                };
+                return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')+'|'+JSON.stringify(details);
+            })()
+            """.trimIndent(),
         ) { value, error ->
             snapshot = value as? String
             failure = error?.localizedDescription
@@ -479,7 +501,9 @@ class PlayerHostTest {
         }
         await { completed }
         assertNull(failure, "Query actual WebKit media state")
-        return snapshot?.split(',')?.map { it.toDouble() }
+        val payload = snapshot ?: return null
+        lastWebMDetails = payload.substringAfter('|', "")
+        return payload.substringBefore('|').split(',').map { it.toDouble() }
     }
 
     private fun withWindow(
@@ -507,12 +531,15 @@ class PlayerHostTest {
         }
     }
 
-    private fun await(condition: () -> Boolean) {
+    private fun await(
+        failureMessage: () -> String = { "Native view did not reach the expected state within five seconds" },
+        condition: () -> Boolean,
+    ) {
         repeat(100) {
             if (condition()) return
             NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
         }
-        assertTrue(condition(), "Native view did not reach the expected state within five seconds")
+        assertTrue(condition(), failureMessage())
     }
 
     private fun UIViewController.players(): List<AVPlayerViewController> =

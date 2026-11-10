@@ -21,6 +21,7 @@ import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.AVFAudio.AVAudioSession
@@ -276,7 +277,7 @@ internal actual fun NativeWebMPlayer(
                     webView: WKWebView,
                     didFinishNavigation: WKNavigation?,
                 ) {
-                    if (webView.window != null) {
+                    if (webView.hasPlaybackSurface()) {
                         webView.evaluateJavaScript(webMPlaybackScript(request), completionHandler = null)
                     }
                 }
@@ -455,11 +456,18 @@ internal val mediaDataStore: WKWebsiteDataStore by lazy { WKWebsiteDataStore.non
 private suspend fun WKWebView.script(script: String): String? {
     // A promoted view is briefly detached while UIKit interop transfers it into the active page.
     // Do not acknowledge play until WebKit has a window; the regular state poll retries it there.
-    if (window == null) return null
+    if (!hasPlaybackSurface()) return null
     return suspendCancellableCoroutine { continuation ->
         evaluateJavaScript(script) { result, _ -> continuation.resume(result as? String) }
     }
 }
+
+@OptIn(ExperimentalForeignApi::class)
+private fun WKWebView.hasPlaybackSurface(): Boolean =
+    window != null &&
+        bounds.useContents {
+            size.width > MIN_WEBM_PLAYBACK_EDGE_POINTS && size.height > MIN_WEBM_PLAYBACK_EDGE_POINTS
+        }
 
 /** Muted inline preview for a catalog video; the thumbnail remains visible underneath until loaded. */
 @OptIn(ExperimentalForeignApi::class)
@@ -507,6 +515,7 @@ internal actual fun NativeInlineLoop(
 
 private const val SEEK_TIMESCALE = 600
 private const val CONTROLS_REFRESH_MS = 250L
+private const val MIN_WEBM_PLAYBACK_EDGE_POINTS = 1.0
 
 /**
  * The first frame comes from AVFoundation, not a web view: a WKWebView per card started a web
