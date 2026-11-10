@@ -149,6 +149,34 @@ class WebMPlaybackScriptTest(unittest.TestCase):
             assert.equal(video.playCalls, 1);
         """)
 
+    def test_latest_intent_is_recorded_before_document_readiness(self) -> None:
+        self.run_production_script(r"""
+            run(3);
+            assert.deepEqual(window.__orbinPlaybackRequested, {command: 3, play: false});
+            assert.equal(window.__orbinPlaybackApplied, undefined, 'Missing DOM cannot acknowledge pause');
+            run(2);
+            assert.deepEqual(window.__orbinPlaybackRequested, {command: 3, play: false});
+            video = media();
+            run(2);
+            await flush();
+            assert.equal(video.playCalls, 0, 'Older play cannot undo a pause sent before DOM readiness');
+            assert.equal(video.paused, true);
+            run(3);
+            assert.equal(window.__orbinPlaybackApplied, 3);
+            assert.equal(video.pauseCalls, 1);
+            global.window = {};
+            video = null;
+            run(4);
+            video = media();
+            run(3);
+            assert.equal(video.pauseCalls, 0, 'Older pause cannot replace a newer pre-DOM play request');
+            assert.equal(window.__orbinPlaybackApplied, undefined);
+            run(4);
+            await flush();
+            assert.equal(video.playCalls, 1);
+            assert.equal(window.__orbinPlaybackApplied, 4);
+        """)
+
     def run_production_script(self, checks: str) -> None:
         source = SCRIPT_SOURCE.read_text(encoding="utf-8")
         template = re.search(r'return """(.*?)"""\.trimIndent\(\)', source, re.DOTALL)

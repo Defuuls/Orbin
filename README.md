@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [193 — Purslane](https://github.com/Defuuls/Orbin/releases/tag/v193-Purslane)
+**Current release:** [194 — Malanga](https://github.com/Defuuls/Orbin/releases/tag/v194-Malanga)
 
-**What's new in 193:** Configurable screen privacy shield, encrypted DNS resolver selection, and incognito controls across Android and iOS.
+**What's new in 194:** Five-tab browsing, distinct board icons, cross-site feeds and search, and inherited playback settings across Android and iOS.
 
 ---
 

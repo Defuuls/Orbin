@@ -369,7 +369,7 @@ class PlayerHostTest {
         try {
             withWindow(root, disposeContent = { visible.value = false }) {
                 // Use the gallery's real live-window host, including prepare-before-host mounting.
-                preloader.prepare(MediaPreloadKey("vp9-upcoming", url, MediaType.VIDEO, "webm"))
+                preloader.prepare(MediaPreloadKey("vp8-upcoming", url, MediaType.VIDEO, "webm"))
                 val warmed = assertNotNull(preloader.peekWebM(url))
                 await { warmed.window != null && root.view.preloadHosts().size == 1 }
                 val warmHost = root.view.preloadHosts().single()
@@ -401,7 +401,7 @@ class PlayerHostTest {
                 val playing = assertNotNull(shown.mediaSnapshot())
                 assertTrue(playing[3] > 0.0, "The actual HTML video clock advances")
                 assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
-                preloader.prepare(MediaPreloadKey("vp9-following", url, MediaType.VIDEO, "webm"))
+                preloader.prepare(MediaPreloadKey("vp8-following", url, MediaType.VIDEO, "webm"))
                 val following = assertNotNull(preloader.peekWebM(url))
                 await { following.window != null && root.view.webViews().size == 2 }
                 assertNotEquals(shown.objcPtr(), following.objcPtr())
@@ -489,7 +489,7 @@ class PlayerHostTest {
                     visibility:document.visibilityState,focused:document.hasFocus(),
                     rect:[r.x,r.y,r.width,r.height],network:v.networkState,
                     duration:v.duration,ended:v.ended,
-                    codec:v.canPlayType('video/webm; codecs="vp9"')
+                    codec:v.canPlayType('video/webm; codecs="vp8"')
                 };
                 return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')+'|'+JSON.stringify(details);
             })()

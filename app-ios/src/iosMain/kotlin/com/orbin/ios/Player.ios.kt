@@ -267,9 +267,10 @@ internal actual fun NativeWebMPlayer(
     var playCommand by remember(url) { mutableIntStateOf(0) }
     var foreground by remember(url) { mutableStateOf(true) }
     val currentActive by rememberUpdatedState(active)
-    val request by rememberUpdatedState(
-        WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
-    )
+    // Read mutable intent when dispatching, including notifications before another UI frame.
+    val request by rememberUpdatedState {
+        WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop)
+    }
     val navigation =
         remember(url) {
             object : NSObject(), WKNavigationDelegateProtocol {
@@ -278,7 +279,7 @@ internal actual fun NativeWebMPlayer(
                     didFinishNavigation: WKNavigation?,
                 ) {
                     if (webView.hasPlaybackSurface()) {
-                        webView.evaluateJavaScript(webMPlaybackScript(request), completionHandler = null)
+                        webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
                     }
                 }
             }
@@ -333,14 +334,14 @@ internal actual fun NativeWebMPlayer(
     // Apply controls immediately, then retry the same command after document/media loading.
     // Repeated polling only reports state once that command has been acknowledged by the page.
     LaunchedEffect(webView, playCommand, muted, loop) {
-        val sent = request
+        val sent = request()
         webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
             if (playCommand == sent.command) state = it
         }
     }
     LaunchedEffect(webView) {
         while (true) {
-            val sent = request
+            val sent = request()
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
                 if (playCommand == sent.command) state = it
             }
@@ -358,7 +359,7 @@ internal actual fun NativeWebMPlayer(
                 foreground = false
                 playCommand++
                 webView.evaluateJavaScript(
-                    webMPlaybackScript(request.copy(command = playCommand, play = false, muted = muted)),
+                    webMPlaybackScript(request().copy(command = playCommand, play = false, muted = muted)),
                     completionHandler = null,
                 )
             }
@@ -371,7 +372,7 @@ internal actual fun NativeWebMPlayer(
                 foreground = false
                 playCommand++
                 webView.evaluateJavaScript(
-                    webMPlaybackScript(request.copy(command = playCommand, play = false, muted = muted)),
+                    webMPlaybackScript(request().copy(command = playCommand, play = false, muted = muted)),
                     completionHandler = null,
                 )
             }
@@ -384,7 +385,7 @@ internal actual fun NativeWebMPlayer(
                 foreground = true
                 playCommand++
                 webView.evaluateJavaScript(
-                    webMPlaybackScript(request.copy(command = playCommand, play = playRequested && currentActive)),
+                    webMPlaybackScript(request().copy(command = playCommand, play = playRequested && currentActive)),
                     completionHandler = null,
                 )
             }

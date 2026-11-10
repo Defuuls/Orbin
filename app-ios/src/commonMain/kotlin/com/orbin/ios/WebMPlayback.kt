@@ -20,11 +20,11 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
     return """
         (function(){
             var v=document.getElementById('v');
-            if(!v)return null;
             function state(){return (v.paused?'0':'1')+','+v.currentTime+','+v.duration+','+(v.muted?'1':'0');}
             var requested=window.__orbinPlaybackRequested;
-            if(requested&&requested.command>$command)return state();
+            if(requested&&requested.command>$command)return v?state():null;
             window.__orbinPlaybackRequested={command:$command,play:$play};
+            if(!v)return null;
             v.muted=$muted;
             v.loop=$loop;
             function applied(play){
