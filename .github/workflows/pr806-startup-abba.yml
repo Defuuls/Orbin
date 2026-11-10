@@ -70,9 +70,13 @@ jobs:
                   assert len(found) == 1 and found[0].is_file(), (revision, module, found)
                   shutil.copy2(found[0], f'abba-apks/{revision}-{label}.apk')
           PY
+          set -x
           build_tools=$(printf '%s\n' "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           for apk in abba-apks/*.apk; do
-            "$build_tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' >> abba-apks/certificates.txt
+            certificate=$("$build_tools/apksigner" verify --print-certs "$apk" | sed -nE 's/^(Signer #1|V2 Signer):? certificate SHA-256 digest: //p')
+            test -n "$certificate"
+            echo "APK $apk certificate SHA256: $certificate"
+            printf '%s\n' "$certificate" >> abba-apks/certificates.txt
           done
           test "$(wc -l < abba-apks/certificates.txt)" = 4
           test "$(sort -u abba-apks/certificates.txt | wc -l)" = 1
@@ -85,7 +89,7 @@ jobs:
           test -n "$baseline_test"
           test "$baseline_test" = "$candidate_test"
           echo "TEST_PACKAGE=$baseline_test" >> "$GITHUB_ENV"
-          jps -l | awk '/GradleDaemon|KotlinCompileDaemon/ {print $1}' | xargs -r kill
+          jps -l | awk '/GradleDaemon|KotlinCompileDaemon/ {print $1}' | xargs -r kill || true
       - name: Prepare the direct instrumentation shell script
         run: |
           cat > "$RUNNER_TEMP/pr806-startup-abba.sh" <<'SH'
