@@ -99,6 +99,30 @@ class FeedActionsViewModelTest {
         }
 
     @Test
+    fun `rapid double tap watches are idempotent and source qualified`() =
+        runTest {
+            val repository = FakeBookmarkRepository()
+            val model = FeedActionsViewModel(repository, mockk())
+            val fourchan = entry("fourchan")
+            val bbwchan = entry("bbwchan")
+
+            repeat(3) { model.watch(fourchan) }
+            model.watch(bbwchan)
+            runCurrent()
+
+            assertThat(repository.getBookmark(fourchan.key)?.isWatched).isTrue()
+            assertThat(repository.getBookmark(bbwchan.key)?.isWatched).isTrue()
+            model.toggleWatch(fourchan)
+            runCurrent()
+            repeat(2) { model.watch(fourchan) }
+            runCurrent()
+
+            assertThat(repository.getBookmark(fourchan.key)?.isWatched).isTrue()
+            assertThat(repository.getBookmark(bbwchan.key)?.isWatched).isTrue()
+            assertThat(repository.getBookmark(fourchan.key)?.title).isEqualTo("Quiet landscapes")
+        }
+
+    @Test
     fun `share asks the repository for the canonical source-qualified URL`() {
         val threadRepository = mockk<ThreadRepository>()
         val entry = entry("bbwchan")

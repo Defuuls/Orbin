@@ -25,10 +25,15 @@ class VideoPreloader
         @VideoOkHttp private val client: OkHttpClient,
         private val cache: VideoPrefixCache,
     ) {
+        private var currentOwner: Any? = null
+
+        @Synchronized
         fun prefetch(
             url: String,
             scope: CoroutineScope,
+            owner: Any? = null,
         ): Job? {
+            currentOwner = owner
             val generation = cache.beginPrefetch()
             val address = url.toHttpUrlOrNull()?.takeIf { it.isHttps } ?: return null
             if (cache.get(url) != null) return null
@@ -138,7 +143,13 @@ class VideoPreloader
             }
         }
 
-        fun clear() = cache.clear()
+        /** A departing surface may clear only its own request, never a replacement surface's. */
+        @Synchronized
+        fun clear(owner: Any? = null) {
+            if (owner != null && currentOwner !== owner) return
+            cache.clear()
+            currentOwner = null
+        }
 
         private companion object {
             const val HTTP_OK = 200

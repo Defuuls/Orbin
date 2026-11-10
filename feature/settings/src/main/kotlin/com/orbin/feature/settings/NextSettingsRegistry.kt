@@ -7,7 +7,6 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
-import com.orbin.core.model.feedColumnsFor
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
@@ -33,7 +32,7 @@ internal fun buildSettings(
     val rows = Rows(strings)
     val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor) + rows.strictDns(dns, vm)
     val data = rows.data(updateState, imageCacheLabel, clearArmed)
-    val appearanceIds = setOf("themeMode", "colorTheme", "feedColumns", "catalogColumns", "amoled")
+    val appearanceIds = setOf("themeMode", "colorTheme", "catalogColumns", "amoled")
     val groups =
         listOf(
             strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
@@ -165,7 +164,6 @@ private class Rows(
             AppColorTheme::label,
             vm::setColorTheme,
         ),
-        feedColumns(settings, vm, formFactor),
         catalogColumns(settings, vm, formFactor),
         toggle("amoled", strings.get(R.string.settings_true_black), settings.amoled, vm::setAmoled),
         toggle(
@@ -210,44 +208,6 @@ private class Rows(
             vm::setCheckUpdatesOnLaunch,
         ),
     )
-
-    /**
-     * Only a device with a wide screen has a choice: a foldable for its inner screen, a tablet for
-     * its one. A phone, and a foldable's front screen, always show one column.
-     */
-    private fun feedColumns(
-        settings: AppSettings,
-        vm: SettingsViewModel,
-        formFactor: FormFactor,
-    ): SettingItem? {
-        if (formFactor.maxFeedColumns <= 1) return null
-        val label =
-            strings.get(
-                if (formFactor ==
-                    FormFactor.FOLDABLE
-                ) {
-                    R.string.settings_feed_columns_unfolded
-                } else {
-                    R.string.settings_feed_columns
-                },
-            )
-        return choice(
-            id = "feedColumns",
-            label = label,
-            values = (1..formFactor.maxFeedColumns).toList(),
-            selected = settings.feedColumnsFor(formFactor),
-            text = {
-                if (it ==
-                    1
-                ) {
-                    strings.get(R.string.settings_one_column)
-                } else {
-                    strings.get(R.string.settings_columns, it)
-                }
-            },
-            onChange = { vm.setFeedColumns(formFactor, it) },
-        )
-    }
 
     /** A board catalog's columns: a tablet's choice; everywhere else the catalog fits its tiles. */
     private fun catalogColumns(

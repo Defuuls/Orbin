@@ -162,4 +162,34 @@ class VideoPreloaderTest {
             assertThat(VideoPreloader(client, cache).prefetch("http://localhost/clip.webm", this)).isNull()
             assertThat(server.requestCount).isEqualTo(0)
         }
+
+    @Test
+    fun `late cleanup cannot clear another surface replacement prefix`() =
+        runBlocking {
+            val preloader = VideoPreloader(client, cache)
+            val feedOwner = Any()
+            val galleryOwner = Any()
+            val feedUrl = server.url("/feed.webm").toString()
+            val galleryUrl = server.url("/gallery.webm").toString()
+            val payload = ByteArray(32) { it.toByte() }
+
+            suspend fun warm(
+                url: String,
+                owner: Any,
+            ) {
+                server.enqueue(MockResponse().setBody(Buffer().write(payload)).setHeader("Content-Type", "video/webm"))
+                withTimeout(10_000) { checkNotNull(preloader.prefetch(url, this@runBlocking, owner)).join() }
+            }
+
+            warm(feedUrl, feedOwner)
+            warm(galleryUrl, galleryOwner)
+            preloader.clear(feedOwner)
+            assertThat(cache.get(galleryUrl)?.bytes).isEqualTo(payload)
+
+            warm(feedUrl, feedOwner)
+            preloader.clear(galleryOwner)
+            assertThat(cache.get(feedUrl)?.bytes).isEqualTo(payload)
+            preloader.clear(feedOwner)
+            assertThat(cache.get(feedUrl)).isNull()
+        }
 }

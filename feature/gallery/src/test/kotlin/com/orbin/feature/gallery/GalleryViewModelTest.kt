@@ -58,8 +58,11 @@ class GalleryViewModelTest {
     fun `only the next revealed clip is prefetched and obsolete network work is cancelled`() =
         runTest {
             val video = mockk<VideoPreloader>(relaxed = true)
-            val pending = Job()
-            every { video.prefetch(any(), any()) } returns pending
+            val pending = mutableListOf<Job>()
+            val owners = mutableListOf<Any>()
+            every { video.prefetch(any(), any(), capture(owners)) } answers {
+                Job().also(pending::add)
+            }
             val viewModel = createViewModel(FakeSettingsRepository(), video = video)
             val items =
                 listOf(
@@ -68,10 +71,19 @@ class GalleryViewModelTest {
                     attachment("covered", MediaType.VIDEO).copy(isSpoiler = true),
                 )
             viewModel.prefetchAround(0, items)
-            verify(exactly = 1) { video.prefetch("https://example.org/next", any()) }
+            verify(exactly = 1) { video.prefetch("https://example.org/next", any(), any()) }
             viewModel.prefetchAround(1, items)
-            assertThat(pending.isCancelled).isTrue()
-            verify(exactly = 1) { video.prefetch(any(), any()) }
+            assertThat(pending.single().isCancelled).isTrue()
+            verify(exactly = 1) { video.prefetch(any(), any(), any()) }
+
+            // Returning to the same page uses this gallery's existing owner, not a new token or
+            // the legacy global owner. Its next cancelled request remains independently owned.
+            viewModel.prefetchAround(0, items)
+            assertThat(owners).hasSize(2)
+            assertThat(owners[1]).isSameInstanceAs(owners[0])
+            verify(exactly = 2) { video.prefetch("https://example.org/next", any(), match { it === owners[0] }) }
+            viewModel.prefetchAround(1, items)
+            assertThat(pending.map { it.isCancelled }).containsExactly(true, true)
         }
 
     @Test

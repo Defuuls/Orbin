@@ -61,6 +61,7 @@ import com.orbin.media.R
 import com.orbin.media.hasHttpStatus
 import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
+import com.orbin.uinext.FeedPlaybackControls
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextCircularProgress
 import com.orbin.uinext.tokens.NextType
@@ -87,6 +88,11 @@ fun VideoPlayer(
     onControlsToggle: ((Boolean) -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
     loop: Boolean? = null,
+    /** Compact tap-to-pause controls for a full-page feed, without viewer chrome or auto-PiP. */
+    feedMode: Boolean = false,
+    onFeedLike: (() -> Unit)? = null,
+    onPlayIntentChange: ((Boolean) -> Unit)? = null,
+    onMuteIntentChange: ((Boolean) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -147,12 +153,13 @@ fun VideoPlayer(
 
     val currentActive by rememberUpdatedState(active)
     val currentPlaybackError by rememberUpdatedState(playbackError)
-    DisposableEffect(lifecycleOwner, exoPlayer) {
+    DisposableEffect(lifecycleOwner, exoPlayer, feedMode) {
+        if (feedMode) activity?.disableAutomaticVideoPip()
         val observer =
             LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                        if (activity?.isInPictureInPictureMode != true) {
+                        if (feedMode || activity?.isInPictureInPictureMode != true) {
                             currentSession.setForeground(false)
                             exoPlayer.pause()
                         }
@@ -174,10 +181,10 @@ fun VideoPlayer(
         }
     }
 
-    LaunchedEffect(exoPlayer, isPlaying, active) {
+    LaunchedEffect(exoPlayer, isPlaying, active, feedMode) {
         if (activity != null) {
             // A queued composition must not re-enable PiP after the native pause callback.
-            val enabled = currentActive && exoPlayer.isPlaying
+            val enabled = !feedMode && currentActive && exoPlayer.isPlaying
             val width = exoPlayer.videoSize.width
             val height = exoPlayer.videoSize.height
             val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(enabled)
@@ -239,7 +246,7 @@ fun VideoPlayer(
 
     // Turning the phone sideways is the fullscreen button.
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    if (active) {
+    if (active && !feedMode) {
         VideoFullscreenEffect(
             activity = activity,
             fullscreen = landscape,
@@ -343,9 +350,28 @@ fun VideoPlayer(
     val skipBackLabel = stringResource(R.string.media_skip_back)
     val skipForwardLabel = stringResource(R.string.media_skip_forward)
 
-    Box(
-        modifier =
-            modifier
+    val togglePlayback = {
+        val ended = exoPlayer.playbackState == Player.STATE_ENDED
+        if (ended) exoPlayer.seekTo(0L)
+        playbackSession.toggle(ended)
+        onPlayIntentChange?.invoke(playbackSession.requestedPlaying)
+        if (!playbackSession.requestedPlaying) activity?.disableAutomaticVideoPip()
+        exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
+        if (playbackSession.requestedPlaying) {
+            controlsVisible = false
+            onControlsToggle?.invoke(false)
+        }
+    }
+    val toggleMute: () -> Unit = {
+        isMuted = !isMuted
+        SessionAudio.muted = isMuted
+        onMuteIntentChange?.invoke(isMuted)
+    }
+    val viewerGestures =
+        if (feedMode) {
+            Modifier
+        } else {
+            Modifier
                 .pointerInput(playbackError, exoPlayer, onLongPress, onControlsToggle) {
                     detectTapGestures(
                         onLongPress = onLongPress?.let { handler -> { handler() } },
@@ -377,8 +403,9 @@ fun VideoPlayer(
                                 },
                             )
                     }
-                },
-    ) {
+                }
+        }
+    Box(modifier = modifier.then(viewerGestures)) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
@@ -395,11 +422,13 @@ fun VideoPlayer(
                 playerView.useController = false
             },
         )
-        VideoPassiveProgress(
-            progress = progress,
-            bufferedProgress = bufferedProgress,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-        )
+        if (!feedMode) {
+            VideoPassiveProgress(
+                progress = progress,
+                bufferedProgress = bufferedProgress,
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            )
+        }
         if (isBuffering) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 NextCircularProgress()
@@ -453,6 +482,16 @@ fun VideoPlayer(
                     )
                 }
             }
+        } else if (feedMode) {
+            FeedPlaybackControls(
+                playing = isPlaying || (isBuffering && playbackSession.requestedPlaying),
+                muted = isMuted,
+                progress = progress,
+                onPlayPause = togglePlayback,
+                onMuteToggle = toggleMute,
+                onDoubleTap = onFeedLike,
+                modifier = Modifier.fillMaxSize(),
+            )
         } else if (controlsVisible) {
             VideoControls(
                 isPlaying = isPlaying,
@@ -460,23 +499,8 @@ fun VideoPlayer(
                 progress = progress,
                 positionMs = positionMs,
                 durationMs = durationMs,
-                onPlayPause = {
-                    val ended = exoPlayer.playbackState == Player.STATE_ENDED
-                    if (ended) {
-                        exoPlayer.seekTo(0L)
-                    }
-                    playbackSession.toggle(ended)
-                    if (!playbackSession.requestedPlaying) activity?.disableAutomaticVideoPip()
-                    exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
-                    if (playbackSession.requestedPlaying) {
-                        controlsVisible = false
-                        onControlsToggle?.invoke(false)
-                    }
-                },
-                onMuteToggle = {
-                    isMuted = !isMuted
-                    SessionAudio.muted = isMuted
-                },
+                onPlayPause = togglePlayback,
+                onMuteToggle = toggleMute,
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
                         exoPlayer.seekTo((durationMs * seekProgress).toLong())

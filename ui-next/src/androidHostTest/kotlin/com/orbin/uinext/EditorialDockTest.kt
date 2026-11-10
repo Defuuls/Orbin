@@ -12,11 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,7 @@ class EditorialDockTest {
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
         }
+        assertIndependentTargets()
     }
 
     @Test
@@ -103,7 +107,25 @@ class EditorialDockTest {
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
         }
+        assertIndependentTargets()
+        val first = composeRule.onNode(isTab and hasContentDescription("Home")).getUnclippedBoundsInRoot()
+        val last = composeRule.onNode(isTab and hasContentDescription("Saved")).getUnclippedBoundsInRoot()
+        assertEquals(0f, first.left.value, 0.5f)
+        assertEquals(248f, last.right.value, 0.5f)
+        composeRule
+            .onAllNodes(hasText("Watched"), useUnmergedTree = true)
+            .assertCountEquals(0)
         composeRule.onNode(isTab and hasContentDescription("Saved")).performClick().assertIsSelected()
         assertEquals(1, calls)
+    }
+
+    private fun assertIndependentTargets() {
+        val bounds =
+            listOf("Home", "Watched", "Boards", "Search", "Saved").map { label ->
+                composeRule.onNode(isTab and hasContentDescription(label)).getUnclippedBoundsInRoot()
+            }
+        bounds.zipWithNext().forEach { (left, right) ->
+            org.junit.Assert.assertTrue("Neighboring navigation targets must not overlap", left.right <= right.left)
+        }
     }
 }

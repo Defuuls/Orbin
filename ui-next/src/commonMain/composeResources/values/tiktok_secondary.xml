@@ -1,0 +1,9 @@
+<resources>
+    <string name="tiktok_secondary_settings">Settings and privacy</string>
+    <string name="tiktok_boards_title">Discover boards</string>
+    <string name="tiktok_board_follow">Follow</string>
+    <string name="tiktok_board_following">Following</string>
+    <string name="tiktok_collection_threads">Threads</string>
+    <string name="tiktok_collection_boards">Boards</string>
+    <string name="tiktok_collection_sites">Sites</string>
+</resources>

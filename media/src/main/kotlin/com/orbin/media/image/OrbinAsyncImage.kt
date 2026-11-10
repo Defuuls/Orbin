@@ -140,6 +140,8 @@ fun MediaThumbnail(
     onClick: (() -> Unit)? = null,
     // The one tile in view plays: a GIF animates from its source, a video loops muted in place.
     playing: Boolean = false,
+    showPlayBadge: Boolean = true,
+    cornerRadius: androidx.compose.ui.unit.Dp = 8.dp,
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
     // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
@@ -164,7 +166,7 @@ fun MediaThumbnail(
     Box(
         modifier =
             finalModifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(cornerRadius))
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -181,7 +183,7 @@ fun MediaThumbnail(
 
         if (attachment.isSpoiler) {
             SpoilerOverlay()
-        } else if (!loopsInPlace && (attachment.type == MediaType.VIDEO || attachment.type == MediaType.AUDIO)) {
+        } else if (showPlayBadge && !loopsInPlace && attachment.isPlayable) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
                 contentDescription = stringResource(R.string.media_play),

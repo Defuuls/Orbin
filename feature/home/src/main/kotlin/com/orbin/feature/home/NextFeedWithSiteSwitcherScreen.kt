@@ -20,6 +20,7 @@ fun NextFeedWithSiteSwitcherScreen(
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
@@ -35,6 +36,7 @@ fun NextFeedWithSiteSwitcherScreen(
         onOpenSearch = onOpenSearch,
         onOpenSaved = onOpenSaved,
         onOpenWatched = onOpenWatched,
+        onOpenBoard = onOpenBoard,
         providerFilter = activeProviderId,
         sourceLabels = listOf(stringResource(R.string.feed_all_sites)) + switcherViewModel.sites.map { it.label },
         selectedSource = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 1,

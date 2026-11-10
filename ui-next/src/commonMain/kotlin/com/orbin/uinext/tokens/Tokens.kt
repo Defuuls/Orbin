@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -80,7 +81,7 @@ object NextMaterials {
  * One proportional system font for post content, navigation, and metadata.
  */
 @Immutable
-object NextType {
+private object NextTypeBase {
     private val sans = FontFamily.Default
     private val mono = FontFamily.Default
     private const val TNUM = "tnum"
@@ -251,29 +252,6 @@ object NextType {
             fontFeatureSettings = TNUM,
         )
 
-    /**
-     * The same scale as Material's typography, so Material components (buttons, top bars, text
-     * fields) and Orbin's own text use one set of fonts, sizes and weights.
-     */
-    val material: Typography =
-        Typography(
-            displayLarge = displayLarge,
-            displayMedium = displayMedium,
-            displaySmall = displaySmall,
-            headlineLarge = headlineLarge,
-            headlineMedium = headlineMedium,
-            headlineSmall = headlineSmall,
-            titleLarge = titleLarge,
-            titleMedium = titleMedium,
-            titleSmall = titleSmall,
-            bodyLarge = bodyLarge,
-            bodyMedium = bodyMedium,
-            bodySmall = bodySmall,
-            labelLarge = labelLarge,
-            labelMedium = labelMedium,
-            labelSmall = labelSmall,
-        )
-
     // Convenience aliases used in ui-next components
 
     /** Screen/section primary title. */
@@ -318,6 +296,129 @@ object NextType {
 
     /** Extra-small telemetry caption (11sp). */
     val captionDense = labelSmall
+}
+
+/** Shared type scale resolved against the bundled family installed by NextTheme. */
+@Immutable
+object NextType {
+    val displayLarge: TextStyle
+        @Composable get() = NextTypeBase.displayLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val displayMedium: TextStyle
+        @Composable get() = NextTypeBase.displayMedium.copy(fontFamily = LocalNextFontFamily.current)
+
+    val displaySmall: TextStyle
+        @Composable get() = NextTypeBase.displaySmall.copy(fontFamily = LocalNextFontFamily.current)
+
+    val headlineLarge: TextStyle
+        @Composable get() = NextTypeBase.headlineLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val headlineMedium: TextStyle
+        @Composable get() = NextTypeBase.headlineMedium.copy(fontFamily = LocalNextFontFamily.current)
+
+    val headlineSmall: TextStyle
+        @Composable get() = NextTypeBase.headlineSmall.copy(fontFamily = LocalNextFontFamily.current)
+
+    val titleLarge: TextStyle
+        @Composable get() = NextTypeBase.titleLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val titleMedium: TextStyle
+        @Composable get() = NextTypeBase.titleMedium.copy(fontFamily = LocalNextFontFamily.current)
+
+    val titleSmall: TextStyle
+        @Composable get() = NextTypeBase.titleSmall.copy(fontFamily = LocalNextFontFamily.current)
+
+    val bodyLarge: TextStyle
+        @Composable get() = NextTypeBase.bodyLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val bodyMedium: TextStyle
+        @Composable get() = NextTypeBase.bodyMedium.copy(fontFamily = LocalNextFontFamily.current)
+
+    val bodySmall: TextStyle
+        @Composable get() = NextTypeBase.bodySmall.copy(fontFamily = LocalNextFontFamily.current)
+
+    val labelLarge: TextStyle
+        @Composable get() = NextTypeBase.labelLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val labelMedium: TextStyle
+        @Composable get() = NextTypeBase.labelMedium.copy(fontFamily = LocalNextFontFamily.current)
+
+    val labelSmall: TextStyle
+        @Composable get() = NextTypeBase.labelSmall.copy(fontFamily = LocalNextFontFamily.current)
+
+    val telemetry: TextStyle
+        @Composable get() = NextTypeBase.telemetry.copy(fontFamily = LocalNextFontFamily.current)
+
+    val telemetryLarge: TextStyle
+        @Composable get() = NextTypeBase.telemetryLarge.copy(fontFamily = LocalNextFontFamily.current)
+
+    val largeTitle: TextStyle
+        @Composable get() = NextTypeBase.largeTitle.copy(fontFamily = LocalNextFontFamily.current)
+
+    val title1: TextStyle
+        @Composable get() = NextTypeBase.title1.copy(fontFamily = LocalNextFontFamily.current)
+
+    val title2: TextStyle
+        @Composable get() = NextTypeBase.title2.copy(fontFamily = LocalNextFontFamily.current)
+
+    val title3: TextStyle
+        @Composable get() = NextTypeBase.title3.copy(fontFamily = LocalNextFontFamily.current)
+
+    val body: TextStyle
+        @Composable get() = NextTypeBase.body.copy(fontFamily = LocalNextFontFamily.current)
+
+    val footnote: TextStyle
+        @Composable get() = NextTypeBase.footnote.copy(fontFamily = LocalNextFontFamily.current)
+
+    val tab: TextStyle
+        @Composable get() = NextTypeBase.tab.copy(fontFamily = LocalNextFontFamily.current)
+
+    val sectionHeader: TextStyle
+        @Composable get() = NextTypeBase.sectionHeader.copy(fontFamily = LocalNextFontFamily.current)
+
+    val callout: TextStyle
+        @Composable get() = NextTypeBase.callout.copy(fontFamily = LocalNextFontFamily.current)
+
+    val caption1: TextStyle
+        @Composable get() = NextTypeBase.caption1.copy(fontFamily = LocalNextFontFamily.current)
+
+    val caption2: TextStyle
+        @Composable get() = NextTypeBase.caption2.copy(fontFamily = LocalNextFontFamily.current)
+
+    val subheadline: TextStyle
+        @Composable get() = NextTypeBase.subheadline.copy(fontFamily = LocalNextFontFamily.current)
+
+    val headline: TextStyle
+        @Composable get() = NextTypeBase.headline.copy(fontFamily = LocalNextFontFamily.current)
+
+    val bodyDense: TextStyle
+        @Composable get() = NextTypeBase.bodyDense.copy(fontFamily = LocalNextFontFamily.current)
+
+    val footnoteDense: TextStyle
+        @Composable get() = NextTypeBase.footnoteDense.copy(fontFamily = LocalNextFontFamily.current)
+
+    val captionDense: TextStyle
+        @Composable get() = NextTypeBase.captionDense.copy(fontFamily = LocalNextFontFamily.current)
+
+    val material: Typography
+        @Composable get() =
+            Typography(
+                displayLarge = displayLarge,
+                displayMedium = displayMedium,
+                displaySmall = displaySmall,
+                headlineLarge = headlineLarge,
+                headlineMedium = headlineMedium,
+                headlineSmall = headlineSmall,
+                titleLarge = titleLarge,
+                titleMedium = titleMedium,
+                titleSmall = titleSmall,
+                bodyLarge = bodyLarge,
+                bodyMedium = bodyMedium,
+                bodySmall = bodySmall,
+                labelLarge = labelLarge,
+                labelMedium = labelMedium,
+                labelSmall = labelSmall,
+            )
 }
 
 /**

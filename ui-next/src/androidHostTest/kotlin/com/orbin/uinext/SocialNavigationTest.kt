@@ -1,7 +1,15 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
@@ -25,17 +33,65 @@ class SocialNavigationTest {
             NextTheme { DestinationPill(NextDestination.SAVED, selected::add) }
         }
         composeRule.onNodeWithContentDescription("Saved").assertIsSelected()
-        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
+        listOf("Home", "Watched", "Boards", "Search", "Saved").forEach { label ->
             composeRule.onNodeWithContentDescription(label).performClick()
         }
         assertThat(selected)
             .containsExactly(
                 NextDestination.FEED,
-                NextDestination.BOARDS,
                 NextDestination.WATCHED,
+                NextDestination.BOARDS,
                 NextDestination.SEARCH,
                 NextDestination.SAVED,
             ).inOrder()
+    }
+
+    @Test
+    fun `the center add action opens Boards once and announces selection`() {
+        var calls = 0
+        var selected: NextDestination? = null
+        composeRule.setContent {
+            NextTheme {
+                DestinationPill(NextDestination.BOARDS, {
+                    selected = it
+                    calls++
+                })
+            }
+        }
+        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
+        val watched = composeRule.onNodeWithContentDescription("Watched").getUnclippedBoundsInRoot()
+        val boards = composeRule.onNodeWithContentDescription("Boards").getUnclippedBoundsInRoot()
+        val search = composeRule.onNodeWithContentDescription("Search").getUnclippedBoundsInRoot()
+        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
+        assertThat(home.left.value).isLessThan(watched.left.value)
+        assertThat(watched.left.value).isLessThan(boards.left.value)
+        assertThat(boards.left.value).isLessThan(search.left.value)
+        assertThat(search.left.value).isLessThan(saved.left.value)
+        assertThat(((boards.left.value + boards.right.value) / 2)).isWithin(0.5f).of(
+            (home.left.value + saved.right.value) / 2,
+        )
+        composeRule.onNodeWithContentDescription("Boards").assertIsSelected().performClick()
+        assertThat(selected).isEqualTo(NextDestination.BOARDS)
+        assertThat(calls).isEqualTo(1)
+    }
+
+    @Test
+    fun `navigation exposes full control bounds while decorative labels stay hidden from accessibility`() {
+        composeRule.setContent {
+            NextTheme { DestinationPill(NextDestination.FEED, {}) }
+        }
+        listOf("Home", "Watched", "Boards", "Search", "Saved").forEach { label ->
+            composeRule
+                .onNodeWithContentDescription(label)
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.HideFromAccessibility))
+                .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+        }
+        listOf("Home", "Watched", "Search", "Saved").forEach { label ->
+            composeRule
+                .onAllNodesWithText(label, useUnmergedTree = true)
+                .assertCountEquals(0)
+        }
     }
 
     @Test

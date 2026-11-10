@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -40,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
@@ -209,7 +211,7 @@ fun PlatformSegments(
     }
 }
 
-/** A compact gray iOS-style field; the field and clear action retain accessible touch targets. */
+/** A compact gray TikTok-style field inside a full-height editable touch target. */
 @Composable
 fun SchematicSearch(
     value: String,
@@ -236,51 +238,75 @@ fun SchematicSearch(
                 ),
             keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
             textStyle = NextType.body.copy(color = next.ink, lineHeight = 20.sp),
-            cursorBrush = SolidColor(next.ink),
+            cursorBrush = SolidColor(TikTokDesign.Pink),
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(next.raised)
+                    .heightIn(min = MIN_TOUCH_TARGET)
                     .semantics { contentDescription = placeholder },
             decorationBox = { inner ->
-                Row(
-                    Modifier.padding(
-                        start = 10.dp,
-                        end = if (value.isEmpty()) 10.dp else 48.dp,
-                        top = 8.dp,
-                        bottom = 8.dp,
-                    ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Box(
+                    Modifier.fillMaxWidth().heightIn(min = MIN_TOUCH_TARGET),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        ReaderIcons.Search,
-                        contentDescription = null,
-                        tint = next.muted,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Box(Modifier.weight(1f)) {
-                        if (value.isEmpty()) {
-                            Text(
-                                placeholder,
-                                style = NextType.body.copy(lineHeight = 20.sp),
-                                color = next.muted,
-                            )
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (next.dark) Color(0xFF252525) else Color(0xFFF1F1F2))
+                            .padding(
+                                start = 10.dp,
+                                end = if (value.isEmpty()) 10.dp else 48.dp,
+                                top = 8.dp,
+                                bottom = 8.dp,
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            ReaderIcons.Search,
+                            contentDescription = null,
+                            tint = next.muted,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Box(Modifier.weight(1f)) {
+                            if (value.isEmpty()) {
+                                Text(
+                                    placeholder,
+                                    style = NextType.body.copy(lineHeight = 20.sp),
+                                    color = next.muted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            inner()
                         }
-                        inner()
                     }
                 }
             },
         )
         if (value.isNotEmpty()) {
-            NextIconAction(
-                imageVector = ReaderIcons.Close,
-                contentDescription = stringResource(Res.string.next_clear_search),
-                onClick = { onValueChange("") },
-                tint = next.muted,
-                modifier = Modifier.align(Alignment.CenterEnd),
-            )
+            val clearLabel = stringResource(Res.string.next_clear_search)
+            Box(
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(MIN_TOUCH_TARGET)
+                    .nextClickable(role = Role.Button, onClick = { onValueChange("") })
+                    .semantics { contentDescription = clearLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier.size(18.dp).clip(CircleShape).background(next.muted),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        ReaderIcons.Close,
+                        contentDescription = null,
+                        tint = next.background,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
         }
     }
 }

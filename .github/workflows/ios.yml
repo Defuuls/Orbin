@@ -94,6 +94,50 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
 
+      # Exercise UIApplication/UIScene startup, the real packaged fonts, and Compose accessibility.
+      # The smoke test follows zero boards, so the captures contain no user-generated media.
+      - name: Launch the installed app and capture native startup screens
+        timeout-minutes: 15
+        run: >-
+          xcodebuild test
+          -project iosApp/Orbin.xcodeproj
+          -scheme Orbin
+          -configuration Debug
+          -destination "platform=iOS Simulator,id=$ORBIN_IOS_TEST_DEVICE"
+          -parallel-testing-enabled NO
+          -only-testing:OrbinUITests/StartupSmokeTests
+          -resultBundlePath "$RUNNER_TEMP/orbin-startup-smoke.xcresult"
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Export native startup screenshots
+        if: always()
+        run: |
+          result="$RUNNER_TEMP/orbin-startup-smoke.xcresult"
+          if [ -d "$result" ]; then
+            xcrun xcresulttool export attachments \
+              --path "$result" \
+              --output-path "$RUNNER_TEMP/orbin-startup-screenshots"
+          fi
+
+      - name: Upload native startup evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-native-startup
+          path: |
+            ${{ runner.temp }}/orbin-startup-screenshots/**/*.png
+            ${{ runner.temp }}/orbin-startup-screenshots/**/*.txt
+            ${{ runner.temp }}/orbin-startup-screenshots/**/manifest.json
+          if-no-files-found: ignore
+
+      - name: Upload native startup result bundle
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-startup-xcresult
+          path: ${{ runner.temp }}/orbin-startup-smoke.xcresult/
+          if-no-files-found: ignore
+
       - name: Upload test reports
         if: always()
         continue-on-error: true

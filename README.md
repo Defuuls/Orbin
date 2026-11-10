@@ -1,14 +1,14 @@
 # Orbin
 
-Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and a **shared, compact reader interface**. It browses boards, catalogs, threads, links, and media with a combined multi-site feed, clear source labels, and strictly read-only access.
+Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and a **shared TikTok-style reader interface**. It browses boards, catalogs, threads, links, and media with a combined multi-site feed, clear source labels, and strictly read-only access.
 
 [Shared Home preview](ui-next/src/androidHostTest/screenshots/social_ios_home.png) · [iOS settings preview](ui-next/src/androidHostTest/screenshots/social_ios_settings.png)
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [194 — Malanga](https://github.com/Defuuls/Orbin/releases/tag/v194-Malanga)
+**Current release:** [195 — Bitter Melon](https://github.com/Defuuls/Orbin/releases/tag/v195-Bitter-Melon)
 
-**What's new in 194:** Five-tab browsing, distinct board icons, cross-site feeds and search, and inherited playback settings across Android and iOS.
+**What's new in 195:** TikTok-style vertical browsing, active-page video, shared typography, and redesigned discovery, library, search, and settings across Android and iOS.
 
 ---
 
@@ -16,10 +16,10 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 | Area | Capabilities |
 | :--- | :--- |
-| **Shared reader interface** | Compact monochrome headers, flat anonymous posts, edge-to-edge media, accessible controls, and shared light/dark/true-black themes across Android and iOS. |
-| **Browsing & Layout** | Five-tab Home, Boards, Watched, Search, and Saved navigation; combined multi-site feed; complete provider-backed directories with original icons for every board; favorite-board shortcuts; and adaptive two-pane browsing. |
+| **Shared reader interface** | Full-screen vertical Home, overlaid media actions, official TikTok Sans typography, flat comments, accessible controls, and shared light/dark/true-black themes across Android and iOS. |
+| **Browsing & Layout** | Fixed Home, Watched, central Boards+, Search, and Saved navigation; combined multi-site feed; complete provider-backed directories with original icons for all 91 current boards; and adaptive two-pane browsing. |
 | **Thread Reader** | Persistent title and source labels, OP badges, green quote links, inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
-| **Settings and activity** | Searchable directory with dedicated subpages, retained privacy and backup controls, and inherited app/site/board playback settings. |
+| **Settings and privacy** | Searchable directory with dedicated subpages, retained privacy and backup controls, and inherited app/site/board playback settings. |
 | **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with bounded next-clip preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
 | **Themes & Ergonomics** | Compact monochrome surfaces, eight selectable color themes, Light / Dark / AMOLED modes, system text scaling, accessible controls, and searchable settings grouped by task. |
 | **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy shield (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and zero telemetry or cloud backups. |

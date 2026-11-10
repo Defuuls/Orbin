@@ -67,6 +67,9 @@ fun OrbinNavHost(
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
+                onOpenBoard = { provider, board, title ->
+                    navController.navigate(Route.Board(provider, board, title))
+                },
                 onOpenSettings = { navController.navigate(Route.Settings) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -101,7 +104,10 @@ fun OrbinNavHost(
                 onDestination = onDestination,
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
-                    NextSearchScreen(onOpenThread = openThread)
+                    NextSearchScreen(
+                        onOpenThread = openThread,
+                        onBack = { navController.navigateToTab(Route.NextFeed) },
+                    )
                 }
             }
         }

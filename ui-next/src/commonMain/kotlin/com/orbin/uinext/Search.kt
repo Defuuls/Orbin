@@ -1,30 +1,8 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_search_idle_hint
-import com.orbin.uinext.resources.next_search_no_matches
-import com.orbin.uinext.resources.next_search_query_label
-import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
-import org.jetbrains.compose.resources.stringResource
 
 /** A search hit: the thread's title, its board as `/g/`, and the start of its opening post. */
 @Immutable
@@ -64,78 +42,7 @@ fun SearchScreen(
     state: SearchState,
     onOpenRow: (SearchRow) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ),
-    ) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = NextSpace.gutter)) {
-            SchematicSearch(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = stringResource(Res.string.next_search_query_label),
-                onSearch = onSearch,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
-            )
-            SearchResults(state = state, onOpenRow = onOpenRow)
-        }
-    }
-}
-
-@Composable
-private fun SearchResults(
-    state: SearchState,
-    onOpenRow: (SearchRow) -> Unit,
-) {
-    when (state) {
-        SearchState.Idle -> NextEmpty(stringResource(Res.string.next_search_idle_hint))
-        SearchState.Loading -> NextLoading()
-        is SearchState.Error -> NextError(state.message)
-        is SearchState.Results ->
-            if (state.rows.isEmpty()) {
-                NextEmpty(stringResource(Res.string.next_search_no_matches))
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(top = 12.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp),
-                ) {
-                    groupedItems(state.rows, key = { it.id }) { _, row ->
-                        SearchResultRow(row, onClick = { onOpenRow(row) })
-                    }
-                }
-            }
-    }
-}
-
-@Composable
-private fun SearchResultRow(
-    row: SearchRow,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
-    ) {
-        Text(
-            text = row.board,
-            style = NextType.footnote,
-            color = next.muted,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        Text(
-            text = row.title,
-            style = NextType.body,
-            color = next.ink,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-        MetaLine(row.snippet, maxLines = 2)
-    }
+    TikTokSearchScreen(query, onQueryChange, onSearch, state, onOpenRow, modifier, onBack)
 }

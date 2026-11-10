@@ -1,23 +1,11 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -25,29 +13,38 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_explore_boards
-import com.orbin.uinext.resources.next_feed_thread_count
 import com.orbin.uinext.resources.next_feed_title
-import com.orbin.uinext.resources.next_nothing_here_yet
-import com.orbin.uinext.resources.next_thread_jump_top
-import com.orbin.uinext.resources.next_try_different_search
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
+/** Stable tags for the immersive reader's navigation and page actions. */
+object TikTokFeedTags {
+    const val PAGER = "tiktok_feed_pager"
+    const val HEADER = "tiktok_feed_header"
+    const val CAPTION = "tiktok_feed_caption"
+    const val ACTIONS = "tiktok_feed_actions"
+    const val FOLLOWING = "tiktok_feed_following"
+    const val FOR_YOU = "tiktok_feed_for_you"
+
+    fun page(id: String): String = "tiktok_feed_page:$id"
+}
+
+/**
+ * Home is one thread per vertical page. The media slot owns playback gestures; opening a thread
+ * belongs to its caption and reply action, so pausing a clip never accidentally navigates away.
+ *
+ * The density arguments remain source-compatible with existing integrations. Home always uses
+ * the full viewport; catalog density is still controlled by [BoardCatalog].
+ */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun FeedScreen(
     rows: List<FeedRow>,
@@ -68,10 +65,7 @@ fun FeedScreen(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     groupByBoard: Boolean = false,
-    // A fixed column count the caller chose for this device and window; null fits as many
-    // full-width cards as the window allows.
     columns: Int? = null,
-    // Every card the same size instead of following its media's shape.
     uniformCards: Boolean = false,
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
@@ -83,38 +77,76 @@ fun FeedScreen(
     selectedSource: Int = 0,
     onSelectSource: (Int) -> Unit = {},
     statusMessage: String? = null,
+    mediaContent: (@Composable (FeedRow, Modifier, Boolean) -> Unit)? = null,
+    onOpenBoard: ((FeedRow) -> Unit)? = null,
+    onUpcomingPreviewChanged: (String?) -> Unit = {},
 ) {
-    val gridState = rememberLazyGridState()
-    var boardFilter by rememberSaveable { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    val railVisible =
-        if (!hideRailOnScroll) {
-            true
-        } else {
-            scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
+    var following by rememberSaveable { mutableStateOf(false) }
+    val visibleRows = remember(rows, following) { if (following) rows.filter { it.watched } else rows }
+    val pager = rememberPagerState(pageCount = { visibleRows.size })
+    var relocation by remember(pager) { mutableStateOf<FeedRelocation?>(null) }
+    val settledId by remember(pager) {
+        derivedStateOf {
+            relocation?.id ?: (
+                pager.layoutInfo.visiblePagesInfo
+                    .firstOrNull { it.index == pager.settledPage }
+                    ?.key as? String
+            )
         }
-    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-    val activePreviewCallback = rememberUpdatedState(onActivePreviewChanged)
-
-    // Emit at most one on-screen preview id so callers can hard-cap feed ExoPlayers to 0–1.
-    val previewById =
-        remember(rows) {
-            rows.filter { it.hasPreview && !it.muted }.associateBy { it.id }
-        }
-    LaunchedEffect(previewById, gridState) {
-        snapshotFlow {
-            val candidates =
-                gridState.layoutInfo.visibleItemsInfo.mapNotNull { item ->
-                    previewById[item.key]?.id
-                }
-            candidates.take(MAX_FEED_AUTOPLAY_IDS).firstOrNull()
-        }.distinctUntilChanged()
-            .collect { activePreviewCallback.value(it) }
     }
+    val visibleIds = remember(visibleRows) { visibleRows.map { it.id } }
+    // Capture the previous laid-out key before the pager applies this data-set change.
+    // Reordering retains the same thread; removal explicitly chooses a valid remaining page.
+    // A normal swipe or an appended row does not request a scroll and keeps its player alive.
+    val anchorId = settledId
+    LaunchedEffect(pager, visibleIds) {
+        if (visibleIds.isNotEmpty()) {
+            val retainedIndex = visibleIds.indexOf(anchorId)
+            val target = retainedIndex.takeIf { it >= 0 } ?: pager.currentPage.coerceIn(visibleIds.indices)
+            if (retainedIndex < 0 || target != pager.currentPage || target != pager.settledPage) {
+                // PagerState briefly retains the old settled index while it relocates. Keep
+                // the retained identity rather than activating that index's new neighbour.
+                val request = retainedIndex.takeIf { it >= 0 }?.let { FeedRelocation(visibleIds[it]) }
+                relocation = request
+                try {
+                    pager.scrollToPage(target)
+                } finally {
+                    if (relocation === request) relocation = null
+                }
+            }
+        }
+    }
+    val previewCallback by rememberUpdatedState(onActivePreviewChanged)
+    val upcomingCallback by rememberUpdatedState(onUpcomingPreviewChanged)
+    val chromeCallback by rememberUpdatedState(onChromeVisibleChange)
+    val titleCallback by rememberUpdatedState(onCompactTitleVisibleChange)
 
+    LaunchedEffect(Unit) {
+        chromeCallback(true)
+        titleCallback(false)
+    }
+    // Keep the settled clip alive during a drag, including a cancelled swipe. Only settling
+    // onto another source-qualified row transfers ownership to a new player.
+    LaunchedEffect(pager, visibleRows) {
+        snapshotFlow {
+            val settledIndex = visibleRows.indexOfFirst { it.id == settledId }
+            val active = visibleRows.getOrNull(settledIndex)?.takeIf { it.hasPreview && !it.muted }?.id
+            val upcoming =
+                visibleRows
+                    .getOrNull((settledIndex + 1).takeIf { settledIndex >= 0 } ?: -1)
+                    ?.takeIf { it.hasPreview && !it.muted }
+                    ?.id
+            active to upcoming
+        }.distinctUntilChanged().collect { (active, upcoming) ->
+            previewCallback(active)
+            upcomingCallback(upcoming)
+        }
+    }
     DisposableEffect(Unit) {
-        onDispose { activePreviewCallback.value(null) }
+        onDispose {
+            previewCallback(null)
+            upcomingCallback(null)
+        }
     }
 
     val hasTabs =
@@ -125,181 +157,87 @@ fun FeedScreen(
             onOpenWatched != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
-            { dest ->
-                when (dest) {
+            { destination ->
+                when (destination) {
                     NextDestination.FEED -> Unit
                     NextDestination.BOARDS -> onOpenBoards?.invoke()
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SEARCH -> onOpenSearch?.invoke()
                     NextDestination.SAVED -> onOpenSaved?.invoke()
                     NextDestination.WATCHED -> onOpenWatched?.invoke()
-                    NextDestination.SETTINGS -> Unit
+                    NextDestination.SETTINGS -> onSettings?.invoke()
                 }
             }
         } else {
             null
         }
-    val feedTitle = stringResource(Res.string.next_feed_title)
-    val showCompactTitle by remember {
-        derivedStateOf {
-            gridState.firstVisibleItemIndex > 0 ||
-                gridState.firstVisibleItemScrollOffset > 64
-        }
-    }
-    LaunchedEffect(showCompactTitle) { onCompactTitleVisibleChange(showCompactTitle) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        NextScaffold(
-            where = feedTitle.takeIf { showRail && !hasTabs },
-            modifier = Modifier.fillMaxSize(),
-            railVisible = railVisible,
-            destination = NextDestination.FEED.takeIf { showRail && hasTabs },
-            onDestination = onDestination.takeIf { showRail },
-        ) { bottomPad ->
-            val header: @Composable () -> Unit = {
-                Column {
-                    FeedHeader(
-                        subtitle =
-                            subtitle ?: pluralStringResource(Res.plurals.next_feed_thread_count, rows.size, rows.size),
-                        headerContent = headerContent,
-                        query = query,
-                        onQueryChange = onQueryChange,
-                        onSettings = onSettings,
-                        onSearch = onOpenSearch,
-                        sourceLabels = sourceLabels,
-                        selectedSource = selectedSource,
-                        onSelectSource = onSelectSource,
-                        statusMessage = statusMessage,
-                    )
-                    if (!groupByBoard) {
-                        FavoriteBoardShortcuts(
-                            rows = rows,
-                            selectedBoard = boardFilter,
-                            onSelected = { key -> boardFilter = if (key == boardFilter) null else key },
-                            thumbnail = thumbnail,
-                        )
-                    }
-                }
-            }
-            val insets = Modifier.fillMaxSize().contentInsets()
-            val visibleRows =
-                remember(rows, boardFilter) {
-                    val selected = boardFilter?.takeIf { key -> rows.any { it.sourceAndBoard == key } }
-                    if (selected == null) rows else rows.filter { it.sourceAndBoard == selected }
-                }
-            val groups =
-                remember(visibleRows, groupByBoard) {
-                    if (groupByBoard) {
-                        visibleRows.groupBy { it.boardTitle to it.board }
-                    } else {
-                        linkedMapOf(
-                            ("" to "") to visibleRows,
-                        )
-                    }
-                }
-            Box(modifier = Modifier.fillMaxSize()) {
-                LazyVerticalGrid(
-                    // One full-width card per thread on a phone, its media whole and the opening post
-                    // under it; wider screens fit more columns of the same card.
-                    columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
-                    state = gridState,
-                    modifier = insets,
-                    contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding()),
-                ) {
-                    fullWidthItem { header() }
-                    if (visibleRows.isEmpty()) {
-                        item(key = "feed-empty", span = { GridItemSpan(maxLineSpan) }) {
-                            Column(Modifier.padding(vertical = 24.dp)) {
-                                ScreenTitle(
-                                    stringResource(Res.string.next_nothing_here_yet),
-                                    subtitle = stringResource(Res.string.next_try_different_search),
-                                    size = 22,
-                                )
-                                onOpenBoards?.let {
-                                    InlineAction(
-                                        stringResource(Res.string.next_explore_boards),
-                                        accent = true,
-                                        onClick = it,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    groups.forEach { (board, group) ->
-                        if (groupByBoard) {
-                            item(key = "board:${board.second}", span = { GridItemSpan(maxLineSpan) }) {
-                                FeedGroupHeading(board.first, board.second, group.size)
-                            }
-                        }
-                        itemsIndexed(group, key = {
-                            _,
-                            row,
-                            ->
-                            row.id
-                        }, contentType = { _, _ -> "feed-grid" }) { index, row ->
-                            FeedGridCell(
-                                row,
-                                index,
-                                onOpenRow,
-                                thumbnail,
-                                activityText = activityText,
-                                showBoard = !groupByBoard,
-                                excerptLines = FEED_EXCERPT_LINES,
-                                tallMedia = true,
-                                uniform = uniformCards,
-                                onToggleWatch = onToggleWatch,
-                                onToggleSaved = onToggleSaved,
-                                onShareRow = onShareRow,
-                            )
-                        }
-                    }
-                }
-                if (rows.isNotEmpty() && showCompactTitle) {
-                    val fabShape = RoundedCornerShape(NextRadius.control)
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            scope.launch { gridState.animateScrollToItem(0) }
-                        },
-                        shape = fabShape,
-                        containerColor = next.accentContainer,
-                        contentColor = next.onAccentContainer,
-                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
-                        expanded = showCompactTitle,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowUpward,
-                                contentDescription = stringResource(Res.string.next_thread_jump_top),
-                            )
-                        },
-                        text = {
-                            Text(
-                                text = stringResource(Res.string.next_thread_jump_top),
-                                style = NextType.labelLarge,
-                            )
-                        },
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(
-                                    end = NextSpace.gutter,
-                                    bottom = bottomPad.calculateBottomPadding() + 16.dp,
-                                ).border(1.dp, next.hairline, fabShape),
+    NextScaffold(
+        where = stringResource(Res.string.next_feed_title),
+        modifier = modifier.fillMaxSize(),
+        railVisible = true,
+        destination = NextDestination.FEED.takeIf { showRail && hasTabs },
+        onDestination = onDestination.takeIf { showRail },
+        immersive = true,
+    ) { bottomPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(TikTokDesign.Black)
+                .padding(bottom = bottomPadding.calculateBottomPadding()),
+        ) {
+            if (visibleRows.isNotEmpty()) {
+                VerticalPager(
+                    state = pager,
+                    key = { page -> visibleRows.getOrNull(page)?.id ?: "feed-pending:$page" },
+                    beyondViewportPageCount = 1,
+                    modifier = Modifier.fillMaxSize().testTag(TikTokFeedTags.PAGER),
+                ) { page ->
+                    val row = visibleRows.getOrNull(page) ?: return@VerticalPager
+                    TikTokFeedPage(
+                        row = row,
+                        active = row.id == settledId && !row.muted,
+                        thumbnail = thumbnail,
+                        mediaContent = mediaContent,
+                        activity = activityText(row),
+                        headerStatus = statusMessage,
+                        onOpen = { onOpenRow(row) },
+                        onOpenBoard = onOpenBoard?.let { action -> { action(row) } } ?: onOpenBoards,
+                        onToggleWatch = onToggleWatch,
+                        onToggleSaved = onToggleSaved,
+                        onShare = onShareRow,
                     )
                 }
+            } else {
+                TikTokFeedEmpty(following = following, onOpenBoards = onOpenBoards, onOpenWatched = onOpenWatched)
             }
+            TikTokFeedHeader(
+                following = following,
+                onFollowingChange = { following = it },
+                subtitle = subtitle,
+                statusMessage = statusMessage,
+                onSettings = onSettings,
+                onSearch = onOpenSearch,
+                onOpenBoards = onOpenBoards,
+                onOpenDownloads = onOpenDownloads,
+                headerContent = headerContent,
+                query = query,
+                onQueryChange = onQueryChange,
+                sourceLabels = sourceLabels,
+                selectedSource = selectedSource,
+                onSelectSource = onSelectSource,
+            )
         }
     }
 }
 
-/** Wide enough that every phone gets one column; a tablet or unfolded foldable gets two or more. */
+private class FeedRelocation(
+    val id: String,
+)
+
+/** Catalog density remains independent of Home's single-page presentation. */
 internal val FEED_CARD_MIN_WIDTH = 360.dp
-
-/** Lines of the opening post under each feed card. */
 internal const val FEED_EXCERPT_LINES = 3
-
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP
 internal const val FEED_SIZE_STEPS = MEDIA_SIZE_STEPS
-
-/** Matches media.video.MAX_FEED_AUTOPLAY_PLAYERS — keep feed ExoPlayer count at 0 or 1. */
-private const val MAX_FEED_AUTOPLAY_IDS = 1

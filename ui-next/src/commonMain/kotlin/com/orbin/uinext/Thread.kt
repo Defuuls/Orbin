@@ -278,7 +278,7 @@ fun ThreadScreen(
                     ),
             ) {
                 item {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = THREAD_COMMENT_GUTTER, vertical = 8.dp)) {
                         if (!subtitle.isNullOrBlank()) {
                             MetaLine(subtitle, color = next.muted)
                             Gap(4)
@@ -316,7 +316,7 @@ fun ThreadScreen(
                                         stringResource(Res.string.next_thread_watch)
                                     },
                                 onClick = onWatch,
-                                tint = next.ink,
+                                tint = if (watching) next.accent else next.ink,
                             )
                             if (onToggleSaved != null) {
                                 val saveIcon = if (saved) ReaderIcons.SavedFilled else ReaderIcons.Saved
@@ -354,7 +354,11 @@ fun ThreadScreen(
                     if (layout == ThreadLayout.FILES) {
                         // What you do with every file belongs with the files, not above the posts.
                         FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(start = GUTTER - 4.dp, top = 8.dp),
+                            modifier =
+                                Modifier.fillMaxWidth().padding(
+                                    start = THREAD_COMMENT_GUTTER - 4.dp,
+                                    top = 8.dp,
+                                ),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
@@ -382,9 +386,9 @@ fun ThreadScreen(
                                         posts.size - 1,
                                         posts.size - 1,
                                     ),
-                                style = NextType.headline,
-                                color = next.ink,
-                                modifier = Modifier.padding(horizontal = GUTTER, vertical = 12.dp),
+                                style = NextType.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = next.muted,
+                                modifier = Modifier.padding(horizontal = THREAD_COMMENT_GUTTER, vertical = 12.dp),
                             )
                         }
                         PostView(
@@ -480,10 +484,10 @@ private fun PostView(
                     original = true,
                     collapsed = collapsed,
                     onToggleCollapse = onToggleCollapse,
-                    modifier = Modifier.padding(horizontal = GUTTER),
+                    modifier = Modifier.padding(horizontal = THREAD_COMMENT_GUTTER),
                 )
                 if (!collapsed) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 4.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = THREAD_COMMENT_GUTTER, vertical = 4.dp)) {
                         PostBody(post, body)
                     }
                     if (post.hasMedia) {
@@ -499,12 +503,12 @@ private fun PostView(
             Row(
                 modifier =
                     Modifier.fillMaxWidth().padding(
-                        start = GUTTER + depthReserve,
-                        end = GUTTER,
+                        start = THREAD_COMMENT_GUTTER + depthReserve,
+                        end = THREAD_COMMENT_GUTTER,
                         top = 4.dp,
                         bottom = 12.dp,
                     ),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 PostAvatar(post, Modifier.padding(top = 8.dp), compact = true)
@@ -556,7 +560,7 @@ private fun PostMetadata(
                 Text(
                     text = post.author.ifBlank { stringResource(Res.string.social_thread_anonymous) },
                     style = NextType.body.copy(fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold),
-                    color = next.ink,
+                    color = if (original) next.ink else next.muted,
                 )
                 if (original) {
                     Text(
@@ -564,27 +568,32 @@ private fun PostMetadata(
                         style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 17.sp),
                         color = next.muted,
                     )
-                } else if (post.time.isNotBlank()) {
+                } else {
                     Text(
-                        post.time,
+                        post.number,
                         style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 17.sp),
-                        color = next.muted,
+                        color = next.faint,
                     )
+                    if (post.time.isNotBlank()) {
+                        Text(
+                            post.time,
+                            style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 17.sp),
+                            color = next.faint,
+                        )
+                    }
                 }
             }
-            Text(
-                text =
-                    if (original) {
+            if (original) {
+                Text(
+                    text =
                         listOf(
                             post.number,
                             post.time,
-                        ).filter(String::isNotBlank).joinToString(" · ")
-                    } else {
-                        post.number
-                    },
-                style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 16.sp),
-                color = next.muted,
-            )
+                        ).filter(String::isNotBlank).joinToString(" · "),
+                    style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                    color = next.muted,
+                )
+            }
             if (collapsed) {
                 Text(
                     text = stringResource(Res.string.next_post_collapsed),
@@ -612,7 +621,7 @@ private fun PostAvatar(
 ) {
     val name = post.author.ifBlank { stringResource(Res.string.social_thread_anonymous) }
     Box(
-        modifier.size(if (compact) 28.dp else 32.dp).clip(CircleShape).background(next.raised),
+        modifier.size(if (compact) 32.dp else 36.dp).clip(CircleShape).background(next.raised),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -653,7 +662,7 @@ private fun PostBody(
     } else {
         Text(
             text = post.body,
-            style = NextType.body.copy(fontSize = 14.sp, lineHeight = 19.sp),
+            style = NextType.body.copy(fontSize = 15.sp, lineHeight = 21.sp),
             color = next.ink,
         )
     }
@@ -681,3 +690,4 @@ private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_INDENT = 12.dp
+private val THREAD_COMMENT_GUTTER = 12.dp

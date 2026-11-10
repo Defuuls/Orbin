@@ -16,6 +16,9 @@ import androidx.compose.ui.unit.dp
  * fill the same silhouette, keeping layout and hit targets stable when selection changes.
  */
 object ReaderIcons {
+    val Plus: ImageVector by lazy { outline("Plus", "M12 5v14M5 12h14") }
+    val Heart: ImageVector by lazy { outline("Heart", HEART) }
+    val HeartFilled: ImageVector by lazy { filled("HeartFilled", HEART) }
     val Home: ImageVector by lazy { outline("Home", HOME) }
     val HomeFilled: ImageVector by lazy { filled("HomeFilled", HOME) }
     val Search: ImageVector by lazy {
@@ -36,6 +39,25 @@ object ReaderIcons {
             "Chat",
             "M21 11.5c0 2-.6 3.7-1.7 5.2L21 21l-4.5-1.4A9.7 9.7 0 0 1 12 20" +
                 "c-5 0-9-3.8-9-8.5S7 3 12 3s9 3.8 9 8.5Z",
+        )
+    }
+    val ChatFilled: ImageVector by lazy {
+        filled(
+            "ChatFilled",
+            "M21.5 11.4c0 5-4.2 9-9.5 9-1.1 0-2.2-.2-3.2-.5L3 22l1.6-5.3A8.6 8.6 0 0 1 2.5 11.4" +
+                "c0-5 4.2-9 9.5-9s9.5 4 9.5 9Z",
+        )
+    }
+    val ShareForward: ImageVector by lazy {
+        filled(
+            "ShareForward",
+            "M13.5 3 23 11.5 13.5 20v-5c-5.1 0-8.5 1.4-12 5 1.6-7.1 5.6-10.5 12-10.5Z",
+        )
+    }
+    val Music: ImageVector by lazy {
+        outline(
+            "Music",
+            "M9 18V5l11-2v13M9 8l11-2M9 18c0 1.7-1.7 3-3.5 3S2 20.2 2 18.5 3.7 16 5.5 16 9 16.3 9 18ZM20 16c0 1.7-1.7 3-3.5 3s-3.5-.8-3.5-2.5S14.7 14 16.5 14s3.5.3 3.5 2Z",
         )
     }
     val Share: ImageVector by lazy {
@@ -107,6 +129,8 @@ object ReaderIcons {
     private const val BELL = "M6 9a6 6 0 0 1 12 0c0 5.5 2 6.5 2 8H4c0-1.5 2-2.5 2-8Z"
     private const val SAVED = "M6 3.5c0-.3.2-.5.5-.5h11c.3 0 .5.2.5.5V21l-6-4-6 4Z"
     private const val STAR = "M12 3l2.8 5.7 6.3.9-4.5 4.4 1.1 6.3-5.7-3-5.7 3 1.1-6.3-4.5-4.4 6.3-.9Z"
+    private const val HEART =
+        "M12 21 3.3 12.7A5.6 5.6 0 0 1 12 5.6a5.6 5.6 0 0 1 8.7 7.1Z"
     private const val CIRCLE = "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0Z"
 }
 

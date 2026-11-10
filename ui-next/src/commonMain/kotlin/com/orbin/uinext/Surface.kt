@@ -7,11 +7,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -25,13 +27,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -58,20 +60,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
@@ -96,66 +106,83 @@ enum class NextDestination {
     SETTINGS,
 }
 
-/** Five icon destinations using the 56pt floating capsule from the pinned iOS reference. */
+/** Five functional destinations in the reference's fixed, edge-to-edge navigation bar. */
 @Composable
 fun DestinationPill(
     selected: NextDestination,
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier = Modifier,
+    immersive: Boolean = false,
 ) {
     val destinations =
         listOf(
             NextDestination.FEED,
-            NextDestination.BOARDS,
             NextDestination.WATCHED,
+            NextDestination.BOARDS,
             NextDestination.SEARCH,
             NextDestination.SAVED,
         )
     val labels =
         listOf(
             stringResource(Res.string.social_home),
-            stringResource(Res.string.next_launchpad_boards),
             stringResource(Res.string.social_watched),
+            stringResource(Res.string.next_launchpad_boards),
             stringResource(Res.string.social_search),
             stringResource(Res.string.social_saved),
         )
     val outline =
-        listOf(ReaderIcons.Home, ReaderIcons.Boards, ReaderIcons.Watched, ReaderIcons.Search, ReaderIcons.Saved)
+        listOf(ReaderIcons.Home, ReaderIcons.Watched, ReaderIcons.Plus, ReaderIcons.Search, ReaderIcons.Saved)
     val filled =
         listOf(
             ReaderIcons.HomeFilled,
-            ReaderIcons.BoardsFilled,
             ReaderIcons.WatchedFilled,
+            ReaderIcons.Plus,
             ReaderIcons.Search,
             ReaderIcons.SavedFilled,
         )
+    val background = if (immersive) TikTokDesign.Black else next.background
+    val foreground = if (immersive) TikTokDesign.White else next.ink
+    val inactive = if (immersive) TikTokDesign.SecondaryWhite else next.muted
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
     BoxWithConstraints(
         modifier =
-            modifier.fillMaxWidth().windowInsetsPadding(
-                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-            ),
-    ) {
-        // Keep five 48dp targets even in narrow split windows. Very narrow windows can scroll
-        // the bar instead of shrinking controls. Dynamic Type never shrinks the content labels.
-        val inset = minOf(24.dp, maxOf(0.dp, (maxWidth - 248.dp) / 2))
-        val barWidth = maxOf(248.dp, maxWidth - inset * 2)
-        val shape = RoundedCornerShape(28.dp)
-        Box(
-            Modifier
+            modifier
                 .fillMaxWidth()
-                .padding(start = inset, end = inset, bottom = 8.dp)
-                .horizontalScroll(rememberScrollState()),
-        ) {
+                .background(background)
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                ),
+    ) {
+        // Five independent 48dp targets fit a 240dp window. Larger text grows the bar rather
+        // than shrinking labels or targets; only even narrower windows need horizontal scroll.
+        val barWidth = maxOf(MIN_TOUCH_TARGET * destinations.size, maxWidth)
+        val labelWidth = with(density) { (barWidth / destinations.size - 8.dp).roundToPx() }
+        val captionHeight =
+            labels.filterIndexed { index, _ -> index != CENTER_DESTINATION_INDEX }.maxOf { label ->
+                with(density) {
+                    measurer
+                        .measure(
+                            label,
+                            style = TikTokDesign.NavigationLabel,
+                            maxLines = Int.MAX_VALUE,
+                            constraints = Constraints(maxWidth = labelWidth),
+                        ).size.height
+                        .toDp()
+                }
+            }
+        val height =
+            maxOf(
+                TikTokDesign.NavigationHeight,
+                TikTokDesign.NavigationIconSize + 2.dp + captionHeight + 8.dp,
+            )
+        Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
             Row(
                 modifier =
                     Modifier
                         .width(barWidth)
-                        .height(56.dp)
-                        .clip(shape)
-                        .background(next.background.copy(alpha = 0.94f))
-                        .border(0.5.dp, next.hairline.copy(alpha = 0.7f), shape)
-                        .selectableGroup()
-                        .padding(4.dp),
+                        .height(height)
+                        .selectableGroup(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 destinations.forEachIndexed { index, destination ->
@@ -165,6 +192,9 @@ fun DestinationPill(
                         icon = if (active) filled[index] else outline[index],
                         selected = active,
                         onClick = { onSelect(destination) },
+                        tint = if (active) foreground else inactive,
+                        height = height,
+                        centerAction = index == CENTER_DESTINATION_INDEX,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -179,26 +209,84 @@ private fun ReaderTab(
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
+    tint: Color,
+    height: Dp,
+    centerAction: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier =
             modifier
-                .heightIn(min = MIN_TOUCH_TARGET)
-                .clip(RoundedCornerShape(24.dp))
+                .height(height)
+                .widthIn(min = MIN_TOUCH_TARGET)
                 .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-                // The visual inset belongs inside the selectable region: at the bar's minimum
-                // width each tab must retain the full 48dp target supplied by its weighted cell.
-                .padding(horizontal = 2.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(
-                    if (selected) next.ink.copy(alpha = if (next.dark) 0.16f else 0.08f) else Color.Transparent,
-                ),
-        contentAlignment = Alignment.Center,
+                .semantics { contentDescription = label }
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = next.ink, modifier = Modifier.size(26.dp))
+        if (centerAction) {
+            TikTokAddMark(Modifier.clearAndSetSemantics {})
+        } else {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(TikTokDesign.NavigationIconSize),
+            )
+            Text(
+                label,
+                style = TikTokDesign.NavigationLabel,
+                color = tint,
+                textAlign = TextAlign.Center,
+                maxLines = Int.MAX_VALUE,
+                modifier =
+                    Modifier.fillMaxWidth().padding(top = 2.dp).clearAndSetSemantics {},
+            )
+        }
     }
 }
+
+/** Original geometric artwork: offset cyan/pink shoulders around the white add button. */
+@Composable
+private fun TikTokAddMark(modifier: Modifier = Modifier) {
+    Canvas(modifier.size(width = 46.dp, height = 30.dp)) {
+        val shoulder = 3.dp.toPx()
+        val faceWidth = size.width - shoulder * 2
+        val radius = CornerRadius(6.dp.toPx())
+        drawRoundRect(TikTokDesign.Cyan, size = Size(faceWidth, size.height), cornerRadius = radius)
+        drawRoundRect(
+            TikTokDesign.Pink,
+            topLeft = Offset(shoulder * 2, 0f),
+            size = Size(faceWidth, size.height),
+            cornerRadius = radius,
+        )
+        drawRoundRect(
+            TikTokDesign.White,
+            topLeft = Offset(shoulder, 0f),
+            size = Size(faceWidth, size.height),
+            cornerRadius = radius,
+        )
+        val arm = 6.dp.toPx()
+        val stroke = 2.4.dp.toPx()
+        drawLine(
+            TikTokDesign.Black,
+            Offset(center.x - arm, center.y),
+            Offset(center.x + arm, center.y),
+            strokeWidth = stroke,
+            cap = StrokeCap.Square,
+        )
+        drawLine(
+            TikTokDesign.Black,
+            Offset(center.x, center.y - arm),
+            Offset(center.x, center.y + arm),
+            strokeWidth = stroke,
+            cap = StrokeCap.Square,
+        )
+    }
+}
+
+private const val CENTER_DESTINATION_INDEX = 2
 
 /** Space to keep scrolling content clear of [CompactTitleBar]. */
 val COMPACT_TITLE_CLEARANCE = 56.dp
@@ -564,7 +652,7 @@ fun MediaTile(
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
  * Wrapped around [androidx.compose.material3.Scaffold]. Pass [destination] + [onDestination]
- * for tab chrome. Only Home, Search, Boards, and Saved draw it; secondary screens use back navigation.
+ * for tab chrome. The five primary destinations draw it; secondary screens use back navigation.
  * [where] names the screen for accessibility services as its pane title.
  */
 @Composable
@@ -574,15 +662,16 @@ fun NextScaffold(
     railVisible: Boolean = true,
     destination: NextDestination? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
+    immersive: Boolean = false,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val pillDestination = destination?.takeIf { it.drawsPill() }?.takeIf { onDestination != null }
     val density = LocalDensity.current
     var measuredChromeHeight by remember { mutableStateOf(0.dp) }
-    val defaultBottom = RAIL_HEIGHT + RAIL_CLEARANCE + bottomInset()
+    val defaultBottom = RAIL_HEIGHT + bottomInset()
     val bottom =
         if (pillDestination != null) {
-            maxOf(defaultBottom, measuredChromeHeight + 12.dp)
+            maxOf(defaultBottom, measuredChromeHeight)
         } else {
             NO_RAIL_CLEARANCE + bottomInset()
         }
@@ -591,8 +680,8 @@ fun NextScaffold(
             modifier
                 .fillMaxSize()
                 .then(if (where != null) Modifier.semantics { paneTitle = where } else Modifier),
-        containerColor = next.background,
-        contentColor = next.ink,
+        containerColor = if (immersive) TikTokDesign.Black else next.background,
+        contentColor = if (immersive) TikTokDesign.White else next.ink,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { scaffoldPadding ->
         Box(
@@ -609,6 +698,7 @@ fun NextScaffold(
                     DestinationPill(
                         selected = pillDestination,
                         onSelect = onDestination,
+                        immersive = immersive,
                         modifier =
                             Modifier.onSizeChanged {
                                 measuredChromeHeight = with(density) { it.height.toDp() }
@@ -622,7 +712,7 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-val RAIL_HEIGHT = 56.dp
+val RAIL_HEIGHT = TikTokDesign.NavigationHeight
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
 private val CHROME_DESTINATIONS =
@@ -641,7 +731,6 @@ private val CHROME_DESTINATIONS =
  */
 internal fun NextDestination?.drawsPill(): Boolean = this in CHROME_DESTINATIONS
 
-private val RAIL_CLEARANCE = 12.dp
 internal val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */
@@ -687,6 +776,48 @@ fun MessageScreen(
     // Loading a grid: show the grid's shape instead of an empty page, so the layout does not jump.
     skeleton: Boolean = false,
 ) {
+    if (destination == NextDestination.FEED) {
+        NextTheme(darkTheme = true, amoled = true) {
+            NextScaffold(
+                where = where ?: title,
+                modifier = modifier,
+                destination = destination,
+                onDestination = onDestination,
+                immersive = true,
+            ) { padding ->
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(bottom = padding.calculateBottomPadding())
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                        ),
+                ) {
+                    Text(
+                        title,
+                        style = NextType.titleMedium,
+                        color = TikTokDesign.White,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(16.dp).semantics { heading() },
+                    )
+                    Column(
+                        Modifier.align(Alignment.Center).padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        if (skeleton) NextCircularProgress()
+                        Text(
+                            subtitle,
+                            style = NextType.body,
+                            color = TikTokDesign.SecondaryWhite,
+                            textAlign = TextAlign.Center,
+                        )
+                        if (actionLabel != null) InlineAction(actionLabel, accent = true, onClick = onAction)
+                    }
+                }
+            }
+        }
+        return
+    }
     NextScaffold(
         where = where.takeIf { !destination.drawsPill() },
         modifier = modifier,

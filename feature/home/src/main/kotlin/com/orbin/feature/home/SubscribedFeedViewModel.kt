@@ -12,6 +12,8 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.feed.BoardFeed
 import com.orbin.domain.feed.SubscribedFeedLoader
@@ -21,6 +23,7 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.media.ImagePreloader
+import com.orbin.media.video.VideoPreloader
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +32,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -90,9 +94,38 @@ class SubscribedFeedViewModel
         historyRepository: HistoryRepository,
         private val appLockController: AppLockController,
         private val imagePreloader: ImagePreloader,
+        private val videoPreloader: VideoPreloader? = null,
     ) : ViewModel() {
         private val feedLoader = SubscribedFeedLoader()
         private val providers = registry.all()
+        private var imagePrefetchJob: Job? = null
+        private var imagePrefetchUrls: List<String> = emptyList()
+        private var videoPrefetchJob: Job? = null
+        private var videoPrefetchUrl: String? = null
+        private val videoPrefetchOwner = Any()
+
+        /** One bounded byte prefix, without creating another decoder or warming hidden media. */
+        fun prefetchFeedVideo(url: String?) {
+            if (videoPrefetchUrl == url && videoPrefetchJob?.isActive == true) return
+            videoPrefetchJob?.cancel()
+            videoPrefetchUrl = url
+            videoPrefetchJob = url?.let { videoPreloader?.prefetch(it, viewModelScope, videoPrefetchOwner) }
+            // Retain a completed prefix until the newly visible player opens it. The cache is
+            // already bounded and expires; disabling preload or leaving/backgrounding clears it.
+        }
+
+        fun clearFeedVideoPrefetch() {
+            videoPrefetchJob?.cancel()
+            videoPrefetchJob = null
+            videoPrefetchUrl = null
+            videoPreloader?.clear(videoPrefetchOwner)
+        }
+
+        override fun onCleared() {
+            clearFeedImagePrefetch()
+            clearFeedVideoPrefetch()
+            super.onCleared()
+        }
 
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -103,16 +136,37 @@ class SubscribedFeedViewModel
                 .map { it.metadata.id.value }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, activeProvider.value.metadata.id.value)
 
-        /** Prefetch near-viewport feed thumbnails under [viewModelScope]. */
+        /** Replace obsolete viewport work instead of accumulating batches during rapid swipes. */
         fun prefetchFeedThumbs(urls: List<String>) {
-            imagePreloader.prefetchBatch(urls, viewModelScope, maxDimensionPx = FEED_PREFETCH_MAX_PX)
+            val targets = urls.filter { it.isNotBlank() }.distinct()
+            if (targets == imagePrefetchUrls && imagePrefetchJob?.isActive == true) return
+            imagePrefetchJob?.cancel()
+            imagePrefetchUrls = targets
+            imagePrefetchJob =
+                imagePreloader.prefetchBatch(targets, viewModelScope, maxDimensionPx = FEED_PREFETCH_MAX_PX)
+        }
+
+        fun clearFeedImagePrefetch() {
+            imagePrefetchJob?.cancel()
+            imagePrefetchJob = null
+            imagePrefetchUrls = emptyList()
         }
 
         private val refreshRequests = MutableStateFlow(0)
 
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                    AppSettings.Default.copy(
+                        // Never start a default-on preview before persisted scoped preferences arrive.
+                        playbackPreferences =
+                            PlaybackPreferences(
+                                defaults = PlaybackSettings(autoplay = false, preloadNextClip = false),
+                            ),
+                    ),
+                )
 
         /**
          * Only settings that actually alter fetched/filtered feed content participate in the load

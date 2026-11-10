@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -27,7 +28,7 @@ class InterfaceSemanticsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the feed is grid only and offers no layout switcher`() {
+    fun `the immersive feed offers no competing layout switcher`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS) }
         }
@@ -61,33 +62,39 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a grid feed cell is a button`() {
+    fun `the feed caption opens the thread as an accessible button`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS) }
         }
         composeRule
-            .onNodeWithText(ROWS[0].subject)
+            .onNode(hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true))
             .assertHasClickAction()
             .assert(hasRole(Role.Button))
     }
 
     @Test
-    fun `a grid feed cell reads as one node carrying its metadata`() {
+    fun `feed replies are a separate accessible action from the caption`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS) }
         }
         composeRule
-            .onNodeWithText(ROWS[0].subject)
-            .assert(hasTextContaining(ROWS[0].activity))
-            .assert(hasTextContaining("218 replies"))
+            .onNodeWithContentDescription("View replies to ${ROWS[0].subject}")
+            .assertHasClickAction()
+        composeRule
+            .onNode(
+                hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true),
+            ).assert(hasTextContaining(ROWS[0].subject))
     }
 
     @Test
-    fun `an explicitly grouped feed names each board in its heading`() {
+    fun `the immersive feed retains the current board identity with legacy grouping requested`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, groupByBoard = true) }
         }
-        composeRule.onAllNodesWithText(ROWS[0].board, substring = true).assertCountEquals(1)
+        composeRule
+            .onNode(
+                hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true),
+            ).assert(hasTextContaining(ROWS[0].board))
     }
 
     @Test
@@ -162,12 +169,13 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `settings opens from a button in the feed header`() {
+    fun `settings opens from the feed options menu`() {
         var opened = 0
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
         }
-        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithText("Settings").performClick()
         assert(opened == 1) { "expected the header button to open settings" }
     }
 

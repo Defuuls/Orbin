@@ -1,17 +1,23 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,18 +30,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_boards_no_match
 import com.orbin.uinext.resources.next_boards_nsfw
 import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
-import com.orbin.uinext.resources.next_launchpad_boards
 import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.resources.next_status_retry
@@ -43,6 +53,9 @@ import com.orbin.uinext.resources.social_feed_all_boards
 import com.orbin.uinext.resources.social_feed_favorite_add
 import com.orbin.uinext.resources.social_feed_favorite_boards
 import com.orbin.uinext.resources.social_feed_favorite_remove
+import com.orbin.uinext.resources.tiktok_board_follow
+import com.orbin.uinext.resources.tiktok_board_following
+import com.orbin.uinext.resources.tiktok_boards_title
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
@@ -125,7 +138,7 @@ fun BoardsScreen(
         } else {
             null
         }
-    val boardsTitle = stringResource(Res.string.next_launchpad_boards)
+    val boardsTitle = stringResource(Res.string.tiktok_boards_title)
     val showCompactTitle by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 64 }
     }
@@ -143,17 +156,11 @@ fun BoardsScreen(
                 contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap),
             ) {
                 item(key = "boards-title") {
-                    Column(Modifier.padding(horizontal = GUTTER)) {
+                    Column(Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER)) {
                         Row(
                             Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                boardsTitle,
-                                style = NextType.titleLarge,
-                                color = next.ink,
-                                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
-                            )
                             if (onOpenSearch != null) {
                                 NextIconAction(
                                     ReaderIcons.Search,
@@ -161,7 +168,21 @@ fun BoardsScreen(
                                     onOpenSearch,
                                     tint = next.ink,
                                 )
+                            } else {
+                                Spacer(Modifier.size(MIN_TOUCH_TARGET))
                             }
+                            Text(
+                                boardsTitle,
+                                style =
+                                    NextType.titleLarge.copy(
+                                        fontSize = 17.sp,
+                                        lineHeight = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                color = next.ink,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
+                            )
                             if (onOpenSettings != null) {
                                 NextIconAction(
                                     ReaderIcons.Menu,
@@ -169,6 +190,8 @@ fun BoardsScreen(
                                     onOpenSettings,
                                     tint = next.ink,
                                 )
+                            } else {
+                                Spacer(Modifier.size(MIN_TOUCH_TARGET))
                             }
                         }
                         headerContent()
@@ -198,13 +221,13 @@ fun BoardsScreen(
                             ),
                             style = NextType.body,
                             color = next.muted,
-                            modifier = Modifier.padding(GUTTER),
+                            modifier = Modifier.padding(BOARD_DIRECTORY_GUTTER),
                         )
                         if (onRetry != null) {
                             InlineAction(
                                 stringResource(Res.string.next_status_retry),
                                 onClick = onRetry,
-                                modifier = Modifier.padding(horizontal = GUTTER),
+                                modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER),
                             )
                         }
                     }
@@ -252,9 +275,16 @@ fun BoardsScreen(
 private fun BoardSectionTitle(label: String) {
     Text(
         label,
-        style = NextType.footnote,
-        color = next.muted,
-        modifier = Modifier.padding(start = GUTTER, end = GUTTER, top = 20.dp, bottom = 8.dp).semantics { heading() },
+        style = NextType.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+        color = next.ink,
+        modifier =
+            Modifier
+                .padding(
+                    start = BOARD_DIRECTORY_GUTTER,
+                    end = BOARD_DIRECTORY_GUTTER,
+                    top = 16.dp,
+                    bottom = 6.dp,
+                ).semantics { heading() },
     )
 }
 
@@ -269,45 +299,80 @@ private fun BoardListRow(
             Modifier
                 .fillMaxWidth()
                 .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(start = GUTTER, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         BoardIcon(
             siteId = board.site ?: board.id.substringBefore('/'),
             boardId = board.path,
             title = board.title,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(48.dp),
         )
         Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
             Text(board.path, style = NextType.titleMedium, color = next.ink)
             Text(board.title, style = NextType.bodyMedium, color = next.muted)
-            if (board.nsfw) {
+            val metadata =
+                listOfNotNull(
+                    board.site?.let(::sourceLabel)?.takeIf(String::isNotBlank),
+                    stringResource(Res.string.next_boards_nsfw).takeIf { board.nsfw },
+                ).joinToString(" · ")
+            if (metadata.isNotBlank()) {
                 Text(
-                    stringResource(Res.string.next_boards_nsfw),
-                    style = NextType.caption1,
+                    metadata,
+                    style = NextType.footnote,
                     color = next.muted,
                 )
             }
         }
         if (onFollow != null) {
             val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
-            NextIconAction(
-                imageVector = if (board.followed) ReaderIcons.StarFilled else ReaderIcons.Star,
-                contentDescription =
+            val actionDescription =
+                stringResource(
+                    if (board.followed) {
+                        Res.string.social_feed_favorite_remove
+                    } else {
+                        Res.string.social_feed_favorite_add
+                    },
+                    identity,
+                )
+            Box(
+                Modifier
+                    .widthIn(min = 80.dp, max = 112.dp)
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .nextClickable(role = Role.Button) { onFollow(!board.followed) }
+                    .semantics {
+                        contentDescription = actionDescription
+                        selected = board.followed
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                val shape = RoundedCornerShape(3.dp)
+                Text(
                     stringResource(
-                        if (board.followed) {
-                            Res.string.social_feed_favorite_remove
-                        } else {
-                            Res.string.social_feed_favorite_add
-                        },
-                        identity,
+                        if (board.followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
                     ),
-                onClick = { onFollow(!board.followed) },
-                tint = next.ink,
-                modifier = Modifier.semantics { selected = board.followed },
-            )
+                    style =
+                        NextType.bodyMedium.copy(
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color = if (board.followed) next.ink else next.onAccent,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(shape)
+                            .background(if (board.followed) next.background else next.accent)
+                            .border(1.dp, if (board.followed) next.hairline else next.accent, shape)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+        } else {
+            Icon(ReaderIcons.ChevronRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
         }
-        Icon(ReaderIcons.ChevronRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
     }
 }
+
+private val BOARD_DIRECTORY_GUTTER = 12.dp

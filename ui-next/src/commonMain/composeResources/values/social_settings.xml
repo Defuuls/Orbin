@@ -1,5 +1,5 @@
 <resources>
-    <string name="social_settings_title">Settings and activity</string>
+    <string name="social_settings_title">Settings and privacy</string>
     <string name="social_settings_back">Back</string>
     <string name="social_settings_sites">Sites and boards</string>
     <string name="social_settings_browsing">How you browse</string>

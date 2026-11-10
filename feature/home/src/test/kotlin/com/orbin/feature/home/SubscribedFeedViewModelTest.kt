@@ -1,5 +1,6 @@
 package com.orbin.feature.home
 
+import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.lock.AppLockController
@@ -23,14 +24,18 @@ import com.orbin.core.testing.repository.FakeHistoryRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.media.ImagePreloader
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -251,10 +256,46 @@ class SubscribedFeedViewModelTest {
             }
         }
 
+    @Test
+    fun `rapid source viewport changes retain only one thumbnail batch and clear it when leaving`() =
+        runTest {
+            val pending = mutableListOf<Pair<List<String>, CompletableJob>>()
+            val imagePreloader = mockk<ImagePreloader>()
+            every { imagePreloader.prefetchBatch(any(), any(), any()) } answers {
+                Job().also { pending += firstArg<List<String>>() to it }
+            }
+            val registry = FakeProviderRegistry(catalogProvider(emptyList()))
+            val viewModel = createViewModel(registry, FakeSettingsRepository(), emptySet(), imagePreloader)
+            val firstViewport = listOf("https://i.4cdn.org/g/41s.jpg")
+            val secondViewport = listOf("https://bbw.example/gen/41s.jpg")
+
+            viewModel.prefetchFeedThumbs(firstViewport)
+            viewModel.prefetchFeedThumbs(firstViewport)
+            assertThat(pending).hasSize(1)
+            assertThat(pending.single().second.isActive).isTrue()
+
+            viewModel.prefetchFeedThumbs(secondViewport)
+            assertThat(pending.last().first).isEqualTo(secondViewport)
+            assertThat(pending.first().second.isCancelled).isTrue()
+            assertThat(pending.count { it.second.isActive }).isEqualTo(1)
+
+            // The screen's pause/dispose hook cancels pending I/O without waiting for the VM to die.
+            viewModel.clearFeedImagePrefetch()
+            assertThat(pending.count { it.second.isActive }).isEqualTo(0)
+            viewModel.prefetchFeedThumbs(secondViewport)
+            assertThat(pending.count { it.second.isActive }).isEqualTo(1)
+
+            val store = ViewModelStore()
+            store.put("feed", viewModel)
+            store.clear()
+            assertThat(pending.count { it.second.isActive }).isEqualTo(0)
+        }
+
     private fun createViewModel(
         registry: ProviderRegistry,
         settingsRepository: FakeSettingsRepository,
         subscribed: Set<BoardId>,
+        imagePreloader: ImagePreloader = mockk(relaxed = true),
     ) = SubscribedFeedViewModel(
         registry = registry,
         observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
@@ -263,7 +304,7 @@ class SubscribedFeedViewModelTest {
         settingsRepository = settingsRepository,
         historyRepository = FakeHistoryRepository(),
         appLockController = AppLockController(),
-        imagePreloader = mockk(relaxed = true),
+        imagePreloader = imagePreloader,
     )
 
     /** A provider that answers every catalog request with [threads]. */

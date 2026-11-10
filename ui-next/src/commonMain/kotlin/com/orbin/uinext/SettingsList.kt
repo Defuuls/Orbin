@@ -163,6 +163,7 @@ fun SettingsScreen(
     }
     Column(modifier = modifier.fillMaxSize().background(next.background).contentInsets()) {
         SettingsNavigationBar(title, backAction)
+        Hairline()
         if (choice != null) {
             SettingsChoiceList(choice) { index ->
                 onSelectOption(choice, index)
@@ -203,7 +204,9 @@ fun SettingsScreen(
                     settingsDirectory(pages.keys, onNavigate != null).forEachIndexed { index, (heading, entries) ->
                         item(key = "directory:$heading") {
                             Column {
-                                if (index > 0) Hairline()
+                                if (index > 0) {
+                                    Box(Modifier.fillMaxWidth().height(8.dp).background(next.raised))
+                                }
                                 SettingsSectionHeading(directorySectionLabel(heading))
                                 entries.forEach { destination ->
                                     SettingsDirectoryRow(
@@ -283,12 +286,19 @@ private fun SettingsNavigationBar(
                     imageVector = ReaderIcons.Back,
                     contentDescription = stringResource(Res.string.social_settings_back),
                     onClick = onBack,
+                    tint = next.ink,
                 )
             }
         }
         Text(
             title,
-            style = NextType.titleLarge,
+            style =
+                NextType.titleLarge.copy(
+                    fontSize = 18.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.sp,
+                ),
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f).semantics { heading() },
             color = next.ink,
@@ -305,7 +315,7 @@ private fun SettingsSectionHeading(label: String) {
             NextType.footnote.copy(
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.sp,
             ),
         color = next.muted,
@@ -324,13 +334,13 @@ private fun SettingsDirectoryRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = 52.dp)
                 .nextClickable(role = Role.Button, onClick = onClick)
                 .padding(horizontal = GUTTER, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(settingsIcon(destination), contentDescription = null, tint = next.ink, modifier = Modifier.size(24.dp))
+        Icon(settingsIcon(destination), contentDescription = null, tint = next.ink, modifier = Modifier.size(22.dp))
         Text(label, style = NextType.body, color = next.ink, modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (value != null) Text(value, style = NextType.bodyDense, color = next.muted)
@@ -401,12 +411,18 @@ private fun SettingsChoiceList(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(option, style = NextType.body, color = next.ink, modifier = Modifier.weight(1f))
+                Text(
+                    option,
+                    style = NextType.body,
+                    fontWeight = if (index == item.selected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = next.ink,
+                    modifier = Modifier.weight(1f),
+                )
                 if (index == item.selected) {
                     Icon(
                         ReaderIcons.Check,
                         contentDescription = null,
-                        tint = next.ink,
+                        tint = TikTokDesign.Pink,
                         modifier = Modifier.size(22.dp),
                     )
                 }
@@ -447,7 +463,13 @@ private fun SettingRow(
                 }
         }
     Column(Modifier.bringIntoViewRequester(bringIntoView)) {
-        BoxWithConstraints(Modifier.fillMaxWidth().then(action).padding(horizontal = GUTTER, vertical = 10.dp)) {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp)
+                .then(action)
+                .padding(horizontal = GUTTER, vertical = 12.dp),
+        ) {
             val valueStyle = NextType.bodyDense.copy(fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
             val measurer = rememberTextMeasurer()
             val hasValue = item.kind != SettingKind.TOGGLE && item.value.isNotBlank()
@@ -480,8 +502,8 @@ private fun SettingRow(
                         modifier = Modifier.weight(1f),
                     )
                     if (item.kind == SettingKind.TOGGLE) {
-                        Box(Modifier.height(32.dp).clearAndSetSemantics {}) {
-                            NextToggle(checked = item.isOn(), onCheckedChange = null)
+                        Box(Modifier.height(32.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+                            TikTokSettingsSwitch(checked = item.isOn())
                         }
                     } else {
                         if (hasValue && !stackValue) {

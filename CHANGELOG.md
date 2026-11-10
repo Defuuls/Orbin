@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [195-Bitter-Melon] - 2026-11-10
+
+### Added
+- Full-screen vertical Home paging with Following and For You views, source selection, board navigation, captions, and independent watch, replies, save, and share controls over real 4chan and BBWChan threads.
+- Active-page MP4 and WebM playback on Android and iOS, with immediate tap pause, mute, progress, double-tap watching, and bounded next-clip preloading that honors app, site, and board preferences.
+
+### Changed
+- Replaced the Instagram-style cards and floating capsule with TikTok-style media overlays and a fixed five-position navigation bar; the central cyan/pink add button opens Boards to add boards to the feed.
+- Bundled official OFL-licensed TikTok Sans regular, medium, semibold, bold, and matching italic fonts for consistent shared typography on both platforms.
+- Redesigned Discover boards, Saved library, Watched activity, thread comments, source-aware Search, and Settings and privacy while retaining real callbacks and all privacy, security, backup, and playback options.
+
+### Fixed
+- Kept playback ownership tied to the settled source-qualified page through cancelled swipes, filtering, and row reordering; off-screen and background feed clips cannot continue playing.
+- Preserved manual pause and mute through decoder recreation while applying changed playback settings when saved pages return; made double-tap watching idempotent so rapid gestures cannot turn watching off.
+- Cancelled obsolete thumbnail batches during rapid swipes and scoped video preload cleanup to its owning feed or gallery; global privacy clearing still cancels all resources.
+- Matched native system-bar icon contrast to the black Home feed and restored the selected appearance on other destinations.
+
+### Testing
+- Added paging, source-identity, independent-action, search, navigation geometry, large-text, prefetch ownership, and real MP4/WebM feed playback and lifecycle regressions; refreshed shared visual baselines.
+
 ## [194-Malanga] - 2026-11-10
 
 ### Added
@@ -2908,7 +2928,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...HEAD
+[195-Bitter-Melon]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...v195-Bitter-Melon
 [194-Malanga]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...v194-Malanga
 [193-Purslane]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...v193-Purslane
 [192-Sea-Kale]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...v192-Sea-Kale

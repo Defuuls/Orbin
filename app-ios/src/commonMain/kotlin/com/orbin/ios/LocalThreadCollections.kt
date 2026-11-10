@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Local save/watch actions need catalog identity only and never fetch full threads. */
 internal class LocalThreadCollections(
@@ -17,6 +19,8 @@ internal class LocalThreadCollections(
     private val now: () -> Long,
     private val onWatch: () -> Unit,
 ) {
+    private val mutations = Mutex()
+
     /** Saved membership is separate from whether background thread updates are enabled. */
     fun saved(key: ThreadKey): Flow<Boolean> = bookmarks.observeBookmark(key).map { it != null }
 
@@ -24,11 +28,13 @@ internal class LocalThreadCollections(
     fun toggleSaved(thread: Thread) {
         Haptics.light()
         scope.launch {
-            val existing = bookmarks.getBookmark(thread.key)
-            if (existing == null) {
-                bookmarks.addBookmark(thread.toBookmark(now()).copy(isWatched = false))
-            } else if (!existing.isWatched) {
-                bookmarks.removeBookmark(thread.key)
+            mutations.withLock {
+                val existing = bookmarks.getBookmark(thread.key)
+                if (existing == null) {
+                    bookmarks.addBookmark(thread.toBookmark(now()).copy(isWatched = false))
+                } else if (!existing.isWatched) {
+                    bookmarks.removeBookmark(thread.key)
+                }
             }
         }
     }
@@ -37,11 +43,13 @@ internal class LocalThreadCollections(
     fun toggleFeedSaved(feed: FeedThread) {
         Haptics.light()
         scope.launch {
-            val existing = bookmarks.getBookmark(feed.thread.key)
-            if (existing == null) {
-                bookmarks.addBookmark(feed.bookmark(watch = false))
-            } else if (!existing.isWatched) {
-                bookmarks.removeBookmark(feed.thread.key)
+            mutations.withLock {
+                val existing = bookmarks.getBookmark(feed.thread.key)
+                if (existing == null) {
+                    bookmarks.addBookmark(feed.bookmark(watch = false))
+                } else if (!existing.isWatched) {
+                    bookmarks.removeBookmark(feed.thread.key)
+                }
             }
         }
     }
@@ -50,13 +58,32 @@ internal class LocalThreadCollections(
     fun toggleFeedWatch(feed: FeedThread) {
         Haptics.light()
         scope.launch {
-            val existing = bookmarks.getBookmark(feed.thread.key)
-            if (existing == null) {
-                bookmarks.addBookmark(feed.bookmark(watch = true))
-                onWatch()
-            } else {
-                bookmarks.setWatched(existing.key, !existing.isWatched)
-                if (!existing.isWatched) onWatch()
+            mutations.withLock {
+                val existing = bookmarks.getBookmark(feed.thread.key)
+                if (existing == null) {
+                    bookmarks.addBookmark(feed.bookmark(watch = true))
+                    onWatch()
+                } else {
+                    bookmarks.setWatched(existing.key, !existing.isWatched)
+                    if (!existing.isWatched) onWatch()
+                }
+            }
+        }
+    }
+
+    /** A media double tap only enables watching; repeated taps can never turn it off. */
+    fun watchFeed(feed: FeedThread) {
+        Haptics.light()
+        scope.launch {
+            mutations.withLock {
+                val existing = bookmarks.getBookmark(feed.thread.key)
+                if (existing == null) {
+                    bookmarks.addBookmark(feed.bookmark(watch = true))
+                    onWatch()
+                } else if (!existing.isWatched) {
+                    bookmarks.setWatched(existing.key, true)
+                    onWatch()
+                }
             }
         }
     }
@@ -85,3 +112,5 @@ internal fun Browser.toggleSaved(thread: Thread) = collections.toggleSaved(threa
 internal fun Browser.toggleFeedSaved(feed: FeedThread) = collections.toggleFeedSaved(feed)
 
 internal fun Browser.toggleFeedWatch(feed: FeedThread) = collections.toggleFeedWatch(feed)
+
+internal fun Browser.watchFeed(feed: FeedThread) = collections.watchFeed(feed)

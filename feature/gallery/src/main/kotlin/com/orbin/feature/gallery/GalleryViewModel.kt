@@ -146,6 +146,7 @@ class GalleryViewModel
 
         private var prefetchJob: Job? = null
         private var videoPrefetchJob: Job? = null
+        private val videoPrefetchOwner = Any()
 
         /**
          * Prefetch the settled page and its immediate neighbours so swipes feel instant without
@@ -172,16 +173,16 @@ class GalleryViewModel
             prefetchJob = imagePreloader.prefetchBatch(urls, viewModelScope)
             if (playbackSettings().preloadNextClip) {
                 items.getOrNull(settledPage + 1)?.takeIf { it.isPlayable && !it.isSpoiler }?.let { next ->
-                    videoPrefetchJob = videoPreloader.prefetch(next.sourceUrl, viewModelScope)
+                    videoPrefetchJob = videoPreloader.prefetch(next.sourceUrl, viewModelScope, videoPrefetchOwner)
                 }
             } else {
-                videoPreloader.clear()
+                videoPreloader.clear(videoPrefetchOwner)
             }
         }
 
         override fun onCleared() {
             videoPrefetchJob?.cancel()
-            videoPreloader.clear()
+            videoPreloader.clear(videoPrefetchOwner)
             super.onCleared()
         }
 

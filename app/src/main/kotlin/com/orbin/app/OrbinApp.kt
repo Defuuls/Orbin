@@ -3,6 +3,9 @@ package com.orbin.app
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -23,12 +26,17 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
@@ -51,6 +59,12 @@ fun OrbinApp(
     pendingRoute: Route? = null,
     onPendingRouteHandled: () -> Unit = {},
 ) {
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val immersive =
+        currentEntry?.destination?.let {
+            it.hasRoute(Route.NextFeed::class) || it.hasRoute(Route.Gallery::class)
+        } ?: !startWithOnboarding
+    SystemBarAppearance(immersive = immersive)
     LaunchedEffect(pendingRoute, startWithOnboarding) {
         if (startWithOnboarding) return@LaunchedEffect
         val route = pendingRoute ?: return@LaunchedEffect
@@ -114,6 +128,22 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
         style = NextType.footnote,
         textAlign = TextAlign.Center,
     )
+}
+
+/** Match native system icons to the actual surface, including a black Home in a light app. */
+@Composable
+internal fun SystemBarAppearance(immersive: Boolean = false) {
+    val activity = LocalView.current.context.findActivity() as? ComponentActivity ?: return
+    val darkIcons = !next.dark && !immersive
+    SideEffect {
+        val style =
+            if (darkIcons) {
+                SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            }
+        activity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? =

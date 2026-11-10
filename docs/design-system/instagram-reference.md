@@ -1,4 +1,7 @@
-# Current iOS reference audit
+# Archived Instagram reference audit
+
+This records the released 194-Malanga design. The current design is documented in
+[TikTok reference audit](tiktok-reference.md).
 
 Reference checked on 2026-11-10: Instagram **454.1**, released 2026-11-04,
 from the [official iOS App Store listing](https://apps.apple.com/us/app/instagram/id389801252)

@@ -3,6 +3,7 @@ package com.orbin.feature.home
 import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,10 +18,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
@@ -61,6 +66,7 @@ fun NextFeedScreen(
     sourceLabels: List<String> = emptyList(),
     selectedSource: Int = 0,
     onSelectSource: (Int) -> Unit = {},
+    onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val actionsViewModel: FeedActionsViewModel = hiltViewModel()
@@ -70,6 +76,30 @@ fun NextFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val formFactor = rememberFormFactor()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var foreground by remember(lifecycleOwner) {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> foreground = true
+                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                        foreground = false
+                        viewModel.clearFeedImagePrefetch()
+                        viewModel.clearFeedVideoPrefetch()
+                    }
+                    else -> Unit
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.clearFeedImagePrefetch()
+            viewModel.clearFeedVideoPrefetch()
+        }
+    }
     var localQuery by rememberSaveable { mutableStateOf("") }
     val effectiveFilter = localQuery
     val nowMillis by
@@ -122,15 +152,69 @@ fun NextFeedScreen(
                 var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
                 var presentationReady by remember { mutableStateOf(false) }
                 var activePreviewId by remember { mutableStateOf<String?>(null) }
-                LaunchedEffect(entries, activePreviewId) {
-                    if (entries.isEmpty()) return@LaunchedEffect
+                var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(
+                    entries,
+                    activePreviewId,
+                    upcomingPreviewId,
+                    settings.playbackPreferences,
+                    foreground,
+                    providerFilter,
+                ) {
+                    val current = entries.firstOrNull { it.row.id == activePreviewId }
+                    val upcoming = entries.firstOrNull { it.row.id == upcomingPreviewId }
+                    val currentPlayback =
+                        current?.let {
+                            settings.playbackPreferences.resolve(
+                                it.key.provider,
+                                it.key.board,
+                            )
+                        }
+                    val upcomingPlayback =
+                        upcoming?.let {
+                            settings.playbackPreferences.resolve(
+                                it.key.provider,
+                                it.key.board,
+                            )
+                        }
+                    val sourceMatches =
+                        if (providerFilter == null) {
+                            true
+                        } else {
+                            val currentMatches = current?.key?.provider?.value == providerFilter
+                            val upcomingMatches = upcoming == null || upcoming.key.provider.value == providerFilter
+                            currentMatches && upcomingMatches
+                        }
+                    val preloadingEnabled =
+                        currentPlayback?.preloadNextClip == true && upcomingPlayback?.preloadNextClip != false
+                    if (!foreground || !sourceMatches || !preloadingEnabled) {
+                        viewModel.clearFeedVideoPrefetch()
+                    } else {
+                        val nextVideo =
+                            upcoming?.attachment?.takeIf {
+                                it.type == MediaType.VIDEO && !it.isSpoiler && it.sourceUrl.isNotBlank()
+                            }
+                        viewModel.prefetchFeedVideo(nextVideo?.sourceUrl)
+                    }
+                }
+                LaunchedEffect(entries, activePreviewId, foreground, providerFilter) {
+                    if (!foreground || entries.isEmpty()) {
+                        viewModel.clearFeedImagePrefetch()
+                        return@LaunchedEffect
+                    }
                     val focus = entries.indexOfFirst { it.row.id == activePreviewId }.let { if (it < 0) 0 else it }
                     val urls =
                         entries
                             .subList(
                                 (focus - 2).coerceAtLeast(0),
                                 (focus + 6).coerceAtMost(entries.size),
-                            ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
+                            ).filter { providerFilter == null || it.key.provider.value == providerFilter }
+                            .mapNotNull { entry ->
+                                entry.attachment
+                                    ?.takeUnless { it.isSpoiler }
+                                    ?.thumbnailUrl
+                                    ?.takeIf(String::isNotBlank)
+                            }
                     viewModel.prefetchFeedThumbs(urls)
                 }
                 LaunchedEffect(state.boards, visited, effectiveFilter, providerFilter) {
@@ -246,6 +330,7 @@ fun NextFeedScreen(
                                 }
                             },
                             onActivePreviewChanged = { activePreviewId = it },
+                            onUpcomingPreviewChanged = { upcomingPreviewId = it },
                             activityText = { row ->
                                 byId[row.id]
                                     ?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
@@ -261,14 +346,35 @@ fun NextFeedScreen(
                                     )
                                 }
                             },
+                            onOpenBoard =
+                                onOpenBoard?.let { open ->
+                                    { row ->
+                                        byId[row.id]?.let { entry ->
+                                            open(entry.key.provider.value, entry.key.board.value, row.boardTitle)
+                                        }
+                                    }
+                                },
+                            mediaContent = { row, mediaModifier, active ->
+                                byId[row.id]?.let { entry ->
+                                    FeedMedia(
+                                        entry = entry,
+                                        preferences = settings.playbackPreferences,
+                                        active =
+                                            active &&
+                                                foreground &&
+                                                (providerFilter == null || entry.key.provider.value == providerFilter),
+                                        modifier = mediaModifier,
+                                        onLike = { actionsViewModel.watch(entry) },
+                                    )
+                                }
+                            },
                             thumbnail = { row, tileModifier ->
                                 byId[row.id]?.attachment?.let { attachment ->
                                     MediaThumbnail(
                                         attachment = attachment,
-                                        fullResolution = true,
+                                        fullResolution = false,
                                         contentScale = ContentScale.Fit,
-                                        // Nothing plays in the feed: GIFs and videos show their
-                                        // thumbnail until the thread is opened.
+                                        // Offscreen pages retain inexpensive static thumbnails.
                                         modifier = tileModifier,
                                     )
                                 }

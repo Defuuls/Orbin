@@ -7,7 +7,7 @@ design system and every `ui-next` screen. What is iOS-only is small:
 | Part | Where | What it does |
 | --- | --- | --- |
 | `:app-ios` | `app-ios/` | The iOS composition root (Kotlin). Builds the providers over Ktor's Darwin engine, opens the shared database, holds navigation and loading state (`Browser`), and draws the shared screens. Linked into the app as the static `OrbinKit` framework. |
-| Xcode project | `iosApp/` | A SwiftUI shell that hosts `MainViewController()` full screen, plus the app icon, launch mark (`LaunchMark` from AppIcon), launch background color, and `Info.plist`. Generated from `iosApp/project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen); the `.xcodeproj` is not committed. |
+| Xcode project | `iosApp/` | A UIKit application/scene delegate that hosts `MainViewController()` full screen with controller-owned status-bar appearance, plus the app icon, launch mark (`LaunchMark` from AppIcon), launch background color, and `Info.plist`. Generated from `iosApp/project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen); the `.xcodeproj` is not committed. |
 
 ## Simulator tests
 
@@ -69,15 +69,14 @@ A reader, so far:
   sheet and the document picker, so a file from either platform restores on the other. As on
   Android, an import merges and never restores the app lock;
 - encrypted DNS for every request, as Android's always-on DNS-over-HTTPS, so a network that
-  blocks a site through DNS (some mobile carriers do) does not hide it. The SwiftUI shell sets it
+  blocks a site through DNS (some mobile carriers do) does not hide it. The UIKit app delegate sets it
   app-wide at launch (`NWParameters.PrivacyContext.default`, iOS 16+) with Android's default
   resolver, Cloudflare; a network whose own DNS is already encrypted keeps it. Unlike Android there
   is no fallback to plain DNS where Cloudflare is blocked, and no resolver setting yet;
 - iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
-  screens size themselves to the window: board catalogs fit more columns, and the feed follows
-  Android's tablet rule (`feedColumns` in `:core:model`): one column on an iPhone or a window
-  narrower or shorter than 600 points, otherwise Settings › **Feed columns** (1–4, from 2), a row
-  only an iPad shows. Board catalogs take Settings › **Catalog columns** (2–8, from 4) on an iPad's
+  screens size themselves to the window. Home uses one full-viewport vertical page on every
+  device, with natural media aspect ratios, safe captions and a fixed navigation bar. Saved and
+  board directories use adaptive cover grids. Board catalogs take Settings › **Catalog columns** (2–8, from 4) on an iPad's
   full width, as Android tablets do (`catalogColumns` in `:core:model`), and sort with Android's
   sort chip. A thread opened from a catalog sits beside it in a window at least 800 x 600 points
   (`showsTwoPanes`): an iPad Pro 11-inch (M4, 834 x 1210pt) full screen either way up, but not a

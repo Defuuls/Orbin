@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tiktok_feed_for_you">For You</string>
+    <string name="tiktok_feed_following">Following</string>
+    <string name="tiktok_feed_menu">Feed options</string>
+    <string name="tiktok_feed_source">%1$s · %2$s</string>
+    <string name="tiktok_feed_thread_source">%1$s · No. %2$s</string>
+    <string name="tiktok_feed_open_board">Open %1$s board</string>
+    <string name="tiktok_feed_watch_label">Watch</string>
+    <string name="tiktok_feed_watching_label">Watching</string>
+    <string name="tiktok_feed_save_label">Save</string>
+    <string name="tiktok_feed_saved_label">Saved</string>
+    <string name="tiktok_feed_share_label">Share</string>
+    <string name="tiktok_feed_hidden">Preview hidden</string>
+    <string name="tiktok_feed_following_empty">Threads you watch appear here</string>
+    <string name="tiktok_feed_following_hint">Watch a thread to keep up with its replies.</string>
+    <string name="tiktok_feed_view_watched">View watched threads</string>
+    <string name="tiktok_feed_text_post">Text post</string>
+</resources>

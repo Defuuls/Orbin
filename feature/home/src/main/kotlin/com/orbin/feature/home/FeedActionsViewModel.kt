@@ -44,6 +44,20 @@ internal class FeedActionsViewModel
             }
         }
 
+        /** A double tap only adds a watch, including repeated gestures before UI state catches up. */
+        fun watch(entry: FeedEntry) {
+            viewModelScope.launch {
+                actions.withLock {
+                    val existing = bookmarkRepository.getBookmark(entry.key)
+                    if (existing == null) {
+                        bookmarkRepository.addBookmark(entry.bookmark(watched = true))
+                    } else if (!existing.isWatched) {
+                        bookmarkRepository.setWatched(entry.key, true)
+                    }
+                }
+            }
+        }
+
         /** Saved is the same bookmark contract used by the reader and Saved destination. */
         fun toggleSaved(entry: FeedEntry) {
             viewModelScope.launch {

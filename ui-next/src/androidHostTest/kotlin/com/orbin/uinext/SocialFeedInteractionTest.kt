@@ -7,12 +7,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -49,14 +51,22 @@ class SocialFeedInteractionTest {
     }
 
     @Test
-    fun `a source-qualified shortcut filters only that board and toggles off`() {
+    fun `paging keeps same board codes on different sites distinct`() {
         val rows = listOf(row("fourchan", "4chan"), row("bbwchan", "BBWChan").copy(subject = "Another source"))
-        composeRule.setContent { NextTheme { FeedScreen(rows = rows) } }
-        composeRule.onNodeWithContentDescription("Filter by 4chan · /g/").performClick()
-        composeRule.onNodeWithContentDescription("Filter by 4chan · /g/").assertIsSelected()
-        composeRule.onNodeWithText("Another source").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("Filter by 4chan · /g/").performClick()
-        composeRule.onNodeWithText("Another source").assertExists()
+        val opened = mutableListOf<String>()
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = rows, onOpenRow = { opened += it.id }) }
+        }
+        composeRule
+            .onNode(
+                hasTestTag(TikTokFeedTags.CAPTION) and hasText("4chan · /g/", substring = true),
+            ).performClick()
+        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(1)
+        composeRule
+            .onNode(
+                hasTestTag(TikTokFeedTags.CAPTION) and hasText("BBWChan · /g/", substring = true),
+            ).performClick()
+        composeRule.runOnIdle { assertEquals(listOf("fourchan/g/1", "bbwchan/g/1"), opened) }
     }
 
     @Test
@@ -147,15 +157,18 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Choose source").performClick()
+        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithText("Choose source").performClick()
         composeRule.onNodeWithText("All sites").assertIsSelected()
         composeRule.onNodeWithText("BBWChan").performClick()
         composeRule.runOnIdle { assertEquals(2, choice) }
-        composeRule.onNodeWithTag(NextTitleTags.LARGE, useUnmergedTree = true).assertTextEquals("BBWChan")
+        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithText("Choose source").performClick()
+        composeRule.onNodeWithText("BBWChan").assertIsSelected()
     }
 
     @Test
-    fun `routine feed counts stay out of the story rail while real status messages remain visible`() {
+    fun `routine feed counts stay out of overlays while real status messages remain visible`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
@@ -170,29 +183,24 @@ class SocialFeedInteractionTest {
     }
 
     @Test
-    fun `post overflow opens real thread actions without opening the post`() {
-        var watched = 0
+    fun `feed menu opens settings without opening a thread`() {
+        var settings = 0
         var opened = 0
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
                     rows = listOf(row("fourchan", "4chan")),
                     onOpenRow = { opened++ },
-                    onToggleWatch = { watched++ },
-                    onToggleSaved = {},
-                    onShareRow = {},
+                    onSettings = { settings++ },
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Options for Weekly discussion").performClick()
-        composeRule.onNodeWithText("Watch Weekly discussion").performClick()
+        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithText("Settings").performClick()
         composeRule.runOnIdle {
-            assertEquals(1, watched)
+            assertEquals(1, settings)
             assertEquals(0, opened)
         }
-        composeRule.onNodeWithContentDescription("Options for Weekly discussion").performClick()
-        composeRule.onNodeWithText("Open thread").performClick()
-        composeRule.runOnIdle { assertEquals(1, opened) }
     }
 
     private fun row(
