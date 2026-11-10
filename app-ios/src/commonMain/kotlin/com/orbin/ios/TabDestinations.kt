@@ -128,20 +128,18 @@ internal fun FeedDestination(
     var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
     val preloader = remember { createNativeMediaPreloader() }
     DisposableEffect(preloader) { onDispose { preloader.close() } }
-    val foreground =
-        FeedPreloadLifecycle(
-            preloader,
-            if (playbackAllowed) {
-                feedPreloadTarget(
-                    byRow[activePreviewId],
-                    byRow[upcomingPreviewId],
-                    settings.playbackPreferences,
-                    supportsWebM,
-                )
-            } else {
-                null
-            },
-        )
+    val preloadTarget =
+        if (playbackAllowed) {
+            feedPreloadTarget(
+                byRow[activePreviewId],
+                byRow[upcomingPreviewId],
+                settings.playbackPreferences,
+                supportsWebM,
+            )
+        } else {
+            null
+        }
+    val foreground = FeedPreloadLifecycle(preloader, preloadTarget)
     val uriHandler = LocalUriHandler.current
     NextPullToRefresh(
         isRefreshing = feed is Load.Loading,
@@ -149,7 +147,9 @@ internal fun FeedDestination(
         modifier = Modifier.fillMaxSize(),
     ) {
         BoxWithConstraints {
-            NativeMediaPreloadHost(preloader)
+            if (preloadTarget != null && foreground && playbackAllowed) {
+                NativeMediaPreloadHost(preloader)
+            }
             FeedScreen(
                 rows = rows,
                 following = mode == HomeFeedMode.FOLLOWING,

@@ -5,6 +5,8 @@ package com.orbin.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.orbin.core.common.dispatchers.Dispatcher
+import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
@@ -30,6 +32,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -107,10 +111,11 @@ class SubscribedFeedViewModel
         private val appLockController: AppLockController,
         private val imagePreloader: ImagePreloader,
         private val videoPreloader: VideoPreloader? = null,
+        @Dispatcher(OrbinDispatcher.Default) workDispatcher: CoroutineDispatcher = Dispatchers.Default,
     ) : ViewModel() {
         private val feedLoader = SubscribedFeedLoader()
         private val providers = registry.all()
-        private val catalogs = HomeFeedCatalogLoader()
+        private val catalogs = HomeFeedCatalogLoader(workDispatcher)
         private val _feedMode = MutableStateFlow(HomeFeedMode.FOR_YOU)
         val feedMode: StateFlow<HomeFeedMode> = _feedMode.asStateFlow()
         private val providerFilter = MutableStateFlow<String?>(null)

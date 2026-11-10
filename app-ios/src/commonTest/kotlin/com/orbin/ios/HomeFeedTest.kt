@@ -12,6 +12,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
+import com.orbin.core.model.PostNode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
@@ -21,17 +22,24 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ViolentMediaCoverProvider
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -41,6 +49,61 @@ import kotlin.test.assertTrue
 /** Real provider decorators over a controlled catalog transport, with no timing or network dependency. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeFeedTest {
+    @Test
+    fun catalogDecoratorsAndPermanentFiltersRunOnTheWorkerBeforeOwnerPublication() =
+        runTest {
+            val worker = QueuedDispatcher()
+            val fixture = Fixture(backgroundScope, count = 1)
+            var transportDispatcher: ContinuationInterceptor? = null
+            var coverDispatcher: ContinuationInterceptor? = null
+            var permanentFilterRan = false
+            var permanentFilterOnWorker = true
+            val commentNodes = persistentListOf<PostNode>(PostNode.Text("An ordinary clip"))
+            val trackedNodes =
+                object : ImmutableList<PostNode> by commentNodes {
+                    override fun iterator(): Iterator<PostNode> {
+                        permanentFilterRan = true
+                        permanentFilterOnWorker = permanentFilterOnWorker && worker.running
+                        return commentNodes.iterator()
+                    }
+                }
+            fixture.catalog = { key ->
+                transportDispatcher = currentCoroutineContext()[ContinuationInterceptor]
+                val kept = video(key)
+                val removed = video(key, 8)
+                listOf(
+                    kept.copy(originalPost = kept.originalPost.copy(comment = PostComment("", trackedNodes))),
+                    removed.copy(originalPost = removed.originalPost.copy(subject = "gore")),
+                )
+            }
+            fixture.beforeCover = { coverDispatcher = currentCoroutineContext()[ContinuationInterceptor] }
+            val home = fixture.start(catalogDispatcher = worker)
+            runCurrent()
+            assertTrue(fixture.requested.isEmpty(), "catalog work must wait for the worker, not execute on owner")
+            assertIs<Load.Loading>(home.content.value)
+
+            var ownerResponsive = false
+            backgroundScope.launch { ownerResponsive = true }
+            runCurrent()
+            assertTrue(ownerResponsive, "queued catalog work must leave the UI owner runnable")
+
+            worker.runCurrent()
+            assertEquals(worker, transportDispatcher)
+            assertEquals(worker, coverDispatcher, "the decorator must stay off the UI owner after provider returns")
+            assertTrue(permanentFilterRan, "permanent filtering must finish before the worker returns")
+            assertTrue(permanentFilterOnWorker, "permanent comment filtering must stay off the UI owner")
+            assertIs<Load.Loading>(home.content.value, "worker results must resume the owner before publication")
+            runCurrent()
+            val row = home.rows().single()
+            assertEquals(7L, row.thread.key.thread.value, "permanently filtered rows never reach publication")
+            assertTrue(
+                row.thread.originalPost.attachments
+                    .single()
+                    .isSpoiler,
+                "the cover decorator ran before publish",
+            )
+        }
+
     @Test
     fun discoveryIncludesUnfollowedBoardsAndBothSourcesWhileFollowingNeedsNoWatchedThread() =
         runTest {
@@ -403,6 +466,31 @@ class HomeFeedTest {
             assertEquals(8, fixture.requested.size)
         }
 
+    /** A separately driven worker queue avoids real threads and shared test-scheduler advancement. */
+    private class QueuedDispatcher : CoroutineDispatcher() {
+        private val tasks = ArrayDeque<Runnable>()
+        var running = false
+            private set
+
+        override fun dispatch(
+            context: CoroutineContext,
+            block: Runnable,
+        ) {
+            tasks.addLast(block)
+        }
+
+        fun runCurrent() {
+            while (tasks.isNotEmpty()) {
+                running = true
+                try {
+                    tasks.removeFirst().run()
+                } finally {
+                    running = false
+                }
+            }
+        }
+    }
+
     private class Fixture(
         private val scope: CoroutineScope,
         sources: List<String> = listOf("one"),
@@ -431,6 +519,7 @@ class HomeFeedTest {
             )
         val requested = mutableListOf<FollowedBoard>()
         var catalog: suspend (FollowedBoard) -> List<CatalogThread> = { listOf(video(it)) }
+        var beforeCover: suspend () -> Unit = {}
         var inFlight = 0
         var maxInFlight = 0
         private val providers =
@@ -459,7 +548,10 @@ class HomeFeedTest {
                             }
                         }
                     }
-                ViolentMediaCoverProvider(base) { settings.value.coverViolentMedia }
+                ViolentMediaCoverProvider(base) {
+                    beforeCover()
+                    settings.value.coverViolentMedia
+                }
             }
 
         fun key(
@@ -467,10 +559,23 @@ class HomeFeedTest {
             board: Int,
         ) = FollowedBoard(ProviderId(source), BoardId("b${board.toString().padStart(2, '0')}"))
 
-        fun start(rawSettings: Flow<AppSettings> = settings) =
-            HomeFeed(providers, preferences, rawSettings, followed, directory, source, firstRun, scope) {
-                true
-            }
+        fun start(
+            rawSettings: Flow<AppSettings> = settings,
+            catalogDispatcher: CoroutineDispatcher =
+                scope.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+        ) = HomeFeed(
+            providers,
+            preferences,
+            rawSettings,
+            followed,
+            directory,
+            source,
+            firstRun,
+            scope,
+            catalogDispatcher,
+        ) {
+            true
+        }
     }
 
     companion object {

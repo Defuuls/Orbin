@@ -104,6 +104,7 @@ class SubscribedFeedViewModelTest {
                     historyRepository = FakeHistoryRepository(),
                     appLockController = AppLockController(),
                     imagePreloader = mockk(relaxed = true),
+                    workDispatcher = mainDispatcherRule.testDispatcher,
                 )
 
             viewModel.uiState.test {
@@ -154,6 +155,7 @@ class SubscribedFeedViewModelTest {
                     historyRepository = FakeHistoryRepository(),
                     appLockController = AppLockController(),
                     imagePreloader = mockk(relaxed = true),
+                    workDispatcher = mainDispatcherRule.testDispatcher,
                 )
 
             viewModel.uiState.test {
@@ -305,6 +307,7 @@ class SubscribedFeedViewModelTest {
         historyRepository = FakeHistoryRepository(),
         appLockController = AppLockController(),
         imagePreloader = imagePreloader,
+        workDispatcher = mainDispatcherRule.testDispatcher,
     )
 
     /** A provider that answers every catalog request with [threads]. */

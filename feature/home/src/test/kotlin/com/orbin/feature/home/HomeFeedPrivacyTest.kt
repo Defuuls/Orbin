@@ -140,6 +140,7 @@ class HomeFeedPrivacyTest {
                 FakeHistoryRepository(),
                 AppLockController(),
                 mockk(relaxed = true),
+                workDispatcher = main.testDispatcher,
             )
         try {
             vm.uiState.test {

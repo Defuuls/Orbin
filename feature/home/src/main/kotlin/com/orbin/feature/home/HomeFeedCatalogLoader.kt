@@ -11,6 +11,8 @@ import com.orbin.domain.feed.BoardFeed
 import com.orbin.domain.feed.SubscribedFeedLoader
 import com.orbin.provider.api.ImageBoardProvider
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -20,6 +22,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 
 internal data class FeedInputs(
     val providerId: String,
@@ -33,7 +36,9 @@ internal data class FeedInputs(
 )
 
 /** A paged discovery shares catalog bytes with Following but keeps presentation caches separate. */
-internal class HomeFeedCatalogLoader {
+internal class HomeFeedCatalogLoader(
+    private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+) {
     private val loader = SubscribedFeedLoader()
     private val gate = Semaphore(SubscribedFeedLoader.MAX_CONCURRENT_BOARD_LOADS)
     private val pages = mutableMapOf<Pair<String, HomeFeedMode>, CachedFeed>()
@@ -129,11 +134,17 @@ internal class HomeFeedCatalogLoader {
         inputs: FeedInputs,
     ): BoardFeed =
         gate.withPermit {
-            loader
-                .load(listOf(board), inputs.limitOverrides, onFailure = { _, error ->
-                    Logger.w(tag = "HomeFeedCatalogLoader") { "Failed to load catalog (${error::class.simpleName})" }
-                }) { id -> provider.getCatalog(CatalogRequest(provider.metadata.id, id)) }
-                .single()
+            // Provider decorators resume after network suspension. Keep their cover scans and
+            // the loader's permanent-content filters off the controller's Main dispatcher too.
+            withContext(workDispatcher) {
+                loader
+                    .load(listOf(board), inputs.limitOverrides, onFailure = { _, error ->
+                        Logger.w(
+                            tag = "HomeFeedCatalogLoader",
+                        ) { "Failed to load catalog (${error::class.simpleName})" }
+                    }) { id -> provider.getCatalog(CatalogRequest(provider.metadata.id, id)) }
+                    .single()
+            }
         }
 
     private fun initialState(

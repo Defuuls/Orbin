@@ -644,6 +644,7 @@ private fun viewModel(
         FakeHistoryRepository(),
         AppLockController(),
         mockk(relaxed = true),
+        workDispatcher = Dispatchers.Main,
     )
 }
 

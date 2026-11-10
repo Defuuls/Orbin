@@ -13,7 +13,9 @@ import com.orbin.domain.feed.BoardFeed
 import com.orbin.domain.feed.SubscribedFeedLoader
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.provider.api.ImageBoardProvider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -32,6 +34,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 
 /** A source outage is distinct from an empty/filtered directory, including during partial loading. */
 internal data class HomeFeedDirectory(
@@ -57,6 +60,7 @@ internal class HomeFeed(
     private val source: StateFlow<ProviderId?>,
     private val firstRun: StateFlow<FirstRunState>,
     private val scope: CoroutineScope,
+    private val catalogDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val isActive: () -> Boolean,
 ) {
     private val _mode = MutableStateFlow(HomeFeedMode.FOR_YOU)
@@ -230,13 +234,17 @@ internal class HomeFeed(
         if (cache[key]?.matches(selection, key) == true) return
         val loaded =
             catalogGate.withPermit {
-                loader
-                    .load(
-                        listOf(board.board),
-                        selection.limits[key]?.let { mapOf(board.board.id to it) }.orEmpty(),
-                    ) { id ->
-                        providerById.getValue(board.provider).getCatalog(CatalogRequest(board.provider, id))
-                    }.single()
+                // Provider decorators resume in their caller's context; their media cover and
+                // the loader's permanent text filter must not compete with native UI work.
+                withContext(catalogDispatcher) {
+                    loader
+                        .load(
+                            listOf(board.board),
+                            selection.limits[key]?.let { mapOf(board.board.id to it) }.orEmpty(),
+                        ) { id ->
+                            providerById.getValue(board.provider).getCatalog(CatalogRequest(board.provider, id))
+                        }.single()
+                }
             }
         currentCoroutineContext().ensureActive()
         publication.withLock {

@@ -16,7 +16,7 @@ final class StartupSmokeTests: XCTestCase {
         app.launch()
 
         let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         waitUntilExists([startBrowsing, done], description: "Onboarding or this release's notes")
         dismissReleaseNotesIfPresent()
         waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
@@ -92,7 +92,7 @@ final class StartupSmokeTests: XCTestCase {
         // A fresh install presents this release's notes over Home. Resolve and dismiss that
         // foreground modal before querying the covered navigation/accessibility tree.
         if expectsReleaseNotes {
-            let done = labeled("Done")
+            let done = releaseNotesDoneButton()
             XCTAssertTrue(done.waitForExistence(timeout: 15), "This release's notes appear after setup")
             waitUntilHittable([done], description: "The release notes dismissal action")
             done.tap()
@@ -131,7 +131,7 @@ final class StartupSmokeTests: XCTestCase {
 
     private func waitForBoardDirectory(_ board: XCUIElement) {
         let retry = labeled("Retry")
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         var retries = 0
         for _ in 0..<4 {
             waitUntilHittable([board, retry, done], description: "The SFW /3/ board or a directory retry action")
@@ -151,6 +151,10 @@ final class StartupSmokeTests: XCTestCase {
 
     private func labeled(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func releaseNotesDoneButton() -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Done")).firstMatch
     }
 
     private func navigationControl(_ label: String) -> XCUIElement {
@@ -178,7 +182,7 @@ final class StartupSmokeTests: XCTestCase {
     }
 
     private func dismissReleaseNotesIfPresent() {
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         if done.exists && done.isHittable {
             done.tap()
         }
