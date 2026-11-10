@@ -1,0 +1,205 @@
+# Draft: set both candidate references to the same immutable TikTok candidate SHA before publishing.
+name: TikTok matched-host startup ABBA
+
+on:
+  push:
+    branches: [validation/tiktok-startup-abba]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tiktok-startup-abba
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 01e699f25728a2fac9095999bc5e8baa8d5c2100
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 202610e2bca7a4f98f1e97ae589c0ed9644341b1
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
+        with:
+          cache-read-only: true
+      - name: Enable KVM and install API 35 image
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          for attempt in 1 2 3; do
+            set +e
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'system-images;android-35;google_apis;x86_64' 'platforms;android-35' emulator > /dev/null
+            sdk_status=${PIPESTATUS[1]}
+            set -e
+            if [ "$sdk_status" = 0 ]; then exit 0; fi
+            sleep 10
+          done
+          exit 1
+      - name: Build both APK pairs before starting the emulator
+        run: |
+          mkdir -p "$HOME/.config/.android" "$HOME/.android" abba-apks
+          keytool -genkeypair -noprompt -keystore "$HOME/.config/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg RSA -keysize 2048 -validity 10000
+          if ! [ "$HOME/.config/.android/debug.keystore" -ef "$HOME/.android/debug.keystore" ]; then
+            cp "$HOME/.config/.android/debug.keystore" "$HOME/.android/debug.keystore"
+          fi
+          for revision in baseline candidate; do
+            (cd "$revision" && ./gradlew :app:assembleBenchmarkRelease :benchmark:assembleBenchmarkRelease --no-daemon)
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, shutil
+          for revision in ('baseline', 'candidate'):
+              for module, label in (('app', 'app'), ('benchmark', 'benchmark')):
+                  found = []
+                  for metadata in (Path(revision)/module/'build/outputs/apk').rglob('output-metadata.json'):
+                      data = json.loads(metadata.read_text())
+                      if data.get('variantName') == 'benchmarkRelease':
+                          found.extend(metadata.parent/item['outputFile'] for item in data['elements'])
+                  assert len(found) == 1 and found[0].is_file(), (revision, module, found)
+                  shutil.copy2(found[0], f'abba-apks/{revision}-{label}.apk')
+          PY
+          set -x
+          build_tools=$(printf '%s\n' "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          for apk in abba-apks/*.apk; do
+            certificate=$("$build_tools/apksigner" verify --print-certs "$apk" | sed -nE 's/^(Signer #1|V2 Signer):? certificate SHA-256 digest: //p')
+            test -n "$certificate"
+            echo "APK $apk certificate SHA256: $certificate"
+            printf '%s\n' "$certificate" >> abba-apks/certificates.txt
+          done
+          test "$(wc -l < abba-apks/certificates.txt)" = 4
+          test "$(sort -u abba-apks/certificates.txt | wc -l)" = 1
+          for revision in baseline candidate; do
+            app_package=$("$build_tools/aapt" dump badging "abba-apks/$revision-app.apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+            test "$app_package" = com.orbin.app
+          done
+          baseline_test=$("$build_tools/aapt" dump badging abba-apks/baseline-benchmark.apk | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+          candidate_test=$("$build_tools/aapt" dump badging abba-apks/candidate-benchmark.apk | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+          test -n "$baseline_test"
+          test "$baseline_test" = "$candidate_test"
+          echo "TEST_PACKAGE=$baseline_test" >> "$GITHUB_ENV"
+          jps -l | awk '/GradleDaemon|KotlinCompileDaemon/ {print $1}' | xargs -r kill || true
+      - name: Prepare the direct instrumentation shell script
+        run: |
+          cat > "$RUNNER_TEMP/tiktok-startup-abba.sh" <<'SH'
+          set -euo pipefail
+          adb shell getprop ro.build.fingerprint
+          for specification in '01-main baseline' '02-candidate candidate' '03-candidate candidate' '04-main baseline'; do
+            read -r phase revision <<< "$specification"
+            mkdir -p "abba-results/$phase"
+            adb uninstall "$TEST_PACKAGE" >/dev/null 2>&1 || true
+            adb uninstall com.orbin.app >/dev/null 2>&1 || true
+            adb install -t "abba-apks/$revision-app.apk"
+            adb install -t "abba-apks/$revision-benchmark.apk"
+            adb shell pm clear com.orbin.app
+            adb shell pm clear "$TEST_PACKAGE"
+            component=$(adb shell pm list instrumentation | tr -d '\r' | sed -n "s/^instrumentation:\($TEST_PACKAGE\/[^ ]*\).*/\1/p")
+            test -n "$component"
+            remote="/sdcard/Android/media/$TEST_PACKAGE/abba-$phase"
+            adb shell input keyevent KEYCODE_HOME
+            sleep 10
+            adb shell am instrument -w -r \
+              -e class 'com.orbin.benchmark.AppPerformanceBenchmark#coldStartup,com.orbin.benchmark.AppPerformanceBenchmark#warmStartup' \
+              -e androidx.benchmark.enabledRules macrobenchmark \
+              -e androidx.benchmark.targetPackageName com.orbin.app \
+              -e androidx.benchmark.skipOnEmulator false \
+              -e androidx.benchmark.suppressErrors EMULATOR,DEBUGGABLE,NOT-PROFILEABLE \
+              -e androidx.benchmark.output.enable true \
+              -e additionalTestOutputDir "$remote" \
+              "$component" | tee "abba-results/$phase/instrumentation.log"
+            grep -qE '^OK \(2 tests\)' "abba-results/$phase/instrumentation.log"
+            adb pull "$remote/." "abba-results/$phase/"
+          done
+          SH
+      - name: Run main, candidate, candidate, main on one emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash ${{ runner.temp }}/tiktok-startup-abba.sh
+      - name: Verify complete production benchmark samples and traces
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, re, shutil
+          summary=Path('abba-summary');summary.mkdir(exist_ok=True)
+          manifest={'baseline_sha':'01e699f25728a2fac9095999bc5e8baa8d5c2100','candidate_sha':'202610e2bca7a4f98f1e97ae589c0ed9644341b1','order':['01-main','02-candidate','03-candidate','04-main'],'phases':[],'apk_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('abba-apks').glob('*.apk')}}
+          for phase in manifest['order']:
+              folder=Path('abba-results')/phase
+              files=list(folder.rglob('*benchmarkData.json'))
+              assert len(files)==1, (phase,files)
+              data=json.loads(files[0].read_text())
+              assert {x['name'] for x in data['benchmarks']}=={'coldStartup','warmStartup'}
+              saved=summary/f'{phase}-benchmarkData.json';shutil.copy2(files[0],saved)
+              record={'phase':phase,'json_file':saved.name,'json_sha256':hashlib.sha256(saved.read_bytes()).hexdigest(),'context':data['context'],'traces':[]}
+              for case in data['benchmarks']:
+                  runs=case['metrics']['timeToInitialDisplayMs']['runs']
+                  assert len(runs)==case['repeatIterations']==10, (phase,case['name'])
+                  traces=case['profilerOutputs']
+                  assert len(traces)==10, (phase,case['name'],len(traces))
+                  iterations=[]
+                  for trace in traces:
+                      assert trace['type']=='PerfettoTrace',trace
+                      matches=list(folder.rglob(trace['filename']))
+                      assert len(matches)==1 and matches[0].stat().st_size>0, trace
+                      file=matches[0];iterations.append(int(re.search(r'_iter(\d{3})_',file.name).group(1)))
+                      record['traces'].append({'filename':str(file.relative_to(folder)),'bytes':file.stat().st_size,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()})
+                  assert sorted(iterations)==list(range(10)),(phase,case['name'],iterations)
+                  print(phase,case['name'],'10 samples, 10 traces',runs)
+              manifest['phases'].append(record)
+          (summary/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: startup-abba-summary
+          path: abba-summary/
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: startup-abba-01-main
+          path: |
+            abba-results/01-main/**/*.json
+            abba-results/01-main/**/*.perfetto-trace
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: startup-abba-02-candidate
+          path: |
+            abba-results/02-candidate/**/*.json
+            abba-results/02-candidate/**/*.perfetto-trace
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: startup-abba-03-candidate
+          path: |
+            abba-results/03-candidate/**/*.json
+            abba-results/03-candidate/**/*.perfetto-trace
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: startup-abba-04-main
+          path: |
+            abba-results/04-main/**/*.json
+            abba-results/04-main/**/*.perfetto-trace
+          if-no-files-found: warn
