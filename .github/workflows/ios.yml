@@ -95,14 +95,16 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
 
       - name: Upload test reports
-        if: failure()
+        if: always()
         continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-test-reports
           path: |
             app-ios/build/reports/tests/**
+            app-ios/build/test-results/**
             storage/build/reports/tests/**
+            storage/build/test-results/**
           if-no-files-found: ignore
 
       - name: Shut down test simulator
