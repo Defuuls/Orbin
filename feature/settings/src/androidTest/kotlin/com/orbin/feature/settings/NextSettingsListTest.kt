@@ -6,12 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
@@ -49,6 +50,7 @@ class NextSettingsListTest {
     fun togglingARowWritesItThrough() {
         setContent()
 
+        composeTestRule.onNode(hasSetTextAction()).performTextInput("Hide NSFW boards")
         scrollTo("Hide NSFW boards").performClick()
         composeTestRule.waitForIdle()
 
@@ -60,7 +62,7 @@ class NextSettingsListTest {
         composeTestRule
             .onNodeWithTag("settings-list")
             .performScrollToNode(hasText(label))
-            .run { composeTestRule.onNodeWithText(label) }
+            .run { composeTestRule.onNode(hasText(label) and !hasSetTextAction()) }
 
     /** The same wiring [NextSettingsScreen] does, minus the launchers, which need an activity. */
     private fun setContent(initial: AppSettings = AppSettings.Default) {

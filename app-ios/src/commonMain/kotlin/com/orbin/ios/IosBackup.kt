@@ -7,6 +7,7 @@ import com.orbin.core.model.BackupDocument
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -217,6 +218,18 @@ class IosBackup(
     // The same fields Android's BackupService restores, less the app lock.
     private suspend fun restoreSettings(restored: AppSettings) =
         with(settings) {
+            requireAuthorization()
+            val existing = settings.first().playbackPreferences
+            existing.overrides.forEach {
+                requireAuthorization()
+                setPlaybackSettings(it.scope, null)
+            }
+            requireAuthorization()
+            setPlaybackSettings(PlaybackScope(), restored.playbackPreferences.defaults)
+            restored.playbackPreferences.overrides.forEach {
+                requireAuthorization()
+                setPlaybackSettings(it.scope, it.settings)
+            }
             requireAuthorization()
             setHideNsfwBoards(restored.hideNsfwBoards)
             requireAuthorization()

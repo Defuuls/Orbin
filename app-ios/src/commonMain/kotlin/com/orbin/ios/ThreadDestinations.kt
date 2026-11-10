@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
@@ -69,11 +71,15 @@ internal fun ThreadDestination(
     ) {
         Loaded(thread, onRetry = browser::retry) { loaded ->
             val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
+            val saved by remember(loaded.key) { browser.saved(loaded.key) }.collectAsState(false)
             ThreadContent(
                 thread = loaded,
                 watching = watching,
+                saved = saved,
+                onToggleSaved = { browser.toggleSaved(loaded) },
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
+                onBack = { browser.back() },
                 onOpenFile = browser::openMedia,
                 mediaPostId = mediaTarget?.takeIf { it.first == loaded.key }?.second,
                 onMediaScrollConsumed = { mediaTarget?.let(browser.mediaScroll::consume) },
@@ -103,6 +109,9 @@ private fun ThreadContent(
     onDownloadAll: () -> Unit = {},
     onSavePage: (() -> Unit)? = null,
     onShare: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
+    saved: Boolean = false,
+    onToggleSaved: (() -> Unit)? = null,
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
@@ -129,7 +138,10 @@ private fun ThreadContent(
         if (mediaPostId == null || layout != ThreadLayout.POSTS) return@LaunchedEffect
         val index = posts.indexOfFirst { it.id == mediaPostId }
         // Item zero is the thread header. Files mode keeps its position until Posts is selected.
-        if (index >= 0) listState.scrollToItem(index + 1)
+        if (index >= 0) {
+            collapsed.remove(mediaPostId)
+            listState.scrollToItem(index + 1)
+        }
         onMediaScrollConsumed()
     }
     var pencilMenu by remember { mutableStateOf(false) }
@@ -148,8 +160,12 @@ private fun ThreadContent(
             listState = listState,
             subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
             board = boardLabel,
+            siteName = thread.key.provider.value,
+            onBack = onBack,
             posts = posts,
             watching = watching,
+            saved = saved,
+            onToggleSaved = onToggleSaved,
             layout = layout,
             onLayoutChange = { layout = it },
             files = fileCells,
@@ -188,7 +204,11 @@ private fun ThreadContent(
                     PostCommentText(
                         comment = entry.comment,
                         selectable = true,
-                        onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                        onQuoteClick = { target ->
+                            val id = target.value.toString()
+                            collapsed.remove(id)
+                            scrollTarget = id
+                        },
                         onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
                     )
                 }
@@ -197,14 +217,20 @@ private fun ThreadContent(
                 val postAttachments = byId[post.id]?.attachments.orEmpty()
                 if (postAttachments.size == 1) {
                     val attachment = postAttachments.first()
-                    Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
+                    Box(
+                        modifier
+                            .aspectRatio(attachment.threadPreviewAspect())
+                            .clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
+                    ) {
                         // Use the site's thumbnail: a long jump can compose several video posts
                         // just before the viewer needs the same limited decoder resources.
                         SharpImage(
                             attachment,
                             attachment.originalFileName,
-                            Modifier.fillMaxWidth(),
+                            Modifier.fillMaxSize(),
+                            fill = Modifier.fillMaxSize(),
                             videoFrame = false,
+                            contentScale = ContentScale.Fit,
                         )
                         // Opening it still asks again in the viewer: the cover is lifted per file there.
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
@@ -215,20 +241,25 @@ private fun ThreadContent(
                     Column(modifier = modifier) {
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.fillMaxWidth().aspectRatio(
+                                    postAttachments.first().threadPreviewAspect(),
+                                ),
                             beyondViewportPageCount = 0,
                         ) { page ->
                             val attachment = postAttachments[page]
                             Box(
                                 Modifier
-                                    .fillMaxWidth()
+                                    .fillMaxSize()
                                     .clickable { firstIndex?.let { onOpenFile(it + page) } },
                             ) {
                                 SharpImage(
                                     attachment,
                                     attachment.originalFileName,
-                                    Modifier.fillMaxWidth(),
+                                    Modifier.fillMaxSize(),
+                                    fill = Modifier.fillMaxSize(),
                                     videoFrame = false,
+                                    contentScale = ContentScale.Fit,
                                 )
                                 if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                             }
@@ -268,9 +299,11 @@ internal fun MediaDestination(
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
     val files = remember(open) { open?.files.orEmpty() }
     MediaViewer(
+        playback = settings.playbackPreferences.resolve(route.thread.provider, route.thread.board),
         files = files,
         startIndex = route.index,
         onPageChanged = { browser.mediaScroll.select(route, it) },

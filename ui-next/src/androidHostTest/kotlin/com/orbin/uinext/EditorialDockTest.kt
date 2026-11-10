@@ -10,22 +10,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,23 +49,11 @@ class EditorialDockTest {
                 }
             }
         }
-        listOf("Feed", "Downloads", "Boards").forEach { label ->
+        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
             composeRule
-                .onNode(isTab and hasText(label))
+                .onNode(isTab and hasContentDescription(label))
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
-            composeRule
-                .onNodeWithText(label, useUnmergedTree = true)
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
-                    val layouts = mutableListOf<TextLayoutResult>()
-                    action(layouts)
-                    val layout = layouts.single()
-                    assertFalse(
-                        "$label: size=${layout.size}, lines=${layout.lineCount}, " +
-                            "width=${layout.didOverflowWidth}, height=${layout.didOverflowHeight}",
-                        layout.hasVisualOverflow,
-                    )
-                }
         }
     }
 
@@ -89,12 +72,38 @@ class EditorialDockTest {
                 )
             }
         }
-        composeRule.onNode(isTab and hasText("Feed")).assertIsSelected()
+        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsSelected()
         composeRule
-            .onNode(isTab and hasText("Downloads"))
+            .onNode(isTab and hasContentDescription("Saved"))
             .performClick()
             .assertIsSelected()
-        composeRule.onNode(isTab and hasText("Feed")).assertIsNotSelected()
+        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsNotSelected()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun narrowViewportKeepsAllFiveIndependent48dpTargets() {
+        var calls = 0
+        composeRule.setContent {
+            var selected by remember { mutableStateOf(NextDestination.FEED) }
+            NextTheme(fontScale = 2f) {
+                Surface(modifier = Modifier.size(248.dp, 400.dp)) {
+                    Box(contentAlignment = Alignment.BottomCenter) {
+                        DestinationPill(selected, {
+                            selected = it
+                            calls++
+                        })
+                    }
+                }
+            }
+        }
+        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
+            composeRule
+                .onNode(isTab and hasContentDescription(label))
+                .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+        }
+        composeRule.onNode(isTab and hasContentDescription("Saved")).performClick().assertIsSelected()
         assertEquals(1, calls)
     }
 }

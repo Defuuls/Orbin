@@ -62,13 +62,70 @@ class ThreadViewModelTest {
     fun `toggling bookmark on an already-bookmarked thread removes it`() =
         runTest {
             val bookmarks =
-                FakeBookmarkRepository(listOf(Bookmark(key = key, title = "Thread", createdAtMillis = 1_000L)))
+                FakeBookmarkRepository(
+                    listOf(Bookmark(key = key, title = "Thread", createdAtMillis = 1_000L, isWatched = false)),
+                )
             val viewModel = createViewModel(bookmarkRepository = bookmarks)
 
             viewModel.isBookmarked.test {
                 assertThat(awaitItem()).isTrue()
                 viewModel.toggleBookmark()
                 assertThat(awaitItem()).isFalse()
+            }
+        }
+
+    @Test
+    fun `saving a thread does not start watching it`() =
+        runTest {
+            val bookmarks = FakeBookmarkRepository()
+            val viewModel = createViewModel(bookmarkRepository = bookmarks)
+
+            viewModel.toggleBookmark()
+            runCurrent()
+
+            assertThat(bookmarks.getBookmark(key)?.isWatched).isFalse()
+        }
+
+    @Test
+    fun `removing a save cannot delete an active watch`() =
+        runTest {
+            val saved = Bookmark(key = key, title = "Watched", createdAtMillis = 1_000L, isWatched = true)
+            val bookmarks = FakeBookmarkRepository(listOf(saved))
+            val viewModel = createViewModel(bookmarkRepository = bookmarks)
+
+            viewModel.toggleBookmark()
+            runCurrent()
+
+            assertThat(bookmarks.getBookmark(key)).isEqualTo(saved)
+        }
+
+    @Test
+    fun `watching a saved-only thread preserves its bookmark and starts notifications`() =
+        runTest {
+            val saved = Bookmark(key = key, title = "Saved title", createdAtMillis = 1_000L, isWatched = false)
+            val bookmarks = FakeBookmarkRepository(listOf(saved))
+            val viewModel = createViewModel(bookmarkRepository = bookmarks)
+
+            viewModel.isWatching.test {
+                assertThat(awaitItem()).isFalse()
+                viewModel.toggleWatch()
+                assertThat(awaitItem()).isTrue()
+                assertThat(bookmarks.getBookmark(key)).isEqualTo(saved.copy(isWatched = true))
+            }
+        }
+
+    @Test
+    fun `stopping notifications keeps the thread in saved items`() =
+        runTest {
+            val saved = Bookmark(key = key, title = "Saved title", createdAtMillis = 1_000L, isWatched = true)
+            val bookmarks = FakeBookmarkRepository(listOf(saved))
+            val viewModel = createViewModel(bookmarkRepository = bookmarks)
+
+            viewModel.isWatching.test {
+                assertThat(awaitItem()).isTrue()
+                viewModel.toggleWatch()
+                assertThat(awaitItem()).isFalse()
+                assertThat(bookmarks.getBookmark(key)).isEqualTo(saved.copy(isWatched = false))
             }
         }
 

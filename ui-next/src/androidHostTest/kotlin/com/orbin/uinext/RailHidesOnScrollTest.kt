@@ -1,12 +1,18 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,22 +36,20 @@ class RailHidesOnScrollTest {
     @Test
     fun `the feed puts its tab pill away as the reader scrolls down`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, hideRailOnScroll = true) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = true) }
         }
-        composeRule.onNodeWithText(DOWNLOADS_TAB).assertExists()
-        composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText(DOWNLOADS_TAB).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
+        scrollFeedDown()
+        composeRule.onNodeWithContentDescription(SAVED_TAB).assertDoesNotExist()
     }
 
     @Test
     fun `the feed keeps its tab pill when the setting is off`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, hideRailOnScroll = false) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = false) }
         }
-        composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText(DOWNLOADS_TAB).assertExists()
+        scrollFeedDown()
+        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
     }
 
     @Test
@@ -79,13 +83,25 @@ class RailHidesOnScrollTest {
                 )
             }
         }
-        composeRule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+        composeRule.onNode(verticalScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
         assert(reported.contains(false)) { "expected the screen to report hidden chrome, got $reported" }
     }
 
+    private fun scrollFeedDown() {
+        val grid = composeRule.onNode(verticalScrollAction())
+        grid.performScrollToIndex(12)
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Thread number 12").assertIsDisplayed()
+        val offset = grid.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertTrue("Expected the feed to move down, offset=$offset", offset > 0f)
+    }
+
+    private fun verticalScrollAction() =
+        hasScrollAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange)
+
     private companion object {
-        const val DOWNLOADS_TAB = "Downloads"
+        const val SAVED_TAB = "Saved"
 
         val ROWS =
             (1..30).map { index ->

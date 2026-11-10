@@ -37,17 +37,19 @@ class WatchedThreads(
     private var refreshedAt: Long? = null
 
     /** Whether the thread [key] is bookmarked, which the thread screen shows as "watching". */
-    fun watching(key: ThreadKey): Flow<Boolean> = bookmarks.observeBookmark(key).map { it != null }
+    fun watching(key: ThreadKey): Flow<Boolean> = bookmarks.observeBookmark(key).map { it?.isWatched == true }
 
     /** Watches [thread], or stops watching it: the thread screen's watch action, as on Android. */
     fun toggle(thread: Thread) {
         Haptics.light()
         scope.launch {
-            if (bookmarks.getBookmark(thread.key) != null) {
-                bookmarks.removeBookmark(thread.key)
-            } else {
+            val existing = bookmarks.getBookmark(thread.key)
+            if (existing == null) {
                 bookmarks.addBookmark(thread.toBookmark(now()))
                 onWatch()
+            } else {
+                bookmarks.setWatched(thread.key, !existing.isWatched)
+                if (!existing.isWatched) onWatch()
             }
         }
     }
@@ -132,6 +134,7 @@ class WatchedThreads(
      */
     suspend fun read(thread: Thread): String? {
         val bookmark = runCatching { bookmarks.getBookmark(thread.key) }.getOrNull() ?: return null
+        if (!bookmark.isWatched) return null
         runCatching {
             bookmarks.updateLatest(thread.key, thread.stats.replyCount, thread.stats.isArchived)
             bookmarks.markRead(thread.key)

@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * The home-screen quick actions, as Android's app shortcuts: Feed, Downloads and Boards, each
- * opening its tab. The items are declared in the app's Info.plist; the scene delegate hands the
+ * Home-screen quick actions open Home, Boards, or the secondary Downloads page.
+ * The items are declared in the app's Info.plist; the scene delegate hands the
  * tapped one's type to [perform], at launch or while running, and the app opens [pending].
  */
 object QuickActions {

@@ -59,6 +59,24 @@ class RowsTest {
     }
 
     @Test
+    fun feedRowsCarryHumanReadableSourcesAndNeverCollideAcrossSites() {
+        val base =
+            CatalogThread(
+                key = ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(1)),
+                originalPost = post(1, files = 0),
+                stats = ThreadStats(),
+            )
+        val first = FeedThread(base.key.provider, base).toFeedRow(0, read = false)
+        val other = base.copy(key = base.key.copy(provider = ProviderId("bbwchan")))
+        val second = FeedThread(other.key.provider, other).toFeedRow(0, read = false)
+        assertEquals("4chan", first.site)
+        assertEquals("BBWChan", second.site)
+        assertNotEquals(first.id, second.id)
+        assertEquals(false, second.hasPreview)
+        assertEquals("BBWChan · /g/", FeedThread(other.key.provider, other).toSearchRow().board)
+    }
+
+    @Test
     fun filesAreIndexedAcrossTheThreadInReadingOrder() {
         val thread =
             Thread(
@@ -228,7 +246,7 @@ class RowsTest {
         val row = FeedThread(ProviderId("site"), thread).toSearchRow()
 
         assertEquals("site/g/42", row.id)
-        assertEquals("/g/", row.board)
+        assertEquals("site · /g/", row.board)
         assertEquals("/g/", row.title, "no subject: the board, as Android titles it")
         assertEquals("bold words", row.snippet, "the text, not the engine's markup")
     }

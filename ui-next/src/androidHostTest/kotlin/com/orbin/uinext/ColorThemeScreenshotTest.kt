@@ -120,7 +120,7 @@ class ColorThemeScreenshotTest(
     companion object {
         private val COLOR_LABELS =
             listOf(
-                "Orbin (green)",
+                "Orbin",
                 "Blue",
                 "Red",
                 "White",

@@ -14,8 +14,8 @@ fun canonicalNextPalette(
         else -> LightPalette
     }
 
-private val AmoledRaised = Color(0xFF0E1015)
-private val AmoledElevated = Color(0xFF151820)
+private val AmoledRaised = Color(0xFF111111)
+private val AmoledElevated = Color(0xFF1B1B1B)
 private const val FAINT_ALPHA_DARK = 0.62f
 private const val FAINT_ALPHA_LIGHT = 0.66f
 
@@ -53,60 +53,49 @@ fun nextPaletteFromColorScheme(
         amoled = dark && amoled,
     )
 
-/**
- * OPTIC-26 Light Mode — Raw Titanium & Field Paper.
- * High-contrast dark ink on warm brushed titanium / drafting vellum with International Orange
- * optical shutter accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
- */
+/** Default light reader palette: white surfaces and monochrome controls. */
 internal val LightPalette =
     NextPalette(
-        background = Color(0xFFF4F2ED),
-        raised = Color(0xFFFAF9F6),
-        elevated = Color(0xFFEAE7E0),
-        ink = Color(0xFF121417),
-        muted = Color(0xFF3D424A),
-        faint = Color(0xFF535861),
-        hairline = Color(0xFFC8C4BA),
-        accent = Color(0xFF9E3608),
-        accentSoft = Color(0xFFF9D6C4),
+        background = Color(0xFFFFFFFF),
+        raised = Color(0xFFF5F5F5),
+        elevated = Color(0xFFEEEEEE),
+        ink = Color(0xFF171717),
+        muted = Color(0xFF5B5B5B),
+        faint = Color(0xFF666666),
+        hairline = Color(0xFFE2E2E2),
+        accent = Color(0xFF171717),
+        accentSoft = Color(0xFFEEEEEE),
         onAccent = Color(0xFFFFFFFF),
-        accentContainer = Color(0xFFF9D6C4),
-        onAccentContainer = Color(0xFF330E00),
+        accentContainer = Color(0xFFEEEEEE),
+        onAccentContainer = Color(0xFF171717),
         destructive = DestructiveLight,
         onDestructive = OnDestructiveLight,
         dark = false,
         amoled = false,
     )
 
-/**
- * OPTIC-26 Dark Mode — Obsidian Anodized.
- * Deep anodized carbon-slate chassis with warm optical phosphor ink and International Orange
- * indicator accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
- */
+/** Dark reader palette with the same semantic contrast and hierarchy. */
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF0A0A0C),
-        raised = Color(0xFF12141A),
-        elevated = Color(0xFF181B22),
-        ink = Color(0xFFE8E4DC),
-        muted = Color(0xFFB6B3AC),
-        faint = Color(0xFF8E8B85),
-        hairline = Color(0xFF282C37),
-        accent = Color(0xFFFF7A3D),
-        accentSoft = Color(0xFF4A1D06),
-        onAccent = Color(0xFF1A0700),
-        accentContainer = Color(0xFF4A1D06),
-        onAccentContainer = Color(0xFFFFD5C2),
+        background = Color(0xFF101010),
+        raised = Color(0xFF1B1B1B),
+        elevated = Color(0xFF242424),
+        ink = Color(0xFFF5F5F5),
+        muted = Color(0xFFBDBDBD),
+        faint = Color(0xFFAAAAAA),
+        hairline = Color(0xFF363636),
+        accent = Color(0xFFF5F5F5),
+        accentSoft = Color(0xFF303030),
+        onAccent = Color(0xFF171717),
+        accentContainer = Color(0xFF303030),
+        onAccentContainer = Color(0xFFF5F5F5),
         destructive = DestructiveDark,
         onDestructive = OnDestructiveDark,
         dark = true,
         amoled = false,
     )
 
-/**
- * OPTIC-26 AMOLED Mode — True-Zero Carbon.
- * Pure `#000000` OLED ground with anodized carbon-slate cells and `1dp` structural borders.
- */
+/** True-black variant for OLED displays. */
 internal val AmoledPalette =
     DarkPalette.copy(
         background = Color.Black,

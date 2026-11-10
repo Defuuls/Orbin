@@ -1,5 +1,6 @@
 package com.orbin.media.video
 
+import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
 import android.util.Rational
@@ -85,12 +86,19 @@ fun VideoPlayer(
     onFullscreenChange: (Boolean) -> Unit = {},
     onControlsToggle: ((Boolean) -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
+    loop: Boolean? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val activity = remember(context) { context.findActivity() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val playbackSession =
+        remember(url, autoPlay) {
+            PlaybackSession(autoPlay, lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        }
+    val currentSession by rememberUpdatedState(playbackSession)
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
-    var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
+    var isMuted by rememberSaveable(url, muted) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
@@ -131,15 +139,13 @@ fun VideoPlayer(
                     !muted,
                 ).build()
                 .apply {
-                    repeatMode = repeatModeFor(shouldLoop(0L))
+                    repeatMode = repeatModeFor(loop ?: shouldLoop(0L))
                     volume = if (muted) 0f else 1f
-                    playWhenReady = active && autoPlay
+                    playWhenReady = playbackSession.shouldPlay(active, hasError = false)
                 }
         }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
     val currentActive by rememberUpdatedState(active)
-    val currentAutoPlay by rememberUpdatedState(autoPlay)
     val currentPlaybackError by rememberUpdatedState(playbackError)
     DisposableEffect(lifecycleOwner, exoPlayer) {
         val observer =
@@ -147,13 +153,17 @@ fun VideoPlayer(
                 when (event) {
                     Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
                         if (activity?.isInPictureInPictureMode != true) {
+                            currentSession.setForeground(false)
                             exoPlayer.pause()
                         }
                     }
                     Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
-                        if (currentActive && currentAutoPlay && currentPlaybackError == null) {
-                            exoPlayer.play()
-                        }
+                        currentSession.setForeground(true)
+                        exoPlayer.playWhenReady =
+                            currentSession.shouldPlay(
+                                currentActive,
+                                hasError = currentPlaybackError != null,
+                            )
                     }
                     else -> {}
                 }
@@ -166,7 +176,8 @@ fun VideoPlayer(
 
     LaunchedEffect(exoPlayer, isPlaying, active) {
         if (activity != null) {
-            val enabled = active && isPlaying
+            // A queued composition must not re-enable PiP after the native pause callback.
+            val enabled = currentActive && exoPlayer.isPlaying
             val width = exoPlayer.videoSize.width
             val height = exoPlayer.videoSize.height
             val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(enabled)
@@ -192,8 +203,8 @@ fun VideoPlayer(
         exoPlayer.setMediaItem(MediaItem.fromUri(url))
         exoPlayer.prepare()
         exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
-        exoPlayer.playWhenReady = active && autoPlay
-        controlsVisible = !autoPlay
+        exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = false)
+        controlsVisible = !playbackSession.requestedPlaying
     }
 
     // Tick down the rate-limit cooldown every second so the UI stays current.
@@ -212,8 +223,8 @@ fun VideoPlayer(
     }
 
     // Pause as soon as this page is no longer active so audio never plays over the next video.
-    LaunchedEffect(active, autoPlay) {
-        exoPlayer.playWhenReady = active && autoPlay && playbackError == null
+    LaunchedEffect(active, autoPlay, playbackError) {
+        exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
     }
 
     LaunchedEffect(isMuted) {
@@ -221,9 +232,9 @@ fun VideoPlayer(
         exoPlayer.setAudioAttributes(exoPlayer.audioAttributes, !isMuted)
     }
 
-    // Short clips loop like GIFs; anything longer plays once. Decided by length, not a setting.
-    LaunchedEffect(durationMs) {
-        exoPlayer.repeatMode = repeatModeFor(shouldLoop(durationMs))
+    // Explicit playback preferences override the legacy duration-based default.
+    LaunchedEffect(durationMs, loop) {
+        exoPlayer.repeatMode = repeatModeFor(loop ?: shouldLoop(durationMs))
     }
 
     // Turning the phone sideways is the fullscreen button.
@@ -265,7 +276,11 @@ fun VideoPlayer(
                 override fun onIsPlayingChanged(isPlayingNow: Boolean) {
                     isPlaying = isPlayingNow
                     if (isPlayingNow) autoRetries = 0
-                    if (!isPlayingNow) controlsVisible = true
+                    if (!isPlayingNow) {
+                        // Auto-enter is read by Android before a later Compose frame may run.
+                        activity?.disableAutomaticVideoPip()
+                        controlsVisible = true
+                    }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -293,13 +308,7 @@ fun VideoPlayer(
             }
         exoPlayer.addListener(listener)
         onDispose {
-            if (activity != null) {
-                runCatching {
-                    activity.setPictureInPictureParams(
-                        PictureInPictureParams.Builder().setAutoEnterEnabled(false).build(),
-                    )
-                }
-            }
+            activity?.disableAutomaticVideoPip()
             PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
             exoPlayer.release()
@@ -452,11 +461,14 @@ fun VideoPlayer(
                 positionMs = positionMs,
                 durationMs = durationMs,
                 onPlayPause = {
-                    if (!isPlaying && exoPlayer.playbackState == Player.STATE_ENDED) {
+                    val ended = exoPlayer.playbackState == Player.STATE_ENDED
+                    if (ended) {
                         exoPlayer.seekTo(0L)
                     }
-                    exoPlayer.playWhenReady = !isPlaying
-                    if (!isPlaying) {
+                    playbackSession.toggle(ended)
+                    if (!playbackSession.requestedPlaying) activity?.disableAutomaticVideoPip()
+                    exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
+                    if (playbackSession.requestedPlaying) {
                         controlsVisible = false
                         onControlsToggle?.invoke(false)
                     }
@@ -475,6 +487,13 @@ fun VideoPlayer(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+    }
+}
+
+/** Update Android synchronously: backgrounding can happen before Compose observes a pause. */
+private fun Activity.disableAutomaticVideoPip() {
+    runCatching {
+        setPictureInPictureParams(PictureInPictureParams.Builder().setAutoEnterEnabled(false).build())
     }
 }
 

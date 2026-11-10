@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,9 +23,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,14 +67,25 @@ fun FeedScreen(
     headerContent: @Composable () -> Unit = {},
     query: String = "",
     onQueryChange: (String) -> Unit = {},
-    groupByBoard: Boolean = true,
+    groupByBoard: Boolean = false,
     // A fixed column count the caller chose for this device and window; null fits as many
     // full-width cards as the window allows.
     columns: Int? = null,
     // Every card the same size instead of following its media's shape.
     uniformCards: Boolean = false,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
+    onToggleWatch: ((FeedRow) -> Unit)? = null,
+    onToggleSaved: ((FeedRow) -> Unit)? = null,
+    onShareRow: ((FeedRow) -> Unit)? = null,
+    sourceLabels: List<String> = emptyList(),
+    selectedSource: Int = 0,
+    onSelectSource: (Int) -> Unit = {},
+    statusMessage: String? = null,
 ) {
     val gridState = rememberLazyGridState()
+    var boardFilter by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val railVisible =
@@ -102,7 +117,12 @@ fun FeedScreen(
         onDispose { activePreviewCallback.value(null) }
     }
 
-    val hasTabs = onOpenBoards != null || onOpenDownloads != null
+    val hasTabs =
+        onOpenBoards != null ||
+            onOpenDownloads != null ||
+            onOpenSearch != null ||
+            onOpenSaved != null ||
+            onOpenWatched != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
@@ -110,6 +130,9 @@ fun FeedScreen(
                     NextDestination.FEED -> Unit
                     NextDestination.BOARDS -> onOpenBoards?.invoke()
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
+                    NextDestination.SEARCH -> onOpenSearch?.invoke()
+                    NextDestination.SAVED -> onOpenSaved?.invoke()
+                    NextDestination.WATCHED -> onOpenWatched?.invoke()
                     NextDestination.SETTINGS -> Unit
                 }
             }
@@ -134,17 +157,36 @@ fun FeedScreen(
             onDestination = onDestination.takeIf { showRail },
         ) { bottomPad ->
             val header: @Composable () -> Unit = {
-                FeedHeader(
-                    subtitle =
-                        subtitle ?: pluralStringResource(Res.plurals.next_feed_thread_count, rows.size, rows.size),
-                    headerContent = headerContent,
-                    query = query,
-                    onQueryChange = onQueryChange,
-                    onSettings = onSettings,
-                )
+                Column {
+                    FeedHeader(
+                        subtitle =
+                            subtitle ?: pluralStringResource(Res.plurals.next_feed_thread_count, rows.size, rows.size),
+                        headerContent = headerContent,
+                        query = query,
+                        onQueryChange = onQueryChange,
+                        onSettings = onSettings,
+                        onSearch = onOpenSearch,
+                        sourceLabels = sourceLabels,
+                        selectedSource = selectedSource,
+                        onSelectSource = onSelectSource,
+                        statusMessage = statusMessage,
+                    )
+                    if (!groupByBoard) {
+                        FavoriteBoardShortcuts(
+                            rows = rows,
+                            selectedBoard = boardFilter,
+                            onSelected = { key -> boardFilter = if (key == boardFilter) null else key },
+                            thumbnail = thumbnail,
+                        )
+                    }
+                }
             }
             val insets = Modifier.fillMaxSize().contentInsets()
-            val visibleRows = rows
+            val visibleRows =
+                remember(rows, boardFilter) {
+                    val selected = boardFilter?.takeIf { key -> rows.any { it.sourceAndBoard == key } }
+                    if (selected == null) rows else rows.filter { it.sourceAndBoard == selected }
+                }
             val groups =
                 remember(visibleRows, groupByBoard) {
                     if (groupByBoard) {
@@ -162,7 +204,7 @@ fun FeedScreen(
                     columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
                     state = gridState,
                     modifier = insets,
-                    contentPadding = gridPadding(bottomPad),
+                    contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding()),
                 ) {
                     fullWidthItem { header() }
                     if (visibleRows.isEmpty()) {
@@ -205,11 +247,14 @@ fun FeedScreen(
                                 excerptLines = FEED_EXCERPT_LINES,
                                 tallMedia = true,
                                 uniform = uniformCards,
+                                onToggleWatch = onToggleWatch,
+                                onToggleSaved = onToggleSaved,
+                                onShareRow = onShareRow,
                             )
                         }
                     }
                 }
-                if (rows.isNotEmpty()) {
+                if (rows.isNotEmpty() && showCompactTitle) {
                     val fabShape = RoundedCornerShape(NextRadius.control)
                     ExtendedFloatingActionButton(
                         onClick = {
@@ -250,7 +295,7 @@ fun FeedScreen(
 internal val FEED_CARD_MIN_WIDTH = 360.dp
 
 /** Lines of the opening post under each feed card. */
-internal const val FEED_EXCERPT_LINES = 8
+internal const val FEED_EXCERPT_LINES = 3
 
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP

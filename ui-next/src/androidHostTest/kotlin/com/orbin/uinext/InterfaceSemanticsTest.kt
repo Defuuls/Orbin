@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -82,9 +83,9 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a feed grouped by board names each board once, in its heading`() {
+    fun `an explicitly grouped feed names each board in its heading`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS) }
+            NextTheme { FeedScreen(rows = ROWS, groupByBoard = true) }
         }
         composeRule.onAllNodesWithText(ROWS[0].board, substring = true).assertCountEquals(1)
     }
@@ -105,7 +106,7 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `settings has no library section of places`() {
+    fun `settings keeps uncategorized controls reachable from its directory`() {
         composeRule.setContent {
             NextTheme {
                 SettingsScreen(
@@ -122,6 +123,7 @@ class InterfaceSemanticsTest {
         composeRule.onNodeWithText("Library").assertDoesNotExist()
         composeRule.onNodeWithText("All media").assertDoesNotExist()
         composeRule.onNodeWithText("Commands").assertDoesNotExist()
+        composeRule.onNodeWithText("More settings").performClick()
         composeRule.onNodeWithText("Image cache usage").assertExists()
     }
 
@@ -148,13 +150,14 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `the tabs are feed, downloads and boards, and settings is not one of them`() {
+    fun `the five tabs expose home boards watched search and saved`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
-        composeRule.onNode(hasText("Feed") and hasRole(Role.Tab)).assertExists()
-        composeRule.onNode(hasText("Downloads") and hasRole(Role.Tab)).assertExists()
-        composeRule.onNode(hasText("Boards") and hasRole(Role.Tab)).assertExists()
+        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
+            composeRule.onNode(hasContentDescription(label) and hasRole(Role.Tab)).assertExists()
+        }
+        composeRule.onNode(hasText("Downloads") and hasRole(Role.Tab)).assertDoesNotExist()
         composeRule.onNode(hasText("Settings") and hasRole(Role.Tab)).assertDoesNotExist()
     }
 

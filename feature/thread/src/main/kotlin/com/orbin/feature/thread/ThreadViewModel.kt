@@ -141,12 +141,18 @@ class ThreadViewModel
                 .map { it != null }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
+        /** Saving a thread does not subscribe to reply notifications. */
+        val isWatching: StateFlow<Boolean> =
+            bookmark
+                .map { it?.isWatched == true }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+
         private val _firstUnreadPostId = MutableStateFlow<PostId?>(null)
 
         val firstUnreadPostId: StateFlow<PostId?> =
             combine(_firstUnreadPostId, bookmark, uiState) { capturedUnread, savedBookmark, state ->
                 val success = state as? ThreadUiState.Success
-                if (savedBookmark == null || success == null) {
+                if (savedBookmark == null || !savedBookmark.isWatched || success == null) {
                     null
                 } else {
                     capturedUnread
@@ -163,10 +169,23 @@ class ThreadViewModel
 
         fun toggleBookmark() {
             viewModelScope.launch {
-                if (isBookmarked.value) {
+                val existing = bookmarkRepository.getBookmark(key)
+                if (existing == null) {
+                    bookmarkRepository.addBookmark(currentBookmark().copy(isWatched = false))
+                } else if (!existing.isWatched) {
                     bookmarkRepository.removeBookmark(key)
+                }
+            }
+        }
+
+        /** Watching can be disabled without deleting the thread from Saved. */
+        fun toggleWatch() {
+            viewModelScope.launch {
+                val existing = bookmarkRepository.getBookmark(key)
+                if (existing == null) {
+                    bookmarkRepository.addBookmark(currentBookmark().copy(isWatched = true))
                 } else {
-                    bookmarkRepository.addBookmark(currentBookmark())
+                    bookmarkRepository.setWatched(key, !existing.isWatched)
                 }
             }
         }
@@ -312,7 +331,7 @@ class ThreadViewModel
             loadedThread = visible
             viewModelScope.launch {
                 val existingBookmark = bookmarkRepository.getBookmark(key)
-                if (existingBookmark != null) {
+                if (existingBookmark?.isWatched == true) {
                     _firstUnreadPostId.value =
                         visible.replies
                             .getOrNull(existingBookmark.lastSeenReplyCount)

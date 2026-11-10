@@ -28,6 +28,7 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.catalogColumns
 import com.orbin.core.model.comparator
 import com.orbin.ios.resources.Res
@@ -69,7 +70,10 @@ internal fun CatalogDestination(
                         thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
                     }
                 }
-            val byRow = remember(threads) { threads.associateBy { "${it.key.board.value}/${it.key.thread.value}" } }
+            val byRow =
+                remember(
+                    threads,
+                ) { threads.associateBy { "${it.key.provider.value}/${it.key.board.value}/${it.key.thread.value}" } }
             // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
             BoxWithConstraints {
                 BoardScreen(
@@ -83,7 +87,15 @@ internal fun CatalogDestination(
                     showRail = false,
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
                     onOpenMedia = { browser.open(Route.BoardMedia(board)) },
-                    thumbnail = { row, modifier -> byRow[row.id]?.let { CatalogThumbnail(it, modifier) } },
+                    thumbnail = { row, modifier ->
+                        byRow[row.id]?.let { thread ->
+                            CatalogThumbnail(
+                                thread,
+                                modifier,
+                                playback = settings.playbackPreferences.resolve(thread.key.provider, thread.key.board),
+                            )
+                        }
+                    },
                 )
             }
         }
@@ -161,10 +173,16 @@ internal fun CatalogThumbnail(
     modifier: Modifier,
     // Whether a video or GIF loops in place, muted; otherwise it shows its picture and a play badge.
     playsPreview: Boolean = true,
+    playback: PlaybackSettings = PlaybackSettings(),
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
-        val canLoop = playsPreview && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        val canLoop =
+            playsPreview &&
+                playback.autoplay &&
+                !attachment.isSpoiler &&
+                attachment.isPlayable &&
+                (!attachment.isWebM || supportsWebM)
         // One preview loops at a time, as on Android: each is a web view and a video decoder.
         val loops = rememberInlineLoopSlot(thread.key.toString(), canLoop)
         SharpImage(
@@ -175,7 +193,14 @@ internal fun CatalogThumbnail(
             // A looping preview covers the picture anyway, so it needs no still frame under it.
             videoFrame = !loops,
         )
-        if (loops) NativeInlineLoop(attachment.sourceUrl, Modifier.matchParentSize())
+        if (loops) {
+            NativeInlineLoop(
+                attachment.sourceUrl,
+                Modifier.matchParentSize(),
+                loop = playback.loopVideos,
+                muted = playback.startMuted && SessionAudio.muted,
+            )
+        }
         if (attachment.isSpoiler) {
             SpoilerCover(Modifier.matchParentSize())
         } else if (!loops && attachment.isPlayable) {
@@ -222,13 +247,14 @@ internal fun SharpImage(
     // picture's own proportions.
     fill: Modifier = Modifier.fillMaxWidth(),
     videoFrame: Boolean = true,
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     // Hovering the Apple Pencil over a picture shows it larger, without opening it.
     PencilHoverPreview(attachment, modifier) {
         AsyncImage(
             model = attachment.thumbnailUrl,
             contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             modifier = fill,
         )
         val sharp = attachment.cardImageUrl()
@@ -236,7 +262,7 @@ internal fun SharpImage(
             AsyncImage(
                 model = sharp,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
                 modifier = Modifier.matchParentSize(),
             )
         }

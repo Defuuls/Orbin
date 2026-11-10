@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 enum class AppColorTheme(
     val label: String,
 ) {
-    ORBIN("Orbin (green)"),
+    ORBIN("Orbin"),
     BLUE("Blue"),
     RED("Red"),
     WHITE("White"),

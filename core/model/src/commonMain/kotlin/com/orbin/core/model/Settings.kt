@@ -122,6 +122,7 @@ data class AppSettings(
     val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
     /** Board catalog columns on a tablet, 2–8; everywhere else the catalog fits its tiles itself. */
     val tabletCatalogColumns: Int = DEFAULT_TABLET_CATALOG_COLUMNS,
+    val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
 ) {
     companion object {
         val Default = AppSettings()

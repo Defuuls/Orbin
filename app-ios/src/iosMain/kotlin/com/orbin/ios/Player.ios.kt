@@ -8,6 +8,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -20,6 +21,7 @@ import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.AVFAudio.AVAudioSession
@@ -47,13 +49,17 @@ import platform.Foundation.NSLog
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
+import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
+import platform.WebKit.WKNavigation
+import platform.WebKit.WKNavigationDelegateProtocol
 import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
 import platform.WebKit.WKWebsiteDataStore
+import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
 /**
@@ -67,14 +73,20 @@ internal actual fun NativePlayer(
     active: Boolean,
     loop: Boolean,
     modifier: Modifier,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
+    preloader: NativeMediaPreloader?,
 ) {
     val player =
-        remember(url) {
-            NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = SessionAudio.muted } }
+        remember(url, preloader) {
+            preloader?.takeNative(url)
+                ?: NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = initiallyMuted } }
         } ?: return
     var muted by remember(player) { mutableStateOf(player.muted) }
     val currentLoop = rememberUpdatedState(loop)
     val currentActive = rememberUpdatedState(active)
+    val foreground = remember(player) { mutableStateOf(true) }
+    var playRequested by remember(player) { mutableStateOf(active && autoPlay) }
     var state by remember(player) { mutableStateOf(VideoState()) }
     DisposableEffect(player) {
         val center = NSNotificationCenter.defaultCenter
@@ -84,9 +96,12 @@ internal actual fun NativePlayer(
                 `object` = player.currentItem,
                 queue = NSOperationQueue.mainQueue,
             ) {
-                if (currentLoop.value && currentActive.value) {
+                val visibleAndForeground = currentActive.value && foreground.value
+                if (currentLoop.value && visibleAndForeground && playRequested) {
                     player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
                     player.play()
+                } else if (!currentLoop.value) {
+                    playRequested = false
                 }
             }
         val resignObserver =
@@ -95,6 +110,7 @@ internal actual fun NativePlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
+                foreground.value = false
                 player.pause()
             }
         val backgroundObserver =
@@ -103,21 +119,40 @@ internal actual fun NativePlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
+                foreground.value = false
                 player.pause()
             }
+        val foregroundObserver =
+            center.addObserverForName(
+                name = UIApplicationDidBecomeActiveNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                foreground.value = true
+            }
         onDispose {
+            center.removeObserver(foregroundObserver)
             center.removeObserver(observer)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
         }
     }
-    LaunchedEffect(player, active) {
-        if (active) {
-            // A neighbouring page may have been composed before the last audio choice.
-            muted = SessionAudio.muted
-            player.muted = muted
-            val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
-            AVAudioSession.sharedInstance().setCategory(category, error = null)
+    // Audio policy must not change a manually started or paused player's playback state.
+    LaunchedEffect(player, initiallyMuted) {
+        muted = initiallyMuted && SessionAudio.muted
+        player.muted = muted
+        val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+        AVAudioSession.sharedInstance().setCategory(category, error = null)
+    }
+    LaunchedEffect(player, active, autoPlay) {
+        playRequested = active && autoPlay
+    }
+    LaunchedEffect(player, active, playRequested, foreground.value) {
+        if (active && playRequested && foreground.value) {
+            val duration = player.currentItem?.let { seconds(it.duration) } ?: 0.0
+            if (duration > 0.0 && seconds(player.currentTime()) >= duration - 0.1) {
+                player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
+            }
             player.play()
         } else {
             player.pause()
@@ -173,7 +208,8 @@ internal actual fun NativePlayer(
         VideoControls(
             state = state.copy(muted = muted),
             onTogglePlay = {
-                if (player.rate > 0f) {
+                playRequested = player.rate <= 0f
+                if (!playRequested) {
                     player.pause()
                 } else {
                     if (state.duration > 0.0 && state.position >= state.duration - 0.1) {
@@ -221,11 +257,40 @@ internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
     active: Boolean,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
+    loop: Boolean,
+    preloader: NativeMediaPreloader?,
 ) {
-    var muted by remember(url) { mutableStateOf(SessionAudio.muted) }
-    val currentMuted = rememberUpdatedState(muted)
-    val webView =
+    var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
+    var playRequested by remember(url) { mutableStateOf(active && autoPlay) }
+    var playCommand by remember(url) { mutableIntStateOf(0) }
+    var foreground by remember(url) { mutableStateOf(true) }
+    val currentActive by rememberUpdatedState(active)
+    // Read mutable intent when dispatching, including notifications before another UI frame.
+    val request by rememberUpdatedState {
+        WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop)
+    }
+    val navigation =
         remember(url) {
+            object : NSObject(), WKNavigationDelegateProtocol {
+                override fun webView(
+                    webView: WKWebView,
+                    didFinishNavigation: WKNavigation?,
+                ) {
+                    if (webView.hasPlaybackSurface()) {
+                        webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
+                    }
+                }
+            }
+        }
+    val webView =
+        remember(url, preloader) {
+            val warmed = preloader?.takeWebM(url)
+            if (warmed != null) {
+                warmed.navigationDelegate = navigation
+                return@remember warmed
+            }
             val configuration =
                 WKWebViewConfiguration().apply {
                     allowsInlineMediaPlayback = true
@@ -236,6 +301,7 @@ internal actual fun NativeWebMPlayer(
                     websiteDataStore = mediaDataStore
                 }
             WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
+                navigationDelegate = navigation
                 opaque = false
                 backgroundColor = UIColor.blackColor
                 scrollView.scrollEnabled = false
@@ -248,23 +314,37 @@ internal actual fun NativeWebMPlayer(
                         "background:#000;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
                         "</head><body><video id=\"v\" src=\"${url.escapeHtmlAttribute()}\" " +
-                        "${if (active) "autoplay " else ""}${if (muted) "muted " else ""}loop playsinline>" +
+                        "${if (muted) "muted " else ""}" +
+                        "${if (loop) "loop " else ""}playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
         }
     var state by remember(webView) { mutableStateOf(VideoState()) }
-    LaunchedEffect(webView, active) {
+    LaunchedEffect(webView, active, muted) {
         if (active) {
-            webView.evaluateJavaScript("document.querySelector('video')?.play()", completionHandler = null)
-        } else {
-            webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+            val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+            AVAudioSession.sharedInstance().setCategory(category, error = null)
         }
     }
-    LaunchedEffect(webView, active) {
-        if (!active) return@LaunchedEffect
+    LaunchedEffect(webView, active, autoPlay) {
+        playRequested = active && autoPlay
+        playCommand++
+    }
+    // Apply controls immediately, then retry the same command after document/media loading.
+    // Repeated polling only reports state once that command has been acknowledged by the page.
+    LaunchedEffect(webView, playCommand, muted, loop) {
+        val sent = request()
+        webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
+            if (playCommand == sent.command) state = it
+        }
+    }
+    LaunchedEffect(webView) {
         while (true) {
-            webView.script(webMStateScript(currentMuted.value))?.let(::parseWebMState)?.let { state = it }
+            val sent = request()
+            webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
+                if (playCommand == sent.command) state = it
+            }
             delay(CONTROLS_REFRESH_MS)
         }
     }
@@ -276,7 +356,12 @@ internal actual fun NativeWebMPlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
-                webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+                foreground = false
+                playCommand++
+                webView.evaluateJavaScript(
+                    webMPlaybackScript(request().copy(command = playCommand, play = false, muted = muted)),
+                    completionHandler = null,
+                )
             }
         val backgroundObserver =
             center.addObserverForName(
@@ -284,12 +369,32 @@ internal actual fun NativeWebMPlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
-                webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
+                foreground = false
+                playCommand++
+                webView.evaluateJavaScript(
+                    webMPlaybackScript(request().copy(command = playCommand, play = false, muted = muted)),
+                    completionHandler = null,
+                )
+            }
+        val foregroundObserver =
+            center.addObserverForName(
+                name = UIApplicationDidBecomeActiveNotification,
+                `object` = null,
+                queue = NSOperationQueue.mainQueue,
+            ) {
+                foreground = true
+                playCommand++
+                webView.evaluateJavaScript(
+                    webMPlaybackScript(request().copy(command = playCommand, play = playRequested && currentActive)),
+                    completionHandler = null,
+                )
             }
         onDispose {
+            center.removeObserver(foregroundObserver)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
             // A neighbouring pager page must not keep playing audio or video.
+            webView.navigationDelegate = null
             webView.tearDownMedia()
         }
     }
@@ -301,11 +406,23 @@ internal actual fun NativeWebMPlayer(
             state = state.copy(muted = muted),
             onToggleMute = {
                 muted = SessionAudio.toggle(muted)
-                webView.evaluateJavaScript(webMStateScript(muted), null)
+                val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+                AVAudioSession.sharedInstance().setCategory(category, error = null)
+                webView.evaluateJavaScript(
+                    webMPlaybackScript(
+                        WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                    ),
+                    null,
+                )
             },
             onTogglePlay = {
+                playRequested = !state.playing
+                playCommand++
+                state = state.copy(playing = playRequested)
                 webView.evaluateJavaScript(
-                    "var v=document.getElementById('v');v.paused?v.play():v.pause()",
+                    webMPlaybackScript(
+                        WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                    ),
                     null,
                 )
             },
@@ -322,7 +439,7 @@ internal actual fun NativeWebMPlayer(
  * the previous page, media player and decoder included, in its back-forward cache, and the view
  * itself lives until Kotlin's collector frees the wrapper. Unload the element first, then the page.
  */
-private fun WKWebView.tearDownMedia() {
+internal fun WKWebView.tearDownMedia() {
     evaluateJavaScript(
         "document.querySelectorAll('video').forEach(function(v){v.pause();v.removeAttribute('src');v.load()})",
         null,
@@ -334,13 +451,24 @@ private fun WKWebView.tearDownMedia() {
 }
 
 /** One in-memory store for every video page, so they share a WebContent process. */
-private val mediaDataStore: WKWebsiteDataStore by lazy { WKWebsiteDataStore.nonPersistentDataStore() }
+internal val mediaDataStore: WKWebsiteDataStore by lazy { WKWebsiteDataStore.nonPersistentDataStore() }
 
 /** Runs [script] in the page and gives back its result as text, or null if it had none. */
-private suspend fun WKWebView.script(script: String): String? =
-    suspendCancellableCoroutine { continuation ->
+private suspend fun WKWebView.script(script: String): String? {
+    // A promoted view is briefly detached while UIKit interop transfers it into the active page.
+    // Do not acknowledge play until WebKit has a window; the regular state poll retries it there.
+    if (!hasPlaybackSurface()) return null
+    return suspendCancellableCoroutine { continuation ->
         evaluateJavaScript(script) { result, _ -> continuation.resume(result as? String) }
     }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun WKWebView.hasPlaybackSurface(): Boolean =
+    window != null &&
+        bounds.useContents {
+            size.width > MIN_WEBM_PLAYBACK_EDGE_POINTS && size.height > MIN_WEBM_PLAYBACK_EDGE_POINTS
+        }
 
 /** Muted inline preview for a catalog video; the thumbnail remains visible underneath until loaded. */
 @OptIn(ExperimentalForeignApi::class)
@@ -348,9 +476,11 @@ private suspend fun WKWebView.script(script: String): String? =
 internal actual fun NativeInlineLoop(
     url: String,
     modifier: Modifier,
+    loop: Boolean,
+    muted: Boolean,
 ) {
     val webView =
-        remember(url) {
+        remember(url, loop, muted) {
             val configuration =
                 WKWebViewConfiguration().apply {
                     allowsInlineMediaPlayback = true
@@ -371,7 +501,8 @@ internal actual fun NativeInlineLoop(
                         "<style>html,body{margin:0;width:100%;height:100%;" +
                         "background:transparent;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
-                        "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline>" +
+                        "</head><body><video src=\"$escapedUrl\" autoplay " +
+                        "${if (muted) "muted " else ""}${if (loop) "loop " else ""}playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
@@ -385,6 +516,7 @@ internal actual fun NativeInlineLoop(
 
 private const val SEEK_TIMESCALE = 600
 private const val CONTROLS_REFRESH_MS = 250L
+private const val MIN_WEBM_PLAYBACK_EDGE_POINTS = 1.0
 
 /**
  * The first frame comes from AVFoundation, not a web view: a WKWebView per card started a web
@@ -409,7 +541,7 @@ internal actual fun NativeVideoFrame(
 @OptIn(ExperimentalComposeUiApi::class)
 private val PASS_THROUGH = UIKitInteropProperties(interactionMode = null)
 
-private fun String.escapeHtmlAttribute(): String =
+internal fun String.escapeHtmlAttribute(): String =
     replace("&", "&amp;")
         .replace("\"", "&quot;")
         .replace("<", "&lt;")

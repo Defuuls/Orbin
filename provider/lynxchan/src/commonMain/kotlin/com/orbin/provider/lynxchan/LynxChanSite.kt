@@ -30,7 +30,7 @@ data class LynxChanSite(
         val BbwChan =
             LynxChanSite(
                 providerId = ProviderId("bbwchan"),
-                displayName = "BBW Chan",
+                displayName = "BBWChan",
                 siteUrl = "https://bbw-chan.link",
                 nsfwByDefault = true,
             )

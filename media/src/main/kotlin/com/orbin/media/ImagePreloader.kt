@@ -6,6 +6,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.size.Size
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -32,15 +33,15 @@ class ImagePreloader(
         }
     }
 
-    /** Prefetch multiple image URLs in batch under [scope]. */
+    /** Prefetch multiple image URLs in batch; the caller can cancel an obsolete viewport job. */
     fun prefetchBatch(
         urls: List<String>,
         scope: CoroutineScope,
         maxDimensionPx: Int? = DEFAULT_PREFETCH_MAX_PX,
-    ) {
+    ): Job? {
         val distinct = urls.filter { it.isNotBlank() }.distinct()
-        if (distinct.isEmpty()) return
-        scope.launch {
+        if (distinct.isEmpty()) return null
+        return scope.launch {
             distinct.forEach { url ->
                 imageLoader.execute(buildRequest(url, maxDimensionPx))
             }

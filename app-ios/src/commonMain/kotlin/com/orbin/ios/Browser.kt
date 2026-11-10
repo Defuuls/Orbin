@@ -73,17 +73,24 @@ data class FeedThread(
     val thread: CatalogThread,
 )
 
-/** Where the reader is. The back stack is a list of these, a tab (feed, downloads or boards) at the bottom. */
+/** Where the reader is, with Home, Boards, Watched, Search or Saved at the bottom of the back stack. */
 sealed interface Route {
     /** The newest threads of every followed board, one list: the start screen, as on Android. */
     data object Feed : Route
 
     data object Boards : Route
 
-    /** What was saved from threads: the middle tab, as on Android. */
+    /** Downloaded files, opened from Settings and activity or a legacy quick action. */
     data object Downloads : Route
 
-    /** Search over the followed boards, opened from the boards list. */
+    /** Bookmarked threads across every site. */
+    data object Saved : Route
+
+    data object History : Route
+
+    data object Watched : Route
+
+    /** Search over favorite and followed boards across sites. */
     data object Search : Route
 
     /** Settings, opened from the feed's header or the boards list. */
@@ -162,8 +169,7 @@ class Browser(
     val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
 
     /**
-     * The site the feed and the Boards list show, as Android's site switcher picks it: the saved choice (the
-     * same `activeProviderId` Android keeps, so a backup carries it), else the first site.
+     * The board directory's saved source. Home has an independent filter, initially All sites.
      */
     val activeSite: StateFlow<ProviderId> =
         this.settings.current
@@ -171,10 +177,25 @@ class Browser(
             .distinctUntilChanged()
             .stateIn(scope, SharingStarted.Eagerly, sites.first().id)
 
-    /** Shows [site]'s feed and boards, and remembers it. */
+    /** Shows [site]'s board directory and remembers it. */
     fun selectSite(site: ProviderId) {
         if (site != activeSite.value) this.settings.setActiveProviderId(site)
     }
+
+    /** Home's source filter is independent of the board directory's selected site. */
+    private val _feedSite = MutableStateFlow<ProviderId?>(null)
+    val feedSite: StateFlow<ProviderId?> = _feedSite.asStateFlow()
+
+    fun selectFeedSite(site: ProviderId?) {
+        require(site == null || site in byId) { "Unknown site: $site" }
+        if (_feedSite.value == site) return
+        _feedSite.value = site
+        loadFeed()
+    }
+
+    internal val collections = LocalThreadCollections(bookmarks, scope, now, onWatch)
+    val savedThreads = bookmarks.observeBookmarks()
+    val readingHistory = history.observeHistory()
 
     /** Searching the followed boards' catalogs. */
     val search =
@@ -240,18 +261,39 @@ class Browser(
         combine(
             providers.map { provider ->
                 val id = provider.metadata.id
-                boardPreferences.observeSubscribedBoards(id).map { boards -> boards.map { FollowedBoard(id, it) } }
+                combine(
+                    boardPreferences.observeSubscribedBoards(id),
+                    boardPreferences.observeFavoriteBoards(id),
+                ) { subscribed, favorites -> (subscribed + favorites).map { FollowedBoard(id, it) } }
             },
         ) { perSite -> perSite.flatMap { it }.toSet() }
             .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    /** Stars are independent from the older subscription preference. Both contribute to Home. */
+    val favorites: StateFlow<Set<FollowedBoard>> =
+        combine(
+            providers.map { provider ->
+                val id = provider.metadata.id
+                boardPreferences.observeFavoriteBoards(id).map { boards -> boards.map { FollowedBoard(id, it) } }
+            },
+        ) { perSite -> perSite.flatMap { it }.toSet() }
+            .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    fun setFavorite(
+        board: SiteBoard,
+        favorite: Boolean,
+    ) {
+        Haptics.light()
+        scope.launch { boardPreferences.setFavoriteBoard(board.provider, board.board.id, favorite) }
+    }
 
     // What the feed holds: the followed boards, whether NSFW ones were hidden, and the violent-media cover.
     private var feedFor: Triple<Set<FollowedBoard>, Boolean, Boolean>? = null
     private var feedLoad: Job? = null
     private val feedLoader = SubscribedFeedLoader()
 
-    /** The last feed that loaded, per site, so a board that fails next time keeps its threads. */
-    private var lastFeed: Pair<ProviderId, List<BoardFeed>>? = null
+    /** Separate source caches keep a failure from replacing another site's threads. */
+    private val lastFeed = mutableMapOf<ProviderId, List<BoardFeed>>()
 
     private var pageLoad: Job? = null
 
@@ -271,14 +313,11 @@ class Browser(
                 .distinctUntilChangedBy { it.hideNsfwBoards to it.coverViolentMedia }
                 .drop(1)
                 .collect {
-                    lastFeed = null
+                    lastFeed.clear()
                     catalogShown = null
                     threadShown = null
                     if (_backStack.value.last() == Route.Feed) loadFeed(force = true) else loadCurrent(force = true)
                 }
-        }
-        scope.launch {
-            activeSite.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
         loadFeed()
         watched.refresh()
@@ -286,7 +325,13 @@ class Browser(
 
     /** Switches to a tab, leaving whatever was open on the other one. */
     fun openTab(tab: Route) {
-        require(tab == Route.Feed || tab == Route.Boards || tab == Route.Downloads) { "Not a tab: $tab" }
+        require(
+            tab == Route.Feed ||
+                tab == Route.Search ||
+                tab == Route.Boards ||
+                tab == Route.Watched ||
+                tab == Route.Saved,
+        ) { "Not a tab: $tab" }
         mediaScroll.clear()
         _backStack.value = listOf(tab)
         if (tab == Route.Feed) loadFeed()
@@ -309,7 +354,15 @@ class Browser(
 
     /** Opens a page over the current one: search, settings, or a board's media wall. */
     fun open(page: Route) {
-        require(page == Route.Search || page == Route.Settings || page is Route.BoardMedia) { "Not a page: $page" }
+        require(
+            page == Route.Search ||
+                page == Route.Boards ||
+                page == Route.Settings ||
+                page == Route.Downloads ||
+                page == Route.History ||
+                page == Route.Watched ||
+                page is Route.BoardMedia,
+        ) { "Not a page: $page" }
         _backStack.update { it + page }
         loadCurrent()
     }
@@ -406,12 +459,20 @@ class Browser(
     private fun loadCurrent(force: Boolean = false) {
         when (val route = _backStack.value.last()) {
             Route.Feed -> loadFeed(force)
-            Route.Boards, Route.Downloads, Route.Search, Route.Settings, is Route.Media -> Unit
+            Route.Boards,
+            Route.Downloads,
+            Route.Saved,
+            Route.History,
+            Route.Watched,
+            Route.Search,
+            Route.Settings,
+            is Route.Media,
+            -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return
                 if (force || catalogShown != board || _catalog.value !is Load.Ready) {
                     catalogShown = board
-                    load(_catalog) { catalogOf(board) }
+                    load(_catalog) { provider(board.provider).catalogOf(board.board.id) }
                 }
             }
             is Route.ThreadPage ->
@@ -448,9 +509,8 @@ class Browser(
      * the feed tab shows it as it was, as Android's feed does.
      */
     private fun loadFeed(force: Boolean = false) {
-        // The active site's followed boards, as Android's feed follows its site switcher.
-        val site = activeSite.value
-        val boards = followed.value.filterTo(mutableSetOf()) { it.provider == site }
+        val site = feedSite.value
+        val boards = followed.value.filterTo(mutableSetOf()) { site == null || it.provider == site }
         val currentSettings = settings.current.value
         val shown = Triple(boards, currentSettings.hideNsfwBoards, currentSettings.coverViolentMedia)
         if (!force && shown == feedFor && _feed.value is Load.Ready) return
@@ -478,34 +538,51 @@ class Browser(
      * nothing to fall back on is the feed an error.
      */
     private suspend fun feedOf(boards: Set<FollowedBoard>): Load<List<FeedThread>> {
-        val site = activeSite.value
+        val currentSettings = settings.current.value
         val known =
             (_boards.value as? Load.Ready)
                 ?.value
                 .orEmpty()
-                .filter { it.provider == site }
-                .associateBy { it.board.id }
-        val ids = boards.mapTo(mutableSetOf()) { it.board }
-        // Before the boards list has loaded a followed board is known only by its id.
-        val candidates = ids.map { id -> known[id]?.board ?: Board(id, title = id.value) }
-        val wanted = feedLoader.feedBoards(candidates, ids, settings.current.value.hideNsfwBoards)
-        if (wanted.isEmpty()) return Load.Ready(emptyList())
-        val limits = boardPreferences.observeFeedThreadLimits(site, ids).first()
-        var firstError: Exception? = null
-        val loaded =
-            feedLoader.load(wanted, limits, onFailure = { _, error -> firstError = firstError ?: error }) { id ->
-                provider(site).getCatalog(CatalogRequest(site, id))
+                .associateBy { FollowedBoard(it.provider, it.board.id) }
+        val perSite =
+            coroutineScope {
+                boards
+                    .groupBy { it.provider }
+                    .map { (site, followedBoards) ->
+                        async {
+                            val ids = followedBoards.mapTo(mutableSetOf()) { it.board }
+                            val candidates =
+                                followedBoards.map {
+                                    known[it]?.board
+                                        ?: Board(it.board, title = it.board.value)
+                                }
+                            val wanted = feedLoader.feedBoards(candidates, ids, currentSettings.hideNsfwBoards)
+                            val limits = boardPreferences.observeFeedThreadLimits(site, ids).first()
+                            var failure: Exception? = null
+                            val loaded =
+                                feedLoader.load(wanted, limits, onFailure = {
+                                    _,
+                                    error,
+                                    ->
+                                    failure = failure ?: error
+                                }) { id ->
+                                    provider(site).getCatalog(CatalogRequest(site, id))
+                                }
+                            val shown = SubscribedFeedLoader.withCachedFailures(loaded, lastFeed[site])
+                            if (loaded.any { !it.failed }) lastFeed[site] = shown
+                            Triple(site, shown, failure)
+                        }
+                    }.awaitAll()
             }
-        val cached = lastFeed?.takeIf { it.first == site }?.second
-        val shown = SubscribedFeedLoader.withCachedFailures(loaded, cached)
-        if (shown.all { it.failed && it.threads.isEmpty() }) {
-            return Load.Failed(firstError?.readable() ?: "Couldn't load the feed")
+        val allBoards = perSite.flatMap { it.second }
+        if (allBoards.isNotEmpty() && allBoards.all { it.failed && it.threads.isEmpty() }) {
+            return Load.Failed(perSite.firstNotNullOfOrNull { it.third }?.readable() ?: "Couldn't load the feed")
         }
-        if (loaded.any { !it.failed }) lastFeed = site to shown
         return Load.Ready(
-            shown
-                .flatMap { feed -> feed.threads.map { FeedThread(site, it) } }
-                .sortedWith(compareBy(FeedSort.BOARD.comparator()) { it.thread }),
+            perSite
+                .flatMap { (site, feeds, _) ->
+                    feeds.flatMap { feed -> feed.threads.map { FeedThread(site, it) } }
+                }.sortedWith(compareBy(FeedSort.ACTIVITY.comparator()) { it.thread }),
         )
     }
 
@@ -523,15 +600,6 @@ class Browser(
             board != null && (board.isPermanentlyFiltered() || (hideNsfw && board.isNsfw))
         }
     }
-
-    // The content filter applies here, as it does to Android's boards list.
-    private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
-        ContentPolicy.visibleBoards(getBoards()).map { SiteBoard(metadata.id, metadata.displayName, it) }
-
-    private suspend fun catalogOf(board: SiteBoard): List<CatalogThread> =
-        ContentPolicy.visibleCatalog(
-            provider(board.provider).getCatalog(CatalogRequest(board.provider, board.board.id)),
-        )
 
     private suspend fun threadOf(key: ThreadKey): Thread {
         _firstUnreadPostId.value = null
@@ -591,3 +659,10 @@ internal suspend fun <T> loadEach(
 
 /** Android loads at most this many followed catalogs at once; so does iOS, for the feed and search. */
 private const val MAX_CONCURRENT_BOARD_LOADS = 4
+
+// Filtering before adapting keeps both providers consistent with the Android directory.
+private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
+    ContentPolicy.visibleBoards(getBoards()).map { SiteBoard(metadata.id, metadata.displayName, it) }
+
+private suspend fun ImageBoardProvider.catalogOf(board: BoardId): List<CatalogThread> =
+    ContentPolicy.visibleCatalog(getCatalog(CatalogRequest(metadata.id, board)))

@@ -1,14 +1,14 @@
 # Orbin
 
-![Orbin 2026 Industrial Hardware Showcase](docs/assets/orbin-brand-showcase.svg)
+Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and a **shared, compact reader interface**. It browses boards, catalogs, threads, links, and media with a combined multi-site feed, clear source labels, and strictly read-only access.
 
-Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and the **OPTIC-26 industrial hardware design system**. It browses boards, catalogs, threads, links, and media with instrument-grade precision, zero distraction, and strictly read-only security.
+[Shared Home preview](ui-next/src/androidHostTest/screenshots/social_ios_home.png) · [iOS settings preview](ui-next/src/androidHostTest/screenshots/social_ios_settings.png)
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [193 — Purslane](https://github.com/Defuuls/Orbin/releases/tag/v193-Purslane)
+**Current release:** [194 — Malanga](https://github.com/Defuuls/Orbin/releases/tag/v194-Malanga)
 
-**What's new in 193:** Configurable screen privacy shield, encrypted DNS resolver selection, and incognito controls across Android and iOS.
+**What's new in 194:** Five-tab browsing, distinct board icons, cross-site feeds and search, and inherited playback settings across Android and iOS.
 
 ---
 
@@ -16,13 +16,14 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 | Area | Capabilities |
 | :--- | :--- |
-| **Industrial Chassis (OPTIC-26)** | Machined 2026 industrial hardware aesthetic across Android and iOS — instrument HUD top bar with live telemetry (`[CH-01 // INSTRUMENT]`, `SIG:NOMINAL`, status LED), precision-milled modular baffles with hairline dividers, flush tactile switchboard deck with mechanical detents (`01`, `02`, `03`) and active LED bars, and critically damped zero-bounce motion. |
-| **Browsing & Layout** | CNC-milled spec-sheet feed cassettes with 4-corner camera reticles (`┌  ┐`, `└  ┘`), adaptive catalogs with uncropped aspect-ratio previews, A–Z subscribed board feed, 840dp+ two-pane split view, and explicit offline/error telemetry states. |
-| **Thread Reader & Telemetry** | Precision instrument post cassettes with `[OP // ORIGIN]` accent beacons, multi-lane mechanical thread reply trace bus, optical viewfinder HUD overlay (`VIEWFINDER // RAW 16:9`), inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
-| **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with hardware caching, preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
-| **Themes & Ergonomics** | High-contrast industrial Void/Stage/Baffle surfaces, eight calibrated color themes, Light / Dark / AMOLED modes, system text scaling, tactile accessible controls, and searchable settings grouped by task. |
+| **Shared reader interface** | Compact monochrome headers, flat anonymous posts, edge-to-edge media, accessible controls, and shared light/dark/true-black themes across Android and iOS. |
+| **Browsing & Layout** | Five-tab Home, Boards, Watched, Search, and Saved navigation; combined multi-site feed; complete provider-backed directories with original icons for every board; favorite-board shortcuts; and adaptive two-pane browsing. |
+| **Thread Reader** | Persistent title and source labels, OP badges, green quote links, inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
+| **Settings and activity** | Searchable directory with dedicated subpages, retained privacy and backup controls, and inherited app/site/board playback settings. |
+| **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with bounded next-clip preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
+| **Themes & Ergonomics** | Compact monochrome surfaces, eight selectable color themes, Light / Dark / AMOLED modes, system text scaling, accessible controls, and searchable settings grouped by task. |
 | **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy shield (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and zero telemetry or cloud backups. |
-| **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBW Chan** (`provider:lynxchan`). |
+| **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBWChan** (`provider:lynxchan`). |
 
 ---
 

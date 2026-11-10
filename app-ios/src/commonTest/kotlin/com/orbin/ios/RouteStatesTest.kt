@@ -44,9 +44,11 @@ class RouteStatesTest {
     fun tabsAreNeverForgotten() {
         val states = RouteStates(limit = 1)
 
-        states.visit(listOf(Route.Feed))
-        states.visit(listOf(Route.Boards))
-
-        assertTrue(states.visit(listOf(Route.Feed, thread(1))).none { it == Route.Feed.stateKey })
+        val tabs = listOf(Route.Feed, Route.Boards, Route.Watched, Route.Search, Route.Saved)
+        tabs.forEach { states.visit(listOf(it)) }
+        val evicted =
+            states.visit(listOf(Route.Feed, thread(1))) +
+                states.visit(listOf(Route.Feed, thread(2)))
+        assertTrue(evicted.none { key -> tabs.any { it.stateKey == key } })
     }
 }

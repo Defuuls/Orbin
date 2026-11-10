@@ -31,7 +31,7 @@ internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
     BoardTile(
         id = tileId,
         path = "/${board.id.value}/",
-        // The Boards list shows one site at a time, as Android's does, so the title is the board's.
+        // The source selector establishes context; the board keeps its full title.
         title = board.title,
         nsfw = board.isNsfw,
         followed = followed,
@@ -39,8 +39,8 @@ internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
     )
 
 /**
- * A feed row, laid out as Android's feed lays it out: "/g/" as the board, so the screen groups
- * by it. The id carries the site too, since both sites can have a /g/ with the same thread number.
+ * Every feed row names its site and board. Its stable key includes the source because two sites
+ * can have the same board code and thread number.
  */
 internal fun FeedThread.toFeedRow(
     nowMillis: Long,
@@ -48,6 +48,7 @@ internal fun FeedThread.toFeedRow(
 ): FeedRow =
     thread.toRow(nowMillis, read).copy(
         id = feedRowId,
+        site = sourceLabel(provider.value),
         board = "/${thread.key.board.value}/",
         threadNumber =
             thread.key.thread.value
@@ -66,7 +67,7 @@ internal fun FeedThread.toSearchRow(): SearchRow {
     return SearchRow(
         id = feedRowId,
         title = result.title,
-        board = "/${thread.key.board.value}/",
+        board = "${sourceLabel(provider.value)} · /${thread.key.board.value}/",
         snippet =
             thread.originalPost.comment
                 .plainText()
@@ -85,7 +86,15 @@ internal fun CatalogThread.toRow(
     unread: Int = 0,
 ): FeedRow =
     FeedRow(
-        id = "${key.board.value}/${key.thread.value}",
+        id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
+        site = sourceLabel(key.provider.value),
+        poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
+        mediaLabel =
+            originalPost.attachments
+                .firstOrNull()
+                ?.extension
+                .orEmpty()
+                .uppercase(),
         subject = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}",
         board = key.board.value,
         activity =
@@ -135,7 +144,8 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> {
     return posts.map { post ->
         NextPost(
             id = post.id.value.toString(),
-            number = "No.${post.id.value}",
+            number = "No. ${post.id.value}",
+            author = post.poster.name.orEmpty(),
             time = formatRelativeTime(post.createdAtMillis, nowMillis).orEmpty(),
             body = post.comment.plainText(),
             depth = depths[post.id] ?: 0,
@@ -183,3 +193,10 @@ internal fun safeExternalLink(url: String): String? {
     val parts = UriParts.parse(trimmed) ?: return null
     return trimmed.takeIf { parts.scheme.equals("https", ignoreCase = true) && !parts.host.isNullOrBlank() }
 }
+
+private fun sourceLabel(provider: String): String =
+    when (provider) {
+        "fourchan" -> "4chan"
+        "bbwchan" -> "BBWChan"
+        else -> provider
+    }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_media_loop_off
@@ -74,6 +76,7 @@ internal fun MediaViewer(
     onClose: () -> Unit,
     onSave: (MediaAttachment) -> Boolean = { false },
     onPageChanged: (Int) -> Unit = {},
+    playback: PlaybackSettings = PlaybackSettings(),
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -83,6 +86,13 @@ internal fun MediaViewer(
         rememberPagerState(
             initialPage = startIndex.coerceIn(0, (files.size - 1).coerceAtLeast(0)),
         ) { files.size }
+    val preloader = remember { createNativeMediaPreloader() }
+    DisposableEffect(preloader) {
+        onDispose { preloader.close() }
+    }
+    LaunchedEffect(preloader, files, pager.currentPage, playback.preloadNextClip) {
+        preloader.prepare(nextMediaPreloadTarget(files, pager.currentPage, playback.preloadNextClip, supportsWebM))
+    }
     val reportPage by rememberUpdatedState(onPageChanged)
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { reportPage(it) }
@@ -101,9 +111,19 @@ internal fun MediaViewer(
         }
     }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
+        NativeMediaPreloadHost(preloader)
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
-        VerticalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
-            MediaPage(files[page.coerceIn(0, files.lastIndex)], active = page == pager.currentPage)
+        VerticalPager(
+            state = pager,
+            beyondViewportPageCount = if (playback.preloadNextClip) 1 else 0,
+            modifier = Modifier.fillMaxSize(),
+        ) { page ->
+            MediaPage(
+                files[page.coerceIn(0, files.lastIndex)],
+                active = page == pager.currentPage,
+                playback = playback,
+                preloader = preloader,
+            )
         }
         val current = files[pager.currentPage.coerceIn(0, files.lastIndex)]
         Row(
@@ -168,13 +188,15 @@ private fun SaveButton(
 private fun MediaPage(
     file: MediaAttachment,
     active: Boolean,
+    playback: PlaybackSettings,
+    preloader: NativeMediaPreloader,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
     var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
-    var looping by remember(file) { mutableStateOf(true) }
+    var looping by remember(file, playback.loopVideos) { mutableStateOf(playback.loopVideos) }
     if (!revealed) {
         SpoilerCover(
             modifier = Modifier.clickable { revealed = true },
@@ -192,6 +214,9 @@ private fun MediaPage(
                     url = playable,
                     active = active,
                     loop = looping,
+                    autoPlay = playback.autoplay,
+                    initiallyMuted = playback.startMuted && SessionAudio.muted,
+                    preloader = preloader,
                     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
                 )
                 TextButton(
@@ -215,6 +240,10 @@ private fun MediaPage(
                 url = webm,
                 modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
                 active = active,
+                autoPlay = playback.autoplay,
+                initiallyMuted = playback.startMuted && SessionAudio.muted,
+                loop = looping,
+                preloader = preloader,
             )
         else -> ExternalFile(file)
     }

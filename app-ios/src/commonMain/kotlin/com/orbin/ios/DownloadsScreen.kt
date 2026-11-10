@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_collection_back
 import com.orbin.ios.resources.ios_downloads_clear
 import com.orbin.ios.resources.ios_downloads_clear_message
 import com.orbin.ios.resources.ios_downloads_clear_title
@@ -57,6 +58,7 @@ internal fun DownloadsScreen(
     onRetry: (id: Long) -> Unit,
     onClear: () -> Unit,
     onDestination: (NextDestination) -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val title = stringResource(Res.string.ios_downloads_title)
     var confirmClear by remember { mutableStateOf(false) }
@@ -68,8 +70,16 @@ internal fun DownloadsScreen(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 ),
         ) {
-            if (records.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp)) {
+                if (onBack !=
+                    null
+                ) {
+                    InlineAction(
+                        stringResource(Res.string.ios_collection_back),
+                        onClick = onBack,
+                    )
+                }
+                if (records.isNotEmpty()) {
                     Spacer(Modifier.weight(1f))
                     InlineAction(stringResource(Res.string.ios_downloads_clear), onClick = { confirmClear = true })
                 }

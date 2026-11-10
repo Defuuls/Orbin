@@ -29,6 +29,10 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +40,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -63,6 +66,15 @@ data class SubscribedBoardFeed(
     val threads: ImmutableList<CatalogThread>,
     /** This board's thread-count override, if any; null means it follows the global default. */
     val threadLimitOverride: FeedThreadLimit?,
+    /** Explicit source identity also survives an empty or failed catalog. */
+    val providerId: String =
+        threads
+            .firstOrNull()
+            ?.key
+            ?.provider
+            ?.value
+            .orEmpty(),
+    val failed: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -80,6 +92,7 @@ class SubscribedFeedViewModel
         private val imagePreloader: ImagePreloader,
     ) : ViewModel() {
         private val feedLoader = SubscribedFeedLoader()
+        private val providers = registry.all()
 
         private val activeProvider: StateFlow<ImageBoardProvider> =
             observeActiveProvider()
@@ -123,49 +136,55 @@ class SubscribedFeedViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val uiState: StateFlow<SubscribedFeedUiState> =
-            activeProvider
-                .flatMapLatest { provider ->
-                    boardPreferencesRepository
-                        .observeSubscribedBoards(provider.metadata.id)
-                        .flatMapLatest { subscribedIds ->
-                            combine(
-                                boardRepository.observeBoards(provider.metadata.id),
-                                boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribedIds),
-                                loadSettings,
-                                refreshRequests,
-                            ) { boards, limitOverrides, feedSettings, refreshCount ->
-                                val inputs =
-                                    FeedInputs(
-                                        providerId = provider.metadata.id.value,
-                                        subscribedIds = subscribedIds,
-                                        boards = boards,
-                                        limitOverrides = limitOverrides,
-                                        settings = feedSettings,
-                                        refreshCount = refreshCount,
-                                    )
-                                loadOrReuseFeeds(inputs) {
-                                    loadSubscribedFeeds(
-                                        provider,
-                                        boards,
-                                        subscribedIds,
-                                        limitOverrides,
-                                        feedSettings,
-                                    )
-                                }
-                            }
-                        }
-                }.onEach { _isRefreshing.value = false }
+            combine(providers.map(::observeProviderFeed)) { states ->
+                mergeProviderFeeds(states.toList())
+            }.onEach { _isRefreshing.value = false }
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                     SubscribedFeedUiState.Loading,
                 )
 
+        /** Cache and failures stay source-scoped even when two sites reuse a board code. */
+        private fun observeProviderFeed(provider: ImageBoardProvider): Flow<SubscribedFeedUiState> =
+            combine(
+                boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
+            ) { subscribed, favorites -> subscribed + favorites }
+                .distinctUntilChanged()
+                .flatMapLatest { subscribedIds ->
+                    combine(
+                        boardRepository.observeBoards(provider.metadata.id),
+                        boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribedIds),
+                        loadSettings,
+                        refreshRequests,
+                    ) { boards, limitOverrides, feedSettings, refreshCount ->
+                        val inputs =
+                            FeedInputs(
+                                providerId = provider.metadata.id.value,
+                                subscribedIds = subscribedIds,
+                                boards = boards,
+                                limitOverrides = limitOverrides,
+                                settings = feedSettings,
+                                refreshCount = refreshCount,
+                            )
+                        loadOrReuseFeeds(inputs) {
+                            loadSubscribedFeeds(
+                                provider,
+                                boards,
+                                subscribedIds,
+                                limitOverrides,
+                                feedSettings,
+                            )
+                        }
+                    }
+                }
+
         private val _isRefreshing = MutableStateFlow(false)
 
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        private var lastLoad: CachedFeed? = null
+        private val lastLoads = mutableMapOf<String, CachedFeed>()
 
         private suspend fun loadOrReuseFeeds(
             inputs: FeedInputs,
@@ -174,17 +193,17 @@ class SubscribedFeedViewModel
             // Coming back to the feed restarts this flow (the stateIn stops after STOP_TIMEOUT_MS
             // without subscribers), but it must not refetch: only a pull to refresh bumps
             // refreshCount, and an unchanged key means the cached feed is still the answer.
-            lastLoad?.let { cached ->
+            lastLoads[inputs.providerId]?.let { cached ->
                 if (cached.inputs == inputs) return cached.state
             }
-            val cachedForProvider = lastLoad?.takeIf { it.inputs.providerId == inputs.providerId }?.state
+            val cachedForProvider = lastLoads[inputs.providerId]?.state
 
             return try {
                 when (val state = load()) {
                     is SubscribedFeedUiState.Success -> {
                         val merged = state.withCachedFailures(cachedForProvider)
                         if (merged.failedBoards.size < merged.boards.size || merged.boards.isEmpty()) {
-                            lastLoad = CachedFeed(inputs, merged, merged.loadedAtMillis)
+                            lastLoads[inputs.providerId] = CachedFeed(inputs, merged, merged.loadedAtMillis)
                         }
                         merged
                     }
@@ -201,27 +220,28 @@ class SubscribedFeedViewModel
         }
 
         init {
-            activeProvider
-                .onEach { provider ->
-                    try {
-                        boardRepository.refreshBoards(provider.metadata.id)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
-                    }
-                }.launchIn(viewModelScope)
+            providers.forEach { provider ->
+                viewModelScope.launch { refreshBoardIndex(provider) }
+            }
+        }
+
+        private suspend fun refreshBoardIndex(provider: ImageBoardProvider) {
+            try {
+                boardRepository.refreshBoards(provider.metadata.id)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
+            }
         }
 
         fun refresh() {
             _isRefreshing.value = true
             viewModelScope.launch {
                 try {
-                    boardRepository.refreshBoards(activeProvider.value.metadata.id)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
+                    coroutineScope {
+                        providers.map { provider -> async { refreshBoardIndex(provider) } }.awaitAll()
+                    }
                 } finally {
                     // Always trigger the catalog pass. If board-index refresh failed, the existing
                     // board list can still refresh and stale content remains available on failure.
@@ -262,7 +282,7 @@ class SubscribedFeedViewModel
                     },
                 ) { board -> provider.getCatalog(CatalogRequest(provider.metadata.id, board)) }
             return SubscribedFeedUiState.Success(
-                boards = results.map { it.toUi() }.toImmutableList(),
+                boards = results.map { it.toUi(provider.metadata.id.value) }.toImmutableList(),
                 failedBoards = results.filter { it.failed }.map { it.board.id }.toImmutableList(),
                 loadedAtMillis = System.currentTimeMillis(),
                 stale = results.any { it.failed },
@@ -303,7 +323,8 @@ private data class CachedFeed(
     val loadedAtMillis: Long,
 )
 
-private fun BoardFeed.toUi() = SubscribedBoardFeed(board, threads.toImmutableList(), limitOverride)
+private fun BoardFeed.toUi(providerId: String) =
+    SubscribedBoardFeed(board, threads.toImmutableList(), limitOverride, providerId, failed)
 
 private fun SubscribedBoardFeed.toLoaderFeed(failed: Boolean) = BoardFeed(board, threads, threadLimitOverride, failed)
 
@@ -317,5 +338,21 @@ private fun SubscribedFeedUiState.Success.withCachedFailures(
             boards.map { it.toLoaderFeed(it.board.id in failedBoards) },
             cached.boards.map { it.toLoaderFeed(false) },
         )
-    return copy(boards = merged.map { it.toUi() }.toImmutableList(), stale = true)
+    val providerId = boards.firstOrNull()?.providerId.orEmpty()
+    return copy(boards = merged.map { it.toUi(providerId) }.toImmutableList(), stale = true)
+}
+
+/** A source outage keeps the other sources readable and exposes the combined feed as stale. */
+internal fun mergeProviderFeeds(states: List<SubscribedFeedUiState>): SubscribedFeedUiState {
+    val successes = states.filterIsInstance<SubscribedFeedUiState.Success>()
+    if (successes.isEmpty()) {
+        return states.filterIsInstance<SubscribedFeedUiState.Error>().firstOrNull()
+            ?: SubscribedFeedUiState.Success(persistentListOf())
+    }
+    return SubscribedFeedUiState.Success(
+        boards = successes.flatMap { it.boards }.toImmutableList(),
+        failedBoards = successes.flatMap { it.failedBoards }.toImmutableList(),
+        loadedAtMillis = successes.minOf { it.loadedAtMillis },
+        stale = successes.any { it.stale } || states.any { it is SubscribedFeedUiState.Error },
+    )
 }

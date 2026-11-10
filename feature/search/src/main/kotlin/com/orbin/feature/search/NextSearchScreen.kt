@@ -58,9 +58,16 @@ private fun SearchUiState.toSearchState(): SearchState =
                         SearchRow(
                             id = it.rowId,
                             title = it.title,
-                            board = "/${it.key.board.value}/",
+                            board = "${sourceLabel(it.key.provider.value)} · /${it.key.board.value}/",
                             snippet = it.snippet,
                         )
                     },
             )
+    }
+
+private fun sourceLabel(provider: String): String =
+    when (provider) {
+        "fourchan" -> "4chan"
+        "bbwchan" -> "BBWChan"
+        else -> provider
     }

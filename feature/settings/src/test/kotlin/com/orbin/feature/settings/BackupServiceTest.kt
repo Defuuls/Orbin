@@ -6,6 +6,9 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -42,6 +45,10 @@ class BackupServiceTest {
             amoled = true,
             biometricLockEnabled = true,
             onboardingCompleted = true,
+            playbackPreferences =
+                PlaybackPreferences(
+                    defaults = PlaybackSettings(autoplay = false, startMuted = false),
+                ).withSettings(PlaybackScope("fake", "g"), PlaybackSettings(loopVideos = false)),
         )
 
     @Test
@@ -57,6 +64,25 @@ class BackupServiceTest {
             // covers every other field without listing them.
             assertThat(restored.copy(biometricLockEnabled = false))
                 .isEqualTo(populatedSettings.copy(biometricLockEnabled = false))
+        }
+
+    @Test
+    fun restoringPlaybackReplacesOldOverridesAndKeepsInheritedScopesLive() =
+        runTest {
+            val exported = service(FakeSettingsRepository(populatedSettings)).exportToJson("test")
+            val destination =
+                FakeSettingsRepository(
+                    AppSettings(
+                        playbackPreferences =
+                            PlaybackPreferences().withSettings(
+                                PlaybackScope("fake", "old"),
+                                PlaybackSettings(startMuted = false),
+                            ),
+                    ),
+                )
+            service(destination).importFromJson(exported).getOrThrow()
+            assertThat(destination.current.playbackPreferences).isEqualTo(populatedSettings.playbackPreferences)
+            assertThat(destination.current.playbackPreferences.hasOverride(PlaybackScope("fake", "old"))).isFalse()
         }
 
     @Test

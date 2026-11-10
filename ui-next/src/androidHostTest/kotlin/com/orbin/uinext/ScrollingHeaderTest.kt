@@ -1,5 +1,7 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -84,7 +86,7 @@ class ScrollingHeaderTest {
         }
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
-        composeRule.onNode(hasScrollAction()).performScrollToIndex(ROW_COUNT)
+        composeRule.onNode(verticalScrollAction()).performScrollToIndex(ROW_COUNT)
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
@@ -105,13 +107,14 @@ class ScrollingHeaderTest {
         }
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
+        composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
 
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
-    private fun scrollToLastRow() = composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
+    private fun scrollToLastRow() =
+        composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
 
     private fun rows() =
         List(ROW_COUNT) { index ->
@@ -130,6 +133,9 @@ class ScrollingHeaderTest {
         List(ROW_COUNT) { index ->
             MediaCell(board = if (index == ROW_COUNT - 1) "/z/" else "/g/", id = "cell-$index")
         }
+
+    private fun verticalScrollAction() =
+        hasScrollAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange)
 
     private companion object {
         const val ROW_COUNT = 30

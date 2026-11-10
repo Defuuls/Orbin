@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -36,7 +37,7 @@ class WindowInsetsTest {
                 FeedScreen(
                     rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
                     subtitle = "1 thread",
-                    // Draws the tab pill; its "Downloads" tab is the only "Downloads" on the feed.
+                    // Draw the shared tab bar so its safe-area clearance is checked.
                     onOpenDownloads = {},
                 )
             }
@@ -48,7 +49,7 @@ class WindowInsetsTest {
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
         // The pill is above the gesture handle rather than behind it.
-        val pill = composeRule.onNodeWithText("Downloads").getUnclippedBoundsInRoot()
+        val pill = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
         assertThat(pill.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 
@@ -66,7 +67,7 @@ class WindowInsetsTest {
         }
         applySystemBars()
 
-        val title = composeRule.onNodeWithText("Settings").getUnclippedBoundsInRoot()
+        val title = composeRule.onNodeWithText("Settings and activity").getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
     }
 

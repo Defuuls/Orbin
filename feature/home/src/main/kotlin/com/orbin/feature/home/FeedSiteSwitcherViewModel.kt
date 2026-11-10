@@ -1,19 +1,12 @@
 package com.orbin.feature.home
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.orbin.core.model.ProviderId
-import com.orbin.domain.repository.SettingsRepository
-import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 internal data class FeedSiteOption(
@@ -21,13 +14,13 @@ internal data class FeedSiteOption(
     val label: String,
 )
 
+/** Filtering Home never changes the independently selected site in the Boards directory. */
 @HiltViewModel
 internal class FeedSiteSwitcherViewModel
     @Inject
     constructor(
         registry: ProviderRegistry,
-        observeActiveProvider: ObserveActiveProviderUseCase,
-        private val settingsRepository: SettingsRepository,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         val sites: ImmutableList<FeedSiteOption> =
             registry
@@ -39,24 +32,15 @@ internal class FeedSiteSwitcherViewModel
                     )
                 }.toImmutableList()
 
-        private val defaultProviderId =
-            registry
-                .default()
-                .metadata
-                .id
-                .value
+        /** Null selects the combined feed; the selected source survives process recreation. */
+        val activeProviderId: StateFlow<String?> = savedStateHandle.getStateFlow(SITE_FILTER_KEY, null)
 
-        val activeProviderId: StateFlow<String> =
-            observeActiveProvider()
-                .map { provider -> provider.metadata.id.value }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), defaultProviderId)
-
-        fun selectSite(id: String) {
-            if (id == activeProviderId.value) return
-            viewModelScope.launch { settingsRepository.setActiveProviderId(ProviderId(id)) }
+        fun selectSite(id: String?) {
+            if (id != null && sites.none { it.id == id }) return
+            savedStateHandle[SITE_FILTER_KEY] = id
         }
 
         private companion object {
-            const val STOP_TIMEOUT_MS = 5_000L
+            const val SITE_FILTER_KEY = "homeSiteFilter"
         }
     }

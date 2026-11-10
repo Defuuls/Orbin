@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.NextMaterials
 import kotlinx.coroutines.launch
 
@@ -125,6 +127,7 @@ fun NextIconAction(
     ) {
         Icon(
             imageVector = imageVector,
+            modifier = Modifier.size(24.dp),
             contentDescription = contentDescription,
             tint = tint,
         )

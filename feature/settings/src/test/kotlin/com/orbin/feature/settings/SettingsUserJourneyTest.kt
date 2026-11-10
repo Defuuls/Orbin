@@ -6,16 +6,20 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.PlaybackScope
 import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
@@ -67,6 +71,34 @@ class SettingsUserJourneyTest {
     }
 
     @Test
+    fun playbackChoicesWriteOnlyAfterSelectingAndOnlyForTheChosenScope() {
+        launch()
+        choose("Scope", "Test Provider")
+        val site = PlaybackScope("fourchan")
+        val defaults = settings.current.playbackPreferences.defaults
+        for (label in listOf("Autoplay", "Preload next clip")) {
+            val before = settings.current.playbackPreferences
+            row(label).performClick()
+            composeRule.waitForIdle()
+            assertThat(settings.current.playbackPreferences).isEqualTo(before)
+            composeRule.onNode(isOption("Off")).performClick()
+            composeRule.waitForIdle()
+            val effective = settings.current.playbackPreferences.forScope(site)
+            assertThat(if (label == "Autoplay") effective.autoplay else effective.preloadNextClip).isFalse()
+            assertThat(settings.current.playbackPreferences.defaults).isEqualTo(defaults)
+
+            val disabled = settings.current.playbackPreferences
+            row(label).performClick()
+            composeRule.waitForIdle()
+            assertThat(settings.current.playbackPreferences).isEqualTo(disabled)
+            composeRule.onNode(isOption("On")).performClick()
+            composeRule.waitForIdle()
+            val enabled = settings.current.playbackPreferences.forScope(site)
+            assertThat(if (label == "Autoplay") enabled.autoplay else enabled.preloadNextClip).isTrue()
+        }
+    }
+
+    @Test
     fun everyChoiceOpensItsOptionsAndKeepsTheOnePicked() {
         launch()
 
@@ -90,7 +122,7 @@ class SettingsUserJourneyTest {
 
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
     @Test
-    fun settingsCarriesOnlyTheShortList() {
+    fun settingsKeepsExistingControlsSearchable() {
         launch()
 
         listOf(
@@ -201,8 +233,10 @@ class SettingsUserJourneyTest {
 
     /** A row, scrolled into composition first: the list is lazy. */
     private fun row(label: String): SemanticsNodeInteraction {
+        composeRule.onNode(hasSetTextAction()).performTextClearance()
+        composeRule.onNode(hasSetTextAction()).performTextInput(label)
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
-        return composeRule.onNode(hasText(label) and hasClickAction())
+        return composeRule.onNode(hasText(label) and hasClickAction() and !hasSetTextAction())
     }
 
     /** An option chip: its whole text is the option, unlike a row that merely shows it as a value. */

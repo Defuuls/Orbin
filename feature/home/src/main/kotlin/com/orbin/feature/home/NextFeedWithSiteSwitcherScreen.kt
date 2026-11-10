@@ -3,9 +3,9 @@ package com.orbin.feature.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.uinext.PlatformSegments
 
 @Composable
 fun NextFeedWithSiteSwitcherScreen(
@@ -17,6 +17,9 @@ fun NextFeedWithSiteSwitcherScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
     onOpenDownloads: (() -> Unit)? = null,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
@@ -29,14 +32,12 @@ fun NextFeedWithSiteSwitcherScreen(
         onChromeVisibleChange = onChromeVisibleChange,
         onOpenBoards = onOpenBoards,
         onOpenDownloads = onOpenDownloads,
-        headerContent = {
-            if (switcherViewModel.sites.size > 1) {
-                PlatformSegments(
-                    labels = switcherViewModel.sites.map { it.label },
-                    selected = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId },
-                    onSelect = { switcherViewModel.selectSite(switcherViewModel.sites[it].id) },
-                )
-            }
-        },
+        onOpenSearch = onOpenSearch,
+        onOpenSaved = onOpenSaved,
+        onOpenWatched = onOpenWatched,
+        providerFilter = activeProviderId,
+        sourceLabels = listOf(stringResource(R.string.feed_all_sites)) + switcherViewModel.sites.map { it.label },
+        selectedSource = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 1,
+        onSelectSource = { switcherViewModel.selectSite(switcherViewModel.sites.getOrNull(it - 1)?.id) },
     )
 }

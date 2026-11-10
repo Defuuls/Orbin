@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.uinext.NextSnackbarHostState
@@ -33,22 +34,37 @@ private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val BYTES_PER_MB = 1024L * 1024L
 
 /**
- * Every setting on one screen, and every one of them editable on it.
- *
- * The list used to hand eleven of its rows back to the category screens it replaced, which meant
- * pressing a setting could drop you into the interface this one was built to replace — a worse
- * outcome than the seven screens, because at least those were consistent with themselves. Nothing
- * navigates now. Toggles flip, choices and text fields open under their own row, and the actions
- * that need the system — a folder picker, a file to write a backup into — open that system picker
- * over this screen.
+ * A settings directory backed by the same persisted controls on every subpage.
+ * System actions such as backup import/export stay in the platform layer.
  */
 @Composable
 fun NextSettingsScreen(
     snackbarHostState: NextSnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onBack: (() -> Unit)? = null,
+    onNavigate: ((String) -> Unit)? = null,
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val availablePlaybackScopes by viewModel.playbackScopes.collectAsStateWithLifecycle()
+    val playbackScopes =
+        remember(availablePlaybackScopes, settings.playbackPreferences.overrides) {
+            (
+                availablePlaybackScopes +
+                    settings.playbackPreferences.overrides.map { override ->
+                        val site =
+                            viewModel.providers.firstOrNull { it.id.value == override.scope.providerId }?.displayName
+                                ?: override.scope.providerId
+                        PlaybackScopeChoice(
+                            override.scope,
+                            if (override.scope.isBoard) "$site · /${override.scope.boardId}/" else site,
+                        )
+                    }
+            ).distinctBy { it.scope }
+        }
+    var playbackProvider by rememberSaveable { mutableStateOf("") }
+    var playbackBoard by rememberSaveable { mutableStateOf("") }
+    val playbackScope = PlaybackScope(playbackProvider, playbackBoard)
     val backupStatus by viewModel.backupStatus.collectAsStateWithLifecycle()
     val updateCheck by viewModel.updateCheck.collectAsStateWithLifecycle()
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
@@ -130,50 +146,86 @@ fun NextSettingsScreen(
 
     NextTheme {
         SettingsScreen(
-            groups = model.groups,
+            groups = model.groups + ("Playback" to playbackRows(settings, playbackScopes, playbackScope)),
+            onBack = onBack,
+            onNavigate = onNavigate,
+            enabledSiteCount = viewModel.providers.size,
             expandedId = expanded,
             onActivate = { item ->
-                when (item.kind) {
-                    SettingKind.TOGGLE -> model.toggle(item.id)
-                    SettingKind.CHOICE, SettingKind.TEXT ->
-                        expanded = if (expanded == item.id) null else item.id
-                    SettingKind.ACTION ->
-                        dispatch(
-                            item = item,
-                            onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                            onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                            onClear = {
-                                if (clearArmed) {
-                                    clearArmed = false
-                                    viewModel.clearLocalActivity { cleared ->
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                strings.get(
-                                                    if (cleared) {
-                                                        R.string.settings_clear_activity_done
-                                                    } else {
-                                                        R.string.settings_clear_activity_failed
-                                                    },
-                                                ),
-                                            )
+                if (item.id == "playbackScope") viewModel.loadPlaybackBoards()
+                val preferences = settings.playbackPreferences
+                val playback = preferences.forScope(playbackScope)
+                val updatedPlayback =
+                    when (item.id) {
+                        "startMuted" -> playback.copy(startMuted = !playback.startMuted)
+                        "loopVideos" -> playback.copy(loopVideos = !playback.loopVideos)
+                        "inheritPlayback" -> if (preferences.hasOverride(playbackScope)) null else playback
+                        else -> null
+                    }
+                if (item.id in
+                    setOf("startMuted", "loopVideos", "inheritPlayback", "resetPlayback")
+                ) {
+                    viewModel.setPlaybackSettings(playbackScope, updatedPlayback)
+                } else {
+                    when (item.kind) {
+                        SettingKind.TOGGLE -> model.toggle(item.id)
+                        SettingKind.CHOICE, SettingKind.TEXT ->
+                            expanded = if (expanded == item.id) null else item.id
+                        SettingKind.ACTION ->
+                            dispatch(
+                                item = item,
+                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
+                                onClear = {
+                                    if (clearArmed) {
+                                        clearArmed = false
+                                        viewModel.clearLocalActivity { cleared ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    strings.get(
+                                                        if (cleared) {
+                                                            R.string.settings_clear_activity_done
+                                                        } else {
+                                                            R.string.settings_clear_activity_failed
+                                                        },
+                                                    ),
+                                                )
+                                            }
                                         }
+                                    } else {
+                                        clearArmed = true
                                     }
-                                } else {
-                                    clearArmed = true
-                                }
-                            },
-                            onClearImageCache = viewModel::clearImageCache,
-                            onCheckUpdates = {
-                                if (updateCheck != UpdateCheckState.Checking) {
-                                    viewModel.checkForUpdate(appVersionName(context))
-                                }
-                            },
-                        )
-                    SettingKind.INFO -> Unit
+                                },
+                                onClearImageCache = viewModel::clearImageCache,
+                                onCheckUpdates = {
+                                    if (updateCheck != UpdateCheckState.Checking) {
+                                        viewModel.checkForUpdate(appVersionName(context))
+                                    }
+                                },
+                            )
+                        SettingKind.INFO -> Unit
+                    }
                 }
             },
             onSelectOption = { item, index ->
-                model.choose(item.id, index)
+                if (item.id == "playbackScope") {
+                    playbackScopes.getOrNull(index)?.scope?.let {
+                        playbackProvider = it.providerId
+                        playbackBoard = it.boardId
+                    }
+                } else if (item.id == "autoplay" && index in 0..1) {
+                    viewModel.setPlaybackSettings(
+                        playbackScope,
+                        settings.playbackPreferences.forScope(playbackScope).copy(autoplay = index == 1),
+                    )
+                } else if (item.id == "preloadNextClip" && index in 0..1) {
+                    viewModel.setPlaybackSettings(
+                        playbackScope,
+                        settings.playbackPreferences.forScope(playbackScope).copy(preloadNextClip = index == 1),
+                    )
+                } else {
+                    model.choose(item.id, index)
+                }
                 expanded = null
             },
             onCommitText = { item, value ->

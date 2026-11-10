@@ -6,6 +6,33 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [194-Malanga] - 2026-11-10
+
+### Added
+- Combined 4chan and BBWChan Home feed and cross-site Search over favorite and followed boards, with source filters, board shortcuts, and source-qualified saved, history, and watched-thread collections, plus direct watch, save, and share actions.
+- Original topic icons for all 91 current boards across both supported sites, with provider-qualified identities, colors for light and dark themes, and deterministic fallback artwork for new boards.
+- Persistent app, site, and board playback preferences with live inheritance, reset to parent settings, backup support, and autoplay, mute, loop, and preload controls in the Android and iOS viewers.
+
+### Changed
+- Replaced industrial chrome with a compact shared Android/iOS reader: monochrome default surfaces, flat anonymous posts, floating Home, Boards, Watched, Search, and Saved tabs, consistent outline icons, circular shortcuts, natural media aspect ratios, edge-to-edge media, source labels, and green quote links.
+- Settings and activity now opens from the header menu as a searchable directory with task subpages, trailing values, and dedicated selection lists, retaining privacy, security, backup, update, and platform controls.
+- Refined thread replies into compact avatar, author, and comment columns while preserving original-post media sizing, quote navigation, attachments, and reading position.
+
+### Fixed
+- Qualified feed, cache, search, collection, and media-wall identities by site so matching board codes and thread numbers cannot open or replace another source's content.
+- Kept primary navigation available during loading and failure states and preserved each tab's navigation and reading state, including independent thread Posts/Files reading positions.
+- Stopping thread watching now retains saved bookmarks, and watched references remain saved until watching is turned off.
+- Honored persisted autoplay and mute preferences before starting media and retained manual play/pause intent through buffering, paging, and app visibility changes.
+- Bounded upcoming-video preloading and released unused native resources when paging, closing the viewer, or disabling preload.
+- Downloaded videos now use the local file data source while online videos retain the configured HTTP transport.
+- Paused Android clips disable automatic Picture in Picture immediately before backgrounding.
+- Reserved valid attachment preview space before decoding, including providers that publish thumbnail dimensions without full media dimensions.
+
+### Testing
+- Added real MP4 and WebM playback smoke coverage, including Android local-file sources, manual pause through backgrounding, and completed-clip replay, plus source-identity, scoped-preference, selection, navigation, and native-resource lifecycle regressions.
+- Updated shared light, dark, large-text, board-icon, and iOS-mode screenshot coverage for the redesigned reader.
+
+
 ## [193-Purslane] - 2026-11-08
 
 ### Added
@@ -2881,7 +2908,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...HEAD
+[194-Malanga]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...v194-Malanga
 [193-Purslane]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...v193-Purslane
 [192-Sea-Kale]: https://github.com/Defuuls/Orbin/compare/v191-Agretti...v192-Sea-Kale
 [191-Agretti]: https://github.com/Defuuls/Orbin/compare/v190-Puntarelle...v191-Agretti

@@ -1,15 +1,12 @@
 package com.orbin.feature.board
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -25,6 +22,7 @@ import com.orbin.uinext.FeedRow
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.sourceLabel
 
 /**
  * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
@@ -145,7 +143,7 @@ fun NextBoardScreen(
                                 attachment = attachment,
                                 fullResolution = true,
                                 contentScale = ContentScale.Fit,
-                                modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+                                modifier = tileModifier,
                             )
                         }
                     }
@@ -167,6 +165,15 @@ private fun CatalogThread.toRow(
         id = "${key.board.value}/${key.thread.value}",
         subject = originalPost.subject ?: "No.${key.thread.value}",
         board = board,
+        site = sourceLabel(key.provider.value),
+        poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
+        mediaLabel =
+            originalPost.attachments
+                .firstOrNull()
+                ?.extension
+                ?.uppercase()
+                .orEmpty(),
+        excerpt = originalPost.comment.plainText(),
         activity =
             formatRelativeTime(
                 if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis,

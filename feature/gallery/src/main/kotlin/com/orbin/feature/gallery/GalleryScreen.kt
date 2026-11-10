@@ -42,6 +42,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -55,7 +56,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.image.ImageCopyResult
+import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.ZoomableImage
+import com.orbin.media.video.SessionAudio
 import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
@@ -84,6 +87,8 @@ fun GalleryScreen(
 ) {
     val media by viewModel.media.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val playback = remember(settings) { viewModel.playbackSettings() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -131,7 +136,7 @@ fun GalleryScreen(
             }
         }
 
-        LaunchedEffect(pagerState.settledPage, media) {
+        LaunchedEffect(pagerState.settledPage, media, playback.preloadNextClip) {
             viewModel.prefetchAround(pagerState.settledPage, media)
         }
         val haptics = LocalHapticFeedback.current
@@ -164,54 +169,55 @@ fun GalleryScreen(
                 beyondViewportPageCount = 0,
             ) { page ->
                 val item = media[page.coerceIn(0, media.lastIndex)]
+                val isActive = page == pagerState.settledPage
                 val isNear = kotlin.math.abs(page - pagerState.settledPage) <= 1
+                var revealed by remember(item.id) { mutableStateOf(!item.isSpoiler) }
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.Black),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
-                        val isActive = page == pagerState.settledPage
-                        VideoPlayer(
-                            url = item.sourceUrl,
-                            modifier = Modifier.fillMaxSize(),
-                            autoPlay = true,
-                            // Only the settled page plays, so swiping away stops its audio.
-                            active = isActive,
-                            // Only the active page controls the gallery chrome.
-                            onFullscreenChange = { if (isActive) videoFullscreen = it },
-                            onControlsToggle = { if (isActive) chromeVisible = it },
-                            onLongPress = { actionsFor = item },
-                        )
+                    if (!revealed) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().clickable { revealed = true },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.gallery_spoiler_reveal),
+                                color = Color.White,
+                                style = NextType.labelMedium,
+                            )
+                        }
+                    } else if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
+                        if (isActive) {
+                            // A neighbour or covered file must not allocate a decoder or fetch its source.
+                            VideoPlayer(
+                                url = item.sourceUrl,
+                                modifier = Modifier.fillMaxSize(),
+                                autoPlay = playback.autoplay,
+                                muted = playback.startMuted && SessionAudio.muted,
+                                loop = playback.loopVideos,
+                                active = true,
+                                onFullscreenChange = { videoFullscreen = it },
+                                onControlsToggle = { chromeVisible = it },
+                                onLongPress = { actionsFor = item },
+                            )
+                        } else {
+                            MediaThumbnail(
+                                attachment = item,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit,
+                            )
+                        }
                     } else {
                         ZoomableImage(
                             url = item.sourceUrl,
                             contentDescription = item.originalFileName,
                             modifier = Modifier.fillMaxSize(),
                             placeholderUrl = item.thumbnailUrl,
-                            // Drop full decodes more than one page away from the settled item.
-                            active = isNear,
+                            active = isActive || (playback.preloadNextClip && isNear),
                             onTap = { chromeVisible = !chromeVisible },
                             onLongPress = { actionsFor = item },
                         )
-                    }
-                    if (item.isSpoiler) {
-                        var revealed by remember(item.id) { mutableStateOf(false) }
-                        if (!revealed) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.85f))
-                                        .clickable { revealed = true },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.gallery_spoiler_reveal),
-                                    color = Color.White,
-                                    style = NextType.labelMedium,
-                                )
-                            }
-                        }
                     }
                 }
             }

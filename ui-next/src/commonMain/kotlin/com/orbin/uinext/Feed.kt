@@ -2,7 +2,7 @@ package com.orbin.uinext
 
 /**
  * A feed/catalog row. Production callers must pass a thread-stable [id]
- * (`"board/thread"`); the `"$board:$subject"` default is only for previews/tests.
+ * (`"provider/board/thread"`); the `"$board:$subject"` default is only for previews/tests.
  */
 data class FeedRow(
     val subject: String,
@@ -22,6 +22,13 @@ data class FeedRow(
      * whole image shows instead of a centre crop.
      */
     val mediaAspectRatio: Float = 0f,
+    /** Human-readable source name, supplied by the platform adapter (for example 4chan). */
+    val site: String = "",
+    val poster: String = "Anonymous",
+    /** File extension or media kind; omitted for text-only posts. */
+    val mediaLabel: String = "",
+    val watched: Boolean = false,
+    val bookmarked: Boolean = false,
     val threadNumber: String =
         id.substringAfterLast('/').trimStart(':').takeIf { candidate ->
             candidate.isNotEmpty() && candidate.all { it.isDigit() }

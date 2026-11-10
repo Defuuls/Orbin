@@ -76,7 +76,7 @@ class InlineActionAccessibilityTest {
             NextTheme { DestinationPill(selected = NextDestination.FEED, onSelect = {}) }
         }
 
-        composeRule.onAllNodes(isTab).assertCountEquals(3)
-        repeat(3) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
+        composeRule.onAllNodes(isTab).assertCountEquals(5)
+        repeat(5) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
     }
 }

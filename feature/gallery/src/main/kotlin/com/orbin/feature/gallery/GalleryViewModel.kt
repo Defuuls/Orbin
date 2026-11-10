@@ -7,6 +7,9 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -18,10 +21,12 @@ import com.orbin.domain.usecase.ObserveThreadUseCase
 import com.orbin.media.ImagePreloader
 import com.orbin.media.image.ImageClipboard
 import com.orbin.media.image.ImageCopyResult
+import com.orbin.media.video.VideoPreloader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +63,7 @@ class GalleryViewModel
         private val savedThreadRepository: SavedThreadRepository,
         private val imageClipboard: ImageClipboard,
         private val imagePreloader: ImagePreloader,
+        private val videoPreloader: VideoPreloader,
     ) : ViewModel() {
         /**
          * Copies the image on screen. Routed through the ViewModel so the fetch uses the app's
@@ -91,12 +97,24 @@ class GalleryViewModel
         /** Drives video autoplay / mute in the gallery from the user's media settings. */
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    // Wait for persisted preferences before starting a clip or fetching its neighbours.
+                    AppSettings.Default.copy(
+                        playbackPreferences =
+                            PlaybackPreferences(
+                                defaults = PlaybackSettings(autoplay = false, preloadNextClip = false),
+                            ),
+                    ),
+                )
 
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val threadKey = ThreadKey(provider, board, threadId)
+
+        fun playbackSettings() = settings.value.playbackPreferences.resolve(provider, board)
 
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
@@ -126,6 +144,9 @@ class GalleryViewModel
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
 
+        private var prefetchJob: Job? = null
+        private var videoPrefetchJob: Job? = null
+
         /**
          * Prefetch the settled page and its immediate neighbours so swipes feel instant without
          * keeping an unstructured coroutine scope alive after the gallery closes.
@@ -134,23 +155,34 @@ class GalleryViewModel
             settledPage: Int,
             items: List<MediaAttachment>,
         ) {
+            prefetchJob?.cancel()
+            videoPrefetchJob?.cancel()
             if (items.isEmpty()) return
+            val neighbours = if (playbackSettings().preloadNextClip) -1..1 else 0..0
             val urls =
-                buildList {
-                    for (delta in -1..1) {
-                        val index = settledPage + delta
-                        if (index in items.indices) {
-                            val item = items[index]
-                            // Neighbours: cheap thumb; settled page: full source for first paint.
-                            if (delta == 0) {
-                                add(item.sourceUrl)
-                            } else {
-                                add(item.thumbnailUrl.ifBlank { item.sourceUrl })
-                            }
-                        }
-                    }
+                neighbours.mapNotNull { delta ->
+                    val item = items.getOrNull(settledPage + delta) ?: return@mapNotNull null
+                    if (item.isSpoiler) return@mapNotNull null
+                    // Coil cannot decode video/audio. Fetching their full source here duplicates
+                    // Media3's stream and can make the active player wait for a speculative request.
+                    val image = item.type == MediaType.IMAGE || item.type == MediaType.ANIMATED_IMAGE
+                    val url = if (delta == 0 && image) item.sourceUrl else item.thumbnailUrl
+                    url.takeIf { it.isNotBlank() }
                 }
-            imagePreloader.prefetchBatch(urls, viewModelScope)
+            prefetchJob = imagePreloader.prefetchBatch(urls, viewModelScope)
+            if (playbackSettings().preloadNextClip) {
+                items.getOrNull(settledPage + 1)?.takeIf { it.isPlayable && !it.isSpoiler }?.let { next ->
+                    videoPrefetchJob = videoPreloader.prefetch(next.sourceUrl, viewModelScope)
+                }
+            } else {
+                videoPreloader.clear()
+            }
+        }
+
+        override fun onCleared() {
+            videoPrefetchJob?.cancel()
+            videoPreloader.clear()
+            super.onCleared()
         }
 
         fun download(attachment: MediaAttachment) {

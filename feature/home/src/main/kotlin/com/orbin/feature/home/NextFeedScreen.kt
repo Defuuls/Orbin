@@ -1,7 +1,7 @@
 package com.orbin.feature.home
 
+import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -11,12 +11,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
@@ -35,6 +34,7 @@ import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.sourceLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -54,8 +54,18 @@ fun NextFeedScreen(
     onOpenDownloads: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
+    providerFilter: String? = null,
+    onOpenSearch: (() -> Unit)? = null,
+    onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
+    sourceLabels: List<String> = emptyList(),
+    selectedSource: Int = 0,
+    onSelectSource: (Int) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val actionsViewModel: FeedActionsViewModel = hiltViewModel()
+    val bookmarks by actionsViewModel.bookmarks.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -76,6 +86,9 @@ fun NextFeedScreen(
             NextDestination.FEED -> Unit
             NextDestination.BOARDS -> onOpenBoards?.invoke()
             NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
+            NextDestination.SEARCH -> onOpenSearch?.invoke()
+            NextDestination.SAVED -> onOpenSaved?.invoke()
+            NextDestination.WATCHED -> onOpenWatched?.invoke()
             NextDestination.SETTINGS -> onOpenSettings()
         }
     }
@@ -120,11 +133,15 @@ fun NextFeedScreen(
                             ).mapNotNull { it.attachment?.thumbnailUrl?.takeIf(String::isNotBlank) }
                     viewModel.prefetchFeedThumbs(urls)
                 }
-                LaunchedEffect(state.boards, visited, effectiveFilter) {
+                LaunchedEffect(state.boards, visited, effectiveFilter, providerFilter) {
                     entries =
                         withContext(Dispatchers.Default) {
                             feedEntries(
-                                feeds = state.boards,
+                                feeds =
+                                    state.boards.filter {
+                                        providerFilter == null || it.providerId == providerFilter
+                                    },
+                                sort = FeedSort.ACTIVITY,
                                 visited = visited,
                                 nowMillis = System.currentTimeMillis(),
                                 filter = effectiveFilter,
@@ -144,15 +161,24 @@ fun NextFeedScreen(
                     )
                 } else {
                     val byId = remember(entries) { entries.associateBy { it.row.id } }
-                    val rows = remember(entries) { entries.map { it.row } }
-                    val baseSubtitle = feedSubtitle(entries.size, state.boards.size)
+                    val bookmarksByKey = remember(bookmarks) { bookmarks.associateBy { it.key } }
+                    val rows =
+                        remember(entries, bookmarksByKey) {
+                            entries.map { entry ->
+                                val bookmark = bookmarksByKey[entry.key]
+                                entry.row.copy(bookmarked = bookmark != null, watched = bookmark?.isWatched == true)
+                            }
+                        }
+                    val scopedBoards = state.boards.filter { providerFilter == null || it.providerId == providerFilter }
+                    val failedBoardCount = scopedBoards.count { it.failed }
+                    val baseSubtitle = feedSubtitle(entries.size, scopedBoards.size)
                     val statusSubtitle =
                         when {
-                            state.failedBoards.isNotEmpty() ->
+                            failedBoardCount > 0 ->
                                 "$baseSubtitle · ${pluralStringResource(
                                     R.plurals.next_feed_failed_boards,
-                                    state.failedBoards.size,
-                                    state.failedBoards.size,
+                                    failedBoardCount,
+                                    failedBoardCount,
                                 )}"
 
                             state.stale -> stringResource(R.string.next_feed_stale_status, baseSubtitle)
@@ -172,13 +198,17 @@ fun NextFeedScreen(
                     ) {
                         FeedScreen(
                             rows = rows,
-                            subtitle = statusSubtitle,
+                            subtitle = baseSubtitle,
+                            statusMessage = statusSubtitle.takeIf { state.stale || failedBoardCount > 0 },
                             showRail = showRail,
                             headerContent = headerContent,
+                            sourceLabels = sourceLabels,
+                            selectedSource = selectedSource,
+                            onSelectSource = onSelectSource,
                             query = localQuery,
                             onQueryChange = { localQuery = it },
                             // Boards A–Z under their own headings, newest activity first within each.
-                            groupByBoard = true,
+                            groupByBoard = false,
                             // One column on a phone or folded; the reader's choice unfolded or on a tablet.
                             columns =
                                 feedColumns(
@@ -193,6 +223,28 @@ fun NextFeedScreen(
                             onSettings = onOpenSettings,
                             onOpenBoards = onOpenBoards,
                             onOpenDownloads = onOpenDownloads,
+                            onOpenSearch = onOpenSearch,
+                            onOpenSaved = onOpenSaved,
+                            onOpenWatched = onOpenWatched,
+                            onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
+                            onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
+                            onShareRow = { row ->
+                                byId[row.id]?.let { entry ->
+                                    val url = actionsViewModel.shareUrl(entry.key)
+                                    val intent =
+                                        Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_SUBJECT, entry.title)
+                                            putExtra(
+                                                Intent.EXTRA_TEXT,
+                                                listOfNotNull(entry.title, url).joinToString("\n"),
+                                            )
+                                        }
+                                    context.startActivity(
+                                        Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                    )
+                                }
+                            },
                             onActivePreviewChanged = { activePreviewId = it },
                             activityText = { row ->
                                 byId[row.id]
@@ -217,7 +269,7 @@ fun NextFeedScreen(
                                         contentScale = ContentScale.Fit,
                                         // Nothing plays in the feed: GIFs and videos show their
                                         // thumbnail until the thread is opened.
-                                        modifier = tileModifier.clip(RoundedCornerShape(14.dp)),
+                                        modifier = tileModifier,
                                     )
                                 }
                             },
@@ -279,9 +331,17 @@ private fun CatalogThread.toEntry(
         activityMillis = activityMillis,
         row =
             FeedRow(
-                id = "${key.board.value}/${key.thread.value}",
+                id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
                 subject = title,
                 board = "/${key.board.value}/",
+                site = sourceLabel(key.provider.value),
+                poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
+                mediaLabel =
+                    originalPost.attachments
+                        .firstOrNull()
+                        ?.extension
+                        ?.uppercase()
+                        .orEmpty(),
                 activity = formatRelativeTime(activityMillis, nowMillis).orEmpty(),
                 replies = stats.replyCount,
                 media = stats.imageCount,

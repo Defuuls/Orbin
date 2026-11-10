@@ -112,8 +112,8 @@ val GreentextColor = Color(0xFF43631B)
 val GreentextDarkColor = Color(0xFF8FB855)
 
 /** Quote link — contrast-safe on light and dark grounds. */
-val QuoteLinkColor = Color(0xFF9E3608)
-val QuoteLinkDarkColor = Color(0xFFFF8B55)
+val QuoteLinkColor = Color(0xFF237A3B)
+val QuoteLinkDarkColor = Color(0xFF80D997)
 
 /** Spoiler tag — near-black fill, same as before. */
 val SpoilerBackground = Color(0xFF2B2B2B)

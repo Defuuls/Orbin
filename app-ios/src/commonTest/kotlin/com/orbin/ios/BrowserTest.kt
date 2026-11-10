@@ -85,9 +85,6 @@ class BrowserTest {
 
     private suspend fun <T> StateFlow<Load<T>>.settled(): Load<T> = first { it !is Load.Loading }
 
-    private fun Load<List<FeedThread>>.boardIds(): List<String> =
-        assertIs<Load.Ready<List<FeedThread>>>(this).value.map { it.thread.key.board.value }
-
     @Test
     fun boardsFromEverySiteAreListedAndAThreadOpensThroughTheCatalog() =
         runTest {
@@ -129,7 +126,7 @@ class BrowserTest {
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             assertEquals(listOf("g"), boards.map { it.board.id.value })
             val unreachable = browser.unreachableSites.value.single()
-            assertTrue(unreachable.startsWith("BBW Chan ("), unreachable)
+            assertTrue(unreachable.startsWith("BBWChan ("), unreachable)
         }
 
     @Test
@@ -374,26 +371,6 @@ class BrowserTest {
 
             browser.watched.toggle(thread)
             assertFalse(browser.watched.watching(key).first { !it })
-        }
-
-    @Test
-    fun theFeedShowsTheActiveSitesFollowedBoardsAndFollowsTheSwitcher() =
-        runTest {
-            val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
-            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
-            boards.forEach { browser.setFollowed(it, follow = true) }
-
-            val first = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
-            assertEquals(listOf("g"), first.boardIds())
-            assertEquals(Route.Feed, browser.backStack.value.single(), "the feed is the start screen")
-
-            browser.selectSite(ProviderId("bbwchan"))
-
-            val second =
-                browser.feed.first { load ->
-                    load is Load.Ready && load.value.isNotEmpty() && load.value.all { it.provider.value == "bbwchan" }
-                }
-            assertEquals(listOf("b"), second.boardIds())
         }
 
     @Test

@@ -69,9 +69,10 @@ compose.resources {
     packageOfResClass = "com.orbin.ios.resources"
 }
 
-// Print failure messages in CI; the default short format drops them.
+// Record native test case names in CI so media decode smoke tests are distinguishable from builds.
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
     testLogging {
+        events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }

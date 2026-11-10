@@ -22,6 +22,8 @@ sealed interface Route {
     @Serializable
     data class BoardMedia(
         val board: String,
+        /** Old restored routes may omit this; new board walls always pin their owning source. */
+        val provider: String = "",
     ) : Route
 
     @Serializable
@@ -53,7 +55,18 @@ sealed interface Route {
         val attachmentId: String? = null,
     ) : Route
 
-    /** What you downloaded: the middle tab. */
+    /** Threads saved from every site. */
+    @Serializable
+    data object Saved : Route
+
+    @Serializable
+    data object History : Route
+
+    /** Saved threads with background reply tracking enabled: the third tab. */
+    @Serializable
+    data object Watched : Route
+
+    /** Files downloaded from threads. */
     @Serializable
     data object Downloads : Route
 

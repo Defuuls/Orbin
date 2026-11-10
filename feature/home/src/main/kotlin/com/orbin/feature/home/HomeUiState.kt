@@ -12,6 +12,7 @@ sealed interface HomeUiState {
     data class Success(
         val providerName: String,
         val boards: ImmutableList<Board>,
+        val providerId: String,
     ) : HomeUiState
 
     data class Error(
