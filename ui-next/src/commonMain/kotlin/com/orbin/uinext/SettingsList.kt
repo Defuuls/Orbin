@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,8 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -18,12 +22,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,11 +42,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
@@ -48,12 +55,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
 import com.orbin.uinext.resources.next_settings_no_matches
 import com.orbin.uinext.resources.next_settings_search
-import com.orbin.uinext.resources.next_settings_title
+import com.orbin.uinext.resources.social_settings_back
+import com.orbin.uinext.resources.social_settings_downloads
+import com.orbin.uinext.resources.social_settings_title
+import com.orbin.uinext.resources.social_settings_view_history
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
@@ -84,73 +98,160 @@ enum class SettingKind {
     INFO,
 }
 
+/** A searchable settings directory with compact, task-specific subpages. */
 @Composable
 fun SettingsScreen(
     groups: List<Pair<String, List<SettingItem>>>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     expandedId: String? = null,
-    showRail: Boolean = true,
+    @Suppress("UnusedParameter") showRail: Boolean = true,
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
+    onBack: (() -> Unit)? = null,
+    onNavigate: ((String) -> Unit)? = null,
 ) {
     val state = rememberLazyListState()
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleGroups = remember(groups, query) { filterSettings(groups, query) }
-    val clearance = compactTitleClearance()
-    val compactClearance = with(LocalDensity.current) { clearance.roundToPx() }
-    LaunchedEffect(expandedId, query, compactClearance) {
+    val pages = remember(groups) { settingsPages(groups) }
+    var page by rememberSaveable {
+        mutableStateOf(
+            expandedId?.let { id ->
+                pages.entries.firstOrNull { (_, rows) -> rows.any { it.id == id } }?.key
+            },
+        )
+    }
+    val activePage = page
+    val labels = settingsPageLabels()
+    val title = activePage?.let { labels[it] } ?: stringResource(Res.string.social_settings_title)
+    val visibleGroups =
+        remember(groups, query, activePage) {
+            if (query.isNotBlank()) {
+                filterSettings(groups, query)
+            } else if (activePage != null) {
+                listOf("" to pages[activePage].orEmpty())
+            } else {
+                emptyList()
+            }
+        }
+    LaunchedEffect(activePage) { state.scrollToItem(0) }
+    LaunchedEffect(expandedId, query) {
         val targetId = expandedId ?: return@LaunchedEffect
         val groupIndex = visibleGroups.indexOfFirst { (_, rows) -> rows.any { it.id == targetId } }
-        if (groupIndex >= 0) {
-            val lazyItemIndex = 2 + groupIndex
-            state.scrollToItem(lazyItemIndex, scrollOffset = -compactClearance)
-        }
+        if (groupIndex >= 0) state.scrollToItem(1 + groupIndex)
     }
-    val settingsTitle = stringResource(Res.string.next_settings_title)
+    val backAction: (() -> Unit)? =
+        if (activePage != null || query.isNotBlank()) {
+            {
+                page = null
+                query = ""
+            }
+        } else {
+            onBack
+        }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = activePage != null || query.isNotBlank(),
+        onBackCompleted = {
+            page = null
+            query = ""
+        },
+    )
     val searchLabel = stringResource(Res.string.next_settings_search)
-    val showCompactTitle by remember {
-        derivedStateOf {
-            state.firstVisibleItemIndex > 0 ||
-                state.firstVisibleItemScrollOffset > 64
-        }
-    }
-    Box(modifier = modifier.fillMaxSize()) {
-        NextScaffold(
-            // Settings is visited from the Feed header, not a tab, so it draws no tab chrome.
-            where = settingsTitle.takeIf { showRail },
-            modifier = Modifier.fillMaxSize(),
-        ) { bottomPad ->
-            LazyColumn(
-                state = state,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .contentInsets()
-                        .imePadding()
-                        .testTag("settings-list"),
-                contentPadding =
-                    PaddingValues(
-                        bottom = bottomPad.calculateBottomPadding(),
-                        top = 4.dp,
-                    ),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                item {
-                    ScreenTitle(
-                        text = settingsTitle,
-                        subtitle = subtitle,
+    Column(modifier = modifier.fillMaxSize().background(next.background).contentInsets()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.width(48.dp)) {
+                if (backAction != null) {
+                    NextIconAction(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(Res.string.social_settings_back),
+                        onClick = backAction,
                     )
                 }
-                item(key = "search") {
+            }
+            Text(
+                text = title,
+                style = NextType.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f).semantics { heading() },
+                color = next.ink,
+            )
+            WidthSpacer(48)
+        }
+        Hairline()
+        LazyColumn(
+            state = state,
+            modifier = Modifier.weight(1f).imePadding().testTag("settings-list"),
+            contentPadding = PaddingValues(bottom = 24.dp + bottomInset()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item(key = "search") {
+                Column {
+                    Gap(12)
                     SchematicSearch(
                         value = query,
                         onValueChange = { query = it },
                         placeholder = searchLabel,
                         modifier = Modifier.padding(horizontal = GUTTER).semantics { contentDescription = searchLabel },
                     )
+                    if (subtitle != null && activePage == null) {
+                        Text(
+                            subtitle,
+                            style = NextType.footnote,
+                            color = next.muted,
+                            modifier = Modifier.padding(GUTTER),
+                        )
+                    }
                 }
+            }
+            if (activePage == null && query.isBlank()) {
+                settingsDirectory(pages.keys, onNavigate != null).forEach { (heading, entries) ->
+                    item(key = "directory:$heading") {
+                        Column {
+                            Text(
+                                text = directorySectionLabel(heading),
+                                style = NextType.footnote,
+                                color = next.muted,
+                                modifier =
+                                    Modifier
+                                        .padding(
+                                            horizontal = GUTTER,
+                                            vertical = 8.dp,
+                                        ).semantics { heading() },
+                            )
+                            entries.forEach { destination ->
+                                SettingsDirectoryRow(
+                                    destination = destination,
+                                    label = labels.getValue(destination),
+                                    onClick = {
+                                        if (destination in
+                                            EXTERNAL_SETTINGS_DESTINATIONS
+                                        ) {
+                                            onNavigate?.invoke(destination)
+                                        } else {
+                                            page =
+                                                if (destination ==
+                                                    "boardPreferences"
+                                                ) {
+                                                    "playback"
+                                                } else {
+                                                    destination
+                                                }
+                                            query = ""
+                                        }
+                                    },
+                                )
+                            }
+                            Gap(12)
+                            Hairline()
+                        }
+                    }
+                }
+            } else {
                 if (visibleGroups.isEmpty()) {
                     item(key = "empty") {
                         Text(
@@ -161,29 +262,67 @@ fun SettingsScreen(
                         )
                     }
                 }
-                visibleGroups.forEachIndexed { groupIndex, (heading, rows) ->
-                    item(key = "group:$groupIndex") {
-                        GroupedSection(header = heading.takeIf { it.isNotBlank() }) {
-                            rows.forEachIndexed { index, item ->
-                                SettingRow(
-                                    item = item,
-                                    expanded = item.id == expandedId,
-                                    onActivate = onActivate,
-                                    onSelectOption = onSelectOption,
-                                    onCommitText = onCommitText,
+                visibleGroups.forEachIndexed { index, (heading, rows) ->
+                    item(key = "group:$index") {
+                        Column {
+                            if (heading.isNotBlank()) {
+                                Text(
+                                    heading,
+                                    style = NextType.footnote,
+                                    color = next.muted,
+                                    modifier = Modifier.padding(GUTTER),
                                 )
-                                if (index < rows.lastIndex) GroupedDivider()
+                            }
+                            if (activePage == "history" && onNavigate != null && query.isBlank()) {
+                                SettingsDirectoryRow(
+                                    "history",
+                                    stringResource(Res.string.social_settings_view_history),
+                                ) {
+                                    onNavigate("history")
+                                }
+                            }
+                            if (activePage == "storage" && onNavigate != null && query.isBlank()) {
+                                SettingsDirectoryRow(
+                                    "downloads",
+                                    stringResource(Res.string.social_settings_downloads),
+                                ) {
+                                    onNavigate("downloads")
+                                }
+                            }
+                            rows.forEach { item ->
+                                SettingRow(item, item.id == expandedId, onActivate, onSelectOption, onCommitText)
                             }
                         }
                     }
                 }
-                item { Gap(8) }
             }
         }
-        CompactTitleBar(
-            title = settingsTitle,
-            visible = showCompactTitle,
-            modifier = Modifier.align(Alignment.TopCenter),
+    }
+}
+
+@Composable
+private fun SettingsDirectoryRow(
+    destination: String,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .nextClickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = GUTTER, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(settingsIcon(destination), contentDescription = null, tint = next.ink, modifier = Modifier.size(24.dp))
+        Text(label, style = NextType.body, color = next.ink, modifier = Modifier.weight(1f))
+        Icon(
+            Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = next.faint,
+            modifier = Modifier.size(18.dp),
         )
     }
 }

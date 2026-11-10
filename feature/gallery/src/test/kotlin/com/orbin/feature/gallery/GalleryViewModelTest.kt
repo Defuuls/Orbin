@@ -4,9 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
@@ -18,12 +22,15 @@ import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeSavedThreadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -41,6 +48,33 @@ class GalleryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val key = ThreadKey(ProviderId(PROVIDER), BoardId(BOARD), ThreadId(THREAD))
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun `playback waits for stored preferences and then follows this board override`() =
+        runTest {
+            val stored = MutableSharedFlow<AppSettings>(replay = 1)
+            val repository =
+                object : SettingsRepository by FakeSettingsRepository() {
+                    override val settings: Flow<AppSettings> = stored
+                }
+            val viewModel = createViewModel(repository)
+            assertThat(viewModel.playbackSettings().autoplay).isFalse()
+            assertThat(viewModel.playbackSettings().preloadNextClip).isFalse()
+
+            val boardPlayback = PlaybackSettings(autoplay = false, startMuted = false, loopVideos = false)
+            stored.emit(
+                AppSettings(
+                    playbackPreferences =
+                        PlaybackPreferences().withSettings(
+                            PlaybackScope(PROVIDER, BOARD),
+                            boardPlayback,
+                        ),
+                ),
+            )
+            runCurrent()
+            assertThat(viewModel.playbackSettings()).isEqualTo(boardPlayback)
+        }
 
     @Test
     fun `media carries every attachment by default`() =
@@ -79,7 +113,7 @@ class GalleryViewModelTest {
             }
         }
 
-    private fun createViewModel(settingsRepository: FakeSettingsRepository) =
+    private fun createViewModel(settingsRepository: SettingsRepository) =
         GalleryViewModel(
             savedStateHandle =
                 SavedStateHandle(

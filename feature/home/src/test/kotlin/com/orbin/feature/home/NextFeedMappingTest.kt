@@ -223,6 +223,16 @@ class NextFeedMappingTest {
         assertThat(kept.map { it.key.thread.value }).containsExactly(3L, 1L).inOrder()
     }
 
+    @Test
+    fun `same board and thread on two sources have distinct row ids and visible names`() {
+        val first = thread(1, board = "g")
+        val second = first.copy(key = ThreadKey(ProviderId("bbwchan"), BoardId("g"), ThreadId(1)))
+        val entries = feedEntries(listOf(boardFeed("g", first, second)), emptySet(), NOW)
+
+        assertThat(entries.map { it.row.id }.toSet()).hasSize(2)
+        assertThat(entries.map { it.row.site }).containsExactly("4chan", "BBWChan")
+    }
+
     private fun boardFeed(
         board: String,
         vararg threads: CatalogThread,

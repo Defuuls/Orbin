@@ -1,9 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,35 +12,43 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_row_counts
 import com.orbin.uinext.resources.next_row_counts_unread
 import com.orbin.uinext.resources.next_row_files
-import com.orbin.uinext.resources.next_row_no_image
 import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_search_threads_prompt
+import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.next_settings_title
+import com.orbin.uinext.resources.social_feed_home
+import com.orbin.uinext.resources.social_feed_muted
+import com.orbin.uinext.resources.social_feed_post_metadata
+import com.orbin.uinext.resources.social_feed_poster_time
 import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -54,81 +60,58 @@ internal fun FeedHeader(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     onSettings: (() -> Unit)? = null,
+    onSearch: (() -> Unit)? = null,
 ) {
-    Column {
-        Row(verticalAlignment = Alignment.Top) {
-            ScreenTitle(
-                text = stringResource(Res.string.next_feed_title),
-                subtitle = subtitle,
-                modifier = Modifier.weight(1f),
-                inset = 0.dp,
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.padding(horizontal = GUTTER)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(Res.string.social_feed_home),
+                style = NextType.titleLarge,
+                color = next.ink,
+                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
             )
-            // Settings is visited, not lived in, so it sits here rather than taking a tab.
+            NextIconAction(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = stringResource(Res.string.next_search_title),
+                onClick = { if (onSearch != null) onSearch() else searchVisible = !searchVisible },
+                tint = next.ink,
+            )
             if (onSettings != null) {
                 NextIconAction(
-                    imageVector = Icons.Outlined.Settings,
+                    imageVector = Icons.Outlined.Menu,
                     contentDescription = stringResource(Res.string.next_settings_title),
                     onClick = onSettings,
-                    tint = next.muted,
-                    modifier = Modifier.padding(top = NextSpace.titleTop),
+                    tint = next.ink,
                 )
             }
         }
-        // Machine telemetry status bar
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(NextRadius.tight))
-                    .background(next.raised)
-                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(6.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(next.accent),
-                )
-                Text(
-                    text = "CH-01: MULTI-CHANNEL // LIVE",
-                    style = NextType.telemetry,
-                    color = next.accent,
-                )
-                Text(
-                    text = "·",
-                    style = NextType.telemetry,
-                    color = next.hairline,
-                )
-                Text(
-                    text = "PROVIDER: 4CHAN/LYNX",
-                    style = NextType.telemetry,
-                    color = next.muted,
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "SIG:NOMINAL",
-                    style = NextType.telemetry,
-                    color = next.faint,
-                )
-            }
-        }
-        Gap(10)
-        Column(Modifier.padding(horizontal = 0.dp)) {
-            headerContent()
-            Gap(10)
-            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
+        headerContent()
+        if (searchVisible || query.isNotEmpty()) {
             Gap(8)
+            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
         }
-        Gap(10)
-        Hairline()
+        if (subtitle.isNotBlank()) {
+            Text(
+                subtitle,
+                style = NextType.footnote,
+                color = next.muted,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+            )
+        }
+        Gap(8)
     }
 }
+
+/** Source names are formatted by adapters; a board always keeps its familiar slash notation. */
+internal val FeedRow.sourceAndBoard: String
+    get() {
+        val path = "/${board.trim('/')}/"
+        return if (site.isBlank()) path else "$site · $path"
+    }
 
 @Composable
 internal fun FeedGridCell(
@@ -138,210 +121,158 @@ internal fun FeedGridCell(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
     activityText: @Composable (FeedRow) -> String = { it.activity },
-    // Off wherever a heading above the card already names the board: a board's catalog, or a feed
-    // grouped by board.
     showBoard: Boolean = true,
-    // How much of the opening post shows under the media.
     excerptLines: Int = 2,
-    // A card as wide as the screen can show portrait media nearly whole, where a grid tile must
-    // letterbox it.
     tallMedia: Boolean = false,
-    // Every card the same height: media in a fixed frame (centre-cropped) and each line of text
-    // reserving its space, so a feed of mixed portrait and landscape posts lines up evenly.
     uniform: Boolean = false,
+    onToggleWatch: ((FeedRow) -> Unit)? = null,
+    onToggleSaved: ((FeedRow) -> Unit)? = null,
+    onShareRow: ((FeedRow) -> Unit)? = null,
 ) {
     if (row.muted) {
-        CollapsedFeedRow(
-            row = row,
-            modifier = modifier.padding(if (tallMedia) GRID_CELL_PADDING else 4.dp),
-            showBoard = showBoard,
-            onClick = onClick,
-        )
+        CollapsedFeedRow(row, modifier, showBoard, onClick)
         return
     }
+    val inset = if (tallMedia) GRID_TEXT_INSET else 8.dp
     Card(
         onClick = { onClick(row) },
-        modifier =
-            modifier
-                .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
-                .semantics { role = Role.Button },
-        shape = RoundedCornerShape(NextRadius.tight),
-        border = BorderStroke(1.dp, next.hairline),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = next.raised,
-                contentColor = next.ink,
-            ),
+        modifier = modifier.padding(if (tallMedia) 0.dp else 4.dp).semantics { role = Role.Button },
+        shape = RoundedCornerShape(if (tallMedia) 0.dp else NextRadius.card),
+        border = if (tallMedia) null else BorderStroke(1.dp, next.hairline),
+        colors = CardDefaults.cardColors(containerColor = next.background, contentColor = next.ink),
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Machined top color band
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(if (row.read) next.hairline else boardHue(row.board)),
-            )
-
-            // Technical Spec Header Strip
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (showBoard) {
-                    BoardDot(row.board, size = 6.dp)
-                    Text(
-                        text = row.board,
-                        style = NextType.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (row.read) next.muted else boardHue(row.board),
-                    )
-                    Text(
-                        text = "·",
-                        style = NextType.telemetry,
-                        color = next.hairline,
-                    )
-                }
-                if (row.threadNumber.isNotBlank()) {
-                    Text(
-                        text = "#${row.threadNumber}",
-                        style = NextType.telemetry,
-                        color = if (row.read) next.muted else next.accent,
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                MetaLine(activityText(row), color = next.faint)
-                Box(
-                    Modifier
-                        .size(5.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(if (row.unread > 0) next.accent else next.hairline.copy(alpha = 0.4f)),
-                )
-            }
-
-            HorizontalDivider(thickness = 1.dp, color = next.hairline)
-
-            val tile =
-                Modifier.fillMaxWidth().let {
-                    if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
-                }
-            Box(modifier = tile) {
-                if (row.hasPreview && thumbnail != null) {
-                    thumbnail(row, Modifier.matchParentSize())
-                } else if (row.hasPreview) {
-                    MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = NextRadius.tight)
-                } else {
+        Column(Modifier.fillMaxWidth()) {
+            if (showBoard || row.site.isNotBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = inset, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     Box(
-                        modifier =
-                            Modifier
-                                .matchParentSize()
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(next.ink.copy(alpha = 0.05f)),
+                        Modifier.size(32.dp).clip(CircleShape).background(next.raised),
                         contentAlignment = Alignment.Center,
                     ) {
-                        MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
+                        Text(row.board.trim('/').take(2), style = NextType.labelLarge, color = next.ink)
                     }
-                }
-                if (row.hasPreview) {
-                    val reticleColor = next.accent.copy(alpha = 0.55f)
-                    Canvas(Modifier.matchParentSize()) {
-                        val stroke = 1.25.dp.toPx()
-                        val arm = 8.dp.toPx()
-                        val pad = 6.dp.toPx()
-                        val w = size.width
-                        val h = size.height
-                        // 4 corner viewfinder brackets
-                        drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
-                        drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
-                        drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
-                        drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
-                        drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            row.sourceAndBoard,
+                            style = NextType.titleMedium,
+                            color = next.ink,
+                        )
+                        Text(
+                            if (row.threadNumber.isNotBlank()) {
+                                stringResource(
+                                    Res.string.social_feed_post_metadata,
+                                    row.poster,
+                                    row.threadNumber,
+                                    activityText(row),
+                                )
+                            } else {
+                                stringResource(Res.string.social_feed_poster_time, row.poster, activityText(row))
+                            },
+                            style = NextType.footnote,
+                            color = next.muted,
+                        )
                     }
                 }
             }
-
-            HorizontalDivider(thickness = 1.dp, color = next.hairline)
-
-            // Spec-Sheet Body Cassette
-            Column(
-                modifier =
-                    Modifier.padding(
-                        horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp,
-                        vertical = 8.dp,
-                    ),
-            ) {
+            // Text posts have no media frame. Players and file-specific controls remain in the
+            // production thumbnail slot, where the actual attachment type is known.
+            if (row.hasPreview) {
+                val tile =
+                    Modifier.fillMaxWidth().let {
+                        if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
+                    }
+                Box(tile) {
+                    if (thumbnail != null) {
+                        thumbnail(row, Modifier.matchParentSize())
+                    } else {
+                        MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = 0.dp)
+                    }
+                    if (row.mediaLabel.isNotBlank()) {
+                        Text(
+                            row.mediaLabel,
+                            style = NextType.caption1,
+                            color = next.ink,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(next.background.copy(alpha = 0.9f))
+                                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                        )
+                    }
+                }
+            }
+            if (tallMedia) {
+                FeedActionStrip(
+                    row = row,
+                    onReply = { onClick(row) },
+                    onToggleWatch = onToggleWatch,
+                    onToggleSaved = onToggleSaved,
+                    onShareRow = onShareRow,
+                )
+            }
+            Column(Modifier.padding(horizontal = inset, vertical = 8.dp)) {
                 Text(
-                    text = row.subject,
-                    style = if (tallMedia) NextType.title3 else NextType.headline,
-                    fontWeight = if (row.read) FontWeight.Medium else FontWeight.Bold,
+                    row.subject,
+                    style = NextType.titleMedium,
+                    fontWeight = if (row.read) FontWeight.Medium else FontWeight.SemiBold,
                     color = if (row.read) next.muted else next.ink,
                     maxLines = if (tallMedia && !uniform) 3 else 2,
                     minLines = if (uniform) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Gap(6)
-                if (uniform) {
-                    MetaLine(row.excerpt, maxLines = excerptLines, minLines = excerptLines)
-                    Gap(6)
-                } else if (row.excerpt.isNotBlank()) {
-                    MetaLine(row.excerpt, maxLines = excerptLines)
-                    Gap(6)
+                if (row.excerpt.isNotBlank() || uniform) {
+                    Gap(4)
+                    Text(
+                        row.excerpt,
+                        style = NextType.body,
+                        color = next.ink,
+                        maxLines = excerptLines,
+                        minLines = if (uniform) excerptLines else 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                val threadInfo =
-                    if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                val footerShape = RoundedCornerShape(NextRadius.tight)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(footerShape)
-                        .background(next.background)
-                        .border(1.dp, next.hairline, footerShape)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                Gap(8)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                    MetaLine(rowCounts(row), maxLines = if (uniform) 1 else 2)
+                    if (!showBoard && row.site.isBlank()) {
+                        Spacer(Modifier.weight(1f))
+                        MetaLine(activityText(row), color = next.faint)
+                    }
                 }
             }
+            Hairline()
         }
     }
 }
 
-/**
- * Sizes a grid tile to its media's own aspect ratio, so the thumbnail can be drawn whole instead of
- * centre-cropped into a fixed-height box. Extreme ratios are clamped to keep a single tile from
- * dwarfing the screen; the image inside still fits without cropping, letterboxed if needed.
- */
+/** Keep an attachment whole, with a bounded frame for unusually tall or wide files. */
 private fun Modifier.mediaTileSize(
     row: FeedRow,
     tallMedia: Boolean,
 ): Modifier =
-    if (row.hasPreview && row.mediaAspectRatio > 0f) {
-        val minAspect = if (tallMedia) MIN_TALL_TILE_ASPECT else MIN_TILE_ASPECT
-        aspectRatio(row.mediaAspectRatio.coerceIn(minAspect, MAX_TILE_ASPECT))
+    if (row.mediaAspectRatio > 0f) {
+        aspectRatio(
+            row.mediaAspectRatio.coerceIn(if (tallMedia) MIN_TALL_TILE_ASPECT else MIN_TILE_ASPECT, MAX_TILE_ASPECT),
+        )
     } else {
         height(FALLBACK_TILE_HEIGHT)
     }
 
-// Tall media is letterboxed at 4:5 in a grid, so one portrait image cannot fill the screen; the
-// whole image is one tap away.
 private const val MIN_TILE_ASPECT = 0.8f
-
-// In a single column, portrait media shows whole down to 9:16, a phone screenshot; only taller is
-// letterboxed.
 private const val MIN_TALL_TILE_ASPECT = 0.5625f
 private const val MAX_TILE_ASPECT = 3f
-
-// The one frame every card's media fills when cards are uniform.
 private const val UNIFORM_TILE_ASPECT = 4f / 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 
-/** A muted thread stays reachable, but loses its preview and metadata until the reader opens it. */
 @Composable
 private fun CollapsedFeedRow(
     row: FeedRow,
@@ -351,53 +282,19 @@ private fun CollapsedFeedRow(
 ) {
     Card(
         onClick = { onClick(row) },
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .semantics { role = Role.Button },
-        shape = RoundedCornerShape(NextRadius.tight),
-        border = BorderStroke(1.dp, next.hairline),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = next.raised,
-                contentColor = next.ink,
-            ),
+        modifier = modifier.fillMaxWidth().semantics { role = Role.Button },
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = next.background, contentColor = next.ink),
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                Modifier
-                    .size(5.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(next.hairline),
-            )
-            Text(
-                text = "[MUTED]",
-                style = NextType.telemetry,
-                color = next.muted,
-            )
-            if (showBoard) {
-                BoardDot(row.board, size = 5.dp)
-                Text(
-                    text = row.board,
-                    style = NextType.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = next.muted,
-                )
+        Column(Modifier.padding(horizontal = GUTTER, vertical = 12.dp)) {
+            if (showBoard ||
+                row.site.isNotBlank()
+            ) {
+                Text(row.sourceAndBoard, style = NextType.titleMedium, color = next.ink)
             }
-            Text(
-                text = row.subject,
-                modifier = Modifier.weight(1f),
-                style = NextType.bodySmall,
-                fontWeight = FontWeight.Normal,
-                color = next.muted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Text(row.subject, style = NextType.body, color = next.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(Res.string.social_feed_muted), style = NextType.footnote, color = next.muted)
         }
     }
 }

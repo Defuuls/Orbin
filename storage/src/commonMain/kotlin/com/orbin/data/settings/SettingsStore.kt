@@ -14,12 +14,17 @@ import com.orbin.core.model.DEFAULT_TABLET_CATALOG_COLUMNS
 import com.orbin.core.model.DEFAULT_WIDE_FEED_COLUMNS
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * [SettingsRepository] over a Preferences [DataStore], under the keys Android has always used.
@@ -31,6 +36,16 @@ class SettingsStore(
     private val dataStore: DataStore<Preferences>,
 ) : SettingsRepository {
     override val settings: Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
+
+    override suspend fun setPlaybackSettings(
+        scope: PlaybackScope,
+        settings: PlaybackSettings?,
+    ) {
+        edit { preferences ->
+            val updated = preferences.playbackPreferences().withSettings(scope, settings)
+            preferences[Keys.playback] = playbackJson.encodeToString(updated)
+        }
+    }
 
     override suspend fun setHideNsfwBoards(enabled: Boolean) {
         edit { it[Keys.hideNsfwBoards] = enabled }
@@ -113,6 +128,7 @@ class SettingsStore(
     @Suppress("ComplexMethod")
     private fun Preferences.toAppSettings(): AppSettings =
         AppSettings(
+            playbackPreferences = playbackPreferences(),
             hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
             coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
@@ -134,7 +150,15 @@ class SettingsStore(
             tabletCatalogColumns = this[Keys.tabletCatalogColumns] ?: DEFAULT_TABLET_CATALOG_COLUMNS,
         )
 
+    private fun Preferences.playbackPreferences(): PlaybackPreferences =
+        this[Keys.playback]?.let { encoded ->
+            runCatching { playbackJson.decodeFromString<PlaybackPreferences>(encoded) }.getOrNull()
+        } ?: PlaybackPreferences()
+
+    private val playbackJson = Json { ignoreUnknownKeys = true }
+
     private object Keys {
+        val playback = stringPreferencesKey("playback_preferences")
         val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
         val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
         val deepMediaScan = booleanPreferencesKey("deep_media_scan")

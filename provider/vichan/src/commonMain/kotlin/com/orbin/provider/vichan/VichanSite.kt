@@ -32,7 +32,7 @@ data class VichanSite(
         val Example =
             VichanSite(
                 providerId = ProviderId("fourchan"),
-                displayName = "4chan (read-only example)",
+                displayName = "4chan",
                 siteUrl = "https://boards.4chan.org",
                 apiBaseUrl = "https://a.4cdn.org/",
                 mediaBaseUrl = "https://i.4cdn.org",

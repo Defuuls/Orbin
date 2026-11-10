@@ -19,9 +19,17 @@ import com.orbin.core.testing.repository.FakeBoardRepository
 import com.orbin.core.testing.repository.FakeProviderRegistry
 import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.provider.api.ImageBoardProvider
+import com.orbin.provider.api.ProviderMetadata
+import com.orbin.provider.api.ProviderRegistry
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -137,18 +145,93 @@ class SearchViewModelTest {
             assertThat((state as SearchUiState.Results).results.map { it.title }).containsExactly("Match")
         }
 
+    @Test
+    fun `favorite and subscribed matching board codes are searched on their own sites`() =
+        runTest {
+            val firstId = ProviderId("fourchan")
+            val secondId = ProviderId("bbwchan")
+            val providers =
+                listOf(firstId, secondId).map { id ->
+                    mockk<ImageBoardProvider> {
+                        every { metadata } returns ProviderMetadata(id, id.value, "https://example.org")
+                    }
+                }
+            val registry =
+                object : ProviderRegistry {
+                    override fun all(): List<ImageBoardProvider> = providers
+
+                    override fun default(): ImageBoardProvider = providers.first()
+
+                    override fun get(id: ProviderId): ImageBoardProvider? = providers.find { it.metadata.id == id }
+                }
+            val preferences =
+                object : BoardPreferencesRepository by FakeBoardPreferencesRepository(emptySet()) {
+                    override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> =
+                        flowOf(if (provider == firstId) setOf(BoardId("g")) else emptySet())
+
+                    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
+                        flowOf(if (provider == secondId) setOf(BoardId("g")) else emptySet())
+                }
+            val queries = mutableListOf<SearchQuery>()
+            val repository =
+                object : SearchRepository by FakeSearchRepository() {
+                    override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> {
+                        queries += query
+                        return OrbinResult.Success(
+                            listOf(result.copy(key = result.key.copy(provider = query.provider))),
+                        )
+                    }
+                }
+            val settings = FakeSettingsRepository()
+            val model =
+                SearchViewModel(
+                    searchRepository = repository,
+                    boardRepository = FakeBoardRepository(),
+                    boardPreferencesRepository = preferences,
+                    settingsRepository = settings,
+                    registry = registry,
+                    observeActiveProvider = ObserveActiveProviderUseCase(registry, settings),
+                )
+            model.searchableBoards.first { it.size == 2 }
+            model.search("match")
+            val found = model.state.first { it is SearchUiState.Results } as SearchUiState.Results
+
+            assertThat(queries.map { it.provider }).containsExactly(firstId, secondId)
+            assertThat(queries.map { it.board }).containsExactly(BoardId("g"), BoardId("g"))
+            assertThat(found.results.map { it.key.provider }).containsExactly(firstId, secondId)
+        }
+
+    @Test
+    fun `a board that is both favorite and subscribed is searched once`() =
+        runTest {
+            val queries = mutableListOf<SearchQuery>()
+            val repository =
+                object : SearchRepository by FakeSearchRepository() {
+                    override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> {
+                        queries += query
+                        return OrbinResult.Success(emptyList())
+                    }
+                }
+            val model = createViewModel(repository, favorites = setOf(BoardId("g")))
+            model.searchableBoards.first { it.isNotEmpty() }
+            model.search("match")
+            model.state.first { it is SearchUiState.Results }
+            assertThat(queries).hasSize(1)
+        }
+
     private fun createViewModel(
         repository: SearchRepository,
         settings: AppSettings = AppSettings.Default,
         boards: List<Board> = listOf(Board(BoardId("g"), "Technology")),
         subscribed: Set<BoardId> = setOf(BoardId("g")),
+        favorites: Set<BoardId> = emptySet(),
     ): SearchViewModel {
         val registry = FakeProviderRegistry()
         val settingsRepository = FakeSettingsRepository(settings)
         return SearchViewModel(
             searchRepository = repository,
             boardRepository = FakeBoardRepository(boards),
-            boardPreferencesRepository = FakeBoardPreferencesRepository(subscribed),
+            boardPreferencesRepository = FakeBoardPreferencesRepository(subscribed, favorites),
             settingsRepository = settingsRepository,
             registry = registry,
             observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),

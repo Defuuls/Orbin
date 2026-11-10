@@ -69,11 +69,15 @@ internal fun ThreadDestination(
     ) {
         Loaded(thread, onRetry = browser::retry) { loaded ->
             val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
+            val saved by remember(loaded.key) { browser.saved(loaded.key) }.collectAsState(false)
             ThreadContent(
                 thread = loaded,
                 watching = watching,
+                saved = saved,
+                onToggleSaved = { browser.toggleSaved(loaded) },
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
+                onBack = { browser.back() },
                 onOpenFile = browser::openMedia,
                 mediaPostId = mediaTarget?.takeIf { it.first == loaded.key }?.second,
                 onMediaScrollConsumed = { mediaTarget?.let(browser.mediaScroll::consume) },
@@ -103,6 +107,9 @@ private fun ThreadContent(
     onDownloadAll: () -> Unit = {},
     onSavePage: (() -> Unit)? = null,
     onShare: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
+    saved: Boolean = false,
+    onToggleSaved: (() -> Unit)? = null,
 ) {
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
@@ -148,8 +155,12 @@ private fun ThreadContent(
             listState = listState,
             subject = thread.subject?.takeIf { it.isNotBlank() } ?: "No.${thread.key.thread.value}",
             board = boardLabel,
+            siteName = thread.key.provider.value,
+            onBack = onBack,
             posts = posts,
             watching = watching,
+            saved = saved,
+            onToggleSaved = onToggleSaved,
             layout = layout,
             onLayoutChange = { layout = it },
             files = fileCells,
@@ -268,9 +279,11 @@ internal fun MediaDestination(
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
     val files = remember(open) { open?.files.orEmpty() }
     MediaViewer(
+        playback = settings.playbackPreferences.resolve(route.thread.provider, route.thread.board),
         files = files,
         startIndex = route.index,
         onPageChanged = { browser.mediaScroll.select(route, it) },

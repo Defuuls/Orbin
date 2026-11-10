@@ -11,6 +11,8 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
@@ -173,6 +175,13 @@ class FakeSettingsRepository(
     private val state = MutableStateFlow(initial)
 
     override val settings: Flow<AppSettings> = state
+
+    override suspend fun setPlaybackSettings(
+        scope: PlaybackScope,
+        settings: PlaybackSettings?,
+    ) {
+        update { copy(playbackPreferences = playbackPreferences.withSettings(scope, settings)) }
+    }
 
     override suspend fun setHideNsfwBoards(enabled: Boolean) {
         update { copy(hideNsfwBoards = enabled) }

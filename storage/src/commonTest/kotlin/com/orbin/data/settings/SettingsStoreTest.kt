@@ -12,6 +12,8 @@ import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -35,6 +37,53 @@ class SettingsStoreTest {
                 ),
             scope = this,
         )
+
+    @Test
+    fun scopedPlaybackPersistsAndResetResumesInheritance() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            val store = SettingsStore(dataStore)
+            val site = PlaybackScope("4chan")
+            val board = PlaybackScope("4chan", "gif")
+            store.setPlaybackSettings(site, PlaybackSettings(autoplay = false))
+            store.setPlaybackSettings(board, PlaybackSettings(startMuted = false))
+            val restored = SettingsStore(dataStore).settings.first().playbackPreferences
+            assertEquals(false, restored.forScope(board).startMuted)
+            assertEquals(false, restored.forScope(PlaybackScope("4chan", "g")).autoplay)
+            assertEquals(true, restored.forScope(PlaybackScope("bbwchan", "gif")).autoplay)
+            store.setPlaybackSettings(board, null)
+            assertEquals(
+                false,
+                SettingsStore(dataStore)
+                    .settings
+                    .first()
+                    .playbackPreferences
+                    .forScope(board)
+                    .autoplay,
+            )
+            assertEquals(
+                true,
+                SettingsStore(dataStore)
+                    .settings
+                    .first()
+                    .playbackPreferences
+                    .forScope(board)
+                    .startMuted,
+            )
+        }
+
+    @Test
+    fun malformedPlaybackDoesNotPreventOtherSettingsFromLoading() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("playback_preferences")] = "invalid"
+                it[booleanPreferencesKey("screen_privacy")] = true
+            }
+            val restored = SettingsStore(dataStore).settings.first()
+            assertEquals(AppSettings.Default.playbackPreferences, restored.playbackPreferences)
+            assertTrue(restored.screenPrivacyEnabled)
+        }
 
     @Test
     fun everyColorSurvivesAStoreWrapperRecreation() =

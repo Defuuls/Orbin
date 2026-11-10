@@ -73,14 +73,12 @@ fun BoardScreen(
             val header: @Composable () -> Unit = {
                 Column {
                     Row(
-                        modifier = Modifier.padding(top = 26.dp),
+                        modifier = Modifier.padding(top = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        BoardDot(board, size = 10.dp)
-                        WidthSpacer(10)
                         Text(
                             text = board,
-                            style = NextType.headlineLarge,
+                            style = NextType.titleLarge,
                             color = next.ink,
                         )
                     }

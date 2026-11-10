@@ -29,17 +29,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The app's OPTIC-26 palette for [dark] / [amoled], shared across Android and iOS.
+ * The app's shared reader palette for [dark] / [amoled], shared across Android and iOS.
  */
 fun materialPalette(
     dark: Boolean,
@@ -77,7 +77,7 @@ fun PlatformSwitch(
                     checkedThumbColor = next.onAccent,
                     checkedTrackColor = next.accent,
                     uncheckedThumbColor = next.muted,
-                    uncheckedTrackColor = next.faint,
+                    uncheckedTrackColor = next.elevated,
                     uncheckedBorderColor = next.hairline,
                 ),
         )
@@ -85,7 +85,7 @@ fun PlatformSwitch(
 }
 
 /**
- * OPTIC-26 machined toggle switch for iOS with accessible 48dp hit target.
+ * Rounded monochrome toggle switch for iOS with accessible 48dp hit target.
  */
 @Composable
 private fun IosSwitch(
@@ -97,8 +97,8 @@ private fun IosSwitch(
     val trackOff = next.elevated
     val trackColor = animateColorAsState(if (checked) trackOn else trackOff, label = "ios-switch-track")
     val thumbOffset = animateDpAsState(if (checked) 20.dp else 0.dp, label = "ios-switch-thumb")
-    val trackShape = RoundedCornerShape(NextRadius.control)
-    val thumbShape = RoundedCornerShape(NextRadius.tight)
+    val trackShape = RoundedCornerShape(50)
+    val thumbShape = RoundedCornerShape(50)
     Box(
         modifier =
             modifier
@@ -127,7 +127,15 @@ private fun IosSwitch(
                     .offset(x = thumbOffset.value)
                     .size(IOS_SWITCH_THUMB)
                     .clip(thumbShape)
-                    .background(if (checked) next.onAccent else next.ink),
+                    .background(
+                        if (checked) {
+                            next.onAccent
+                        } else if (next.dark) {
+                            next.ink
+                        } else {
+                            Color.White
+                        },
+                    ),
             )
         }
     }
@@ -165,7 +173,7 @@ fun PlatformSegments(
                     SegmentedButtonDefaults.colors(
                         activeContainerColor = next.accentSoft,
                         activeContentColor = next.accent,
-                        inactiveContainerColor = next.elevated,
+                        inactiveContainerColor = next.background,
                         inactiveContentColor = next.ink,
                         activeBorderColor = next.hairline,
                         inactiveBorderColor = next.hairline,

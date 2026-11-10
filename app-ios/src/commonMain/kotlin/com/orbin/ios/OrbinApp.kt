@@ -167,6 +167,7 @@ private fun Destination(
         Route.Feed -> FeedDestination(browser, formFactor)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
+        Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
         is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)

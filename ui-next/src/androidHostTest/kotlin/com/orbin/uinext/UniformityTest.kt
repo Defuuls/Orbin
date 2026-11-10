@@ -15,14 +15,14 @@ import kotlin.math.pow
  */
 class UniformityTest {
     @Test
-    fun `corner radius tokens maintain machined industrial geometry and uniformity`() {
+    fun `corner radius tokens maintain consistent social interface geometry`() {
         assertThat(NextRadius.tight).isEqualTo(2.dp)
-        assertThat(NextRadius.control).isEqualTo(4.dp)
+        assertThat(NextRadius.control).isEqualTo(10.dp)
         assertThat(NextRadius.tile).isEqualTo(4.dp)
         assertThat(NextRadius.card).isEqualTo(6.dp)
-        assertThat(NextRadius.sheet).isEqualTo(8.dp)
+        assertThat(NextRadius.sheet).isEqualTo(16.dp)
         assertThat(NextRadius.continuous).isEqualTo(6.dp)
-        assertThat(NextRadius.pill).isEqualTo(4.dp)
+        assertThat(NextRadius.pill).isEqualTo(20.dp)
     }
 
     @Test
@@ -31,7 +31,7 @@ class UniformityTest {
         assertThat(NextSpace.gutterTight).isEqualTo(16.dp)
         assertThat(NextSpace.section).isEqualTo(28.dp)
         assertThat(NextSpace.groupGap).isEqualTo(20.dp)
-        assertThat(NextSpace.rowY).isEqualTo(16.dp)
+        assertThat(NextSpace.rowY).isEqualTo(12.dp)
         assertThat(NextSpace.rowX).isEqualTo(16.dp)
         assertThat(NextSpace.chromeInset).isEqualTo(16.dp)
         assertThat(NextSpace.chromeBottom).isEqualTo(12.dp)
@@ -60,7 +60,9 @@ class UniformityTest {
     fun `destination tabs maintain complete semantic definitions`() {
         assertThat(NextDestination.entries).containsExactly(
             NextDestination.FEED,
+            NextDestination.SEARCH,
             NextDestination.BOARDS,
+            NextDestination.SAVED,
             NextDestination.DOWNLOADS,
             NextDestination.SETTINGS,
         )

@@ -1,9 +1,7 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,10 +18,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -149,27 +145,19 @@ private fun SearchResultRow(
                 .nextClickable(role = Role.Button, onClick = onClick)
                 .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            BoardDot(row.board, size = 6.dp)
-            Text(
-                text = row.board,
-                style = NextType.caption1,
-                color = boardHue(row.board),
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-            Text(
-                text = row.title,
-                style = NextType.body,
-                color = next.ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-        }
+        Text(
+            text = row.board,
+            style = NextType.footnote,
+            color = next.muted,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Text(
+            text = row.title,
+            style = NextType.body,
+            color = next.ink,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
         MetaLine(row.snippet, maxLines = 2)
     }
 }

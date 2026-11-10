@@ -17,6 +17,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -54,7 +55,7 @@ class EditorialDockTest {
                 }
             }
         }
-        listOf("Feed", "Downloads", "Boards").forEach { label ->
+        listOf("Home", "Search", "Boards", "Saved").forEach { label ->
             composeRule
                 .onNode(isTab and hasText(label))
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
@@ -89,12 +90,12 @@ class EditorialDockTest {
                 )
             }
         }
-        composeRule.onNode(isTab and hasText("Feed")).assertIsSelected()
+        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsSelected()
         composeRule
-            .onNode(isTab and hasText("Downloads"))
+            .onNode(isTab and hasContentDescription("Saved"))
             .performClick()
             .assertIsSelected()
-        composeRule.onNode(isTab and hasText("Feed")).assertIsNotSelected()
+        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsNotSelected()
         assertEquals(1, calls)
     }
 }

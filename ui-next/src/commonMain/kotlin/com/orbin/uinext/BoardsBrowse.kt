@@ -1,22 +1,23 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,54 +30,46 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_boards_count
-import com.orbin.uinext.resources.next_boards_discover
-import com.orbin.uinext.resources.next_boards_following
-import com.orbin.uinext.resources.next_boards_following_tab
 import com.orbin.uinext.resources.next_boards_no_match
 import com.orbin.uinext.resources.next_boards_nsfw
 import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
-import com.orbin.uinext.resources.next_boards_tap_to_follow
 import com.orbin.uinext.resources.next_launchpad_boards
-import com.orbin.uinext.resources.next_search_threads
-import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.resources.next_search_title
+import com.orbin.uinext.resources.next_settings_title
+import com.orbin.uinext.resources.next_status_retry
+import com.orbin.uinext.resources.social_feed_all_boards
+import com.orbin.uinext.resources.social_feed_favorite_add
+import com.orbin.uinext.resources.social_feed_favorite_boards
+import com.orbin.uinext.resources.social_feed_favorite_remove
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** A board tile for the Boards destination — no app types, just presentation. */
+/** A board directory row. Its stable [id] includes its site when more than one site is shown. */
 data class BoardTile(
     val id: String,
     val path: String,
     val title: String,
     val nsfw: Boolean = false,
     val followed: Boolean = false,
-    /** The site the board is on, as its provider id: picks the tile's symbol (see [boardSymbol]). */
     val site: String? = null,
 )
 
-/**
- * Boards A–Z by path ("/3/", "/a/", "/b/" …), whatever order the site lists them in; the title
- * breaks ties, which matters where two sites share a path.
- */
 internal fun List<BoardTile>.sortedAlphabetically(): List<BoardTile> =
     sortedWith(
         compareBy<BoardTile, String>(String.CASE_INSENSITIVE_ORDER) { it.path }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
     )
 
-/**
- * Primary Boards destination: inset grouped list on the grouped ground (iOS Settings / Files
- * rhythm), with DestinationPill chrome when sibling destinations are wired.
- */
+/** A searchable, source-scoped directory with independent open and favorite actions. */
 @Composable
 fun BoardsScreen(
     boards: List<BoardTile>,
@@ -91,27 +84,22 @@ fun BoardsScreen(
     onOpenSettings: (() -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
-    // Search reads threads on the boards you follow, so it lives with the boards.
     onOpenSearch: (() -> Unit)? = null,
-    // Above the search field: where a platform lists more than one site, its site switcher.
     headerContent: @Composable () -> Unit = {},
+    onOpenSaved: (() -> Unit)? = null,
+    emptyMessage: String? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var following by rememberSaveable { mutableStateOf(false) }
     val visibleBoards =
-        remember(boards, query, following) {
+        remember(boards, query) {
+            val terms = query.trim().split(Regex("\\s+")).filter(String::isNotBlank)
             boards
-                .filter {
-                    (!following || it.followed) &&
-                        (
-                            it.path.contains(
-                                query,
-                                true,
-                            ) ||
-                                it.title.contains(query, true)
-                        )
+                .filter { board ->
+                    terms.all { term -> "${board.path} ${board.title}".contains(term, ignoreCase = true) }
                 }.sortedAlphabetically()
         }
+    val favorites = remember(visibleBoards) { visibleBoards.filter { it.followed } }
     val listState = rememberLazyListState()
     val railVisible =
         if (hideRailOnScroll) {
@@ -120,33 +108,29 @@ fun BoardsScreen(
             true
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-
-    val hasTabs = onOpenFeed != null || onOpenDownloads != null || onOpenSettings != null
+    val hasTabs = onOpenFeed != null || onOpenDownloads != null || onOpenSearch != null || onOpenSaved != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
                 when (dest) {
                     NextDestination.FEED -> onOpenFeed?.invoke()
-                    NextDestination.BOARDS -> Unit
+                    NextDestination.SEARCH -> onOpenSearch?.invoke()
+                    NextDestination.SAVED -> onOpenSaved?.invoke()
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> onOpenSettings?.invoke()
+                    NextDestination.BOARDS -> Unit
                 }
             }
         } else {
             null
         }
-
     val boardsTitle = stringResource(Res.string.next_launchpad_boards)
     val showCompactTitle by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0 ||
-                listState.firstVisibleItemScrollOffset > 64
-        }
+        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 64 }
     }
-
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         NextScaffold(
-            where = stringResource(Res.string.next_launchpad_boards).takeIf { showRail },
+            where = boardsTitle.takeIf { showRail && !hasTabs },
             modifier = Modifier.fillMaxSize(),
             railVisible = railVisible,
             destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
@@ -155,89 +139,122 @@ fun BoardsScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding =
-                    PaddingValues(
-                        top = 0.dp,
-                        bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap,
-                    ),
+                contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap),
             ) {
                 item(key = "boards-title") {
-                    Column {
-                        ScreenTitle(
-                            text = stringResource(Res.string.next_launchpad_boards),
-                            subtitle =
-                                subtitle
-                                    ?: pluralStringResource(
-                                        Res.plurals.next_boards_count,
-                                        boards.size,
-                                        boards.size,
-                                    ),
-                        )
-                        Column(Modifier.padding(horizontal = GUTTER)) {
-                            headerContent()
-                            SchematicSearch(query, { query = it }, stringResource(Res.string.next_boards_search))
-                            if (onOpenSearch != null) {
-                                Box(modifier = Modifier.padding(top = 4.dp).offset(x = (-4).dp)) {
-                                    InlineAction(stringResource(Res.string.next_search_threads), onClick = onOpenSearch)
-                                }
-                            }
-                            Gap(12)
-                            PlatformSegments(
-                                listOf(
-                                    stringResource(Res.string.next_boards_discover),
-                                    stringResource(
-                                        Res.string.next_boards_following_tab,
-                                        boards.count { it.followed },
-                                    ),
-                                ),
-                                if (following) 1 else 0,
-                                {
-                                    following =
-                                        it == 1
-                                },
+                    Column(Modifier.padding(horizontal = GUTTER)) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                boardsTitle,
+                                style = NextType.titleLarge,
+                                color = next.ink,
+                                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
                             )
-                            Gap(12)
-                        }
-                        if (onRandom != null) {
-                            Box(modifier = Modifier.padding(horizontal = GUTTER - 4.dp)) {
-                                InlineAction(
-                                    label = stringResource(Res.string.next_boards_random),
-                                    onClick = onRandom,
+                            if (onOpenSearch != null) {
+                                NextIconAction(
+                                    Icons.Outlined.Search,
+                                    stringResource(Res.string.next_search_title),
+                                    onOpenSearch,
+                                    tint = next.ink,
                                 )
                             }
-                            Gap(12)
+                            if (onOpenSettings != null) {
+                                NextIconAction(
+                                    Icons.Outlined.Menu,
+                                    stringResource(Res.string.next_settings_title),
+                                    onOpenSettings,
+                                    tint = next.ink,
+                                )
+                            }
+                        }
+                        headerContent()
+                        Gap(8)
+                        SchematicSearch(query, { query = it }, stringResource(Res.string.next_boards_search))
+                        if (!subtitle.isNullOrBlank()) {
+                            Text(
+                                subtitle,
+                                style = NextType.footnote,
+                                color = next.muted,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                        if (onRandom !=
+                            null
+                        ) {
+                            InlineAction(stringResource(Res.string.next_boards_random), onClick = onRandom)
                         }
                     }
                 }
                 if (visibleBoards.isEmpty()) {
                     item(key = "boards-empty") {
-                        GroupedSection {
-                            MetaLine(
-                                stringResource(Res.string.next_boards_no_match),
-                                modifier = Modifier.padding(16.dp),
+                        Text(
+                            (
+                                emptyMessage?.takeIf { boards.isEmpty() && query.isBlank() }
+                                    ?: stringResource(Res.string.next_boards_no_match)
+                            ),
+                            style = NextType.body,
+                            color = next.muted,
+                            modifier = Modifier.padding(GUTTER),
+                        )
+                        if (onRetry != null) {
+                            InlineAction(
+                                stringResource(Res.string.next_status_retry),
+                                onClick = onRetry,
+                                modifier = Modifier.padding(horizontal = GUTTER),
                             )
                         }
                     }
                 } else {
-                    items(visibleBoards, key = { it.id }) { board ->
-                        BoardListRow(
-                            board = board,
-                            onClick = { onOpenBoard(board) },
-                            onFollow =
-                                onFollowBoard?.let { action ->
-                                    { checked -> action(board, checked) }
+                    if (favorites.isNotEmpty()) {
+                        item(
+                            key = "favorite-heading",
+                        ) { BoardSectionTitle(stringResource(Res.string.social_feed_favorite_boards)) }
+                        items(favorites, key = { "favorite:${it.id}" }) { board ->
+                            BoardListRow(
+                                board,
+                                { onOpenBoard(board) },
+                                onFollowBoard?.let {
+                                    { checked ->
+                                        it(board, checked)
+                                    }
                                 },
+                            )
+                        }
+                        item(key = "favorite-divider") {
+                            Gap(12)
+                            Hairline()
+                        }
+                    }
+                    item(key = "all-heading") { BoardSectionTitle(stringResource(Res.string.social_feed_all_boards)) }
+                    items(visibleBoards, key = { "all:${it.id}" }) { board ->
+                        BoardListRow(
+                            board,
+                            { onOpenBoard(board) },
+                            onFollowBoard?.let {
+                                { checked ->
+                                    it(board, checked)
+                                }
+                            },
                         )
                     }
                 }
             }
         }
-        CompactTitleBar(
-            title = boardsTitle,
-            visible = showCompactTitle,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
+        CompactTitleBar(boardsTitle, showCompactTitle, modifier = Modifier.align(Alignment.TopCenter))
     }
+}
+
+@Composable
+private fun BoardSectionTitle(label: String) {
+    Text(
+        label,
+        style = NextType.footnote,
+        color = next.muted,
+        modifier = Modifier.padding(start = GUTTER, end = GUTTER, top = 20.dp, bottom = 8.dp).semantics { heading() },
+    )
 }
 
 @Composable
@@ -246,101 +263,44 @@ private fun BoardListRow(
     onClick: () -> Unit,
     onFollow: ((Boolean) -> Unit)? = null,
 ) {
-    val hue = boardHue(board.path)
-    val symbol = board.site?.let { boardSymbol(it, board.path.trim('/')) }
-    val shape = RoundedCornerShape(NextRadius.card)
-    val tileShape = RoundedCornerShape(NextRadius.tile)
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = GUTTER, vertical = 6.dp)
-                .clip(shape)
-                .background(next.raised)
-                .border(1.dp, if (board.followed) next.accent else next.hairline, shape)
                 .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = NextSpace.rowX, vertical = 18.dp),
+                .padding(start = GUTTER, end = 8.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(60.dp)
-                    .clip(tileShape)
-                    .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f))
-                    .border(1.dp, hue.copy(alpha = 0.45f), tileShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (symbol != null) {
-                Icon(
-                    imageVector = symbol,
-                    contentDescription = null,
-                    tint = hue,
-                    modifier = Modifier.size(28.dp),
-                )
-            } else {
+        Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+            Text(board.path, style = NextType.titleMedium, color = next.ink)
+            Text(board.title, style = NextType.bodyMedium, color = next.muted)
+            if (board.nsfw) {
                 Text(
-                    text = board.path,
-                    style = NextType.headline,
-                    fontWeight = FontWeight.Bold,
-                    color = hue,
+                    stringResource(Res.string.next_boards_nsfw),
+                    style = NextType.caption1,
+                    color = next.muted,
                 )
             }
         }
-        WidthSpacer(14)
-        Column(modifier = Modifier.weight(1f)) {
-            Column {
-                Text(
-                    text = board.title,
-                    style = NextType.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = next.ink,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (board.nsfw) {
-                    Gap(6)
-                    Text(
-                        text = stringResource(Res.string.next_boards_nsfw),
-                        style = NextType.caption2,
-                        color = next.muted,
-                        modifier =
-                            Modifier
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(next.ink.copy(alpha = if (next.dark) 0.14f else 0.06f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-            }
-            Text(
-                text =
-                    run {
-                        val followLabel =
-                            if (board.followed) {
-                                stringResource(Res.string.next_boards_following)
-                            } else {
-                                stringResource(Res.string.next_boards_tap_to_follow)
-                            }
-                        // A symbol takes the path's place on the tile, so the path moves here.
-                        if (symbol != null) "${board.path} · $followLabel" else followLabel
-                    },
-                style = NextType.footnote,
-                color = next.muted,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        WidthSpacer(8)
         if (onFollow != null) {
-            // Switch owns follow; the row click opens the board — no competing chevron.
-            PlatformSwitch(board.followed, onFollow)
-        } else {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = next.faint,
-                modifier = Modifier.size(22.dp),
+            val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
+            NextIconAction(
+                imageVector = if (board.followed) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                contentDescription =
+                    stringResource(
+                        if (board.followed) {
+                            Res.string.social_feed_favorite_remove
+                        } else {
+                            Res.string.social_feed_favorite_add
+                        },
+                        identity,
+                    ),
+                onClick = { onFollow(!board.followed) },
+                tint = next.ink,
+                modifier = Modifier.semantics { selected = board.followed },
             )
         }
+        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
     }
 }

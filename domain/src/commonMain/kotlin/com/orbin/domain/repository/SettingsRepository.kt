@@ -5,6 +5,8 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +14,12 @@ import kotlinx.coroutines.flow.Flow
 @Suppress("TooManyFunctions")
 interface SettingsRepository {
     val settings: Flow<AppSettings>
+
+    /** Saves a scoped playback snapshot, or removes its override to resume inheritance. */
+    suspend fun setPlaybackSettings(
+        scope: PlaybackScope,
+        settings: PlaybackSettings?,
+    )
 
     suspend fun setHideNsfwBoards(enabled: Boolean)
 

@@ -5,6 +5,9 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
@@ -38,8 +41,41 @@ class ReaderSettings(
         repository.settings.stateIn(
             scope,
             SharingStarted.Eagerly,
-            AppSettings.Default,
+            // Persisted autoplay may be disabled; wait for the store before starting media.
+            AppSettings.Default.copy(
+                playbackPreferences =
+                    PlaybackPreferences(
+                        defaults = PlaybackSettings(autoplay = false, preloadNextClip = false),
+                    ),
+            ),
         )
+
+    fun setPlaybackSettings(
+        scope: PlaybackScope,
+        value: PlaybackSettings?,
+    ): Job = this.scope.launch { repository.setPlaybackSettings(scope, value) }
+
+    /** Returns true when the settings row belongs to the scoped playback controls. */
+    internal fun activatePlayback(
+        id: String,
+        settings: AppSettings,
+        scope: PlaybackScope,
+    ): Boolean {
+        val preferences = settings.playbackPreferences
+        val playback = preferences.forScope(scope)
+        val value =
+            when (id) {
+                "autoplay" -> playback.copy(autoplay = !playback.autoplay)
+                "startMuted" -> playback.copy(startMuted = !playback.startMuted)
+                "loopVideos" -> playback.copy(loopVideos = !playback.loopVideos)
+                "preloadNextClip" -> playback.copy(preloadNextClip = !playback.preloadNextClip)
+                "inheritPlayback" -> if (preferences.hasOverride(scope)) null else playback
+                "resetPlayback" -> null
+                else -> return false
+            }
+        setPlaybackSettings(scope, value)
+        return true
+    }
 
     fun setHideNsfwBoards(hide: Boolean): Job = scope.launch { repository.setHideNsfwBoards(hide) }
 

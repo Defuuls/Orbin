@@ -14,6 +14,8 @@ internal expect fun NativePlayer(
     active: Boolean,
     loop: Boolean,
     modifier: Modifier = Modifier,
+    autoPlay: Boolean = true,
+    initiallyMuted: Boolean = SessionAudio.muted,
 )
 
 /** WebKit plays WebM on iOS 17.4 and later. Older iOS versions open the file externally. */
@@ -24,6 +26,9 @@ internal expect fun NativeWebMPlayer(
     url: String,
     modifier: Modifier = Modifier,
     active: Boolean = true,
+    autoPlay: Boolean = true,
+    initiallyMuted: Boolean = SessionAudio.muted,
+    loop: Boolean = true,
 )
 
 internal val MediaAttachment.isWebM: Boolean
@@ -44,6 +49,8 @@ private val NATIVE_PLAYER_EXTENSIONS = setOf("mp4", "m4v", "mov", "mp3", "m4a", 
 internal expect fun NativeInlineLoop(
     url: String,
     modifier: Modifier = Modifier,
+    loop: Boolean = true,
+    muted: Boolean = true,
 )
 
 /**

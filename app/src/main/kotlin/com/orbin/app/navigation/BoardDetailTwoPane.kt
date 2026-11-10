@@ -114,6 +114,10 @@ fun BoardDetailTwoPane(
                 composable<Route.Thread> { entry ->
                     val route = entry.toRoute<Route.Thread>()
                     NextThreadScreen(
+                        onBack = {
+                            onThreadSelected(null)
+                            detailNavController.popBackStack()
+                        },
                         onOpenMedia = { index ->
                             onOpenGallery(route.provider, route.board, route.thread, index)
                         },

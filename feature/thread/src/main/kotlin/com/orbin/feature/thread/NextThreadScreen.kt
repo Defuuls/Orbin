@@ -69,10 +69,12 @@ fun NextThreadScreen(
     mediaScrollIndex: Int? = null,
     onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
+    onBack: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-    val isBookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
+    val isWatching by viewModel.isWatching.collectAsStateWithLifecycle()
+    val isSaved by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val firstUnreadPostId by viewModel.firstUnreadPostId.collectAsStateWithLifecycle()
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
@@ -111,7 +113,8 @@ fun NextThreadScreen(
                 LoadedThread(
                     state = state,
                     isRefreshing = isRefreshing,
-                    isBookmarked = isBookmarked,
+                    isWatching = isWatching,
+                    isSaved = isSaved,
                     firstUnreadPostId = firstUnreadPostId,
                     initialScrollPosition = initialScrollPosition,
                     initialScrollLoaded = initialScrollLoaded,
@@ -121,6 +124,7 @@ fun NextThreadScreen(
                     viewModel = viewModel,
                     onOpenMedia = onOpenMedia,
                     modifier = modifier,
+                    onBack = onBack,
                 )
         }
     }
@@ -130,7 +134,8 @@ fun NextThreadScreen(
 private fun LoadedThread(
     state: ThreadUiState.Success,
     isRefreshing: Boolean,
-    isBookmarked: Boolean,
+    isWatching: Boolean,
+    isSaved: Boolean,
     firstUnreadPostId: PostId?,
     initialScrollPosition: ThreadScrollPosition?,
     initialScrollLoaded: Boolean,
@@ -140,6 +145,7 @@ private fun LoadedThread(
     viewModel: ThreadViewModel,
     onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -218,9 +224,13 @@ private fun LoadedThread(
             ThreadScreen(
                 subject = thread.subject ?: viewModel.title,
                 board = "/${thread.key.board.value}/",
+                siteName = thread.key.provider.value,
+                onBack = onBack,
                 posts = presentation.rowModels,
                 subtitle = thread.subtitleText(state.fromSavedCopy),
-                watching = isBookmarked,
+                watching = isWatching,
+                saved = isSaved,
+                onToggleSaved = viewModel::toggleBookmark,
                 layout = layout,
                 onLayoutChange = {
                     if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
@@ -251,7 +261,7 @@ private fun LoadedThread(
                 onScrollConsumed = { scrollTarget = null },
                 onWatch = {
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                    viewModel.toggleBookmark()
+                    viewModel.toggleWatch()
                 },
                 onDownloadAll = {
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
@@ -423,7 +433,8 @@ internal fun Thread.toRows(): List<ThreadRow> {
             row =
                 NextPost(
                     id = post.id.value.toString(),
-                    number = "No.${post.id.value}",
+                    number = "No. ${post.id.value}",
+                    author = post.poster.name.orEmpty(),
                     time = formatRelativeTime(post.createdAtMillis).orEmpty(),
                     body = "",
                     depth = depths[post.id] ?: 0,

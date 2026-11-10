@@ -9,6 +9,8 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
@@ -47,12 +49,55 @@ class SettingsViewModel
         private val updateRepository: UpdateRepository,
         private val appUpdater: AppUpdater,
         private val dnsPrivacyMonitor: DnsPrivacyMonitor,
-        registry: ProviderRegistry,
+        private val registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
         private val _imageCacheUsageBytes = MutableStateFlow(0L)
+        private val mutablePlaybackScopes =
+            MutableStateFlow(
+                listOf(PlaybackScopeChoice(PlaybackScope(), "App defaults")) +
+                    registry.all().map {
+                        PlaybackScopeChoice(
+                            PlaybackScope(it.metadata.id.value),
+                            it.metadata.displayName,
+                        )
+                    },
+            )
+        internal val playbackScopes = mutablePlaybackScopes.asStateFlow()
+        private var playbackBoardsLoaded = false
+
+        /** Load real provider directories only when a reader opens the scope chooser. */
+        internal fun loadPlaybackBoards() {
+            if (playbackBoardsLoaded) return
+            playbackBoardsLoaded = true
+            update {
+                registry.all().forEach { provider ->
+                    try {
+                        val choices =
+                            provider.getBoards().map { board ->
+                                PlaybackScopeChoice(
+                                    PlaybackScope(provider.metadata.id.value, board.id.value),
+                                    "${provider.metadata.displayName} · /${board.id.value}/",
+                                )
+                            }
+                        mutablePlaybackScopes.value += choices
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // Site and app scopes remain usable offline; a later visit can retry.
+                        playbackBoardsLoaded = false
+                    }
+                }
+                mutablePlaybackScopes.value = mutablePlaybackScopes.value.distinctBy { it.scope }
+            }
+        }
+
+        fun setPlaybackSettings(
+            scope: PlaybackScope,
+            settings: PlaybackSettings?,
+        ) = update { repository.setPlaybackSettings(scope, settings) }
 
         val imageCacheUsageBytes: StateFlow<Long> = _imageCacheUsageBytes.asStateFlow()
 

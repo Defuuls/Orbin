@@ -67,10 +67,12 @@ internal actual fun NativePlayer(
     active: Boolean,
     loop: Boolean,
     modifier: Modifier,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
 ) {
     val player =
         remember(url) {
-            NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = SessionAudio.muted } }
+            NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = initiallyMuted } }
         } ?: return
     var muted by remember(player) { mutableStateOf(player.muted) }
     val currentLoop = rememberUpdatedState(loop)
@@ -111,14 +113,14 @@ internal actual fun NativePlayer(
             center.removeObserver(backgroundObserver)
         }
     }
-    LaunchedEffect(player, active) {
+    LaunchedEffect(player, active, autoPlay, initiallyMuted) {
         if (active) {
             // A neighbouring page may have been composed before the last audio choice.
-            muted = SessionAudio.muted
+            muted = initiallyMuted && SessionAudio.muted
             player.muted = muted
             val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
             AVAudioSession.sharedInstance().setCategory(category, error = null)
-            player.play()
+            if (autoPlay) player.play() else player.pause()
         } else {
             player.pause()
         }
@@ -221,8 +223,11 @@ internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
     active: Boolean,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
+    loop: Boolean,
 ) {
-    var muted by remember(url) { mutableStateOf(SessionAudio.muted) }
+    var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
     val currentMuted = rememberUpdatedState(muted)
     val webView =
         remember(url) {
@@ -248,14 +253,18 @@ internal actual fun NativeWebMPlayer(
                         "background:#000;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
                         "</head><body><video id=\"v\" src=\"${url.escapeHtmlAttribute()}\" " +
-                        "${if (active) "autoplay " else ""}${if (muted) "muted " else ""}loop playsinline>" +
+                        "${if (active && autoPlay) "autoplay " else ""}${if (muted) "muted " else ""}" +
+                        "${if (loop) "loop " else ""}playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }
         }
+    LaunchedEffect(webView, loop) {
+        webView.evaluateJavaScript("document.querySelector('video').loop=$loop", completionHandler = null)
+    }
     var state by remember(webView) { mutableStateOf(VideoState()) }
-    LaunchedEffect(webView, active) {
-        if (active) {
+    LaunchedEffect(webView, active, autoPlay) {
+        if (active && autoPlay) {
             webView.evaluateJavaScript("document.querySelector('video')?.play()", completionHandler = null)
         } else {
             webView.evaluateJavaScript("document.querySelector('video')?.pause()", completionHandler = null)
@@ -348,9 +357,11 @@ private suspend fun WKWebView.script(script: String): String? =
 internal actual fun NativeInlineLoop(
     url: String,
     modifier: Modifier,
+    loop: Boolean,
+    muted: Boolean,
 ) {
     val webView =
-        remember(url) {
+        remember(url, loop, muted) {
             val configuration =
                 WKWebViewConfiguration().apply {
                     allowsInlineMediaPlayback = true
@@ -371,7 +382,8 @@ internal actual fun NativeInlineLoop(
                         "<style>html,body{margin:0;width:100%;height:100%;" +
                         "background:transparent;overflow:hidden}" +
                         "video{width:100%;height:100%;object-fit:contain}</style>" +
-                        "</head><body><video src=\"$escapedUrl\" autoplay muted loop playsinline>" +
+                        "</head><body><video src=\"$escapedUrl\" autoplay " +
+                        "${if (muted) "muted " else ""}${if (loop) "loop " else ""}playsinline>" +
                         "</video></body></html>"
                 loadHTMLString(string = html, baseURL = null)
             }

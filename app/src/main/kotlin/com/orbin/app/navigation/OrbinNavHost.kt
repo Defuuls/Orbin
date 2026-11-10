@@ -11,12 +11,15 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.orbin.app.LocalOrbinSnackbarHostState
+import com.orbin.app.R
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
@@ -28,8 +31,8 @@ import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
-import com.orbin.uinext.NextChromeHost
 import com.orbin.uinext.NextDestination
+import com.orbin.uinext.NextScaffold
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
@@ -48,6 +51,10 @@ fun OrbinNavHost(
         navController.navigate(Route.Thread(provider, board, thread, title))
     }
 
+    val uriHandler = LocalUriHandler.current
+    val onDestination: (NextDestination) -> Unit = { destination ->
+        navController.openDestination(destination)
+    }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -64,7 +71,9 @@ fun OrbinNavHost(
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenDownloads = { navController.navigateToTab(Route.Downloads) },
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenSearch = { navController.navigateToTab(Route.Search) },
+                onOpenSaved = { navController.navigateToTab(Route.Saved) },
             )
         }
 
@@ -74,17 +83,20 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
-                onOpenDownloads = { navController.navigateToTab(Route.Downloads) },
+                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenSaved = { navController.navigateToTab(Route.Saved) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
-                onOpenSearch = { navController.navigate(Route.Search) },
+                onOpenSearch = { navController.navigateToTab(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
             )
         }
 
         composable<Route.Search> {
-            NextChromeHost(
-                where = "Search",
+            NextScaffold(
+                where = stringResource(R.string.nav_search),
+                destination = NextDestination.SEARCH,
+                onDestination = onDestination,
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
                     NextSearchScreen(onOpenThread = openThread)
@@ -106,7 +118,7 @@ fun OrbinNavHost(
                         ),
                     )
                 },
-                onOpenSaved = { navController.navigateToTab(Route.Downloads) },
+                onOpenSaved = { navController.navigateToTab(Route.Saved) },
             )
         }
 
@@ -159,6 +171,7 @@ fun OrbinNavHost(
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
                     .collectAsStateWithLifecycle()
             NextThreadScreen(
+                onBack = { navController.navigateUp() },
                 onOpenMedia = { index ->
                     navController.navigate(Route.Gallery(route.provider, route.board, route.thread, index))
                 },
@@ -181,22 +194,48 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Downloads> {
-            DownloadsScreen(
-                onDestination = { destination ->
-                    when (destination) {
-                        NextDestination.FEED -> navController.navigateToTab(Route.NextFeed)
-                        NextDestination.BOARDS -> navController.navigateToTab(Route.BoardGallery)
-                        NextDestination.DOWNLOADS -> Unit
-                        NextDestination.SETTINGS -> navController.navigate(Route.Settings)
-                    }
-                },
+        composable<Route.Saved> {
+            ThreadCollectionsDestination(
+                kind = CollectionKind.SAVED,
+                title = stringResource(R.string.nav_saved),
+                onOpenThread = openThread,
+                onSettings = { navController.navigate(Route.Settings) },
+                onDestination = onDestination,
             )
+        }
+        composable<Route.History> {
+            ThreadCollectionsDestination(
+                kind = CollectionKind.HISTORY,
+                title = stringResource(R.string.nav_history),
+                onOpenThread = openThread,
+                onBack = { navController.navigateUp() },
+            )
+        }
+        composable<Route.Watched> {
+            ThreadCollectionsDestination(
+                kind = CollectionKind.WATCHED,
+                title = stringResource(R.string.nav_watched),
+                onOpenThread = openThread,
+                onBack = { navController.navigateUp() },
+            )
+        }
+        composable<Route.Downloads> {
+            DownloadsScreen(onBack = { navController.navigateUp() })
         }
 
         composable<Route.Settings> {
             NextSettingsScreen(
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
+                onBack = { navController.navigateUp() },
+                onNavigate = { destination ->
+                    when (destination) {
+                        "boards", "favorites" -> navController.navigate(Route.BoardGallery)
+                        "history" -> navController.navigate(Route.History)
+                        "watched" -> navController.navigate(Route.Watched)
+                        "downloads" -> navController.navigate(Route.Downloads)
+                        "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
+                    }
+                },
             )
         }
 
@@ -231,13 +270,24 @@ internal val threadRouteSaver =
     )
 
 /**
- * Switches to one of the three tabs. Each tab sits directly on top of the Feed rather than on top
- * of whatever was open, so Back from Downloads or Boards always lands on the Feed and switching tabs
- * never piles screens up.
+ * Switches between Home, Search, Boards and Saved without piling up previous tab destinations.
+ * Home remains the root, so Android Back from another tab returns there.
  */
 internal fun NavHostController.navigateToTab(route: Route) {
     navigate(route) {
         popUpTo(Route.NextFeed) { inclusive = false }
         launchSingleTop = true
+    }
+}
+
+/** Resolves the four tabs without confusing saved threads with downloaded files. */
+internal fun NavHostController.openDestination(destination: NextDestination) {
+    when (destination) {
+        NextDestination.FEED -> navigateToTab(Route.NextFeed)
+        NextDestination.SEARCH -> navigateToTab(Route.Search)
+        NextDestination.BOARDS -> navigateToTab(Route.BoardGallery)
+        NextDestination.SAVED -> navigateToTab(Route.Saved)
+        NextDestination.DOWNLOADS -> navigate(Route.Downloads)
+        NextDestination.SETTINGS -> navigate(Route.Settings)
     }
 }

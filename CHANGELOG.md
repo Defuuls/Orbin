@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Combined 4chan and BBWChan Home feed and cross-site Search, with independent site filters, favorite-board shortcuts, source-qualified saved/history/watched collections, and direct watch, save, and share actions.
+- Persistent app, site, and board playback preferences with live inheritance, reset to parent settings, backup support, and autoplay/mute/loop/preload behavior in the Android and iOS media viewers.
+
+### Changed
+- Replaced industrial chrome with a compact shared Android/iOS reader: monochrome default surfaces, flat anonymous posts, natural media aspect ratios, green quote links, and stable Home, Search, Boards, and Saved tabs.
+- Settings and activity now opens from the header menu as a searchable directory with task subpages, retaining existing privacy, security, backup, and platform controls.
+
+### Fixed
+- Site-qualified feed and collection identities prevent matching board codes and thread numbers on different providers from opening the wrong source.
+- Stopping thread watching retains saved bookmarks, and media waits for persisted playback settings before starting automatically.
+
 ## [193-Purslane] - 2026-11-08
 
 ### Added

@@ -53,7 +53,17 @@ sealed interface Route {
         val attachmentId: String? = null,
     ) : Route
 
-    /** What you downloaded: the middle tab. */
+    /** Threads saved from every site. */
+    @Serializable
+    data object Saved : Route
+
+    @Serializable
+    data object History : Route
+
+    @Serializable
+    data object Watched : Route
+
+    /** Files downloaded from threads. */
     @Serializable
     data object Downloads : Route
 

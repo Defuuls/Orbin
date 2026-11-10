@@ -1,0 +1,9 @@
+<resources>
+    <string name="collection_back">Back</string>
+    <string name="collection_settings">Settings and activity</string>
+    <string name="collection_empty">Threads you save or visit will appear here.</string>
+    <string name="collection_saved">Saved</string>
+    <string name="collection_history">History</string>
+    <string name="collection_watched">Watched threads</string>
+    <string name="collection_all_sites">All sites</string>
+</resources>

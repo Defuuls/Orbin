@@ -9,6 +9,8 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
@@ -82,8 +84,10 @@ class FakeHistory : HistoryRepository {
 class FakeBoardPreferences : BoardPreferencesRepository {
     val subscribed = MutableStateFlow<Map<ProviderId, Set<BoardId>>>(emptyMap())
     val limits = MutableStateFlow<Map<Pair<ProviderId, BoardId>, FeedThreadLimit>>(emptyMap())
+    val favorites = MutableStateFlow<Map<ProviderId, Set<BoardId>>>(emptyMap())
 
-    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> = MutableStateFlow(emptySet())
+    override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
+        favorites.map { it[provider].orEmpty() }
 
     override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> =
         subscribed.map { it[provider].orEmpty() }
@@ -92,7 +96,10 @@ class FakeBoardPreferences : BoardPreferencesRepository {
         provider: ProviderId,
         board: BoardId,
         favorite: Boolean,
-    ) = Unit
+    ) = favorites.update { all ->
+        val current = all[provider].orEmpty()
+        all + (provider to if (favorite) current + board else current - board)
+    }
 
     override suspend fun setSubscribedBoard(
         provider: ProviderId,
@@ -119,6 +126,13 @@ class FakeBoardPreferences : BoardPreferencesRepository {
 @Suppress("TooManyFunctions")
 class FakeSettings : SettingsRepository {
     override val settings = MutableStateFlow(AppSettings.Default)
+
+    override suspend fun setPlaybackSettings(
+        scope: PlaybackScope,
+        settings: PlaybackSettings?,
+    ) {
+        this.settings.update { it.copy(playbackPreferences = it.playbackPreferences.withSettings(scope, settings)) }
+    }
 
     override suspend fun setHideNsfwBoards(enabled: Boolean) = settings.update { it.copy(hideNsfwBoards = enabled) }
 

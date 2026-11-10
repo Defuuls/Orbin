@@ -56,6 +56,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.ZoomableImage
+import com.orbin.media.video.SessionAudio
 import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
@@ -84,6 +85,8 @@ fun GalleryScreen(
 ) {
     val media by viewModel.media.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val playback = remember(settings) { viewModel.playbackSettings() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -131,7 +134,7 @@ fun GalleryScreen(
             }
         }
 
-        LaunchedEffect(pagerState.settledPage, media) {
+        LaunchedEffect(pagerState.settledPage, media, playback.preloadNextClip) {
             viewModel.prefetchAround(pagerState.settledPage, media)
         }
         val haptics = LocalHapticFeedback.current
@@ -174,7 +177,9 @@ fun GalleryScreen(
                         VideoPlayer(
                             url = item.sourceUrl,
                             modifier = Modifier.fillMaxSize(),
-                            autoPlay = true,
+                            autoPlay = playback.autoplay,
+                            muted = playback.startMuted && SessionAudio.muted,
+                            loop = playback.loopVideos,
                             // Only the settled page plays, so swiping away stops its audio.
                             active = isActive,
                             // Only the active page controls the gallery chrome.

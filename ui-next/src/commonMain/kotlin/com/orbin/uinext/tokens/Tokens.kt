@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * OPTIC-26 spatial rhythm for ui-next.
+ * Shared social reader spatial rhythm for ui-next.
  *
  * Precision 4dp/8dp grid with 16dp viewport gutters, 8dp modular cell gaps, and 1dp structural
  * hairline chassis borders.
@@ -25,10 +25,10 @@ object NextSpace {
     val gutterTight: Dp = 16.dp
     val section: Dp = 28.dp
     val groupGap: Dp = 20.dp
-    val rowY: Dp = 16.dp
+    val rowY: Dp = 12.dp
     val rowX: Dp = 16.dp
-    val titleTop: Dp = 24.dp
-    val titleBottom: Dp = 20.dp
+    val titleTop: Dp = 12.dp
+    val titleBottom: Dp = 12.dp
     val chromeInset: Dp = 16.dp
     val chromeBottom: Dp = 12.dp
     val pillPadX: Dp = 12.dp
@@ -38,20 +38,19 @@ object NextSpace {
 }
 
 /**
- * OPTIC-26 machined hardware radii.
+ * Shared reader corner radii.
  *
- * Replaces bulbous 32dp Material Expressive blobs and iOS squircles with tight CNC-machined
- * micro-radii (`2dp`–`8dp`) inspired by Leica/Teenage Engineering/Hasselblad optical instruments.
+ * Media stays edge-to-edge; search fields and sheets use restrained rounding.
  */
 @Immutable
 object NextRadius {
     val tight: Dp = 2.dp
-    val control: Dp = 4.dp
+    val control: Dp = 10.dp
     val tile: Dp = 4.dp
     val card: Dp = 6.dp
-    val sheet: Dp = 8.dp
+    val sheet: Dp = 16.dp
     val continuous: Dp = 6.dp
-    val pill: Dp = 4.dp
+    val pill: Dp = 20.dp
 }
 
 /**
@@ -78,22 +77,19 @@ object NextMaterials {
 }
 
 /**
- * OPTIC-26 Dual-Channel Typography:
- * - Proportional Sans (`FontFamily.Default` with `tnum` tabular numerals) for human discourse.
- * - Technical Monospace (`FontFamily.Monospace` with `tnum`) for telemetry, board codes, post IDs,
- *   timestamps, byte sizes, and index counters.
+ * One proportional system font for post content, navigation, and metadata.
  */
 @Immutable
 object NextType {
     private val sans = FontFamily.Default
-    private val mono = FontFamily.Monospace
+    private val mono = FontFamily.Default
     private const val TNUM = "tnum"
 
     // Display — instrument bay & primary screen readouts
     val displayLarge =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             fontSize = 57.sp,
             lineHeight = 64.sp,
             letterSpacing = (-1.7).sp,
@@ -102,7 +98,7 @@ object NextType {
     val displayMedium =
         TextStyle(
             fontFamily = sans,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.Bold,
             fontSize = 36.sp,
             lineHeight = 40.sp,
             letterSpacing = (-0.8).sp,
@@ -181,8 +177,8 @@ object NextType {
         TextStyle(
             fontFamily = sans,
             fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
-            lineHeight = 22.sp,
+            fontSize = 16.sp,
+            lineHeight = 23.sp,
             letterSpacing = 0.15.sp,
             fontFeatureSettings = TNUM,
         )
@@ -281,7 +277,7 @@ object NextType {
     // Convenience aliases used in ui-next components
 
     /** Screen/section primary title. */
-    val largeTitle = displayMedium
+    val largeTitle = headlineSmall
 
     val title1 = headlineLarge
     val title2 = headlineMedium
@@ -297,7 +293,7 @@ object NextType {
     val tab = labelMedium
 
     /** Section header — technical index header. */
-    val sectionHeader = telemetry
+    val sectionHeader = bodySmall.copy(fontWeight = FontWeight.Medium)
 
     /** Inline action label. */
     val callout = labelLarge

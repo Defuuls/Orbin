@@ -23,16 +23,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
@@ -44,8 +40,8 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Feed, Downloads and Boards own DestinationPill chrome; Settings, threads,
- * catalogs and Search draw no bottom chrome, since each already carries its own large title.
+ * Root composable. Home, Search, Boards and Saved own the shared four-tab chrome;
+ * settings, downloads, threads and catalogs use hierarchical back navigation.
  */
 @Composable
 fun OrbinApp(
@@ -59,7 +55,7 @@ fun OrbinApp(
         if (startWithOnboarding) return@LaunchedEffect
         val route = pendingRoute ?: return@LaunchedEffect
         when (route) {
-            Route.NextFeed, Route.Downloads, Route.BoardGallery -> navController.navigateToTab(route)
+            Route.NextFeed, Route.Search, Route.Saved, Route.BoardGallery -> navController.navigateToTab(route)
             else -> navController.navigate(route)
         }
         onPendingRouteHandled()
@@ -67,20 +63,8 @@ fun OrbinApp(
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
-        val backStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = backStackEntry?.destination
         val snackbarHostState = LocalOrbinSnackbarHostState.current
-
-        val isNextFeed = currentDestination?.hasRoute(Route.NextFeed::class) == true
-        // The three screens built out of the same scrolling list and the same floating rail. The
-        // setting used to reach only the feed, so a reader who had turned it on watched the rail
-        // slide away there and stay pinned on a catalog drawn from the identical row — which reads
-        // as a bug rather than as a distinction, because it is not one.
-        val scrollAwayScreen =
-            isNextFeed ||
-                currentDestination?.hasRoute(Route.Board::class) == true ||
-                currentDestination?.hasRoute(Route.BoardGallery::class) == true
-        val chromeHidesOnScroll = scrollAwayScreen
+        // The four primary destinations stay reachable while their content scrolls.
         // The banner floats over the top of whatever screen is showing rather than pushing it
         // down: losing the network should not make the whole layout jump, twice.
         val statusBarInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
@@ -91,7 +75,7 @@ fun OrbinApp(
                 navController = navController,
                 modifier = Modifier.fillMaxSize(),
                 startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
-                chromeHidesOnScroll = chromeHidesOnScroll,
+                chromeHidesOnScroll = false,
                 twoPaneBoardDetail = twoPaneBoardDetail,
             )
             AnimatedVisibility(

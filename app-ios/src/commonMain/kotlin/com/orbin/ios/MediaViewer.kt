@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_media_loop_off
@@ -74,6 +75,7 @@ internal fun MediaViewer(
     onClose: () -> Unit,
     onSave: (MediaAttachment) -> Boolean = { false },
     onPageChanged: (Int) -> Unit = {},
+    playback: PlaybackSettings = PlaybackSettings(),
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -102,8 +104,12 @@ internal fun MediaViewer(
     }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
-        VerticalPager(state = pager, beyondViewportPageCount = 1, modifier = Modifier.fillMaxSize()) { page ->
-            MediaPage(files[page.coerceIn(0, files.lastIndex)], active = page == pager.currentPage)
+        VerticalPager(
+            state = pager,
+            beyondViewportPageCount = if (playback.preloadNextClip) 1 else 0,
+            modifier = Modifier.fillMaxSize(),
+        ) { page ->
+            MediaPage(files[page.coerceIn(0, files.lastIndex)], active = page == pager.currentPage, playback = playback)
         }
         val current = files[pager.currentPage.coerceIn(0, files.lastIndex)]
         Row(
@@ -168,13 +174,14 @@ private fun SaveButton(
 private fun MediaPage(
     file: MediaAttachment,
     active: Boolean,
+    playback: PlaybackSettings,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
     var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
-    var looping by remember(file) { mutableStateOf(true) }
+    var looping by remember(file, playback.loopVideos) { mutableStateOf(playback.loopVideos) }
     if (!revealed) {
         SpoilerCover(
             modifier = Modifier.clickable { revealed = true },
@@ -192,6 +199,8 @@ private fun MediaPage(
                     url = playable,
                     active = active,
                     loop = looping,
+                    autoPlay = playback.autoplay,
+                    initiallyMuted = playback.startMuted && SessionAudio.muted,
                     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
                 )
                 TextButton(
@@ -215,6 +224,9 @@ private fun MediaPage(
                 url = webm,
                 modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
                 active = active,
+                autoPlay = playback.autoplay,
+                initiallyMuted = playback.startMuted && SessionAudio.muted,
+                loop = looping,
             )
         else -> ExternalFile(file)
     }

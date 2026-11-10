@@ -7,6 +7,8 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.PlaybackPreferences
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -91,12 +93,24 @@ class GalleryViewModel
         /** Drives video autoplay / mute in the gallery from the user's media settings. */
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.Eagerly,
+                    // Wait for persisted preferences before starting a clip or fetching its neighbours.
+                    AppSettings.Default.copy(
+                        playbackPreferences =
+                            PlaybackPreferences(
+                                defaults = PlaybackSettings(autoplay = false, preloadNextClip = false),
+                            ),
+                    ),
+                )
 
         private val provider = ProviderId(savedStateHandle.get<String>("provider").orEmpty())
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val threadKey = ThreadKey(provider, board, threadId)
+
+        fun playbackSettings() = settings.value.playbackPreferences.resolve(provider, board)
 
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
@@ -137,7 +151,8 @@ class GalleryViewModel
             if (items.isEmpty()) return
             val urls =
                 buildList {
-                    for (delta in -1..1) {
+                    val neighbours = if (playbackSettings().preloadNextClip) -1..1 else 0..0
+                    for (delta in neighbours) {
                         val index = settledPage + delta
                         if (index in items.indices) {
                             val item = items[index]

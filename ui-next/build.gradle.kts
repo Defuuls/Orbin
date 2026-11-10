@@ -30,6 +30,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:designsystem"))
             implementation(libs.cmp.resources)
+            implementation(libs.cmp.navigationevent.compose)
             implementation(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {

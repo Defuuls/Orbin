@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class WatchedThreadsTest {
@@ -109,6 +110,30 @@ class WatchedThreadsTest {
 
             assertEquals(2, bookmarks.getBookmark(key)?.latestReplyCount)
             assertTrue(notifier.posts.isEmpty())
+        }
+
+    @Test
+    fun savedOnlyThreadsDoNotExposeWatchedUnreadState() =
+        runTest {
+            val bookmarks = FakeBookmarks()
+            bookmarks.addBookmark(Bookmark(key, "Saved", createdAtMillis = 0, isWatched = false))
+            val watched = WatchedThreads(bookmarks, backgroundScope, { 0 }) { thread(0) }
+            assertNull(watched.read(thread(3)))
+            assertEquals(0, bookmarks.getBookmark(key)?.latestReplyCount)
+        }
+
+    @Test
+    fun savedOnlyThreadsCanBeWatchedAndUnwatchedWithoutDeletingTheBookmark() =
+        runTest {
+            val bookmarks = FakeBookmarks()
+            bookmarks.addBookmark(Bookmark(key, "Saved", createdAtMillis = 0, isWatched = false))
+            val watched = WatchedThreads(bookmarks, backgroundScope, { 0 }) { thread(0) }
+            assertEquals(false, watched.watching(key).first())
+            watched.toggle(thread(0))
+            assertTrue(watched.watching(key).first { it })
+            watched.toggle(thread(0))
+            assertEquals(false, watched.watching(key).first { !it })
+            assertEquals("Saved", bookmarks.getBookmark(key)?.title)
         }
 
     @Test

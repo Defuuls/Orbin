@@ -48,14 +48,14 @@ class RedesignInteractionTest {
                 ThreadScreen(
                     subject = "Thread",
                     board = "/g/",
-                    posts = listOf(Post("No.1", "12:00", "Post body")),
+                    posts = listOf(Post("No. 1", "12:00", "Post body")),
                     onToggleCollapse = { collapsed++ },
                     onPostClick = { opened++ },
                 )
             }
         }
         composeRule
-            .onNode(hasText("No.1") and hasClickAction())
+            .onNode(hasText("No. 1", substring = true) and hasClickAction())
             .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
             .performClick()
         assertEquals(1, collapsed)

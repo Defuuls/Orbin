@@ -21,7 +21,7 @@ import com.orbin.uinext.tokens.NextType
 /**
  * The palette the entire interface is drawn from.
  *
- * Derived from the M3 forest green color scheme — all fields map to named M3 color roles.
+ * Shared semantic colors mapped consistently to Material color roles.
  * Flat, matte: no alpha fills, no frosted chrome, no gradient scrims. Surface hierarchy
  * is expressed through tonal fills (raised/elevated) rather than transparency or shadows.
  *
@@ -45,7 +45,7 @@ data class NextPalette(
     val faint: Color,
     /** Separator line — M3 `outlineVariant`. Very soft, no hard border. */
     val hairline: Color,
-    /** Interactive accent — M3 `primary` (forest green). */
+    /** Interactive accent — M3 `primary`. */
     val accent: Color,
     /** Soft accent fill for chips / selected rows — M3 `primaryContainer`. */
     val accentSoft: Color,
@@ -77,16 +77,10 @@ val next: NextPalette
     @Composable get() = LocalNext.current
 
 /**
- * Installs the M3 forest green design system as [LocalNext] and wires it into [MaterialTheme].
+ * Installs the shared reader palette in [LocalNext] and [MaterialTheme].
  *
- * The palette is derived from the resolved [MaterialTheme.colorScheme] via [nextPaletteFromM3],
- * so dynamic color and the static forest green scheme both flow through identical code paths.
- *
- * Brand accent is forest green on every platform ([NextPalette.accent]). When [platform] is
- * [NextPlatform.IOS], control chrome adapts to iOS: [NextHighlightIndication] for press,
- * UISwitch-like [PlatformSwitch] metrics/colors, and [FontFamily.SansSerif] (SF on Apple).
- * Android keeps Material ripple and Material Switch. The forest green brand color is intentional
- * on iOS — not system blue — so both apps share one identity while controls feel native.
+ * Platform controls adapt to native press feedback while retaining the same semantic colors.
+ * The default palette is monochrome; callers can select an optional accent family.
  *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits

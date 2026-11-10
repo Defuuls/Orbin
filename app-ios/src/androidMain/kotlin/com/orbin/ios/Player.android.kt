@@ -11,6 +11,8 @@ internal actual fun NativePlayer(
     active: Boolean,
     loop: Boolean,
     modifier: Modifier,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
 ) {
     Box(modifier)
 }
@@ -22,6 +24,9 @@ internal actual fun NativeWebMPlayer(
     url: String,
     modifier: Modifier,
     active: Boolean,
+    autoPlay: Boolean,
+    initiallyMuted: Boolean,
+    loop: Boolean,
 ) {
     Box(modifier)
 }
@@ -30,6 +35,8 @@ internal actual fun NativeWebMPlayer(
 internal actual fun NativeInlineLoop(
     url: String,
     modifier: Modifier,
+    loop: Boolean,
+    muted: Boolean,
 ) {
     Box(modifier)
 }

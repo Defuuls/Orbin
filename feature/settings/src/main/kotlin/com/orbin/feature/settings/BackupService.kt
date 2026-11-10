@@ -8,6 +8,7 @@ import com.orbin.core.model.BackupSavedSearch
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchContentType
@@ -155,6 +156,12 @@ class BackupService
                 setHideNsfwBoards(settings.hideNsfwBoards)
                 setCoverViolentMedia(settings.coverViolentMedia)
                 setDeepMediaScan(settings.deepMediaScan)
+                this.settings
+                    .first()
+                    .playbackPreferences.overrides
+                    .forEach { setPlaybackSettings(it.scope, null) }
+                setPlaybackSettings(PlaybackScope(), settings.playbackPreferences.defaults)
+                settings.playbackPreferences.overrides.forEach { setPlaybackSettings(it.scope, it.settings) }
                 setThemeMode(settings.themeMode)
                 setColorTheme(settings.colorTheme)
                 setAmoled(settings.amoled)

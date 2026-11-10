@@ -85,12 +85,13 @@ fun VideoPlayer(
     onFullscreenChange: (Boolean) -> Unit = {},
     onControlsToggle: ((Boolean) -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
+    loop: Boolean? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val activity = remember(context) { context.findActivity() }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
-    var isMuted by rememberSaveable(url) { mutableStateOf(muted) }
+    var isMuted by rememberSaveable(url, muted) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
     var controlsVisible by rememberSaveable(url) { mutableStateOf(!autoPlay) }
@@ -131,7 +132,7 @@ fun VideoPlayer(
                     !muted,
                 ).build()
                 .apply {
-                    repeatMode = repeatModeFor(shouldLoop(0L))
+                    repeatMode = repeatModeFor(loop ?: shouldLoop(0L))
                     volume = if (muted) 0f else 1f
                     playWhenReady = active && autoPlay
                 }
@@ -221,9 +222,9 @@ fun VideoPlayer(
         exoPlayer.setAudioAttributes(exoPlayer.audioAttributes, !isMuted)
     }
 
-    // Short clips loop like GIFs; anything longer plays once. Decided by length, not a setting.
-    LaunchedEffect(durationMs) {
-        exoPlayer.repeatMode = repeatModeFor(shouldLoop(durationMs))
+    // Explicit playback preferences override the legacy duration-based default.
+    LaunchedEffect(durationMs, loop) {
+        exoPlayer.repeatMode = repeatModeFor(loop ?: shouldLoop(durationMs))
     }
 
     // Turning the phone sideways is the fullscreen button.

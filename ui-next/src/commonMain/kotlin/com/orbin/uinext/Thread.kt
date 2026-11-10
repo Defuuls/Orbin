@@ -1,7 +1,5 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,27 +9,36 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -40,7 +47,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,11 +56,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
@@ -70,11 +78,16 @@ import com.orbin.uinext.resources.next_thread_jump_bottom
 import com.orbin.uinext.resources.next_thread_jump_top
 import com.orbin.uinext.resources.next_thread_jump_unread
 import com.orbin.uinext.resources.next_thread_posts
-import com.orbin.uinext.resources.next_thread_posts_count
 import com.orbin.uinext.resources.next_thread_save_page
-import com.orbin.uinext.resources.next_thread_share
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
+import com.orbin.uinext.resources.social_feed_save
+import com.orbin.uinext.resources.social_feed_saved_while_watching
+import com.orbin.uinext.resources.social_feed_unsave
+import com.orbin.uinext.resources.social_thread_anonymous
+import com.orbin.uinext.resources.social_thread_back
+import com.orbin.uinext.resources.social_thread_op
+import com.orbin.uinext.resources.social_thread_share
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.launch
@@ -95,6 +108,7 @@ data class Post(
     val replies: Int = 0,
     val spoiler: Boolean = false,
     val id: String = number,
+    val author: String = "",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,15 +139,14 @@ fun ThreadScreen(
     onScrollConsumed: () -> Unit = {},
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
+    siteName: String = "",
+    onBack: (() -> Unit)? = null,
+    saved: Boolean = false,
+    onToggleSaved: (() -> Unit)? = null,
 ) {
     val state = listState ?: rememberLazyListState()
     val scope = rememberCoroutineScope()
     val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
-    val showCompactTitle by remember {
-        derivedStateOf {
-            state.firstVisibleItemIndex > 0 || state.firstVisibleItemScrollOffset > 64
-        }
-    }
     LaunchedEffect(scrollToPostId, posts) {
         val target = posts.indexOfFirst { it.id == scrollToPostId }
         if (scrollToPostId != null && target >= 0) {
@@ -147,6 +160,50 @@ fun ThreadScreen(
             containerColor = next.background,
             contentColor = next.ink,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                Column(Modifier.fillMaxWidth().contentInsets().background(next.background)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (onBack != null) {
+                            NextIconAction(
+                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = stringResource(Res.string.social_thread_back),
+                                onClick = onBack,
+                            )
+                        } else {
+                            Box(Modifier.size(MIN_TOUCH_TARGET))
+                        }
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = subject,
+                                style = NextType.titleLarge,
+                                color = next.ink,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text =
+                                    listOf(
+                                        sourceLabel(siteName),
+                                        board,
+                                    ).filter(String::isNotBlank).joinToString(" · "),
+                                style = NextType.footnote,
+                                color = next.muted,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        NextIconAction(
+                            imageVector = Icons.Outlined.Share,
+                            contentDescription = stringResource(Res.string.social_thread_share),
+                            onClick = onShare,
+                        )
+                    }
+                    Hairline()
+                }
+            },
             floatingActionButton = {
                 if (layout == ThreadLayout.POSTS && posts.size > 1) {
                     val jumpShape = RoundedCornerShape(NextRadius.tight)
@@ -208,7 +265,10 @@ fun ThreadScreen(
         ) { scaffoldPadding ->
             LazyColumn(
                 state = state,
-                modifier = Modifier.padding(scaffoldPadding).contentInsets(),
+                modifier =
+                    Modifier
+                        .padding(scaffoldPadding)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
                 contentPadding =
                     PaddingValues(
                         // Room for the jump pill plus a margin, so the last post can scroll fully clear.
@@ -216,99 +276,93 @@ fun ThreadScreen(
                     ),
             ) {
                 item {
-                    Row(
-                        modifier = Modifier.padding(start = GUTTER, top = 26.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        BoardDot(board, size = 6.dp)
-                        WidthSpacer(7)
-                        Text(
-                            text = board,
-                            style = NextType.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = boardHue(board),
-                        )
-                        WidthSpacer(8)
-                        val countText =
-                            pluralStringResource(
-                                Res.plurals.next_thread_posts_count,
-                                posts.size,
-                                posts.size,
-                            )
-                        MetaLine(
-                            subtitle ?: countText,
-                            color = next.faint,
-                        )
-                    }
-                    ScreenTitle(text = subject, size = 34)
-                    // Two things only: how to read the thread, and whether to be told when it moves.
-                    val barShape = RoundedCornerShape(NextRadius.tight)
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = GUTTER)
-                                .clip(barShape)
-                                .background(next.raised)
-                                .border(1.dp, next.hairline, barShape)
-                                .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val threadSegments =
-                            listOf(
-                                stringResource(Res.string.next_thread_posts),
-                                stringResource(Res.string.next_thread_files),
-                            )
-                        val selectedSegment = if (layout == ThreadLayout.FILES) 1 else 0
-                        SingleChoiceSegmentedButtonRow(
-                            modifier = Modifier.weight(1f),
+                    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp)) {
+                        if (!subtitle.isNullOrBlank()) {
+                            MetaLine(subtitle, color = next.muted)
+                            Gap(4)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            threadSegments.forEachIndexed { index, label ->
-                                SegmentedButton(
-                                    selected = index == selectedSegment,
-                                    onClick = {
-                                        onLayoutChange(
-                                            if (index == 1) ThreadLayout.FILES else ThreadLayout.POSTS,
-                                        )
-                                    },
-                                    shape =
-                                        SegmentedButtonDefaults.itemShape(
-                                            index = index,
-                                            count = threadSegments.size,
-                                        ),
-                                    colors =
-                                        SegmentedButtonDefaults.colors(
-                                            activeContainerColor = next.accent,
-                                            activeContentColor = next.onAccent,
-                                            inactiveContainerColor = next.raised,
-                                            inactiveContentColor = next.ink,
-                                            activeBorderColor = next.accent,
-                                            inactiveBorderColor = next.hairline,
-                                        ),
-                                    label = {
-                                        Text(
-                                            text = label,
-                                            style = NextType.labelMedium,
-                                            fontWeight =
-                                                if (index == selectedSegment) FontWeight.Bold else FontWeight.Medium,
-                                        )
-                                    },
+                            val threadSegments =
+                                listOf(
+                                    stringResource(Res.string.next_thread_posts),
+                                    stringResource(Res.string.next_thread_files),
                                 )
+                            val selectedSegment = if (layout == ThreadLayout.FILES) 1 else 0
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+                                threadSegments.forEachIndexed { index, label ->
+                                    SegmentedButton(
+                                        selected = index == selectedSegment,
+                                        onClick = {
+                                            onLayoutChange(if (index == 1) ThreadLayout.FILES else ThreadLayout.POSTS)
+                                        },
+                                        shape = SegmentedButtonDefaults.itemShape(index, threadSegments.size),
+                                        colors =
+                                            SegmentedButtonDefaults.colors(
+                                                activeContainerColor = next.ink,
+                                                activeContentColor = next.background,
+                                                inactiveContainerColor = next.background,
+                                                inactiveContentColor = next.ink,
+                                                activeBorderColor = next.ink,
+                                                inactiveBorderColor = next.hairline,
+                                            ),
+                                        label = {
+                                            Text(text = label, style = NextType.labelMedium)
+                                        },
+                                    )
+                                }
+                            }
+                            WidthSpacer(8)
+                            NextIconAction(
+                                imageVector =
+                                    if (watching) {
+                                        Icons.Filled.NotificationsActive
+                                    } else {
+                                        Icons.Outlined.NotificationsNone
+                                    },
+                                contentDescription =
+                                    if (watching) {
+                                        stringResource(Res.string.next_thread_watching)
+                                    } else {
+                                        stringResource(Res.string.next_thread_watch)
+                                    },
+                                onClick = onWatch,
+                                tint = next.ink,
+                            )
+                            if (onToggleSaved != null) {
+                                val saveIcon = if (saved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder
+                                if (saved && watching) {
+                                    val savedLabel =
+                                        stringResource(Res.string.social_feed_saved_while_watching, subject)
+                                    Box(
+                                        modifier =
+                                            Modifier.size(MIN_TOUCH_TARGET).semantics {
+                                                contentDescription = savedLabel
+                                            },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(saveIcon, contentDescription = null, tint = next.ink)
+                                    }
+                                } else {
+                                    NextIconAction(
+                                        imageVector = saveIcon,
+                                        contentDescription =
+                                            stringResource(
+                                                if (saved) {
+                                                    Res.string.social_feed_unsave
+                                                } else {
+                                                    Res.string.social_feed_save
+                                                },
+                                                subject,
+                                            ),
+                                        onClick = onToggleSaved,
+                                        tint = next.ink,
+                                    )
+                                }
                             }
                         }
-                        WidthSpacer(8)
-                        NextIconAction(
-                            imageVector =
-                                if (watching) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone,
-                            contentDescription =
-                                if (watching) {
-                                    stringResource(Res.string.next_thread_watching)
-                                } else {
-                                    stringResource(Res.string.next_thread_watch)
-                                },
-                            onClick = onWatch,
-                            tint = if (watching) next.accent else next.muted,
-                        )
                     }
                     if (layout == ThreadLayout.FILES) {
                         // What you do with every file belongs with the files, not above the posts.
@@ -324,17 +378,29 @@ fun ThreadScreen(
                             onSavePage?.let {
                                 InlineAction(stringResource(Res.string.next_thread_save_page), onClick = it)
                             }
-                            InlineAction(stringResource(Res.string.next_thread_share), onClick = onShare)
+                            InlineAction(stringResource(Res.string.social_thread_share), onClick = onShare)
                         }
                     }
-                    Gap(18)
+                    Gap(4)
                     Hairline()
                 }
                 if (layout == ThreadLayout.POSTS) {
                     itemsIndexed(posts, key = { _, post -> post.id }) { index, post ->
+                        if (index == 1) {
+                            Text(
+                                text =
+                                    pluralStringResource(
+                                        Res.plurals.next_row_replies,
+                                        posts.size - 1,
+                                        posts.size - 1,
+                                    ),
+                                style = NextType.headline,
+                                color = next.ink,
+                                modifier = Modifier.padding(horizontal = GUTTER, vertical = 12.dp),
+                            )
+                        }
                         PostView(
                             post = post,
-                            board = board,
                             seed = index,
                             collapsed = post.id in collapsed,
                             onToggleCollapse = onToggleCollapse,
@@ -371,11 +437,6 @@ fun ThreadScreen(
                 }
             }
         }
-        CompactTitleBar(
-            title = subject,
-            visible = showCompactTitle,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
     }
 }
 
@@ -384,7 +445,6 @@ const val MAX_REPLY_DEPTH = 3
 @Composable
 private fun PostView(
     post: Post,
-    board: String,
     seed: Int,
     collapsed: Boolean = false,
     onToggleCollapse: (Post) -> Unit = {},
@@ -393,93 +453,88 @@ private fun PostView(
     media: (@Composable (Post, Modifier) -> Unit)? = null,
 ) {
     val depthCount = post.depth.coerceAtMost(MAX_REPLY_DEPTH)
-    val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
+    val depthReserve = REPLY_INDENT * depthCount
     Surface(
         onClick = { onClick(post) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(NextRadius.tight),
-        border = BorderStroke(1.dp, if (seed == 0) next.accent.copy(alpha = 0.65f) else next.hairline),
-        color = if (seed == 0) next.elevated else next.raised,
+        modifier = Modifier.fillMaxWidth(),
+        color = next.background,
         contentColor = next.ink,
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth()) {
             Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .padding(
-                            start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
+                            start = GUTTER + depthReserve,
                             end = GUTTER,
-                            top = 12.dp,
-                            bottom = 12.dp,
+                            top = 8.dp,
+                            bottom = 16.dp,
                         ),
-            ) {
-                if (seed == 0) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .clip(RoundedCornerShape(1.dp))
-                            .background(next.accent),
-                    )
-                    Gap(8)
-                }
+            ) postContent@{
                 val expandLabel = stringResource(Res.string.next_post_expand)
                 val collapseLabel = stringResource(Res.string.next_post_collapse)
                 val collapsedState = stringResource(Res.string.next_post_collapsed_state)
                 val expandedState = stringResource(Res.string.next_post_expanded_state)
-                val metaShape = RoundedCornerShape(NextRadius.tight)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                Row(
                     modifier =
                         Modifier
-                            .clip(metaShape)
-                            .background(next.background)
-                            .border(1.dp, next.hairline, metaShape)
+                            .fillMaxWidth()
                             .heightIn(min = MIN_TOUCH_TARGET)
                             .nextClickable(
                                 onClickLabel = if (collapsed) expandLabel else collapseLabel,
                                 onClick = { onToggleCollapse(post) },
-                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    if (seed == 0) {
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(next.accentContainer)
-                                .border(1.dp, next.accent, RoundedCornerShape(NextRadius.tight))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(next.raised),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.PersonOutline,
+                            contentDescription = null,
+                            tint = next.muted,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                text = "OP // ORIGIN",
-                                style = NextType.telemetry,
-                                color = next.accent,
+                                text = post.author.ifBlank { stringResource(Res.string.social_thread_anonymous) },
+                                style = NextType.headline,
+                                color = next.ink,
                             )
+                            if (seed == 0) {
+                                Text(
+                                    text = stringResource(Res.string.social_thread_op),
+                                    style = NextType.caption1,
+                                    color = next.muted,
+                                    modifier =
+                                        Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(next.raised)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
                         }
+                        MetaLine(listOf(post.number, post.time).filter(String::isNotBlank).joinToString(" · "))
                     }
-                    Text(
-                        text = post.number,
-                        style = NextType.telemetryLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (seed == 0) next.accent else next.ink,
-                    )
-                    MetaLine(post.time, color = next.faint)
                     if (post.replies > 0) {
-                        val repliesText =
-                            pluralStringResource(
-                                Res.plurals.next_row_replies,
-                                post.replies,
-                                post.replies,
-                            )
-                        Pill(repliesText, tint = next.muted)
-                    }
-                    if (collapsed) {
-                        MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
+                        MetaLine(
+                            pluralStringResource(Res.plurals.next_row_replies, post.replies, post.replies),
+                            color = next.muted,
+                        )
                     }
                 }
-                if (collapsed) return@Column
+                if (collapsed) {
+                    MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
+                }
+                if (collapsed) return@postContent
                 Gap(8)
                 var spoilerRevealed by rememberSaveable(post.id) { mutableStateOf(false) }
                 if (post.spoiler && !spoilerRevealed) {
@@ -517,76 +572,19 @@ private fun PostView(
                 }
                 if (post.hasMedia) {
                     Gap(10)
-                    val tile = Modifier.fillMaxWidth().aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO)
-                    Box(modifier = tile) {
-                        if (media != null) {
-                            media(post, Modifier.matchParentSize())
-                        } else {
-                            MediaTile(
-                                modifier = Modifier.matchParentSize(),
-                                seed = seed + 1,
-                                radius = NextRadius.tight,
-                            )
-                        }
-                        val reticleColor = next.accent.copy(alpha = 0.55f)
-                        Canvas(Modifier.matchParentSize()) {
-                            val stroke = 1.25.dp.toPx()
-                            val arm = 8.dp.toPx()
-                            val pad = 6.dp.toPx()
-                            val w = size.width
-                            val h = size.height
-                            // 4 corner viewfinder brackets
-                            drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
-                            drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
-                            drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
-                            drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
-                            drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
-                        }
-                        Box(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(NextRadius.tight))
-                                    .background(Color.Black.copy(alpha = 0.65f))
-                                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = "VIEWFINDER // RAW 16:9",
-                                style = NextType.telemetry,
-                                color = Color.White.copy(alpha = 0.85f),
-                            )
-                        }
+                    if (media != null) {
+                        // Platform media slots own the attachment ratio and multi-file pager height.
+                        media(post, Modifier.fillMaxWidth())
+                    } else {
+                        MediaTile(
+                            modifier = Modifier.fillMaxWidth().aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO),
+                            seed = seed + 1,
+                            radius = NextRadius.tight,
+                        )
                     }
                 }
             }
-            if (depthCount > 0) {
-                Row(modifier = Modifier.matchParentSize().padding(top = 12.dp, bottom = 12.dp)) {
-                    repeat(depthCount) {
-                        Column(
-                            modifier = Modifier.padding(start = GUTTER).fillMaxHeight().width(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Box(
-                                Modifier
-                                    .size(4.dp)
-                                    .clip(RoundedCornerShape(1.dp))
-                                    .background(boardHue(board).copy(alpha = 0.85f)),
-                            )
-                            Box(
-                                Modifier
-                                    .fillMaxHeight()
-                                    .width(1.5.dp)
-                                    .background(boardHue(board).copy(alpha = 0.35f)),
-                            )
-                        }
-                    }
-                }
-            }
+            Hairline()
         }
     }
 }
@@ -594,4 +592,4 @@ private fun PostView(
 private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
 private val THREAD_JUMP_CLEARANCE = 84.dp
-private val REPLY_DEPTH_BAR_WIDTH = 2.dp
+private val REPLY_INDENT = 12.dp

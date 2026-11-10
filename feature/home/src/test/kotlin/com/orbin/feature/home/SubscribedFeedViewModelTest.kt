@@ -27,6 +27,7 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderCapabilities
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderMetadata
+import com.orbin.provider.api.ProviderRegistry
 import io.mockk.mockk
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -131,6 +132,37 @@ class SubscribedFeedViewModelTest {
             }
         }
 
+    @Test
+    fun `favorite boards populate Home while existing subscriptions remain`() =
+        runTest {
+            val provider = catalogProvider(listOf(catalogThread(1L)))
+            val registry = FakeProviderRegistry(provider)
+            val settingsRepository = FakeSettingsRepository()
+            val viewModel =
+                SubscribedFeedViewModel(
+                    registry = registry,
+                    observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
+                    boardRepository = FakeBoardRepository(),
+                    boardPreferencesRepository =
+                        FakeBoardPreferencesRepository(subscribed = emptySet(), favorites = setOf(healthyBoard)),
+                    settingsRepository = settingsRepository,
+                    historyRepository = FakeHistoryRepository(),
+                    appLockController = AppLockController(),
+                    imagePreloader = mockk(relaxed = true),
+                )
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                assertThat(
+                    state.boards
+                        .single()
+                        .board.id,
+                ).isEqualTo(healthyBoard)
+                assertThat(state.boards.single().threads).hasSize(1)
+            }
+        }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `returning to the feed reuses it and only a refresh fetches the catalogs again`() =
@@ -165,8 +197,62 @@ class SubscribedFeedViewModelTest {
             assertThat(catalogCalls.get()).isGreaterThan(callsAfterFirstLoad)
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `combined feed loads both sites and preserves a failed site's own cached board`() =
+        runTest {
+            var secondSiteFails = false
+            val first = catalogProvider(listOf(catalogThread(1L)), providerId = "fourchan")
+            val second =
+                catalogProvider(
+                    listOf(catalogThread(2L)),
+                    providerId = "bbwchan",
+                    fail = { secondSiteFails },
+                )
+            val providers = listOf(first, second)
+            val registry =
+                object : ProviderRegistry {
+                    override fun all(): List<ImageBoardProvider> = providers
+
+                    override fun default(): ImageBoardProvider = first
+
+                    override fun get(id: ProviderId): ImageBoardProvider? = providers.find { it.metadata.id == id }
+                }
+            val viewModel = createViewModel(registry, FakeSettingsRepository(), setOf(healthyBoard))
+
+            viewModel.uiState.test {
+                advanceUntilIdle()
+                val initial = expectMostRecentItem() as SubscribedFeedUiState.Success
+                assertThat(initial.boards.map { it.providerId }).containsExactly("fourchan", "bbwchan")
+                assertThat(initial.boards.flatMap { it.threads }.map { it.key.provider.value })
+                    .containsExactly("fourchan", "bbwchan")
+
+                secondSiteFails = true
+                viewModel.refresh()
+                advanceUntilIdle()
+                val refreshed = expectMostRecentItem() as SubscribedFeedUiState.Success
+                val byProvider = refreshed.boards.associateBy { it.providerId }
+                assertThat(
+                    byProvider
+                        .getValue("fourchan")
+                        .threads
+                        .single()
+                        .key.thread.value,
+                ).isEqualTo(1L)
+                // Both sites use /g/: the failed source must never receive the other site's cache.
+                assertThat(
+                    byProvider
+                        .getValue("bbwchan")
+                        .threads
+                        .single()
+                        .key.thread.value,
+                ).isEqualTo(2L)
+                assertThat(refreshed.stale).isTrue()
+            }
+        }
+
     private fun createViewModel(
-        registry: FakeProviderRegistry,
+        registry: ProviderRegistry,
         settingsRepository: FakeSettingsRepository,
         subscribed: Set<BoardId>,
     ) = SubscribedFeedViewModel(
@@ -184,15 +270,18 @@ class SubscribedFeedViewModelTest {
     private fun catalogProvider(
         threads: List<CatalogThread>,
         catalogCalls: AtomicInteger = AtomicInteger(),
+        providerId: String = "fourchan",
+        fail: () -> Boolean = { false },
     ) = object : ImageBoardProvider {
-        override val metadata = ProviderMetadata(ProviderId("fourchan"), "Test", "https://example.org")
+        override val metadata = ProviderMetadata(ProviderId(providerId), "Test", "https://example.org")
         override val capabilities = ProviderCapabilities()
 
         override suspend fun getBoards(): List<Board> = emptyList()
 
         override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> {
             catalogCalls.incrementAndGet()
-            return threads
+            if (fail()) throw ProviderException.NotFound("Unavailable")
+            return threads.map { it.copy(key = it.key.copy(provider = metadata.id)) }
         }
 
         override suspend fun getThread(

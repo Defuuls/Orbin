@@ -4,6 +4,8 @@ import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -73,6 +75,9 @@ class IosBackupTest {
             from.settings.setColorTheme(AppColorTheme.PURPLE)
             from.settings.setCoverViolentMedia(false)
             from.settings.setBiometricLockEnabled(true)
+            val playbackScope = PlaybackScope(site.value, "g")
+            val playback = PlaybackSettings(autoplay = false, startMuted = false, loopVideos = false)
+            from.settings.setPlaybackSettings(playbackScope, playback)
             from.boards.setSubscribedBoard(site, BoardId("g"), true)
             val key = ThreadKey(site, BoardId("g"), ThreadId(7))
             from.bookmarks.addBookmark(
@@ -82,6 +87,8 @@ class IosBackupTest {
             val json = backup(from).exportToJson()
 
             val to = Stores()
+            val staleScope = PlaybackScope(site.value, "old")
+            to.settings.setPlaybackSettings(staleScope, PlaybackSettings(autoplay = false))
             val result = backup(to).importFromJson(json).getOrThrow()
             assertEquals(1 to 1, result)
             val settings = to.settings.settings.first()
@@ -89,6 +96,8 @@ class IosBackupTest {
             assertEquals(AppColorTheme.PURPLE, settings.colorTheme)
             assertFalse(settings.coverViolentMedia)
             assertFalse(settings.biometricLockEnabled, "a backup must not change the app lock")
+            assertEquals(playback, settings.playbackPreferences.forScope(playbackScope))
+            assertFalse(settings.playbackPreferences.hasOverride(staleScope))
             assertEquals(setOf(BoardId("g")), to.boards.observeSubscribedBoards(site).first())
             val bookmark = to.bookmarks.getBookmark(key)!!
             assertTrue(bookmark.isWatched)
