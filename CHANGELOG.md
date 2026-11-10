@@ -11,6 +11,7 @@ All notable changes to Orbin are documented here. The format is based on
 ### Fixed
 - Made Following show followed boards instead of filtering watched threads, and gave For You its own discovery feed across eligible boards on both sites.
 - Kept feed tabs and source selection available during loading, empty results, and errors, and scoped catalog caches, playback, and preloading to the selected feed and source.
+- Paused iOS feed playback and preloading while release notes or the privacy cover obscure the reader.
 
 ### Added
 - Bounded, incremental For You catalog loading so discovery can show videos before every board has loaded.
@@ -19,7 +20,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Testing
 - Added feed-mode, source, discovery-loading, persistence, reply-video filtering, thread routing, chat-action, and settings compatibility regressions across Android and iOS.
-
 
 ## [196-Kai-Lan] - 2026-11-10
 

@@ -47,7 +47,7 @@ final class StartupSmokeTests: XCTestCase {
 
         hasOpenedFeed = true
         startBrowsing.tap()
-        assertHomeAfterSetup()
+        assertHomeAfterSetup(expectsReleaseNotes: true)
         assertFeedTabsChangeSelection()
 
         let tabs = ["Home", "Watched", "Boards", "Search", "Saved"].map(navigationControl)
@@ -88,10 +88,16 @@ final class StartupSmokeTests: XCTestCase {
         app = nil
     }
 
-    private func assertHomeAfterSetup() {
+    private func assertHomeAfterSetup(expectsReleaseNotes: Bool = false) {
+        // A fresh install presents this release's notes over Home. Resolve and dismiss that
+        // foreground modal before querying the covered navigation/accessibility tree.
+        if expectsReleaseNotes {
+            let done = labeled("Done")
+            XCTAssertTrue(done.waitForExistence(timeout: 15), "This release's notes appear after setup")
+            waitUntilHittable([done], description: "The release notes dismissal action")
+            done.tap()
+        }
         let home = navigationControl("Home")
-        waitUntilHittable([home, labeled("Done")], description: "Home navigation or release notes")
-        dismissReleaseNotesIfPresent()
         waitUntilHittable([home], description: "Home after mandatory board setup")
         XCTAssertTrue(home.isSelected)
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")

@@ -72,6 +72,7 @@ private const val CLEAR_ARMED_MS = 4_000L
 internal fun FeedDestination(
     browser: Browser,
     formFactor: FormFactor,
+    playbackAllowed: Boolean = true,
 ) {
     val feed by browser.feed.collectAsState()
     val boards by browser.boards.collectAsState()
@@ -130,12 +131,16 @@ internal fun FeedDestination(
     val foreground =
         FeedPreloadLifecycle(
             preloader,
-            feedPreloadTarget(
-                byRow[activePreviewId],
-                byRow[upcomingPreviewId],
-                settings.playbackPreferences,
-                supportsWebM,
-            ),
+            if (playbackAllowed) {
+                feedPreloadTarget(
+                    byRow[activePreviewId],
+                    byRow[upcomingPreviewId],
+                    settings.playbackPreferences,
+                    supportsWebM,
+                )
+            } else {
+                null
+            },
         )
     val uriHandler = LocalUriHandler.current
     NextPullToRefresh(
@@ -191,7 +196,7 @@ internal fun FeedDestination(
                         FeedMedia(
                             feed = entry,
                             playback = settings.playbackPreferences.resolve(entry.provider, entry.thread.key.board),
-                            active = active && foreground,
+                            active = active && foreground && playbackAllowed,
                             modifier = modifier,
                             preloader = preloader,
                             onLike = { browser.watchFeed(entry) },
