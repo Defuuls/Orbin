@@ -88,19 +88,29 @@ class OrbinAppTest {
     @Test
     fun aHomeShortcutCannotSkipMandatoryBoardSetup() {
         awaitText("Welcome to Orbin")
+        val activity = composeTestRule.activity
+        val launchIntent = Intent(activity.intent)
 
-        composeTestRule.runOnUiThread {
-            val activity = composeTestRule.activity
-            activity.startActivity(
-                Intent(activity, MainActivity::class.java)
-                    .setAction("com.orbin.shortcut.FEED")
-                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            )
+        try {
+            composeTestRule.runOnUiThread {
+                activity.startActivity(
+                    Intent(activity, MainActivity::class.java)
+                        .setAction("com.orbin.shortcut.FEED")
+                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                )
+            }
+            composeTestRule.waitUntil(timeoutMillis = READY_TIMEOUT_MS) {
+                activity.intent.action == "com.orbin.shortcut.FEED"
+            }
+            composeTestRule.waitForIdle()
+
+            composeTestRule.onNodeWithText("Welcome to Orbin").assertExists()
+            composeTestRule.onNodeWithText("Start browsing").assertIsNotEnabled()
+        } finally {
+            // MainActivity keeps incoming intents for recreation. ActivityScenario identifies
+            // its Activity by the original launch intent and otherwise ignores teardown events.
+            composeTestRule.runOnUiThread { activity.intent = launchIntent }
         }
-        composeTestRule.waitForIdle()
-
-        composeTestRule.onNodeWithText("Welcome to Orbin").assertExists()
-        composeTestRule.onNodeWithText("Start browsing").assertIsNotEnabled()
     }
 
     /**
