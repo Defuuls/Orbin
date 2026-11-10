@@ -1,8 +1,8 @@
 # Orbin
 
-![Orbin 2026 Industrial Hardware Showcase](docs/assets/orbin-brand-showcase.svg)
+![Orbin Modern Showcase](docs/assets/orbin-brand-showcase.svg)
 
-Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and the **OPTIC-26 industrial hardware design system**. It browses boards, catalogs, threads, links, and media with instrument-grade precision, zero distraction, and strictly read-only security.
+Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** built with Kotlin Multiplatform, Compose Multiplatform, and an authentic **Instagram-style visual layout**. It browses boards, catalogs, threads, links, and media with edge-to-edge elegance, zero distraction, and strictly read-only security.
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
@@ -16,11 +16,11 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 | Area | Capabilities |
 | :--- | :--- |
-| **Industrial Chassis (OPTIC-26)** | Machined 2026 industrial hardware aesthetic across Android and iOS — instrument HUD top bar with live telemetry (`[CH-01 // INSTRUMENT]`, `SIG:NOMINAL`, status LED), precision-milled modular baffles with hairline dividers, flush tactile switchboard deck with mechanical detents (`01`, `02`, `03`) and active LED bars, and critically damped zero-bounce motion. |
-| **Browsing & Layout** | CNC-milled spec-sheet feed cassettes with 4-corner camera reticles (`┌  ┐`, `└  ┘`), adaptive catalogs with uncropped aspect-ratio previews, A–Z subscribed board feed, 840dp+ two-pane split view, and explicit offline/error telemetry states. |
-| **Thread Reader & Telemetry** | Precision instrument post cassettes with `[OP // ORIGIN]` accent beacons, multi-lane mechanical thread reply trace bus, optical viewfinder HUD overlay (`VIEWFINDER // RAW 16:9`), inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
+| **Instagram Design & Layout** | Authentic Instagram look and feel across Android and iOS — bold top brand header, horizontal Stories tray carousel with iconic gradient rings (`#FBAA47`, `#D91A46`, `#A60F93`) for boards, edge-to-edge full-bleed media cards, author headers with story ring avatars, interactive Like hearts (`#ED4956`), comment bubble actions, bookmark ribbons, and clean docked bottom navigation bar (`52dp`). |
+| **Browsing & Feed** | Instagram feed cards with uncropped media previews, interactive engagement bar, bold like counts, expandable captions, direct comment navigation, A–Z subscribed board feed, and 840dp+ two-pane split view. |
+| **Thread Reader & Comments** | Instagram-styled comment reel layout with author badge for OP, circular author avatars, comment like hearts, inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
 | **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with hardware caching, preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
-| **Themes & Ergonomics** | High-contrast industrial Void/Stage/Baffle surfaces, eight calibrated color themes, Light / Dark / AMOLED modes, system text scaling, tactile accessible controls, and searchable settings grouped by task. |
+| **Themes & Ergonomics** | Pure white (`#FFFFFF`) and pure black (`#000000`) canvas, Royal Blue (`#0095F6`) and Crimson (`#ED4956`) accents, eight calibrated color themes, Light / Dark / AMOLED modes, and accessible tactile controls. |
 | **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy shield (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and zero telemetry or cloud backups. |
 | **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBW Chan** (`provider:lynxchan`). |
 

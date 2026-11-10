@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,9 +24,12 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -50,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -396,10 +397,10 @@ private fun PostView(
     val depthReserve = (GUTTER + REPLY_DEPTH_BAR_WIDTH) * depthCount
     Surface(
         onClick = { onClick(post) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
         shape = RoundedCornerShape(NextRadius.tight),
-        border = BorderStroke(1.dp, if (seed == 0) next.accent.copy(alpha = 0.65f) else next.hairline),
-        color = if (seed == 0) next.elevated else next.raised,
+        border = BorderStroke(0.5.dp, if (seed == 0) next.hairline else next.hairline.copy(alpha = 0.5f)),
+        color = if (seed == 0) next.raised else next.background,
         contentColor = next.ink,
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -408,184 +409,224 @@ private fun PostView(
                     Modifier
                         .fillMaxWidth()
                         .padding(
-                            start = (if (depthCount == 0) GUTTER else 13.dp) + depthReserve,
+                            start = (if (depthCount == 0) GUTTER else 12.dp) + depthReserve,
                             end = GUTTER,
-                            top = 12.dp,
-                            bottom = 12.dp,
+                            top = 10.dp,
+                            bottom = 10.dp,
                         ),
             ) {
-                if (seed == 0) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .clip(RoundedCornerShape(1.dp))
-                            .background(next.accent),
-                    )
-                    Gap(8)
-                }
-                val expandLabel = stringResource(Res.string.next_post_expand)
-                val collapseLabel = stringResource(Res.string.next_post_collapse)
-                val collapsedState = stringResource(Res.string.next_post_collapsed_state)
-                val expandedState = stringResource(Res.string.next_post_expanded_state)
-                val metaShape = RoundedCornerShape(NextRadius.tight)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier =
-                        Modifier
-                            .clip(metaShape)
-                            .background(next.background)
-                            .border(1.dp, next.hairline, metaShape)
-                            .heightIn(min = MIN_TOUCH_TARGET)
-                            .nextClickable(
-                                onClickLabel = if (collapsed) expandLabel else collapseLabel,
-                                onClick = { onToggleCollapse(post) },
-                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                ) {
-                    if (seed == 0) {
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(next.accentContainer)
-                                .border(1.dp, next.accent, RoundedCornerShape(NextRadius.tight))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = "OP // ORIGIN",
-                                style = NextType.telemetry,
-                                color = next.accent,
-                            )
-                        }
-                    }
-                    Text(
-                        text = post.number,
-                        style = NextType.telemetryLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (seed == 0) next.accent else next.ink,
-                    )
-                    MetaLine(post.time, color = next.faint)
-                    if (post.replies > 0) {
-                        val repliesText =
-                            pluralStringResource(
-                                Res.plurals.next_row_replies,
-                                post.replies,
-                                post.replies,
-                            )
-                        Pill(repliesText, tint = next.muted)
-                    }
-                    if (collapsed) {
-                        MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
-                    }
-                }
+                PostMetaHeader(
+                    post = post,
+                    board = board,
+                    isOp = seed == 0,
+                    collapsed = collapsed,
+                    onToggleCollapse = onToggleCollapse,
+                )
                 if (collapsed) return@Column
                 Gap(8)
-                var spoilerRevealed by rememberSaveable(post.id) { mutableStateOf(false) }
-                if (post.spoiler && !spoilerRevealed) {
-                    val revealLabel = stringResource(Res.string.next_spoiler_reveal)
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(44.dp)
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(Color.Black.copy(alpha = SPOILER_SCRIM))
-                                .nextClickable(
-                                    onClickLabel = revealLabel,
-                                    onClick = { spoilerRevealed = true },
-                                ),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text(
-                            text = revealLabel,
-                            style = NextType.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.72f),
-                            modifier = Modifier.padding(horizontal = 14.dp),
-                        )
-                    }
-                } else if (body != null) {
-                    body(post)
-                } else {
-                    Text(
-                        text = post.body,
-                        style = NextType.body,
-                        fontWeight = FontWeight.Normal,
-                        color = next.ink.copy(alpha = 0.90f),
-                    )
-                }
-                if (post.hasMedia) {
-                    Gap(10)
-                    val tile = Modifier.fillMaxWidth().aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO)
-                    Box(modifier = tile) {
-                        if (media != null) {
-                            media(post, Modifier.matchParentSize())
-                        } else {
-                            MediaTile(
-                                modifier = Modifier.matchParentSize(),
-                                seed = seed + 1,
-                                radius = NextRadius.tight,
-                            )
-                        }
-                        val reticleColor = next.accent.copy(alpha = 0.55f)
-                        Canvas(Modifier.matchParentSize()) {
-                            val stroke = 1.25.dp.toPx()
-                            val arm = 8.dp.toPx()
-                            val pad = 6.dp.toPx()
-                            val w = size.width
-                            val h = size.height
-                            // 4 corner viewfinder brackets
-                            drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
-                            drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
-                            drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
-                            drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
-                            drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
-                            drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
-                        }
-                        Box(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(NextRadius.tight))
-                                    .background(Color.Black.copy(alpha = 0.65f))
-                                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = "VIEWFINDER // RAW 16:9",
-                                style = NextType.telemetry,
-                                color = Color.White.copy(alpha = 0.85f),
-                            )
-                        }
-                    }
-                }
+                PostContent(
+                    post = post,
+                    seed = seed,
+                    body = body,
+                    media = media,
+                )
+                Gap(8)
+                PostActionRow(isOp = seed == 0, replies = post.replies)
             }
             if (depthCount > 0) {
-                Row(modifier = Modifier.matchParentSize().padding(top = 12.dp, bottom = 12.dp)) {
-                    repeat(depthCount) {
-                        Column(
-                            modifier = Modifier.padding(start = GUTTER).fillMaxHeight().width(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Box(
-                                Modifier
-                                    .size(4.dp)
-                                    .clip(RoundedCornerShape(1.dp))
-                                    .background(boardHue(board).copy(alpha = 0.85f)),
-                            )
-                            Box(
-                                Modifier
-                                    .fillMaxHeight()
-                                    .width(1.5.dp)
-                                    .background(boardHue(board).copy(alpha = 0.35f)),
-                            )
-                        }
-                    }
-                }
+                PostDepthIndicator(depthCount = depthCount, board = board)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostMetaHeader(
+    post: Post,
+    board: String,
+    isOp: Boolean,
+    collapsed: Boolean,
+    onToggleCollapse: (Post) -> Unit,
+) {
+    val expandLabel = stringResource(Res.string.next_post_expand)
+    val collapseLabel = stringResource(Res.string.next_post_collapse)
+    val collapsedState = stringResource(Res.string.next_post_collapsed_state)
+    val expandedState = stringResource(Res.string.next_post_expanded_state)
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .nextClickable(
+                    onClickLabel = if (collapsed) expandLabel else collapseLabel,
+                    onClick = { onToggleCollapse(post) },
+                ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
+                .padding(vertical = 4.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(if (isOp) 28.dp else 22.dp)
+                    .clip(CircleShape)
+                    .then(
+                        if (isOp) {
+                            Modifier.border(1.5.dp, InstagramStoryGradient, CircleShape).padding(2.dp)
+                        } else {
+                            Modifier
+                        },
+                    ).clip(CircleShape)
+                    .background(boardHue(board)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = if (isOp) "OP" else post.number.takeLast(2),
+                style = NextType.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+        }
+        if (isOp) {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(NextRadius.control))
+                    .background(next.accentSoft)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    text = "Author",
+                    style = NextType.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = next.accent,
+                )
+            }
+        }
+        Text(
+            text = post.number,
+            style = NextType.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isOp) next.accent else next.ink,
+        )
+        MetaLine(post.time, color = next.faint)
+        if (post.replies > 0) {
+            val repliesText =
+                pluralStringResource(
+                    Res.plurals.next_row_replies,
+                    post.replies,
+                    post.replies,
+                )
+            Pill(repliesText, tint = next.muted)
+        }
+        if (collapsed) {
+            MetaLine(stringResource(Res.string.next_post_collapsed), color = next.faint)
+        }
+    }
+}
+
+@Composable
+private fun PostContent(
+    post: Post,
+    seed: Int,
+    body: (@Composable (Post) -> Unit)?,
+    media: (@Composable (Post, Modifier) -> Unit)?,
+) {
+    var spoilerRevealed by rememberSaveable(post.id) { mutableStateOf(false) }
+    if (post.spoiler && !spoilerRevealed) {
+        val revealLabel = stringResource(Res.string.next_spoiler_reveal)
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(NextRadius.control))
+                    .background(Color.Black.copy(alpha = SPOILER_SCRIM))
+                    .nextClickable(
+                        onClickLabel = revealLabel,
+                        onClick = { spoilerRevealed = true },
+                    ),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(
+                text = revealLabel,
+                style = NextType.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.72f),
+                modifier = Modifier.padding(horizontal = 14.dp),
+            )
+        }
+    } else if (body != null) {
+        body(post)
+    } else {
+        Text(
+            text = post.body,
+            style = NextType.body,
+            fontWeight = FontWeight.Normal,
+            color = next.ink.copy(alpha = 0.90f),
+        )
+    }
+    if (post.hasMedia) {
+        Gap(10)
+        val tile = Modifier.fillMaxWidth().aspectRatio(DEFAULT_POST_MEDIA_ASPECT_RATIO)
+        Box(modifier = tile.clip(RoundedCornerShape(NextRadius.control))) {
+            if (media != null) {
+                media(post, Modifier.matchParentSize())
+            } else {
+                MediaTile(
+                    modifier = Modifier.matchParentSize(),
+                    seed = seed + 1,
+                    radius = NextRadius.control,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostActionRow(
+    isOp: Boolean,
+    replies: Int,
+) {
+    var isLiked by rememberSaveable { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "Reply",
+            style = NextType.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = next.muted,
+        )
+        Spacer(Modifier.weight(1f))
+        NextIconAction(
+            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            contentDescription = if (isLiked) "Unlike" else "Like",
+            onClick = { isLiked = !isLiked },
+            tint = if (isLiked) Color(0xFFED4956) else next.muted,
+        )
+    }
+}
+
+@Composable
+private fun PostDepthIndicator(
+    depthCount: Int,
+    board: String,
+) {
+    Row(modifier = Modifier.fillMaxHeight().padding(vertical = 10.dp)) {
+        repeat(depthCount) {
+            Column(
+                modifier = Modifier.padding(start = GUTTER).fillMaxHeight().width(3.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(1.5.dp)
+                        .background(boardHue(board).copy(alpha = 0.25f)),
+                )
             }
         }
     }

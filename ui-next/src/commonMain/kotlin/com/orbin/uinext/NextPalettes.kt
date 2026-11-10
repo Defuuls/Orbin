@@ -54,63 +54,58 @@ fun nextPaletteFromColorScheme(
     )
 
 /**
- * OPTIC-26 Light Mode — Raw Titanium & Field Paper.
- * High-contrast dark ink on warm brushed titanium / drafting vellum with International Orange
- * optical shutter accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
+ * Instagram Clean Light Mode — Pure white canvas, crisp dark ink, subtle hairlines, and Royal Blue accent.
  */
 internal val LightPalette =
     NextPalette(
-        background = Color(0xFFF4F2ED),
-        raised = Color(0xFFFAF9F6),
-        elevated = Color(0xFFEAE7E0),
-        ink = Color(0xFF121417),
-        muted = Color(0xFF3D424A),
-        faint = Color(0xFF535861),
-        hairline = Color(0xFFC8C4BA),
-        accent = Color(0xFF9E3608),
-        accentSoft = Color(0xFFF9D6C4),
+        background = Color(0xFFFFFFFF),
+        raised = Color(0xFFFAFAFA),
+        elevated = Color(0xFFFFFFFF),
+        ink = Color(0xFF262626),
+        muted = Color(0xFF737373),
+        faint = Color(0xFF8E8E8E),
+        hairline = Color(0xFFEFEFEF),
+        accent = Color(0xFF0095F6),
+        accentSoft = Color(0xFFE0F1FF),
         onAccent = Color(0xFFFFFFFF),
-        accentContainer = Color(0xFFF9D6C4),
-        onAccentContainer = Color(0xFF330E00),
-        destructive = DestructiveLight,
-        onDestructive = OnDestructiveLight,
+        accentContainer = Color(0xFFE0F1FF),
+        onAccentContainer = Color(0xFF00376B),
+        destructive = Color(0xFFED4956),
+        onDestructive = Color(0xFFFFFFFF),
         dark = false,
         amoled = false,
     )
 
 /**
- * OPTIC-26 Dark Mode — Obsidian Anodized.
- * Deep anodized carbon-slate chassis with warm optical phosphor ink and International Orange
- * indicator accent. Every text tier clears WCAG AA 4.5:1 across all three surface levels.
+ * Instagram Dark Mode — Pure black ground, crisp light ink, and Royal Blue accent.
  */
 internal val DarkPalette =
     NextPalette(
-        background = Color(0xFF0A0A0C),
-        raised = Color(0xFF12141A),
-        elevated = Color(0xFF181B22),
-        ink = Color(0xFFE8E4DC),
-        muted = Color(0xFFB6B3AC),
-        faint = Color(0xFF8E8B85),
-        hairline = Color(0xFF282C37),
-        accent = Color(0xFFFF7A3D),
-        accentSoft = Color(0xFF4A1D06),
-        onAccent = Color(0xFF1A0700),
-        accentContainer = Color(0xFF4A1D06),
-        onAccentContainer = Color(0xFFFFD5C2),
-        destructive = DestructiveDark,
-        onDestructive = OnDestructiveDark,
+        background = Color(0xFF000000),
+        raised = Color(0xFF121212),
+        elevated = Color(0xFF1A1A1A),
+        ink = Color(0xFFF5F5F5),
+        muted = Color(0xFFA8A8A8),
+        faint = Color(0xFF737373),
+        hairline = Color(0xFF262626),
+        accent = Color(0xFF0095F6),
+        accentSoft = Color(0xFF002952),
+        onAccent = Color(0xFFFFFFFF),
+        accentContainer = Color(0xFF002952),
+        onAccentContainer = Color(0xFFB3DCFF),
+        destructive = Color(0xFFED4956),
+        onDestructive = Color(0xFFFFFFFF),
         dark = true,
         amoled = false,
     )
 
 /**
- * OPTIC-26 AMOLED Mode — True-Zero Carbon.
- * Pure `#000000` OLED ground with anodized carbon-slate cells and `1dp` structural borders.
+ * Instagram AMOLED Mode — Pure `#000000` ground and elevated bars.
  */
 internal val AmoledPalette =
     DarkPalette.copy(
         background = Color.Black,
-        raised = AmoledRaised,
-        elevated = AmoledElevated,
+        raised = Color.Black,
+        elevated = Color(0xFF121212),
         amoled = true,
     )

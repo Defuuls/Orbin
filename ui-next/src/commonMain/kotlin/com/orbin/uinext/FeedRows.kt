@@ -1,12 +1,13 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -14,23 +15,43 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_feed_title
@@ -47,6 +68,15 @@ import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
+val InstagramStoryGradient =
+    Brush.linearGradient(
+        listOf(
+            Color(0xFFFBAA47),
+            Color(0xFFD91A46),
+            Color(0xFFA60F93),
+        ),
+    )
+
 @Composable
 internal fun FeedHeader(
     subtitle: String,
@@ -55,78 +85,105 @@ internal fun FeedHeader(
     onQueryChange: (String) -> Unit = {},
     onSettings: (() -> Unit)? = null,
 ) {
-    Column {
-        Row(verticalAlignment = Alignment.Top) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = NextSpace.titleTop),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             ScreenTitle(
                 text = stringResource(Res.string.next_feed_title),
                 subtitle = subtitle,
                 modifier = Modifier.weight(1f),
                 inset = 0.dp,
             )
-            // Settings is visited, not lived in, so it sits here rather than taking a tab.
-            if (onSettings != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 NextIconAction(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(Res.string.next_settings_title),
-                    onClick = onSettings,
-                    tint = next.muted,
-                    modifier = Modifier.padding(top = NextSpace.titleTop),
+                    imageVector = Icons.Outlined.NotificationsNone,
+                    contentDescription = "Notifications",
+                    onClick = { /* activity feed */ },
+                    tint = next.ink,
                 )
+                if (onSettings != null) {
+                    NextIconAction(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = stringResource(Res.string.next_settings_title),
+                        onClick = onSettings,
+                        tint = next.ink,
+                    )
+                }
             }
         }
-        // Machine telemetry status bar
+        InstagramStoriesTray()
+        Gap(4)
+        Column(Modifier.padding(horizontal = 0.dp)) {
+            headerContent()
+            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
+        }
+        Gap(10)
+        HorizontalDivider(thickness = 0.5.dp, color = next.hairline)
+    }
+}
+
+@Composable
+internal fun InstagramStoriesTray(
+    modifier: Modifier = Modifier,
+    onSelectBoard: ((String) -> Unit)? = null,
+) {
+    val boards = remember {
+        listOf("/all/", "/g/", "/v/", "/a/", "/ck/", "/p/", "/mu/", "/fit/", "/wsg/")
+    }
+    LazyRow(
+        modifier = modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+    ) {
+        items(boards) { board ->
+            InstagramStoryBubble(
+                board = board,
+                onClick = { onSelectBoard?.invoke(board) },
+            )
+        }
+    }
+}
+
+@Composable
+internal fun InstagramStoryBubble(
+    board: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
         Box(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(NextRadius.tight))
-                    .background(next.raised)
-                    .border(1.dp, next.hairline, RoundedCornerShape(NextRadius.tight))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, InstagramStoryGradient, CircleShape)
+                    .padding(3.dp)
+                    .clip(CircleShape)
+                    .background(boardHue(board).copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(6.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(next.accent),
-                )
-                Text(
-                    text = "CH-01: MULTI-CHANNEL // LIVE",
-                    style = NextType.telemetry,
-                    color = next.accent,
-                )
-                Text(
-                    text = "·",
-                    style = NextType.telemetry,
-                    color = next.hairline,
-                )
-                Text(
-                    text = "PROVIDER: 4CHAN/LYNX",
-                    style = NextType.telemetry,
-                    color = next.muted,
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "SIG:NOMINAL",
-                    style = NextType.telemetry,
-                    color = next.faint,
-                )
-            }
+            Text(
+                text = board.replace("/", "").take(3).uppercase(),
+                style = NextType.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = next.ink,
+            )
         }
-        Gap(10)
-        Column(Modifier.padding(horizontal = 0.dp)) {
-            headerContent()
-            Gap(10)
-            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
-            Gap(8)
-        }
-        Gap(10)
-        Hairline()
+        Gap(4)
+        Text(
+            text = board,
+            style = NextType.labelSmall,
+            color = next.muted,
+            maxLines = 1,
+        )
     }
 }
 
@@ -138,16 +195,9 @@ internal fun FeedGridCell(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
     activityText: @Composable (FeedRow) -> String = { it.activity },
-    // Off wherever a heading above the card already names the board: a board's catalog, or a feed
-    // grouped by board.
     showBoard: Boolean = true,
-    // How much of the opening post shows under the media.
     excerptLines: Int = 2,
-    // A card as wide as the screen can show portrait media nearly whole, where a grid tile must
-    // letterbox it.
     tallMedia: Boolean = false,
-    // Every card the same height: media in a fixed frame (centre-cropped) and each line of text
-    // reserving its space, so a feed of mixed portrait and landscape posts lines up evenly.
     uniform: Boolean = false,
 ) {
     if (row.muted) {
@@ -166,156 +216,225 @@ internal fun FeedGridCell(
                 .padding(if (tallMedia) GRID_CELL_PADDING else 4.dp)
                 .semantics { role = Role.Button },
         shape = RoundedCornerShape(NextRadius.tight),
-        border = BorderStroke(1.dp, next.hairline),
+        border = BorderStroke(0.5.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
-                containerColor = next.raised,
+                containerColor = next.background,
                 contentColor = next.ink,
             ),
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Machined top color band
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(if (row.read) next.hairline else boardHue(row.board)),
+            PostHeader(row, showBoard, activityText(row), onClick = { onClick(row) })
+            PostMedia(row, seed, uniform, tallMedia, thumbnail)
+            PostActionBar(row = row, seed = seed, onCommentClick = { onClick(row) })
+            PostEngagement(
+                row = row,
+                seed = seed,
+                showBoard = showBoard,
+                uniform = uniform,
+                excerptLines = excerptLines,
             )
+            HorizontalDivider(thickness = 0.5.dp, color = next.hairline)
+        }
+    }
+}
 
-            // Technical Spec Header Strip
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
+@Composable
+private fun PostHeader(
+    row: FeedRow,
+    showBoard: Boolean,
+    activity: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, InstagramStoryGradient, CircleShape)
+                    .padding(2.5.dp)
+                    .clip(CircleShape)
+                    .background(boardHue(row.board)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (showBoard) {
+                Text(
+                    text = row.board.replace("/", "").take(2).uppercase(),
+                    style = NextType.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            } else {
+                OrbitEmblem(size = 18.dp, tint = Color.White)
+            }
+        }
+        WidthSpacer(10)
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (showBoard) {
-                    BoardDot(row.board, size = 6.dp)
                     Text(
                         text = row.board,
-                        style = NextType.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (row.read) next.muted else boardHue(row.board),
+                        style = NextType.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = next.ink,
                     )
-                    Text(
-                        text = "·",
-                        style = NextType.telemetry,
-                        color = next.hairline,
-                    )
+                    WidthSpacer(6)
+                    Text(text = "•", style = NextType.labelSmall, color = next.muted)
+                    WidthSpacer(6)
                 }
-                if (row.threadNumber.isNotBlank()) {
-                    Text(
-                        text = "#${row.threadNumber}",
-                        style = NextType.telemetry,
-                        color = if (row.read) next.muted else next.accent,
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                MetaLine(activityText(row), color = next.faint)
-                Box(
-                    Modifier
-                        .size(5.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(if (row.unread > 0) next.accent else next.hairline.copy(alpha = 0.4f)),
-                )
-            }
-
-            HorizontalDivider(thickness = 1.dp, color = next.hairline)
-
-            val tile =
-                Modifier.fillMaxWidth().let {
-                    if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
-                }
-            Box(modifier = tile) {
-                if (row.hasPreview && thumbnail != null) {
-                    thumbnail(row, Modifier.matchParentSize())
-                } else if (row.hasPreview) {
-                    MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = NextRadius.tight)
-                } else {
-                    Box(
-                        modifier =
-                            Modifier
-                                .matchParentSize()
-                                .clip(RoundedCornerShape(NextRadius.tight))
-                                .background(next.ink.copy(alpha = 0.05f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
-                    }
-                }
-                if (row.hasPreview) {
-                    val reticleColor = next.accent.copy(alpha = 0.55f)
-                    Canvas(Modifier.matchParentSize()) {
-                        val stroke = 1.25.dp.toPx()
-                        val arm = 8.dp.toPx()
-                        val pad = 6.dp.toPx()
-                        val w = size.width
-                        val h = size.height
-                        // 4 corner viewfinder brackets
-                        drawLine(reticleColor, Offset(pad, pad), Offset(pad + arm, pad), stroke)
-                        drawLine(reticleColor, Offset(pad, pad), Offset(pad, pad + arm), stroke)
-                        drawLine(reticleColor, Offset(w - pad - arm, pad), Offset(w - pad, pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad, pad), Offset(w - pad, pad + arm), stroke)
-                        drawLine(reticleColor, Offset(pad, h - pad - arm), Offset(pad, h - pad), stroke)
-                        drawLine(reticleColor, Offset(pad, h - pad), Offset(pad + arm, h - pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad - arm, h - pad), Offset(w - pad, h - pad), stroke)
-                        drawLine(reticleColor, Offset(w - pad, h - pad), Offset(w - pad, h - pad - arm), stroke)
-                    }
-                }
-            }
-
-            HorizontalDivider(thickness = 1.dp, color = next.hairline)
-
-            // Spec-Sheet Body Cassette
-            Column(
-                modifier =
-                    Modifier.padding(
-                        horizontal = if (tallMedia) GRID_TEXT_INSET else 8.dp,
-                        vertical = 8.dp,
-                    ),
-            ) {
                 Text(
-                    text = row.subject,
-                    style = if (tallMedia) NextType.title3 else NextType.headline,
-                    fontWeight = if (row.read) FontWeight.Medium else FontWeight.Bold,
-                    color = if (row.read) next.muted else next.ink,
-                    maxLines = if (tallMedia && !uniform) 3 else 2,
-                    minLines = if (uniform) 2 else 1,
-                    overflow = TextOverflow.Ellipsis,
+                    text = activity,
+                    style = NextType.labelSmall,
+                    color = next.muted,
                 )
-                Gap(6)
-                if (uniform) {
-                    MetaLine(row.excerpt, maxLines = excerptLines, minLines = excerptLines)
-                    Gap(6)
-                } else if (row.excerpt.isNotBlank()) {
-                    MetaLine(row.excerpt, maxLines = excerptLines)
-                    Gap(6)
-                }
-                val threadInfo =
-                    if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
-                val footerShape = RoundedCornerShape(NextRadius.tight)
-                Box(
+            }
+        }
+        NextIconAction(
+            imageVector = Icons.Outlined.MoreHoriz,
+            contentDescription = "More",
+            onClick = onClick,
+            tint = next.ink,
+        )
+    }
+}
+
+@Composable
+private fun PostMedia(
+    row: FeedRow,
+    seed: Int,
+    uniform: Boolean,
+    tallMedia: Boolean,
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+) {
+    val tile =
+        Modifier.fillMaxWidth().let {
+            if (uniform) it.aspectRatio(UNIFORM_TILE_ASPECT) else it.mediaTileSize(row, tallMedia)
+        }
+    Box(modifier = tile) {
+        if (row.hasPreview && thumbnail != null) {
+            thumbnail(row, Modifier.matchParentSize())
+        } else if (row.hasPreview) {
+            MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = NextRadius.tight)
+        } else {
+            Box(
+                modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .clip(footerShape)
-                        .background(next.background)
-                        .border(1.dp, next.hairline, footerShape)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) {
-                    MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
-                }
+                        .matchParentSize()
+                        .background(next.ink.copy(alpha = 0.04f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                MetaLine(stringResource(Res.string.next_row_no_image), color = next.faint)
             }
         }
     }
 }
 
+@Composable
+private fun PostActionBar(
+    row: FeedRow,
+    seed: Int,
+    onCommentClick: () -> Unit,
+) {
+    var isLiked by rememberSaveable(row.id) { mutableStateOf(false) }
+    var isBookmarked by rememberSaveable(row.id) { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NextIconAction(
+            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            contentDescription = if (isLiked) "Unlike" else "Like",
+            onClick = { isLiked = !isLiked },
+            tint = if (isLiked) Color(0xFFED4956) else next.ink,
+        )
+        WidthSpacer(8)
+        NextIconAction(
+            imageVector = Icons.Outlined.ChatBubbleOutline,
+            contentDescription = "Comment",
+            onClick = onCommentClick,
+            tint = next.ink,
+        )
+        WidthSpacer(8)
+        NextIconAction(
+            imageVector = Icons.AutoMirrored.Outlined.Send,
+            contentDescription = "Share",
+            onClick = onCommentClick,
+            tint = next.ink,
+        )
+        Spacer(Modifier.weight(1f))
+        NextIconAction(
+            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+            contentDescription = if (isBookmarked) "Saved" else "Save",
+            onClick = { isBookmarked = !isBookmarked },
+            tint = next.ink,
+        )
+    }
+}
+
+@Composable
+private fun PostEngagement(
+    row: FeedRow,
+    seed: Int,
+    showBoard: Boolean,
+    uniform: Boolean,
+    excerptLines: Int,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, bottom = 10.dp),
+    ) {
+        val likeCount = row.replies * 3 + seed * 7 + 14
+        Text(
+            text = "$likeCount likes",
+            style = NextType.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = next.ink,
+        )
+        Gap(4)
+        Text(
+            text =
+                buildAnnotatedString {
+                    if (showBoard) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = next.ink)) {
+                            append("${row.board} ")
+                        }
+                    }
+                    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = next.ink)) {
+                        append(row.subject)
+                    }
+                    if (row.excerpt.isNotBlank()) {
+                        append(" ")
+                        withStyle(SpanStyle(color = next.ink.copy(alpha = 0.85f))) {
+                            append(row.excerpt)
+                        }
+                    }
+                },
+            style = NextType.bodySmall,
+            maxLines = if (uniform) 2 else excerptLines,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Gap(4)
+        Text(
+            text = "View all ${row.replies} comments",
+            style = NextType.labelSmall,
+            color = next.muted,
+        )
+        Gap(2)
+        Text(
+            text = rowCounts(row),
+            style = NextType.labelSmall,
+            color = next.faint,
+        )
+    }
+}
+
 /**
  * Sizes a grid tile to its media's own aspect ratio, so the thumbnail can be drawn whole instead of
- * centre-cropped into a fixed-height box. Extreme ratios are clamped to keep a single tile from
- * dwarfing the screen; the image inside still fits without cropping, letterboxed if needed.
+ * centre-cropped into a fixed-height box.
  */
 private fun Modifier.mediaTileSize(
     row: FeedRow,
@@ -328,20 +447,12 @@ private fun Modifier.mediaTileSize(
         height(FALLBACK_TILE_HEIGHT)
     }
 
-// Tall media is letterboxed at 4:5 in a grid, so one portrait image cannot fill the screen; the
-// whole image is one tap away.
 private const val MIN_TILE_ASPECT = 0.8f
-
-// In a single column, portrait media shows whole down to 9:16, a phone screenshot; only taller is
-// letterboxed.
 private const val MIN_TALL_TILE_ASPECT = 0.5625f
 private const val MAX_TILE_ASPECT = 3f
-
-// The one frame every card's media fills when cards are uniform.
 private const val UNIFORM_TILE_ASPECT = 4f / 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 
-/** A muted thread stays reachable, but loses its preview and metadata until the reader opens it. */
 @Composable
 private fun CollapsedFeedRow(
     row: FeedRow,
@@ -351,37 +462,33 @@ private fun CollapsedFeedRow(
 ) {
     Card(
         onClick = { onClick(row) },
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .semantics { role = Role.Button },
-        shape = RoundedCornerShape(NextRadius.tight),
+        modifier = modifier.fillMaxWidth().semantics { role = Role.Button },
+        shape = RoundedCornerShape(NextRadius.control),
         border = BorderStroke(1.dp, next.hairline),
         colors =
             CardDefaults.cardColors(
-                containerColor = next.raised,
+                containerColor = next.background,
                 contentColor = next.ink,
             ),
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 Modifier
-                    .size(5.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(next.hairline),
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(next.muted),
             )
             Text(
-                text = "[MUTED]",
-                style = NextType.telemetry,
+                text = "Hidden Post",
+                style = NextType.labelSmall,
                 color = next.muted,
             )
             if (showBoard) {
-                BoardDot(row.board, size = 5.dp)
                 Text(
                     text = row.board,
                     style = NextType.labelSmall,

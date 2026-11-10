@@ -110,6 +110,10 @@ enum class NextDestination {
  * Settings is not a tab: it is visited, not lived in, so it opens from the Feed header instead of
  * taking a slot here.
  */
+/**
+ * Instagram-styled docked bottom navigation bar.
+ * Clean, docked, edge-to-edge chrome with Home, Downloads, and Boards tabs.
+ */
 @Composable
 fun DestinationPill(
     selected: NextDestination,
@@ -117,9 +121,7 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val railInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-    val shape = RoundedCornerShape(topStart = NextRadius.tight, topEnd = NextRadius.tight)
     val destinations = listOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
-    val channelCodes = listOf("01", "02", "03")
     val labels =
         listOf(
             stringResource(Res.string.next_feed_title),
@@ -127,170 +129,61 @@ fun DestinationPill(
             stringResource(Res.string.next_launchpad_boards),
         )
     val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Download, Icons.Outlined.GridView)
-    val measurer = rememberTextMeasurer()
-    val labelStyle = NextType.tab.copy(fontWeight = FontWeight.Bold)
-    val widestLabel =
-        labels.maxOf { label ->
-            measurer.measure(text = label, style = labelStyle, maxLines = 1, softWrap = false).size.width
-        }
-    val density = LocalDensity.current
-    BoxWithConstraints(
+
+    Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(railInsets),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        val cellWidth = (minOf(maxWidth, 640.dp) - 20.dp) / destinations.size.toFloat() - 12.dp
-        val useRows = widestLabel > with(density) { cellWidth.toPx() }
-        val dock =
-            Modifier
-                .widthIn(max = 640.dp)
-                .fillMaxWidth()
-                .clip(shape)
                 .background(next.elevated)
-                .border(1.dp, next.hairline, shape)
-                .selectableGroup()
-                .padding(horizontal = 6.dp, vertical = 4.dp)
-        if (useRows) {
-            Column(modifier = dock, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                destinations.forEachIndexed { index, destination ->
-                    DockTab(
-                        label = labels[index],
-                        channelCode = channelCodes[index],
-                        icon = icons[index],
-                        selected = selected == destination,
-                        onClick = { onSelect(destination) },
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontal = true,
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = dock,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                destinations.forEachIndexed { index, destination ->
-                    if (index > 0) {
-                        Box(
-                            Modifier
-                                .width(1.dp)
-                                .height(40.dp)
-                                .background(next.hairline),
-                        )
-                    }
-                    DockTab(
-                        label = labels[index],
-                        channelCode = channelCodes[index],
-                        icon = icons[index],
-                        selected = selected == destination,
-                        onClick = { onSelect(destination) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DockTab(
-    label: String,
-    channelCode: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    horizontal: Boolean = false,
-) {
-    val ink = if (selected) next.ink else next.muted
-    val tabShape = RoundedCornerShape(NextRadius.tight)
-    val target =
-        modifier
-            .heightIn(min = RAIL_HEIGHT)
-            .clip(tabShape)
-            .background(if (selected) next.accentContainer else Color.Transparent)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = if (horizontal) 16.dp else 4.dp, vertical = 6.dp)
-    if (horizontal) {
+                .border(1.dp, next.hairline)
+                .windowInsetsPadding(railInsets),
+        contentAlignment = Alignment.Center,
+    ) {
         Row(
-            modifier = target,
+            modifier =
+                Modifier
+                    .widthIn(max = 640.dp)
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .selectableGroup()
+                    .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(if (selected) next.accent else next.hairline),
-            )
-            Text(
-                text = channelCode,
-                style = NextType.telemetry,
-                color = if (selected) next.accent else next.faint,
-            )
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) next.accent else ink,
-                modifier = Modifier.size(20.dp),
-            )
-            Text(
-                text = label,
-                style = NextType.tab,
-                fontWeight = FontWeight.Bold,
-                color = ink,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    } else {
-        Column(
-            modifier = target,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // Mechanical detent status bar
-            Box(
-                Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(2.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(if (selected) next.accent else next.hairline.copy(alpha = 0.4f)),
-            )
-            Gap(4)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(4.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(if (selected) next.accent else next.hairline),
-                )
-                Text(
-                    text = channelCode,
-                    style = NextType.telemetry,
-                    color = if (selected) next.accent else next.faint,
-                )
+            destinations.forEachIndexed { index, destination ->
+                val isSelected = selected == destination
+                val ink = if (isSelected) next.ink else next.muted
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = MIN_TOUCH_TARGET)
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.Tab,
+                                onClick = { onSelect(destination) },
+                            ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = icons[index],
+                        contentDescription = null,
+                        tint = if (isSelected) next.accent else ink,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Gap(2)
+                    Text(
+                        text = labels[index],
+                        style = NextType.caption2,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) next.accent else ink,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            Gap(2)
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) next.accent else ink,
-                modifier = Modifier.size(20.dp),
-            )
-            Gap(2)
-            Text(
-                text = label,
-                style = NextType.tab,
-                fontWeight = FontWeight.Bold,
-                color = ink,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
@@ -300,68 +193,44 @@ private fun OrbitEmblem(
     modifier: Modifier = Modifier,
     size: Dp = 52.dp,
 ) {
-    val ink = next.onAccentContainer
-    val reticle = next.accent
-    val emblemShape = RoundedCornerShape(NextRadius.control)
+    val ink = next.ink
+    val cameraShape = RoundedCornerShape(NextRadius.control)
     Box(
         modifier =
             modifier
                 .size(size)
-                .clip(emblemShape)
-                .background(next.accentContainer)
-                .border(1.dp, next.hairline, emblemShape)
-                .padding(size * 0.14f)
+                .clip(cameraShape)
+                .background(next.raised)
+                .border(1.dp, next.hairline, cameraShape)
+                .padding(size * 0.16f)
                 .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val w = this.size.width
             val h = this.size.height
-            val cx = w * 0.5f
-            val cy = h * 0.5f
             val minDim = this.size.minDimension
-            val stroke = Stroke(width = 1.5.dp.toPx())
-            val thinStroke = Stroke(width = 1.dp.toPx())
+            val stroke = Stroke(width = 1.75.dp.toPx())
 
-            // Outer precision housing ring + inner aperture ring
-            val outerR = minDim * 0.42f
-            val innerR = minDim * 0.20f
-            drawCircle(color = ink, radius = outerR, center = Offset(cx, cy), style = stroke)
-            drawCircle(color = ink, radius = innerR, center = Offset(cx, cy), style = thinStroke)
-
-            // 6-blade tangential aperture chords
-            val cos60 = 0.5f
-            val sin60 = 0.8660254f
-            val dirs =
-                arrayOf(
-                    1f to 0f,
-                    cos60 to sin60,
-                    -cos60 to sin60,
-                    -1f to 0f,
-                    -cos60 to -sin60,
-                    cos60 to -sin60,
-                )
-            for (i in dirs.indices) {
-                val (dx0, dy0) = dirs[i]
-                val (dx1, dy1) = dirs[(i + 1) % dirs.size]
-                drawLine(
-                    color = ink,
-                    start = Offset(cx + dx0 * innerR, cy + dy0 * innerR),
-                    end = Offset(cx + dx1 * outerR, cy + dy1 * outerR),
-                    strokeWidth = 1.dp.toPx(),
-                )
-            }
-
-            // Cardinal reticle ticks + International Orange optical lock dot
-            val tickInner = outerR * 0.82f
-            val tickOuter = minDim * 0.49f
-            drawLine(reticle, Offset(cx, cy - tickOuter), Offset(cx, cy - tickInner), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx, cy + tickInner), Offset(cx, cy + tickOuter), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx - tickOuter, cy), Offset(cx - tickInner, cy), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx + tickInner, cy), Offset(cx + tickOuter, cy), strokeWidth = 1.25.dp.toPx())
+            // Camera rounded rect body
+            drawRoundRect(
+                color = ink,
+                size = this.size,
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(minDim * 0.28f, minDim * 0.28f),
+                style = stroke,
+            )
+            // Center camera lens
             drawCircle(
-                color = reticle,
-                radius = minDim * 0.065f,
-                center = Offset(cx, cy),
+                color = ink,
+                radius = minDim * 0.24f,
+                center = Offset(w * 0.5f, h * 0.5f),
+                style = stroke,
+            )
+            // Top-right flash dot
+            drawCircle(
+                color = ink,
+                radius = minDim * 0.06f,
+                center = Offset(w * 0.74f, h * 0.26f),
             )
         }
     }
@@ -399,45 +268,28 @@ fun CompactTitleBar(
         exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it / 2 } + fadeOut(),
         modifier = modifier.fillMaxWidth(),
     ) {
-        val shape = RoundedCornerShape(bottomStart = NextRadius.tight, bottomEnd = NextRadius.tight)
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ).clip(shape)
+                    )
                     .background(next.elevated)
-                    .border(1.dp, next.hairline, shape)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .border(1.dp, next.hairline)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
                     .testTag(NextTitleTags.COMPACT),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             OrbitEmblem(size = 22.dp)
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(next.accent),
-            )
-            Text(
-                text = "HUD //",
-                style = NextType.telemetry,
-                color = next.accent,
-            )
             Text(
                 text = title,
-                style = NextType.headline,
+                style = NextType.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = next.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = "[SIG:OK]",
-                style = NextType.telemetry,
-                color = next.muted,
             )
         }
     }
@@ -446,8 +298,7 @@ fun CompactTitleBar(
 /**
  * A screen title set in the content rather than in a bar above it.
  *
- * Large, heavy, tightly tracked — scrolls away with the content because a title is information,
- * not furniture.
+ * Clean, bold, and modern title typography matching Instagram headers.
  */
 @Composable
 fun ScreenTitle(
@@ -461,74 +312,27 @@ fun ScreenTitle(
 ) {
     val titleStyle =
         when {
-            size >= 32 -> NextType.largeTitle
-            size >= 26 -> NextType.title1
-            else -> NextType.title2
+            size >= 32 -> NextType.largeTitle.copy(fontWeight = FontWeight.Bold)
+            size >= 26 -> NextType.title1.copy(fontWeight = FontWeight.Bold)
+            else -> NextType.title2.copy(fontWeight = FontWeight.Bold)
         }
     val showEmblem = size >= 32 && LocalDensity.current.fontScale < 1.4f
     Column(
         modifier =
-            modifier.fillMaxWidth().padding(
-                start = inset,
-                end = inset,
-                top = NextSpace.titleTop,
-                bottom = NextSpace.titleBottom,
-            ),
-    ) {
-        // Machined Telemetry Header Strip
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(next.accent),
-            )
-            Text(
-                text = "CH-01 // INSTRUMENT",
-                style = NextType.telemetry,
-                color = next.accent,
-            )
-            Text(
-                text = "·",
-                style = NextType.telemetry,
-                color = next.hairline,
-            )
-            Text(
-                text = "SIG:NOMINAL",
-                style = NextType.telemetry,
-                color = next.muted,
-            )
-            Box(Modifier.weight(1f))
-            Text(
-                text = "[OPTIC-26]",
-                style = NextType.telemetry,
-                color = next.faint,
-            )
-        }
-        Box(
-            Modifier
+            modifier
                 .fillMaxWidth()
-                .height(1.dp)
-                .background(next.hairline),
-        )
-        Gap(10)
+                .padding(
+                    start = inset,
+                    end = inset,
+                    top = NextSpace.titleTop,
+                    bottom = NextSpace.titleBottom,
+                ),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Box(
-                    Modifier
-                        .width(28.dp)
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(next.accent),
-                )
-                Gap(10)
                 Text(
                     text = text,
                     style = titleStyle,
@@ -540,12 +344,12 @@ fun ScreenTitle(
                         text = subtitle,
                         style = NextType.subheadline,
                         color = next.muted,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             }
             if (showEmblem) {
-                OrbitEmblem(modifier = Modifier.padding(start = 16.dp, bottom = 4.dp))
+                OrbitEmblem(modifier = Modifier.padding(start = 16.dp))
             }
         }
     }
@@ -567,7 +371,7 @@ fun Hairline(
     )
 }
 
-/** OPTIC-26 machined card section — flat card on surface background with 1dp structural border. */
+/** Card section — flat card on surface background with subtle hairline border. */
 @Composable
 fun GroupedSection(
     modifier: Modifier = Modifier,
@@ -902,7 +706,7 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-val RAIL_HEIGHT = 64.dp
+val RAIL_HEIGHT = 52.dp
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
 private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
@@ -914,7 +718,7 @@ private val CHROME_DESTINATIONS = setOf(NextDestination.FEED, NextDestination.DO
  */
 internal fun NextDestination?.drawsPill(): Boolean = this in CHROME_DESTINATIONS
 
-private val RAIL_CLEARANCE = 48.dp
+private val RAIL_CLEARANCE = 16.dp
 internal val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */

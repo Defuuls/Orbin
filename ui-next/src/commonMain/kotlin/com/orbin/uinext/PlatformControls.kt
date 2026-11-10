@@ -39,7 +39,7 @@ import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The app's OPTIC-26 palette for [dark] / [amoled], shared across Android and iOS.
+ * The app's palette for [dark] / [amoled], shared across Android and iOS.
  */
 fun materialPalette(
     dark: Boolean,
@@ -85,7 +85,7 @@ fun PlatformSwitch(
 }
 
 /**
- * OPTIC-26 machined toggle switch for iOS with accessible 48dp hit target.
+ * Clean toggle switch for iOS with accessible 48dp hit target.
  */
 @Composable
 private fun IosSwitch(

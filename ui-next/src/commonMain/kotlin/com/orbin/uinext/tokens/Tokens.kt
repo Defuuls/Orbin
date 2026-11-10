@@ -14,10 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * OPTIC-26 spatial rhythm for ui-next.
+ * Clean spatial rhythm for ui-next.
  *
- * Precision 4dp/8dp grid with 16dp viewport gutters, 8dp modular cell gaps, and 1dp structural
- * hairline chassis borders.
+ * Minimal 4dp/8dp grid with 16dp viewport gutters and subtle hairline dividers.
  */
 @Immutable
 object NextSpace {
@@ -38,20 +37,17 @@ object NextSpace {
 }
 
 /**
- * OPTIC-26 machined hardware radii.
- *
- * Replaces bulbous 32dp Material Expressive blobs and iOS squircles with tight CNC-machined
- * micro-radii (`2dp`–`8dp`) inspired by Leica/Teenage Engineering/Hasselblad optical instruments.
+ * Instagram modern radii — full-bleed zero-radius media cards, smooth controls, and rounded avatars.
  */
 @Immutable
 object NextRadius {
-    val tight: Dp = 2.dp
-    val control: Dp = 4.dp
-    val tile: Dp = 4.dp
-    val card: Dp = 6.dp
-    val sheet: Dp = 8.dp
-    val continuous: Dp = 6.dp
-    val pill: Dp = 4.dp
+    val tight: Dp = 4.dp
+    val control: Dp = 8.dp
+    val tile: Dp = 0.dp
+    val card: Dp = 0.dp
+    val sheet: Dp = 16.dp
+    val continuous: Dp = 8.dp
+    val pill: Dp = 20.dp
 }
 
 /**
@@ -78,10 +74,9 @@ object NextMaterials {
 }
 
 /**
- * OPTIC-26 Dual-Channel Typography:
- * - Proportional Sans (`FontFamily.Default` with `tnum` tabular numerals) for human discourse.
- * - Technical Monospace (`FontFamily.Monospace` with `tnum`) for telemetry, board codes, post IDs,
- *   timestamps, byte sizes, and index counters.
+ * Modern Typography:
+ * Proportional Sans (`FontFamily.Default` with `tnum` tabular numerals) for clean readability,
+ * bold headlines, and crisp metadata.
  */
 @Immutable
 object NextType {
@@ -234,24 +229,24 @@ object NextType {
             fontFeatureSettings = TNUM,
         )
 
-    /** Dedicated monospace telemetry styles for board codes, post numbers, byte counts, and HUD tags. */
+    /** Clean metadata style for counts, timestamps, and badges. */
     val telemetry =
         TextStyle(
-            fontFamily = mono,
-            fontWeight = FontWeight.Bold,
-            fontSize = 11.sp,
-            lineHeight = 15.sp,
-            letterSpacing = 0.7.sp,
+            fontFamily = sans,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.sp,
             fontFeatureSettings = TNUM,
         )
 
     val telemetryLarge =
         TextStyle(
-            fontFamily = mono,
-            fontWeight = FontWeight.Bold,
+            fontFamily = sans,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
             lineHeight = 18.sp,
-            letterSpacing = 0.5.sp,
+            letterSpacing = 0.sp,
             fontFeatureSettings = TNUM,
         )
 
@@ -325,10 +320,9 @@ object NextType {
 }
 
 /**
- * OPTIC-26 critically damped mechanical motion.
+ * Modern smooth motion and transitions.
  *
- * Zero bounce (`DampingRatioNoBouncy`) across every transition, toggle, and dock switch so the UI
- * responds like a precision optical shutter rather than a playful spring.
+ * Responsive, clean transitions across navigation, sheets, and controls.
  */
 @Immutable
 object NextMotion {
