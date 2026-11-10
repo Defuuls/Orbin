@@ -46,6 +46,7 @@ fun OrbinNavHost(
     twoPaneBoardDetail: Boolean = false,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    onOnboardingCompleted: () -> Unit = {},
 ) {
     val openThread: (String, String, Long, String) -> Unit = { provider, board, thread, title ->
         navController.navigate(Route.Thread(provider, board, thread, title))
@@ -256,6 +257,7 @@ fun OrbinNavHost(
         composable<Route.Onboarding> {
             OnboardingScreen(
                 onFinish = {
+                    onOnboardingCompleted()
                     navController.navigate(Route.NextFeed) {
                         popUpTo(navController.graph.id) {
                             inclusive = true

@@ -95,7 +95,8 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
 
       # Exercise UIApplication/UIScene startup, the real packaged fonts, and Compose accessibility.
-      # The smoke test follows zero boards, so the captures contain no user-generated media.
+      # Follow a SFW board, finish mandatory setup, and verify cold-launch persistence.
+      # Explicit screenshots contain only onboarding metadata, before opening the live feed.
       - name: Launch the installed app and capture native startup screens
         timeout-minutes: 15
         run: >-

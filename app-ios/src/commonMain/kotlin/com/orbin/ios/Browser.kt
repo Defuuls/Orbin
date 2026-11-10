@@ -137,7 +137,9 @@ private val Route.catalogBoard: SiteBoard?
  * Each destination loads when it is opened and again on [retry]. Going back to a page that already
  * loaded shows it as it was rather than fetching it again. Starting a new load cancels the one
  * still running, so a slow thread cannot overwrite the one the reader opened next.
+ * Navigation and loading actions share one back stack, loader cache, and app-lifetime scope.
  */
+@Suppress("TooManyFunctions")
 class Browser(
     private val providers: List<ImageBoardProvider>,
     private val bookmarks: BookmarkRepository,
@@ -155,13 +157,26 @@ class Browser(
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
     val settings = ReaderSettings(settings, history, scope, downloadDao)
 
-    /** First run's board picker, shown until it is finished once, as on Android. */
+    private val followedBoards: Flow<Set<FollowedBoard>> =
+        combine(
+            providers.map { provider ->
+                val id = provider.metadata.id
+                combine(
+                    boardPreferences.observeSubscribedBoards(id),
+                    boardPreferences.observeFavoriteBoards(id),
+                ) { subscribed, favorites -> (subscribed + favorites).map { FollowedBoard(id, it) } }
+            },
+        ) { perSite -> perSite.flatMap { it }.toSet() }
+
+    /** Every followed board, on every site: what the feed is made of and the boards list marks. */
+    val followed: StateFlow<Set<FollowedBoard>> =
+        followedBoards.stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    /** First run reads the same persisted subscriptions and favorites as Home, across every site. */
     val firstRun =
         FirstRun(
             settings,
-            combine(providers.map { boardPreferences.observeSubscribedBoards(it.metadata.id) }) { perSite ->
-                perSite.any { it.isNotEmpty() }
-            },
+            followedBoards.map { it.isNotEmpty() },
             scope,
         )
 
@@ -256,19 +271,6 @@ class Browser(
      */
     val firstUnreadPostId: StateFlow<String?> = _firstUnreadPostId.asStateFlow()
 
-    /** Every followed board, on every site: what the feed is made of and the boards list marks. */
-    val followed: StateFlow<Set<FollowedBoard>> =
-        combine(
-            providers.map { provider ->
-                val id = provider.metadata.id
-                combine(
-                    boardPreferences.observeSubscribedBoards(id),
-                    boardPreferences.observeFavoriteBoards(id),
-                ) { subscribed, favorites -> (subscribed + favorites).map { FollowedBoard(id, it) } }
-            },
-        ) { perSite -> perSite.flatMap { it }.toSet() }
-            .stateIn(scope, SharingStarted.Eagerly, emptySet())
-
     /** Stars are independent from the older subscription preference. Both contribute to Home. */
     val favorites: StateFlow<Set<FollowedBoard>> =
         combine(
@@ -305,7 +307,7 @@ class Browser(
         loadBoards()
         // The feed follows the followed set: follow a board and its threads join the list.
         scope.launch {
-            followed.drop(1).collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
+            followed.collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
         }
         scope.launch {
             this@Browser
@@ -346,8 +348,17 @@ class Browser(
         follow: Boolean,
     ) {
         Haptics.light()
-        scope.launch { boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow) }
+        firstRun.updateFollow { boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow) }
     }
+
+    /** Starts the initialized feed across all sites after setup's last board edit has persisted. */
+    fun completeFirstRun(): Job =
+        firstRun.complete {
+            followed.first { it.isNotEmpty() }
+            _feedSite.value = null
+            _backStack.value = listOf(Route.Feed)
+            loadFeed(force = true)
+        }
 
     /** Every thread the reader has opened, on any board, for the feed's read state. */
     fun visitedKeys(): Flow<Set<ThreadKey>> = history.observeVisitedKeys()
@@ -419,7 +430,7 @@ class Browser(
     fun retry() {
         Haptics.light()
         // First run's picker lists the boards, whatever tab sits under it.
-        if (firstRun.needed.value) return loadBoards()
+        if (firstRun.state.value.needed) return loadBoards()
         when (_backStack.value.last()) {
             Route.Boards -> loadBoards()
             Route.Feed -> loadFeed(force = true)

@@ -1,6 +1,7 @@
 package com.orbin.feature.onboarding
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -18,9 +19,15 @@ fun OnboardingScreen(
 ) {
     val boards by viewModel.boards.collectAsStateWithLifecycle()
     val subscribed by viewModel.subscribedBoardIds.collectAsStateWithLifecycle()
+    val totalFollowing by viewModel.totalFollowing.collectAsStateWithLifecycle()
+    val setupState by viewModel.setupState.collectAsStateWithLifecycle()
     val selectedProvider by viewModel.selectedProvider.collectAsStateWithLifecycle()
     val providers = viewModel.providers
     val siteNames = remember(providers) { providers.map { it.metadata.displayName } }
+
+    LaunchedEffect(setupState.completed) {
+        if (setupState.completed) onFinish()
+    }
 
     NextTheme {
         SharedOnboardingScreen(
@@ -31,10 +38,11 @@ fun OnboardingScreen(
             onSelectSite = { index -> viewModel.setSelectedProvider(providers[index]) },
             onFollow = viewModel::setSubscribed,
             onRetry = viewModel::loadBoards,
-            onStart = {
-                viewModel.complete()
-                onFinish()
-            },
+            onStart = viewModel::complete,
+            totalFollowing = totalFollowing,
+            isSaving = setupState.isSaving,
+            errorMessage = setupState.errorMessage,
+            canStart = totalFollowing > 0 && !setupState.isSaving,
         )
     }
 }

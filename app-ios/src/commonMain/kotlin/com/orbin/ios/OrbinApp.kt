@@ -62,12 +62,13 @@ fun OrbinApp(
 
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
-    val firstRun by browser.firstRun.needed.collectAsState()
+    val firstRun by browser.firstRun.state.collectAsState()
+    val readerReady = firstRun.initialized && !firstRun.needed
 
     // A home-screen quick action opens its tab, as an Android app shortcut does.
     val quickAction by QuickActions.pending.collectAsState()
-    LaunchedEffect(quickAction, lockState.locked, lockState.obscured) {
-        if (!lockState.locked && !lockState.obscured) {
+    LaunchedEffect(quickAction, lockState.locked, lockState.obscured, readerReady) {
+        if (!lockState.locked && !lockState.obscured && readerReady) {
             quickAction?.let { tab ->
                 if (tab == Route.Downloads) browser.open(tab) else browser.openTab(tab)
                 QuickActions.opened()
@@ -82,7 +83,7 @@ fun OrbinApp(
             AppThemeMode.DARK -> true
         }
     val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
-    val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun, lockState)
+    val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun.needed, lockState)
     SideEffect { onStatusBarAppearance(lightIcons) }
     NextTheme(
         darkTheme = palette.dark,
@@ -96,7 +97,9 @@ fun OrbinApp(
         val routeStates = remember { RouteStates() }
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
         Box(Modifier.fillMaxSize()) {
-            if (!lockState.locked && firstRun) {
+            if (!lockState.locked && !firstRun.initialized) {
+                NextLoading(Modifier.fillMaxSize())
+            } else if (!lockState.locked && firstRun.needed) {
                 OnboardingDestination(browser)
             } else if (!lockState.locked) {
                 val route = backStack.last()
@@ -108,7 +111,11 @@ fun OrbinApp(
         }
         // This release's notes, once after an update, never over the lock.
         if (whatsNew != null) {
-            WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible = !lockState.locked && !lockState.obscured)
+            WhatsNewOnUpdate(
+                whatsNew.lastSeen,
+                whatsNew::markSeen,
+                visible = !lockState.locked && !lockState.obscured && readerReady,
+            )
         }
     }
 }
@@ -116,6 +123,7 @@ fun OrbinApp(
 /** First run: Android's board picker, over the active site's boards. */
 @Composable
 private fun OnboardingDestination(browser: Browser) {
+    val setup by browser.firstRun.state.collectAsState()
     val boards by browser.boards.collectAsState()
     val followed by browser.followed.collectAsState()
     val site by browser.activeSite.collectAsState()
@@ -152,7 +160,11 @@ private fun OnboardingDestination(browser: Browser) {
         onSelectSite = { index -> browser.selectSite(browser.sites[index].id) },
         onFollow = { id, follow -> byId[id]?.let { browser.setFollowed(it, follow) } },
         onRetry = browser::retry,
-        onStart = { browser.firstRun.complete() },
+        onStart = { browser.completeFirstRun() },
+        totalFollowing = followed.size,
+        isSaving = setup.isSaving,
+        errorMessage = setup.errorMessage,
+        canStart = setup.canStart,
     )
 }
 

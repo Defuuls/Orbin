@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [196-Kai-Lan] - 2026-11-10
+
+### Fixed
+- Required at least one saved board before Start browsing can finish setup on Android and iOS; board selection stays open until the reader explicitly starts their initialized feed.
+- Waited for local settings and follows before choosing the startup screen, and reopened setup for older installations that completed it with no boards.
+- Serialized board writes, kept setup open on save failures, and counted subscriptions and favorites across both sites so changing the selected site cannot strand setup.
+- Prevented restored navigation, shortcuts, and release notes from bypassing first-run setup, and opened the initialized Home feed across all sites.
+
+### Testing
+- Added persistence, empty-install recovery, cross-site following, save-failure, navigation, and cold-relaunch regressions, including the installed iOS application's mandatory setup flow.
+
+
 ## [195-Bitter-Melon] - 2026-11-10
 
 ### Added
@@ -2928,7 +2940,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...HEAD
+[196-Kai-Lan]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...v196-Kai-Lan
 [195-Bitter-Melon]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...v195-Bitter-Melon
 [194-Malanga]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...v194-Malanga
 [193-Purslane]: https://github.com/Defuuls/Orbin/compare/v192-Sea-Kale...v193-Purslane

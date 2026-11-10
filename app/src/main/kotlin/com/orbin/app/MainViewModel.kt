@@ -7,11 +7,18 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppUpdateState
 import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.domain.repository.AppUpdater
+import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,8 +31,12 @@ class MainViewModel
         settingsRepository: SettingsRepository,
         networkMonitor: NetworkMonitor,
         private val appUpdater: AppUpdater,
+        boardPreferencesRepository: BoardPreferencesRepository,
+        registry: ProviderRegistry,
         networkConfigProvider: FixedNetworkConfigProvider = FixedNetworkConfigProvider(),
     ) : ViewModel() {
+        private val startupOnboardingOverride = MutableStateFlow<Boolean?>(null)
+
         init {
             viewModelScope.launch {
                 settingsRepository.settings.collect { settings ->
@@ -35,9 +46,46 @@ class MainViewModel
         }
 
         val uiState: StateFlow<MainUiState> =
-            settingsRepository.settings
-                .map { MainUiState(settings = it, ready = true) }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
+            flow {
+                val initialSettings = settingsRepository.settings.first()
+                // Read local follows once per launch. Older versions let readers skip setup;
+                // a reader who later unfollows everything in this session stays in the app.
+                val providers = registry.all()
+                val hasFeedBoards =
+                    providers.isNotEmpty() &&
+                        combine(
+                            providers.map { provider ->
+                                combine(
+                                    boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                                    boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
+                                ) { followed, favorite -> followed.isNotEmpty() || favorite.isNotEmpty() }
+                            },
+                        ) { it.any { hasBoards -> hasBoards } }.first()
+                if (initialSettings.onboardingCompleted != hasFeedBoards) {
+                    try {
+                        settingsRepository.setOnboardingCompleted(hasFeedBoards)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // A transient write failure must not leave startup blank. Keep the
+                        // correct first-run policy locally until the wizard acknowledges success.
+                        startupOnboardingOverride.value = hasFeedBoards
+                    }
+                }
+                emitAll(
+                    combine(settingsRepository.settings, startupOnboardingOverride) { settings, override ->
+                        MainUiState(
+                            settings = override?.let { settings.copy(onboardingCompleted = it) } ?: settings,
+                            ready = true,
+                        )
+                    },
+                )
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
+
+        /** Called by the wizard only after its followed boards and completion settings persist. */
+        fun onOnboardingCompleted() {
+            startupOnboardingOverride.value = null
+        }
 
         /** Starts `true` so a fresh launch never flashes an offline banner before the first callback. */
         val isOnline: StateFlow<Boolean> =

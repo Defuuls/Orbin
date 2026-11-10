@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [195 — Bitter Melon](https://github.com/Defuuls/Orbin/releases/tag/v195-Bitter-Melon)
+**Current release:** [196 — Kai Lan](https://github.com/Defuuls/Orbin/releases/tag/v196-Kai-Lan)
 
-**What's new in 195:** TikTok-style vertical browsing, active-page video, shared typography, and redesigned discovery, library, search, and settings across Android and iOS.
+**What's new in 196:** Mandatory first-run board selection initializes Home before browsing on Android and iOS, and repairs installations that previously skipped setup.
 
 ---
 

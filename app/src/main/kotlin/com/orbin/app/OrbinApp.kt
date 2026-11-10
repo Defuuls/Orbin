@@ -28,6 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
@@ -58,25 +62,15 @@ fun OrbinApp(
     isOnline: Boolean = true,
     pendingRoute: Route? = null,
     onPendingRouteHandled: () -> Unit = {},
+    onOnboardingCompleted: () -> Unit = {},
 ) {
+    val initialStartDestination = remember { if (startWithOnboarding) Route.Onboarding else Route.NextFeed }
     val currentEntry by navController.currentBackStackEntryAsState()
     val immersive =
         currentEntry?.destination?.let {
             it.hasRoute(Route.NextFeed::class) || it.hasRoute(Route.Gallery::class)
         } ?: !startWithOnboarding
     SystemBarAppearance(immersive = immersive)
-    LaunchedEffect(pendingRoute, startWithOnboarding) {
-        if (startWithOnboarding) return@LaunchedEffect
-        val route = pendingRoute ?: return@LaunchedEffect
-        when (route) {
-            Route.NextFeed, Route.BoardGallery, Route.Watched, Route.Search, Route.Saved ->
-                navController.navigateToTab(
-                    route,
-                )
-            else -> navController.navigate(route)
-        }
-        onPendingRouteHandled()
-    }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
@@ -88,13 +82,22 @@ fun OrbinApp(
         Box(modifier = Modifier.fillMaxSize()) {
             // Each destination owns its insets via its own top bar / chrome; the root no longer
             // uses Material Scaffold — NextSnackbarHost is the toast layer.
-            OrbinNavHost(
+            OnboardingNavigation(
                 navController = navController,
-                modifier = Modifier.fillMaxSize(),
-                startDestination = if (startWithOnboarding) Route.Onboarding else Route.NextFeed,
-                chromeHidesOnScroll = false,
-                twoPaneBoardDetail = twoPaneBoardDetail,
-            )
+                startWithOnboarding = startWithOnboarding,
+                pendingRoute = pendingRoute,
+                onPendingRouteHandled = onPendingRouteHandled,
+                onOnboardingCompleted = onOnboardingCompleted,
+            ) { acknowledgeCompletion ->
+                OrbinNavHost(
+                    navController = navController,
+                    modifier = Modifier.fillMaxSize(),
+                    startDestination = initialStartDestination,
+                    chromeHidesOnScroll = false,
+                    twoPaneBoardDetail = twoPaneBoardDetail,
+                    onOnboardingCompleted = acknowledgeCompletion,
+                )
+            }
             AnimatedVisibility(
                 visible = !isOnline,
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -113,6 +116,53 @@ fun OrbinApp(
             )
         }
     }
+}
+
+/** A successful wizard callback takes effect before asynchronously collected settings catch up. */
+@Composable
+internal fun OnboardingNavigation(
+    navController: NavHostController,
+    startWithOnboarding: Boolean,
+    pendingRoute: Route?,
+    onPendingRouteHandled: () -> Unit,
+    onOnboardingCompleted: () -> Unit,
+    content: @Composable (onCompleted: () -> Unit) -> Unit,
+) {
+    // Deliberately not saved: a new process must validate its actual persisted board follows.
+    var onboardingAcknowledged by remember { mutableStateOf(false) }
+    val onCompleted by rememberUpdatedState(onOnboardingCompleted)
+    val acknowledgeCompletion =
+        remember {
+            {
+                onboardingAcknowledged = true
+                onCompleted()
+            }
+        }
+    val needsSetup = startWithOnboarding && !onboardingAcknowledged
+    val currentEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(needsSetup, currentEntry) {
+        if (needsSetup && currentEntry?.destination?.hasRoute(Route.Onboarding::class) == false) {
+            navController.navigate(Route.Onboarding) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+    LaunchedEffect(pendingRoute, needsSetup, currentEntry) {
+        if (needsSetup || currentEntry?.destination?.hasRoute(Route.Onboarding::class) != false) {
+            return@LaunchedEffect
+        }
+        val route = pendingRoute ?: return@LaunchedEffect
+        when (route) {
+            Route.NextFeed, Route.BoardGallery, Route.Watched, Route.Search, Route.Saved ->
+                navController.navigateToTab(
+                    route,
+                )
+            else -> navController.navigate(route)
+        }
+        onPendingRouteHandled()
+    }
+    content(acknowledgeCompletion)
 }
 
 @Composable

@@ -131,7 +131,9 @@
     <!-- Onboarding -->
     <string name="next_onboarding_title">Welcome to Orbin</string>
     <string name="next_onboarding_subtitle">Follow a few boards to fill your feed.</string>
-    <string name="next_onboarding_skip_hint">You can follow boards later</string>
+    <string name="next_onboarding_required_hint">Follow at least one board to continue</string>
+    <string name="next_onboarding_saving">Saving your boards…</string>
+    <string name="next_onboarding_empty">No boards available. Try loading them again.</string>
     <plurals name="next_onboarding_following_count">
         <item quantity="one">%1$d following</item>
         <item quantity="other">%1$d following</item>
