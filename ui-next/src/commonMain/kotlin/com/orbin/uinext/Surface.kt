@@ -19,10 +19,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -295,13 +298,81 @@ private fun DockTab(
     }
 }
 
+/**
+ * Machined 6-blade geometric optical aperture iris.
+ * Lineage: Leica M-System rangefinders, teenage engineering field hardware, and brand.md.
+ */
 @Composable
-private fun OrbitEmblem(
+fun ApertureMark(
+    modifier: Modifier = Modifier,
+    size: Dp = 22.dp,
+    tint: Color? = null,
+) {
+    val ink = tint ?: next.ink
+    val reticle = next.accent
+    Canvas(
+        modifier =
+            modifier
+                .size(size)
+                .clearAndSetSemantics {},
+    ) {
+        val w = this.size.width
+        val h = this.size.height
+        val cx = w * 0.5f
+        val cy = h * 0.5f
+        val minDim = this.size.minDimension
+        val stroke = Stroke(width = 1.25.dp.toPx())
+        val thinStroke = Stroke(width = 1.dp.toPx())
+
+        // Outer precision housing ring + inner aperture ring
+        val outerR = minDim * 0.44f
+        val innerR = minDim * 0.20f
+        drawCircle(color = ink, radius = outerR, center = Offset(cx, cy), style = stroke)
+        drawCircle(color = ink, radius = innerR, center = Offset(cx, cy), style = thinStroke)
+
+        // 6-blade tangential aperture chords
+        val cos60 = 0.5f
+        val sin60 = 0.8660254f
+        val dirs =
+            arrayOf(
+                1f to 0f,
+                cos60 to sin60,
+                -cos60 to sin60,
+                -1f to 0f,
+                -cos60 to -sin60,
+                cos60 to -sin60,
+            )
+        for (i in dirs.indices) {
+            val (dx0, dy0) = dirs[i]
+            val (dx1, dy1) = dirs[(i + 1) % dirs.size]
+            drawLine(
+                color = ink,
+                start = Offset(cx + dx0 * innerR, cy + dy0 * innerR),
+                end = Offset(cx + dx1 * outerR, cy + dy1 * outerR),
+                strokeWidth = 1.dp.toPx(),
+            )
+        }
+
+        // Cardinal reticle ticks + optical lock dot
+        val tickInner = outerR * 0.82f
+        val tickOuter = minDim * 0.49f
+        drawLine(reticle, Offset(cx, cy - tickOuter), Offset(cx, cy - tickInner), strokeWidth = 1.25.dp.toPx())
+        drawLine(reticle, Offset(cx, cy + tickInner), Offset(cx, cy + tickOuter), strokeWidth = 1.25.dp.toPx())
+        drawLine(reticle, Offset(cx - tickOuter, cy), Offset(cx - tickInner, cy), strokeWidth = 1.25.dp.toPx())
+        drawLine(reticle, Offset(cx + tickInner, cy), Offset(cx + tickOuter, cy), strokeWidth = 1.25.dp.toPx())
+        drawCircle(
+            color = reticle,
+            radius = minDim * 0.065f,
+            center = Offset(cx, cy),
+        )
+    }
+}
+
+@Composable
+fun OrbitEmblem(
     modifier: Modifier = Modifier,
     size: Dp = 52.dp,
 ) {
-    val ink = next.onAccentContainer
-    val reticle = next.accent
     val emblemShape = RoundedCornerShape(NextRadius.control)
     Box(
         modifier =
@@ -312,58 +383,9 @@ private fun OrbitEmblem(
                 .border(1.dp, next.hairline, emblemShape)
                 .padding(size * 0.14f)
                 .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val w = this.size.width
-            val h = this.size.height
-            val cx = w * 0.5f
-            val cy = h * 0.5f
-            val minDim = this.size.minDimension
-            val stroke = Stroke(width = 1.5.dp.toPx())
-            val thinStroke = Stroke(width = 1.dp.toPx())
-
-            // Outer precision housing ring + inner aperture ring
-            val outerR = minDim * 0.42f
-            val innerR = minDim * 0.20f
-            drawCircle(color = ink, radius = outerR, center = Offset(cx, cy), style = stroke)
-            drawCircle(color = ink, radius = innerR, center = Offset(cx, cy), style = thinStroke)
-
-            // 6-blade tangential aperture chords
-            val cos60 = 0.5f
-            val sin60 = 0.8660254f
-            val dirs =
-                arrayOf(
-                    1f to 0f,
-                    cos60 to sin60,
-                    -cos60 to sin60,
-                    -1f to 0f,
-                    -cos60 to -sin60,
-                    cos60 to -sin60,
-                )
-            for (i in dirs.indices) {
-                val (dx0, dy0) = dirs[i]
-                val (dx1, dy1) = dirs[(i + 1) % dirs.size]
-                drawLine(
-                    color = ink,
-                    start = Offset(cx + dx0 * innerR, cy + dy0 * innerR),
-                    end = Offset(cx + dx1 * outerR, cy + dy1 * outerR),
-                    strokeWidth = 1.dp.toPx(),
-                )
-            }
-
-            // Cardinal reticle ticks + International Orange optical lock dot
-            val tickInner = outerR * 0.82f
-            val tickOuter = minDim * 0.49f
-            drawLine(reticle, Offset(cx, cy - tickOuter), Offset(cx, cy - tickInner), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx, cy + tickInner), Offset(cx, cy + tickOuter), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx - tickOuter, cy), Offset(cx - tickInner, cy), strokeWidth = 1.25.dp.toPx())
-            drawLine(reticle, Offset(cx + tickInner, cy), Offset(cx + tickOuter, cy), strokeWidth = 1.25.dp.toPx())
-            drawCircle(
-                color = reticle,
-                radius = minDim * 0.065f,
-                center = Offset(cx, cy),
-            )
-        }
+        ApertureMark(modifier = Modifier.fillMaxSize(), size = size * 0.72f, tint = next.onAccentContainer)
     }
 }
 
@@ -440,6 +462,69 @@ fun CompactTitleBar(
                 color = next.muted,
             )
         }
+    }
+}
+
+/**
+ * Machined instrument channel bar pinned to the top of destinations.
+ * Replaces bulky scrolling titles with a dense, machined HUD header (+68dp content gain).
+ */
+@Composable
+fun MachinedChannelBar(
+    channelCode: String,
+    title: String,
+    modifier: Modifier = Modifier,
+    status: String = "SIG:NOMINAL",
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    val shape = RoundedCornerShape(bottomStart = NextRadius.tight, bottomEnd = NextRadius.tight)
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                )
+                .clip(shape)
+                .background(next.elevated)
+                .border(1.dp, next.hairline, shape)
+                .height(48.dp)
+                .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ApertureMark(size = 20.dp)
+        Box(
+            Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(1.dp))
+                .background(next.accent),
+        )
+        Text(
+            text = channelCode,
+            style = NextType.telemetry,
+            color = next.accent,
+        )
+        Text(
+            text = "·",
+            style = NextType.telemetry,
+            color = next.hairline,
+        )
+        Text(
+            text = title,
+            style = NextType.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = next.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = status,
+            style = NextType.telemetry,
+            color = next.faint,
+        )
+        actions()
     }
 }
 
@@ -839,6 +924,107 @@ fun MediaTile(
 }
 
 /**
+ * Machined vertical hardware navigation rail for wide viewports (tablets, foldables, landscape).
+ * Replaces bottom floating bar with an instrument side rack docked to the leading edge.
+ */
+@Composable
+fun IndustrialNavRail(
+    selected: NextDestination,
+    onSelect: (NextDestination) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val destinations = listOf(NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.BOARDS)
+    val channelCodes = listOf("01", "02", "03")
+    val labels =
+        listOf(
+            stringResource(Res.string.next_feed_title),
+            stringResource(Res.string.next_downloads_tab),
+            stringResource(Res.string.next_launchpad_boards),
+        )
+    val icons = listOf(Icons.Outlined.Home, Icons.Outlined.Download, Icons.Outlined.GridView)
+    val insets =
+        WindowInsets.safeDrawing.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.Start,
+        )
+    Column(
+        modifier =
+            modifier
+                .windowInsetsPadding(insets)
+                .background(next.elevated)
+                .selectableGroup()
+                .padding(vertical = 14.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ApertureMark(size = 28.dp)
+        Gap(6)
+        Text(
+            text = "OPTIC",
+            style = NextType.telemetry,
+            color = next.accent,
+        )
+        Gap(16)
+        destinations.forEachIndexed { index, destination ->
+            val isSelected = selected == destination
+            val ink = if (isSelected) next.ink else next.muted
+            val keyShape = RoundedCornerShape(NextRadius.tight)
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(keyShape)
+                        .background(if (isSelected) next.accentContainer else Color.Transparent)
+                        .border(1.dp, if (isSelected) next.accent else Color.Transparent, keyShape)
+                        .selectable(
+                            selected = isSelected,
+                            role = Role.Tab,
+                            onClick = { onSelect(destination) },
+                        )
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 16.dp, height = 2.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(if (isSelected) next.accent else next.hairline),
+                )
+                Gap(4)
+                Text(
+                    text = channelCodes[index],
+                    style = NextType.telemetry,
+                    color = if (isSelected) next.accent else next.faint,
+                )
+                Gap(4)
+                Icon(
+                    imageVector = icons[index],
+                    contentDescription = null,
+                    tint = if (isSelected) next.accent else ink,
+                    modifier = Modifier.size(22.dp),
+                )
+                Gap(4)
+                Text(
+                    text = labels[index],
+                    style = NextType.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = ink,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Gap(10)
+        }
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = "[OPTIC-26]",
+            style = NextType.telemetry,
+            color = next.faint,
+        )
+    }
+}
+
+/**
  * Every screen: the ground, the chrome, and the room a scrolling list has to leave for it.
  *
  * Wrapped around [androidx.compose.material3.Scaffold]. Pass [destination] + [onDestination]
@@ -875,25 +1061,47 @@ fun NextScaffold(
         contentColor = next.ink,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { scaffoldPadding ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier.fillMaxSize().padding(scaffoldPadding),
         ) {
-            content(PaddingValues(bottom = bottom))
-            if (pillDestination != null && onDestination != null) {
-                AnimatedVisibility(
-                    visible = railVisible,
-                    enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(),
-                    exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                ) {
-                    DestinationPill(
+            val isWideScreen = maxWidth >= 600.dp
+            if (isWideScreen && pillDestination != null && onDestination != null) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    IndustrialNavRail(
                         selected = pillDestination,
                         onSelect = onDestination,
-                        modifier =
-                            Modifier.onSizeChanged {
-                                measuredChromeHeight = with(density) { it.height.toDp() }
-                            },
+                        modifier = Modifier.width(80.dp).fillMaxHeight(),
                     )
+                    Box(
+                        Modifier
+                            .width(1.dp)
+                            .fillMaxHeight()
+                            .background(next.hairline),
+                    )
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        content(PaddingValues(bottom = 16.dp + bottomInset()))
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    content(PaddingValues(bottom = bottom))
+                    if (pillDestination != null && onDestination != null) {
+                        AnimatedVisibility(
+                            visible = railVisible,
+                            enter = slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(),
+                            exit = slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut(),
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        ) {
+                            DestinationPill(
+                                selected = pillDestination,
+                                onSelect = onDestination,
+                                modifier =
+                                    Modifier.onSizeChanged {
+                                        measuredChromeHeight = with(density) { it.height.toDp() }
+                                    },
+                            )
+                        }
+                    }
                 }
             }
         }

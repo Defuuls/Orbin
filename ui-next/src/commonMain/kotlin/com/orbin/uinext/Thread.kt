@@ -4,22 +4,28 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -30,8 +36,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -147,61 +151,84 @@ fun ThreadScreen(
             containerColor = next.background,
             contentColor = next.ink,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            floatingActionButton = {
+            bottomBar = {
                 if (layout == ThreadLayout.POSTS && posts.size > 1) {
-                    val jumpShape = RoundedCornerShape(NextRadius.tight)
+                    val insets =
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                        )
+                    val keyShape = RoundedCornerShape(NextRadius.tight)
                     Row(
                         modifier =
-                            Modifier.padding(
-                                end = 4.dp,
-                                bottom = 12.dp + bottomInset(),
-                            ),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .windowInsetsPadding(insets)
+                                .background(next.elevated)
+                                .border(1.dp, next.hairline)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        ExtendedFloatingActionButton(
-                            onClick = { scope.launch { state.animateScrollToItem(0) } },
-                            shape = jumpShape,
-                            containerColor = next.elevated,
-                            contentColor = next.ink,
-                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
-                            modifier = Modifier.border(1.dp, next.hairline, jumpShape),
+                        Box(
+                            modifier =
+                                Modifier
+                                    .clip(keyShape)
+                                    .background(next.raised)
+                                    .border(1.dp, next.hairline, keyShape)
+                                    .clickable {
+                                        scope.launch { state.animateScrollToItem(0) }
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
                         ) {
                             Text(
-                                text = stringResource(Res.string.next_thread_jump_top),
-                                style = NextType.labelMedium,
+                                text = "▲ TOP",
+                                style = NextType.telemetry,
+                                color = next.ink,
                             )
                         }
                         if (firstUnreadPostId != null) {
-                            ExtendedFloatingActionButton(
-                                onClick = {
-                                    val target = posts.indexOfFirst { it.id == firstUnreadPostId }
-                                    if (target >= 0) scope.launch { state.animateScrollToItem(target + 1) }
-                                },
-                                shape = jumpShape,
-                                containerColor = next.accent,
-                                contentColor = next.onAccent,
-                                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .clip(keyShape)
+                                        .background(next.accentContainer)
+                                        .border(1.dp, next.accent, keyShape)
+                                        .clickable {
+                                            val target = posts.indexOfFirst { it.id == firstUnreadPostId }
+                                            if (target >= 0) scope.launch { state.animateScrollToItem(target + 1) }
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
                             ) {
                                 Text(
-                                    text = stringResource(Res.string.next_thread_jump_unread),
-                                    style = NextType.labelMedium,
+                                    text = "● UNREAD",
+                                    style = NextType.telemetry,
+                                    color = next.accent,
                                 )
                             }
                         }
-                        ExtendedFloatingActionButton(
-                            onClick = { scope.launch { state.animateScrollToItem(posts.size) } },
-                            shape = jumpShape,
-                            containerColor = next.elevated,
-                            contentColor = next.ink,
-                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
-                            modifier = Modifier.border(1.dp, next.hairline, jumpShape),
+                        Box(
+                            modifier =
+                                Modifier
+                                    .clip(keyShape)
+                                    .background(next.raised)
+                                    .border(1.dp, next.hairline, keyShape)
+                                    .clickable {
+                                        scope.launch { state.animateScrollToItem(posts.size) }
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
                         ) {
                             Text(
-                                text = stringResource(Res.string.next_thread_jump_bottom),
-                                style = NextType.labelMedium,
+                                text = "▼ BTM",
+                                style = NextType.telemetry,
+                                color = next.ink,
                             )
                         }
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = "NO. ${posts.size} POSTS",
+                            style = NextType.telemetry,
+                            color = next.muted,
+                        )
                     }
                 }
             },
@@ -211,8 +238,7 @@ fun ThreadScreen(
                 modifier = Modifier.padding(scaffoldPadding).contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        // Room for the jump pill plus a margin, so the last post can scroll fully clear.
-                        bottom = THREAD_JUMP_CLEARANCE + bottomInset(),
+                        bottom = 16.dp + bottomInset(),
                     ),
             ) {
                 item {
@@ -593,5 +619,4 @@ private fun PostView(
 
 private const val SPOILER_SCRIM = 0.88f
 private const val DEFAULT_POST_MEDIA_ASPECT_RATIO = 16f / 9f
-private val THREAD_JUMP_CLEARANCE = 84.dp
 private val REPLY_DEPTH_BAR_WIDTH = 2.dp

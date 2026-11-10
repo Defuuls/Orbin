@@ -22,9 +22,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +75,7 @@ fun FeedScreen(
 ) {
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
+    var twoColumns by rememberSaveable { mutableStateOf(false) }
 
     val railVisible =
         if (!hideRailOnScroll) {
@@ -141,6 +145,8 @@ fun FeedScreen(
                     query = query,
                     onQueryChange = onQueryChange,
                     onSettings = onSettings,
+                    twoColumns = twoColumns,
+                    onToggleColumns = { twoColumns = !twoColumns },
                 )
             }
             val insets = Modifier.fillMaxSize().contentInsets()
@@ -156,10 +162,11 @@ fun FeedScreen(
                     }
                 }
             Box(modifier = Modifier.fillMaxSize()) {
+                val effectiveColumns =
+                    columns?.let(GridCells::Fixed)
+                        ?: if (twoColumns) GridCells.Adaptive(170.dp) else GridCells.Adaptive(FEED_CARD_MIN_WIDTH)
                 LazyVerticalGrid(
-                    // One full-width card per thread on a phone, its media whole and the opening post
-                    // under it; wider screens fit more columns of the same card.
-                    columns = columns?.let(GridCells::Fixed) ?: GridCells.Adaptive(FEED_CARD_MIN_WIDTH),
+                    columns = effectiveColumns,
                     state = gridState,
                     modifier = insets,
                     contentPadding = gridPadding(bottomPad),

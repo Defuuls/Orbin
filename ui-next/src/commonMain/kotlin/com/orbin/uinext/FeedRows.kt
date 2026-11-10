@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,23 +55,45 @@ internal fun FeedHeader(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
     onSettings: (() -> Unit)? = null,
+    twoColumns: Boolean = false,
+    onToggleColumns: (() -> Unit)? = null,
 ) {
     Column {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = NextSpace.titleTop),
+        ) {
             ScreenTitle(
                 text = stringResource(Res.string.next_feed_title),
                 subtitle = subtitle,
                 modifier = Modifier.weight(1f),
                 inset = 0.dp,
             )
-            // Settings is visited, not lived in, so it sits here rather than taking a tab.
+            if (onToggleColumns != null) {
+                val latchShape = RoundedCornerShape(NextRadius.tight)
+                Box(
+                    modifier =
+                        Modifier
+                            .clip(latchShape)
+                            .background(if (twoColumns) next.accentContainer else next.raised)
+                            .border(1.dp, if (twoColumns) next.accent else next.hairline, latchShape)
+                            .clickable(onClick = onToggleColumns)
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = if (twoColumns) "[2-COL]" else "[1-COL]",
+                        style = NextType.telemetry,
+                        color = if (twoColumns) next.accent else next.muted,
+                    )
+                }
+            }
             if (onSettings != null) {
                 NextIconAction(
                     imageVector = Icons.Outlined.Settings,
                     contentDescription = stringResource(Res.string.next_settings_title),
                     onClick = onSettings,
                     tint = next.muted,
-                    modifier = Modifier.padding(top = NextSpace.titleTop),
                 )
             }
         }
@@ -294,18 +317,36 @@ internal fun FeedGridCell(
                     MetaLine(row.excerpt, maxLines = excerptLines)
                     Gap(6)
                 }
-                val threadInfo =
-                    if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · ${rowCounts(row)}" else rowCounts(row)
                 val footerShape = RoundedCornerShape(NextRadius.tight)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(footerShape)
-                        .background(next.background)
-                        .border(1.dp, next.hairline, footerShape)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(footerShape)
+                            .background(next.background)
+                            .border(1.dp, next.hairline, footerShape)
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    MetaLine(threadInfo, maxLines = if (uniform) 1 else 2)
+                    val countPrefix =
+                        if (row.unread > 0) "${rowCounts(row)} · +${row.unread} NEW" else rowCounts(row)
+                    val threadInfo =
+                        if (row.threadNumber.isNotBlank()) "#${row.threadNumber} · $countPrefix" else countPrefix
+                    Text(
+                        text = threadInfo,
+                        style = NextType.telemetry,
+                        color = if (row.unread > 0) next.accent else next.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text(
+                        text = "OPEN ↗",
+                        style = NextType.telemetry,
+                        fontWeight = FontWeight.Bold,
+                        color = next.accent,
+                    )
                 }
             }
         }
