@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -547,7 +548,10 @@ private fun TikTokFeedTab(
             .heightIn(min = MIN_TOUCH_TARGET)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .testTag(tag)
-            .padding(start = 4.dp, end = 4.dp, top = 9.dp, bottom = 4.dp),
+            .semantics {
+                contentDescription = label
+                heading()
+            }.padding(start = 4.dp, end = 4.dp, top = 9.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
@@ -559,7 +563,7 @@ private fun TikTokFeedTab(
             maxLines = if (wrap) Int.MAX_VALUE else 1,
             overflow = TextOverflow.Clip,
             textAlign = if (wrap) TextAlign.Center else TextAlign.Start,
-            modifier = (if (wrap) Modifier.fillMaxWidth() else Modifier).semantics { heading() },
+            modifier = (if (wrap) Modifier.fillMaxWidth() else Modifier).semantics { hideFromAccessibility() },
         )
         Box(Modifier.width(22.dp).height(2.dp).background(if (selected) TikTokDesign.White else Color.Transparent))
     }

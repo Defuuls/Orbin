@@ -51,6 +51,14 @@ class TikTokAdaptiveScreenshotTest {
     fun darkSettings() = capture("tiktok_settings_dark", 390.dp, 844.dp, dark = true) { SettingsFixture() }
 
     @Test
+    fun fourchanOnboarding() =
+        capture("tiktok_onboarding_fourchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 0) }
+
+    @Test
+    fun bbwchanOnboarding() =
+        capture("tiktok_onboarding_bbwchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 1) }
+
+    @Test
     @Config(qualifiers = "w960dp-h720dp-mdpi")
     fun wideSettings() = capture("tiktok_settings_wide", 960.dp, 720.dp) { SettingsFixture() }
 
@@ -77,6 +85,34 @@ class TikTokAdaptiveScreenshotTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/androidHostTest/screenshots/$name.png")
     }
+}
+
+@Composable
+private fun OnboardingFixture(selectedSite: Int) {
+    val boards =
+        if (selectedSite == 0) {
+            listOf(
+                OnboardingBoard("g", "Technology", "Local technology discussions.", false),
+                OnboardingBoard("p", "Photography", "Share a favorite view.", false),
+                OnboardingBoard("wg", "Wallpapers", "Original desktop artwork.", false),
+            )
+        } else {
+            listOf(
+                OnboardingBoard("gen", "General Discussion", "A fictional weekly discussion.", false),
+                OnboardingBoard("bbwai", "BBW AI", "A local artwork fixture.", true),
+                OnboardingBoard("bbwdraw", "BBW Drawn", "Original drawings and sketches.", true),
+            )
+        }
+    OnboardingScreen(
+        boards = OnboardingBoards.Ready(boards),
+        following = emptySet(),
+        sites = listOf("4chan", "BBWChan"),
+        selectedSite = selectedSite,
+        onSelectSite = {},
+        onFollow = { _, _ -> },
+        onRetry = {},
+        onStart = {},
+    )
 }
 
 @Composable

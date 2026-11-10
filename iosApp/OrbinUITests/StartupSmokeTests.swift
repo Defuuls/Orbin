@@ -28,7 +28,7 @@ final class StartupSmokeTests: XCTestCase {
 
         // Do not tap a board: the resulting Home contains no user-generated images or video.
         startBrowsing.tap()
-        let forYou = labeled("For You")
+        let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
         waitUntilHittable([forYou, done], description: "TikTok Home or release notes")
         dismissReleaseNotesIfPresent()
         if startBrowsing.exists && startBrowsing.isHittable {
@@ -36,7 +36,8 @@ final class StartupSmokeTests: XCTestCase {
             startBrowsing.tap()
         }
         waitUntilHittable([forYou], description: "TikTok For You feed")
-        XCTAssertTrue(labeled("Following").exists)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch.exists)
+        XCTAssertTrue(forYou.isSelected, "For You must announce its selected tab state")
         XCTAssertTrue(labeled("Nothing here yet").waitForExistence(timeout: 15))
 
         let tabs = ["Home", "Watched", "Boards", "Search", "Saved"].map(navigationControl)
@@ -60,6 +61,10 @@ final class StartupSmokeTests: XCTestCase {
     override func tearDownWithError() throws {
         if let run = testRun, run.hasSucceeded == false, app != nil {
             attachScreenshot(named: "ios-startup-failure")
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "ios-startup-accessibility-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
         }
         app?.terminate()
         app = nil
@@ -70,8 +75,8 @@ final class StartupSmokeTests: XCTestCase {
     }
 
     private func navigationControl(_ label: String) -> XCUIElement {
-        let candidates = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label))
-        // A page title may share a tab's name. Select the real bottom control, not its ancestor.
+        let candidates = app.buttons.matching(NSPredicate(format: "label == %@", label))
+        // A header action may share a tab's name. Require a real bottom button, not a text leaf.
         return candidates.allElementsBoundByIndex.first {
             $0.isHittable && $0.frame.minY > app.frame.height / 2 && $0.frame.height <= 120
         } ?? candidates.firstMatch

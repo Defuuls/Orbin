@@ -126,6 +126,7 @@ jobs:
           name: ios-native-startup
           path: |
             ${{ runner.temp }}/orbin-startup-screenshots/**/*.png
+            ${{ runner.temp }}/orbin-startup-screenshots/**/*.txt
             ${{ runner.temp }}/orbin-startup-screenshots/**/manifest.json
           if-no-files-found: ignore
 
