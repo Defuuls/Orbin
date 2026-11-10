@@ -48,10 +48,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -563,7 +563,7 @@ private fun TikTokFeedTab(
             maxLines = if (wrap) Int.MAX_VALUE else 1,
             overflow = TextOverflow.Clip,
             textAlign = if (wrap) TextAlign.Center else TextAlign.Start,
-            modifier = (if (wrap) Modifier.fillMaxWidth() else Modifier).semantics { hideFromAccessibility() },
+            modifier = (if (wrap) Modifier.fillMaxWidth() else Modifier).clearAndSetSemantics {},
         )
         Box(Modifier.width(22.dp).height(2.dp).background(if (selected) TikTokDesign.White else Color.Transparent))
     }

@@ -3,13 +3,14 @@ package com.orbin.uinext
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -88,8 +89,8 @@ class SocialNavigationTest {
         }
         listOf("Home", "Watched", "Search", "Saved").forEach { label ->
             composeRule
-                .onNodeWithText(label, useUnmergedTree = true)
-                .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility))
+                .onAllNodesWithText(label, useUnmergedTree = true)
+                .assertCountEquals(0)
         }
     }
 

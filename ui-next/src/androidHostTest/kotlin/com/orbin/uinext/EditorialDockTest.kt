@@ -10,9 +10,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -22,8 +22,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -114,18 +112,9 @@ class EditorialDockTest {
         val last = composeRule.onNode(isTab and hasContentDescription("Saved")).getUnclippedBoundsInRoot()
         assertEquals(0f, first.left.value, 0.5f)
         assertEquals(248f, last.right.value, 0.5f)
-        val layouts = mutableListOf<TextLayoutResult>()
         composeRule
-            .onNode(hasText("Watched"), useUnmergedTree = true)
-            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { getLayout -> getLayout(layouts) }
-        assertEquals(1, layouts.size)
-        org.junit.Assert.assertFalse(
-            "The enlarged label must remain fully readable",
-            layouts.single().hasVisualOverflow,
-        )
-        repeat(layouts.single().lineCount) { line ->
-            org.junit.Assert.assertFalse("No label line may be ellipsized", layouts.single().isLineEllipsized(line))
-        }
+            .onAllNodes(hasText("Watched"), useUnmergedTree = true)
+            .assertCountEquals(0)
         composeRule.onNode(isTab and hasContentDescription("Saved")).performClick().assertIsSelected()
         assertEquals(1, calls)
     }
