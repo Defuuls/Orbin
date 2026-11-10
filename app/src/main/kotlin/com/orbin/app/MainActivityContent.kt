@@ -91,6 +91,7 @@ internal fun AppContent(
     onRetryUnlock: () -> Unit,
     pendingRoute: Route?,
     onPendingRouteHandled: () -> Unit,
+    onOnboardingCompleted: () -> Unit,
     updateDialog: @Composable () -> Unit,
 ) {
     // Root installs NextTheme once. Nested no-arg NextTheme calls short-circuit, so Next screens
@@ -123,6 +124,7 @@ internal fun AppContent(
                         isOnline = isOnline,
                         pendingRoute = pendingRoute,
                         onPendingRouteHandled = onPendingRouteHandled,
+                        onOnboardingCompleted = onOnboardingCompleted,
                     )
                 }
             }

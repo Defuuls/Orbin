@@ -33,7 +33,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** The iOS browser end to end over the real providers, with the network replaced by a script. */
+/**
+ * The iOS browser end to end over the real providers, with the network replaced by a script.
+ * Shared provider scripts and request recording keep navigation and first-run assertions consistent.
+ */
+@Suppress("LargeClass")
 class BrowserTest {
     private val requested = mutableListOf<String>()
     private val userAgents = mutableSetOf<String?>()
@@ -42,7 +46,7 @@ class BrowserTest {
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
 
-    // Past first run: these tests are about browsing, not the board picker.
+    // A stored completion flag alone is repaired when the reader has no followed boards.
     private val settings = FakeSettings().apply { settings.value = settings.value.copy(onboardingCompleted = true) }
 
     private var clock = NOW
@@ -242,7 +246,16 @@ class BrowserTest {
     @Test
     fun goingBackShowsTheLoadedPageWithoutFetchingItAgain() =
         runTest {
+            // An established reader has a real saved follow; an empty old install stays in setup,
+            // whose Retry correctly reloads the board picker instead of the covered catalog.
+            boardPreferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("g"), true)
             val browser = browser(backgroundScope, BOTH_SITES)
+            assertFalse(
+                browser.firstRun.state
+                    .first { it.initialized }
+                    .needed,
+            )
+            browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             val g =
                 assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first {
                     it.board.id.value ==
@@ -413,6 +426,108 @@ class BrowserTest {
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             assertEquals(Load.Ready(emptyList()), browser.feed.settled())
+        }
+
+    @Test
+    fun firstRunRequiresASavedBoardAndStartsItsFeedAcrossAllSites() =
+        runTest {
+            settings.settings.value = settings.settings.value.copy(onboardingCompleted = false)
+            val browser = browser(backgroundScope, BOTH_SITES)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.firstRun.state.first { it.initialized }
+            browser.completeFirstRun().join()
+            assertTrue(browser.firstRun.state.value.needed)
+            assertFalse(settings.settings.value.onboardingCompleted)
+
+            val technology = boards.first { it.provider.value == "fourchan" }
+            browser.setFollowed(technology, true)
+            browser.firstRun.state.first { it.canStart }
+            assertTrue(browser.firstRun.state.value.needed, "following a board cannot auto-dismiss setup")
+            assertFalse(settings.settings.value.onboardingCompleted)
+
+            // Finish while looking at another site's picker. Home must still show the saved board.
+            val otherSite = ProviderId("bbwchan")
+            browser.selectSite(otherSite)
+            browser.selectFeedSite(otherSite)
+            browser.openTab(Route.Boards)
+            browser.completeFirstRun().join()
+
+            assertFalse(browser.firstRun.state.value.needed)
+            assertTrue(settings.settings.value.onboardingCompleted)
+            assertNull(browser.feedSite.value)
+            assertEquals(listOf(Route.Feed), browser.backStack.value)
+            val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(
+                listOf("fourchan/g"),
+                assertIs<Load.Ready<List<FeedThread>>>(feed).value.map {
+                    "${it.provider.value}/${it.thread.key.board.value}"
+                },
+            )
+            assertEquals(setOf(BoardId("g")), boardPreferences.subscribed.value[technology.provider])
+
+            val relaunched = browser(backgroundScope, BOTH_SITES)
+            assertFalse(
+                relaunched.firstRun.state
+                    .first { it.initialized }
+                    .needed,
+            )
+            val restored = relaunched.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(1, assertIs<Load.Ready<List<FeedThread>>>(restored).value.size)
+        }
+
+    @Test
+    fun firstRunKeepsSameNamedBoardsFromDifferentSitesIndependent() =
+        runTest {
+            settings.settings.value = settings.settings.value.copy(onboardingCompleted = false)
+            val routes =
+                BOTH_SITES +
+                    (
+                        LYNXCHAN_BOARDS to
+                            """{"status":"ok","data":{"boards":[{"boardUri":"g","boardName":"General"}]}}"""
+                    )
+            val browser = browser(backgroundScope, routes)
+            val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.firstRun.state.first { it.initialized }
+            val technology = boards.first { it.provider.value == "fourchan" }
+            val general = boards.first { it.provider.value == "bbwchan" }
+
+            browser.setFollowed(technology, true)
+            browser.selectSite(general.provider)
+            browser.setFollowed(general, true)
+            val both = browser.followed.first { it.size == 2 }
+            assertEquals(setOf(technology.provider, general.provider), both.map { it.provider }.toSet())
+            assertTrue(both.all { it.board == BoardId("g") })
+
+            browser.setFollowed(general, false)
+            browser.followed.first { it.size == 1 }
+            browser.firstRun.state.first { it.canStart }
+            browser.completeFirstRun().join()
+
+            assertEquals(setOf(BoardId("g")), boardPreferences.subscribed.value[technology.provider])
+            assertTrue(
+                boardPreferences.subscribed.value[general.provider]
+                    .orEmpty()
+                    .isEmpty(),
+            )
+            assertTrue(settings.settings.value.onboardingCompleted)
+        }
+
+    @Test
+    fun anExistingFavoriteOnAnotherSiteInitializesHomeWithoutRepeatingSetup() =
+        runTest {
+            settings.settings.value = settings.settings.value.copy(onboardingCompleted = false)
+            val otherSite = ProviderId("bbwchan")
+            boardPreferences.setFavoriteBoard(otherSite, BoardId("b"), true)
+            val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
+            val state = browser.firstRun.state.first { it.initialized }
+
+            assertFalse(state.needed)
+            assertTrue(settings.settings.value.onboardingCompleted)
+            val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
+            assertEquals(
+                listOf(otherSite),
+                assertIs<Load.Ready<List<FeedThread>>>(feed).value.map { it.provider },
+            )
         }
 
     @Test

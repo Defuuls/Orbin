@@ -1,35 +1,25 @@
-# Orbin 195 - Bitter Melon
+# Orbin 196 - Kai Lan
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 195
-codename     = "Bitter Melon"
-version_code = 213
+number       = 196
+codename     = "Kai Lan"
+version_code = 214
 
-highlight = "TikTok-style vertical browsing, active-page video, shared typography, and redesigned discovery, library, search, and settings across Android and iOS."
+highlight = "Mandatory first-run board selection initializes Home before browsing on Android and iOS, and repairs installations that previously skipped setup."
 
 summary = [
-  "bump Orbin to 195-Bitter-Melon / versionCode 213",
-  "replace the Instagram layout with a shared TikTok-style reader",
-  "enable scoped active-page media and owned adjacent-clip preloading",
-  "synchronize release notes and Android/iOS version labels",
+  "require a saved board before finishing first-run setup on Android and iOS",
+  "recover existing installations with no followed boards",
+  "bump Orbin to 196-Kai-Lan / versionCode 214",
 ]
 
 [changelog]
-Added = [
-  "Full-screen vertical Home paging with Following and For You views, source selection, board navigation, captions, and independent watch, replies, save, and share controls over real 4chan and BBWChan threads.",
-  "Active-page MP4 and WebM playback on Android and iOS, with immediate tap pause, mute, progress, double-tap watching, and bounded next-clip preloading that honors app, site, and board preferences.",
-]
-Changed = [
-  "Replaced the Instagram-style cards and floating capsule with TikTok-style media overlays and a fixed five-position navigation bar; the central cyan/pink add button opens Boards to add boards to the feed.",
-  "Bundled official OFL-licensed TikTok Sans regular, medium, semibold, bold, and matching italic fonts for consistent shared typography on both platforms.",
-  "Redesigned Discover boards, Saved library, Watched activity, thread comments, source-aware Search, and Settings and privacy while retaining real callbacks and all privacy, security, backup, and playback options.",
-]
 Fixed = [
-  "Kept playback ownership tied to the settled source-qualified page through cancelled swipes, filtering, and row reordering; off-screen and background feed clips cannot continue playing.",
-  "Preserved manual pause and mute through decoder recreation while applying changed playback settings when saved pages return; made double-tap watching idempotent so rapid gestures cannot turn watching off.",
-  "Cancelled obsolete thumbnail batches during rapid swipes and scoped video preload cleanup to its owning feed or gallery; global privacy clearing still cancels all resources.",
-  "Matched native system-bar icon contrast to the black Home feed and restored the selected appearance on other destinations.",
+  "Required at least one saved board before Start browsing can finish setup on Android and iOS; board selection stays open until the reader explicitly starts their initialized feed.",
+  "Waited for local settings and follows before choosing the startup screen, and reopened setup for older installations that completed it with no boards.",
+  "Serialized board writes, kept setup open on save failures, and counted subscriptions and favorites across both sites so changing the selected site cannot strand setup.",
+  "Prevented restored navigation, shortcuts, and release notes from bypassing first-run setup, and opened the initialized Home feed across all sites.",
 ]
 Testing = [
-  "Added paging, source-identity, independent-action, search, navigation geometry, large-text, prefetch ownership, and real MP4/WebM feed playback and lifecycle regressions; refreshed shared visual baselines.",
+  "Added persistence, empty-install recovery, cross-site following, save-failure, navigation, and cold-relaunch regressions, including the installed iOS application's mandatory setup flow.",
 ]

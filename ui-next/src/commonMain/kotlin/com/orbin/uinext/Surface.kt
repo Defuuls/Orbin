@@ -535,6 +535,7 @@ fun InlineAction(
     accent: Boolean = false,
     selected: Boolean? = null,
     onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
 ) {
     val shape = RoundedCornerShape(NextRadius.control)
     val filled = selected ?: accent
@@ -545,12 +546,26 @@ fun InlineAction(
                 text = label,
                 style = NextType.callout,
                 fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
-                color = if (filled) next.onAccent else next.muted,
+                color =
+                    if (!enabled) {
+                        next.faint
+                    } else if (filled) {
+                        next.onAccent
+                    } else {
+                        next.muted
+                    },
                 modifier =
                     Modifier
                         .clip(shape)
-                        .background(if (filled) next.accent else Color.Transparent)
-                        .padding(horizontal = if (filled) 13.dp else 4.dp, vertical = 7.dp),
+                        .background(
+                            if (!filled) {
+                                Color.Transparent
+                            } else if (enabled) {
+                                next.accent
+                            } else {
+                                next.raised
+                            },
+                        ).padding(horizontal = if (filled) 13.dp else 4.dp, vertical = 7.dp),
             )
         }
     if (onClick == null) {
@@ -560,13 +575,14 @@ fun InlineAction(
     val press =
         if (selected == null) {
             Modifier.clickable(
+                enabled = enabled,
                 role = Role.Button,
                 indication = androidx.compose.material3.ripple(color = next.accent),
                 interactionSource = interaction,
                 onClick = onClick,
             )
         } else {
-            Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            Modifier.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
         }
     Box(
         modifier =

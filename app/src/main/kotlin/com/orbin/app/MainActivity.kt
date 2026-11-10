@@ -272,6 +272,7 @@ class MainActivity : FragmentActivity() {
             onRetryUnlock = { requestUnlock() },
             pendingRoute = pendingRoute,
             onPendingRouteHandled = { pendingRoute = null },
+            onOnboardingCompleted = viewModel::onOnboardingCompleted,
             // Offered once the reader can see the app: never over onboarding or the lock screen.
             updateDialog = {
                 val visible = settings.onboardingCompleted && (!shouldLock || unlocked)

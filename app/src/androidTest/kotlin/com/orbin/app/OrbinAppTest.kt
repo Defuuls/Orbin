@@ -1,7 +1,9 @@
 package com.orbin.app
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -78,9 +80,27 @@ class OrbinAppTest {
     fun firstRunAsksOnlyForBoards() {
         awaitText("Welcome to Orbin")
 
-        composeTestRule.onNodeWithText("Start browsing").assertExists()
+        composeTestRule.onNodeWithText("Start browsing").assertExists().assertIsNotEnabled()
         composeTestRule.onNodeWithText("Continue").assertDoesNotExist()
         composeTestRule.onNodeWithText("Privacy").assertDoesNotExist()
+    }
+
+    @Test
+    fun aHomeShortcutCannotSkipMandatoryBoardSetup() {
+        awaitText("Welcome to Orbin")
+
+        composeTestRule.runOnUiThread {
+            val activity = composeTestRule.activity
+            activity.startActivity(
+                Intent(activity, MainActivity::class.java)
+                    .setAction("com.orbin.shortcut.FEED")
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Welcome to Orbin").assertExists()
+        composeTestRule.onNodeWithText("Start browsing").assertIsNotEnabled()
     }
 
     /**

@@ -23,16 +23,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_onboarding_adult_board
 import com.orbin.uinext.resources.next_onboarding_catalog
+import com.orbin.uinext.resources.next_onboarding_empty
 import com.orbin.uinext.resources.next_onboarding_following_count
-import com.orbin.uinext.resources.next_onboarding_skip_hint
+import com.orbin.uinext.resources.next_onboarding_required_hint
+import com.orbin.uinext.resources.next_onboarding_saving
 import com.orbin.uinext.resources.next_onboarding_start
 import com.orbin.uinext.resources.next_onboarding_subtitle
 import com.orbin.uinext.resources.next_onboarding_title
@@ -81,6 +86,10 @@ fun OnboardingScreen(
     onRetry: () -> Unit,
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
+    totalFollowing: Int = following.size,
+    isSaving: Boolean = false,
+    errorMessage: String? = null,
+    canStart: Boolean = totalFollowing > 0 && !isSaving,
 ) {
     Column(
         modifier =
@@ -95,10 +104,22 @@ fun OnboardingScreen(
             subtitle = stringResource(Res.string.next_onboarding_subtitle),
         )
         if (sites.size > 1) {
-            SiteSelector(sites, selectedSite, onSelectSite)
+            SiteSelector(sites, selectedSite, enabled = !isSaving, onSelectSite)
         }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), onFollow, onRetry)
+            BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), !isSaving, onFollow, onRetry)
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = NextType.footnote,
+                color = next.destructive,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = NextSpace.gutter, vertical = 4.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+            )
         }
         Row(
             modifier =
@@ -110,20 +131,26 @@ fun OnboardingScreen(
         ) {
             Text(
                 text =
-                    if (following.isEmpty()) {
-                        stringResource(Res.string.next_onboarding_skip_hint)
-                    } else {
-                        pluralStringResource(
-                            Res.plurals.next_onboarding_following_count,
-                            following.size,
-                            following.size,
-                        )
+                    when {
+                        isSaving -> stringResource(Res.string.next_onboarding_saving)
+                        totalFollowing == 0 -> stringResource(Res.string.next_onboarding_required_hint)
+                        else ->
+                            pluralStringResource(
+                                Res.plurals.next_onboarding_following_count,
+                                totalFollowing,
+                                totalFollowing,
+                            )
                     },
                 style = NextType.footnote,
                 color = next.muted,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
-            InlineAction(label = stringResource(Res.string.next_onboarding_start), accent = true, onClick = onStart)
+            InlineAction(
+                label = stringResource(Res.string.next_onboarding_start),
+                accent = true,
+                enabled = canStart && totalFollowing > 0 && !isSaving,
+                onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
+            )
         }
     }
 }
@@ -132,6 +159,7 @@ fun OnboardingScreen(
 private fun SiteSelector(
     sites: List<String>,
     selected: Int,
+    enabled: Boolean,
     onSelect: (Int) -> Unit,
 ) {
     Row(
@@ -147,6 +175,7 @@ private fun SiteSelector(
             InlineAction(
                 label = name,
                 selected = index == selected,
+                enabled = enabled,
                 onClick = { onSelect(index) },
                 modifier = Modifier.weight(1f),
             )
@@ -159,6 +188,7 @@ private fun BoardsList(
     state: OnboardingBoards,
     following: Set<String>,
     siteId: String,
+    enabled: Boolean,
     onFollow: (board: String, follow: Boolean) -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -167,14 +197,20 @@ private fun BoardsList(
         is OnboardingBoards.Failed -> NextError(state.message, onRetry = onRetry)
         is OnboardingBoards.Ready ->
             if (state.boards.isEmpty()) {
-                NextEmpty("No boards available")
+                NextError(stringResource(Res.string.next_onboarding_empty), onRetry = onRetry)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 6.dp),
                 ) {
                     items(state.boards, key = { it.id }) { board ->
-                        BoardRow(board, siteId, isFollowed = board.id in following, onFollow = onFollow)
+                        BoardRow(
+                            board,
+                            siteId,
+                            isFollowed = board.id in following,
+                            enabled = enabled,
+                            onFollow = onFollow,
+                        )
                         GroupedDivider()
                     }
                 }
@@ -187,6 +223,7 @@ private fun BoardRow(
     board: OnboardingBoard,
     siteId: String,
     isFollowed: Boolean,
+    enabled: Boolean,
     onFollow: (board: String, follow: Boolean) -> Unit,
 ) {
     val description =
@@ -201,8 +238,12 @@ private fun BoardRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .toggleable(value = isFollowed, role = Role.Switch, onValueChange = { onFollow(board.id, it) })
-                .padding(horizontal = NextSpace.gutter, vertical = 9.dp),
+                .toggleable(
+                    value = isFollowed,
+                    enabled = enabled,
+                    role = Role.Switch,
+                    onValueChange = { onFollow(board.id, it) },
+                ).padding(horizontal = NextSpace.gutter, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
