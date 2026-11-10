@@ -14,7 +14,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -61,12 +60,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -76,7 +75,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -104,12 +102,6 @@ enum class NextDestination {
     SETTINGS,
 }
 
-/**
- * The permanent chrome: a floating dock with labeled Feed, Downloads and Boards destinations.
- *
- * Settings is not a tab: it is visited, not lived in, so it opens from the Feed header instead of
- * taking a slot here.
- */
 /**
  * Instagram-styled docked bottom navigation bar.
  * Clean, docked, edge-to-edge chrome with Home, Downloads, and Boards tabs.
@@ -189,11 +181,11 @@ fun DestinationPill(
 }
 
 @Composable
-private fun OrbitEmblem(
+internal fun OrbitEmblem(
     modifier: Modifier = Modifier,
     size: Dp = 52.dp,
+    tint: Color = next.ink,
 ) {
-    val ink = next.ink
     val cameraShape = RoundedCornerShape(NextRadius.control)
     Box(
         modifier =
@@ -211,24 +203,25 @@ private fun OrbitEmblem(
             val h = this.size.height
             val minDim = this.size.minDimension
             val stroke = Stroke(width = 1.75.dp.toPx())
+            val cr = minDim * 0.28f
 
             // Camera rounded rect body
             drawRoundRect(
-                color = ink,
+                color = tint,
                 size = this.size,
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(minDim * 0.28f, minDim * 0.28f),
+                cornerRadius = CornerRadius(cr, cr),
                 style = stroke,
             )
             // Center camera lens
             drawCircle(
-                color = ink,
+                color = tint,
                 radius = minDim * 0.24f,
                 center = Offset(w * 0.5f, h * 0.5f),
                 style = stroke,
             )
             // Top-right flash dot
             drawCircle(
-                color = ink,
+                color = tint,
                 radius = minDim * 0.06f,
                 center = Offset(w * 0.74f, h * 0.26f),
             )

@@ -132,9 +132,10 @@ internal fun InstagramStoriesTray(
     modifier: Modifier = Modifier,
     onSelectBoard: ((String) -> Unit)? = null,
 ) {
-    val boards = remember {
-        listOf("/all/", "/g/", "/v/", "/a/", "/ck/", "/p/", "/mu/", "/fit/", "/wsg/")
-    }
+    val boards =
+        remember {
+            listOf("/all/", "/g/", "/v/", "/a/", "/ck/", "/p/", "/mu/", "/fit/", "/wsg/")
+        }
     LazyRow(
         modifier = modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -263,8 +264,9 @@ private fun PostHeader(
             contentAlignment = Alignment.Center,
         ) {
             if (showBoard) {
+                val initials = row.board.filter { it != '/' }.take(2).uppercase()
                 Text(
-                    text = row.board.replace("/", "").take(2).uppercase(),
+                    text = initials,
                     style = NextType.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -385,7 +387,10 @@ private fun PostEngagement(
     excerptLines: Int,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, bottom = 10.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
     ) {
         val likeCount = row.replies * 3 + seed * 7 + 14
         Text(
