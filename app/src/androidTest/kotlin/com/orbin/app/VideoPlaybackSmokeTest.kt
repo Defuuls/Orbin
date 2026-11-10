@@ -6,9 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -23,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.orbin.media.video.VideoPlayer
+import com.orbin.uinext.FeedPlaybackTags
 import com.orbin.uinext.NextTheme
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -34,6 +44,7 @@ import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Exercises the real player, Hilt data source, Android decoder, controls, and Activity lifecycle. */
 @HiltAndroidTest
@@ -56,6 +67,7 @@ class VideoPlaybackSmokeTest {
 
     private var fixture: File? = null
     private var player: ExoPlayer? = null
+    private var recreatePlayer: (() -> Unit)? = null
 
     @After
     fun removeFixture() {
@@ -65,6 +77,7 @@ class VideoPlaybackSmokeTest {
             composeRule.mainClock.advanceTimeByFrame()
             composeRule.waitForIdle()
             player = null
+            recreatePlayer = null
             fixture?.delete()
             fixture = null
         }
@@ -115,10 +128,75 @@ class VideoPlaybackSmokeTest {
         assertFalse("WebM must not report a decoder error", playerMatches { it.playerError != null })
     }
 
+    @Test
+    fun feedPlaybackPausesDirectlyAndNeverEnablesAutomaticPip() {
+        showRealPlayer(autoPlay = false, loop = true, feedMode = true)
+        composeRule.onNodeWithTag(FeedPlaybackTags.SURFACE).performClick()
+        awaitRenderedPlayback()
+
+        composeRule.onNodeWithTag(FeedPlaybackTags.MUTE).performClick()
+        waitForPlayer { it.volume == 1f }
+        val previousPlayer = checkNotNull(player)
+        composeRule.runOnUiThread { checkNotNull(recreatePlayer).invoke() }
+        awaitPlayer(previousPlayer)
+        awaitRenderedPlayback()
+        assertTrue("A recreated feed decoder retains the explicit unmute", playerMatches { it.volume == 1f })
+
+        // An actively playing feed must background normally rather than entering PiP.
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        composeRule.runOnUiThread {
+            assertFalse(
+                "Playing feed video must not enter PiP when backgrounded",
+                composeRule.activity.isInPictureInPictureMode,
+            )
+        }
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        awaitRenderedPlayback()
+
+        composeRule.onNodeWithTag(FeedPlaybackTags.SURFACE).performTouchInput { click() }
+        assertTrue(
+            "Feed tap pauses the native player immediately",
+            playerMatches { !it.isPlaying && !it.playWhenReady },
+        )
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        composeRule.runOnUiThread {
+            assertFalse("A paused feed must remain out of PiP", composeRule.activity.isInPictureInPictureMode)
+        }
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        composeRule.mainClock.advanceTimeByFrame()
+        assertTrue("Manual feed pause survives backgrounding", playerMatches { !it.playWhenReady })
+
+        composeRule.onNodeWithTag(FeedPlaybackTags.SURFACE).performClick()
+        awaitRenderedPlayback()
+        assertFalse("Feed playback must not report a decoder error", playerMatches { it.playerError != null })
+    }
+
+    @Test
+    fun feedWebmDecodesAndDoubleTapAddsAWatchWithoutPausing() {
+        val watches = AtomicInteger()
+        showRealPlayer(
+            autoPlay = true,
+            loop = true,
+            assetName = "playback-smoke.webm",
+            feedMode = true,
+            onFeedLike = { watches.incrementAndGet() },
+        )
+        awaitRenderedPlayback()
+        composeRule.onNodeWithTag(FeedPlaybackTags.SURFACE).performTouchInput { doubleClick() }
+        composeRule.waitUntil(TIMEOUT_MS) {
+            composeRule.mainClock.advanceTimeByFrame()
+            watches.get() == 1
+        }
+        awaitRenderedPlayback()
+        assertFalse("Feed WebM must not report a decoder error", playerMatches { it.playerError != null })
+    }
+
     private fun showRealPlayer(
         autoPlay: Boolean,
         loop: Boolean,
         assetName: String = "playback-smoke.mp4",
+        feedMode: Boolean = false,
+        onFeedLike: (() -> Unit)? = null,
     ) {
         composeRule.waitUntil(TIMEOUT_MS) {
             composeRule.onAllNodesWithText("Welcome to Orbin").fetchSemanticsNodes().isNotEmpty()
@@ -141,22 +219,48 @@ class VideoPlaybackSmokeTest {
         composeRule.runOnUiThread {
             composeRule.activity.setContent {
                 NextTheme {
-                    VideoPlayer(
-                        url = file.toURI().toString(),
-                        autoPlay = autoPlay,
-                        muted = true,
-                        loop = loop,
-                        modifier = Modifier.fillMaxSize().testTag(SURFACE_TAG),
-                    )
+                    // The host keeps user intent while the active page releases its decoder.
+                    var retainedMuted by rememberSaveable { mutableStateOf(true) }
+                    var retainedPlaying by rememberSaveable { mutableStateOf(autoPlay) }
+                    var generation by remember { mutableIntStateOf(0) }
+                    SideEffect { recreatePlayer = { generation++ } }
+                    key(generation) {
+                        VideoPlayer(
+                            url = file.toURI().toString(),
+                            autoPlay = if (feedMode) retainedPlaying else autoPlay,
+                            muted = retainedMuted,
+                            loop = loop,
+                            feedMode = feedMode,
+                            onFeedLike = onFeedLike,
+                            onPlayIntentChange =
+                                if (feedMode) {
+                                    { retainedPlaying = it }
+                                } else {
+                                    null
+                                },
+                            onMuteIntentChange =
+                                if (feedMode) {
+                                    { retainedMuted = it }
+                                } else {
+                                    null
+                                },
+                            modifier = Modifier.fillMaxSize().testTag(SURFACE_TAG),
+                        )
+                    }
                 }
             }
         }
+        awaitPlayer()
+    }
+
+    private fun awaitPlayer(previous: ExoPlayer? = null) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
         composeRule.waitUntil(TIMEOUT_MS) {
             composeRule.mainClock.advanceTimeByFrame()
             var found: ExoPlayer? = null
             instrumentation.runOnMainSync { found = findPlayer(composeRule.activity.window.decorView) }
             player = found
-            found != null
+            found != null && found !== previous
         }
     }
 

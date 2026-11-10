@@ -69,7 +69,7 @@ class SettingsRowsTest {
     }
 
     @Test
-    fun anIpadChoosesItsFeedAndCatalogColumnsAndAnIphoneDoesNot() {
+    fun onlyTheTabletCatalogOffersColumnsWhileImmersiveHomeDoesNot() {
         fun rows(formFactor: FormFactor) =
             settingsGroups(
                 AppSettings(tabletFeedColumns = 3),
@@ -78,18 +78,16 @@ class SettingsRowsTest {
                 formFactor = formFactor,
             ).flatMap { it.second }
 
-        val columns = rows(FormFactor.TABLET).single { it.id == SettingIds.FEED_COLUMNS }
-        assertEquals(SettingKind.CHOICE, columns.kind)
-        assertEquals(listOf("1", "2", "3", "4"), columns.options)
-        assertEquals("3", columns.value)
-        assertEquals(2, columns.selected)
-        assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.FEED_COLUMNS })
+        FormFactor.entries.forEach { factor ->
+            assertTrue(rows(factor).none { it.id == SettingIds.FEED_COLUMNS })
+        }
 
         val catalog = rows(FormFactor.TABLET).single { it.id == SettingIds.CATALOG_COLUMNS }
         assertEquals((2..8).map { it.toString() }, catalog.options)
         assertEquals("4", catalog.value)
         assertEquals(2, catalog.selected)
         assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.CATALOG_COLUMNS })
+        assertTrue(rows(FormFactor.FOLDABLE).none { it.id == SettingIds.CATALOG_COLUMNS })
     }
 
     @Test

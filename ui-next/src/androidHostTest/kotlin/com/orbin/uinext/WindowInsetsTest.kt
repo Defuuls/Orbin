@@ -1,9 +1,14 @@
 package com.orbin.uinext
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -18,8 +23,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The interface draws edge to edge with no top bar and no bottom navigation bar, so nothing but
- * these screens is keeping content out of the status bar and the gesture handle. That went wrong
+ * Media fills the edge-to-edge viewport while overlay controls and navigation respect safe areas.
+ * These screens keep actions and captions out of the status bar and gesture handle. That went wrong
  * once already — every screen was cut off at both ends on a device with real insets — and the
  * screenshot goldens could not see it, because Robolectric renders with no system bars at all
  * unless a test puts them there. This is the test that puts them there.
@@ -31,26 +36,55 @@ class WindowInsetsTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `feed content clears the status bar and the tab pill clears the navigation bar`() {
+    fun `immersive media is edge to edge while captions and navigation clear system bars`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
                     rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
                     subtitle = "1 thread",
-                    // Draw the shared tab bar so its safe-area clearance is checked.
-                    onOpenDownloads = {},
+                    onOpenBoards = {},
+                    onOpenWatched = {},
+                    onOpenSearch = {},
+                    onOpenSaved = {},
+                    thumbnail = { _, modifier ->
+                        Box(modifier.testTag("feed-media").background(Color.Green))
+                    },
                 )
             }
         }
         applySystemBars()
 
         val root = composeRule.onRoot().getUnclippedBoundsInRoot()
-        // The first row is below the status bar rather than under the clock.
+        val media = composeRule.onNodeWithTag("feed-media").getUnclippedBoundsInRoot()
+        assertThat(media.top.value).isWithin(0.5f).of(root.top.value)
+        assertThat(media.left.value).isWithin(0.5f).of(root.left.value)
+        assertThat(media.right.value).isWithin(0.5f).of(root.right.value)
+        // Media can extend behind the status bar; its caption must remain readable.
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
-        // The pill is above the gesture handle rather than behind it.
-        val pill = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
-        assertThat(pill.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
+        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
+        assertThat(home.left.value).isWithin(0.5f).of(root.left.value)
+        assertThat(saved.right.value).isWithin(0.5f).of(root.right.value)
+        assertThat(saved.bottom.value).isWithin(0.5f).of((root.bottom - NAVIGATION_BAR).value)
+        assertThat(firstRow.bottom.value).isAtMost(saved.top.value)
+    }
+
+    @Test
+    fun `navigation uses horizontal safe areas without adding capsule margins`() {
+        composeRule.setContent {
+            NextTheme {
+                Box {
+                    DestinationPill(NextDestination.FEED, {})
+                }
+            }
+        }
+        applySystemBars(horizontal = 24.dp)
+        val root = composeRule.onRoot().getUnclippedBoundsInRoot()
+        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
+        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
+        assertThat(home.left.value).isWithin(0.5f).of((root.left + 24.dp).value)
+        assertThat(saved.right.value).isWithin(0.5f).of((root.right - 24.dp).value)
     }
 
     @Test
@@ -67,7 +101,7 @@ class WindowInsetsTest {
         }
         applySystemBars()
 
-        val title = composeRule.onNodeWithText("Settings and activity").getUnclippedBoundsInRoot()
+        val title = composeRule.onNodeWithText("Settings and privacy").getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
     }
 
@@ -76,12 +110,17 @@ class WindowInsetsTest {
      * point of the test: without it the assertions pass on a broken layout, which is exactly how
      * the goldens missed this.
      */
-    private fun applySystemBars() {
+    private fun applySystemBars(horizontal: androidx.compose.ui.unit.Dp = 0.dp) {
         val decor = composeRule.activity.window.decorView
         val density = composeRule.density
         val bars =
             with(density) {
-                Insets.of(0, STATUS_BAR.roundToPx(), 0, NAVIGATION_BAR.roundToPx())
+                Insets.of(
+                    horizontal.roundToPx(),
+                    STATUS_BAR.roundToPx(),
+                    horizontal.roundToPx(),
+                    NAVIGATION_BAR.roundToPx(),
+                )
             }
         val insets =
             WindowInsetsCompat.Builder().setInsets(WindowInsetsCompat.Type.systemBars(), bars).build()

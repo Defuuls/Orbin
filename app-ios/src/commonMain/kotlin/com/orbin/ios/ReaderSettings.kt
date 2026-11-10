@@ -11,7 +11,6 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
-import com.orbin.core.model.feedColumnsFor
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -200,7 +199,6 @@ private fun appearanceAndPrivacyRows(
         ),
         colorThemeChoice(settings.colorTheme),
         toggle(SettingIds.AMOLED, "True black", settings.amoled),
-        feedColumns(settings, formFactor),
         catalogColumns(settings, formFactor),
         toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
         toggle(
@@ -304,7 +302,6 @@ private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): Lis
             SettingIds.THEME,
             SettingIds.COLOR_THEME,
             SettingIds.AMOLED,
-            SettingIds.FEED_COLUMNS,
             SettingIds.CATALOG_COLUMNS,
         )
     val privacyIds =
@@ -336,23 +333,6 @@ private fun versionRow(version: AppVersion): SettingItem? {
         value = version.name,
         kind = SettingKind.INFO,
         hint = version.build.takeUnless { it.isBlank() }?.let { "Build $it" },
-    )
-}
-
-/** An iPad's feed column count, as Android's tablet row: only where the device has a choice. */
-private fun feedColumns(
-    settings: AppSettings,
-    formFactor: FormFactor,
-): SettingItem? {
-    if (formFactor.maxFeedColumns <= 1) return null
-    val columns = settings.feedColumnsFor(formFactor).coerceIn(1, formFactor.maxFeedColumns)
-    return SettingItem(
-        id = SettingIds.FEED_COLUMNS,
-        label = "Feed columns",
-        value = columns.toString(),
-        kind = SettingKind.CHOICE,
-        options = (1..formFactor.maxFeedColumns).map { it.toString() },
-        selected = columns - 1,
     )
 }
 

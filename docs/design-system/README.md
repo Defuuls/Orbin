@@ -8,7 +8,8 @@ and callbacks. The shared UI never reads repositories directly.
 
 ## Navigation and source identity
 
-The primary destinations are **Home, Boards, Watched, Search, and Saved**. Settings opens
+The primary destinations are **Home, Watched, Boards, Search, and Saved**. The central
+cyan/pink add button opens Boards so the reader can add boards to the feed. Settings opens
 from the header menu as a separate page, with back navigation and no bottom
 bar. Downloads, history, and watched threads remain reachable through settings.
 
@@ -23,17 +24,20 @@ from providers rather than a fixed list of example boards.
 
 ## Visual language
 
-The default theme is monochrome, with white light surfaces, dark text, quiet gray
-metadata, and subtle section separators. Dark and true-black modes and existing
-optional color themes remain available. Use semantic `next` colors and `NextType`,
-`NextSpace`, and `NextRadius`; do not introduce a separate screen palette.
+Home uses a full-screen vertical pager on a black canvas with overlaid Following
+and For You tabs, caption/source metadata, and a right-side action rail. One settled
+source-qualified page owns active playback. The current clip remains stable during a
+cancelled drag; a new page takes ownership after settling. The fixed five-position
+navigation clears the native bottom safe area and remains reachable while paging.
 
-Use compact 20–22sp screen titles, 16sp body text, 16dp side margins, and an 8dp
-spacing rhythm. Flat rows replace bordered cards and hardware decoration. Post
-media can extend to the screen edges; its metadata and text retain their gutters.
-Text-only posts do not reserve an empty media frame. Production slots preserve
-image aspect ratios, spoilers, multiple attachments, links, and existing players.
-Still images do not acquire video-only mute or looping controls.
+The shared interface bundles official TikTok Sans weights and italics. Non-media
+screens use white or dark flat surfaces, compact centered headers, subtle grouped
+sections, gray search fields, and restrained pink accents. Existing optional color
+themes and Light/Dark/AMOLED settings remain available. Board catalogs and Saved use
+three-column covers at standard text sizes, with accessible alternatives for larger text.
+Media preserves its natural aspect ratio on the black canvas, including landscape
+letterboxing. Spoilers remain covered until explicitly revealed. Text-only threads
+use readable text pages, and still images do not acquire video-only controls.
 
 Anonymous post headers show the actual author and post number, with a small OP
 badge on the original post. Quote links use accessible green in light and dark
@@ -42,7 +46,7 @@ to use their real host callbacks.
 
 ## Settings and playback
 
-“Settings and activity” is a searchable directory with dedicated subpages and selection lists for
+“Settings and privacy” is a searchable directory with dedicated subpages and selection lists for
 browsing, appearance, playback, privacy, storage, and app information. Search finds
 all supplied controls by label, group, hint, value, and choices. Unknown controls
 remain accessible through More settings. Security, DNS, backup, and update
@@ -53,18 +57,21 @@ override. A board scope always contains its provider. Turning inheritance off
 copies the current effective values; resetting removes that scope's override so
 future parent changes flow through. Explicit board overrides survive a site reset.
 Autoplay, starting muted, looping, and neighbor preloading affect real viewer
-consumers, and settings are included in backups. Android feed previews remain
-static; iOS inline previews respect effective playback preferences.
+consumers and active Home videos, and settings are included in backups. Feed playback
+requires a settled active page and the effective preference; manual play remains
+available when autoplay is off. Owned preloads are cancelled on source changes,
+backgrounding, or departure without cancelling a newer screen's resources.
 
 ## Accessibility and verification
 
 Controls have at least 48dp touch targets. The five tab icons expose labels and
-selected semantics while retaining the reference’s icon-only layout at enlarged text sizes. Headers and content clear
+selected semantics with compact visible labels; the central Boards add artwork retains
+an accessible name. Larger text can grow the bar instead of shrinking its controls. Headers and content clear
 safe areas, and measured tab height determines scrolling clearance. Accommodate
 2× text, narrow windows, landscape, tablets, and foldables. Toggle rows own one
 checked action; their visual switch stays passive when the row owns the toggle.
 
-The [current iOS reference audit](instagram-reference.md) records the pinned reference, layout targets, and the limits of pixel-level verification.
+The [current iOS reference audit](tiktok-reference.md) records the pinned reference, layout targets, and the limits of pixel-level verification.
 
 Tests cover source identity collisions, source filtering, favorite/open actions,
 settings navigation and search, playback inheritance/reset/persistence, and tab

@@ -35,6 +35,13 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         OrbinVersionName: $(ORBIN_VERSION_NAME)
+        # The app delegate creates each window with the status-bar-aware Compose container as root.
+        UIViewControllerBasedStatusBarAppearance: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Orbin
         # Solid brand ground + centered app mark while Kotlin/Compose loads.
         # LaunchMark is derived from AppIcon (no separate designer artwork); regenerate Xcode with xcodegen.
         UILaunchScreen:
@@ -108,6 +115,21 @@ targets:
         script: |
           cd "$SRCROOT/.."
           ./gradlew :app-ios:embedAndSignAppleFrameworkForXcode
+  OrbinUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - OrbinUITests
+    dependencies:
+      - target: Orbin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID).uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Orbin
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
 schemes:
   Orbin:
     build:
@@ -115,5 +137,11 @@ schemes:
         Orbin: all
     run:
       config: Debug
+    test:
+      config: Debug
+      language: en
+      region: US
+      targets:
+        - OrbinUITests
     archive:
       config: Release

@@ -6,21 +6,21 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.social_settings_about
 import com.orbin.uinext.resources.social_settings_appearance
 import com.orbin.uinext.resources.social_settings_board_preferences
-import com.orbin.uinext.resources.social_settings_browsing
 import com.orbin.uinext.resources.social_settings_downloads
 import com.orbin.uinext.resources.social_settings_enabled_sites
 import com.orbin.uinext.resources.social_settings_favorite_boards
 import com.orbin.uinext.resources.social_settings_help
 import com.orbin.uinext.resources.social_settings_hidden
 import com.orbin.uinext.resources.social_settings_history
-import com.orbin.uinext.resources.social_settings_media
-import com.orbin.uinext.resources.social_settings_more
 import com.orbin.uinext.resources.social_settings_other
 import com.orbin.uinext.resources.social_settings_playback
 import com.orbin.uinext.resources.social_settings_privacy
-import com.orbin.uinext.resources.social_settings_sites
 import com.orbin.uinext.resources.social_settings_storage
 import com.orbin.uinext.resources.social_settings_watched
+import com.orbin.uinext.resources.tiktok_settings_browsing
+import com.orbin.uinext.resources.tiktok_settings_cache
+import com.orbin.uinext.resources.tiktok_settings_content
+import com.orbin.uinext.resources.tiktok_settings_support
 import org.jetbrains.compose.resources.stringResource
 
 internal val EXTERNAL_SETTINGS_DESTINATIONS = setOf("boards", "favorites", "watched", "help")
@@ -47,28 +47,16 @@ internal fun settingsDirectory(
     navigationAvailable: Boolean,
 ): List<Pair<String, List<String>>> =
     listOf(
-        "sites" to
-            if (navigationAvailable) {
-                listOfNotNull(
-                    "boards",
-                    "boardPreferences".takeIf {
-                        "playback" in pages
-                    },
-                    "favorites",
-                )
-            } else {
-                emptyList()
-            },
         "browsing" to
             listOfNotNull(
+                "boards".takeIf { navigationAvailable },
+                "boardPreferences".takeIf { navigationAvailable && "playback" in pages },
+                "favorites".takeIf { navigationAvailable },
                 "history".takeIf { it in pages },
                 "watched".takeIf { navigationAvailable },
-                "hidden".takeIf {
-                    it in
-                        pages
-                },
             ),
-        "media" to listOf("playback", "appearance", "privacy", "storage").filter { it in pages },
+        "content" to listOf("playback", "appearance", "hidden", "privacy").filter { it in pages },
+        "cache" to listOf("storage").filter { it in pages },
         "more" to
             listOfNotNull(
                 "help".takeIf { navigationAvailable },
@@ -103,10 +91,10 @@ internal fun settingsPageLabels(): Map<String, String> =
 internal fun directorySectionLabel(id: String): String =
     stringResource(
         when (id) {
-            "sites" -> Res.string.social_settings_sites
-            "browsing" -> Res.string.social_settings_browsing
-            "media" -> Res.string.social_settings_media
-            else -> Res.string.social_settings_more
+            "browsing" -> Res.string.tiktok_settings_browsing
+            "content" -> Res.string.tiktok_settings_content
+            "cache" -> Res.string.tiktok_settings_cache
+            else -> Res.string.tiktok_settings_support
         },
     )
 

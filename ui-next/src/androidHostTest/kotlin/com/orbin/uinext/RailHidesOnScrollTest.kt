@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
@@ -19,14 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * Scrolling down puts the tab pill away, and secondary screens have no floating bar to put away.
- *
- * The catalog and media wall used to carry a floating name bar that repeated their own large title
- * over the content. They now draw no bottom chrome at all, the same as a thread, so the only bar
- * left to hide is the Feed / Media / Boards pill. The screens still report scroll direction to the shell
- * so the system bars can follow.
- */
+/** Fixed TikTok navigation survives paging; secondary catalogs retain their scroll reporting. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class RailHidesOnScrollTest {
@@ -34,17 +28,17 @@ class RailHidesOnScrollTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the feed puts its tab pill away as the reader scrolls down`() {
+    fun `TikTok navigation remains reachable while paging even with legacy hide preference`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = true) }
         }
         composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
         scrollFeedDown()
-        composeRule.onNodeWithContentDescription(SAVED_TAB).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
     }
 
     @Test
-    fun `the feed keeps its tab pill when the setting is off`() {
+    fun `TikTok navigation remains reachable when the legacy hide preference is off`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = false) }
         }
@@ -89,10 +83,10 @@ class RailHidesOnScrollTest {
     }
 
     private fun scrollFeedDown() {
-        val grid = composeRule.onNode(verticalScrollAction())
+        val grid = composeRule.onNodeWithTag(TikTokFeedTags.PAGER)
         grid.performScrollToIndex(12)
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Thread number 12").assertIsDisplayed()
+        composeRule.onNodeWithText("Thread number 13").assertIsDisplayed()
         val offset = grid.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
         assertTrue("Expected the feed to move down, offset=$offset", offset > 0f)
     }

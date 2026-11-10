@@ -16,15 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * A title is information, not furniture: it says what you opened and stops being useful once you
- * are reading. Every screen here is supposed to put its header *in* the content so it scrolls away
- * — and the feed, the board catalogue and the media wall did not, they pinned it in a band above
- * the list, which is the thing the whole interface argues against.
- *
- * The screenshot goldens cannot see this. They are all captured at rest, where a pinned header and
- * a first-item header are the same picture. So this scrolls.
- */
+/** Feed tabs stay over the pager while catalog headers retain their own reading behavior. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class ScrollingHeaderTest {
@@ -32,27 +24,29 @@ class ScrollingHeaderTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the feed header scrolls away with the list`() {
+    fun `feed tabs remain visible after paging to the last thread`() {
         composeRule.setContent { NextTheme { FeedScreen(rows = rows(), showRail = false) } }
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
-        scrollToLastRow()
+        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(ROW_COUNT - 1)
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithText(LAST_SUBJECT).assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     /** The grid is the harder case: a header there has to span every column rather than take a cell. */
     @Test
-    fun `the feed header scrolls away in the grid`() {
+    fun `feed tabs stay visible when the caller requests legacy grid defaults`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = rows(), showRail = false) }
         }
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
-        scrollToLastRow()
+        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(ROW_COUNT - 1)
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
+        composeRule.onNodeWithText(LAST_SUBJECT).assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 

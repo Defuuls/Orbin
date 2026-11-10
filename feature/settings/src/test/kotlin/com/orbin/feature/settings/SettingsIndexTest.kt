@@ -62,22 +62,13 @@ class SettingsIndexTest {
         assertThat(duplicates).isEmpty()
     }
 
-    /** Only a device with a wide screen offers a column count, and only as many as it allows. */
+    /** Home pages one thread at a time, so persisted legacy column preferences have no control. */
     @Test
-    fun `feed columns show only on foldables and tablets`() {
+    fun `immersive feed never offers a column control`() {
         fun columnsRow(formFactor: FormFactor) =
             buildModel(formFactor).groups.flatMap { it.second }.firstOrNull { it.id == "feedColumns" }
 
-        assertThat(columnsRow(FormFactor.PHONE)).isNull()
-        with(checkNotNull(columnsRow(FormFactor.FOLDABLE))) {
-            assertThat(label).isEqualTo("Feed columns when unfolded")
-            assertThat(options).containsExactly("1 column", "2 columns", "3 columns").inOrder()
-            assertThat(value).isEqualTo("2 columns")
-        }
-        with(checkNotNull(columnsRow(FormFactor.TABLET))) {
-            assertThat(label).isEqualTo("Feed columns")
-            assertThat(options).containsExactly("1 column", "2 columns", "3 columns", "4 columns").inOrder()
-        }
+        FormFactor.entries.forEach { assertThat(columnsRow(it)).isNull() }
     }
 
     /** A board catalog's column count is a tablet's alone: a foldable's catalog fits itself. */

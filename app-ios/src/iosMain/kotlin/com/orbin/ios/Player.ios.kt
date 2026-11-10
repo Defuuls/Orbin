@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
+import com.orbin.uinext.FeedPlaybackControls
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
@@ -49,8 +50,10 @@ import platform.Foundation.NSLog
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
+import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationState.UIApplicationStateActive
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
@@ -76,6 +79,10 @@ internal actual fun NativePlayer(
     autoPlay: Boolean,
     initiallyMuted: Boolean,
     preloader: NativeMediaPreloader?,
+    feedMode: Boolean,
+    onFeedLike: (() -> Unit)?,
+    onPlayIntentChange: ((Boolean) -> Unit)?,
+    onMuteIntentChange: ((Boolean) -> Unit)?,
 ) {
     val player =
         remember(url, preloader) {
@@ -84,8 +91,15 @@ internal actual fun NativePlayer(
         } ?: return
     var muted by remember(player) { mutableStateOf(player.muted) }
     val currentLoop = rememberUpdatedState(loop)
+    val reportIntent by rememberUpdatedState(onPlayIntentChange)
+    val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
     val currentActive = rememberUpdatedState(active)
-    val foreground = remember(player) { mutableStateOf(true) }
+    val foreground =
+        remember(player) {
+            mutableStateOf(
+                !feedMode || UIApplication.sharedApplication.applicationState == UIApplicationStateActive,
+            )
+        }
     var playRequested by remember(player) { mutableStateOf(active && autoPlay) }
     var state by remember(player) { mutableStateOf(VideoState()) }
     DisposableEffect(player) {
@@ -102,6 +116,7 @@ internal actual fun NativePlayer(
                     player.play()
                 } else if (!currentLoop.value) {
                     playRequested = false
+                    reportIntent?.invoke(false)
                 }
             }
         val resignObserver =
@@ -139,7 +154,7 @@ internal actual fun NativePlayer(
     }
     // Audio policy must not change a manually started or paused player's playback state.
     LaunchedEffect(player, initiallyMuted) {
-        muted = initiallyMuted && SessionAudio.muted
+        muted = if (feedMode) initiallyMuted else initiallyMuted && SessionAudio.muted
         player.muted = muted
         val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
         AVAudioSession.sharedInstance().setCategory(category, error = null)
@@ -190,7 +205,7 @@ internal actual fun NativePlayer(
             factory = {
                 AVPlayerViewController().apply {
                     showsPlaybackControls = false
-                    allowsPictureInPicturePlayback = true
+                    allowsPictureInPicturePlayback = !feedMode
                 }
             },
             // The interop factory runs once per host, not once per remembered player. A URL
@@ -199,38 +214,61 @@ internal actual fun NativePlayer(
             // are not PiP sources.
             update = {
                 it.player = player
-                it.canStartPictureInPictureAutomaticallyFromInline = active
+                it.allowsPictureInPicturePlayback = !feedMode
+                it.canStartPictureInPictureAutomaticallyFromInline = active && !feedMode
             },
             onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize(),
             properties = PASS_THROUGH,
         )
-        VideoControls(
-            state = state.copy(muted = muted),
-            onTogglePlay = {
-                playRequested = player.rate <= 0f
-                if (!playRequested) {
-                    player.pause()
-                } else {
-                    if (state.duration > 0.0 && state.position >= state.duration - 0.1) {
-                        player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
-                    }
-                    player.play()
+        val togglePlay: () -> Unit = {
+            playRequested = if (feedMode) !playRequested else player.rate <= 0f
+            if (!playRequested) {
+                player.pause()
+            } else {
+                if (state.duration > 0.0 && state.position >= state.duration - 0.1) {
+                    player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
                 }
-            },
-            onToggleMute = {
-                muted = SessionAudio.toggle(muted)
-                player.muted = muted
-                val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
-                AVAudioSession.sharedInstance().setCategory(category, error = null)
-            },
-            onSeekTo = { target ->
-                player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
-            },
-            modifier = Modifier.matchParentSize(),
-        )
+                player.play()
+            }
+            reportIntent?.invoke(playRequested)
+        }
+        val toggleMute: () -> Unit = {
+            muted = SessionAudio.toggle(muted)
+            reportMuteIntent?.invoke(muted)
+            player.muted = muted
+            val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+            AVAudioSession.sharedInstance().setCategory(category, error = null)
+        }
+        if (feedMode) {
+            FeedPlaybackControls(
+                playing = playRequested,
+                muted = muted,
+                onPlayPause = togglePlay,
+                onMuteToggle = toggleMute,
+                progress = state.feedProgress,
+                onDoubleTap = onFeedLike,
+                modifier = Modifier.matchParentSize(),
+            )
+        } else {
+            VideoControls(
+                state = state.copy(muted = muted),
+                onTogglePlay = togglePlay,
+                onToggleMute = toggleMute,
+                onSeekTo = { target ->
+                    player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
+                },
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
 }
+
+private val VideoState.feedProgress: Float
+    get() = if (duration > 0.0) (position / duration).toFloat() else 0f
+
+private val VideoState.atEnd: Boolean
+    get() = duration > 0.0 && position >= duration - 0.05 && !playing
 
 /** A media time in seconds, or 0 while it is not yet known. */
 @OptIn(ExperimentalForeignApi::class)
@@ -261,12 +299,23 @@ internal actual fun NativeWebMPlayer(
     initiallyMuted: Boolean,
     loop: Boolean,
     preloader: NativeMediaPreloader?,
+    feedMode: Boolean,
+    onFeedLike: (() -> Unit)?,
+    onPlayIntentChange: ((Boolean) -> Unit)?,
+    onMuteIntentChange: ((Boolean) -> Unit)?,
 ) {
     var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
     var playRequested by remember(url) { mutableStateOf(active && autoPlay) }
+    val reportIntent by rememberUpdatedState(onPlayIntentChange)
+    val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
     var playCommand by remember(url) { mutableIntStateOf(0) }
-    var foreground by remember(url) { mutableStateOf(true) }
+    var foreground by remember(url) {
+        mutableStateOf(
+            !feedMode || UIApplication.sharedApplication.applicationState == UIApplicationStateActive,
+        )
+    }
     val currentActive by rememberUpdatedState(active)
+    val currentLoop by rememberUpdatedState(loop)
     // Read mutable intent when dispatching, including notifications before another UI frame.
     val request by rememberUpdatedState {
         WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop)
@@ -343,7 +392,15 @@ internal actual fun NativeWebMPlayer(
         while (true) {
             val sent = request()
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
-                if (playCommand == sent.command) state = it
+                if (playCommand == sent.command) {
+                    state = it
+                    val completedFeedClip = feedMode && !currentLoop && it.atEnd
+                    if (completedFeedClip && playRequested) {
+                        playRequested = false
+                        playCommand++
+                        reportIntent?.invoke(false)
+                    }
+                }
             }
             delay(CONTROLS_REFRESH_MS)
         }
@@ -402,35 +459,51 @@ internal actual fun NativeWebMPlayer(
         key(webView) {
             UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
         }
-        VideoControls(
-            state = state.copy(muted = muted),
-            onToggleMute = {
-                muted = SessionAudio.toggle(muted)
-                val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
-                AVAudioSession.sharedInstance().setCategory(category, error = null)
-                webView.evaluateJavaScript(
-                    webMPlaybackScript(
-                        WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
-                    ),
-                    null,
-                )
-            },
-            onTogglePlay = {
-                playRequested = !state.playing
-                playCommand++
-                state = state.copy(playing = playRequested)
-                webView.evaluateJavaScript(
-                    webMPlaybackScript(
-                        WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
-                    ),
-                    null,
-                )
-            },
-            onSeekTo = { target ->
-                webView.evaluateJavaScript("document.getElementById('v').currentTime=$target", null)
-            },
-            modifier = Modifier.matchParentSize(),
-        )
+        val toggleMute: () -> Unit = {
+            muted = SessionAudio.toggle(muted)
+            reportMuteIntent?.invoke(muted)
+            val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
+            AVAudioSession.sharedInstance().setCategory(category, error = null)
+            webView.evaluateJavaScript(
+                webMPlaybackScript(
+                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                ),
+                null,
+            )
+        }
+        val togglePlay: () -> Unit = {
+            playRequested = if (feedMode) !playRequested else !state.playing
+            playCommand++
+            state = state.copy(playing = playRequested)
+            webView.evaluateJavaScript(
+                webMPlaybackScript(
+                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                ),
+                null,
+            )
+            reportIntent?.invoke(playRequested)
+        }
+        if (feedMode) {
+            FeedPlaybackControls(
+                playing = playRequested && !state.atEnd,
+                muted = muted,
+                onPlayPause = togglePlay,
+                onMuteToggle = toggleMute,
+                progress = state.feedProgress,
+                onDoubleTap = onFeedLike,
+                modifier = Modifier.matchParentSize(),
+            )
+        } else {
+            VideoControls(
+                state = state.copy(muted = muted),
+                onToggleMute = toggleMute,
+                onTogglePlay = togglePlay,
+                onSeekTo = { target ->
+                    webView.evaluateJavaScript("document.getElementById('v').currentTime=$target", null)
+                },
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
 }
 

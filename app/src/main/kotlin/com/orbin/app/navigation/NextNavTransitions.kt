@@ -43,8 +43,8 @@ internal fun NavDestination.isPrimaryTab(): Boolean =
 private const val TAB_FEED = 0
 private const val TAB_SEARCH = 3
 private const val TAB_SAVED = 4
-private const val TAB_BOARDS = 1
-private const val TAB_WATCHED = 2
+private const val TAB_BOARDS = 2
+private const val TAB_WATCHED = 1
 private const val TAB_UNKNOWN = -1
 
 internal fun NavDestination.primaryTabIndex(): Int =

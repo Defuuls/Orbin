@@ -1,0 +1,8 @@
+<resources>
+    <string name="tiktok_settings_browsing">Browsing</string>
+    <string name="tiktok_settings_content">Content &amp; display</string>
+    <string name="tiktok_settings_cache">Cache &amp; cellular</string>
+    <string name="tiktok_settings_support">Support &amp; about</string>
+    <string name="tiktok_search_submit">Search</string>
+    <string name="tiktok_search_all">All</string>
+</resources>

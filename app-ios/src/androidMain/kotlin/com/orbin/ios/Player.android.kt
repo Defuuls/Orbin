@@ -14,6 +14,10 @@ internal actual fun NativePlayer(
     autoPlay: Boolean,
     initiallyMuted: Boolean,
     preloader: NativeMediaPreloader?,
+    feedMode: Boolean,
+    onFeedLike: (() -> Unit)?,
+    onPlayIntentChange: ((Boolean) -> Unit)?,
+    onMuteIntentChange: ((Boolean) -> Unit)?,
 ) {
     Box(modifier)
 }
@@ -29,6 +33,10 @@ internal actual fun NativeWebMPlayer(
     initiallyMuted: Boolean,
     loop: Boolean,
     preloader: NativeMediaPreloader?,
+    feedMode: Boolean,
+    onFeedLike: (() -> Unit)?,
+    onPlayIntentChange: ((Boolean) -> Unit)?,
+    onMuteIntentChange: ((Boolean) -> Unit)?,
 ) {
     Box(modifier)
 }

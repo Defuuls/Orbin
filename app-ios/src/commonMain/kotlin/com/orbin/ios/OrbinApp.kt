@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ fun OrbinApp(
     version: AppVersion = AppVersion(),
     whatsNew: WhatsNewRepository? = null,
     pages: ThreadPages? = null,
+    onStatusBarAppearance: (lightIcons: Boolean) -> Unit = {},
 ) {
     val backStack by browser.backStack.collectAsState()
     NavigationBackHandler(
@@ -60,6 +62,7 @@ fun OrbinApp(
 
     val settings by browser.settings.current.collectAsState()
     val lockState by lock.state.collectAsState()
+    val firstRun by browser.firstRun.needed.collectAsState()
 
     // A home-screen quick action opens its tab, as an Android app shortcut does.
     val quickAction by QuickActions.pending.collectAsState()
@@ -79,6 +82,8 @@ fun OrbinApp(
             AppThemeMode.DARK -> true
         }
     val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
+    val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun, lockState)
+    SideEffect { onStatusBarAppearance(lightIcons) }
     NextTheme(
         darkTheme = palette.dark,
         amoled = palette.amoled,
@@ -91,7 +96,6 @@ fun OrbinApp(
         val routeStates = remember { RouteStates() }
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
         Box(Modifier.fillMaxSize()) {
-            val firstRun by browser.firstRun.needed.collectAsState()
             if (!lockState.locked && firstRun) {
                 OnboardingDestination(browser)
             } else if (!lockState.locked) {

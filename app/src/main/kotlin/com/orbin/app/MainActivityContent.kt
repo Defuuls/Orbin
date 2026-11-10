@@ -109,6 +109,9 @@ internal fun AppContent(
         palette = nextPalette,
         platform = NextPlatform.ANDROID,
     ) {
+        // Exactly one appearance owner: a skipped parent must not compete with Home's
+        // white icons or leave them behind when a light lock/loading surface replaces it.
+        if (!ready || (shouldLock && !unlocked)) SystemBarAppearance()
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = next.background,

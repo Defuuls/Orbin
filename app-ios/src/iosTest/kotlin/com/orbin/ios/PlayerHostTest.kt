@@ -47,6 +47,7 @@ import platform.Foundation.CFBridgingRelease
 import platform.Foundation.NSData
 import platform.Foundation.NSDate
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
@@ -55,6 +56,9 @@ import platform.Foundation.create
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
 import platform.Foundation.writeToFile
+import platform.UIKit.UIApplicationDidBecomeActiveNotification
+import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
@@ -64,6 +68,7 @@ import platform.WebKit.WKWebView
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -466,6 +471,145 @@ class PlayerHostTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun feedNativePlayerDecodesWithScopedMuteAndKeepsPausedIntentAcrossBackgrounding() {
+        val path = writeFeedFixture(PlaybackFixtures.RED)
+        val url = assertNotNull(NSURL.fileURLWithPath(path).absoluteString)
+        val requested = mutableStateOf(true)
+        val muted = mutableStateOf(true)
+        val visible = mutableStateOf(true)
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) {
+                    NativePlayer(
+                        url = url,
+                        active = true,
+                        autoPlay = requested.value,
+                        initiallyMuted = muted.value,
+                        loop = true,
+                        feedMode = true,
+                        onPlayIntentChange = { requested.value = it },
+                        onMuteIntentChange = { muted.value = it },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        try {
+            withWindow(root, disposeContent = { visible.value = false }) {
+                SessionAudio.muted = false // Another board's audio choice cannot defeat this scope.
+                await { root.players().size == 1 }
+                val host = root.players().single()
+                val player = assertNotNull(host.player)
+                foregroundFeedTestHost()
+                await { player.rate > 0f && secondsForTest(player.currentTime()) > 0.05 }
+                assertDecodedColor(host, red = true)
+                assertTrue(player.muted)
+                assertFalse(host.allowsPictureInPicturePlayback)
+                assertFalse(host.canStartPictureInPictureAutomaticallyFromInline)
+
+                requested.value = false
+                await { player.rate == 0f }
+                val pausedAt = secondsForTest(player.currentTime())
+                backgroundFeedTestHost()
+                assertEquals(0f, player.rate)
+                foregroundFeedTestHost()
+                NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.15))
+                assertEquals(0f, player.rate, "Foregrounding must preserve the feed's explicit pause")
+                assertTrue(secondsForTest(player.currentTime()) <= pausedAt + 0.05)
+
+                // The feed remembers the manual audio choice separately from decoder ownership.
+                muted.value = false
+                await { !player.muted }
+                visible.value = false
+                await { root.players().isEmpty() }
+                assertNull(player.currentItem, "Leaving the feed releases its one active native item")
+                visible.value = true
+                await { root.players().size == 1 }
+                val reopened = assertNotNull(root.players().single().player)
+                foregroundFeedTestHost()
+                await { !reopened.muted }
+                assertNotEquals(player.objcPtr(), reopened.objcPtr())
+                assertEquals(0f, reopened.rate, "Returning to a paused page retains the audio and play choices")
+                requested.value = true
+                await { reopened.rate > 0f && secondsForTest(reopened.currentTime()) > 0.05 }
+                assertDecodedColor(root.players().single(), red = true)
+            }
+        } finally {
+            NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+        }
+    }
+
+    @Test
+    fun feedWebMDecodesRealFramesAndKeepsPausedIntentAcrossBackgrounding() {
+        if (!supportsWebM) return
+        val requested = mutableStateOf(true)
+        val visible = mutableStateOf(true)
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) {
+                    NativeWebMPlayer(
+                        url = "data:video/webm;base64," + PlaybackFixtures.WEBM,
+                        active = true,
+                        autoPlay = requested.value,
+                        initiallyMuted = true,
+                        loop = true,
+                        feedMode = true,
+                        onPlayIntentChange = { requested.value = it },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        withWindow(root, disposeContent = { visible.value = false }) {
+            await { root.view.webViews().size == 1 }
+            val webView = root.view.webViews().single()
+            foregroundFeedTestHost()
+            await(failureMessage = { "Feed WebM did not decode: $lastWebMDetails" }) {
+                webView.mediaSnapshot()?.let { it[0] >= 2 && it[3] > 0.05 && it[4] > 0 } == true
+            }
+            requested.value = false
+            await { webView.mediaSnapshot()?.get(5) == 1.0 }
+            val paused = assertNotNull(webView.mediaSnapshot())
+            backgroundFeedTestHost()
+            assertEquals(1.0, webView.mediaSnapshot()?.get(5))
+            foregroundFeedTestHost()
+            NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.15))
+            val resumed = assertNotNull(webView.mediaSnapshot())
+            assertEquals(1.0, resumed[5], "Foregrounding must preserve the feed WebM pause")
+            assertTrue(resumed[3] <= paused[3] + 0.05)
+            requested.value = true
+            await { webView.mediaSnapshot()?.let { it[3] > paused[3] + 0.05 && it[4] > paused[4] } == true }
+            visible.value = false
+            await { root.view.webViews().isEmpty() }
+        }
+    }
+
+    private fun writeFeedFixture(encoded: String): String {
+        val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+        val bytes = Base64.decode(encoded)
+        val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+        assertTrue(data.writeToFile(path, atomically = true))
+        return path
+    }
+
+    private fun foregroundFeedTestHost() {
+        // The standalone Kotlin executable has no UIApplicationMain; model the real activation event.
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            UIApplicationDidBecomeActiveNotification,
+            `object` = null,
+        )
+    }
+
+    private fun backgroundFeedTestHost() {
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            UIApplicationWillResignActiveNotification,
+            `object` = null,
+        )
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            UIApplicationDidEnterBackgroundNotification,
+            `object` = null,
+        )
     }
 
     private var lastWebMDetails = ""

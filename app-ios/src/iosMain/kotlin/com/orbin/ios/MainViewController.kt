@@ -42,36 +42,42 @@ fun MainViewController(): UIViewController {
     // Decided before anything reads local state: a crash loop most likely comes from that state,
     // so safe mode must not depend on it, as on Android.
     val crashLooping = IosStartupCrashes.crashes.isCrashLooping
-    return ComposeUIViewController {
-        var safeMode by remember { mutableStateOf(crashLooping) }
-        if (safeMode) {
-            IosSafeMode(
-                report = IosStartupCrashes.crashes::report,
-                onReset = {
-                    IosStartupCrashes.resetLocalData()
-                    safeMode = false
-                },
-                onContinue = { safeMode = false },
-            )
-        } else {
-            val app = remember { sharedStartedApp }
-            // A launch that stays up this long got going: it no longer counts towards safe mode.
-            LaunchedEffect(Unit) {
-                delay(StartupCrashes.STARTUP_WINDOW_MILLIS)
-                IosStartupCrashes.crashes.launchSucceeded()
+    val appearance = StatusBarAppearance()
+    val content =
+        ComposeUIViewController {
+            var safeMode by remember { mutableStateOf(crashLooping) }
+            if (safeMode) {
+                IosSafeMode(
+                    report = IosStartupCrashes.crashes::report,
+                    onReset = {
+                        IosStartupCrashes.resetLocalData()
+                        safeMode = false
+                    },
+                    onContinue = { safeMode = false },
+                )
+            } else {
+                val app = remember { sharedStartedApp }
+                // A launch that stays up this long got going: it no longer counts towards safe mode.
+                LaunchedEffect(Unit) {
+                    delay(StartupCrashes.STARTUP_WINDOW_MILLIS)
+                    IosStartupCrashes.crashes.launchSucceeded()
+                }
+                OrbinApp(
+                    app.browser,
+                    app.lock,
+                    app.downloads,
+                    app.backup,
+                    formFactor(),
+                    AppVersion(app.graph.appVersion, app.graph.appBuild),
+                    app.graph.whatsNew,
+                    app.graph.pages,
+                    onStatusBarAppearance = appearance::setLightIcons,
+                )
             }
-            OrbinApp(
-                app.browser,
-                app.lock,
-                app.downloads,
-                app.backup,
-                formFactor(),
-                AppVersion(app.graph.appVersion, app.graph.appBuild),
-                app.graph.whatsNew,
-                app.graph.pages,
-            )
         }
-    }.also { controller -> attachPencil(controller.view) }
+    val controller = StatusBarRootController(content, appearance)
+    attachPencil(content.view)
+    return controller
 }
 
 private val sharedStartedApp: StartedApp by lazy { startApp() }

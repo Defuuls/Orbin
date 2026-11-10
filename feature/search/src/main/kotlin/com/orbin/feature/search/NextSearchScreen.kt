@@ -19,6 +19,7 @@ import com.orbin.uinext.SearchState
 fun NextSearchScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     viewModel: SearchViewModel = hiltViewModel(),
+    onBack: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
@@ -29,6 +30,7 @@ fun NextSearchScreen(
             query = query,
             onQueryChange = { query = it },
             onSearch = { viewModel.search(query) },
+            onBack = onBack,
             state = remember(state) { state.toSearchState() },
             onOpenRow = { row ->
                 byRow[row.id]?.let { result ->

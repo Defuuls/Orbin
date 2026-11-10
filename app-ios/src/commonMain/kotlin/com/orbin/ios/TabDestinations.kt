@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +24,7 @@ import coil3.SingletonImageLoader
 import coil3.compose.LocalPlatformContext
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.Board
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
@@ -72,6 +74,7 @@ internal fun FeedDestination(
     formFactor: FormFactor,
 ) {
     val feed by browser.feed.collectAsState()
+    val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.feedSite.collectAsState()
     val saved by browser.savedThreads.collectAsState(emptyList())
@@ -94,9 +97,25 @@ internal fun FeedDestination(
                     }
                 }
             val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
+            var activePreviewId by remember { mutableStateOf<String?>(null) }
+            var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
+            val preloader = remember { createNativeMediaPreloader() }
+            DisposableEffect(preloader) { onDispose { preloader.close() } }
+            val foreground =
+                FeedPreloadLifecycle(
+                    preloader,
+                    feedPreloadTarget(
+                        byRow[activePreviewId],
+                        byRow[upcomingPreviewId],
+                        settings.playbackPreferences,
+                        supportsWebM,
+                    ),
+                )
+            val uriHandler = LocalUriHandler.current
             // Columns as on Android: one on a phone or a narrow window (split view), the reader's choice
             // on an iPad's full width.
             BoxWithConstraints {
+                NativeMediaPreloadHost(preloader)
                 FeedScreen(
                     rows = rows,
                     hideRailOnScroll = false,
@@ -107,10 +126,37 @@ internal fun FeedDestination(
                     onShareRow = { row ->
                         byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
                     },
-                    // Nothing plays in the feed, as on Android: a video shows its picture and a
-                    // play badge until its thread is opened. Catalogs keep their looping previews.
-                    thumbnail = { row, modifier ->
-                        byRow[row.id]?.let { CatalogThumbnail(it.thread, modifier, playsPreview = false) }
+                    onActivePreviewChanged = { activePreviewId = it },
+                    onUpcomingPreviewChanged = { upcomingPreviewId = it },
+                    mediaContent = { row, modifier, active ->
+                        byRow[row.id]?.let { entry ->
+                            FeedMedia(
+                                feed = entry,
+                                playback = settings.playbackPreferences.resolve(entry.provider, entry.thread.key.board),
+                                active = active && foreground,
+                                modifier = modifier,
+                                preloader = preloader,
+                                onLike = { browser.watchFeed(entry) },
+                                onOpenExternal = uriHandler::openUri,
+                            )
+                        }
+                    },
+                    onOpenBoard = { row ->
+                        byRow[row.id]?.let { entry ->
+                            val key = entry.thread.key
+                            val known =
+                                (boards as? Load.Ready<List<SiteBoard>>)?.value?.firstOrNull {
+                                    it.provider == key.provider && it.board.id == key.board
+                                }
+                            browser.openBoard(
+                                known
+                                    ?: SiteBoard(
+                                        key.provider,
+                                        browser.siteName(key.provider),
+                                        Board(key.board, row.boardTitle),
+                                    ),
+                            )
+                        }
                     },
                     onOpenBoards = { browser.openTab(Route.Boards) },
                     onOpenDownloads = { browser.open(Route.Downloads) },
@@ -242,7 +288,7 @@ internal fun SettingsDestination(
             buildList {
                 add(PlaybackScope() to "App defaults")
                 browser.sites.forEach { add(PlaybackScope(it.id.value) to it.name) }
-                (boards as? Load.Ready)?.value.orEmpty().forEach {
+                (boards as? Load.Ready<List<SiteBoard>>)?.value.orEmpty().forEach {
                     add(
                         PlaybackScope(
                             it.provider.value,
@@ -439,6 +485,7 @@ internal fun SearchDestination(browser: Browser) {
                 query = query,
                 onQueryChange = browser.search::setQuery,
                 onSearch = { browser.search.run() },
+                onBack = { browser.openTab(Route.Feed) },
                 state = state,
                 onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
             )

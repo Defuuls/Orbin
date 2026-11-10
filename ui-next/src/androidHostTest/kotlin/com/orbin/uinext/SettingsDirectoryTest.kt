@@ -56,7 +56,7 @@ class SettingsDirectoryTest {
         composeRule.onNodeWithText("True black").assertIsOff()
         composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Settings and activity").assertExists()
+        composeRule.onNodeWithText("Settings and privacy").assertExists()
         assertEquals(0, exits)
         composeRule.onNodeWithContentDescription("Back").performClick()
         assertEquals(1, exits)
@@ -89,7 +89,7 @@ class SettingsDirectoryTest {
         composeRule.waitForIdle()
         composeRule.runOnUiThread { input.backCompleted() }
         assertEquals("The settings handler should receive back before its host", 0, hostBacks)
-        composeRule.onNodeWithText("Settings and activity").assertExists()
+        composeRule.onNodeWithText("Settings and privacy").assertExists()
         composeRule.waitForIdle()
         composeRule.runOnUiThread { input.backCompleted() }
         composeRule.waitForIdle()
@@ -125,7 +125,7 @@ class SettingsDirectoryTest {
         composeRule.onNodeWithText("Appearance").assertExists()
         composeRule.onNodeWithText("Color theme").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Settings and activity").assertExists()
+        composeRule.onNodeWithText("Settings and privacy").assertExists()
         composeRule.onNodeWithText("Color theme").assertDoesNotExist()
     }
 
