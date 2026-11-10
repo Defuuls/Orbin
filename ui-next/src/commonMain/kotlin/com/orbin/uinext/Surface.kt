@@ -75,6 +75,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -240,7 +241,8 @@ private fun ReaderTab(
                 color = tint,
                 textAlign = TextAlign.Center,
                 maxLines = Int.MAX_VALUE,
-                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                modifier =
+                    Modifier.fillMaxWidth().padding(top = 2.dp).semantics { hideFromAccessibility() },
             )
         }
     }

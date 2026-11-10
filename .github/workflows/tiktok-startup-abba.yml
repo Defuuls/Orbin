@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 202610e2bca7a4f98f1e97ae589c0ed9644341b1
+          ref: 28dd1fdcb5bf87157dc52da07cb209b700b2a6d8
           path: candidate
           persist-credentials: false
       - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c
@@ -139,7 +139,7 @@ jobs:
           from pathlib import Path
           import hashlib, json, re, shutil
           summary=Path('abba-summary');summary.mkdir(exist_ok=True)
-          manifest={'baseline_sha':'01e699f25728a2fac9095999bc5e8baa8d5c2100','candidate_sha':'202610e2bca7a4f98f1e97ae589c0ed9644341b1','order':['01-main','02-candidate','03-candidate','04-main'],'phases':[],'apk_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('abba-apks').glob('*.apk')}}
+          manifest={'baseline_sha':'01e699f25728a2fac9095999bc5e8baa8d5c2100','candidate_sha':'28dd1fdcb5bf87157dc52da07cb209b700b2a6d8','order':['01-main','02-candidate','03-candidate','04-main'],'phases':[],'apk_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('abba-apks').glob('*.apk')}}
           for phase in manifest['order']:
               folder=Path('abba-results')/phase
               files=list(folder.rglob('*benchmarkData.json'))

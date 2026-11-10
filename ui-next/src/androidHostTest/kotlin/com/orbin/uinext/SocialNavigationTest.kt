@@ -1,9 +1,15 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -66,6 +72,25 @@ class SocialNavigationTest {
         composeRule.onNodeWithContentDescription("Boards").assertIsSelected().performClick()
         assertThat(selected).isEqualTo(NextDestination.BOARDS)
         assertThat(calls).isEqualTo(1)
+    }
+
+    @Test
+    fun `navigation exposes full control bounds while decorative labels stay hidden from accessibility`() {
+        composeRule.setContent {
+            NextTheme { DestinationPill(NextDestination.FEED, {}) }
+        }
+        listOf("Home", "Watched", "Boards", "Search", "Saved").forEach { label ->
+            composeRule
+                .onNodeWithContentDescription(label)
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.HideFromAccessibility))
+                .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+        }
+        listOf("Home", "Watched", "Search", "Saved").forEach { label ->
+            composeRule
+                .onNodeWithText(label, useUnmergedTree = true)
+                .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility))
+        }
     }
 
     @Test

@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
@@ -60,6 +63,16 @@ class TikTokFeedAccessibilityTest {
             }
         }
         listOf("Following", "For You").forEach(::assertCompleteLabel)
+        listOf("Following", "For You").forEach { label ->
+            composeRule
+                .onNodeWithContentDescription(label)
+                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.HideFromAccessibility))
+                .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+            composeRule
+                .onNodeWithText(label, useUnmergedTree = true)
+                .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility))
+        }
         composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).performClick().assertIsSelected()
         composeRule.onNodeWithTag(TikTokFeedTags.FOR_YOU).performClick().assertIsSelected()
         val menu = composeRule.onNodeWithContentDescription("Feed options").getUnclippedBoundsInRoot()

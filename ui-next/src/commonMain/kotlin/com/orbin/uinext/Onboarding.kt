@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +36,6 @@ import com.orbin.uinext.resources.next_onboarding_skip_hint
 import com.orbin.uinext.resources.next_onboarding_start
 import com.orbin.uinext.resources.next_onboarding_subtitle
 import com.orbin.uinext.resources.next_onboarding_title
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
@@ -100,7 +98,7 @@ fun OnboardingScreen(
             SiteSelector(sites, selectedSite, onSelectSite)
         }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            BoardsList(boards, following, onFollow, onRetry)
+            BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), onFollow, onRetry)
         }
         Row(
             modifier =
@@ -160,6 +158,7 @@ private fun SiteSelector(
 private fun BoardsList(
     state: OnboardingBoards,
     following: Set<String>,
+    siteId: String,
     onFollow: (board: String, follow: Boolean) -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -175,7 +174,7 @@ private fun BoardsList(
                     contentPadding = PaddingValues(vertical = 6.dp),
                 ) {
                     items(state.boards, key = { it.id }) { board ->
-                        BoardRow(board, isFollowed = board.id in following, onFollow = onFollow)
+                        BoardRow(board, siteId, isFollowed = board.id in following, onFollow = onFollow)
                         GroupedDivider()
                     }
                 }
@@ -186,6 +185,7 @@ private fun BoardsList(
 @Composable
 private fun BoardRow(
     board: OnboardingBoard,
+    siteId: String,
     isFollowed: Boolean,
     onFollow: (board: String, follow: Boolean) -> Unit,
 ) {
@@ -206,7 +206,7 @@ private fun BoardRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        BoardMonogram(board.id)
+        BoardIcon(siteId = siteId, boardId = board.id, title = board.title, modifier = Modifier.size(42.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -233,25 +233,5 @@ private fun BoardRow(
         Box(Modifier.clearAndSetSemantics {}) {
             NextToggle(checked = isFollowed, onCheckedChange = null)
         }
-    }
-}
-
-@Composable
-private fun BoardMonogram(id: String) {
-    val hue = boardHue("/$id/")
-    Box(
-        modifier =
-            Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(NextRadius.control))
-                .background(hue.copy(alpha = if (next.dark) 0.35f else 0.18f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "/$id/",
-            color = hue,
-            fontWeight = FontWeight.Bold,
-            style = NextType.footnote,
-        )
     }
 }
