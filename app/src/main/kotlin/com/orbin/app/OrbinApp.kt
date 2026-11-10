@@ -68,7 +68,9 @@ fun OrbinApp(
     val currentEntry by navController.currentBackStackEntryAsState()
     val immersive =
         currentEntry?.destination?.let {
-            it.hasRoute(Route.NextFeed::class) || it.hasRoute(Route.Gallery::class)
+            it.hasRoute(Route.NextFeed::class) ||
+                it.hasRoute(Route.Gallery::class) ||
+                it.hasRoute(Route.ThreadVideos::class)
         } ?: !startWithOnboarding
     SystemBarAppearance(immersive = immersive)
 

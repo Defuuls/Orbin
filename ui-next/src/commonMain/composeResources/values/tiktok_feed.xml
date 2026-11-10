@@ -12,8 +12,10 @@
     <string name="tiktok_feed_saved_label">Saved</string>
     <string name="tiktok_feed_share_label">Share</string>
     <string name="tiktok_feed_hidden">Preview hidden</string>
-    <string name="tiktok_feed_following_empty">Threads you watch appear here</string>
-    <string name="tiktok_feed_following_hint">Watch a thread to keep up with its replies.</string>
+    <string name="tiktok_feed_following_empty">No videos from followed boards yet</string>
+    <string name="tiktok_feed_following_hint">Follow boards to see their videos here.</string>
+    <string name="tiktok_feed_loading">Loading videos…</string>
+    <string name="tiktok_feed_retry">Try again</string>
     <string name="tiktok_feed_view_watched">View watched threads</string>
     <string name="tiktok_feed_text_post">Text post</string>
 </resources>

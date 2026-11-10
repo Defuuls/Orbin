@@ -97,6 +97,8 @@ class ReaderSettings(
 
     fun setCoverViolentMedia(cover: Boolean): Job = scope.launch { repository.setCoverViolentMedia(cover) }
 
+    fun setOpenThreadComments(enabled: Boolean): Job = scope.launch { repository.setOpenThreadComments(enabled) }
+
     fun setColorTheme(theme: AppColorTheme): Job = scope.launch { repository.setColorTheme(theme) }
 
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
@@ -137,6 +139,7 @@ internal object SettingIds {
     const val PRIVACY = "privacy"
     const val CONTACT = "contact"
     const val COVER_VIOLENT = "coverViolent"
+    const val OPEN_THREAD_COMMENTS = "openThreadComments"
     const val COLOR_THEME = "colorTheme"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"

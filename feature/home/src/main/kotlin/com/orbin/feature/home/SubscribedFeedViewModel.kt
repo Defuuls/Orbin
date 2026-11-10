@@ -9,13 +9,12 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
-import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ThreadKey
-import com.orbin.domain.feed.BoardFeed
 import com.orbin.domain.feed.SubscribedFeedLoader
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -44,9 +43,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -62,6 +64,16 @@ sealed interface SubscribedFeedUiState {
         val failedBoards: ImmutableList<BoardId> = persistentListOf(),
         val loadedAtMillis: Long = System.currentTimeMillis(),
         val stale: Boolean = false,
+        val isLoadingMore: Boolean = false,
+        val canLoadMore: Boolean = false,
+        val mode: HomeFeedMode = HomeFeedMode.FOR_YOU,
+        val providerFilter: String? = null,
+        /** The published request token coalesces repeated end-of-page callbacks. */
+        val discoveryLimit: Int = 0,
+        val hideNsfwBoards: Boolean = false,
+        val coverViolentMedia: Boolean = true,
+        /** Preserves a source outage even when healthy catalogs contain no eligible videos. */
+        val errorMessage: String? = null,
     ) : SubscribedFeedUiState
 }
 
@@ -98,6 +110,41 @@ class SubscribedFeedViewModel
     ) : ViewModel() {
         private val feedLoader = SubscribedFeedLoader()
         private val providers = registry.all()
+        private val catalogs = HomeFeedCatalogLoader()
+        private val _feedMode = MutableStateFlow(HomeFeedMode.FOR_YOU)
+        val feedMode: StateFlow<HomeFeedMode> = _feedMode.asStateFlow()
+        private val providerFilter = MutableStateFlow<String?>(null)
+        private val discoveryLimit = MutableStateFlow(DISCOVERY_PAGE_SIZE)
+        private val indexResults = MutableStateFlow<Map<String, String?>>(emptyMap())
+
+        fun setFeedMode(mode: HomeFeedMode) {
+            if (_feedMode.value == mode) return
+            clearFeedImagePrefetch()
+            clearFeedVideoPrefetch()
+            _feedMode.value = mode
+        }
+
+        fun setProviderFilter(id: String?) {
+            if (id != null && providers.none { it.metadata.id.value == id }) return
+            if (providerFilter.value == id) return
+            clearFeedImagePrefetch()
+            clearFeedVideoPrefetch()
+            discoveryLimit.value = DISCOVERY_PAGE_SIZE
+            providerFilter.value = id
+        }
+
+        /** Fetch another small page only when the current page has finished. */
+        fun loadMoreDiscovery() {
+            val current = uiState.value as? SubscribedFeedUiState.Success ?: return
+            val selectionMatches =
+                current.mode == _feedMode.value &&
+                    current.providerFilter == providerFilter.value &&
+                    current.discoveryLimit == discoveryLimit.value
+            val pageReady = current.mode == HomeFeedMode.FOR_YOU && !current.isLoadingMore && current.canLoadMore
+            if (!selectionMatches || !pageReady) return
+            discoveryLimit.value += DISCOVERY_PAGE_SIZE
+        }
+
         private var imagePrefetchJob: Job? = null
         private var imagePrefetchUrls: List<String> = emptyList()
         private var videoPrefetchJob: Job? = null
@@ -152,7 +199,7 @@ class SubscribedFeedViewModel
             imagePrefetchUrls = emptyList()
         }
 
-        private val refreshRequests = MutableStateFlow(0)
+        private val refreshRequests = MutableStateFlow<Map<String, Int>>(emptyMap())
 
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
@@ -170,18 +217,13 @@ class SubscribedFeedViewModel
 
         /**
          * Only settings that actually alter fetched/filtered feed content participate in the load
-         * cache key. Appearance, playback, downloads, privacy and other unrelated preferences can
+         * cache key. Appearance, playback, downloads, app locking and other unrelated preferences can
          * now change without invalidating every subscribed catalog.
          */
-        private val loadSettings: StateFlow<FeedLoadSettings> =
+        private val loadSettings: Flow<FeedLoadSettings> =
             settingsRepository.settings
                 .map(AppSettings::toFeedLoadSettings)
                 .distinctUntilChanged()
-                .stateIn(
-                    viewModelScope,
-                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-                    AppSettings.Default.toFeedLoadSettings(),
-                )
 
         /** Threads already present in reading history, for "already read" title styling in the feed. */
         val visitedThreadKeys: StateFlow<Set<ThreadKey>> =
@@ -190,88 +232,123 @@ class SubscribedFeedViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val uiState: StateFlow<SubscribedFeedUiState> =
-            combine(providers.map(::observeProviderFeed)) { states ->
-                mergeProviderFeeds(states.toList())
-            }.onEach { _isRefreshing.value = false }
-                .stateIn(
+            combine(_feedMode, providerFilter, discoveryLimit, loadSettings, ::FeedSelection)
+                .flatMapLatest { selection ->
+                    // Privacy changes replace every source together before old cached rows can
+                    // be mixed with a source that has already applied the new policy.
+                    val policyChanged = catalogs.prepare(selection.settings)
+                    val selected =
+                        providers.filter {
+                            selection.providerFilter == null ||
+                                it.metadata.id.value == selection.providerFilter
+                        }
+                    val content: Flow<SubscribedFeedUiState> =
+                        if (selected.isEmpty()) {
+                            flowOf(
+                                SubscribedFeedUiState.Success(
+                                    persistentListOf(),
+                                    mode = selection.mode,
+                                    providerFilter = selection.providerFilter,
+                                    discoveryLimit = selection.discoveryLimit,
+                                    hideNsfwBoards = selection.settings.hideNsfwBoards,
+                                    coverViolentMedia = selection.settings.coverViolentMedia,
+                                ),
+                            )
+                        } else {
+                            val quota = (selection.discoveryLimit + selected.size - 1) / selected.size
+                            combine(selected.map { observeProviderFeed(it, selection, quota) }) { states ->
+                                when (val merged = mergeProviderFeeds(states.toList())) {
+                                    is SubscribedFeedUiState.Success ->
+                                        merged.copy(
+                                            mode = selection.mode,
+                                            providerFilter = selection.providerFilter,
+                                            discoveryLimit = selection.discoveryLimit,
+                                            hideNsfwBoards = selection.settings.hideNsfwBoards,
+                                            coverViolentMedia = selection.settings.coverViolentMedia,
+                                        )
+                                    else -> merged
+                                }
+                            }
+                        }
+                    content.onStart {
+                        if (policyChanged) emit(SubscribedFeedUiState.Loading)
+                    }
+                }.onEach { state ->
+                    if (state !is SubscribedFeedUiState.Loading &&
+                        (state !is SubscribedFeedUiState.Success || !state.isLoadingMore)
+                    ) {
+                        _isRefreshing.value = false
+                    }
+                }.stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                     SubscribedFeedUiState.Loading,
                 )
 
         /** Cache and failures stay source-scoped even when two sites reuse a board code. */
-        private fun observeProviderFeed(provider: ImageBoardProvider): Flow<SubscribedFeedUiState> =
+        private fun observeProviderFeed(
+            provider: ImageBoardProvider,
+            selection: FeedSelection,
+            quota: Int,
+        ): Flow<SubscribedFeedUiState> =
             combine(
+                boardRepository.observeBoards(provider.metadata.id),
                 boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
                 boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
-            ) { subscribed, favorites -> subscribed + favorites }
-                .distinctUntilChanged()
-                .flatMapLatest { subscribedIds ->
-                    combine(
-                        boardRepository.observeBoards(provider.metadata.id),
-                        boardPreferencesRepository.observeFeedThreadLimits(provider.metadata.id, subscribedIds),
-                        loadSettings,
-                        refreshRequests,
-                    ) { boards, limitOverrides, feedSettings, refreshCount ->
-                        val inputs =
+                indexResults,
+            ) { boards, subscribed, favorites, indexes ->
+                val settings = selection.settings
+                val followed = subscribed + favorites
+                val ids =
+                    if (selection.mode ==
+                        HomeFeedMode.FOLLOWING
+                    ) {
+                        followed
+                    } else {
+                        boards.mapTo(mutableSetOf()) { it.id }
+                    }
+                val eligible = feedLoader.feedBoards(boards, ids, settings.hideNsfwBoards)
+                val wanted =
+                    if (selection.mode == HomeFeedMode.FOR_YOU) discoveryBoards(eligible, followed, quota) else eligible
+                val emptyFollowing = selection.mode == HomeFeedMode.FOLLOWING && followed.isEmpty()
+                ProviderFeedSelection(
+                    wanted,
+                    settings,
+                    eligible.size > wanted.size,
+                    emptyFollowing || wanted.isNotEmpty() || provider.metadata.id.value in indexes,
+                    indexes[provider.metadata.id.value].takeIf { wanted.isEmpty() && !emptyFollowing },
+                )
+            }.distinctUntilChanged()
+                .flatMapLatest { chosen ->
+                    if (chosen.boards.isEmpty() && !chosen.indexReady) {
+                        flowOf(SubscribedFeedUiState.Loading)
+                    } else if (chosen.boards.isEmpty() && chosen.indexError != null) {
+                        flowOf(SubscribedFeedUiState.Error(chosen.indexError))
+                    } else {
+                        combine(
+                            boardPreferencesRepository.observeFeedThreadLimits(
+                                provider.metadata.id,
+                                chosen.boards.mapTo(mutableSetOf()) { it.id },
+                            ),
+                            refreshRequests.map { it[provider.metadata.id.value] ?: 0 }.distinctUntilChanged(),
+                        ) { limitOverrides, refreshCount ->
                             FeedInputs(
-                                providerId = provider.metadata.id.value,
-                                subscribedIds = subscribedIds,
-                                boards = boards,
-                                limitOverrides = limitOverrides,
-                                settings = feedSettings,
-                                refreshCount = refreshCount,
-                            )
-                        loadOrReuseFeeds(inputs) {
-                            loadSubscribedFeeds(
-                                provider,
-                                boards,
-                                subscribedIds,
+                                provider.metadata.id.value,
+                                chosen.boards,
                                 limitOverrides,
-                                feedSettings,
+                                chosen.settings,
+                                refreshCount,
+                                selection.mode,
+                                selection.providerFilter,
+                                chosen.canLoadMore,
                             )
-                        }
+                        }.distinctUntilChanged().flatMapLatest { catalogs.load(provider, it) }
                     }
                 }
 
         private val _isRefreshing = MutableStateFlow(false)
 
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-        private val lastLoads = mutableMapOf<String, CachedFeed>()
-
-        private suspend fun loadOrReuseFeeds(
-            inputs: FeedInputs,
-            load: suspend () -> SubscribedFeedUiState,
-        ): SubscribedFeedUiState {
-            // Coming back to the feed restarts this flow (the stateIn stops after STOP_TIMEOUT_MS
-            // without subscribers), but it must not refetch: only a pull to refresh bumps
-            // refreshCount, and an unchanged key means the cached feed is still the answer.
-            lastLoads[inputs.providerId]?.let { cached ->
-                if (cached.inputs == inputs) return cached.state
-            }
-            val cachedForProvider = lastLoads[inputs.providerId]?.state
-
-            return try {
-                when (val state = load()) {
-                    is SubscribedFeedUiState.Success -> {
-                        val merged = state.withCachedFailures(cachedForProvider)
-                        if (merged.failedBoards.size < merged.boards.size || merged.boards.isEmpty()) {
-                            lastLoads[inputs.providerId] = CachedFeed(inputs, merged, merged.loadedAtMillis)
-                        }
-                        merged
-                    }
-
-                    else -> state
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                Logger.w(tag = TAG) { "Failed to refresh subscribed feed (${error::class.simpleName})" }
-                cachedForProvider?.copy(stale = true)
-                    ?: SubscribedFeedUiState.Error(error.message ?: "Feed refresh failed")
-            }
-        }
 
         init {
             providers.forEach { provider ->
@@ -281,25 +358,45 @@ class SubscribedFeedViewModel
 
         private suspend fun refreshBoardIndex(provider: ImageBoardProvider) {
             try {
-                boardRepository.refreshBoards(provider.metadata.id)
+                val result = boardRepository.refreshBoards(provider.metadata.id)
+                indexResults.value =
+                    indexResults.value +
+                    (
+                        provider.metadata.id.value to
+                            (result as? com.orbin.core.common.result.OrbinResult.Failure)?.error?.message
+                    )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 Logger.w(tag = TAG) { "Failed to refresh board index (${error::class.simpleName})" }
+                indexResults.value =
+                    indexResults.value +
+                    (provider.metadata.id.value to (error.message ?: "Couldn't load boards. Try again."))
             }
         }
 
         fun refresh() {
+            val selectedSource = providerFilter.value
+            val targets = providers.filter { selectedSource == null || it.metadata.id.value == selectedSource }
             _isRefreshing.value = true
             viewModelScope.launch {
                 try {
                     coroutineScope {
-                        providers.map { provider -> async { refreshBoardIndex(provider) } }.awaitAll()
+                        targets
+                            .map { provider -> async { refreshBoardIndex(provider) } }
+                            .awaitAll()
                     }
                 } finally {
                     // Always trigger the catalog pass. If board-index refresh failed, the existing
                     // board list can still refresh and stale content remains available on failure.
-                    refreshRequests.value += 1
+                    refreshRequests.update { previous ->
+                        previous.toMutableMap().apply {
+                            targets.forEach { provider ->
+                                val id = provider.metadata.id.value
+                                this[id] = (this[id] ?: 0) + 1
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -318,40 +415,16 @@ class SubscribedFeedViewModel
             }
         }
 
-        private suspend fun loadSubscribedFeeds(
-            provider: ImageBoardProvider,
-            boards: List<Board>,
-            subscribedIds: Set<BoardId>,
-            limitOverrides: Map<BoardId, FeedThreadLimit>,
-            settings: FeedLoadSettings,
-        ): SubscribedFeedUiState {
-            val feedBoards = feedLoader.feedBoards(boards, subscribedIds, settings.hideNsfwBoards)
-            if (feedBoards.isEmpty()) return SubscribedFeedUiState.Success(persistentListOf())
-            val results =
-                feedLoader.load(
-                    feedBoards,
-                    limitOverrides,
-                    onFailure = { _, error ->
-                        Logger.w(tag = TAG) { "Failed to load catalog (${error::class.simpleName})" }
-                    },
-                ) { board -> provider.getCatalog(CatalogRequest(provider.metadata.id, board)) }
-            return SubscribedFeedUiState.Success(
-                boards = results.map { it.toUi(provider.metadata.id.value) }.toImmutableList(),
-                failedBoards = results.filter { it.failed }.map { it.board.id }.toImmutableList(),
-                loadedAtMillis = System.currentTimeMillis(),
-                stale = results.any { it.failed },
-            )
-        }
-
         private companion object {
             const val TAG = "SubscribedFeedViewModel"
             const val STOP_TIMEOUT_MS = 5_000L
             const val FEED_PREFETCH_MAX_PX = 480
+            const val DISCOVERY_PAGE_SIZE = 8
         }
     }
 
 /** The settings that shape the feed; everything else about it is fixed. */
-private data class FeedLoadSettings(
+internal data class FeedLoadSettings(
     val hideNsfwBoards: Boolean,
     val coverViolentMedia: Boolean,
 )
@@ -362,51 +435,57 @@ private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
         coverViolentMedia = coverViolentMedia,
     )
 
-private data class FeedInputs(
-    val providerId: String,
-    val subscribedIds: Set<BoardId>,
-    val boards: List<Board>,
-    val limitOverrides: Map<BoardId, FeedThreadLimit>,
+private data class FeedSelection(
+    val mode: HomeFeedMode,
+    val providerFilter: String?,
+    val discoveryLimit: Int,
     val settings: FeedLoadSettings,
-    val refreshCount: Int,
 )
 
-private data class CachedFeed(
-    val inputs: FeedInputs,
-    val state: SubscribedFeedUiState.Success,
-    val loadedAtMillis: Long,
+private data class ProviderFeedSelection(
+    val boards: List<Board>,
+    val settings: FeedLoadSettings,
+    val canLoadMore: Boolean,
+    val indexReady: Boolean,
+    val indexError: String?,
 )
 
-private fun BoardFeed.toUi(providerId: String) =
-    SubscribedBoardFeed(board, threads.toImmutableList(), limitOverride, providerId, failed)
-
-private fun SubscribedBoardFeed.toLoaderFeed(failed: Boolean) = BoardFeed(board, threads, threadLimitOverride, failed)
-
-/** A board that failed this time keeps last time's threads; see [SubscribedFeedLoader.withCachedFailures]. */
-private fun SubscribedFeedUiState.Success.withCachedFailures(
-    cached: SubscribedFeedUiState.Success?,
-): SubscribedFeedUiState.Success {
-    if (failedBoards.isEmpty() || cached == null) return this
-    val merged =
-        SubscribedFeedLoader.withCachedFailures(
-            boards.map { it.toLoaderFeed(it.board.id in failedBoards) },
-            cached.boards.map { it.toLoaderFeed(false) },
-        )
-    val providerId = boards.firstOrNull()?.providerId.orEmpty()
-    return copy(boards = merged.map { it.toUi(providerId) }.toImmutableList(), stale = true)
+/** Discovery mixes familiar and unfollowed boards before its bounded catalog pass. */
+private fun discoveryBoards(
+    boards: List<Board>,
+    followed: Set<BoardId>,
+    limit: Int,
+): List<Board> {
+    val (familiar, discover) = boards.partition { it.id in followed }
+    return buildList {
+        for (index in 0 until maxOf(familiar.size, discover.size)) {
+            familiar.getOrNull(index)?.let(::add)
+            discover.getOrNull(index)?.let(::add)
+        }
+    }.take(limit)
 }
 
 /** A source outage keeps the other sources readable and exposes the combined feed as stale. */
 internal fun mergeProviderFeeds(states: List<SubscribedFeedUiState>): SubscribedFeedUiState {
     val successes = states.filterIsInstance<SubscribedFeedUiState.Success>()
+    val errors = states.filterIsInstance<SubscribedFeedUiState.Error>()
+    val loading = states.any { it is SubscribedFeedUiState.Loading }
     if (successes.isEmpty()) {
-        return states.filterIsInstance<SubscribedFeedUiState.Error>().firstOrNull()
-            ?: SubscribedFeedUiState.Success(persistentListOf())
+        return if (loading) {
+            SubscribedFeedUiState.Loading
+        } else {
+            errors.firstOrNull()
+                ?: SubscribedFeedUiState.Success(persistentListOf())
+        }
     }
+    if (!loading && successes.all { it.boards.isEmpty() } && errors.isNotEmpty()) return errors.first()
     return SubscribedFeedUiState.Success(
         boards = successes.flatMap { it.boards }.toImmutableList(),
         failedBoards = successes.flatMap { it.failedBoards }.toImmutableList(),
         loadedAtMillis = successes.minOf { it.loadedAtMillis },
-        stale = successes.any { it.stale } || states.any { it is SubscribedFeedUiState.Error },
+        stale = successes.any { it.stale } || errors.isNotEmpty(),
+        isLoadingMore = successes.any { it.isLoadingMore } || loading,
+        canLoadMore = successes.any { it.canLoadMore },
+        errorMessage = errors.firstOrNull()?.message ?: successes.firstNotNullOfOrNull { it.errorMessage },
     )
 }

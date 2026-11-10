@@ -45,6 +45,7 @@ class BackupServiceTest {
             amoled = true,
             biometricLockEnabled = true,
             onboardingCompleted = true,
+            openThreadComments = true,
             playbackPreferences =
                 PlaybackPreferences(
                     defaults = PlaybackSettings(autoplay = false, startMuted = false),
@@ -83,6 +84,19 @@ class BackupServiceTest {
             service(destination).importFromJson(exported).getOrThrow()
             assertThat(destination.current.playbackPreferences).isEqualTo(populatedSettings.playbackPreferences)
             assertThat(destination.current.playbackPreferences.hasOverride(PlaybackScope("fake", "old"))).isFalse()
+        }
+
+    @Test
+    fun importingAnOlderBackupRestoresTheVideoFirstChatDefault() =
+        runTest {
+            val destination = FakeSettingsRepository(AppSettings(openThreadComments = true))
+
+            service(destination)
+                .importFromJson("""{ "settings": { "themeMode": "DARK" } }""")
+                .getOrThrow()
+
+            assertThat(destination.current.openThreadComments).isFalse()
+            assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
         }
 
     @Test

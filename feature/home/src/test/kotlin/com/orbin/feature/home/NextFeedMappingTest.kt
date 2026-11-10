@@ -233,6 +233,38 @@ class NextFeedMappingTest {
         assertThat(entries.map { it.row.site }).containsExactly("4chan", "BBWChan")
     }
 
+    @Test
+    fun `video feeds omit text and images and select a later video attachment consistently`() {
+        val image = attachment()
+        val video =
+            image.copy(
+                id = "clip",
+                originalFileName = "clip.webm",
+                extension = "webm",
+                type = MediaType.VIDEO,
+                sourceUrl = "https://example.org/clip.webm",
+                width = 900,
+                height = 1600,
+            )
+        val feeds =
+            listOf(
+                boardFeed(
+                    "g",
+                    thread(1),
+                    thread(2, attachments = arrayOf(image)),
+                    thread(3, attachments = arrayOf(image, video)),
+                ),
+            )
+
+        val entries = feedEntries(feeds, emptySet(), NOW, videosOnly = true)
+
+        assertThat(entries.map { it.key.thread.value }).containsExactly(3L)
+        assertThat(entries.single().attachment).isEqualTo(video)
+        assertThat(entries.single().row.mediaLabel).isEqualTo("WEBM")
+        assertThat(entries.single().row.mediaAspectRatio).isEqualTo(video.previewAspectRatio)
+        assertThat(feedEntries(feeds, emptySet(), NOW)).hasSize(3)
+    }
+
     private fun boardFeed(
         board: String,
         vararg threads: CatalogThread,

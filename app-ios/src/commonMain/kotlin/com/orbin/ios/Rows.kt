@@ -14,6 +14,7 @@ import com.orbin.provider.api.UriParts
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.SearchRow
+import kotlinx.collections.immutable.toImmutableList
 import com.orbin.uinext.Post as NextPost
 
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
@@ -57,6 +58,13 @@ internal fun FeedThread.toFeedRow(
 
 internal val FeedThread.feedRowId: String
     get() = "${provider.value}/${thread.key.board.value}/${thread.key.thread.value}"
+
+/** A catalog can attach an image before a clip; the video feed always previews an actual video. */
+internal fun FeedThread.videoFeedPreview(): FeedThread? {
+    val clips = thread.originalPost.attachments.filter { it.type == MediaType.VIDEO && it.sourceUrl.isNotBlank() }
+    if (clips.isEmpty()) return null
+    return copy(thread = thread.copy(originalPost = thread.originalPost.copy(attachments = clips.toImmutableList())))
+}
 
 /**
  * A search hit, titled as Android titles it (`toSearchResult` in `:core:model`), with the opening

@@ -5,6 +5,7 @@ import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
@@ -88,6 +89,13 @@ class BrowserTest {
     }
 
     private suspend fun <T> StateFlow<Load<T>>.settled(): Load<T> = first { it !is Load.Loading }
+
+    private suspend fun Browser.finishSetupIfNeeded() {
+        if (firstRun.state.first { it.initialized }.needed) {
+            firstRun.state.first { it.canStart }
+            completeFirstRun().join()
+        }
+    }
 
     @Test
     fun boardsFromEverySiteAreListedAndAThreadOpensThroughTheCatalog() =
@@ -250,6 +258,7 @@ class BrowserTest {
             // whose Retry correctly reloads the board picker instead of the covered catalog.
             boardPreferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("g"), true)
             val browser = browser(backgroundScope, BOTH_SITES)
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             assertFalse(
                 browser.firstRun.state
                     .first { it.initialized }
@@ -393,7 +402,9 @@ class BrowserTest {
             val browser = browser(backgroundScope, BOTH_SITES + ("a.4cdn.org/boards.json" to boardsJson))
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             // The /v/ catalog is not in the script, so it fails with a 404.
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.finishSetupIfNeeded()
 
             val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             assertEquals(
@@ -415,7 +426,9 @@ class BrowserTest {
                 }
             boardPreferences.setFeedThreadLimit(g.provider, g.board.id, FeedThreadLimit.SIX)
 
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             browser.setFollowed(g, follow = true)
+            browser.finishSetupIfNeeded()
 
             val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             assertEquals(6, assertIs<Load.Ready<List<FeedThread>>>(feed).value.size)
@@ -425,6 +438,7 @@ class BrowserTest {
     fun withNothingFollowedTheFeedIsEmptyNotAnError() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             assertEquals(Load.Ready(emptyList()), browser.feed.settled())
         }
 
@@ -519,6 +533,7 @@ class BrowserTest {
             val otherSite = ProviderId("bbwchan")
             boardPreferences.setFavoriteBoard(otherSite, BoardId("b"), true)
             val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             val state = browser.firstRun.state.first { it.initialized }
 
             assertFalse(state.needed)
@@ -612,7 +627,9 @@ class BrowserTest {
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.finishSetupIfNeeded()
             browser.followed.first { it.size == 2 }
 
             browser.open(Route.Search)
@@ -643,7 +660,9 @@ class BrowserTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
             // The LynxChan /b/ catalog is not in the script, so it fails with a 404.
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.finishSetupIfNeeded()
             browser.followed.first { it.size == 2 }
 
             browser.search.setQuery("hi")
@@ -665,7 +684,9 @@ class BrowserTest {
                     ("a.4cdn.org/b/catalog.json" to """[{"page":1,"threads":[{"no":9,"sub":"Hi","time":2}]}]""")
             val browser = browser(backgroundScope, routes)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.finishSetupIfNeeded()
             browser.feed.first { it is Load.Ready && it.value.size == 2 }
 
             browser.settings.setHideNsfwBoards(true).join()
@@ -692,11 +713,11 @@ class BrowserTest {
                     ) +
                     (
                         "a.4cdn.org/g/catalog.json" to
-                            """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1},{"no":8,"sub":"gore video","time":2}]}]"""
+                            """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"},{"no":8,"sub":"gore video","time":2}]}]"""
                     ) +
                     (
                         "a.4cdn.org/g/thread/7.json" to
-                            """{"posts":[{"no":7,"sub":"Hi","time":1},{"no":8,"com":"gore","time":2},{"no":9,"com":"ok","time":3}]}"""
+                            """{"posts":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"},{"no":8,"com":"gore","time":2},{"no":9,"com":"ok","time":3}]}"""
                     ) +
                     ("a.4cdn.org/g/thread/8.json" to """{"posts":[{"no":8,"sub":"gore video","time":2}]}""")
             val browser = browser(backgroundScope, routes)
@@ -789,8 +810,10 @@ class BrowserTest {
         val BOTH_SITES =
             mapOf(
                 "a.4cdn.org/boards.json" to """{"boards":[{"board":"g","title":"Technology"}]}""",
-                "a.4cdn.org/g/catalog.json" to """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1}]}]""",
-                "a.4cdn.org/g/thread/7.json" to """{"posts":[{"no":7,"sub":"Hi","time":1}]}""",
+                "a.4cdn.org/g/catalog.json" to
+                    """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"}]}]""",
+                "a.4cdn.org/g/thread/7.json" to
+                    """{"posts":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"}]}""",
                 LYNXCHAN_BOARDS to """{"status":"ok","data":{"boards":[{"boardUri":"b","boardName":"Random"}]}}""",
             )
     }

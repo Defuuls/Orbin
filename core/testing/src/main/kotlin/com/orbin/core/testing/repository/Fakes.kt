@@ -195,6 +195,10 @@ class FakeSettingsRepository(
         update { copy(deepMediaScan = enabled) }
     }
 
+    override suspend fun setOpenThreadComments(enabled: Boolean) {
+        update { copy(openThreadComments = enabled) }
+    }
+
     override suspend fun setColorTheme(theme: AppColorTheme) {
         update { copy(colorTheme = theme) }
     }

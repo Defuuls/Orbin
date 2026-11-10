@@ -162,7 +162,9 @@ fun NextSettingsScreen(
                         "inheritPlayback" -> if (preferences.hasOverride(playbackScope)) null else playback
                         else -> null
                     }
-                if (item.id in
+                if (item.id == "openThreadComments") {
+                    viewModel.setOpenThreadComments(!settings.openThreadComments)
+                } else if (item.id in
                     setOf("startMuted", "loopVideos", "inheritPlayback", "resetPlayback")
                 ) {
                     viewModel.setPlaybackSettings(playbackScope, updatedPlayback)

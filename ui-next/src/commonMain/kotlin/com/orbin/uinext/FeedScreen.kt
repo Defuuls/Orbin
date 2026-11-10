@@ -11,6 +11,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -80,10 +82,34 @@ fun FeedScreen(
     mediaContent: (@Composable (FeedRow, Modifier, Boolean) -> Unit)? = null,
     onOpenBoard: ((FeedRow) -> Unit)? = null,
     onUpcomingPreviewChanged: (String?) -> Unit = {},
+    following: Boolean? = null,
+    onFollowingChange: (Boolean) -> Unit = {},
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    onRetry: (() -> Unit)? = null,
+    onLoadMore: (() -> Unit)? = null,
+    onOpenReplies: ((FeedRow) -> Unit)? = null,
+    repliesOpenComments: Boolean = onOpenReplies == null,
+    loadMoreKey: Any? = null,
 ) {
-    var following by rememberSaveable { mutableStateOf(false) }
-    val visibleRows = remember(rows, following) { if (following) rows.filter { it.watched } else rows }
-    val pager = rememberPagerState(pageCount = { visibleRows.size })
+    var localFollowing by rememberSaveable { mutableStateOf(false) }
+    val showingFollowing = following ?: localFollowing
+    // The adapters own board membership; watching a thread must never change its feed tab.
+    val visibleRows = rows
+    var discoveryPage by rememberSaveable(selectedSource) { mutableIntStateOf(0) }
+    var followingPage by rememberSaveable(selectedSource) { mutableIntStateOf(0) }
+    val pager =
+        key(showingFollowing, selectedSource) {
+            rememberPagerState(
+                initialPage = if (showingFollowing) followingPage else discoveryPage,
+                pageCount = { visibleRows.size },
+            )
+        }
+    LaunchedEffect(pager, showingFollowing) {
+        snapshotFlow { pager.settledPage }.distinctUntilChanged().collect { page ->
+            if (showingFollowing) followingPage = page else discoveryPage = page
+        }
+    }
     var relocation by remember(pager) { mutableStateOf<FeedRelocation?>(null) }
     val settledId by remember(pager) {
         derivedStateOf {
@@ -120,6 +146,12 @@ fun FeedScreen(
     val upcomingCallback by rememberUpdatedState(onUpcomingPreviewChanged)
     val chromeCallback by rememberUpdatedState(onChromeVisibleChange)
     val titleCallback by rememberUpdatedState(onCompactTitleVisibleChange)
+    val loadMoreCallback by rememberUpdatedState(onLoadMore)
+    LaunchedEffect(pager, visibleRows.size, onLoadMore != null, loadMoreKey) {
+        snapshotFlow { pager.settledPage >= visibleRows.lastIndex - 2 && visibleRows.isNotEmpty() }
+            .distinctUntilChanged()
+            .collect { nearEnd -> if (nearEnd) loadMoreCallback?.invoke() }
+    }
 
     LaunchedEffect(Unit) {
         chromeCallback(true)
@@ -202,6 +234,8 @@ fun FeedScreen(
                         activity = activityText(row),
                         headerStatus = statusMessage,
                         onOpen = { onOpenRow(row) },
+                        onOpenReplies = { (onOpenReplies ?: onOpenRow)(row) },
+                        repliesOpenComments = repliesOpenComments,
                         onOpenBoard = onOpenBoard?.let { action -> { action(row) } } ?: onOpenBoards,
                         onToggleWatch = onToggleWatch,
                         onToggleSaved = onToggleSaved,
@@ -209,11 +243,20 @@ fun FeedScreen(
                     )
                 }
             } else {
-                TikTokFeedEmpty(following = following, onOpenBoards = onOpenBoards, onOpenWatched = onOpenWatched)
+                TikTokFeedEmpty(
+                    following = showingFollowing,
+                    onOpenBoards = onOpenBoards,
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    onRetry = onRetry,
+                )
             }
             TikTokFeedHeader(
-                following = following,
-                onFollowingChange = { following = it },
+                following = showingFollowing,
+                onFollowingChange = {
+                    localFollowing = it
+                    onFollowingChange(it)
+                },
                 subtitle = subtitle,
                 statusMessage = statusMessage,
                 onSettings = onSettings,

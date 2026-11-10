@@ -108,7 +108,7 @@ class SubscribedFeedViewModelTest {
 
             viewModel.uiState.test {
                 var state = awaitItem()
-                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
 
                 assertThat(state.boards.map { it.board.id }).containsExactly(healthyBoard, deadBoard)
                 assertThat(state.boards.first { it.board.id == healthyBoard }.threads).hasSize(1)
@@ -130,7 +130,7 @@ class SubscribedFeedViewModelTest {
 
             viewModel.uiState.test {
                 var state = awaitItem()
-                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
 
                 val threads = state.boards.single().threads
                 assertThat(threads).hasSize(25)
@@ -158,7 +158,7 @@ class SubscribedFeedViewModelTest {
 
             viewModel.uiState.test {
                 var state = awaitItem()
-                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
                 assertThat(
                     state.boards
                         .single()
@@ -179,7 +179,7 @@ class SubscribedFeedViewModelTest {
 
             viewModel.uiState.test {
                 var state = awaitItem()
-                while (state !is SubscribedFeedUiState.Success) state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
                 cancelAndIgnoreRemainingEvents()
             }
             val callsAfterFirstLoad = catalogCalls.get()

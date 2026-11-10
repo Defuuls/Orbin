@@ -204,6 +204,7 @@ private fun Destination(
             }
         }
         is Route.Media -> MediaDestination(browser, downloads, route)
+        is Route.ThreadVideos -> ThreadVideosDestination(browser, downloads, route)
     }
 }
 

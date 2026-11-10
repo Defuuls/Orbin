@@ -235,6 +235,8 @@ class IosBackup(
             requireAuthorization()
             setCoverViolentMedia(restored.coverViolentMedia)
             requireAuthorization()
+            setOpenThreadComments(restored.openThreadComments)
+            requireAuthorization()
             setDeepMediaScan(restored.deepMediaScan)
             requireAuthorization()
             setThemeMode(restored.themeMode)

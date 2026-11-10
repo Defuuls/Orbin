@@ -27,6 +27,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
@@ -39,7 +40,6 @@ import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
 import com.orbin.ios.resources.ios_primary_boards
-import com.orbin.ios.resources.ios_primary_home
 import com.orbin.ios.resources.ios_primary_loading
 import com.orbin.ios.resources.ios_primary_retry
 import com.orbin.ios.resources.ios_search_follow_boards
@@ -77,100 +77,157 @@ internal fun FeedDestination(
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.feedSite.collectAsState()
+    val mode by browser.feedMode.collectAsState()
+    val loadingMore by browser.feedLoadingMore.collectAsState()
+    val canLoadMore by browser.feedCanLoadMore.collectAsState()
+    val discoveryProgress by browser.feedDiscoveryProgress.collectAsState()
+    val contentPolicy by browser.feedContentPolicy.collectAsState()
     val saved by browser.savedThreads.collectAsState(emptyList())
     val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
+    val policyMatches = contentPolicy == HomeFeedContentPolicy(settings.hideNsfwBoards, settings.coverViolentMedia)
+    val threads =
+        remember(feed, policyMatches) {
+            if (policyMatches) {
+                (feed as? Load.Ready)?.value.orEmpty().mapNotNull(
+                    FeedThread::videoFeedPreview,
+                )
+            } else {
+                emptyList()
+            }
+        }
+    // Empty video batches advance only after their catalogs finish, never while mapping old rows.
+    LaunchedEffect(
+        threads.isEmpty(),
+        loadingMore,
+        canLoadMore,
+        mode,
+        discoveryProgress,
+        feed is Load.Ready,
+        policyMatches,
+    ) {
+        val successfulEmptyPage = feed is Load.Ready && policyMatches && threads.isEmpty()
+        val discoveryCanAdvance = mode == HomeFeedMode.FOR_YOU && !loadingMore && canLoadMore
+        if (successfulEmptyPage && discoveryCanAdvance) {
+            browser.loadMoreFeed()
+        }
+    }
+    val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+    val byKey = remember(saved) { saved.associateBy { it.key } }
+    val rows =
+        remember(threads, visited, byKey) {
+            threads.map {
+                it.toFeedRow(now, read = it.thread.key in visited).copy(
+                    watched = byKey[it.thread.key]?.isWatched == true,
+                    bookmarked = it.thread.key in byKey,
+                )
+            }
+        }
+    val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
+    var activePreviewId by remember { mutableStateOf<String?>(null) }
+    var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
+    val preloader = remember { createNativeMediaPreloader() }
+    DisposableEffect(preloader) { onDispose { preloader.close() } }
+    val foreground =
+        FeedPreloadLifecycle(
+            preloader,
+            feedPreloadTarget(
+                byRow[activePreviewId],
+                byRow[upcomingPreviewId],
+                settings.playbackPreferences,
+                supportsWebM,
+            ),
+        )
+    val uriHandler = LocalUriHandler.current
     NextPullToRefresh(
         isRefreshing = feed is Load.Loading,
         onRefresh = browser::retry,
         modifier = Modifier.fillMaxSize(),
     ) {
-        PrimaryLoaded(browser, feed, stringResource(Res.string.ios_primary_home), NextDestination.FEED) { threads ->
-            val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-            val byKey = remember(saved) { saved.associateBy { it.key } }
-            val rows =
-                remember(threads, visited, byKey) {
-                    threads.map {
-                        it.toFeedRow(now, read = it.thread.key in visited).copy(
-                            watched = byKey[it.thread.key]?.isWatched == true,
-                            bookmarked = it.thread.key in byKey,
+        BoxWithConstraints {
+            NativeMediaPreloadHost(preloader)
+            FeedScreen(
+                rows = rows,
+                following = mode == HomeFeedMode.FOLLOWING,
+                onFollowingChange = {
+                    browser.selectFeedMode(
+                        if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU,
+                    )
+                },
+                isLoading = !policyMatches || feed is Load.Loading || loadingMore && rows.isEmpty(),
+                errorMessage = (feed as? Load.Failed)?.message,
+                onRetry = browser::retry,
+                onLoadMore =
+                    (browser::loadMoreFeed).takeIf {
+                        canLoadMore &&
+                            !loadingMore &&
+                            feed is Load.Ready &&
+                            policyMatches
+                    },
+                loadMoreKey = discoveryProgress,
+                hideRailOnScroll = false,
+                columns = feedColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
+                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+                onOpenReplies = { row ->
+                    byRow[row.id]?.let {
+                        if (settings.openThreadComments) {
+                            browser.openThread(
+                                it.thread.key,
+                            )
+                        } else {
+                            browser.openThreadVideos(it.thread.key)
+                        }
+                    }
+                },
+                repliesOpenComments = settings.openThreadComments,
+                onToggleWatch = { row -> byRow[row.id]?.let(browser::toggleFeedWatch) },
+                onToggleSaved = { row -> byRow[row.id]?.let(browser::toggleFeedSaved) },
+                onShareRow = { row ->
+                    byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
+                },
+                onActivePreviewChanged = { activePreviewId = it },
+                onUpcomingPreviewChanged = { upcomingPreviewId = it },
+                mediaContent = { row, modifier, active ->
+                    byRow[row.id]?.let { entry ->
+                        FeedMedia(
+                            feed = entry,
+                            playback = settings.playbackPreferences.resolve(entry.provider, entry.thread.key.board),
+                            active = active && foreground,
+                            modifier = modifier,
+                            preloader = preloader,
+                            onLike = { browser.watchFeed(entry) },
+                            onOpenExternal = uriHandler::openUri,
                         )
                     }
-                }
-            val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
-            var activePreviewId by remember { mutableStateOf<String?>(null) }
-            var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
-            val preloader = remember { createNativeMediaPreloader() }
-            DisposableEffect(preloader) { onDispose { preloader.close() } }
-            val foreground =
-                FeedPreloadLifecycle(
-                    preloader,
-                    feedPreloadTarget(
-                        byRow[activePreviewId],
-                        byRow[upcomingPreviewId],
-                        settings.playbackPreferences,
-                        supportsWebM,
-                    ),
-                )
-            val uriHandler = LocalUriHandler.current
-            // Columns as on Android: one on a phone or a narrow window (split view), the reader's choice
-            // on an iPad's full width.
-            BoxWithConstraints {
-                NativeMediaPreloadHost(preloader)
-                FeedScreen(
-                    rows = rows,
-                    hideRailOnScroll = false,
-                    columns = feedColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
-                    onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-                    onToggleWatch = { row -> byRow[row.id]?.let(browser::toggleFeedWatch) },
-                    onToggleSaved = { row -> byRow[row.id]?.let(browser::toggleFeedSaved) },
-                    onShareRow = { row ->
-                        byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
-                    },
-                    onActivePreviewChanged = { activePreviewId = it },
-                    onUpcomingPreviewChanged = { upcomingPreviewId = it },
-                    mediaContent = { row, modifier, active ->
-                        byRow[row.id]?.let { entry ->
-                            FeedMedia(
-                                feed = entry,
-                                playback = settings.playbackPreferences.resolve(entry.provider, entry.thread.key.board),
-                                active = active && foreground,
-                                modifier = modifier,
-                                preloader = preloader,
-                                onLike = { browser.watchFeed(entry) },
-                                onOpenExternal = uriHandler::openUri,
-                            )
-                        }
-                    },
-                    onOpenBoard = { row ->
-                        byRow[row.id]?.let { entry ->
-                            val key = entry.thread.key
-                            val known =
-                                (boards as? Load.Ready<List<SiteBoard>>)?.value?.firstOrNull {
-                                    it.provider == key.provider && it.board.id == key.board
-                                }
-                            browser.openBoard(
-                                known
-                                    ?: SiteBoard(
-                                        key.provider,
-                                        browser.siteName(key.provider),
-                                        Board(key.board, row.boardTitle),
-                                    ),
-                            )
-                        }
-                    },
-                    onOpenBoards = { browser.openTab(Route.Boards) },
-                    onOpenDownloads = { browser.open(Route.Downloads) },
-                    onOpenSearch = { browser.openTab(Route.Search) },
-                    onOpenSaved = { browser.openTab(Route.Saved) },
-                    onOpenWatched = { browser.openTab(Route.Watched) },
-                    onSettings = { browser.open(Route.Settings) },
-                    sourceLabels =
-                        listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
-                    selectedSource = if (site == null) 0 else browser.sites.indexOfFirst { it.id == site } + 1,
-                    onSelectSource = { index -> browser.selectFeedSite(browser.sites.getOrNull(index - 1)?.id) },
-                    uniformCards = true,
-                )
-            }
+                },
+                onOpenBoard = { row ->
+                    byRow[row.id]?.let { entry ->
+                        val key = entry.thread.key
+                        val known =
+                            (boards as? Load.Ready<List<SiteBoard>>)?.value?.firstOrNull {
+                                it.provider == key.provider && it.board.id == key.board
+                            }
+                        browser.openBoard(
+                            known
+                                ?: SiteBoard(
+                                    key.provider,
+                                    browser.siteName(key.provider),
+                                    Board(key.board, row.boardTitle),
+                                ),
+                        )
+                    }
+                },
+                onOpenBoards = { browser.openTab(Route.Boards) },
+                onOpenDownloads = { browser.open(Route.Downloads) },
+                onOpenSearch = { browser.openTab(Route.Search) },
+                onOpenSaved = { browser.openTab(Route.Saved) },
+                onOpenWatched = { browser.openTab(Route.Watched) },
+                onSettings = { browser.open(Route.Settings) },
+                sourceLabels =
+                    listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
+                selectedSource = if (site == null) 0 else browser.sites.indexOfFirst { it.id == site } + 1,
+                onSelectSource = { index -> browser.selectFeedSite(browser.sites.getOrNull(index - 1)?.id) },
+                uniformCards = true,
+            )
         }
     }
 }
@@ -355,6 +412,10 @@ internal fun SettingsDestination(
                     SettingIds.COVER_VIOLENT -> {
                         Haptics.light()
                         browser.settings.setCoverViolentMedia(!settings.coverViolentMedia)
+                    }
+                    SettingIds.OPEN_THREAD_COMMENTS -> {
+                        Haptics.light()
+                        browser.settings.setOpenThreadComments(!settings.openThreadComments)
                     }
                     SettingIds.AMOLED -> {
                         Haptics.light()

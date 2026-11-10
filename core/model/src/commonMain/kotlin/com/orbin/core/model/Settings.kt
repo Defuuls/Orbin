@@ -123,6 +123,8 @@ data class AppSettings(
     /** Board catalog columns on a tablet, 2–8; everywhere else the catalog fits its tiles itself. */
     val tabletCatalogColumns: Int = DEFAULT_TABLET_CATALOG_COLUMNS,
     val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
+    /** Open comments from Home's chat button instead of the thread's videos. */
+    val openThreadComments: Boolean = false,
 ) {
     companion object {
         val Default = AppSettings()

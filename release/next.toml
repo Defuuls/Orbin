@@ -1,25 +1,29 @@
-# Orbin 196 - Kai Lan
+# Orbin 197 - Okahijiki
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 196
-codename     = "Kai Lan"
-version_code = 214
+number       = 197
+codename     = "Okahijiki"
+version_code = 215
 
-highlight = "Mandatory first-run board selection initializes Home before browsing on Android and iOS, and repairs installations that previously skipped setup."
+highlight = "For You discovers videos across all boards, Following uses followed boards, and the chat button opens thread videos with an optional comments setting."
 
 summary = [
-  "require a saved board before finishing first-run setup on Android and iOS",
-  "recover existing installations with no followed boards",
-  "bump Orbin to 196-Kai-Lan / versionCode 214",
+  "separate all-board For You discovery from followed-board Following feeds",
+  "open videos from every post in a thread through the chat button by default",
+  "add a persisted setting to open comments from the chat button",
+  "bump Orbin to 197-Okahijiki / versionCode 215",
 ]
 
 [changelog]
 Fixed = [
-  "Required at least one saved board before Start browsing can finish setup on Android and iOS; board selection stays open until the reader explicitly starts their initialized feed.",
-  "Waited for local settings and follows before choosing the startup screen, and reopened setup for older installations that completed it with no boards.",
-  "Serialized board writes, kept setup open on save failures, and counted subscriptions and favorites across both sites so changing the selected site cannot strand setup.",
-  "Prevented restored navigation, shortcuts, and release notes from bypassing first-run setup, and opened the initialized Home feed across all sites.",
+  "Made Following show followed boards instead of filtering watched threads, and gave For You its own discovery feed across eligible boards on both sites.",
+  "Kept feed tabs and source selection available during loading, empty results, and errors, and scoped catalog caches, playback, and preloading to the selected feed and source.",
+]
+Added = [
+  "Bounded, incremental For You catalog loading so discovery can show videos before every board has loaded.",
+  "A thread-video destination for the Home chat button, including video attachments in replies, with explicit loading, retry, and empty states on Android and iOS.",
+  "A global Playback setting, Open comments from chat button, which defaults off and preserves the choice across relaunches and backups.",
 ]
 Testing = [
-  "Added persistence, empty-install recovery, cross-site following, save-failure, navigation, and cold-relaunch regressions, including the installed iOS application's mandatory setup flow.",
+  "Added feed-mode, source, discovery-loading, persistence, reply-video filtering, thread routing, chat-action, and settings compatibility regressions across Android and iOS.",
 ]

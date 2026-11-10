@@ -142,6 +142,23 @@ class SettingsDirectoryTest {
     }
 
     @Test
+    fun chatButtonPreferenceIsDiscoverableInPlaybackAndSearch() {
+        val row =
+            SettingItem(
+                "openThreadComments",
+                "Open comments from chat button",
+                "Off",
+                checked = false,
+                hint = "Off opens thread videos; on opens comments.",
+            )
+        val groups = listOf("Playback" to listOf(row))
+
+        assertEquals(listOf(row), settingsPages(groups)["playback"])
+        assertEquals(listOf(row), filterSettings(groups, "thread videos").flatMap { it.second })
+        assertEquals(listOf(row), filterSettings(groups, "chat comments").flatMap { it.second })
+    }
+
+    @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun settingsValuesMoveBelowLabelsAtLargeTextWithoutTruncation() {
         var scale by mutableStateOf(1f)

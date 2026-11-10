@@ -259,6 +259,35 @@ class RowsTest {
         assertEquals(image.thumbnailUrl, image.copy(type = MediaType.VIDEO).cardImageUrl())
     }
 
+    @Test
+    fun videoFeedSkipsImageOnlyThreadsAndUsesTheActualVideoOnMixedPosts() {
+        val image = post(1, files = 1).attachments.single()
+        val video =
+            image.copy(
+                id = "video",
+                extension = "mp4",
+                type = MediaType.VIDEO,
+                sourceUrl = "https://example.org/video.mp4",
+            )
+        val key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(1))
+        val imageOnly = FeedThread(key.provider, CatalogThread(key, post(1, files = 1), ThreadStats()))
+        assertNull(imageOnly.videoFeedPreview())
+        val mixed =
+            imageOnly.copy(
+                thread =
+                    imageOnly.thread.copy(
+                        originalPost = post(1, files = 0).copy(attachments = persistentListOf(image, video)),
+                    ),
+            )
+
+        val preview = mixed.videoFeedPreview()!!
+
+        assertEquals(listOf(video), preview.thread.originalPost.attachments)
+        assertEquals(key, preview.thread.key)
+        assertEquals("MP4", preview.toFeedRow(0, read = false).mediaLabel)
+        assertEquals(listOf(image, video), mixed.thread.originalPost.attachments, "the full thread remains untouched")
+    }
+
     private fun post(
         id: Long,
         files: Int,

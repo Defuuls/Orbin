@@ -157,6 +157,8 @@ class SettingsViewModel
 
         fun setDeepMediaScan(enabled: Boolean) = update { repository.setDeepMediaScan(enabled) }
 
+        fun setOpenThreadComments(enabled: Boolean) = update { repository.setOpenThreadComments(enabled) }
+
         fun setCoverViolentMedia(enabled: Boolean) = update { repository.setCoverViolentMedia(enabled) }
 
         fun setFeedColumns(

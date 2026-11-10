@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -62,7 +63,9 @@ import com.orbin.media.video.SessionAudio
 import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
+import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLinearProgress
+import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
 import com.orbin.uinext.nextElevatedSurface
@@ -85,16 +88,44 @@ fun GalleryScreen(
     onMediaPageChanged: (Int) -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
-    val media by viewModel.media.collectAsStateWithLifecycle()
+    val content by viewModel.content.collectAsStateWithLifecycle()
+    val loaded = content as? GalleryContentState.Ready
+    val media = loaded?.media.orEmpty()
+    val threadMediaIndices = loaded?.threadMediaIndices.orEmpty()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val playback = remember(settings) { viewModel.playbackSettings() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val mediaPageChanged by rememberUpdatedState(onMediaPageChanged)
 
     NextTheme(darkTheme = true) {
         if (media.isEmpty()) {
-            NextEmpty(stringResource(R.string.gallery_empty), Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                when (val state = content) {
+                    GalleryContentState.Loading -> NextLoading()
+                    is GalleryContentState.Error -> NextError(state.message, onRetry = viewModel::retry)
+                    is GalleryContentState.Ready ->
+                        NextEmpty(
+                            stringResource(
+                                if (viewModel.videosOnly) R.string.gallery_no_thread_videos else R.string.gallery_empty,
+                            ),
+                            Modifier.fillMaxSize(),
+                        )
+                }
+                InlineAction(
+                    label = stringResource(R.string.gallery_close),
+                    onClick = onClose,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(
+                                    WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                                ),
+                            ).padding(horizontal = NextSpace.gutter, vertical = 8.dp),
+                )
+            }
             return@NextTheme
         }
 
@@ -104,10 +135,10 @@ fun GalleryScreen(
                 pageCount = { media.size },
             )
 
-        LaunchedEffect(pagerState) {
+        LaunchedEffect(pagerState, threadMediaIndices) {
             snapshotFlow { pagerState.settledPage }
                 .distinctUntilChanged()
-                .collect(onMediaPageChanged)
+                .collect { page -> threadMediaIndices.getOrNull(page)?.let(mediaPageChanged) }
         }
 
         // Top bar auto-hides after a period of inactivity for uninterrupted media viewing,
@@ -142,7 +173,7 @@ fun GalleryScreen(
         val haptics = LocalHapticFeedback.current
         val close = {
             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-            onMediaPageChanged(pagerState.settledPage)
+            threadMediaIndices.getOrNull(pagerState.settledPage)?.let(mediaPageChanged)
             onClose()
         }
         val save: (MediaAttachment) -> Unit = { attachment ->
@@ -165,6 +196,7 @@ fun GalleryScreen(
         ) {
             VerticalPager(
                 state = pagerState,
+                key = { page -> checkNotNull(loaded).pageKey(page) },
                 modifier = Modifier.fillMaxSize(),
                 beyondViewportPageCount = 0,
             ) { page ->

@@ -68,6 +68,9 @@ fun OrbinNavHost(
         composable<Route.NextFeed> {
             NextFeedWithSiteSwitcherScreen(
                 onOpenThread = openThread,
+                onOpenThreadVideos = { provider, board, thread, _ ->
+                    navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
+                },
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
@@ -206,6 +209,10 @@ fun OrbinNavHost(
                         ?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
                 },
             )
+        }
+
+        composable<Route.ThreadVideos> {
+            GalleryScreen(onClose = navController::navigateUp)
         }
 
         composable<Route.Saved> {

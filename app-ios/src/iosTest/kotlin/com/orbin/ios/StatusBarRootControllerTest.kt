@@ -33,6 +33,8 @@ class StatusBarRootControllerTest {
         assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle())
         appearance.setLightIcons(lightStatusBarIcons(media, false, false, unlocked))
         assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
+        appearance.setLightIcons(lightStatusBarIcons(Route.ThreadVideos(media.thread), false, false, unlocked))
+        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
         appearance.setLightIcons(lightStatusBarIcons(media, false, false, LockState(obscured = true)))
         assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle())
         appearance.setLightIcons(lightStatusBarIcons(Route.Feed, false, true, unlocked))

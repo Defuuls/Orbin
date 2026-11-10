@@ -156,6 +156,7 @@ class BackupService
                 setHideNsfwBoards(settings.hideNsfwBoards)
                 setCoverViolentMedia(settings.coverViolentMedia)
                 setDeepMediaScan(settings.deepMediaScan)
+                setOpenThreadComments(settings.openThreadComments)
                 this.settings
                     .first()
                     .playbackPreferences.overrides
