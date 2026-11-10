@@ -177,7 +177,12 @@ internal fun CatalogThumbnail(
 ) {
     val attachment = thread.originalPost.attachments.firstOrNull() ?: return
     Box(modifier) {
-        val canLoop = playsPreview && playback.autoplay && attachment.isPlayable && (!attachment.isWebM || supportsWebM)
+        val canLoop =
+            playsPreview &&
+                playback.autoplay &&
+                !attachment.isSpoiler &&
+                attachment.isPlayable &&
+                (!attachment.isWebM || supportsWebM)
         // One preview loops at a time, as on Android: each is a web view and a video decoder.
         val loops = rememberInlineLoopSlot(thread.key.toString(), canLoop)
         SharpImage(
@@ -242,13 +247,14 @@ internal fun SharpImage(
     // picture's own proportions.
     fill: Modifier = Modifier.fillMaxWidth(),
     videoFrame: Boolean = true,
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     // Hovering the Apple Pencil over a picture shows it larger, without opening it.
     PencilHoverPreview(attachment, modifier) {
         AsyncImage(
             model = attachment.thumbnailUrl,
             contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
+            contentScale = contentScale,
             modifier = fill,
         )
         val sharp = attachment.cardImageUrl()
@@ -256,7 +262,7 @@ internal fun SharpImage(
             AsyncImage(
                 model = sharp,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
                 modifier = Modifier.matchParentSize(),
             )
         }

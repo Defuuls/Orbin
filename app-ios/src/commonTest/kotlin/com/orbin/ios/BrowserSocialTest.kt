@@ -26,7 +26,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Source filtering, four-tab navigation and local collections across both providers. */
+/** Source filtering, five-tab navigation and local collections across both providers. */
 class BrowserSocialTest {
     private val requested = mutableListOf<String>()
     private val recording = Mutex()
@@ -122,10 +122,10 @@ class BrowserSocialTest {
         }
 
     @Test
-    fun theFourTabsReplaceTheStackAndSettingsReturnsToTheSelectedTab() =
+    fun theFiveTabsReplaceTheStackAndSettingsReturnsToTheSelectedTab() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
-            for (tab in listOf(Route.Feed, Route.Search, Route.Boards, Route.Saved)) {
+            for (tab in listOf(Route.Feed, Route.Boards, Route.Watched, Route.Search, Route.Saved)) {
                 browser.openTab(tab)
                 browser.open(Route.Settings)
                 assertEquals(listOf(tab, Route.Settings), browser.backStack.value)

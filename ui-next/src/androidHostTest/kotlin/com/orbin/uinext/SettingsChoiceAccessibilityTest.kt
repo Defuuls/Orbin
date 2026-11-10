@@ -10,9 +10,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +41,7 @@ class SettingsChoiceAccessibilityTest {
                                     SettingItem(
                                         id = "colorTheme",
                                         label = "Color theme",
-                                        value = "Current theme",
+                                        value = listOf("Blue", "Teal")[selected],
                                         kind = SettingKind.CHOICE,
                                         options = listOf("Blue", "Teal"),
                                         selected = selected,
@@ -59,8 +62,43 @@ class SettingsChoiceAccessibilityTest {
             .assert(radio)
             .assertIsNotSelected()
             .performClick()
+        composeRule.onNodeWithText("Color theme").performClick()
         composeRule.onNodeWithText("Teal").assertIsSelected().performClick()
+        composeRule.onNodeWithText("Color theme").performClick()
         composeRule.onNodeWithText("Teal").assertIsSelected()
         composeRule.onNodeWithText("Blue").assertIsNotSelected()
+    }
+
+    @Test
+    fun scopeSearchKeepsTheOriginalOptionIndex() {
+        var selectedIndex = -1
+        val options = listOf("App defaults") + (1..12).map { "Site · /board$it/" }
+        composeRule.setContent {
+            NextTheme {
+                SettingsScreen(
+                    groups =
+                        listOf(
+                            "Playback" to
+                                listOf(
+                                    SettingItem(
+                                        id = "playbackScope",
+                                        label = "Scope",
+                                        value = options.first(),
+                                        kind = SettingKind.CHOICE,
+                                        options = options,
+                                        selected = 0,
+                                    ),
+                                ),
+                        ),
+                    expandedId = "playbackScope",
+                    onSelectOption = { _, index -> selectedIndex = index },
+                )
+            }
+        }
+        composeRule.onNode(hasSetTextAction()).performTextInput("board12")
+        composeRule.onNodeWithText("Site · /board12/").performClick()
+        composeRule.waitForIdle()
+        assertEquals(12, selectedIndex)
+        composeRule.onNodeWithText("Playback").assertExists()
     }
 }

@@ -258,8 +258,7 @@ class ProposalScreenshotTest {
         }
 
     /**
-     * A row being changed where it stands, which is the only way this list edits anything: the
-     * choice opens its options underneath rather than opening a screen over them.
+     * A dedicated choice page keeps options in a readable single-selection list.
      */
     @Test
     fun settingsEditing() =

@@ -62,6 +62,7 @@ class UniformityTest {
             NextDestination.FEED,
             NextDestination.SEARCH,
             NextDestination.BOARDS,
+            NextDestination.WATCHED,
             NextDestination.SAVED,
             NextDestination.DOWNLOADS,
             NextDestination.SETTINGS,

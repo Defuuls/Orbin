@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -85,6 +86,13 @@ internal fun MediaViewer(
         rememberPagerState(
             initialPage = startIndex.coerceIn(0, (files.size - 1).coerceAtLeast(0)),
         ) { files.size }
+    val preloader = remember { createNativeMediaPreloader() }
+    DisposableEffect(preloader) {
+        onDispose { preloader.close() }
+    }
+    LaunchedEffect(preloader, files, pager.currentPage, playback.preloadNextClip) {
+        preloader.prepare(nextMediaPreloadTarget(files, pager.currentPage, playback.preloadNextClip, supportsWebM))
+    }
     val reportPage by rememberUpdatedState(onPageChanged)
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { reportPage(it) }
@@ -109,7 +117,12 @@ internal fun MediaViewer(
             beyondViewportPageCount = if (playback.preloadNextClip) 1 else 0,
             modifier = Modifier.fillMaxSize(),
         ) { page ->
-            MediaPage(files[page.coerceIn(0, files.lastIndex)], active = page == pager.currentPage, playback = playback)
+            MediaPage(
+                files[page.coerceIn(0, files.lastIndex)],
+                active = page == pager.currentPage,
+                playback = playback,
+                preloader = preloader,
+            )
         }
         val current = files[pager.currentPage.coerceIn(0, files.lastIndex)]
         Row(
@@ -175,6 +188,7 @@ private fun MediaPage(
     file: MediaAttachment,
     active: Boolean,
     playback: PlaybackSettings,
+    preloader: NativeMediaPreloader,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
@@ -201,6 +215,7 @@ private fun MediaPage(
                     loop = looping,
                     autoPlay = playback.autoplay,
                     initiallyMuted = playback.startMuted && SessionAudio.muted,
+                    preloader = preloader,
                     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
                 )
                 TextButton(
@@ -227,6 +242,7 @@ private fun MediaPage(
                 autoPlay = playback.autoplay,
                 initiallyMuted = playback.startMuted && SessionAudio.muted,
                 loop = looping,
+                preloader = preloader,
             )
         else -> ExternalFile(file)
     }

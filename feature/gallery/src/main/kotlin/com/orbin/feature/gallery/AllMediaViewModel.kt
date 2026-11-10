@@ -7,6 +7,7 @@ import co.touchlab.kermit.Logger
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogRequest
+import com.orbin.core.model.ProviderId
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
 import com.orbin.domain.media.BoardSweep
@@ -23,6 +24,7 @@ import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
+import com.orbin.provider.api.require
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,6 +39,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -82,9 +85,15 @@ class AllMediaViewModel
         /** Set when the wall was opened from a board's catalog: sweep that board alone. */
         private val onlyBoard: String? = savedStateHandle.get<String>("board")
 
+        // A drill-in belongs to its source, even if a different source is selected elsewhere.
+        private val pinnedProvider =
+            savedStateHandle.get<String>("provider")?.takeIf(String::isNotBlank)?.let {
+                providerRegistry.require(ProviderId(it))
+            }
+
         private val activeProvider: StateFlow<ImageBoardProvider> =
-            observeActiveProvider()
-                .stateIn(viewModelScope, SharingStarted.Eagerly, providerRegistry.default())
+            (pinnedProvider?.let { flowOf(it) } ?: observeActiveProvider())
+                .stateIn(viewModelScope, SharingStarted.Eagerly, pinnedProvider ?: providerRegistry.default())
 
         private val refreshRequests = MutableStateFlow(0)
 

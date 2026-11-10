@@ -19,20 +19,21 @@ class SocialNavigationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `all four tabs dispatch distinct destinations`() {
+    fun `all five tabs dispatch distinct destinations`() {
         val selected = mutableListOf<NextDestination>()
         composeRule.setContent {
             NextTheme { DestinationPill(NextDestination.SAVED, selected::add) }
         }
         composeRule.onNodeWithContentDescription("Saved").assertIsSelected()
-        listOf("Home", "Search", "Boards", "Saved").forEach { label ->
+        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
             composeRule.onNodeWithContentDescription(label).performClick()
         }
         assertThat(selected)
             .containsExactly(
                 NextDestination.FEED,
-                NextDestination.SEARCH,
                 NextDestination.BOARDS,
+                NextDestination.WATCHED,
+                NextDestination.SEARCH,
                 NextDestination.SAVED,
             ).inOrder()
     }

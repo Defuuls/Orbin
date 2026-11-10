@@ -74,6 +74,7 @@ fun OrbinNavHost(
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
                 onOpenSaved = { navController.navigateToTab(Route.Saved) },
+                onOpenWatched = { navController.navigateToTab(Route.Watched) },
             )
         }
 
@@ -85,6 +86,7 @@ fun OrbinNavHost(
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
                 onOpenDownloads = { navController.navigate(Route.Downloads) },
                 onOpenSaved = { navController.navigateToTab(Route.Saved) },
+                onOpenWatched = { navController.navigateToTab(Route.Watched) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
@@ -123,6 +125,7 @@ fun OrbinNavHost(
         }
 
         composable<Route.Board> { backStackEntry ->
+            val boardRoute = backStackEntry.toRoute<Route.Board>()
             val mediaScrollIndex by
                 backStackEntry.savedStateHandle
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
@@ -152,14 +155,18 @@ fun OrbinNavHost(
                             NO_THREAD_MEDIA_SCROLL_INDEX
                     },
                     onBack = navController::navigateUp,
-                    onOpenBoardMedia = { board -> navController.navigate(Route.BoardMedia(board)) },
+                    onOpenBoardMedia = { board ->
+                        navController.navigate(Route.BoardMedia(board = board, provider = boardRoute.provider))
+                    },
                 )
             } else {
                 NextBoardScreen(
                     onOpenThread = openThread,
                     hideRailOnScroll = chromeHidesOnScroll,
                     onChromeVisibleChange = onChromeVisibleChange,
-                    onOpenMedia = { board -> navController.navigate(Route.BoardMedia(board)) },
+                    onOpenMedia = { board ->
+                        navController.navigate(Route.BoardMedia(board = board, provider = boardRoute.provider))
+                    },
                 )
             }
         }
@@ -216,7 +223,8 @@ fun OrbinNavHost(
                 kind = CollectionKind.WATCHED,
                 title = stringResource(R.string.nav_watched),
                 onOpenThread = openThread,
-                onBack = { navController.navigateUp() },
+                onSettings = { navController.navigate(Route.Settings) },
+                onDestination = onDestination,
             )
         }
         composable<Route.Downloads> {
@@ -229,9 +237,9 @@ fun OrbinNavHost(
                 onBack = { navController.navigateUp() },
                 onNavigate = { destination ->
                     when (destination) {
-                        "boards", "favorites" -> navController.navigate(Route.BoardGallery)
+                        "boards", "favorites" -> navController.navigateToTab(Route.BoardGallery)
                         "history" -> navController.navigate(Route.History)
-                        "watched" -> navController.navigate(Route.Watched)
+                        "watched" -> navController.navigateToTab(Route.Watched)
                         "downloads" -> navController.navigate(Route.Downloads)
                         "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
                     }
@@ -270,23 +278,33 @@ internal val threadRouteSaver =
     )
 
 /**
- * Switches between Home, Search, Boards and Saved without piling up previous tab destinations.
+ * Switches between Home, Boards, Watched, Search and Saved without piling up previous tab destinations.
  * Home remains the root, so Android Back from another tab returns there.
  */
 internal fun NavHostController.navigateToTab(route: Route) {
+    // Save only the owning tab. Restoring a covered Settings or detail page would open it when
+    // the reader explicitly selected the tab underneath it.
+    while (currentDestination?.isPrimaryTab() == false) {
+        if (!popBackStack()) break
+    }
     navigate(route) {
-        popUpTo(Route.NextFeed) { inclusive = false }
+        popUpTo(Route.NextFeed) {
+            inclusive = false
+            saveState = true
+        }
         launchSingleTop = true
+        restoreState = true
     }
 }
 
-/** Resolves the four tabs without confusing saved threads with downloaded files. */
+/** Resolves the five tabs without confusing saved threads with downloaded files. */
 internal fun NavHostController.openDestination(destination: NextDestination) {
     when (destination) {
         NextDestination.FEED -> navigateToTab(Route.NextFeed)
         NextDestination.SEARCH -> navigateToTab(Route.Search)
         NextDestination.BOARDS -> navigateToTab(Route.BoardGallery)
         NextDestination.SAVED -> navigateToTab(Route.Saved)
+        NextDestination.WATCHED -> navigateToTab(Route.Watched)
         NextDestination.DOWNLOADS -> navigate(Route.Downloads)
         NextDestination.SETTINGS -> navigate(Route.Settings)
     }

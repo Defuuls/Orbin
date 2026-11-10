@@ -1,0 +1,149 @@
+package com.orbin.uinext
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.unit.dp
+
+/**
+ * A single outline family for reader controls on Android and iOS.
+ *
+ * Shapes share a 24dp canvas, rounded joins, and an optical 1.8dp stroke. Selected tab variants
+ * fill the same silhouette, keeping layout and hit targets stable when selection changes.
+ */
+object ReaderIcons {
+    val Home: ImageVector by lazy { outline("Home", HOME) }
+    val HomeFilled: ImageVector by lazy { filled("HomeFilled", HOME) }
+    val Search: ImageVector by lazy {
+        outline("Search", "M18 10.5a7.5 7.5 0 1 1-15 0a7.5 7.5 0 0 1 15 0ZM16 16l5 5")
+    }
+    val Boards: ImageVector by lazy { outline("Boards", BOARDS) }
+    val BoardsFilled: ImageVector by lazy { filled("BoardsFilled", BOARDS) }
+    val Watched: ImageVector by lazy {
+        outline("Watched", "$BELL M12 2v1M10 20.5a2 2 0 0 0 4 0")
+    }
+    val WatchedFilled: ImageVector by lazy {
+        filled("WatchedFilled", "$BELL M11 2a1 1 0 0 1 2 0v1h-2ZM10 20h4a2 2 0 0 1-4 0Z")
+    }
+    val Saved: ImageVector by lazy { outline("Saved", SAVED) }
+    val SavedFilled: ImageVector by lazy { filled("SavedFilled", SAVED) }
+    val Chat: ImageVector by lazy {
+        outline(
+            "Chat",
+            "M21 11.5c0 2-.6 3.7-1.7 5.2L21 21l-4.5-1.4A9.7 9.7 0 0 1 12 20" +
+                "c-5 0-9-3.8-9-8.5S7 3 12 3s9 3.8 9 8.5Z",
+        )
+    }
+    val Share: ImageVector by lazy {
+        outline("Share", "M21 3l-7.3 18-3.3-7.4L3 10.3 21 3ZM10.4 13.6 21 3")
+    }
+    val Menu: ImageVector by lazy { outline("Menu", "M4 5.5h16M4 12h16M4 18.5h16") }
+    val More: ImageVector by lazy { outline("More", "M6 12h.01M12 12h.01M18 12h.01") }
+    val Back: ImageVector by lazy { outline("Back", "M15 4l-8 8 8 8", autoMirror = true) }
+    val ChevronDown: ImageVector by lazy { outline("ChevronDown", "M6 9l6 6 6-6") }
+    val ChevronRight: ImageVector by lazy { outline("ChevronRight", "M9 5l7 7-7 7", autoMirror = true) }
+    val Close: ImageVector by lazy { outline("Close", "M6 6l12 12M18 6 6 18") }
+    val Check: ImageVector by lazy { outline("Check", "M5 12l4 4L19 6") }
+    val Download: ImageVector by lazy {
+        outline("Download", "M12 3v12M7 10l5 5 5-5M4 16v4h16v-4")
+    }
+    val Star: ImageVector by lazy { outline("Star", STAR) }
+    val StarFilled: ImageVector by lazy { filled("StarFilled", STAR) }
+    val Settings: ImageVector by lazy {
+        outline(
+            "Settings",
+            "M9.5 2.5h5l.6 2.3 1.5.9 2.3-.6 2.5 4.3-1.7 1.7v1.8l1.7 1.7-2.5 4.3-2.3-.6-1.5.9-.6 2.3h-5" +
+                "l-.6-2.3-1.5-.9-2.3.6-2.5-4.3 1.7-1.7v-1.8L2.6 9.4 5.1 5.1l2.3.6 1.5-.9.6-2.3Z" +
+                "M15.5 12a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0Z",
+        )
+    }
+    val Play: ImageVector by lazy {
+        outline("Play", "$CIRCLE M10 8l6 4-6 4Z")
+    }
+    val Clock: ImageVector by lazy { outline("Clock", "$CIRCLE M12 7v5l3.5 2.5") }
+    val Shield: ImageVector by lazy {
+        outline(
+            "Shield",
+            "M12 3c-2.5 1.8-5.3 2.7-8 3v5.4c0 4.6 3.5 8.1 8 10.1 4.5-2 8-5.5 8-10.1V6c-2.7-.3-5.5-1.2-8-3Z",
+        )
+    }
+    val Hide: ImageVector by lazy {
+        outline(
+            "Hide",
+            "M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z" +
+                "M15 12a3 3 0 1 1-6 0a3 3 0 0 1 6 0ZM3 3l18 18",
+        )
+    }
+    val Storage: ImageVector by lazy {
+        outline("Storage", "M3 3.5h18v4H3ZM5 7.5V20h14V7.5M10 11.5h4")
+    }
+    val Info: ImageVector by lazy { outline("Info", "$CIRCLE M12 10.5V17M12 7h.01") }
+    val Help: ImageVector by lazy {
+        outline("Help", "$CIRCLE M9.5 8.5a2.5 2.5 0 0 1 5 .2c0 1.8-2.5 2.1-2.5 4.3M12 17h.01")
+    }
+    val Palette: ImageVector by lazy {
+        outline(
+            "Palette",
+            "M12 3c-5 0-9 3.8-9 8.5S6.6 20 11 20h1.2c1.2 0 1.6-1.3.8-2.1l-.6-.6c-.8-.8-.3-2.3.9-2.3H16" +
+                "c3 0 5-2 5-4.7C21 6.2 16.9 3 12 3ZM7 11h.01M9 7.5h.01M13 6.5h.01M17 9h.01",
+        )
+    }
+    val Globe: ImageVector by lazy {
+        outline("Globe", "$CIRCLE M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9c-3-3-4-6-4-9s1-6 4-9Z")
+    }
+
+    private const val HOME =
+        "M3 10.2l8.1-6.8c.5-.5 1.3-.5 1.8 0l8.1 6.8V20c0 .6-.4 1-1 1h-5v-7c0-.6-.4-1-1-1h-4" +
+            "c-.6 0-1 .4-1 1v7H4c-.6 0-1-.4-1-1Z"
+    private const val BOARDS =
+        "M4 3h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1V4c0-.6.4-1 1-1Z" +
+            "M15 3h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1h-5c-.6 0-1-.4-1-1V4c0-.6.4-1 1-1Z" +
+            "M4 14h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1v-5c0-.6.4-1 1-1Z" +
+            "M15 14h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1h-5c-.6 0-1-.4-1-1v-5c0-.6.4-1 1-1Z"
+    private const val BELL = "M6 9a6 6 0 0 1 12 0c0 5.5 2 6.5 2 8H4c0-1.5 2-2.5 2-8Z"
+    private const val SAVED = "M6 3.5c0-.3.2-.5.5-.5h11c.3 0 .5.2.5.5V21l-6-4-6 4Z"
+    private const val STAR = "M12 3l2.8 5.7 6.3.9-4.5 4.4 1.1 6.3-5.7-3-5.7 3 1.1-6.3-4.5-4.4 6.3-.9Z"
+    private const val CIRCLE = "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0Z"
+}
+
+private fun outline(
+    name: String,
+    data: String,
+    autoMirror: Boolean = false,
+): ImageVector = readerIcon(name, data, filled = false, autoMirror = autoMirror)
+
+private fun filled(
+    name: String,
+    data: String,
+): ImageVector = readerIcon(name, data, filled = true)
+
+private fun readerIcon(
+    name: String,
+    data: String,
+    filled: Boolean,
+    autoMirror: Boolean = false,
+): ImageVector =
+    ImageVector
+        .Builder(
+            name = "Reader$name",
+            defaultWidth = READER_ICON_SIZE.dp,
+            defaultHeight = READER_ICON_SIZE.dp,
+            viewportWidth = READER_ICON_SIZE,
+            viewportHeight = READER_ICON_SIZE,
+            autoMirror = autoMirror,
+        ).addPath(
+            pathData = PathParser().parsePathString(data).toNodes(),
+            pathFillType = PathFillType.EvenOdd,
+            fill = if (filled) SolidColor(Color.Black) else null,
+            stroke = if (filled) null else SolidColor(Color.Black),
+            strokeLineWidth = if (filled) 0f else READER_ICON_STROKE,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ).build()
+
+private const val READER_ICON_SIZE = 24f
+private const val READER_ICON_STROKE = 1.8f

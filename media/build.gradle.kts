@@ -45,6 +45,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.okhttp.tls)
     // MediaThumbnail's scaling is only visible in the raster it produces, so the test for it
     // renders the composable and reads pixels back — Robolectric to host the render, coil-test to
     // serve a thumbnail of a known size without a network.

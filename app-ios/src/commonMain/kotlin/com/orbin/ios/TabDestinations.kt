@@ -30,13 +30,20 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumns
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_boards_no_visible
+import com.orbin.ios.resources.ios_boards_source_unavailable
 import com.orbin.ios.resources.ios_collection_all_sites
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
+import com.orbin.ios.resources.ios_primary_boards
+import com.orbin.ios.resources.ios_primary_home
+import com.orbin.ios.resources.ios_primary_loading
+import com.orbin.ios.resources.ios_primary_retry
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextScaffold
@@ -57,7 +64,7 @@ import kotlin.time.Clock
 
 private const val CLEAR_ARMED_MS = 4_000L
 
-// Home, Search, Boards and Saved tabs, plus their detail pages.
+// Home, Boards, Watched, Search and Saved tabs, plus their detail pages.
 
 @Composable
 internal fun FeedDestination(
@@ -74,7 +81,7 @@ internal fun FeedDestination(
         onRefresh = browser::retry,
         modifier = Modifier.fillMaxSize(),
     ) {
-        Loaded(feed, onRetry = browser::retry) { threads ->
+        PrimaryLoaded(browser, feed, stringResource(Res.string.ios_primary_home), NextDestination.FEED) { threads ->
             val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
             val byKey = remember(saved) { saved.associateBy { it.key } }
             val rows =
@@ -109,8 +116,12 @@ internal fun FeedDestination(
                     onOpenDownloads = { browser.open(Route.Downloads) },
                     onOpenSearch = { browser.openTab(Route.Search) },
                     onOpenSaved = { browser.openTab(Route.Saved) },
+                    onOpenWatched = { browser.openTab(Route.Watched) },
                     onSettings = { browser.open(Route.Settings) },
-                    headerContent = { FeedSiteSwitcher(browser, site) },
+                    sourceLabels =
+                        listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
+                    selectedSource = if (site == null) 0 else browser.sites.indexOfFirst { it.id == site } + 1,
+                    onSelectSource = { index -> browser.selectFeedSite(browser.sites.getOrNull(index - 1)?.id) },
                     uniformCards = true,
                 )
             }
@@ -125,16 +136,24 @@ internal fun BoardsDestination(browser: Browser) {
     val unreachable by browser.unreachableSites.collectAsState()
     val site by browser.activeSite.collectAsState()
     val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
-    Loaded(boards, onRetry = browser::retry) { all ->
+    PrimaryLoaded(browser, boards, stringResource(Res.string.ios_primary_boards), NextDestination.BOARDS) { all ->
         // One site at a time, as Android's boards list; hidden NSFW boards leave it, as there.
         val list =
             remember(all, site, hideNsfw) {
                 all.filter { it.provider == site && !(hideNsfw && it.board.isNsfw) }
             }
         val byTile = remember(list) { list.associateBy { it.tileId } }
+        val sourceUnavailable = all.none { it.provider == site }
         BoardsScreen(
             hideRailOnScroll = false,
             subtitle = boardsSubtitle(list.size, unreachable),
+            emptyMessage =
+                if (sourceUnavailable) {
+                    stringResource(Res.string.ios_boards_source_unavailable, browser.siteName(site))
+                } else {
+                    stringResource(Res.string.ios_boards_no_visible)
+                },
+            onRetry = if (sourceUnavailable) browser::retry else null,
             boards =
                 remember(list, favorites) {
                     list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in favorites) }
@@ -144,6 +163,7 @@ internal fun BoardsDestination(browser: Browser) {
             onOpenFeed = { browser.openTab(Route.Feed) },
             onOpenDownloads = { browser.open(Route.Downloads) },
             onOpenSaved = { browser.openTab(Route.Saved) },
+            onOpenWatched = { browser.openTab(Route.Watched) },
             onOpenSearch = { browser.openTab(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
             headerContent = { SiteSwitcher(browser, site, gapAfter = 12.dp) },
@@ -199,6 +219,7 @@ internal fun DownloadsDestination(
                 NextDestination.DOWNLOADS -> Unit
                 NextDestination.SEARCH -> browser.openTab(Route.Search)
                 NextDestination.SAVED -> browser.openTab(Route.Saved)
+                NextDestination.WATCHED -> browser.openTab(Route.Watched)
                 NextDestination.SETTINGS -> browser.open(Route.Settings)
             }
         },
@@ -266,13 +287,14 @@ internal fun SettingsDestination(
                     ("Playback" to playbackRows(settings, playbackChoices, playbackScope))
             },
         expandedId = expanded,
+        enabledSiteCount = browser.sites.size,
         showRail = false,
         onBack = { browser.back() },
         onNavigate = { destination ->
             when (destination) {
-                "boards", "favorites" -> browser.open(Route.Boards)
+                "boards", "favorites" -> browser.openTab(Route.Boards)
                 "history" -> browser.open(Route.History)
-                "watched" -> browser.open(Route.Watched)
+                "watched" -> browser.openTab(Route.Watched)
                 "downloads" -> browser.open(Route.Downloads)
                 "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
             }
@@ -318,6 +340,8 @@ internal fun SettingsDestination(
                     SettingIds.FEED_COLUMNS,
                     SettingIds.CATALOG_COLUMNS,
                     "playbackScope",
+                    "autoplay",
+                    "preloadNextClip",
                     -> {
                         Haptics.light()
                         expanded = if (expanded == item.id) null else item.id
@@ -356,14 +380,24 @@ internal fun SettingsDestination(
         },
         onSelectOption = { item, index ->
             Haptics.light()
-            when (item.id) {
-                "playbackScope" -> playbackChoices.getOrNull(index)?.let { playbackScope = it.first }
-                SettingIds.DOH_PROVIDER -> DohProvider.entries.getOrNull(index)?.let(browser.settings::setDohProvider)
-                SettingIds.COLOR_THEME -> AppColorTheme.entries.getOrNull(index)?.let(browser.settings::setColorTheme)
-                SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
-                SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
-                SettingIds.CATALOG_COLUMNS ->
-                    browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
+            if (!browser.settings.selectPlaybackChoice(item.id, index, settings, playbackScope)) {
+                when (item.id) {
+                    "playbackScope" -> playbackChoices.getOrNull(index)?.let { playbackScope = it.first }
+                    SettingIds.DOH_PROVIDER ->
+                        DohProvider.entries
+                            .getOrNull(
+                                index,
+                            )?.let(browser.settings::setDohProvider)
+                    SettingIds.COLOR_THEME ->
+                        AppColorTheme.entries
+                            .getOrNull(
+                                index,
+                            )?.let(browser.settings::setColorTheme)
+                    SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
+                    SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
+                    SettingIds.CATALOG_COLUMNS ->
+                        browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
+                }
             }
             expanded = null
         },
@@ -412,25 +446,13 @@ internal fun SearchDestination(browser: Browser) {
     }
 }
 
-@Composable
-private fun FeedSiteSwitcher(
-    browser: Browser,
-    active: ProviderId?,
-) {
-    if (browser.sites.size < 2) return
-    PlatformSegments(
-        labels = listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
-        selected = if (active == null) 0 else browser.sites.indexOfFirst { it.id == active } + 1,
-        onSelect = { index -> browser.selectFeedSite(if (index == 0) null else browser.sites[index - 1].id) },
-    )
-}
-
 internal fun Browser.openDestination(destination: NextDestination) {
     when (destination) {
         NextDestination.FEED -> openTab(Route.Feed)
         NextDestination.SEARCH -> openTab(Route.Search)
         NextDestination.BOARDS -> openTab(Route.Boards)
         NextDestination.SAVED -> openTab(Route.Saved)
+        NextDestination.WATCHED -> openTab(Route.Watched)
         NextDestination.DOWNLOADS -> open(Route.Downloads)
         NextDestination.SETTINGS -> open(Route.Settings)
     }
@@ -473,22 +495,48 @@ internal fun ThreadCollectionsDestination(
             },
         )
     val byRow = rows.associate { it.second.id to it.first }
+    val isTab = route == Route.Saved || route == Route.Watched
     ThreadCollectionScreen(
         title = title,
         rows = rows.map { it.second },
         onOpen = { row -> byRow[row.id]?.let(browser::openThread) },
         onBack =
-            if (route == Route.Saved) {
+            if (isTab) {
                 null
             } else {
                 { browser.back() }
             },
         onSettings =
-            if (route == Route.Saved) {
+            if (isTab) {
                 { browser.open(Route.Settings) }
             } else {
                 null
             },
-        onDestination = if (route == Route.Saved) browser::openDestination else null,
+        onDestination = if (isTab) browser::openDestination else null,
+        selectedDestination = if (route == Route.Watched) NextDestination.WATCHED else NextDestination.SAVED,
     )
+}
+
+/** A network failure must not remove the tab bar or trap the reader on a loading screen. */
+@Composable
+private fun <T> PrimaryLoaded(
+    browser: Browser,
+    load: Load<T>,
+    title: String,
+    destination: NextDestination,
+    content: @Composable (T) -> Unit,
+) {
+    when (load) {
+        is Load.Ready -> content(load.value)
+        else ->
+            MessageScreen(
+                title = title,
+                subtitle = if (load is Load.Failed) load.message else stringResource(Res.string.ios_primary_loading),
+                skeleton = load is Load.Loading,
+                actionLabel = if (load is Load.Failed) stringResource(Res.string.ios_primary_retry) else null,
+                onAction = browser::retry,
+                destination = destination,
+                onDestination = browser::openDestination,
+            )
+    }
 }

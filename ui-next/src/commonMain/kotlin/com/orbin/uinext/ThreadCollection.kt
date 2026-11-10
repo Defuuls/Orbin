@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,11 +50,12 @@ fun ThreadCollectionScreen(
     onBack: (() -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
+    selectedDestination: NextDestination = NextDestination.SAVED,
 ) {
     NextScaffold(
         where = title,
         modifier = modifier,
-        destination = NextDestination.SAVED.takeIf { onDestination != null },
+        destination = selectedDestination.takeIf { onDestination != null },
         onDestination = onDestination,
     ) { padding ->
         Column(
@@ -70,7 +69,7 @@ fun ThreadCollectionScreen(
             ) {
                 if (onBack != null) {
                     NextIconAction(
-                        Icons.AutoMirrored.Outlined.ArrowBack,
+                        ReaderIcons.Back,
                         stringResource(Res.string.collection_back),
                         onBack,
                     )
@@ -78,7 +77,7 @@ fun ThreadCollectionScreen(
                 Text(title, style = NextType.titleLarge, color = next.ink, modifier = Modifier.padding(8.dp))
                 Spacer(Modifier.weight(1f))
                 if (onSettings != null) {
-                    NextIconAction(Icons.Outlined.Menu, stringResource(Res.string.collection_settings), onSettings)
+                    NextIconAction(ReaderIcons.Menu, stringResource(Res.string.collection_settings), onSettings)
                 }
             }
             if (rows.isEmpty()) {

@@ -90,6 +90,12 @@ fun VideoPlayer(
     val context = LocalContext.current
     val appContext = context.applicationContext
     val activity = remember(context) { context.findActivity() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val playbackSession =
+        remember(url, autoPlay) {
+            PlaybackSession(autoPlay, lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        }
+    val currentSession by rememberUpdatedState(playbackSession)
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url, muted) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
@@ -134,13 +140,11 @@ fun VideoPlayer(
                 .apply {
                     repeatMode = repeatModeFor(loop ?: shouldLoop(0L))
                     volume = if (muted) 0f else 1f
-                    playWhenReady = active && autoPlay
+                    playWhenReady = playbackSession.shouldPlay(active, hasError = false)
                 }
         }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
     val currentActive by rememberUpdatedState(active)
-    val currentAutoPlay by rememberUpdatedState(autoPlay)
     val currentPlaybackError by rememberUpdatedState(playbackError)
     DisposableEffect(lifecycleOwner, exoPlayer) {
         val observer =
@@ -148,13 +152,17 @@ fun VideoPlayer(
                 when (event) {
                     Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
                         if (activity?.isInPictureInPictureMode != true) {
+                            currentSession.setForeground(false)
                             exoPlayer.pause()
                         }
                     }
                     Lifecycle.Event.ON_START, Lifecycle.Event.ON_RESUME -> {
-                        if (currentActive && currentAutoPlay && currentPlaybackError == null) {
-                            exoPlayer.play()
-                        }
+                        currentSession.setForeground(true)
+                        exoPlayer.playWhenReady =
+                            currentSession.shouldPlay(
+                                currentActive,
+                                hasError = currentPlaybackError != null,
+                            )
                     }
                     else -> {}
                 }
@@ -193,8 +201,8 @@ fun VideoPlayer(
         exoPlayer.setMediaItem(MediaItem.fromUri(url))
         exoPlayer.prepare()
         exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
-        exoPlayer.playWhenReady = active && autoPlay
-        controlsVisible = !autoPlay
+        exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = false)
+        controlsVisible = !playbackSession.requestedPlaying
     }
 
     // Tick down the rate-limit cooldown every second so the UI stays current.
@@ -213,8 +221,8 @@ fun VideoPlayer(
     }
 
     // Pause as soon as this page is no longer active so audio never plays over the next video.
-    LaunchedEffect(active, autoPlay) {
-        exoPlayer.playWhenReady = active && autoPlay && playbackError == null
+    LaunchedEffect(active, autoPlay, playbackError) {
+        exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
     }
 
     LaunchedEffect(isMuted) {
@@ -453,11 +461,13 @@ fun VideoPlayer(
                 positionMs = positionMs,
                 durationMs = durationMs,
                 onPlayPause = {
-                    if (!isPlaying && exoPlayer.playbackState == Player.STATE_ENDED) {
+                    val ended = exoPlayer.playbackState == Player.STATE_ENDED
+                    if (ended) {
                         exoPlayer.seekTo(0L)
                     }
-                    exoPlayer.playWhenReady = !isPlaying
-                    if (!isPlaying) {
+                    playbackSession.toggle(ended)
+                    exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
+                    if (playbackSession.requestedPlaying) {
                         controlsVisible = false
                         onControlsToggle?.invoke(false)
                     }

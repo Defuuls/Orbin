@@ -11,24 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.next_clear_search
 import com.orbin.uinext.resources.next_search_idle_hint
 import com.orbin.uinext.resources.next_search_no_matches
 import com.orbin.uinext.resources.next_search_query_label
-import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
@@ -80,28 +73,13 @@ fun SearchScreen(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 ),
     ) {
-        ScreenTitle(text = stringResource(Res.string.next_search_title))
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = NextSpace.gutter)) {
-            NextTextField(
+            SchematicSearch(
                 value = query,
                 onValueChange = onQueryChange,
-                label = stringResource(Res.string.next_search_query_label),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-                trailing =
-                    if (query.isNotEmpty()) {
-                        {
-                            NextIconAction(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(Res.string.next_clear_search),
-                                onClick = { onQueryChange("") },
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                placeholder = stringResource(Res.string.next_search_query_label),
+                onSearch = onSearch,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
             )
             SearchResults(state = state, onOpenRow = onOpenRow)
         }

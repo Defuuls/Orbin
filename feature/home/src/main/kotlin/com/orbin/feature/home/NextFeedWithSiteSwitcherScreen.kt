@@ -6,7 +6,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.uinext.PlatformSegments
 
 @Composable
 fun NextFeedWithSiteSwitcherScreen(
@@ -20,6 +19,7 @@ fun NextFeedWithSiteSwitcherScreen(
     onOpenDownloads: (() -> Unit)? = null,
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
@@ -34,15 +34,10 @@ fun NextFeedWithSiteSwitcherScreen(
         onOpenDownloads = onOpenDownloads,
         onOpenSearch = onOpenSearch,
         onOpenSaved = onOpenSaved,
+        onOpenWatched = onOpenWatched,
         providerFilter = activeProviderId,
-        headerContent = {
-            if (switcherViewModel.sites.size > 1) {
-                PlatformSegments(
-                    labels = listOf(stringResource(R.string.feed_all_sites)) + switcherViewModel.sites.map { it.label },
-                    selected = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 1,
-                    onSelect = { switcherViewModel.selectSite(switcherViewModel.sites.getOrNull(it - 1)?.id) },
-                )
-            }
-        },
+        sourceLabels = listOf(stringResource(R.string.feed_all_sites)) + switcherViewModel.sites.map { it.label },
+        selectedSource = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 1,
+        onSelectSource = { switcherViewModel.selectSite(switcherViewModel.sites.getOrNull(it - 1)?.id) },
     )
 }

@@ -31,18 +31,20 @@ private fun fadeSpec(push: Boolean) =
     )
 
 /**
- * The four primary tabs crossfade softly; settings and detail pages use hierarchical motion.
+ * The five primary tabs crossfade softly; settings and detail pages use hierarchical motion.
  */
 internal fun NavDestination.isPrimaryTab(): Boolean =
     hasRoute(Route.NextFeed::class) ||
         hasRoute(Route.Search::class) ||
         hasRoute(Route.Saved::class) ||
+        hasRoute(Route.Watched::class) ||
         hasRoute(Route.BoardGallery::class)
 
 private const val TAB_FEED = 0
-private const val TAB_SEARCH = 1
-private const val TAB_SAVED = 3
-private const val TAB_BOARDS = 2
+private const val TAB_SEARCH = 3
+private const val TAB_SAVED = 4
+private const val TAB_BOARDS = 1
+private const val TAB_WATCHED = 2
 private const val TAB_UNKNOWN = -1
 
 internal fun NavDestination.primaryTabIndex(): Int =
@@ -50,6 +52,7 @@ internal fun NavDestination.primaryTabIndex(): Int =
         hasRoute(Route.NextFeed::class) -> TAB_FEED
         hasRoute(Route.Search::class) -> TAB_SEARCH
         hasRoute(Route.Saved::class) -> TAB_SAVED
+        hasRoute(Route.Watched::class) -> TAB_WATCHED
         hasRoute(Route.BoardGallery::class) -> TAB_BOARDS
         else -> TAB_UNKNOWN
     }

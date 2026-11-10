@@ -16,4 +16,8 @@
     <string name="social_feed_save">Save %1$s</string>
     <string name="social_feed_unsave">Remove %1$s from saved threads</string>
     <string name="social_feed_saved_while_watching">Saved while watching. Turn off Watch to remove %1$s.</string>
+    <string name="social_feed_choose_source">Choose source</string>
+    <string name="social_feed_sources">Sites</string>
+    <string name="social_feed_more">Options for %1$s</string>
+    <string name="social_feed_open_thread">Open thread</string>
 </resources>

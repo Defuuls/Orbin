@@ -75,9 +75,14 @@ fun FeedScreen(
     uniformCards: Boolean = false,
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
     onToggleWatch: ((FeedRow) -> Unit)? = null,
     onToggleSaved: ((FeedRow) -> Unit)? = null,
     onShareRow: ((FeedRow) -> Unit)? = null,
+    sourceLabels: List<String> = emptyList(),
+    selectedSource: Int = 0,
+    onSelectSource: (Int) -> Unit = {},
+    statusMessage: String? = null,
 ) {
     val gridState = rememberLazyGridState()
     var boardFilter by rememberSaveable { mutableStateOf<String?>(null) }
@@ -112,7 +117,12 @@ fun FeedScreen(
         onDispose { activePreviewCallback.value(null) }
     }
 
-    val hasTabs = onOpenBoards != null || onOpenDownloads != null || onOpenSearch != null || onOpenSaved != null
+    val hasTabs =
+        onOpenBoards != null ||
+            onOpenDownloads != null ||
+            onOpenSearch != null ||
+            onOpenSaved != null ||
+            onOpenWatched != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
@@ -122,6 +132,7 @@ fun FeedScreen(
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SEARCH -> onOpenSearch?.invoke()
                     NextDestination.SAVED -> onOpenSaved?.invoke()
+                    NextDestination.WATCHED -> onOpenWatched?.invoke()
                     NextDestination.SETTINGS -> Unit
                 }
             }
@@ -155,6 +166,10 @@ fun FeedScreen(
                         onQueryChange = onQueryChange,
                         onSettings = onSettings,
                         onSearch = onOpenSearch,
+                        sourceLabels = sourceLabels,
+                        selectedSource = selectedSource,
+                        onSelectSource = onSelectSource,
+                        statusMessage = statusMessage,
                     )
                     if (!groupByBoard) {
                         FavoriteBoardShortcuts(
@@ -280,7 +295,7 @@ fun FeedScreen(
 internal val FEED_CARD_MIN_WIDTH = 360.dp
 
 /** Lines of the opening post under each feed card. */
-internal const val FEED_EXCERPT_LINES = 8
+internal const val FEED_EXCERPT_LINES = 3
 
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP

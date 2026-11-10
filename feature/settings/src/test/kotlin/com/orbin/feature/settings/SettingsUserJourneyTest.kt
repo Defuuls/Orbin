@@ -19,6 +19,7 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.PlaybackScope
 import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
@@ -70,15 +71,31 @@ class SettingsUserJourneyTest {
     }
 
     @Test
-    fun playbackControlWritesAppDefaults() {
+    fun playbackChoicesWriteOnlyAfterSelectingAndOnlyForTheChosenScope() {
         launch()
-        val before = settings.current.playbackPreferences.defaults.autoplay
-        row("Autoplay").performClick()
-        composeRule.waitForIdle()
-        assertThat(settings.current.playbackPreferences.defaults.autoplay).isEqualTo(!before)
-        row("Autoplay").performClick()
-        composeRule.waitForIdle()
-        assertThat(settings.current.playbackPreferences.defaults.autoplay).isEqualTo(before)
+        choose("Scope", "Test Provider")
+        val site = PlaybackScope("fourchan")
+        val defaults = settings.current.playbackPreferences.defaults
+        for (label in listOf("Autoplay", "Preload next clip")) {
+            val before = settings.current.playbackPreferences
+            row(label).performClick()
+            composeRule.waitForIdle()
+            assertThat(settings.current.playbackPreferences).isEqualTo(before)
+            composeRule.onNode(isOption("Off")).performClick()
+            composeRule.waitForIdle()
+            val effective = settings.current.playbackPreferences.forScope(site)
+            assertThat(if (label == "Autoplay") effective.autoplay else effective.preloadNextClip).isFalse()
+            assertThat(settings.current.playbackPreferences.defaults).isEqualTo(defaults)
+
+            val disabled = settings.current.playbackPreferences
+            row(label).performClick()
+            composeRule.waitForIdle()
+            assertThat(settings.current.playbackPreferences).isEqualTo(disabled)
+            composeRule.onNode(isOption("On")).performClick()
+            composeRule.waitForIdle()
+            val enabled = settings.current.playbackPreferences.forScope(site)
+            assertThat(if (label == "Autoplay") enabled.autoplay else enabled.preloadNextClip).isTrue()
+        }
     }
 
     @Test

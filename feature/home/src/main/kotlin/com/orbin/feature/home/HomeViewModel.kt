@@ -70,8 +70,9 @@ class HomeViewModel
         fun setFavorite(
             boardId: String,
             favorite: Boolean,
+            sourceId: String = activeProvider.value.metadata.id.value,
         ) {
-            val provider = activeProvider.value.metadata.id
+            val provider = ProviderId(sourceId)
             viewModelScope.launch { boardPreferencesRepository.setFavoriteBoard(provider, BoardId(boardId), favorite) }
         }
 
@@ -94,22 +95,26 @@ class HomeViewModel
             settingsRepository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
 
+        private var loadJob: Job? = null
+
         init {
             activeProvider.onEach { load() }.launchIn(viewModelScope)
         }
 
-        private var loadJob: Job? = null
-
         fun load() {
             loadJob?.cancel()
             val provider = activeProvider.value
+            _uiState.value = HomeUiState.Loading
             loadJob =
                 viewModelScope.launch {
-                    _uiState.value = HomeUiState.Loading
                     _uiState.value =
                         when (val result = boardRepository.refreshBoards(provider.metadata.id)) {
                             is OrbinResult.Success ->
-                                HomeUiState.Success(provider.metadata.displayName, result.data.toImmutableList())
+                                HomeUiState.Success(
+                                    provider.metadata.displayName,
+                                    result.data.toImmutableList(),
+                                    provider.metadata.id.value,
+                                )
                             is OrbinResult.Failure -> HomeUiState.Error(result.error.message)
                         }
                 }

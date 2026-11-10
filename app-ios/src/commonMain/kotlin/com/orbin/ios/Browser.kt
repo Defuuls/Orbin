@@ -73,7 +73,7 @@ data class FeedThread(
     val thread: CatalogThread,
 )
 
-/** Where the reader is, with Home, Search, Boards or Saved at the bottom of the back stack. */
+/** Where the reader is, with Home, Boards, Watched, Search or Saved at the bottom of the back stack. */
 sealed interface Route {
     /** The newest threads of every followed board, one list: the start screen, as on Android. */
     data object Feed : Route
@@ -329,8 +329,8 @@ class Browser(
             tab == Route.Feed ||
                 tab == Route.Search ||
                 tab == Route.Boards ||
-                tab == Route.Saved ||
-                tab == Route.Downloads,
+                tab == Route.Watched ||
+                tab == Route.Saved,
         ) { "Not a tab: $tab" }
         mediaScroll.clear()
         _backStack.value = listOf(tab)

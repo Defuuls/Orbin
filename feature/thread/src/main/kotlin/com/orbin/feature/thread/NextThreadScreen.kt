@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -195,6 +196,7 @@ private fun LoadedThread(
         val targetPostId = thread.postIdForMediaIndex(index)
         val target = targetPostId?.let { postId -> rows.indexOfFirst { it.post.id == postId } } ?: -1
         if (target >= 0) {
+            collapsed.remove(rows[target].row.id)
             listState.scrollToItem(target + 1)
             viewModel.saveScrollPosition(rows[target].post.id, 0)
             viewModel.flushScrollPosition()
@@ -295,7 +297,11 @@ private fun LoadedThread(
                         PostCommentText(
                             comment = entry.post.comment,
                             selectable = true,
-                            onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                            onQuoteClick = { target ->
+                                val id = target.value.toString()
+                                collapsed.remove(id)
+                                scrollTarget = id
+                            },
                             onLinkClick = { link -> SafeExternalLinks.open(context, link) },
                         )
                     }
@@ -339,6 +345,7 @@ private fun PostMedia(
             modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
             // Thread cells are display-sized: progressive thumb → full source.
             fullResolution = true,
+            contentScale = ContentScale.Fit,
             onClick = { onOpen(only.id) },
         )
         return
@@ -357,6 +364,7 @@ private fun PostMedia(
                     attachment = attachment,
                     modifier = Modifier.fillMaxWidth().clip(shape),
                     fullResolution = true,
+                    contentScale = ContentScale.Fit,
                     onClick = { onOpen(attachment.id) },
                 )
             }
@@ -375,6 +383,7 @@ private fun PostMedia(
                 attachment = attachment,
                 modifier = Modifier.fillMaxWidth().aspectRatio(attachment.threadAspectRatio()).clip(shape),
                 fullResolution = true,
+                contentScale = ContentScale.Fit,
                 onClick = { onOpen(attachment.id) },
             )
             if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))
@@ -383,7 +392,9 @@ private fun PostMedia(
 }
 
 private fun MediaAttachment.threadAspectRatio(): Float =
-    aspectRatio.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT)
+    previewAspectRatio
+        .takeIf { it.isFinite() && it > 0f }
+        ?.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT) ?: 1f
 
 internal data class ThreadRow(
     val post: com.orbin.core.model.Post,
@@ -463,6 +474,6 @@ private const val COMPACT_COLUMNS = 4
 private const val MEDIUM_COLUMNS = 3
 private const val LARGE_COLUMNS = 2
 private const val FILL_COLUMNS = 1
-private const val MIN_THREAD_MEDIA_ASPECT = 0.75f
-private const val MAX_THREAD_MEDIA_ASPECT = 2f
+private const val MIN_THREAD_MEDIA_ASPECT = 0.5625f
+private const val MAX_THREAD_MEDIA_ASPECT = 3f
 private const val SCROLL_TRACK_SETTLE_MS = 180L

@@ -47,4 +47,9 @@ internal val Route.stateKey: String
     get() = toString()
 
 private val Route.isTab: Boolean
-    get() = this == Route.Feed || this == Route.Search || this == Route.Boards || this == Route.Saved
+    get() =
+        this == Route.Feed ||
+            this == Route.Boards ||
+            this == Route.Watched ||
+            this == Route.Search ||
+            this == Route.Saved

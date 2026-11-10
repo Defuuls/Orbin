@@ -9,14 +9,18 @@ All notable changes to Orbin are documented here. The format is based on
 ### Added
 - Combined 4chan and BBWChan Home feed and cross-site Search, with independent site filters, favorite-board shortcuts, source-qualified saved/history/watched collections, and direct watch, save, and share actions.
 - Persistent app, site, and board playback preferences with live inheritance, reset to parent settings, backup support, and autoplay/mute/loop/preload behavior in the Android and iOS media viewers.
+- Original topic icons for all 91 boards across 4chan and BBWChan, with distinct source identities, light/dark colors, and automatic icons for future boards.
 
 ### Changed
-- Replaced industrial chrome with a compact shared Android/iOS reader: monochrome default surfaces, flat anonymous posts, natural media aspect ratios, green quote links, and stable Home, Search, Boards, and Saved tabs.
+- Replaced industrial chrome with a compact shared Android/iOS reader: monochrome default surfaces, flat anonymous posts, natural media aspect ratios, green quote links, and a floating five-tab Home, Boards, Watched, Search, and Saved navigation capsule.
 - Settings and activity now opens from the header menu as a searchable directory with task subpages, retaining existing privacy, security, backup, and platform controls.
 
 ### Fixed
 - Site-qualified feed and collection identities prevent matching board codes and thread numbers on different providers from opening the wrong source.
 - Stopping thread watching retains saved bookmarks, and media waits for persisted playback settings before starting automatically.
+- Video playback retains manual pause and play intent across app backgrounding and settings changes; bounded next-clip preloading reuses prepared media and cancels obsolete work.
+- Downloaded videos use the local file data source while online videos retain the configured HTTP transport.
+- Switching primary tabs restores their state, board media stays pinned to its original site, and thread Posts/Files retain independent reading positions.
 
 ## [193-Purslane] - 2026-11-08
 

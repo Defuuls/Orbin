@@ -293,7 +293,7 @@ object NextType {
     val tab = labelMedium
 
     /** Section header — technical index header. */
-    val sectionHeader = bodySmall.copy(fontWeight = FontWeight.Medium)
+    val sectionHeader = bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium)
 
     /** Inline action label. */
     val callout = labelLarge

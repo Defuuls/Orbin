@@ -13,6 +13,7 @@ internal actual fun NativePlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     initiallyMuted: Boolean,
+    preloader: NativeMediaPreloader?,
 ) {
     Box(modifier)
 }
@@ -27,6 +28,7 @@ internal actual fun NativeWebMPlayer(
     autoPlay: Boolean,
     initiallyMuted: Boolean,
     loop: Boolean,
+    preloader: NativeMediaPreloader?,
 ) {
     Box(modifier)
 }

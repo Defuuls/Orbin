@@ -12,12 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,6 +81,7 @@ fun BoardsScreen(
     onOpenSearch: (() -> Unit)? = null,
     headerContent: @Composable () -> Unit = {},
     onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
     emptyMessage: String? = null,
     onRetry: (() -> Unit)? = null,
 ) {
@@ -108,7 +103,12 @@ fun BoardsScreen(
             true
         }
     LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
-    val hasTabs = onOpenFeed != null || onOpenDownloads != null || onOpenSearch != null || onOpenSaved != null
+    val hasTabs =
+        onOpenFeed != null ||
+            onOpenDownloads != null ||
+            onOpenSearch != null ||
+            onOpenSaved != null ||
+            onOpenWatched != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
@@ -116,6 +116,7 @@ fun BoardsScreen(
                     NextDestination.FEED -> onOpenFeed?.invoke()
                     NextDestination.SEARCH -> onOpenSearch?.invoke()
                     NextDestination.SAVED -> onOpenSaved?.invoke()
+                    NextDestination.WATCHED -> onOpenWatched?.invoke()
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> onOpenSettings?.invoke()
                     NextDestination.BOARDS -> Unit
@@ -155,7 +156,7 @@ fun BoardsScreen(
                             )
                             if (onOpenSearch != null) {
                                 NextIconAction(
-                                    Icons.Outlined.Search,
+                                    ReaderIcons.Search,
                                     stringResource(Res.string.next_search_title),
                                     onOpenSearch,
                                     tint = next.ink,
@@ -163,7 +164,7 @@ fun BoardsScreen(
                             }
                             if (onOpenSettings != null) {
                                 NextIconAction(
-                                    Icons.Outlined.Menu,
+                                    ReaderIcons.Menu,
                                     stringResource(Res.string.next_settings_title),
                                     onOpenSettings,
                                     tint = next.ink,
@@ -272,6 +273,12 @@ private fun BoardListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        BoardIcon(
+            siteId = board.site ?: board.id.substringBefore('/'),
+            boardId = board.path,
+            title = board.title,
+            modifier = Modifier.size(40.dp),
+        )
         Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
             Text(board.path, style = NextType.titleMedium, color = next.ink)
             Text(board.title, style = NextType.bodyMedium, color = next.muted)
@@ -286,7 +293,7 @@ private fun BoardListRow(
         if (onFollow != null) {
             val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
             NextIconAction(
-                imageVector = if (board.followed) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                imageVector = if (board.followed) ReaderIcons.StarFilled else ReaderIcons.Star,
                 contentDescription =
                     stringResource(
                         if (board.followed) {
@@ -301,6 +308,6 @@ private fun BoardListRow(
                 modifier = Modifier.semantics { selected = board.followed },
             )
         }
-        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
+        Icon(ReaderIcons.ChevronRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
     }
 }

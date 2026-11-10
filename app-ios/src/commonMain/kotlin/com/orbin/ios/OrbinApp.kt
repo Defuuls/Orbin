@@ -66,7 +66,7 @@ fun OrbinApp(
     LaunchedEffect(quickAction, lockState.locked, lockState.obscured) {
         if (!lockState.locked && !lockState.obscured) {
             quickAction?.let { tab ->
-                browser.openTab(tab)
+                if (tab == Route.Downloads) browser.open(tab) else browser.openTab(tab)
                 QuickActions.opened()
             }
         }

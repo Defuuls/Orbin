@@ -8,7 +8,7 @@ and callbacks. The shared UI never reads repositories directly.
 
 ## Navigation and source identity
 
-The primary destinations are **Home, Search, Boards, and Saved**. Settings opens
+The primary destinations are **Home, Boards, Watched, Search, and Saved**. Settings opens
 from the header menu as a separate page, with back navigation and no bottom
 bar. Downloads, history, and watched threads remain reachable through settings.
 
@@ -42,7 +42,7 @@ to use their real host callbacks.
 
 ## Settings and playback
 
-“Settings and activity” is a searchable directory with dedicated subpages for
+“Settings and activity” is a searchable directory with dedicated subpages and selection lists for
 browsing, appearance, playback, privacy, storage, and app information. Search finds
 all supplied controls by label, group, hint, value, and choices. Unknown controls
 remain accessible through More settings. Security, DNS, backup, and update
@@ -58,11 +58,13 @@ static; iOS inline previews respect effective playback preferences.
 
 ## Accessibility and verification
 
-Controls have at least 48dp touch targets. The four tab icons expose labels and
-selected semantics; enlarged text adds visible labels in two rows to preserve reading space. Headers and content clear
+Controls have at least 48dp touch targets. The five tab icons expose labels and
+selected semantics while retaining the reference’s icon-only layout at enlarged text sizes. Headers and content clear
 safe areas, and measured tab height determines scrolling clearance. Accommodate
 2× text, narrow windows, landscape, tablets, and foldables. Toggle rows own one
 checked action; their visual switch stays passive when the row owns the toggle.
+
+The [current iOS reference audit](instagram-reference.md) records the pinned reference, layout targets, and the limits of pixel-level verification.
 
 Tests cover source identity collisions, source filtering, favorite/open actions,
 settings navigation and search, playback inheritance/reset/persistence, and tab

@@ -42,19 +42,23 @@ internal fun playbackRows(
                     "inheritPlayback",
                     if (scope.isBoard) "Use site settings" else "Use app defaults",
                     !preferences.hasOverride(scope),
-                    "Changing a control creates an override for this scope.",
+                    when {
+                        preferences.hasOverride(scope) && scope.isBoard -> "Board overrides are active."
+                        preferences.hasOverride(scope) -> "Site overrides are active."
+                        scope.isBoard -> "This board uses site settings."
+                        else -> "This site uses app defaults."
+                    },
                 ),
             )
         }
-        add(playbackToggle("autoplay", "Autoplay", playback.autoplay, "Start clips automatically."))
+        add(playbackChoice("autoplay", "Autoplay", playback.autoplay, "Choose when clips start automatically."))
         add(playbackToggle("startMuted", "Start muted", playback.startMuted, "Play clips without sound."))
         add(playbackToggle("loopVideos", "Loop videos", playback.loopVideos, "Replay the active clip."))
         add(
-            playbackToggle(
+            playbackChoice(
                 "preloadNextClip",
                 "Preload next clip",
                 playback.preloadNextClip,
-                "Load upcoming media ahead of time.",
             ),
         )
         if (!scope.isApp && preferences.hasOverride(scope)) {
@@ -62,13 +66,28 @@ internal fun playbackRows(
                 SettingItem(
                     id = "resetPlayback",
                     label = if (scope.isBoard) "Reset to site settings" else "Reset to app defaults",
-                    value = "Reset",
+                    value = "",
                     kind = SettingKind.ACTION,
                 ),
             )
         }
     }
 }
+
+private fun playbackChoice(
+    id: String,
+    label: String,
+    enabled: Boolean,
+    hint: String? = null,
+) = SettingItem(
+    id = id,
+    label = label,
+    value = if (enabled) ON_LABEL else OFF_LABEL,
+    kind = SettingKind.CHOICE,
+    options = listOf(OFF_LABEL, ON_LABEL),
+    selected = if (enabled) 1 else 0,
+    hint = hint,
+)
 
 private fun playbackToggle(
     id: String,

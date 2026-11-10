@@ -57,6 +57,10 @@ fun NextFeedScreen(
     providerFilter: String? = null,
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
+    sourceLabels: List<String> = emptyList(),
+    selectedSource: Int = 0,
+    onSelectSource: (Int) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val actionsViewModel: FeedActionsViewModel = hiltViewModel()
@@ -84,6 +88,7 @@ fun NextFeedScreen(
             NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
             NextDestination.SEARCH -> onOpenSearch?.invoke()
             NextDestination.SAVED -> onOpenSaved?.invoke()
+            NextDestination.WATCHED -> onOpenWatched?.invoke()
             NextDestination.SETTINGS -> onOpenSettings()
         }
     }
@@ -193,9 +198,13 @@ fun NextFeedScreen(
                     ) {
                         FeedScreen(
                             rows = rows,
-                            subtitle = statusSubtitle,
+                            subtitle = baseSubtitle,
+                            statusMessage = statusSubtitle.takeIf { state.stale || failedBoardCount > 0 },
                             showRail = showRail,
                             headerContent = headerContent,
+                            sourceLabels = sourceLabels,
+                            selectedSource = selectedSource,
+                            onSelectSource = onSelectSource,
                             query = localQuery,
                             onQueryChange = { localQuery = it },
                             // Boards A–Z under their own headings, newest activity first within each.
@@ -216,6 +225,7 @@ fun NextFeedScreen(
                             onOpenDownloads = onOpenDownloads,
                             onOpenSearch = onOpenSearch,
                             onOpenSaved = onOpenSaved,
+                            onOpenWatched = onOpenWatched,
                             onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
                             onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
                             onShareRow = { row ->

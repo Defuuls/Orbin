@@ -149,6 +149,7 @@ fun NextSettingsScreen(
             groups = model.groups + ("Playback" to playbackRows(settings, playbackScopes, playbackScope)),
             onBack = onBack,
             onNavigate = onNavigate,
+            enabledSiteCount = viewModel.providers.size,
             expandedId = expanded,
             onActivate = { item ->
                 if (item.id == "playbackScope") viewModel.loadPlaybackBoards()
@@ -156,15 +157,13 @@ fun NextSettingsScreen(
                 val playback = preferences.forScope(playbackScope)
                 val updatedPlayback =
                     when (item.id) {
-                        "autoplay" -> playback.copy(autoplay = !playback.autoplay)
                         "startMuted" -> playback.copy(startMuted = !playback.startMuted)
                         "loopVideos" -> playback.copy(loopVideos = !playback.loopVideos)
-                        "preloadNextClip" -> playback.copy(preloadNextClip = !playback.preloadNextClip)
                         "inheritPlayback" -> if (preferences.hasOverride(playbackScope)) null else playback
                         else -> null
                     }
                 if (item.id in
-                    setOf("autoplay", "startMuted", "loopVideos", "preloadNextClip", "inheritPlayback", "resetPlayback")
+                    setOf("startMuted", "loopVideos", "inheritPlayback", "resetPlayback")
                 ) {
                     viewModel.setPlaybackSettings(playbackScope, updatedPlayback)
                 } else {
@@ -214,6 +213,16 @@ fun NextSettingsScreen(
                         playbackProvider = it.providerId
                         playbackBoard = it.boardId
                     }
+                } else if (item.id == "autoplay" && index in 0..1) {
+                    viewModel.setPlaybackSettings(
+                        playbackScope,
+                        settings.playbackPreferences.forScope(playbackScope).copy(autoplay = index == 1),
+                    )
+                } else if (item.id == "preloadNextClip" && index in 0..1) {
+                    viewModel.setPlaybackSettings(
+                        playbackScope,
+                        settings.playbackPreferences.forScope(playbackScope).copy(preloadNextClip = index == 1),
+                    )
                 } else {
                     model.choose(item.id, index)
                 }

@@ -25,8 +25,13 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import com.orbin.media.ImagePreloader
+import com.orbin.media.video.VideoPreloader
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
@@ -48,6 +53,69 @@ class GalleryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val key = ThreadKey(ProviderId(PROVIDER), BoardId(BOARD), ThreadId(THREAD))
+
+    @Test
+    fun `only the next revealed clip is prefetched and obsolete network work is cancelled`() =
+        runTest {
+            val video = mockk<VideoPreloader>(relaxed = true)
+            val pending = Job()
+            every { video.prefetch(any(), any()) } returns pending
+            val viewModel = createViewModel(FakeSettingsRepository(), video = video)
+            val items =
+                listOf(
+                    attachment("image", MediaType.IMAGE),
+                    attachment("next", MediaType.VIDEO),
+                    attachment("covered", MediaType.VIDEO).copy(isSpoiler = true),
+                )
+            viewModel.prefetchAround(0, items)
+            verify(exactly = 1) { video.prefetch("https://example.org/next", any()) }
+            viewModel.prefetchAround(1, items)
+            assertThat(pending.isCancelled).isTrue()
+            verify(exactly = 1) { video.prefetch(any(), any()) }
+        }
+
+    @Test
+    fun `gallery prefetches video posters and never decodes video sources through Coil`() =
+        runTest {
+            val preloader = mockk<ImagePreloader>(relaxed = true)
+            val viewModel = createViewModel(FakeSettingsRepository(), preloader)
+            val items =
+                listOf(
+                    attachment("before", MediaType.IMAGE),
+                    attachment("video", MediaType.VIDEO),
+                    attachment("after", MediaType.ANIMATED_IMAGE),
+                )
+            viewModel.prefetchAround(1, items)
+            verify {
+                preloader.prefetchBatch(
+                    listOf(
+                        "https://example.org/before/thumb",
+                        "https://example.org/video/thumb",
+                        "https://example.org/after/thumb",
+                    ),
+                    any(),
+                    any(),
+                )
+            }
+        }
+
+    @Test
+    fun `disabled preload excludes neighbours and covered sources are never prefetched`() =
+        runTest {
+            val preloader = mockk<ImagePreloader>(relaxed = true)
+            val settings =
+                FakeSettingsRepository(
+                    AppSettings(
+                        playbackPreferences = PlaybackPreferences(defaults = PlaybackSettings(preloadNextClip = false)),
+                    ),
+                )
+            val viewModel = createViewModel(settings, preloader)
+            val items = listOf(attachment("current", MediaType.IMAGE), attachment("next", MediaType.IMAGE))
+            viewModel.prefetchAround(0, items)
+            verify { preloader.prefetchBatch(listOf("https://example.org/current"), any(), any()) }
+            viewModel.prefetchAround(0, listOf(items.first().copy(isSpoiler = true)))
+            verify { preloader.prefetchBatch(emptyList(), any(), any()) }
+        }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
@@ -113,24 +181,28 @@ class GalleryViewModelTest {
             }
         }
 
-    private fun createViewModel(settingsRepository: SettingsRepository) =
-        GalleryViewModel(
-            savedStateHandle =
-                SavedStateHandle(
-                    mapOf(
-                        "provider" to PROVIDER,
-                        "board" to BOARD,
-                        "thread" to THREAD,
-                        "startIndex" to 0,
-                    ),
+    private fun createViewModel(
+        settingsRepository: SettingsRepository,
+        preloader: ImagePreloader = mockk(relaxed = true),
+        video: VideoPreloader = mockk(relaxed = true),
+    ) = GalleryViewModel(
+        savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "provider" to PROVIDER,
+                    "board" to BOARD,
+                    "thread" to THREAD,
+                    "startIndex" to 0,
                 ),
-            observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
-            downloadRepository = FakeDownloadRepository(),
-            settingsRepository = settingsRepository,
-            savedThreadRepository = FakeSavedThreadRepository(),
-            imageClipboard = mockk(relaxed = true),
-            imagePreloader = mockk(relaxed = true),
-        )
+            ),
+        observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
+        downloadRepository = FakeDownloadRepository(),
+        settingsRepository = settingsRepository,
+        savedThreadRepository = FakeSavedThreadRepository(),
+        imageClipboard = mockk(relaxed = true),
+        imagePreloader = preloader,
+        videoPreloader = video,
+    )
 
     private fun createViewModel(
         settingsRepository: FakeSettingsRepository,
@@ -154,6 +226,7 @@ class GalleryViewModelTest {
         // not about copying one to the clipboard.
         imageClipboard = mockk(relaxed = true),
         imagePreloader = mockk(relaxed = true),
+        videoPreloader = mockk(relaxed = true),
     )
 
     private fun thread() =

@@ -10,9 +10,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,16 +38,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.HorizontalDivider
@@ -74,7 +71,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -83,6 +79,7 @@ import com.orbin.uinext.resources.next_launchpad_boards
 import com.orbin.uinext.resources.social_home
 import com.orbin.uinext.resources.social_saved
 import com.orbin.uinext.resources.social_search
+import com.orbin.uinext.resources.social_watched
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
@@ -93,12 +90,13 @@ enum class NextDestination {
     FEED,
     SEARCH,
     BOARDS,
+    WATCHED,
     SAVED,
     DOWNLOADS,
     SETTINGS,
 }
 
-/** A quiet, full-width tab bar. Secondary pages keep their own back navigation. */
+/** Five icon destinations using the 56pt floating capsule from the pinned iOS reference. */
 @Composable
 fun DestinationPill(
     selected: NextDestination,
@@ -106,45 +104,69 @@ fun DestinationPill(
     modifier: Modifier = Modifier,
 ) {
     val destinations =
-        listOf(NextDestination.FEED, NextDestination.SEARCH, NextDestination.BOARDS, NextDestination.SAVED)
+        listOf(
+            NextDestination.FEED,
+            NextDestination.BOARDS,
+            NextDestination.WATCHED,
+            NextDestination.SEARCH,
+            NextDestination.SAVED,
+        )
     val labels =
         listOf(
             stringResource(Res.string.social_home),
-            stringResource(Res.string.social_search),
             stringResource(Res.string.next_launchpad_boards),
+            stringResource(Res.string.social_watched),
+            stringResource(Res.string.social_search),
             stringResource(Res.string.social_saved),
         )
     val outline =
-        listOf(Icons.Outlined.Home, Icons.Outlined.Search, Icons.Outlined.GridView, Icons.Outlined.BookmarkBorder)
-    val filled = listOf(Icons.Filled.Home, Icons.Filled.Search, Icons.Filled.GridView, Icons.Filled.Bookmark)
-    val showLabels = LocalDensity.current.fontScale >= 1.4f
-    Column(modifier.fillMaxWidth().background(next.background)) {
-        Hairline()
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-                        ),
-                    ).selectableGroup(),
+        listOf(ReaderIcons.Home, ReaderIcons.Boards, ReaderIcons.Watched, ReaderIcons.Search, ReaderIcons.Saved)
+    val filled =
+        listOf(
+            ReaderIcons.HomeFilled,
+            ReaderIcons.BoardsFilled,
+            ReaderIcons.WatchedFilled,
+            ReaderIcons.Search,
+            ReaderIcons.SavedFilled,
+        )
+    BoxWithConstraints(
+        modifier =
+            modifier.fillMaxWidth().windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+            ),
+    ) {
+        // Keep five 48dp targets even in narrow split windows. Very narrow windows can scroll
+        // the bar instead of shrinking controls. Dynamic Type never shrinks the content labels.
+        val inset = minOf(24.dp, maxOf(0.dp, (maxWidth - 248.dp) / 2))
+        val barWidth = maxOf(248.dp, maxWidth - inset * 2)
+        val shape = RoundedCornerShape(28.dp)
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = inset, end = inset, bottom = 8.dp)
+                .horizontalScroll(rememberScrollState()),
         ) {
-            // At enlarged text sizes, two columns keep every label readable instead of shrinking
-            // type or clipping words in four narrow cells. The scaffold measures this bar's height.
-            destinations.indices.chunked(if (showLabels) 2 else 4).forEach { indices ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    indices.forEach { index ->
-                        val active = selected == destinations[index]
-                        ReaderTab(
-                            label = labels[index],
-                            icon = if (active) filled[index] else outline[index],
-                            selected = active,
-                            showLabel = showLabels,
-                            onClick = { onSelect(destinations[index]) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            Row(
+                modifier =
+                    Modifier
+                        .width(barWidth)
+                        .height(56.dp)
+                        .clip(shape)
+                        .background(next.background.copy(alpha = 0.94f))
+                        .border(0.5.dp, next.hairline.copy(alpha = 0.7f), shape)
+                        .selectableGroup()
+                        .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                destinations.forEachIndexed { index, destination ->
+                    val active = selected == destination
+                    ReaderTab(
+                        label = labels[index],
+                        icon = if (active) filled[index] else outline[index],
+                        selected = active,
+                        onClick = { onSelect(destination) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -156,34 +178,25 @@ private fun ReaderTab(
     label: String,
     icon: ImageVector,
     selected: Boolean,
-    showLabel: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier =
             modifier
-                .heightIn(min = RAIL_HEIGHT)
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(24.dp))
                 .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-                .padding(horizontal = 8.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+                // The visual inset belongs inside the selectable region: at the bar's minimum
+                // width each tab must retain the full 48dp target supplied by its weighted cell.
+                .padding(horizontal = 2.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    if (selected) next.ink.copy(alpha = if (next.dark) 0.16f else 0.08f) else Color.Transparent,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = if (showLabel) null else label,
-            tint = next.ink,
-            modifier = Modifier.size(26.dp),
-        )
-        if (showLabel) {
-            Text(
-                text = label,
-                modifier = Modifier.fillMaxWidth(),
-                style = NextType.tab,
-                color = next.ink,
-                textAlign = TextAlign.Center,
-            )
-        }
+        Icon(icon, contentDescription = label, tint = next.ink, modifier = Modifier.size(26.dp))
     }
 }
 
@@ -609,11 +622,17 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-val RAIL_HEIGHT = 52.dp
+val RAIL_HEIGHT = 56.dp
 
 /** The destinations that earn a tab in the permanent chrome. Everything else draws none. */
 private val CHROME_DESTINATIONS =
-    setOf(NextDestination.FEED, NextDestination.SEARCH, NextDestination.BOARDS, NextDestination.SAVED)
+    setOf(
+        NextDestination.FEED,
+        NextDestination.BOARDS,
+        NextDestination.WATCHED,
+        NextDestination.SEARCH,
+        NextDestination.SAVED,
+    )
 
 /**
  * Whether this destination draws the permanent pill.

@@ -17,11 +17,11 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 | Area | Capabilities |
 | :--- | :--- |
 | **Shared reader interface** | Compact monochrome headers, flat anonymous posts, edge-to-edge media, accessible controls, and shared light/dark/true-black themes across Android and iOS. |
-| **Browsing & Layout** | Combined Home feed with All sites / 4chan / BBWChan filters, complete provider-backed board directories, favorite-board shortcuts, source-qualified saved/history records, and adaptive two-pane browsing. |
+| **Browsing & Layout** | Five-tab Home, Boards, Watched, Search, and Saved navigation; combined multi-site feed; complete provider-backed directories with original icons for every board; favorite-board shortcuts; and adaptive two-pane browsing. |
 | **Thread Reader** | Persistent title and source labels, OP badges, green quote links, inline quote expansion, backlinks, spoilers, multi-attachment carousels, and Files sheet. |
 | **Settings and activity** | Searchable directory with dedicated subpages, retained privacy and backup controls, and inherited app/site/board playback settings. |
-| **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with hardware caching, preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
-| **Themes & Ergonomics** | High-contrast industrial Void/Stage/Baffle surfaces, eight selectable color themes, Light / Dark / AMOLED modes, system text scaling, accessible controls, and searchable settings grouped by task. |
+| **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with bounded next-clip preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
+| **Themes & Ergonomics** | Compact monochrome surfaces, eight selectable color themes, Light / Dark / AMOLED modes, system text scaling, accessible controls, and searchable settings grouped by task. |
 | **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy shield (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and zero telemetry or cloud backups. |
 | **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBWChan** (`provider:lynxchan`). |
 

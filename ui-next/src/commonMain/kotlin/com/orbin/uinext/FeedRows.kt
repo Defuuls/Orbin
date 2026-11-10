@@ -10,15 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,12 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_row_counts
 import com.orbin.uinext.resources.next_row_counts_unread
@@ -44,10 +45,18 @@ import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_search_threads_prompt
 import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.next_settings_title
+import com.orbin.uinext.resources.social_feed_choose_source
 import com.orbin.uinext.resources.social_feed_home
+import com.orbin.uinext.resources.social_feed_more
 import com.orbin.uinext.resources.social_feed_muted
+import com.orbin.uinext.resources.social_feed_open_thread
 import com.orbin.uinext.resources.social_feed_post_metadata
 import com.orbin.uinext.resources.social_feed_poster_time
+import com.orbin.uinext.resources.social_feed_save
+import com.orbin.uinext.resources.social_feed_share
+import com.orbin.uinext.resources.social_feed_unsave
+import com.orbin.uinext.resources.social_feed_unwatch
+import com.orbin.uinext.resources.social_feed_watch
 import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.pluralStringResource
@@ -61,48 +70,100 @@ internal fun FeedHeader(
     onQueryChange: (String) -> Unit = {},
     onSettings: (() -> Unit)? = null,
     onSearch: (() -> Unit)? = null,
+    sourceLabels: List<String> = emptyList(),
+    selectedSource: Int = 0,
+    onSelectSource: (Int) -> Unit = {},
+    statusMessage: String? = null,
 ) {
     var searchVisible by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.padding(horizontal = GUTTER)) {
+    var sourcePickerVisible by rememberSaveable { mutableStateOf(false) }
+    val source = sourceLabels.getOrNull(selectedSource).orEmpty()
+    val chooseSource = stringResource(Res.string.social_feed_choose_source)
+    Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                stringResource(Res.string.social_feed_home),
-                style = NextType.titleLarge,
-                color = next.ink,
-                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
-            )
             NextIconAction(
-                imageVector = Icons.Outlined.Search,
+                imageVector = ReaderIcons.Search,
                 contentDescription = stringResource(Res.string.next_search_title),
                 onClick = { if (onSearch != null) onSearch() else searchVisible = !searchVisible },
                 tint = next.ink,
             )
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Row(
+                    modifier =
+                        Modifier
+                            .heightIn(min = 48.dp)
+                            .then(
+                                if (sourceLabels.isNotEmpty()) {
+                                    Modifier
+                                        .semantics {
+                                            contentDescription = chooseSource
+                                            stateDescription =
+                                                listOf(source, subtitle).filter(String::isNotBlank).joinToString(", ")
+                                        }.nextClickable(role = Role.Button) { sourcePickerVisible = true }
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        source.takeIf { selectedSource > 0 && it.isNotBlank() }
+                            ?: stringResource(Res.string.social_feed_home),
+                        style = NextType.titleLarge.copy(fontSize = 24.sp, lineHeight = 29.sp),
+                        color = next.ink,
+                        modifier =
+                            Modifier.testTag(NextTitleTags.LARGE).semantics {
+                                heading()
+                                if (subtitle.isNotBlank()) stateDescription = subtitle
+                            },
+                    )
+                    if (sourceLabels.isNotEmpty()) {
+                        Icon(ReaderIcons.ChevronDown, null, tint = next.ink, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
             if (onSettings != null) {
                 NextIconAction(
-                    imageVector = Icons.Outlined.Menu,
+                    imageVector = ReaderIcons.Menu,
                     contentDescription = stringResource(Res.string.next_settings_title),
                     onClick = onSettings,
                     tint = next.ink,
                 )
+            } else {
+                Spacer(Modifier.size(48.dp))
             }
         }
-        headerContent()
-        if (searchVisible || query.isNotEmpty()) {
-            Gap(8)
-            SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
+        Column(Modifier.padding(horizontal = GUTTER)) {
+            headerContent()
+            if (searchVisible || query.isNotEmpty()) {
+                Gap(8)
+                SchematicSearch(query, onQueryChange, stringResource(Res.string.next_search_threads_prompt))
+                Gap(8)
+            }
+            if (!statusMessage.isNullOrBlank()) {
+                Text(
+                    statusMessage,
+                    style = NextType.footnote,
+                    color = next.muted,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+                )
+            }
         }
-        if (subtitle.isNotBlank()) {
-            Text(
-                subtitle,
-                style = NextType.footnote,
-                color = next.muted,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-            )
-        }
-        Gap(8)
+    }
+    if (sourcePickerVisible) {
+        FeedSourceSheet(
+            labels = sourceLabels,
+            selected = selectedSource,
+            onSelect = { index ->
+                onSelectSource(index)
+                sourcePickerVisible = false
+            },
+            onDismiss = { sourcePickerVisible = false },
+        )
     }
 }
 
@@ -133,6 +194,7 @@ internal fun FeedGridCell(
         CollapsedFeedRow(row, modifier, showBoard, onClick)
         return
     }
+    var optionsVisible by rememberSaveable(row.id) { mutableStateOf(false) }
     val inset = if (tallMedia) GRID_TEXT_INSET else 8.dp
     Card(
         onClick = { onClick(row) },
@@ -145,20 +207,25 @@ internal fun FeedGridCell(
         Column(Modifier.fillMaxWidth()) {
             if (showBoard || row.site.isNotBlank()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = inset, vertical = 10.dp),
+                    modifier =
+                        Modifier.fillMaxWidth().padding(
+                            horizontal = if (tallMedia) 12.dp else inset,
+                            vertical = if (tallMedia) 0.dp else 6.dp,
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(next.raised),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(row.board.trim('/').take(2), style = NextType.labelLarge, color = next.ink)
-                    }
+                    BoardIcon(
+                        siteId = row.site,
+                        boardId = row.board,
+                        title = row.boardTitle,
+                        modifier = Modifier.size(32.dp),
+                    )
                     Column(Modifier.weight(1f)) {
                         Text(
                             row.sourceAndBoard,
-                            style = NextType.titleMedium,
+                            style = NextType.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
                             color = next.ink,
                         )
                         Text(
@@ -172,8 +239,16 @@ internal fun FeedGridCell(
                             } else {
                                 stringResource(Res.string.social_feed_poster_time, row.poster, activityText(row))
                             },
-                            style = NextType.footnote,
+                            style = NextType.footnote.copy(fontSize = 11.sp, lineHeight = 14.sp),
                             color = next.muted,
+                        )
+                    }
+                    if (tallMedia) {
+                        NextIconAction(
+                            ReaderIcons.More,
+                            stringResource(Res.string.social_feed_more, row.subject),
+                            onClick = { optionsVisible = true },
+                            tint = next.ink,
                         )
                     }
                 }
@@ -216,10 +291,10 @@ internal fun FeedGridCell(
                     onShareRow = onShareRow,
                 )
             }
-            Column(Modifier.padding(horizontal = inset, vertical = 8.dp)) {
+            Column(Modifier.padding(horizontal = if (tallMedia) 12.dp else inset, vertical = 4.dp)) {
                 Text(
                     row.subject,
-                    style = NextType.titleMedium,
+                    style = NextType.bodyMedium,
                     fontWeight = if (row.read) FontWeight.Medium else FontWeight.SemiBold,
                     color = if (row.read) next.muted else next.ink,
                     maxLines = if (tallMedia && !uniform) 3 else 2,
@@ -230,7 +305,7 @@ internal fun FeedGridCell(
                     Gap(4)
                     Text(
                         row.excerpt,
-                        style = NextType.body,
+                        style = NextType.bodyMedium,
                         color = next.ink,
                         maxLines = excerptLines,
                         minLines = if (uniform) excerptLines else 1,
@@ -249,8 +324,40 @@ internal fun FeedGridCell(
                     }
                 }
             }
-            Hairline()
+            Gap(10)
         }
+    }
+    if (optionsVisible) {
+        val actions =
+            buildList {
+                add(NextSheetAction(stringResource(Res.string.social_feed_open_thread)) { onClick(row) })
+                onToggleWatch?.let { action ->
+                    add(
+                        NextSheetAction(
+                            stringResource(
+                                if (row.watched) Res.string.social_feed_unwatch else Res.string.social_feed_watch,
+                                row.subject,
+                            ),
+                        ) { action(row) },
+                    )
+                }
+                onShareRow?.let { action ->
+                    add(NextSheetAction(stringResource(Res.string.social_feed_share, row.subject)) { action(row) })
+                }
+                if (!row.watched) {
+                    onToggleSaved?.let { action ->
+                        add(
+                            NextSheetAction(
+                                stringResource(
+                                    if (row.bookmarked) Res.string.social_feed_unsave else Res.string.social_feed_save,
+                                    row.subject,
+                                ),
+                            ) { action(row) },
+                        )
+                    }
+                }
+            }
+        NextActionSheet(row.subject, actions, onDismiss = { optionsVisible = false })
     }
 }
 

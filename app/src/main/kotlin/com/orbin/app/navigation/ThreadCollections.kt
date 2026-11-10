@@ -82,6 +82,7 @@ internal fun ThreadCollectionsDestination(
         onBack = onBack,
         onSettings = onSettings,
         onDestination = onDestination,
+        selectedDestination = if (kind == CollectionKind.WATCHED) NextDestination.WATCHED else NextDestination.SAVED,
     )
 }
 

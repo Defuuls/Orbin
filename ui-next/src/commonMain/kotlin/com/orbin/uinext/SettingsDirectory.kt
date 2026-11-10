@@ -1,20 +1,5 @@
 package com.orbin.uinext
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.NotificationsNone
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.PlayCircleOutline
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.orbin.uinext.resources.Res
@@ -127,18 +112,18 @@ internal fun directorySectionLabel(id: String): String =
 
 internal fun settingsIcon(id: String): ImageVector =
     when (id) {
-        "boards" -> Icons.Outlined.GridView
-        "boardPreferences" -> Icons.Outlined.Settings
-        "favorites" -> Icons.Outlined.StarBorder
-        "history" -> Icons.Outlined.History
-        "watched" -> Icons.Outlined.NotificationsNone
-        "hidden" -> Icons.Outlined.VisibilityOff
-        "playback" -> Icons.Outlined.PlayCircleOutline
-        "appearance" -> Icons.Outlined.Palette
-        "privacy" -> Icons.Outlined.Shield
-        "storage" -> Icons.Outlined.Storage
-        "downloads" -> Icons.Outlined.Download
-        "help" -> Icons.AutoMirrored.Outlined.HelpOutline
-        "about" -> Icons.Outlined.Info
-        else -> Icons.Outlined.BookmarkBorder
+        "boards" -> ReaderIcons.Globe
+        "boardPreferences" -> ReaderIcons.Settings
+        "favorites" -> ReaderIcons.Star
+        "history" -> ReaderIcons.Clock
+        "watched" -> ReaderIcons.Watched
+        "hidden" -> ReaderIcons.Hide
+        "playback" -> ReaderIcons.Play
+        "appearance" -> ReaderIcons.Palette
+        "privacy" -> ReaderIcons.Shield
+        "storage" -> ReaderIcons.Storage
+        "downloads" -> ReaderIcons.Download
+        "help" -> ReaderIcons.Help
+        "about" -> ReaderIcons.Info
+        else -> ReaderIcons.Saved
     }

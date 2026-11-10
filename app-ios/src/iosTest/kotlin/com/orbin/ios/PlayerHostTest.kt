@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
+import com.orbin.core.model.MediaType
+import kotlinx.cinterop.CValue
 import kotlinx.cinterop.UByteVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.get
@@ -20,10 +22,16 @@ import platform.AVFoundation.asset
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.muted
+import platform.AVFoundation.pause
+import platform.AVFoundation.play
+import platform.AVFoundation.preferredForwardBufferDuration
+import platform.AVFoundation.rate
 import platform.AVFoundation.removeOutput
 import platform.AVKit.AVPlayerViewController
 import platform.CoreFoundation.CFRetain
 import platform.CoreGraphics.CGRectMake
+import platform.CoreMedia.CMTime
+import platform.CoreMedia.CMTimeGetSeconds
 import platform.CoreVideo.CVPixelBufferGetBaseAddress
 import platform.CoreVideo.CVPixelBufferGetBytesPerRow
 import platform.CoreVideo.CVPixelBufferGetHeight
@@ -86,7 +94,7 @@ class PlayerHostTest {
                 }
             }
         try {
-            withWindow(root) {
+            withWindow(root, disposeContent = { visible.value = false }) {
                 SessionAudio.muted = true
                 repeat(2) {
                     await { root.players().size == 1 }
@@ -189,6 +197,104 @@ class PlayerHostTest {
     }
 
     @Test
+    fun aSilentPrerolledClipTransfersToTheVisiblePlayerWithoutReloadingOrBeingReleasedBySettings() {
+        val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+        val bytes = Base64.decode(PlaybackFixtures.RED)
+        val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+        assertTrue(data.writeToFile(path, atomically = true))
+        val url = assertNotNull(NSURL.fileURLWithPath(path).absoluteString)
+        val key = MediaPreloadKey("upcoming", url, MediaType.VIDEO, "mp4")
+        val preloader = createNativeMediaPreloader()
+        preloader.prepare(key)
+        val warmed = assertNotNull(preloader.peekNative(url))
+        try {
+            // Actual AVFoundation preroll prepares decode but must remain silent and paused.
+            await { preloader.isPrerolled(url) }
+            assertEquals(0f, warmed.rate)
+            assertTrue(warmed.muted)
+            assertEquals(2.0, warmed.currentItem?.preferredForwardBufferDuration)
+            val visible = mutableStateOf(true)
+            val root =
+                ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                    if (visible.value) {
+                        NativePlayer(
+                            url = url,
+                            active = true,
+                            autoPlay = false,
+                            loop = true,
+                            modifier = Modifier.fillMaxSize(),
+                            preloader = preloader,
+                        )
+                    }
+                }
+            withWindow(root, disposeContent = { visible.value = false }) {
+                await { root.players().size == 1 }
+                val host = root.players().single()
+                val player = assertNotNull(host.player)
+                assertEquals(warmed.objcPtr(), player.objcPtr(), "Opening the clip reuses the prerolled native player")
+                assertNull(preloader.peekNative(url), "The visible player owns the promoted resource")
+                assertEquals(0f, player.rate, "Autoplay off remains paused even after preloading")
+                player.play()
+                await { secondsForTest(player.currentTime()) > 0.05 }
+                assertDecodedColor(host, red = true)
+                preloader.prepare(key.copy(id = "next-upcoming"))
+                val next = assertNotNull(preloader.peekNative(url))
+                assertNotEquals(player.objcPtr(), next.objcPtr())
+                preloader.prepare(null)
+                assertNull(next.currentItem, "Turning preload off releases only the upcoming player")
+                assertNotNull(player.currentItem, "The visible player's transferred item must survive")
+                assertTrue(player.rate > 0f)
+            }
+        } finally {
+            preloader.close()
+            NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+        }
+    }
+
+    @Test
+    fun manualPlaybackSurvivesAnAudioPreferenceChangeWhenAutoplayIsOff() {
+        val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+        val bytes = Base64.decode(PlaybackFixtures.RED)
+        val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+        assertTrue(data.writeToFile(path, atomically = true))
+        val url = assertNotNull(NSURL.fileURLWithPath(path).absoluteString)
+        val muted = mutableStateOf(true)
+        val visible = mutableStateOf(true)
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) {
+                    NativePlayer(
+                        url = url,
+                        active = true,
+                        autoPlay = false,
+                        initiallyMuted = muted.value,
+                        loop = true,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        try {
+            withWindow(root, disposeContent = { visible.value = false }) {
+                await { root.players().size == 1 }
+                val player = assertNotNull(root.players().single().player)
+                assertEquals(0f, player.rate)
+                player.play()
+                await { player.rate > 0f }
+                muted.value = false
+                await { !player.muted }
+                assertTrue(player.rate > 0f, "Changing mute must not pause manually started playback")
+                player.pause()
+                muted.value = true
+                await { player.muted }
+                assertEquals(0f, player.rate, "Changing mute must also preserve a manual pause")
+            }
+        } finally {
+            NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+            SessionAudio.muted = true
+        }
+    }
+
+    @Test
     fun nativeHostFollowsUrlReplacementAndReopensWithFreshPlayer() {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
@@ -200,7 +306,7 @@ class PlayerHostTest {
                     NativePlayer(url.value, active = false, loop = true, modifier = Modifier.fillMaxSize())
                 }
             }
-        withWindow(root) {
+        withWindow(root, disposeContent = { visible.value = false }) {
             repeat(3) {
                 await { root.players().size == 1 }
                 val host = root.players().single()
@@ -233,6 +339,62 @@ class PlayerHostTest {
     }
 
     @Test
+    fun preloadedWebMTransfersItsViewAndDecodesRealFramesWhileItsClockAdvances() {
+        if (!supportsWebM) return
+        val url = "data:video/webm;base64," + PlaybackFixtures.WEBM
+        val preloader = createNativeMediaPreloader()
+        preloader.prepare(MediaPreloadKey("vp9-upcoming", url, MediaType.VIDEO, "webm"))
+        val warmed = assertNotNull(preloader.peekWebM(url))
+        try {
+            // The upcoming view loads actual clip metadata without playing or producing audio.
+            await { warmed.mediaSnapshot()?.let { it[0] >= 1 && it[1] == 64.0 && it[2] == 64.0 } == true }
+            val before = assertNotNull(warmed.mediaSnapshot())
+            assertEquals(0.0, before[3])
+            assertEquals(1.0, before[5], "The preloaded view remains paused")
+            assertEquals(1.0, before[6], "The preloaded view remains muted")
+            val visible = mutableStateOf(true)
+            val root =
+                ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                    if (visible.value) {
+                        NativeWebMPlayer(
+                            url = url,
+                            active = true,
+                            autoPlay = true,
+                            initiallyMuted = true,
+                            loop = true,
+                            preloader = preloader,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            withWindow(root, disposeContent = { visible.value = false }) {
+                await { root.view.webViews().size == 1 }
+                val shown = root.view.webViews().single()
+                assertEquals(warmed.objcPtr(), shown.objcPtr(), "Opening the clip reuses the prepared WebKit view")
+                assertNull(preloader.peekWebM(url))
+                await {
+                    shown.mediaSnapshot()?.let {
+                        it[0] >= 2 && it[1] == 64.0 && it[2] == 64.0 && it[3] > 0.05 && it[4] > 0
+                    } == true
+                }
+                val playing = assertNotNull(shown.mediaSnapshot())
+                assertTrue(playing[3] > 0.0, "The actual HTML video clock advances")
+                assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
+                preloader.prepare(null)
+                assertEquals(
+                    shown.objcPtr(),
+                    root.view
+                        .webViews()
+                        .single()
+                        .objcPtr(),
+                )
+            }
+        } finally {
+            preloader.close()
+        }
+    }
+
+    @Test
     fun webMUrlReplacementMountsTheNewViewAndRemovesTheOldOne() {
         val url = mutableStateOf(FIRST_URL)
         val visible = mutableStateOf(true)
@@ -242,7 +404,7 @@ class PlayerHostTest {
             ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
             }
-        withWindow(root) {
+        withWindow(root, disposeContent = { visible.value = false }) {
             repeat(3) {
                 await { root.view.webViews().size == 1 }
                 val previous = root.view.webViews().single()
@@ -270,8 +432,28 @@ class PlayerHostTest {
         }
     }
 
+    private fun WKWebView.mediaSnapshot(): List<Double>? {
+        var completed = false
+        var snapshot: String? = null
+        var failure: String? = null
+        evaluateJavaScript(
+            "(function(){var v=document.getElementById('v');if(!v)return null;" +
+                "var frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:" +
+                "(v.webkitDecodedFrameCount||0);" +
+                "return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')})()",
+        ) { value, error ->
+            snapshot = value as? String
+            failure = error?.localizedDescription
+            completed = true
+        }
+        await { completed }
+        assertNull(failure, "Query actual WebKit media state")
+        return snapshot?.split(',')?.map { it.toDouble() }
+    }
+
     private fun withWindow(
         root: UIViewController,
+        disposeContent: () -> Unit,
         block: () -> Unit,
     ) {
         val originalMute = SessionAudio.muted
@@ -281,9 +463,14 @@ class PlayerHostTest {
         try {
             block()
         } finally {
-            window.hidden = true
-            window.rootViewController = null
-            SessionAudio.muted = originalMute
+            try {
+                disposeContent()
+                await { root.players().isEmpty() && root.view.webViews().isEmpty() }
+            } finally {
+                window.hidden = true
+                window.rootViewController = null
+                SessionAudio.muted = originalMute
+            }
         }
     }
 
@@ -309,3 +496,5 @@ class PlayerHostTest {
 // Local missing files keep host lifecycle coverage independent of network/decoder availability.
 private const val FIRST_URL = "file:///tmp/orbin-host-test-first.mp4"
 private const val SECOND_URL = "file:///tmp/orbin-host-test-second.mp4"
+
+private fun secondsForTest(time: CValue<CMTime>): Double = CMTimeGetSeconds(time)

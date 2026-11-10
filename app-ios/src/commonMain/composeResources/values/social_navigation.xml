@@ -4,4 +4,10 @@
     <string name="ios_collection_saved">Saved</string>
     <string name="ios_collection_history">History</string>
     <string name="ios_collection_watched">Watched threads</string>
+    <string name="ios_primary_home">Home</string>
+    <string name="ios_primary_boards">Boards</string>
+    <string name="ios_primary_loading">Loading…</string>
+    <string name="ios_primary_retry">Try again</string>
+    <string name="ios_boards_source_unavailable">%1$s is unavailable. Try loading its boards again.</string>
+    <string name="ios_boards_no_visible">No visible boards. Review Hidden content in Settings and activity.</string>
 </resources>

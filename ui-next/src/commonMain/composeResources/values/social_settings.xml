@@ -20,4 +20,5 @@
     <string name="social_settings_help">Help</string>
     <string name="social_settings_about">About</string>
     <string name="social_settings_other">More settings</string>
+    <string name="social_settings_search_options">Search options</string>
 </resources>

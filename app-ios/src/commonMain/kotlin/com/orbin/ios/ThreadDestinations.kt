@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
@@ -136,7 +138,10 @@ private fun ThreadContent(
         if (mediaPostId == null || layout != ThreadLayout.POSTS) return@LaunchedEffect
         val index = posts.indexOfFirst { it.id == mediaPostId }
         // Item zero is the thread header. Files mode keeps its position until Posts is selected.
-        if (index >= 0) listState.scrollToItem(index + 1)
+        if (index >= 0) {
+            collapsed.remove(mediaPostId)
+            listState.scrollToItem(index + 1)
+        }
         onMediaScrollConsumed()
     }
     var pencilMenu by remember { mutableStateOf(false) }
@@ -199,7 +204,11 @@ private fun ThreadContent(
                     PostCommentText(
                         comment = entry.comment,
                         selectable = true,
-                        onQuoteClick = { target -> scrollTarget = target.value.toString() },
+                        onQuoteClick = { target ->
+                            val id = target.value.toString()
+                            collapsed.remove(id)
+                            scrollTarget = id
+                        },
                         onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
                     )
                 }
@@ -208,14 +217,20 @@ private fun ThreadContent(
                 val postAttachments = byId[post.id]?.attachments.orEmpty()
                 if (postAttachments.size == 1) {
                     val attachment = postAttachments.first()
-                    Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
+                    Box(
+                        modifier
+                            .aspectRatio(attachment.threadPreviewAspect())
+                            .clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
+                    ) {
                         // Use the site's thumbnail: a long jump can compose several video posts
                         // just before the viewer needs the same limited decoder resources.
                         SharpImage(
                             attachment,
                             attachment.originalFileName,
-                            Modifier.fillMaxWidth(),
+                            Modifier.fillMaxSize(),
+                            fill = Modifier.fillMaxSize(),
                             videoFrame = false,
+                            contentScale = ContentScale.Fit,
                         )
                         // Opening it still asks again in the viewer: the cover is lifted per file there.
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
@@ -226,20 +241,25 @@ private fun ThreadContent(
                     Column(modifier = modifier) {
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.fillMaxWidth().aspectRatio(
+                                    postAttachments.first().threadPreviewAspect(),
+                                ),
                             beyondViewportPageCount = 0,
                         ) { page ->
                             val attachment = postAttachments[page]
                             Box(
                                 Modifier
-                                    .fillMaxWidth()
+                                    .fillMaxSize()
                                     .clickable { firstIndex?.let { onOpenFile(it + page) } },
                             ) {
                                 SharpImage(
                                     attachment,
                                     attachment.originalFileName,
-                                    Modifier.fillMaxWidth(),
+                                    Modifier.fillMaxSize(),
+                                    fill = Modifier.fillMaxSize(),
                                     videoFrame = false,
+                                    contentScale = ContentScale.Fit,
                                 )
                                 if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                             }

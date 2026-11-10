@@ -31,18 +31,21 @@ fun BoardGalleryScreen(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenSaved: (() -> Unit)? = null,
+    onOpenWatched: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
     val favorites by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val loadedSource = (uiState as? HomeUiState.Success)?.providerId
     val openBoard: (Board) -> Unit = { board ->
-        onOpenBoard(providerId, board.id.value, board.title)
+        loadedSource?.let { source -> onOpenBoard(source, board.id.value, board.title) }
     }
 
     val visibleBoards =
-        remember(uiState, settings.hideNsfwBoards) {
+        remember(uiState, providerId, settings.hideNsfwBoards) {
             (uiState as? HomeUiState.Success)
+                ?.takeIf { it.providerId == providerId }
                 ?.boards
                 ?.filterNot { board -> settings.hideNsfwBoards && board.isNsfw }
                 // The permanent filter, with no reader tags on top of it.
@@ -76,7 +79,9 @@ fun BoardGalleryScreen(
                     )
                 }
             },
-            onFollowBoard = { board, checked -> viewModel.setFavorite(board.id, checked) },
+            onFollowBoard = { board, checked ->
+                viewModel.setFavorite(board.id, checked, board.site ?: providerId)
+            },
             onOpenBoard = { tile ->
                 visibleBoards.firstOrNull { it.id.value == tile.id }?.let(openBoard)
             },
@@ -91,6 +96,7 @@ fun BoardGalleryScreen(
             onOpenSettings = onOpenSettings,
             onOpenSearch = onOpenSearch,
             onOpenSaved = onOpenSaved,
+            onOpenWatched = onOpenWatched,
             hideRailOnScroll = hideRailOnScroll,
             onChromeVisibleChange = onChromeVisibleChange,
             emptyMessage =

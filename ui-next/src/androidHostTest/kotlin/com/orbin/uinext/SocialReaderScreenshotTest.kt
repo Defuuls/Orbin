@@ -1,7 +1,9 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,12 +66,15 @@ class SocialReaderScreenshotTest {
                     ),
                 columns = 1,
                 hideRailOnScroll = false,
-                headerContent = { PlatformSegments(listOf("All sites", "4chan", "BBWChan"), 0, {}) },
+                sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                selectedSource = 0,
+                onSelectSource = {},
                 thumbnail = { _, modifier -> ScenicPlaceholder(modifier) },
                 onOpenRow = {},
                 onOpenBoards = {},
                 onOpenSearch = {},
                 onOpenSaved = {},
+                onOpenWatched = {},
                 onSettings = {},
                 onToggleWatch = {},
                 onToggleSaved = {},
@@ -95,6 +100,7 @@ class SocialReaderScreenshotTest {
                 onOpenFeed = {},
                 onOpenSearch = {},
                 onOpenSaved = {},
+                onOpenWatched = {},
                 onOpenSettings = {},
             )
         }
@@ -104,6 +110,7 @@ class SocialReaderScreenshotTest {
         capture("social_ios_settings") {
             SettingsScreen(
                 groups = settingsFixtures(),
+                enabledSiteCount = 2,
                 onBack = {},
                 onNavigate = {},
             )
@@ -114,7 +121,8 @@ class SocialReaderScreenshotTest {
         capture("social_ios_playback") {
             SettingsScreen(
                 groups = settingsFixtures(),
-                expandedId = "autoplay",
+                enabledSiteCount = 2,
+                expandedId = "startMuted",
                 onBack = {},
                 onNavigate = {},
                 onActivate = {},
@@ -163,6 +171,55 @@ class SocialReaderScreenshotTest {
             )
         }
 
+    @Test
+    fun searchAcrossSites() =
+        capture("social_ios_search") {
+            NextScaffold(where = "Search", destination = NextDestination.SEARCH, onDestination = {}) { padding ->
+                Box(Modifier.padding(bottom = padding.calculateBottomPadding())) {
+                    SearchScreen(
+                        query = "landscape",
+                        onQueryChange = {},
+                        onSearch = {},
+                        state =
+                            SearchState.Results(
+                                listOf(
+                                    SearchRow(
+                                        "fourchan/wg/482917",
+                                        "Quiet landscapes",
+                                        "4chan · /wg/",
+                                        "A place to share a favorite view.",
+                                    ),
+                                    SearchRow(
+                                        "bbwchan/gen/230145",
+                                        "Weekend landscapes",
+                                        "BBWChan · /gen/",
+                                        "What is everyone working on this week?",
+                                    ),
+                                ),
+                            ),
+                        onOpenRow = {},
+                    )
+                }
+            }
+        }
+
+    @Test
+    fun watchedThreads() =
+        capture("social_ios_watched") {
+            ThreadCollectionScreen(
+                title = "Watched threads",
+                rows =
+                    listOf(
+                        ThreadCollectionRow("fourchan/wg/482917", "Quiet landscapes", "4chan · /wg/"),
+                        ThreadCollectionRow("bbwchan/gen/230145", "Weekly discussion", "BBWChan · /gen/"),
+                    ),
+                onOpen = {},
+                onSettings = {},
+                onDestination = {},
+                selectedDestination = NextDestination.WATCHED,
+            )
+        }
+
     private fun capture(
         name: String,
         content: @Composable () -> Unit,
@@ -205,12 +262,33 @@ class SocialReaderScreenshotTest {
                         selected = 2,
                         hint = "Changes apply to this board.",
                     ),
-                    SettingItem("inheritPlayback", "Use site settings", "Off", checked = false),
-                    SettingItem("autoplay", "Autoplay", "Off", checked = false),
+                    SettingItem(
+                        "inheritPlayback",
+                        "Use site settings",
+                        "Off",
+                        checked = false,
+                        hint = "Board overrides are active.",
+                    ),
+                    SettingItem(
+                        "autoplay",
+                        "Autoplay",
+                        "Off",
+                        SettingKind.CHOICE,
+                        options = listOf("Off", "On"),
+                        selected = 0,
+                        hint = "Choose when clips start automatically.",
+                    ),
                     SettingItem("startMuted", "Start muted", "On", checked = true, hint = "Play clips without sound."),
                     SettingItem("loopVideos", "Loop videos", "On", checked = true),
-                    SettingItem("preloadNextClip", "Preload next clip", "Off", checked = false),
-                    SettingItem("resetPlayback", "Reset to site settings", "Reset", SettingKind.ACTION),
+                    SettingItem(
+                        "preloadNextClip",
+                        "Preload next clip",
+                        "Off",
+                        SettingKind.CHOICE,
+                        options = listOf("Off", "On"),
+                        selected = 0,
+                    ),
+                    SettingItem("resetPlayback", "Reset to site settings", "", SettingKind.ACTION),
                 ),
             "Storage" to
                 listOf(

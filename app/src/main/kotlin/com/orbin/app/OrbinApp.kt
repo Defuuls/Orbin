@@ -40,7 +40,7 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Home, Search, Boards and Saved own the shared four-tab chrome;
+ * Root composable. Home, Boards, Watched, Search and Saved own the shared five-tab chrome;
  * settings, downloads, threads and catalogs use hierarchical back navigation.
  */
 @Composable
@@ -55,7 +55,10 @@ fun OrbinApp(
         if (startWithOnboarding) return@LaunchedEffect
         val route = pendingRoute ?: return@LaunchedEffect
         when (route) {
-            Route.NextFeed, Route.Search, Route.Saved, Route.BoardGallery -> navController.navigateToTab(route)
+            Route.NextFeed, Route.BoardGallery, Route.Watched, Route.Search, Route.Saved ->
+                navController.navigateToTab(
+                    route,
+                )
             else -> navController.navigate(route)
         }
         onPendingRouteHandled()
@@ -64,7 +67,7 @@ fun OrbinApp(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
         val snackbarHostState = LocalOrbinSnackbarHostState.current
-        // The four primary destinations stay reachable while their content scrolls.
+        // The five primary destinations stay reachable while their content scrolls.
         // The banner floats over the top of whatever screen is showing rather than pushing it
         // down: losing the network should not make the whole layout jump, twice.
         val statusBarInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)

@@ -150,11 +150,11 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `the tabs are home search boards and saved with no settings tab`() {
+    fun `the five tabs expose home boards watched search and saved`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
-        listOf("Home", "Search", "Boards", "Saved").forEach { label ->
+        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
             composeRule.onNode(hasContentDescription(label) and hasRole(Role.Tab)).assertExists()
         }
         composeRule.onNode(hasText("Downloads") and hasRole(Role.Tab)).assertDoesNotExist()

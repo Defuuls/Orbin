@@ -6,20 +6,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.social_feed_save
@@ -29,6 +24,7 @@ import com.orbin.uinext.resources.social_feed_unsave
 import com.orbin.uinext.resources.social_feed_unwatch
 import com.orbin.uinext.resources.social_feed_view_replies
 import com.orbin.uinext.resources.social_feed_watch
+import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
 /** Actions are independent touch targets; providers remain read-only when a thread is watched. */
@@ -46,7 +42,7 @@ internal fun FeedActionStrip(
     ) {
         if (onToggleWatch != null) {
             NextIconAction(
-                imageVector = if (row.watched) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsNone,
+                imageVector = if (row.watched) ReaderIcons.WatchedFilled else ReaderIcons.Watched,
                 contentDescription =
                     stringResource(
                         if (row.watched) Res.string.social_feed_unwatch else Res.string.social_feed_watch,
@@ -58,14 +54,15 @@ internal fun FeedActionStrip(
             )
         }
         NextIconAction(
-            Icons.Outlined.ChatBubbleOutline,
+            ReaderIcons.Chat,
             stringResource(Res.string.social_feed_view_replies, row.subject),
             onReply,
             tint = next.ink,
         )
+        Text(row.replies.toString(), style = NextType.bodyMedium, fontWeight = FontWeight.SemiBold, color = next.ink)
         if (onShareRow != null) {
             NextIconAction(
-                Icons.AutoMirrored.Outlined.Send,
+                ReaderIcons.Share,
                 stringResource(Res.string.social_feed_share, row.subject),
                 { onShareRow(row) },
                 tint = next.ink,
@@ -82,14 +79,14 @@ internal fun FeedActionStrip(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Filled.Bookmark,
+                    ReaderIcons.SavedFilled,
                     stringResource(Res.string.social_feed_saved_while_watching, row.subject),
                     tint = next.ink,
                 )
             }
         } else if (onToggleSaved != null) {
             NextIconAction(
-                imageVector = if (row.bookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                imageVector = if (row.bookmarked) ReaderIcons.SavedFilled else ReaderIcons.Saved,
                 contentDescription =
                     stringResource(
                         if (row.bookmarked) Res.string.social_feed_unsave else Res.string.social_feed_save,

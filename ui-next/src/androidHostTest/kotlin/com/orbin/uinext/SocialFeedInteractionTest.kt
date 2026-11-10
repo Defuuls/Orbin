@@ -1,10 +1,16 @@
 package com.orbin.uinext
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -122,6 +128,71 @@ class SocialFeedInteractionTest {
             ).assertIsSelected()
             .assertIsNotEnabled()
             .assertHasNoClickAction()
+    }
+
+    @Test
+    fun `Home source menu applies real source selection and announces the current choice`() {
+        var choice = -1
+        composeRule.setContent {
+            var selected by remember { mutableIntStateOf(0) }
+            NextTheme {
+                FeedScreen(
+                    rows = listOf(row("fourchan", "4chan")),
+                    sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                    selectedSource = selected,
+                    onSelectSource = {
+                        selected = it
+                        choice = it
+                    },
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Choose source").performClick()
+        composeRule.onNodeWithText("All sites").assertIsSelected()
+        composeRule.onNodeWithText("BBWChan").performClick()
+        composeRule.runOnIdle { assertEquals(2, choice) }
+        composeRule.onNodeWithTag(NextTitleTags.LARGE, useUnmergedTree = true).assertTextEquals("BBWChan")
+    }
+
+    @Test
+    fun `routine feed counts stay out of the story rail while real status messages remain visible`() {
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = listOf(row("fourchan", "4chan")),
+                    subtitle = "1 thread · 1 board",
+                    statusMessage = "Showing previously loaded threads",
+                )
+            }
+        }
+        composeRule.onNodeWithText("1 thread · 1 board").assertDoesNotExist()
+        composeRule.onNodeWithText("Showing previously loaded threads").assertExists()
+    }
+
+    @Test
+    fun `post overflow opens real thread actions without opening the post`() {
+        var watched = 0
+        var opened = 0
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = listOf(row("fourchan", "4chan")),
+                    onOpenRow = { opened++ },
+                    onToggleWatch = { watched++ },
+                    onToggleSaved = {},
+                    onShareRow = {},
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Options for Weekly discussion").performClick()
+        composeRule.onNodeWithText("Watch Weekly discussion").performClick()
+        composeRule.runOnIdle {
+            assertEquals(1, watched)
+            assertEquals(0, opened)
+        }
+        composeRule.onNodeWithContentDescription("Options for Weekly discussion").performClick()
+        composeRule.onNodeWithText("Open thread").performClick()
+        composeRule.runOnIdle { assertEquals(1, opened) }
     }
 
     private fun row(

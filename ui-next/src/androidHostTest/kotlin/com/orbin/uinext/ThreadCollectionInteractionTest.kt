@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -18,7 +19,7 @@ class ThreadCollectionInteractionTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheFourTabsReachable() {
+    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheFiveTabsReachable() {
         var opened = ""
         var destination: NextDestination? = null
         composeRule.setContent {
@@ -37,7 +38,28 @@ class ThreadCollectionInteractionTest {
         }
         composeRule.onNodeWithText("BBWChan · /g/").performClick()
         assertEquals("bbwchan/g/7", opened)
+        composeRule.onNodeWithContentDescription("Watched").performClick()
+        assertEquals(NextDestination.WATCHED, destination)
         composeRule.onNodeWithContentDescription("Search").performClick()
         assertEquals(NextDestination.SEARCH, destination)
+    }
+
+    @Test
+    fun watchedHasItsOwnSelectedTabAndOpensTheSourceQualifiedThread() {
+        var opened = ""
+        composeRule.setContent {
+            NextTheme {
+                ThreadCollectionScreen(
+                    title = "Watched threads",
+                    rows = listOf(ThreadCollectionRow("bbwchan/gen/7", "Discussion", "BBWChan · /gen/")),
+                    onOpen = { opened = it.id },
+                    selectedDestination = NextDestination.WATCHED,
+                    onDestination = {},
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Watched").assertIsSelected()
+        composeRule.onNodeWithText("Discussion").performClick()
+        assertEquals("bbwchan/gen/7", opened)
     }
 }

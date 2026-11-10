@@ -65,12 +65,29 @@ class ReaderSettings(
         val playback = preferences.forScope(scope)
         val value =
             when (id) {
-                "autoplay" -> playback.copy(autoplay = !playback.autoplay)
                 "startMuted" -> playback.copy(startMuted = !playback.startMuted)
                 "loopVideos" -> playback.copy(loopVideos = !playback.loopVideos)
-                "preloadNextClip" -> playback.copy(preloadNextClip = !playback.preloadNextClip)
                 "inheritPlayback" -> if (preferences.hasOverride(scope)) null else playback
                 "resetPlayback" -> null
+                else -> return false
+            }
+        setPlaybackSettings(scope, value)
+        return true
+    }
+
+    /** Opening a choice page is read-only; only an explicit option selection persists it. */
+    internal fun selectPlaybackChoice(
+        id: String,
+        index: Int,
+        settings: AppSettings,
+        scope: PlaybackScope,
+    ): Boolean {
+        if (index !in 0..1) return false
+        val playback = settings.playbackPreferences.forScope(scope)
+        val value =
+            when (id) {
+                "autoplay" -> playback.copy(autoplay = index == 1)
+                "preloadNextClip" -> playback.copy(preloadNextClip = index == 1)
                 else -> return false
             }
         setPlaybackSettings(scope, value)
