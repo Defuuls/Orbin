@@ -20,6 +20,7 @@ All notable changes to Orbin are documented here. The format is based on
 - Stopping thread watching retains saved bookmarks, and media waits for persisted playback settings before starting automatically.
 - Video playback retains manual pause and play intent across app backgrounding and settings changes; bounded next-clip preloading reuses prepared media and cancels obsolete work.
 - Downloaded videos use the local file data source while online videos retain the configured HTTP transport.
+- Paused Android videos immediately disable automatic Picture in Picture before the app moves into the background.
 - Switching primary tabs restores their state, board media stays pinned to its original site, and thread Posts/Files retain independent reading positions.
 
 ## [193-Purslane] - 2026-11-08

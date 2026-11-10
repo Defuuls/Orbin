@@ -59,7 +59,16 @@ class VideoPlaybackSmokeTest {
 
     @After
     fun removeFixture() {
-        fixture?.delete()
+        if (fixture != null) {
+            // Dispose the real player before removing its source, including on assertion failure.
+            composeRule.runOnUiThread { composeRule.activity.setContent {} }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            player = null
+            fixture?.delete()
+            fixture = null
+        }
+        composeRule.mainClock.autoAdvance = true
     }
 
     @Test
@@ -72,11 +81,13 @@ class VideoPlaybackSmokeTest {
         // before pausing, rather than mutating ExoPlayer directly from the test.
         showControls("Pause")
         composeRule.onNodeWithContentDescription("Pause").performClick()
-        composeRule.waitUntil(TIMEOUT_MS) { playerMatches { !it.isPlaying && !it.playWhenReady } }
+        assertTrue("Pause updates the native player immediately", playerMatches { !it.isPlaying && !it.playWhenReady })
 
+        // Background before another Compose frame: a stale auto-enter flag would leave this
+        // Activity in PiP at PAUSED instead of reaching CREATED.
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        composeRule.waitForIdle()
+        composeRule.mainClock.advanceTimeByFrame()
         assertTrue("A manual pause must survive background/foreground", playerMatches { !it.playWhenReady })
 
         showControls("Play")
@@ -89,17 +100,10 @@ class VideoPlaybackSmokeTest {
     fun aFinishedNonLoopingClipRestartsWithOnePlayAction() {
         showRealPlayer(autoPlay = true, loop = false)
         awaitRenderedPlayback()
-        composeRule.waitUntil(TIMEOUT_MS) {
-            playerMatches {
-                it.playbackState ==
-                    androidx.media3.common.Player.STATE_ENDED
-            }
-        }
+        waitForPlayer { it.playbackState == androidx.media3.common.Player.STATE_ENDED }
         showControls("Play")
         composeRule.onNodeWithContentDescription("Play").performClick()
-        composeRule.waitUntil(TIMEOUT_MS) {
-            playerMatches { it.isPlaying && it.currentPosition > 0L }
-        }
+        waitForPlayer { it.isPlaying && it.currentPosition > 0L }
         assertFalse("Restart must not report a decoder error", playerMatches { it.playerError != null })
     }
 
@@ -107,9 +111,7 @@ class VideoPlaybackSmokeTest {
     fun webmRendersVideoFramesAndCompletes() {
         showRealPlayer(autoPlay = true, loop = false, assetName = "playback-smoke.webm")
         awaitRenderedPlayback()
-        composeRule.waitUntil(TIMEOUT_MS) {
-            playerMatches { it.playbackState == androidx.media3.common.Player.STATE_ENDED }
-        }
+        waitForPlayer { it.playbackState == androidx.media3.common.Player.STATE_ENDED }
         assertFalse("WebM must not report a decoder error", playerMatches { it.playerError != null })
     }
 
@@ -132,6 +134,10 @@ class VideoPlaybackSmokeTest {
             file.outputStream().use(input::copyTo)
         }
         fixture = file
+        // Video progress and buffering update Compose continuously. Advancing Compose by hand
+        // keeps semantics queries from waiting for a looping player to become globally idle;
+        // ExoPlayer, Android's decoder and their media clock continue in real time.
+        composeRule.mainClock.autoAdvance = false
         composeRule.runOnUiThread {
             composeRule.activity.setContent {
                 NextTheme {
@@ -146,6 +152,7 @@ class VideoPlaybackSmokeTest {
             }
         }
         composeRule.waitUntil(TIMEOUT_MS) {
+            composeRule.mainClock.advanceTimeByFrame()
             var found: ExoPlayer? = null
             instrumentation.runOnMainSync { found = findPlayer(composeRule.activity.window.decorView) }
             player = found
@@ -154,23 +161,32 @@ class VideoPlaybackSmokeTest {
     }
 
     private fun awaitRenderedPlayback() {
-        composeRule.waitUntil(TIMEOUT_MS) {
-            playerMatches { current ->
-                current.videoDecoderCounters?.ensureUpdated()
-                current.isPlaying &&
-                    current.currentPosition > MIN_PROGRESS_MS &&
-                    (current.videoDecoderCounters?.renderedOutputBufferCount ?: 0) > 0
-            }
+        waitForPlayer { current ->
+            current.videoDecoderCounters?.ensureUpdated()
+            current.isPlaying &&
+                current.currentPosition > MIN_PROGRESS_MS &&
+                (current.videoDecoderCounters?.renderedOutputBufferCount ?: 0) > 0
         }
     }
 
     private fun showControls(label: String) {
+        composeRule.mainClock.advanceTimeByFrame()
         if (composeRule.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isEmpty()) {
             composeRule.onNodeWithTag(SURFACE_TAG).performTouchInput { click() }
         }
         composeRule.waitUntil(TIMEOUT_MS) {
+            composeRule.mainClock.advanceTimeByFrame()
             composeRule.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun waitForPlayer(predicate: (ExoPlayer) -> Boolean) {
+        composeRule.waitUntil(TIMEOUT_MS) {
+            composeRule.mainClock.advanceTimeByFrame()
+            playerMatches(predicate)
+        }
+        // Flush the player's latest callback into controls and lifecycle/PiP effects as well.
+        composeRule.mainClock.advanceTimeByFrame()
     }
 
     private fun playerMatches(predicate: (ExoPlayer) -> Boolean): Boolean {

@@ -1,5 +1,6 @@
 package com.orbin.media.video
 
+import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
 import android.util.Rational
@@ -175,7 +176,8 @@ fun VideoPlayer(
 
     LaunchedEffect(exoPlayer, isPlaying, active) {
         if (activity != null) {
-            val enabled = active && isPlaying
+            // A queued composition must not re-enable PiP after the native pause callback.
+            val enabled = currentActive && exoPlayer.isPlaying
             val width = exoPlayer.videoSize.width
             val height = exoPlayer.videoSize.height
             val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(enabled)
@@ -274,7 +276,11 @@ fun VideoPlayer(
                 override fun onIsPlayingChanged(isPlayingNow: Boolean) {
                     isPlaying = isPlayingNow
                     if (isPlayingNow) autoRetries = 0
-                    if (!isPlayingNow) controlsVisible = true
+                    if (!isPlayingNow) {
+                        // Auto-enter is read by Android before a later Compose frame may run.
+                        activity?.disableAutomaticVideoPip()
+                        controlsVisible = true
+                    }
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -302,13 +308,7 @@ fun VideoPlayer(
             }
         exoPlayer.addListener(listener)
         onDispose {
-            if (activity != null) {
-                runCatching {
-                    activity.setPictureInPictureParams(
-                        PictureInPictureParams.Builder().setAutoEnterEnabled(false).build(),
-                    )
-                }
-            }
+            activity?.disableAutomaticVideoPip()
             PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
             exoPlayer.release()
@@ -466,6 +466,7 @@ fun VideoPlayer(
                         exoPlayer.seekTo(0L)
                     }
                     playbackSession.toggle(ended)
+                    if (!playbackSession.requestedPlaying) activity?.disableAutomaticVideoPip()
                     exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
                     if (playbackSession.requestedPlaying) {
                         controlsVisible = false
@@ -486,6 +487,13 @@ fun VideoPlayer(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+    }
+}
+
+/** Update Android synchronously: backgrounding can happen before Compose observes a pause. */
+private fun Activity.disableAutomaticVideoPip() {
+    runCatching {
+        setPictureInPictureParams(PictureInPictureParams.Builder().setAutoEnterEnabled(false).build())
     }
 }
 
