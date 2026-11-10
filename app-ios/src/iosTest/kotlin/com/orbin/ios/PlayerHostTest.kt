@@ -2,6 +2,7 @@
 
 package com.orbin.ios
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ import platform.Foundation.writeToFile
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.accessibilityElementsHidden
 import platform.UIKit.childViewControllers
 import platform.WebKit.WKWebView
 import kotlin.io.encoding.Base64
@@ -343,32 +345,46 @@ class PlayerHostTest {
         if (!supportsWebM) return
         val url = "data:video/webm;base64," + PlaybackFixtures.WEBM
         val preloader = createNativeMediaPreloader()
-        preloader.prepare(MediaPreloadKey("vp9-upcoming", url, MediaType.VIDEO, "webm"))
-        val warmed = assertNotNull(preloader.peekWebM(url))
-        try {
-            // The upcoming view loads actual clip metadata without playing or producing audio.
-            await { warmed.mediaSnapshot()?.let { it[0] >= 1 && it[1] == 64.0 && it[2] == 64.0 } == true }
-            val before = assertNotNull(warmed.mediaSnapshot())
-            assertEquals(0.0, before[3])
-            assertEquals(1.0, before[5], "The preloaded view remains paused")
-            assertEquals(1.0, before[6], "The preloaded view remains muted")
-            val visible = mutableStateOf(true)
-            val root =
-                ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
-                    if (visible.value) {
-                        NativeWebMPlayer(
-                            url = url,
-                            active = true,
-                            autoPlay = true,
-                            initiallyMuted = true,
-                            loop = true,
-                            preloader = preloader,
-                            modifier = Modifier.fillMaxSize(),
-                        )
+        val visible = mutableStateOf(true)
+        val showPlayer = mutableStateOf(false)
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) {
+                    Box(Modifier.fillMaxSize()) {
+                        NativeMediaPreloadHost(preloader)
+                        if (showPlayer.value) {
+                            NativeWebMPlayer(
+                                url = url,
+                                active = true,
+                                autoPlay = true,
+                                initiallyMuted = true,
+                                loop = true,
+                                preloader = preloader,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                 }
+            }
+        try {
             withWindow(root, disposeContent = { visible.value = false }) {
-                await { root.view.webViews().size == 1 }
+                // Use the gallery's real live-window host, including prepare-before-host mounting.
+                preloader.prepare(MediaPreloadKey("vp9-upcoming", url, MediaType.VIDEO, "webm"))
+                val warmed = assertNotNull(preloader.peekWebM(url))
+                await { warmed.window != null && root.view.preloadHosts().size == 1 }
+                val warmHost = root.view.preloadHosts().single()
+                assertEquals(warmHost.objcPtr(), warmed.superview.objcPtr())
+                assertTrue(warmed.bounds.useContents { size.width > 0 && size.height > 0 })
+                assertTrue(!warmHost.hidden && warmHost.alpha == 1.0)
+                assertTrue(warmHost.accessibilityElementsHidden && !warmHost.userInteractionEnabled)
+                assertSilentPreparedWebM(warmed)
+                showPlayer.value = true
+                await {
+                    preloader.peekWebM(url) == null &&
+                        warmHost.subviews.isEmpty() &&
+                        warmed.window != null &&
+                        root.view.webViews().size == 1
+                }
                 val shown = root.view.webViews().single()
                 assertEquals(warmed.objcPtr(), shown.objcPtr(), "Opening the clip reuses the prepared WebKit view")
                 assertNull(preloader.peekWebM(url))
@@ -380,7 +396,12 @@ class PlayerHostTest {
                 val playing = assertNotNull(shown.mediaSnapshot())
                 assertTrue(playing[3] > 0.0, "The actual HTML video clock advances")
                 assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
+                preloader.prepare(MediaPreloadKey("vp9-following", url, MediaType.VIDEO, "webm"))
+                val following = assertNotNull(preloader.peekWebM(url))
+                await { following.window != null && root.view.webViews().size == 2 }
+                assertNotEquals(shown.objcPtr(), following.objcPtr())
                 preloader.prepare(null)
+                await { following.window == null && root.view.webViews().size == 1 }
                 assertEquals(
                     shown.objcPtr(),
                     root.view
@@ -388,10 +409,20 @@ class PlayerHostTest {
                         .single()
                         .objcPtr(),
                 )
+                assertTrue(warmHost.subviews.isEmpty(), "Promoted WebKit view belongs only to the visible player")
             }
         } finally {
             preloader.close()
         }
+    }
+
+    private fun assertSilentPreparedWebM(webView: WKWebView) {
+        // The upcoming view loads actual clip metadata without playing or producing audio.
+        await { webView.mediaSnapshot()?.let { it[0] >= 1 && it[1] == 64.0 && it[2] == 64.0 } == true }
+        val before = assertNotNull(webView.mediaSnapshot())
+        assertEquals(0.0, before[3])
+        assertEquals(1.0, before[5], "The preloaded view remains paused")
+        assertEquals(1.0, before[6], "The preloaded view remains muted")
     }
 
     @Test
@@ -465,7 +496,9 @@ class PlayerHostTest {
         } finally {
             try {
                 disposeContent()
-                await { root.players().isEmpty() && root.view.webViews().isEmpty() }
+                await {
+                    root.players().isEmpty() && root.view.webViews().isEmpty() && root.view.preloadHosts().isEmpty()
+                }
             } finally {
                 window.hidden = true
                 window.rootViewController = null
@@ -490,6 +523,11 @@ class PlayerHostTest {
     private fun UIView.webViews(): List<WKWebView> =
         subviews.filterIsInstance<UIView>().flatMap {
             if (it is WKWebView) listOf(it) else it.webViews()
+        }
+
+    private fun UIView.preloadHosts(): List<MediaPreloadHostView> =
+        subviews.filterIsInstance<UIView>().flatMap {
+            if (it is MediaPreloadHostView) listOf(it) else it.preloadHosts()
         }
 }
 

@@ -2,6 +2,13 @@
 
 package com.orbin.ios
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
+import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,6 +34,9 @@ import platform.AVFoundation.status
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSURL
 import platform.UIKit.UIColor
+import platform.UIKit.UIView
+import platform.UIKit.accessibilityElementsHidden
+import platform.UIKit.setFrame
 import platform.WebKit.WKNavigation
 import platform.WebKit.WKNavigationDelegateProtocol
 import platform.WebKit.WKWebView
@@ -35,6 +45,28 @@ import platform.darwin.NSObject
 
 /** Only the upcoming clip is retained; promoted resources become the visible player's responsibility. */
 internal actual fun createNativeMediaPreloader(): NativeMediaPreloader = IosMediaPreloader()
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+internal actual fun NativeMediaPreloadHost(preloader: NativeMediaPreloader) {
+    val owner = preloader as? IosMediaPreloader ?: return
+    UIKitView(
+        factory = { MediaPreloadHostView().also(owner::attachHost) },
+        onRelease = owner::detachHost,
+        modifier = Modifier.size(1.dp),
+        properties = UIKitInteropProperties(interactionMode = null),
+    )
+}
+
+/** A live, clipped pixel behind the gallery; hidden or detached WebKit views can suspend their documents. */
+internal class MediaPreloadHostView : UIView(frame = CGRectMake(0.0, 0.0, 1.0, 1.0)) {
+    init {
+        clipsToBounds = true
+        userInteractionEnabled = false
+        accessibilityElementsHidden = true
+        backgroundColor = UIColor.blackColor
+    }
+}
 
 internal fun NativeMediaPreloader.takeNative(url: String): AVPlayer? = (this as? IosMediaPreloader)?.takeNative(url)
 
@@ -50,8 +82,23 @@ internal fun NativeMediaPreloader.isPrerolled(url: String): Boolean =
 private class IosMediaPreloader : NativeMediaPreloader {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val upcoming = SingleUpcomingMedia<PreparedClip>(create = ::create, release = PreparedClip::close)
+    private var warmHost: MediaPreloadHostView? = null
+    private var closed = false
+
+    fun attachHost(host: MediaPreloadHostView) {
+        if (closed) return
+        warmHost = host
+        upcoming.key?.let(upcoming::peek)?.let { if (it is PreparedWebM) mount(it) }
+    }
+
+    fun detachHost(host: MediaPreloadHostView) {
+        if (warmHost != host) return
+        warmHost = null
+        upcoming.clear()
+    }
 
     override fun prepare(target: MediaPreloadKey?) {
+        if (closed) return
         upcoming.prepare(target?.takeIf { NSURL.URLWithString(it.url) != null })
     }
 
@@ -77,16 +124,27 @@ private class IosMediaPreloader : NativeMediaPreloader {
 
     internal fun takeWebM(url: String): WKWebView? {
         val key = upcoming.key?.takeIf { it.url == url && it.webM } ?: return null
-        return (upcoming.claim(key) as? PreparedWebM)?.promote()
+        val clip = upcoming.claim(key) as? PreparedWebM ?: return null
+        if (clip.webView.superview == warmHost) clip.webView.removeFromSuperview()
+        return clip.promote()
     }
 
     override fun close() {
+        closed = true
         upcoming.clear()
+        warmHost = null
         scope.cancel()
     }
 
     private fun create(key: MediaPreloadKey): PreparedClip =
-        if (key.webM) PreparedWebM(key.url) else PreparedNative(key.url, scope)
+        if (key.webM) PreparedWebM(key.url).also(::mount) else PreparedNative(key.url, scope)
+
+    private fun mount(clip: PreparedWebM) {
+        warmHost?.let { host ->
+            clip.webView.setFrame(CGRectMake(0.0, 0.0, 1.0, 1.0))
+            host.addSubview(clip.webView)
+        }
+    }
 }
 
 private sealed interface PreparedClip {
@@ -194,6 +252,7 @@ private class PreparedWebM(
 
     override fun close() {
         webView.navigationDelegate = null
+        webView.removeFromSuperview()
         webView.tearDownMedia()
     }
 }

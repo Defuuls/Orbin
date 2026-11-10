@@ -276,7 +276,9 @@ internal actual fun NativeWebMPlayer(
                     webView: WKWebView,
                     didFinishNavigation: WKNavigation?,
                 ) {
-                    webView.evaluateJavaScript(webMPlaybackScript(request), completionHandler = null)
+                    if (webView.window != null) {
+                        webView.evaluateJavaScript(webMPlaybackScript(request), completionHandler = null)
+                    }
                 }
             }
         }
@@ -450,10 +452,14 @@ internal fun WKWebView.tearDownMedia() {
 internal val mediaDataStore: WKWebsiteDataStore by lazy { WKWebsiteDataStore.nonPersistentDataStore() }
 
 /** Runs [script] in the page and gives back its result as text, or null if it had none. */
-private suspend fun WKWebView.script(script: String): String? =
-    suspendCancellableCoroutine { continuation ->
+private suspend fun WKWebView.script(script: String): String? {
+    // A promoted view is briefly detached while UIKit interop transfers it into the active page.
+    // Do not acknowledge play until WebKit has a window; the regular state poll retries it there.
+    if (window == null) return null
+    return suspendCancellableCoroutine { continuation ->
         evaluateJavaScript(script) { result, _ -> continuation.resume(result as? String) }
     }
+}
 
 /** Muted inline preview for a catalog video; the thumbnail remains visible underneath until loaded. */
 @OptIn(ExperimentalForeignApi::class)

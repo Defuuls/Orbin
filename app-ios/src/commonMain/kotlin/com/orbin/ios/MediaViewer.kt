@@ -111,6 +111,7 @@ internal fun MediaViewer(
         }
     }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
+        NativeMediaPreloadHost(preloader)
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
         VerticalPager(
             state = pager,
