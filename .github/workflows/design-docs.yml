@@ -1,0 +1,60 @@
+name: Design docs
+
+# Checks docs/design-system: the spec's arithmetic and contrast (scripts/tests/test_design_spec.py)
+# and the rendered diagrams and companion page against the baselines committed in
+# docs/design-system/baselines (scripts/design_docs_visual.cjs).
+#
+# It runs only when those files change, so a headless browser is never installed for unrelated
+# work. If an intended change makes the visual check fail, regenerate the baselines locally with
+# `node scripts/design_docs_visual.cjs --update` using the Playwright version below, or download
+# the design-docs-renders artifact to see what moved.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/design-docs.yml'
+      - 'docs/design-system/**'
+      - 'scripts/design_docs_visual.cjs'
+      - 'scripts/tests/test_design_spec.py'
+      # The visual check sets all text in these fonts.
+      - 'ui-next/src/commonMain/composeResources/font/**'
+
+concurrency:
+  group: design-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The baselines were rendered with this version's Chromium build. Change both together.
+  PLAYWRIGHT_VERSION: 1.63.0
+
+jobs:
+  verify:
+    name: Verify design docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Spec arithmetic, contrast and references
+        run: python3 -m unittest scripts/tests/test_design_spec.py
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/playwright" "playwright@${PLAYWRIGHT_VERSION}"
+          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Compare renders with baselines
+        run: NODE_PATH="$RUNNER_TEMP/playwright/node_modules" node scripts/design_docs_visual.cjs
+
+      - name: Upload failing renders
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: design-docs-renders
+          path: build/design-docs-visual
+          if-no-files-found: ignore
