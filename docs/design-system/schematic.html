@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Orbin Reader Schematic</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a drawing set. Each diagram is a sheet with a title block; reference tables follow. */
+:root{
+  --bg:#F6F8F6; --sheet:#FFFFFF; --ink:#18201A; --muted:#566259; --rule:#CFD8D1; --accent:#2E7D32; --accent-ink:#FFFFFF; --code:#EAF0EB;
+  --font-display:'Roboto Condensed','Roboto',system-ui,sans-serif; --font-body:'Roboto',system-ui,-apple-system,'Segoe UI',sans-serif; --font-mono:'Roboto Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0F1410; --sheet:#171D18; --ink:#E6ECE7; --muted:#A3B0A6; --rule:#2E3830; --accent:#81C784; --accent-ink:#0B2A0E; --code:#222B24; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#0F1410; --sheet:#171D18; --ink:#E6ECE7; --muted:#A3B0A6; --rule:#2E3830; --accent:#81C784; --accent-ink:#0B2A0E; --code:#222B24; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.55;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:2.5rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0;max-width:68ch}
+code{font-family:var(--font-mono);font-size:.86em;background:var(--code);padding:.1em .35em;border-radius:3px}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mast{display:flex;flex-direction:column;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:24px}
+.eyebrow{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.status{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:.92rem;color:var(--muted)}
+.status b{color:var(--ink);font-weight:500}
+.notice{border-left:4px solid var(--accent);padding:10px 14px;background:var(--sheet);max-width:none}
+section{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--rule);display:flex;flex-direction:column;min-width:0}
+.sheet-draw{overflow-x:auto;padding:12px}
+.sheet-img{display:block;height:auto;max-width:none;margin-inline:auto}
+.block{display:grid;grid-template-columns:auto 1fr auto;border-top:1px solid var(--rule);font-size:.9rem}
+.block > div{padding:10px 14px;min-width:0}
+.block > div + div{border-left:1px solid var(--rule)}
+.block .k{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block}
+.block .v{font-family:var(--font-display);font-weight:700;font-size:1.05rem}
+.notes{margin:0;padding:12px 14px 14px 32px;border-top:1px solid var(--rule);display:flex;flex-direction:column;gap:4px;font-size:.95rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);background:var(--sheet)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top;white-space:nowrap}
+td:last-child{white-space:normal;min-width:16rem}
+thead th{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+tbody th{font-weight:400}
+.sw{display:inline-block;width:14px;height:14px;border:1px solid var(--rule);border-radius:2px;vertical-align:-2px;margin-right:6px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px}
+.cols > div{display:flex;flex-direction:column;gap:12px;min-width:0}
+ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+footer{border-top:1px solid var(--rule);padding-top:16px;color:var(--muted);font-size:.9rem}
+@media (max-width:560px){ h1{font-size:1.9rem} .block{grid-template-columns:1fr 1fr} .block > div:first-child{grid-column:1 / -1;border-bottom:1px solid var(--rule)} .block > div:nth-child(2){border-left:0} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+<span class="eyebrow">Orbin design system · drawing set</span>
+<h1>Orbin Reader Schematic</h1>
+<p>Dimensioned drawings and tokens for the board catalog and thread reader, on phones and in two panes. Orbin is read-only, so no posting controls appear anywhere in this set.</p>
+<div class="status"><span><b>Status</b> normative, not yet implemented</span><span><b>Units</b> dp for layout, sp for type</span><span><b>Sheets</b> 6</span></div>
+<p class="notice">The written spec in <code>docs/design-system/README.md</code> is the source of truth. If this page and the spec differ, the spec is correct.</p>
+</header>
+
+<section aria-labelledby="h-sheets">
+<h2 id="h-sheets">Drawings</h2>
+<article class="sheet" id="sheet-1">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/phone-catalog-list.svg" width="640" alt="Phone catalog, list mode diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">1 of 6</span></div><div><span class="k">Title</span><span class="v">Phone catalog, list mode</span></div><div><span class="k">Scale</span><span class="v">1 px = 1 dp</span></div></div>
+<ul class="notes"><li>Rows are at least 96dp: a 72dp thumbnail with 12dp above and below.</li><li>The text column takes the width that remains, 188dp in a 360dp window.</li><li>The whole row opens the thread. The count pill is a label.</li></ul>
+</article>
+<article class="sheet" id="sheet-2">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/phone-catalog-grid.svg" width="640" alt="Phone catalog, grid mode diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">2 of 6</span></div><div><span class="k">Title</span><span class="v">Phone catalog, grid mode</span></div><div><span class="k">Scale</span><span class="v">1 px = 1 dp</span></div></div>
+<ul class="notes"><li>Column count is the pane width divided by 120dp, rounded down.</li><li>Each card is a square image above a 76dp text block.</li><li>The reader switches between list and grid in the overflow menu.</li></ul>
+</article>
+<article class="sheet" id="sheet-3">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/two-pane.svg" width="1040" alt="Two panes: catalog and thread diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">3 of 6</span></div><div><span class="k">Title</span><span class="v">Two panes: catalog and thread</span></div><div><span class="k">Scale</span><span class="v">1 px = 1 dp</span></div></div>
+<ul class="notes"><li>Two panes apply when both window sides reach 600dp and the width reaches 800dp.</li><li>The catalog pane is five twelfths of the width, capped at 420dp.</li><li>Wide windows use the 100dp thumbnail, so rows are at least 124dp.</li></ul>
+</article>
+<article class="sheet" id="sheet-4">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/cell-anatomy.svg" width="880" alt="Shared cell: catalog row and post diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">4 of 6</span></div><div><span class="k">Title</span><span class="v">Shared cell: catalog row and post</span></div><div><span class="k">Scale</span><span class="v">1.5 px = 1 dp</span></div></div>
+<ul class="notes"><li>A catalog row and a post are one cell: gutter, optional thumbnail, gap, text column.</li><li>A catalog row adds the count pill at the trailing edge.</li><li>With no media, the text starts at the gutter.</li></ul>
+</article>
+<article class="sheet" id="sheet-5">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/states.svg" width="964" alt="States diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">5 of 6</span></div><div><span class="k">Title</span><span class="v">States</span></div><div><span class="k">Scale</span><span class="v">0.6 px = 1 dp</span></div></div>
+<ul class="notes"><li>First load shows skeleton cells; a reload keeps the content and shows only the progress bar.</li><li>An error names its cause in the title and offers Retry.</li><li>The thread pane reads Select a thread until one is opened.</li></ul>
+</article>
+<article class="sheet" id="sheet-6">
+<div class="sheet-draw"><img class="sheet-img" src="diagrams/themes.svg" width="980" alt="Themes diagram. The spec README describes every dimension shown."></div>
+<div class="block"><div><span class="k">Sheet</span><span class="v">6 of 6</span></div><div><span class="k">Title</span><span class="v">Themes</span></div><div><span class="k">Scale</span><span class="v">0.83 px = 1 dp</span></div></div>
+<ul class="notes"><li>Only the color table changes between themes.</li><li>Dark and AMOLED move the green from the app bar to quoted text and author names.</li><li>AMOLED grounds are pure black.</li></ul>
+</article>
+</section>
+
+<section aria-labelledby="h-color">
+<h2 id="h-color">Color tokens</h2>
+<p>One table, three themes. Every text and ground pair in the spec is tested against its contrast minimum in all three.</p>
+<div class="tablewrap"><table><thead><tr><th>Token</th><th>Light</th><th>Dark</th><th>AMOLED</th><th>Use</th></tr></thead><tbody>
+<tr data-token="color.appBar" data-light="#2E7D32" data-dark="#1E1E1E" data-amoled="#000000"><th scope="row"><code>color.appBar</code></th><td><span class="sw" style="background:#2E7D32"></span><code>#2E7D32</code></td><td><span class="sw" style="background:#1E1E1E"></span><code>#1E1E1E</code></td><td><span class="sw" style="background:#000000"></span><code>#000000</code></td><td>App bar and status bar ground</td></tr>
+<tr data-token="color.onAppBar" data-light="#FFFFFF" data-dark="#E8EAED" data-amoled="#E8EAED"><th scope="row"><code>color.onAppBar</code></th><td><span class="sw" style="background:#FFFFFF"></span><code>#FFFFFF</code></td><td><span class="sw" style="background:#E8EAED"></span><code>#E8EAED</code></td><td><span class="sw" style="background:#E8EAED"></span><code>#E8EAED</code></td><td>App bar title and icons</td></tr>
+<tr data-token="color.background" data-light="#FFFFFF" data-dark="#121212" data-amoled="#000000"><th scope="row"><code>color.background</code></th><td><span class="sw" style="background:#FFFFFF"></span><code>#FFFFFF</code></td><td><span class="sw" style="background:#121212"></span><code>#121212</code></td><td><span class="sw" style="background:#000000"></span><code>#000000</code></td><td>Screen, row, post, and card ground</td></tr>
+<tr data-token="color.surfaceVariant" data-light="#F1F3F4" data-dark="#2A2A2A" data-amoled="#1A1A1A"><th scope="row"><code>color.surfaceVariant</code></th><td><span class="sw" style="background:#F1F3F4"></span><code>#F1F3F4</code></td><td><span class="sw" style="background:#2A2A2A"></span><code>#2A2A2A</code></td><td><span class="sw" style="background:#1A1A1A"></span><code>#1A1A1A</code></td><td>Thumbnail placeholder, count pill, skeleton bars</td></tr>
+<tr data-token="color.selected" data-light="#E8F5E9" data-dark="#1B3A1F" data-amoled="#12261A"><th scope="row"><code>color.selected</code></th><td><span class="sw" style="background:#E8F5E9"></span><code>#E8F5E9</code></td><td><span class="sw" style="background:#1B3A1F"></span><code>#1B3A1F</code></td><td><span class="sw" style="background:#12261A"></span><code>#12261A</code></td><td>Open thread&#x27;s row in the two-pane catalog</td></tr>
+<tr data-token="color.ink" data-light="#1F1F1F" data-dark="#E8EAED" data-amoled="#E8EAED"><th scope="row"><code>color.ink</code></th><td><span class="sw" style="background:#1F1F1F"></span><code>#1F1F1F</code></td><td><span class="sw" style="background:#E8EAED"></span><code>#E8EAED</code></td><td><span class="sw" style="background:#E8EAED"></span><code>#E8EAED</code></td><td>Titles, post bodies, pill count</td></tr>
+<tr data-token="color.inkMuted" data-light="#5F6368" data-dark="#BDC1C6" data-amoled="#BDC1C6"><th scope="row"><code>color.inkMuted</code></th><td><span class="sw" style="background:#5F6368"></span><code>#5F6368</code></td><td><span class="sw" style="background:#BDC1C6"></span><code>#BDC1C6</code></td><td><span class="sw" style="background:#BDC1C6"></span><code>#BDC1C6</code></td><td>Post numbers, dates, file details, helper text</td></tr>
+<tr data-token="color.hairline" data-light="#DADCE0" data-dark="#3C4043" data-amoled="#2A2A2A"><th scope="row"><code>color.hairline</code></th><td><span class="sw" style="background:#DADCE0"></span><code>#DADCE0</code></td><td><span class="sw" style="background:#3C4043"></span><code>#3C4043</code></td><td><span class="sw" style="background:#2A2A2A"></span><code>#2A2A2A</code></td><td>Row, post, and pane dividers; card outline</td></tr>
+<tr data-token="color.accent" data-light="#00796B" data-dark="#80CBC4" data-amoled="#80CBC4"><th scope="row"><code>color.accent</code></th><td><span class="sw" style="background:#00796B"></span><code>#00796B</code></td><td><span class="sw" style="background:#80CBC4"></span><code>#80CBC4</code></td><td><span class="sw" style="background:#80CBC4"></span><code>#80CBC4</code></td><td>Progress bar and text buttons</td></tr>
+<tr data-token="color.onAccent" data-light="#FFFFFF" data-dark="#003731" data-amoled="#003731"><th scope="row"><code>color.onAccent</code></th><td><span class="sw" style="background:#FFFFFF"></span><code>#FFFFFF</code></td><td><span class="sw" style="background:#003731"></span><code>#003731</code></td><td><span class="sw" style="background:#003731"></span><code>#003731</code></td><td>Text on an accent-filled control</td></tr>
+<tr data-token="color.quote" data-light="#2E7D32" data-dark="#81C784" data-amoled="#81C784"><th scope="row"><code>color.quote</code></th><td><span class="sw" style="background:#2E7D32"></span><code>#2E7D32</code></td><td><span class="sw" style="background:#81C784"></span><code>#81C784</code></td><td><span class="sw" style="background:#81C784"></span><code>#81C784</code></td><td>Quoted (greentext) lines</td></tr>
+<tr data-token="color.author" data-light="#117743" data-dark="#81C784" data-amoled="#81C784"><th scope="row"><code>color.author</code></th><td><span class="sw" style="background:#117743"></span><code>#117743</code></td><td><span class="sw" style="background:#81C784"></span><code>#81C784</code></td><td><span class="sw" style="background:#81C784"></span><code>#81C784</code></td><td>Post author name</td></tr>
+<tr data-token="color.quoteLink" data-light="#0B57D0" data-dark="#A8C7FA" data-amoled="#A8C7FA"><th scope="row"><code>color.quoteLink</code></th><td><span class="sw" style="background:#0B57D0"></span><code>#0B57D0</code></td><td><span class="sw" style="background:#A8C7FA"></span><code>#A8C7FA</code></td><td><span class="sw" style="background:#A8C7FA"></span><code>#A8C7FA</code></td><td>Post reference links and backlinks</td></tr>
+<tr data-token="color.error" data-light="#B3261E" data-dark="#F2B8B5" data-amoled="#F2B8B5"><th scope="row"><code>color.error</code></th><td><span class="sw" style="background:#B3261E"></span><code>#B3261E</code></td><td><span class="sw" style="background:#F2B8B5"></span><code>#F2B8B5</code></td><td><span class="sw" style="background:#F2B8B5"></span><code>#F2B8B5</code></td><td>Error state title</td></tr>
+</tbody></table></div>
+</section>
+
+<section aria-labelledby="h-type">
+<h2 id="h-type">Type tokens</h2>
+<p>The family is the platform default: Roboto on Android, San Francisco on iOS.</p>
+<div class="tablewrap"><table><thead><tr><th>Token</th><th>Size</th><th>Line height</th><th>Weight</th><th>Use</th></tr></thead><tbody>
+<tr data-token="type.appBarTitle" data-value="20sp/28sp/500"><th scope="row"><code>type.appBarTitle</code></th><td>20sp</td><td>28sp</td><td>500</td><td>App bar title</td></tr>
+<tr data-token="type.appBarSubtitle" data-value="14sp/20sp/400"><th scope="row"><code>type.appBarSubtitle</code></th><td>14sp</td><td>20sp</td><td>400</td><td>Board line under a thread title</td></tr>
+<tr data-token="type.rowTitle" data-value="16sp/22sp/700"><th scope="row"><code>type.rowTitle</code></th><td>16sp</td><td>22sp</td><td>700</td><td>Catalog row title</td></tr>
+<tr data-token="type.meta" data-value="12sp/16sp/400"><th scope="row"><code>type.meta</code></th><td>12sp</td><td>16sp</td><td>400</td><td>Post number, date, file details, backlinks</td></tr>
+<tr data-token="type.preview" data-value="14sp/20sp/400"><th scope="row"><code>type.preview</code></th><td>14sp</td><td>20sp</td><td>400</td><td>Catalog row preview line</td></tr>
+<tr data-token="type.body" data-value="15sp/22sp/400"><th scope="row"><code>type.body</code></th><td>15sp</td><td>22sp</td><td>400</td><td>Post body</td></tr>
+<tr data-token="type.cardTitle" data-value="14sp/20sp/700"><th scope="row"><code>type.cardTitle</code></th><td>14sp</td><td>20sp</td><td>700</td><td>Grid card title</td></tr>
+<tr data-token="type.postAuthor" data-value="12sp/16sp/700"><th scope="row"><code>type.postAuthor</code></th><td>12sp</td><td>16sp</td><td>700</td><td>Post author name</td></tr>
+<tr data-token="type.pill" data-value="14sp/20sp/500"><th scope="row"><code>type.pill</code></th><td>14sp</td><td>20sp</td><td>500</td><td>Reply count in the pill</td></tr>
+<tr data-token="type.stateTitle" data-value="24sp/32sp/400"><th scope="row"><code>type.stateTitle</code></th><td>24sp</td><td>32sp</td><td>400</td><td>Empty and error state title</td></tr>
+<tr data-token="type.stateBody" data-value="16sp/24sp/400"><th scope="row"><code>type.stateBody</code></th><td>16sp</td><td>24sp</td><td>400</td><td>State helper text and the empty detail pane message</td></tr>
+<tr data-token="type.label" data-value="14sp/20sp/500"><th scope="row"><code>type.label</code></th><td>14sp</td><td>20sp</td><td>500</td><td>Text buttons</td></tr>
+</tbody></table></div>
+</section>
+
+<section aria-labelledby="h-measure">
+<h2 id="h-measure">Spacing, size and radius tokens</h2>
+<div class="tablewrap"><table><thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead><tbody>
+<tr data-token="space.gutter" data-value="16dp"><th scope="row"><code>space.gutter</code></th><td>16dp</td><td>Left and right screen edge inset</td></tr>
+<tr data-token="space.rowPadY" data-value="12dp"><th scope="row"><code>space.rowPadY</code></th><td>12dp</td><td>Top and bottom padding of a catalog row</td></tr>
+<tr data-token="space.postPadY" data-value="12dp"><th scope="row"><code>space.postPadY</code></th><td>12dp</td><td>Top and bottom padding of a post</td></tr>
+<tr data-token="space.cardPad" data-value="8dp"><th scope="row"><code>space.cardPad</code></th><td>8dp</td><td>Padding around the text block of a grid card</td></tr>
+<tr data-token="space.gridGap" data-value="4dp"><th scope="row"><code>space.gridGap</code></th><td>4dp</td><td>Between grid cards and around the grid</td></tr>
+<tr data-token="space.gap" data-value="12dp"><th scope="row"><code>space.gap</code></th><td>12dp</td><td>Thumbnail to text column</td></tr>
+<tr data-token="space.gapSmall" data-value="8dp"><th scope="row"><code>space.gapSmall</code></th><td>8dp</td><td>Text to pill, and between blocks inside a post</td></tr>
+<tr data-token="space.line" data-value="4dp"><th scope="row"><code>space.line</code></th><td>4dp</td><td>Between title, meta line, and preview in a row</td></tr>
+<tr data-token="size.appBar" data-value="56dp"><th scope="row"><code>size.appBar</code></th><td>56dp</td><td>App bar height</td></tr>
+<tr data-token="size.touchTarget" data-value="48dp"><th scope="row"><code>size.touchTarget</code></th><td>48dp</td><td>Minimum size of anything that can be tapped</td></tr>
+<tr data-token="size.icon" data-value="24dp"><th scope="row"><code>size.icon</code></th><td>24dp</td><td>App bar icon</td></tr>
+<tr data-token="size.thumbnail" data-value="72dp"><th scope="row"><code>size.thumbnail</code></th><td>72dp</td><td>Cell thumbnail width and height in a window that is not wide</td></tr>
+<tr data-token="size.thumbnailWide" data-value="100dp"><th scope="row"><code>size.thumbnailWide</code></th><td>100dp</td><td>Cell thumbnail width and height in a wide window</td></tr>
+<tr data-token="size.cellMin" data-value="96dp"><th scope="row"><code>size.cellMin</code></th><td>96dp</td><td>Minimum height of a cell that has a thumbnail</td></tr>
+<tr data-token="size.cellMinWide" data-value="124dp"><th scope="row"><code>size.cellMinWide</code></th><td>124dp</td><td>The same minimum in a wide window</td></tr>
+<tr data-token="size.gridCardMin" data-value="120dp"><th scope="row"><code>size.gridCardMin</code></th><td>120dp</td><td>Grid column count is the pane width divided by this, rounded down</td></tr>
+<tr data-token="size.gridCardText" data-value="76dp"><th scope="row"><code>size.gridCardText</code></th><td>76dp</td><td>Height of the text block under a grid card image</td></tr>
+<tr data-token="size.threadStatus" data-value="88dp"><th scope="row"><code>size.threadStatus</code></th><td>88dp</td><td>Thread footer that reports reply and image counts</td></tr>
+<tr data-token="size.pillHeight" data-value="36dp"><th scope="row"><code>size.pillHeight</code></th><td>36dp</td><td>Reply count pill height</td></tr>
+<tr data-token="size.pillMinWidth" data-value="48dp"><th scope="row"><code>size.pillMinWidth</code></th><td>48dp</td><td>Reply count pill minimum width</td></tr>
+<tr data-token="size.hairline" data-value="1dp"><th scope="row"><code>size.hairline</code></th><td>1dp</td><td>Row and post divider thickness</td></tr>
+<tr data-token="size.progress" data-value="4dp"><th scope="row"><code>size.progress</code></th><td>4dp</td><td>Refresh progress bar height</td></tr>
+<tr data-token="size.readingMax" data-value="640dp"><th scope="row"><code>size.readingMax</code></th><td>640dp</td><td>Maximum post text width in a wide pane</td></tr>
+<tr data-token="size.drawerMax" data-value="320dp"><th scope="row"><code>size.drawerMax</code></th><td>320dp</td><td>Maximum navigation drawer width</td></tr>
+<tr data-token="size.wideMin" data-value="600dp"><th scope="row"><code>size.wideMin</code></th><td>600dp</td><td>Both window sides must reach this to count as wide</td></tr>
+<tr data-token="size.twoPaneMinWidth" data-value="800dp"><th scope="row"><code>size.twoPaneMinWidth</code></th><td>800dp</td><td>Wide windows at least this wide show two panes</td></tr>
+<tr data-token="size.listPaneMax" data-value="420dp"><th scope="row"><code>size.listPaneMax</code></th><td>420dp</td><td>Maximum catalog pane width in two panes</td></tr>
+<tr data-token="size.paneDivider" data-value="1dp"><th scope="row"><code>size.paneDivider</code></th><td>1dp</td><td>Divider between the two panes</td></tr>
+<tr data-token="radius.small" data-value="4dp"><th scope="row"><code>radius.small</code></th><td>4dp</td><td>Thumbnails and skeleton bars</td></tr>
+<tr data-token="radius.card" data-value="2dp"><th scope="row"><code>radius.card</code></th><td>2dp</td><td>Grid card</td></tr>
+<tr data-token="radius.pill" data-value="18dp"><th scope="row"><code>radius.pill</code></th><td>18dp</td><td>Reply count pill</td></tr>
+</tbody></table></div>
+</section>
+
+<section aria-labelledby="h-panes">
+<h2 id="h-panes">Pane widths</h2>
+<p>The catalog pane is five twelfths of the window width after the divider is removed, rounded down, and never wider than 420dp.</p>
+<div class="tablewrap"><table><thead><tr><th>Window width</th><th>Catalog pane</th><th>Divider</th><th>Thread pane</th></tr></thead><tbody>
+<tr><td>800dp</td><td>332dp</td><td>1dp</td><td>467dp</td></tr>
+<tr><td>960dp</td><td>399dp</td><td>1dp</td><td>560dp</td></tr>
+<tr><td>1280dp</td><td>420dp</td><td>1dp</td><td>859dp</td></tr>
+</tbody></table></div>
+</section>
+
+<section aria-labelledby="h-rules">
+<h2 id="h-rules">Rules that the drawings cannot show</h2>
+<div class="cols">
+<div><h3>Edge cases</h3><ul class="plain">
+<li>Titles run to two lines, then an ellipsis. The cell grows to fit.</li>
+<li>A thread with no image has no thumbnail and no placeholder.</li>
+<li>A spoiler image stays covered until the reader taps it.</li>
+<li>At a font scale of 1.3 the count pill moves under the preview. At 2.0 the thumbnail moves above the text.</li>
+<li>Right-to-left layouts mirror the cell.</li>
+</ul></div>
+<div><h3>Loading and speed</h3><ul class="plain">
+<li>Lists load the provider's thumbnail, never the full file.</li>
+<li>Thumbnail space is reserved before the image arrives, so rows do not jump.</li>
+<li>Item keys combine provider, board and post number.</li>
+<li>Opening a thread in two panes does not reload the catalog.</li>
+<li>Reload replaces content in place and never clears the list first.</li>
+</ul></div>
+<div><h3>Left out on purpose</h3><ul class="plain">
+<li>The compose button, the reply box and the reply arrow on each post. Orbin does not post.</li>
+<li>The 80dp thumbnail and the media-above-text post from the wireframes. The source app uses 72dp and 100dp thumbnails beside the text.</li>
+<li>Equal pane widths and the 8dp pane divider.</li>
+</ul></div>
+</div>
+</section>
+
+<footer>Home, Watched, Saved, Search results, Settings and the media viewer are outside this set and keep their shipped behavior.</footer>
+</div>
+</body>
+</html>
