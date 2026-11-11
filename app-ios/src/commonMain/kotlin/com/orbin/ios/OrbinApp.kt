@@ -3,7 +3,6 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -21,7 +20,6 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
-import com.orbin.core.model.showsTwoPanes
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextColorTheme
@@ -104,18 +102,23 @@ fun OrbinApp(
                     OnboardingDestination(browser)
                 } else if (!lockState.locked) {
                     val route = backStack.last()
-                    stateHolder.SaveableStateProvider(route.stateKey) {
-                        Destination(
-                            browser,
-                            lock,
-                            downloads,
-                            backup,
-                            formFactor,
-                            version,
-                            route,
-                            pages,
-                            playbackAllowed = !covered && !lockState.obscured,
-                        )
+                    val boardReader = boardReaderRoute(backStack)
+                    if (boardReader != null) {
+                        BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
+                    } else {
+                        stateHolder.SaveableStateProvider(route.stateKey) {
+                            Destination(
+                                browser,
+                                lock,
+                                downloads,
+                                backup,
+                                formFactor,
+                                version,
+                                route,
+                                pages,
+                                playbackAllowed = !covered && !lockState.obscured,
+                            )
+                        }
                     }
                 }
                 LockCover(lock, lockState)
@@ -204,21 +207,7 @@ private fun Destination(
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.BoardMedia -> BoardMediaDestination(browser, route.board)
-        is Route.ThreadPage -> {
-            val backStack by browser.backStack.collectAsState()
-            val previous = backStack.getOrNull(backStack.lastIndex - 1)
-            // The catalog stays beside the thread only in a window with room for both: an iPad Pro
-            // 11-inch full screen either way up (834 x 1210pt), not a narrow Stage Manager, Split
-            // View or Slide Over window, which gets the thread alone as a phone does.
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
-                if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
-                    ThreadSplitDestination(browser, previous.board, downloads, pages)
-                } else {
-                    ThreadDestination(browser, downloads, pages)
-                }
-            }
-        }
+        is Route.ThreadPage -> ThreadDestination(browser, downloads, pages)
         is Route.Media -> MediaDestination(browser, downloads, route)
         is Route.ThreadVideos -> ThreadVideosDestination(browser, downloads, route)
     }
