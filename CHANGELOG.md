@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Replaced the design-system documentation with a normative catalog and thread reader specification: independent color, type, spacing, and size tokens for light, dark, and AMOLED themes; phone list and grid layouts; two-pane rules; states; and a performance contract. The app does not implement this design yet.
+
+### Testing
+- Added checks for the specification's arithmetic, contrast ratios, token references, and diagrams, and a visual regression check of the diagrams and companion page that runs only when the design documentation changes.
+
 ## [198-Celtuce] - 2026-11-11
 
 ### Changed
