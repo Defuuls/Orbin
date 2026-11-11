@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_menu">Menu</string>
+    <string name="reader_back">Back</string>
+    <string name="reader_reload">Reload</string>
+    <string name="reader_search">Search</string>
+    <string name="reader_more">More options</string>
+    <string name="reader_pick_board">Choose a board</string>
+    <string name="reader_view_list">List view</string>
+    <string name="reader_view_grid">Grid view</string>
+    <string name="reader_sort">Sort: %1$s</string>
+    <string name="reader_muted">Muted</string>
+    <string name="reader_row_meta">No.%1$s · %2$s</string>
+    <string name="reader_row_summary">%1$s, %2$s, %3$s</string>
+    <string name="reader_count_thousands">%1$sk</string>
+    <plurals name="reader_unread">
+        <item quantity="one">%1$d new reply</item>
+        <item quantity="other">%1$d new replies</item>
+    </plurals>
+</resources>

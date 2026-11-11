@@ -46,7 +46,29 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a board catalog offers no layout switcher`() {
+    fun `a board catalog offers its other layout from the overflow menu`() {
+        val chosen = mutableListOf<CatalogMode>()
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = ROWS.size,
+                    rowAt = ROWS::getOrNull,
+                    mode = CatalogMode.LIST,
+                    onModeChange = { chosen += it },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Grid view").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("List view").assertDoesNotExist()
+        composeRule.onNodeWithText("Grid view").performClick()
+        assert(chosen == listOf(CatalogMode.GRID)) { "expected one switch to the grid, got $chosen" }
+    }
+
+    @Test
+    fun `a board catalog with nothing to offer draws no overflow button`() {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
@@ -57,8 +79,7 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Grid").assertDoesNotExist()
-        composeRule.onNodeWithText("Images").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").assertDoesNotExist()
     }
 
     @Test
@@ -109,7 +130,8 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(1)
+        composeRule.onAllNodesWithText("Technology", substring = true).assertCountEquals(1)
+        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(0)
     }
 
     @Test

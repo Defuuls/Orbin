@@ -78,6 +78,7 @@ fun BoardDetailTwoPane(
                     onThreadSelected(Route.Thread(provider, board, thread, title))
                 },
                 onOpenMedia = onOpenBoardMedia,
+                selectedThread = selectedThread?.thread,
             )
         }
 

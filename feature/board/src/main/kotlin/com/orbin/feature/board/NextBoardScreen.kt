@@ -2,22 +2,26 @@ package com.orbin.feature.board
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.catalogColumns
+import com.orbin.core.model.isWideWindow
 import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
+import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
@@ -27,16 +31,15 @@ import com.orbin.uinext.sourceLabel
 /**
  * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
  *
- * A catalog is a feed scoped to one board, so it reuses the feed's grid layout.
- * Rows are handed over by index because the catalog is paged.
+ * Rows are handed over by index because the catalog is paged. [selectedThread] is the thread open
+ * beside the catalog in two panes, so its row can show as selected.
  */
 @Composable
 fun NextBoardScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     modifier: Modifier = Modifier,
-    hideRailOnScroll: Boolean = false,
-    onChromeVisibleChange: (Boolean) -> Unit = {},
     onOpenMedia: ((board: String) -> Unit)? = null,
+    selectedThread: Long? = null,
     viewModel: BoardViewModel = hiltViewModel(),
 ) {
     val threads = viewModel.catalog.collectAsLazyPagingItems()
@@ -45,8 +48,9 @@ fun NextBoardScreen(
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
-    val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val formFactor = rememberFormFactor()
+    // The reader's choice lasts while the catalog is open; the Appearance setting will own it.
+    var catalogMode by rememberSaveable { mutableStateOf(CatalogMode.LIST) }
+    val configuration = LocalConfiguration.current
 
     val board = "/${viewModel.boardId}/"
     val snapshot = threads.itemSnapshotList
@@ -127,22 +131,21 @@ fun NextBoardScreen(
                         )
                     }
                 },
-                hideRailOnScroll = hideRailOnScroll,
-                onChromeVisibleChange = onChromeVisibleChange,
-                columns =
-                    catalogColumns(
-                        formFactor,
-                        LocalConfiguration.current.screenWidthDp,
-                        LocalConfiguration.current.screenHeightDp,
-                        settings,
-                    ),
+                mode = catalogMode,
+                onModeChange = { catalogMode = it },
+                onReload = threads::refresh,
+                reloading = refreshState is LoadState.Loading,
+                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
+                selectedRowId = selectedThread?.let { "${viewModel.boardId}/$it" },
                 thumbnail = { row, tileModifier ->
                     row.threadId()?.let { id ->
                         byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                             MediaThumbnail(
                                 attachment = attachment,
-                                fullResolution = true,
-                                contentScale = ContentScale.Fit,
+                                fullResolution = false,
+                                contentScale = ContentScale.Crop,
+                                // The row and the card clip their own thumbnail corners.
+                                cornerRadius = 0.dp,
                                 modifier = tileModifier,
                             )
                         }

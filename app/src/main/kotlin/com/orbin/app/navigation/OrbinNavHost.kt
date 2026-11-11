@@ -172,8 +172,6 @@ fun OrbinNavHost(
             } else {
                 NextBoardScreen(
                     onOpenThread = openThread,
-                    hideRailOnScroll = chromeHidesOnScroll,
-                    onChromeVisibleChange = onChromeVisibleChange,
                     onOpenMedia = { board ->
                         navController.navigate(Route.BoardMedia(board = board, provider = boardRoute.provider))
                     },

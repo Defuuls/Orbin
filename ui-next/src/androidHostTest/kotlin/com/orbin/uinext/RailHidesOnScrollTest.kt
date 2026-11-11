@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -61,10 +62,10 @@ class RailHidesOnScrollTest {
         composeRule.onAllNodesWithText("All media").assertCountEquals(1)
     }
 
-    /** The screen reports the change, so the shell can take the system bars with it. */
+    /** The catalog has no chrome that hides: its app bar actions stay reachable mid-scroll. */
     @Test
-    fun `a screen tells the shell when its chrome goes away`() {
-        val reported = mutableListOf<Boolean>()
+    fun `a catalog keeps its app bar actions after scrolling`() {
+        var reloads = 0
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
@@ -72,14 +73,14 @@ class RailHidesOnScrollTest {
                     description = "Technology",
                     itemCount = ROWS.size,
                     rowAt = { ROWS.getOrNull(it) },
-                    hideRailOnScroll = true,
-                    onChromeVisibleChange = { reported += it },
+                    onReload = { reloads += 1 },
                 )
             }
         }
         composeRule.onNode(verticalScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        assert(reported.contains(false)) { "expected the screen to report hidden chrome, got $reported" }
+        composeRule.onNodeWithContentDescription("Reload").assertIsDisplayed().performClick()
+        assertTrue("expected one reload, got $reloads", reloads == 1)
     }
 
     private fun scrollFeedDown() {

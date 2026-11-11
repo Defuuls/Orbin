@@ -29,8 +29,8 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
-import com.orbin.core.model.catalogColumns
 import com.orbin.core.model.comparator
+import com.orbin.core.model.isWideWindow
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.uinext.BoardScreen
@@ -49,6 +49,8 @@ internal fun CatalogDestination(
     browser: Browser,
     board: SiteBoard,
     formFactor: FormFactor,
+    // True when the caller already knows the window is wide, as the two-pane split does.
+    wideWindow: Boolean = false,
 ) {
     val catalog by browser.catalog.collectAsState()
     val settings by browser.settings.current.collectAsState()
@@ -74,17 +76,17 @@ internal fun CatalogDestination(
                 remember(
                     threads,
                 ) { threads.associateBy { "${it.key.provider.value}/${it.key.board.value}/${it.key.thread.value}" } }
-            // An iPad's chosen column count on its full width; elsewhere the catalog fits its tiles.
+            // The window's size, not the pane's, decides the thumbnail size.
             BoxWithConstraints {
                 BoardScreen(
-                    columns = catalogColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
+                    wideWindow = wideWindow || isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
+                    onReload = browser::retry,
                     board = "/${board.board.id.value}/",
                     description = board.board.title,
                     itemCount = rows.size,
                     rowAt = { index -> rows.getOrNull(index) },
                     sortLabel = sort.label,
                     onSort = browser::cycleCatalogSort,
-                    showRail = false,
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
                     onOpenMedia = { browser.open(Route.BoardMedia(board)) },
                     thumbnail = { row, modifier ->
@@ -158,7 +160,8 @@ internal fun ThreadSplitDestination(
 ) {
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxSize()) {
-            CatalogDestination(browser, board, formFactor)
+            // The split only exists in a wide window, though this pane alone is narrow.
+            CatalogDestination(browser, board, formFactor, wideWindow = true)
         }
         Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
         Box(Modifier.weight(1.4f).fillMaxSize()) {
