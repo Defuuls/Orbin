@@ -307,15 +307,17 @@ private fun CatalogRow(
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
     val title = rowTitle(row)
     val summary = rowSummary(row, title)
+    // The tag leads the chain: a tag after clearAndSetSemantics is cleared with the descendants.
     Column(
         Modifier
+            .testTag(CatalogTags.ROW)
             .fillMaxWidth()
             .background(if (selected) colors.selected else colors.background)
             .nextClickable(role = Role.Button) { onOpen(row) }
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
-            }.testTag(CatalogTags.ROW),
+            },
     ) {
         val thumbnailSlot: @Composable () -> Unit = {
             Box(
@@ -390,15 +392,16 @@ private fun CatalogRow(
 private fun CountPill(row: FeedRow) {
     val colors = reader
     val unread = row.unread > 0
+    // The tag leads the chain so the node it names has the pill's outer bounds, padding included.
     Box(
         modifier =
             Modifier
+                .testTag(CatalogTags.PILL)
                 .height(ReaderSize.pillHeight)
                 .widthIn(min = ReaderSize.pillMinWidth)
                 .clip(RoundedCornerShape(ReaderRadius.pill))
                 .background(if (unread) colors.accent else colors.surfaceVariant)
-                .padding(horizontal = ReaderSpace.gap)
-                .testTag(CatalogTags.PILL),
+                .padding(horizontal = ReaderSpace.gap),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -424,6 +427,7 @@ private fun CatalogCard(
     val summary = rowSummary(row, title)
     Column(
         Modifier
+            .testTag(CatalogTags.CARD)
             .fillMaxWidth()
             .clip(shape)
             .background(if (selected) colors.selected else colors.background)
@@ -432,7 +436,7 @@ private fun CatalogCard(
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
-            }.testTag(CatalogTags.CARD),
+            },
     ) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).background(colors.surfaceVariant)) {
             if (row.hasPreview && !row.muted) thumbnail?.invoke(row, Modifier.fillMaxSize())
