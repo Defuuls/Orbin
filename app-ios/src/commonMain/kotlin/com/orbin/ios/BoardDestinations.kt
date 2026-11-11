@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FormFactor
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
@@ -48,7 +47,6 @@ import kotlin.time.Clock
 internal fun CatalogDestination(
     browser: Browser,
     board: SiteBoard,
-    formFactor: FormFactor,
     // True when the caller already knows the window is wide, as the two-pane split does.
     wideWindow: Boolean = false,
 ) {
@@ -154,14 +152,13 @@ internal fun BoardMediaDestination(
 internal fun ThreadSplitDestination(
     browser: Browser,
     board: SiteBoard,
-    formFactor: FormFactor,
     downloads: MediaDownloads,
     pages: ThreadPages?,
 ) {
     Row(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxSize()) {
             // The split only exists in a wide window, though this pane alone is narrow.
-            CatalogDestination(browser, board, formFactor, wideWindow = true)
+            CatalogDestination(browser, board, wideWindow = true)
         }
         Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
         Box(Modifier.weight(1.4f).fillMaxSize()) {

@@ -111,9 +111,6 @@ class ScrollingHeaderTest {
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
 
-    private fun scrollToLastRow() =
-        composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
-
     private fun rows() =
         List(ROW_COUNT) { index ->
             FeedRow(

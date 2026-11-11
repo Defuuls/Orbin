@@ -202,7 +202,7 @@ private fun Destination(
         Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
-        is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
+        is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.BoardMedia -> BoardMediaDestination(browser, route.board)
         is Route.ThreadPage -> {
             val backStack by browser.backStack.collectAsState()
@@ -213,7 +213,7 @@ private fun Destination(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
                 if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
-                    ThreadSplitDestination(browser, previous.board, formFactor, downloads, pages)
+                    ThreadSplitDestination(browser, previous.board, downloads, pages)
                 } else {
                     ThreadDestination(browser, downloads, pages)
                 }
