@@ -15,6 +15,10 @@ DESIGN_DIR = Path(__file__).resolve().parents[2] / "docs" / "design-system"
 SPEC = DESIGN_DIR / "README.md"
 PAGE = DESIGN_DIR / "schematic.html"
 DIAGRAMS = DESIGN_DIR / "diagrams"
+CODE_TOKENS = (
+    Path(__file__).resolve().parents[2]
+    / "ui-next" / "src" / "commonMain" / "kotlin" / "com" / "orbin" / "uinext" / "tokens" / "ReaderTokens.kt"
+)
 
 THEMES = ("Light", "Dark", "AMOLED")
 TOKEN_REF = re.compile(r"\b(?:color|type|space|size|radius)\.[A-Za-z][A-Za-z0-9]*\b")
@@ -106,6 +110,89 @@ class Spec:
             for row in rows:
                 values[row[0]] = row[1]
         return values
+
+
+def parse_code_tokens(kotlin: str) -> dict[str, str]:
+    """ReaderTokens.kt as {token: value}, in the same form as Spec.raw_values()."""
+    themes: dict[str, dict[str, str]] = {}
+    values: dict[str, str] = {}
+    scope = None
+    for line in kotlin.splitlines():
+        opened = re.match(r"(?:val (Reader(?:Light|Dark|Amoled)Colors) =|object (Reader(?:Type|Space|Size|Radius)) \{)", line)
+        if opened:
+            scope = opened.group(1) or opened.group(2)
+            continue
+        if line in (")", "    )", "}"):
+            scope = None
+            continue
+        if scope is None:
+            continue
+        color = re.fullmatch(r"\s+(\w+) = Color\(0xFF([0-9A-F]{6})\),", line)
+        style = re.fullmatch(r"\s+val (\w+): TextStyle = readerType\((\d+), (\d+), (\d+)\)", line)
+        measure = re.fullmatch(r"\s+val (\w+): Dp = (\d+)\.dp", line)
+        if scope.endswith("Colors") and color:
+            themes.setdefault(color.group(1), {})[scope] = f"#{color.group(2)}"
+        elif scope == "ReaderType" and style:
+            values[f"type.{style.group(1)}"] = f"{style.group(2)}sp/{style.group(3)}sp/{style.group(4)}"
+        elif scope in ("ReaderSpace", "ReaderSize", "ReaderRadius") and measure:
+            values[f"{scope[len('Reader'):].lower()}.{measure.group(1)}"] = f"{measure.group(2)}dp"
+        elif "=" in line and not line.lstrip().startswith(("/", "*")):
+            raise ValueError(f"unreadable token line in {scope}: {line.strip()}")
+    for name, by_theme in themes.items():
+        values[f"color.{name}"] = "/".join(
+            by_theme[scope] for scope in ("ReaderLightColors", "ReaderDarkColors", "ReaderAmoledColors")
+        )
+    return values
+
+
+class CodeTokenTest(unittest.TestCase):
+    """The Kotlin tokens the app draws with must equal the document's tables."""
+
+    def test_code_tokens_equal_the_spec(self) -> None:
+        code = parse_code_tokens(CODE_TOKENS.read_text(encoding="utf-8"))
+        spec = Spec().raw_values()
+        self.assertEqual(sorted(set(spec) - set(code)), [], "tokens in the spec that the code lacks")
+        self.assertEqual(sorted(set(code) - set(spec)), [], "tokens in the code that the spec lacks")
+        self.assertEqual({name: code[name] for name in spec}, spec)
+
+    def test_parser_reads_each_token_shape(self) -> None:
+        sample = "\n".join(
+            [
+                "val ReaderLightColors =",
+                "    ReaderColors(",
+                "        ink = Color(0xFF111111),",
+                "    )",
+                "val ReaderDarkColors =",
+                "    ReaderColors(",
+                "        ink = Color(0xFF222222),",
+                "    )",
+                "val ReaderAmoledColors =",
+                "    ReaderColors(",
+                "        ink = Color(0xFF333333),",
+                "    )",
+                "object ReaderType {",
+                "    /** Body. */",
+                "    val body: TextStyle = readerType(15, 22, 400)",
+                "}",
+                "object ReaderSize {",
+                "    val appBar: Dp = 56.dp",
+                "}",
+            ]
+        )
+        self.assertEqual(
+            parse_code_tokens(sample),
+            {"type.body": "15sp/22sp/400", "size.appBar": "56dp", "color.ink": "#111111/#222222/#333333"},
+        )
+
+    def test_parser_rejects_a_token_written_another_way(self) -> None:
+        for bad in ("    val appBar = 56.dp", "    val appBar: Dp = 56.5.dp", "    val appBar: Dp = BAR"):
+            with self.assertRaises(ValueError, msg=bad):
+                parse_code_tokens("object ReaderSize {\n" + bad + "\n}")
+
+    def test_a_theme_missing_a_color_fails(self) -> None:
+        sample = "val ReaderLightColors =\n    ReaderColors(\n        ink = Color(0xFF111111),\n    )"
+        with self.assertRaises(KeyError):
+            parse_code_tokens(sample)
 
 
 class ParserTest(unittest.TestCase):
