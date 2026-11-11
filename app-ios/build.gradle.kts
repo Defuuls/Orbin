@@ -53,13 +53,14 @@ kotlin {
         androidMain.dependencies {
             implementation(project.dependencies.platform(libs.compose.bom))
         }
-        commonTest.dependencies {
+        // Shared logic tests live in androidHostTest so `./gradlew test` (CI unit tests) runs
+        // them on the JVM and they are not compiled into the Kotlin/Native test binary.
+        // Tests that need UIKit, AVKit, or other native APIs stay in iosTest.
+        getByName("androidHostTest").dependencies {
+            implementation(libs.junit)
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
-        }
-        getByName("androidHostTest").dependencies {
-            implementation(libs.junit)
         }
     }
 }

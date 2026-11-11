@@ -1,13 +1,12 @@
 name: iOS
 
-# Builds the iOS app on macOS: the shared Kotlin tests on the iOS simulator, then the Xcode
-# project for the simulator. No signing, so it needs no secrets and runs on every PR that can
-# change what the iOS app compiles. Uploading to TestFlight is testflight.yml.
+# Builds the iOS app on macOS: the native Kotlin tests on the iOS simulator, then the Xcode
+# project for the simulator. No signing, so it needs no secrets and runs on every PR or main
+# push that can change what the iOS app compiles. Uploading to TestFlight is testflight.yml.
 on:
   push:
     branches: [main]
-  pull_request:
-    paths:
+    paths: &ios-paths
       - 'app-ios/**'
       - 'iosApp/**'
       - 'ui-next/**'
@@ -26,6 +25,8 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/ios.yml'
+  pull_request:
+    paths: *ios-paths
   workflow_dispatch:
 
 concurrency:
@@ -45,12 +46,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up JDK and Gradle
-        uses: ./.github/actions/setup-jdk-gradle
-
       # Kotlin's standalone simulator mode omits system services, including Keychain.
-      # Boot one device normally and use it for both suites so neither suite shuts it down.
-      - name: Boot simulator with system services
+      # Pick a device and start booting it before JDK/Gradle setup, then wait for
+      # bootstatus only when the suites are about to run.
+      - name: Start booting simulator with system services
         run: |
           python3 - <<'PY'
           import json
@@ -68,16 +67,30 @@ jobs:
           device = candidates[0]
           if device["state"] != "Booted":
               subprocess.run(["xcrun", "simctl", "boot", device["udid"]], check=True)
-          subprocess.run(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], check=True)
           with open(os.environ["GITHUB_ENV"], "a") as env:
               env.write("ORBIN_IOS_TEST_DEVICE=" + device["udid"] + "\n")
           PY
 
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+
+      - name: Restore Kotlin/Native compiler cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: |
+            konan-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Wait for simulator system services
+        run: xcrun simctl bootstatus "$ORBIN_IOS_TEST_DEVICE" -b
+
       - name: Shared tests on the iOS simulator
-        # The app's logic, and the shared database over the driver the app opens it with.
-        run: >-
-          ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
-          -Porbin.iosTestDevice="$ORBIN_IOS_TEST_DEVICE"
+        # Native suites only: iosTest (UIKit/AVKit) and the shared database over the
+        # driver the app opens it with. Shared app-ios logic runs in CI unit tests.
+        # The booted UDID is passed as ORBIN_IOS_TEST_DEVICE so it is not a
+        # configuration-cache key.
+        run: ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
 
       - name: Set up XcodeGen
         uses: ./.github/actions/setup-xcodegen
@@ -91,8 +104,11 @@ jobs:
           -project iosApp/Orbin.xcodeproj
           -scheme Orbin
           -configuration Debug
-          -destination 'generic/platform=iOS Simulator'
+          -destination "platform=iOS Simulator,id=$ORBIN_IOS_TEST_DEVICE"
+          -skipPackagePluginValidation
           CODE_SIGNING_ALLOWED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          ONLY_ACTIVE_ARCH=YES
 
       # Exercise UIApplication/UIScene startup, the real packaged fonts, and Compose accessibility.
       # Follow a SFW board, finish mandatory setup, and verify cold-launch persistence.
@@ -108,7 +124,10 @@ jobs:
           -parallel-testing-enabled NO
           -only-testing:OrbinUITests/StartupSmokeTests
           -resultBundlePath "$RUNNER_TEMP/orbin-startup-smoke.xcresult"
+          -skipPackagePluginValidation
           CODE_SIGNING_ALLOWED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          ONLY_ACTIVE_ARCH=YES
 
       - name: Export native startup screenshots
         if: always()
@@ -151,6 +170,16 @@ jobs:
             storage/build/reports/tests/**
             storage/build/test-results/**
           if-no-files-found: ignore
+
+      # Combined cache's post-save is `success()`-only, so a failed Gradle step
+      # never wrote ~/.konan. Save explicitly so a later run can reuse the compiler.
+      - name: Save Kotlin/Native compiler cache
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
 
       - name: Shut down test simulator
         if: always() && env.ORBIN_IOS_TEST_DEVICE != ''

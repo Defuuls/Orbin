@@ -7,10 +7,23 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- Speeding up the iOS simulator CI job: the simulator boots in the background during JDK and
+  Kotlin/Native setup, `~/.konan` is cached, the booted device is passed as an environment
+  variable so it does not bust the Gradle configuration cache, xcodebuild skips index stores
+  and inactive architectures, and pushes to main use the same path filters as pull requests.
 - Replaced the design-system documentation with a normative catalog and thread reader specification: independent color, type, spacing, and size tokens for light, dark, and AMOLED themes; phone list and grid layouts; two-pane rules; states; and a performance contract. The app does not implement this design yet.
 
 ### Testing
+- Moved shared `:app-ios` logic tests from `commonTest` to `androidHostTest` so they run only
+  on the Android host already exercised by `./gradlew test` in CI, and left UIKit, AVKit, and
+  other native API tests in `iosTest` on the simulator.
 - Added checks for the specification's arithmetic, contrast ratios, token references, and diagrams, and a visual regression check of the diagrams and companion page that runs only when the design documentation changes.
+
+### Fixed
+- The iOS simulator job no longer fails after passing tests: the default simulator device is a
+  constant instead of an `xcrun` lookup, which Gradle's configuration cache rejects at the end
+  of the build. `~/.konan` is also saved when a later step fails, so the next run can reuse the
+  Kotlin/Native compiler.
 
 ## [198-Celtuce] - 2026-11-11
 
