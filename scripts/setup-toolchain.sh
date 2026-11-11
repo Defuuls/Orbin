@@ -16,7 +16,7 @@ log() { echo "[setup-toolchain] $*" >&2; }
 PROJECT_DIR="${ORBIN_PROJECT_DIR:-$(pwd)}"
 SDK_DIR="${ANDROID_SDK_ROOT:-$HOME/android-sdk}"
 CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-CMDLINE_TOOLS_SHA256="7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee"
+CMDLINE_TOOLS_SHA256="2d2d50857e4eb553af5a6dc3ad507a17adf43d115264b1afc116f95c92e5e258"
 GRADLE_MIRROR_BASE="https://mirrors.cloud.tencent.com/gradle"
 
 # ---------------------------------------------------------------------------
