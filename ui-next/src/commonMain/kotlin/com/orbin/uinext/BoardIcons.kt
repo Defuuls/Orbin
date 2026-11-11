@@ -74,7 +74,7 @@ internal fun boardIconDefinition(
     title: String = "",
 ): BoardIconDefinition {
     val identity = boardIconIdentity(siteId, boardId)
-    return KNOWN_BOARD_DEFINITIONS[identity] ?: createBoardIconDefinition(identity, topicForTitle(title), false)
+    return KNOWN_BOARD_DEFINITIONS[identity]?.value ?: createBoardIconDefinition(identity, topicForTitle(title), false)
 }
 
 internal fun boardIconIdentity(
@@ -101,7 +101,10 @@ internal fun boardIconIdentity(
 internal val registeredBoardIconIds: Set<String> get() = KNOWN_BOARD_TOPICS.keys
 
 private val KNOWN_BOARD_DEFINITIONS by lazy {
-    KNOWN_BOARD_TOPICS.mapValues { (identity, topic) -> createBoardIconDefinition(identity, topic, true) }
+    // Each canonical identity shares one thread-safe value; unused boards never parse vector paths.
+    KNOWN_BOARD_TOPICS.mapValues { (identity, topic) ->
+        lazy { createBoardIconDefinition(identity, topic, true) }
+    }
 }
 
 private fun createBoardIconDefinition(

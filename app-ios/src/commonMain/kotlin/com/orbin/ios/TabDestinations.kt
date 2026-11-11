@@ -113,13 +113,16 @@ internal fun FeedDestination(
         }
     }
     val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
+    // Caption text and activity belong to the content snapshot; local membership only changes flags.
+    val baseRows = remember(threads) { threads.map { it.thread.key to it.toFeedRow(now, read = false) } }
     val byKey = remember(saved) { saved.associateBy { it.key } }
     val rows =
-        remember(threads, visited, byKey) {
-            threads.map {
-                it.toFeedRow(now, read = it.thread.key in visited).copy(
-                    watched = byKey[it.thread.key]?.isWatched == true,
-                    bookmarked = it.thread.key in byKey,
+        remember(baseRows, visited, byKey) {
+            baseRows.map { (key, row) ->
+                row.copy(
+                    read = key in visited,
+                    watched = byKey[key]?.isWatched == true,
+                    bookmarked = key in byKey,
                 )
             }
         }

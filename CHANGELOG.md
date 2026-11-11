@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [198-Celtuce] - 2026-11-11
+
+### Changed
+- Reduced first-use work in board lists by building only the icons being requested, with the same artwork, colors, aliases, and fallback icons on both sites.
+- Reused Home caption and activity text while updating read, watched, and saved status, preserving feed ordering, privacy filters, and playback ownership.
+
+### Testing
+- Verified board identity and alias cases, light and dark visual baselines, and feed state regressions across Android and iOS.
+
+
 ## [197-Okahijiki] - 2026-11-10
 
 ### Fixed
@@ -2956,7 +2966,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...HEAD
+[198-Celtuce]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...v198-Celtuce
 [197-Okahijiki]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...v197-Okahijiki
 [196-Kai-Lan]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...v196-Kai-Lan
 [195-Bitter-Melon]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...v195-Bitter-Melon
