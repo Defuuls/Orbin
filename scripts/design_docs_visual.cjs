@@ -29,6 +29,14 @@ const FONT_FILES = { 400: 'tiktok_sans_regular.ttf', 500: 'tiktok_sans_medium.tt
 
 const SCHEMES = ['light', 'dark'];
 const WIDTHS = { phone: 390, desktop: 1280 };
+// Text rasterization otherwise follows the machine's fontconfig (hinting, subpixel layout), which
+// moves glyph edges and can change where a line wraps.
+const STABLE_RENDERING_ARGS = [
+  '--font-render-hinting=none',
+  '--disable-font-subpixel-positioning',
+  '--disable-lcd-text',
+  '--force-color-profile=srgb',
+];
 // A pixel differs when any channel is further apart than this (0-255).
 const CHANNEL_TOLERANCE = 40;
 // A render fails when more than this share of its pixels differ.
@@ -59,9 +67,34 @@ function targets() {
   return list;
 }
 
+// Loads every test font face, then fails if any text would still be drawn with a system font.
+// Without this a render taken before the faces decode, or a glyph the test font lacks, falls back
+// to whatever the machine has installed and the comparison fails for a reason it cannot name.
 async function settle(page) {
-  await page.evaluate(() => document.fonts.ready);
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const unloaded = await page.evaluate(async (weights) => {
+    for (const weight of weights) await document.fonts.load(`${weight} 16px DocsTest`);
+    await document.fonts.ready;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return Array.from(document.fonts)
+      .filter((face) => face.family.includes('DocsTest') && face.status !== 'loaded')
+      .map((face) => `${face.weight}: ${face.status}`);
+  }, Object.keys(FONT_FILES));
+  if (unloaded.length > 0) throw new Error(`test font faces did not load: ${unloaded.join(', ')}`);
+
+  const session = await page.context().newCDPSession(page);
+  await session.send('DOM.enable');
+  await session.send('CSS.enable');
+  const { root } = await session.send('DOM.getDocument');
+  const { nodeIds } = await session.send('DOM.querySelectorAll', { nodeId: root.nodeId, selector: 'body *' });
+  const systemFonts = new Set();
+  for (const nodeId of nodeIds) {
+    const { fonts } = await session.send('CSS.getPlatformFontsForNode', { nodeId });
+    for (const font of fonts) if (!font.isCustomFont) systemFonts.add(font.familyName);
+  }
+  await session.detach();
+  if (systemFonts.size > 0) {
+    throw new Error(`text fell back to system fonts (${Array.from(systemFonts).join(', ')}); the render would differ between machines`);
+  }
 }
 
 async function renderDiagram(page, target, css) {
@@ -70,7 +103,7 @@ async function renderDiagram(page, target, css) {
     `<!doctype html><html><head><meta charset="utf-8"><style>${css}html,body{margin:0}svg{display:block;max-width:100%;height:auto}</style></head><body>${svg}</body></html>`,
   );
   await settle(page);
-  return page.screenshot({ fullPage: true });
+  return page.locator('svg').screenshot();
 }
 
 async function renderPage(page, css) {
@@ -139,7 +172,7 @@ async function main() {
 
   const css = fontCss();
   const all = targets();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: STABLE_RENDERING_ARGS });
   const failures = [];
   try {
     const judge = await (await browser.newContext()).newPage();
