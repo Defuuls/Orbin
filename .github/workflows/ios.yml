@@ -74,8 +74,8 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
 
-      - name: Cache Kotlin/Native compiler
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Restore Kotlin/Native compiler cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
@@ -170,6 +170,16 @@ jobs:
             storage/build/reports/tests/**
             storage/build/test-results/**
           if-no-files-found: ignore
+
+      # Combined cache's post-save is `success()`-only, so a failed Gradle step
+      # never wrote ~/.konan. Save explicitly so a later run can reuse the compiler.
+      - name: Save Kotlin/Native compiler cache
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
 
       - name: Shut down test simulator
         if: always() && env.ORBIN_IOS_TEST_DEVICE != ''

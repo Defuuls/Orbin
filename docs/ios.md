@@ -34,7 +34,8 @@ The `orbin.iosTestDevice` Gradle property still works for local runs:
 
 Find the UDID with `xcrun simctl list devices available`. Either form selects that device and
 disables standalone mode; Gradle leaves its lifecycle to you. Ordinary tests without an override
-retain Kotlin's default simulator management.
+run in standalone mode with a placeholder device name. The lookup of an available simulator is
+not done at configuration time, because starting `xcrun` then breaks Gradle's configuration cache.
 
 ## What it does so far
 

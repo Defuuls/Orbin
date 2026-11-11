@@ -19,6 +19,12 @@ All notable changes to Orbin are documented here. The format is based on
   other native API tests in `iosTest` on the simulator.
 - Added checks for the specification's arithmetic, contrast ratios, token references, and diagrams, and a visual regression check of the diagrams and companion page that runs only when the design documentation changes.
 
+### Fixed
+- The iOS simulator job no longer fails after passing tests: the default simulator device is a
+  constant instead of an `xcrun` lookup, which Gradle's configuration cache rejects at the end
+  of the build. `~/.konan` is also saved when a later step fails, so the next run can reuse the
+  Kotlin/Native compiler.
+
 ## [198-Celtuce] - 2026-11-11
 
 ### Changed
