@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [197 — Okahijiki](https://github.com/Defuuls/Orbin/releases/tag/v197-Okahijiki)
+**Current release:** [198 — Celtuce](https://github.com/Defuuls/Orbin/releases/tag/v198-Celtuce)
 
-**What's new in 197:** For You discovers videos across all boards, Following uses followed boards, and the chat button opens thread videos with an optional comments setting.
+**What's new in 198:** Board icons initialize on demand, and Home reuses captions while read, watched, or saved status changes.
 
 ---
 
