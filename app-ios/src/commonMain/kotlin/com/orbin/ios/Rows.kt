@@ -158,6 +158,7 @@ internal fun Thread.toPosts(nowMillis: Long): List<NextPost> {
             body = post.comment.plainText(),
             depth = depths[post.id] ?: 0,
             hasMedia = post.attachments.isNotEmpty(),
+            mediaCount = post.attachments.size,
             replies = counts[post.id] ?: 0,
             // A spoilered file is covered where it is drawn; `spoiler` here would hide the post's
             // text instead, which is not what a spoilered file means.

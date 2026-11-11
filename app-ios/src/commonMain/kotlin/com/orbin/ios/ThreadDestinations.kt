@@ -3,17 +3,10 @@ package com.orbin.ios
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,8 +25,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.orbin.core.model.Thread
+import com.orbin.core.model.isWideWindow
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_pencil_download_all
@@ -44,9 +39,7 @@ import com.orbin.uinext.MediaCell
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.next
 import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -80,6 +73,7 @@ internal fun ThreadDestination(
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
                 onBack = { browser.back() },
+                onReload = browser::retry,
                 onOpenFile = browser::openMedia,
                 mediaPostId = mediaTarget?.takeIf { it.first == loaded.key }?.second,
                 onMediaScrollConsumed = { mediaTarget?.let(browser.mediaScroll::consume) },
@@ -112,7 +106,24 @@ private fun ThreadContent(
     onBack: (() -> Unit)? = null,
     saved: Boolean = false,
     onToggleSaved: (() -> Unit)? = null,
+    onReload: (() -> Unit)? = null,
 ) {
+    // The window's size, not this pane's, decides the thumbnail size: the thread pane of a split
+    // is narrower than the window it is in.
+    val windowSize = LocalWindowInfo.current.containerSize
+    val wideWindow =
+        with(LocalDensity.current) {
+            isWideWindow(
+                windowSize.width
+                    .toDp()
+                    .value
+                    .toInt(),
+                windowSize.height
+                    .toDp()
+                    .value
+                    .toInt(),
+            )
+        }
     val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
     val posts = remember(thread) { thread.toPosts(now) }
     val byId = remember(thread) { thread.allPosts.associateBy { it.id.value.toString() } }
@@ -214,65 +225,26 @@ private fun ThreadContent(
                 }
             },
             media = { post, modifier ->
-                val postAttachments = byId[post.id]?.attachments.orEmpty()
-                if (postAttachments.size == 1) {
-                    val attachment = postAttachments.first()
-                    Box(
-                        modifier
-                            .aspectRatio(attachment.threadPreviewAspect())
-                            .clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
-                    ) {
-                        // Use the site's thumbnail: a long jump can compose several video posts
-                        // just before the viewer needs the same limited decoder resources.
+                // The post's first file, cropped to the square the screen gives it. The viewer
+                // pages through the rest. It is the site's thumbnail: a long jump can compose
+                // several video posts just before the viewer needs the same decoder resources.
+                byId[post.id]?.attachments?.firstOrNull()?.let { attachment ->
+                    Box(modifier.clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) }) {
                         SharpImage(
                             attachment,
                             attachment.originalFileName,
                             Modifier.fillMaxSize(),
                             fill = Modifier.fillMaxSize(),
                             videoFrame = false,
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.Crop,
                         )
                         // Opening it still asks again in the viewer: the cover is lifted per file there.
                         if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                     }
-                } else if (postAttachments.size > 1) {
-                    val pagerState = rememberPagerState(pageCount = { postAttachments.size })
-                    val firstIndex = thread.firstFileIndex(post.id)
-                    Column(modifier = modifier) {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier =
-                                Modifier.fillMaxWidth().aspectRatio(
-                                    postAttachments.first().threadPreviewAspect(),
-                                ),
-                            beyondViewportPageCount = 0,
-                        ) { page ->
-                            val attachment = postAttachments[page]
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .clickable { firstIndex?.let { onOpenFile(it + page) } },
-                            ) {
-                                SharpImage(
-                                    attachment,
-                                    attachment.originalFileName,
-                                    Modifier.fillMaxSize(),
-                                    fill = Modifier.fillMaxSize(),
-                                    videoFrame = false,
-                                    contentScale = ContentScale.Fit,
-                                )
-                                if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "${pagerState.currentPage + 1} of ${postAttachments.size}",
-                            style = NextType.labelMedium,
-                            color = next.muted,
-                        )
-                    }
                 }
             },
+            onReload = onReload,
+            wideWindow = wideWindow,
         )
         val watchLabel = if (watching) Res.string.ios_pencil_unwatch else Res.string.ios_pencil_watch
         PencilMenu(

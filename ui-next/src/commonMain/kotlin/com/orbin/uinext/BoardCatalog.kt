@@ -263,8 +263,8 @@ private fun catalogOverflow(
                     add(ReaderMenuItem(stringResource(Res.string.reader_view_list)) { onModeChange(CatalogMode.LIST) })
             }
         }
-        if (sortLabel != null) add(ReaderMenuItem(stringResource(Res.string.reader_sort, sortLabel), onSort))
-        if (onOpenMedia != null) add(ReaderMenuItem(stringResource(Res.string.next_board_media), onOpenMedia))
+        if (sortLabel != null) add(ReaderMenuItem(stringResource(Res.string.reader_sort, sortLabel), onClick = onSort))
+        if (onOpenMedia != null) add(ReaderMenuItem(stringResource(Res.string.next_board_media), onClick = onOpenMedia))
     }
 
 /** The text a screen reader gets for a thread: title, then count, then date. */

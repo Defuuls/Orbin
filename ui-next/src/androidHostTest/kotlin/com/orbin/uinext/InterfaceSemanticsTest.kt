@@ -157,7 +157,7 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a thread shows its title once and keeps only the top and bottom jumps`() {
+    fun `a thread shows its title once and offers the top and bottom jumps from its overflow`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -171,11 +171,13 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        // The floating rail used to repeat the subject at the bottom of the screen.
         composeRule.onAllNodesWithText("Weekly desktop thread").assertCountEquals(1)
+        composeRule.onNodeWithText("Top").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
         composeRule.onNodeWithText("Top").assertExists()
         composeRule.onNodeWithText("Bottom").assertExists()
-        composeRule.onNodeWithText("↓").assertDoesNotExist()
+        // With nothing unread there is no third jump.
+        composeRule.onNodeWithText("First new post").assertDoesNotExist()
     }
 
     @Test

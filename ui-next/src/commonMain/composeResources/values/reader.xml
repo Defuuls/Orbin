@@ -13,6 +13,10 @@
     <string name="reader_row_meta">No.%1$s · %2$s</string>
     <string name="reader_row_summary">%1$s, %2$s, %3$s</string>
     <string name="reader_count_thousands">%1$sk</string>
+    <string name="reader_first_new">First new post</string>
+    <string name="reader_new">New</string>
+    <string name="reader_reply_link">>>%1$s</string>
+    <string name="reader_media_more">+%1$d</string>
     <plurals name="reader_unread">
         <item quantity="one">%1$d new reply</item>
         <item quantity="other">%1$d new replies</item>

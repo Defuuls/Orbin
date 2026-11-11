@@ -69,10 +69,11 @@ class ReaderAction(
     val onClick: () -> Unit,
 )
 
-/** An entry in an app bar's overflow menu. */
+/** An entry in an app bar's overflow menu. A disabled entry is read out but does nothing. */
 @Immutable
 class ReaderMenuItem(
     val label: String,
+    val enabled: Boolean = true,
     val onClick: () -> Unit,
 )
 
@@ -213,7 +214,14 @@ fun ReaderAppBar(
                     ) {
                         overflow.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item.label, style = ReaderType.stateBody, color = colors.ink) },
+                                text = {
+                                    Text(
+                                        text = item.label,
+                                        style = ReaderType.stateBody,
+                                        color = if (item.enabled) colors.ink else colors.inkMuted,
+                                    )
+                                },
+                                enabled = item.enabled,
                                 onClick = {
                                     open = false
                                     item.onClick()

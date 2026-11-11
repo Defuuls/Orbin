@@ -1,20 +1,9 @@
 package com.orbin.feature.thread
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,9 +18,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -42,7 +30,7 @@ import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
-import com.orbin.core.model.ThumbnailSize
+import com.orbin.core.model.isWideWindow
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.core.ui.post.PostCommentText
 import com.orbin.domain.thread.replyCounts
@@ -56,9 +44,6 @@ import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import com.orbin.uinext.Post as NextPost
@@ -149,6 +134,7 @@ private fun LoadedThread(
     onBack: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
     val listState = rememberLazyListState()
@@ -239,15 +225,14 @@ private fun LoadedThread(
                     layout = it
                 },
                 files = presentation.fileCells,
-                fileColumns = ThumbnailSize.MEDIUM.threadGridColumns(),
                 onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
                 fileTile = { cell, tileModifier ->
                     presentation.attachmentsById[cell.id]?.let { attachment ->
                         MediaThumbnail(
                             attachment = attachment,
-                            modifier = tileModifier.clip(RoundedCornerShape(NextRadius.tile)),
-                            // Files wall tiles are large; pull source with thumb placeholder.
-                            fullResolution = true,
+                            modifier = tileModifier,
+                            // The screen clips each tile's corners itself.
+                            cornerRadius = 0.dp,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                         )
                     }
@@ -307,18 +292,19 @@ private fun LoadedThread(
                     }
                 },
                 media = { row, tileModifier ->
-                    val postAttachments =
-                        presentation.rowsById[row.id]
-                            ?.post
-                            ?.attachments
-                            .orEmpty()
-                    PostMedia(
-                        attachments = postAttachments,
-                        scrollable = true,
-                        modifier = tileModifier,
-                        onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
-                    )
+                    // The post's first file, cropped to the square the screen gives it. The viewer
+                    // pages through the rest.
+                    presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { first ->
+                        MediaThumbnail(
+                            attachment = first,
+                            modifier = tileModifier,
+                            cornerRadius = 0.dp,
+                            onClick = { presentation.mediaIndex[first.id]?.let(::openMedia) },
+                        )
+                    }
                 },
+                onReload = viewModel::refresh,
+                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
             )
             NextSnackbarHost(
                 hostState = snackbarHostState,
@@ -327,74 +313,6 @@ private fun LoadedThread(
         }
     }
 }
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PostMedia(
-    attachments: List<MediaAttachment>,
-    scrollable: Boolean,
-    modifier: Modifier,
-    onOpen: (String) -> Unit,
-) {
-    if (attachments.isEmpty()) return
-    val shape = RoundedCornerShape(NextRadius.tile)
-    if (attachments.size == 1) {
-        val only = attachments.first()
-        MediaThumbnail(
-            attachment = only,
-            modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
-            // Thread cells are display-sized: progressive thumb → full source.
-            fullResolution = true,
-            contentScale = ContentScale.Fit,
-            onClick = { onOpen(only.id) },
-        )
-        return
-    }
-    if (scrollable) {
-        val pagerState = rememberPagerState(pageCount = { attachments.size })
-        val stableAspectRatio = attachments.first().threadAspectRatio()
-        Column(modifier = modifier) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth().aspectRatio(stableAspectRatio),
-                beyondViewportPageCount = 0,
-            ) { page ->
-                val attachment = attachments[page]
-                MediaThumbnail(
-                    attachment = attachment,
-                    modifier = Modifier.fillMaxWidth().clip(shape),
-                    fullResolution = true,
-                    contentScale = ContentScale.Fit,
-                    onClick = { onOpen(attachment.id) },
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "${pagerState.currentPage + 1} of ${attachments.size}",
-                style = NextType.labelMedium,
-                color = next.muted,
-            )
-        }
-        return
-    }
-    Column(modifier = modifier) {
-        attachments.forEachIndexed { index, attachment ->
-            MediaThumbnail(
-                attachment = attachment,
-                modifier = Modifier.fillMaxWidth().aspectRatio(attachment.threadAspectRatio()).clip(shape),
-                fullResolution = true,
-                contentScale = ContentScale.Fit,
-                onClick = { onOpen(attachment.id) },
-            )
-            if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-private fun MediaAttachment.threadAspectRatio(): Float =
-    previewAspectRatio
-        .takeIf { it.isFinite() && it > 0f }
-        ?.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT) ?: 1f
 
 internal data class ThreadRow(
     val post: com.orbin.core.model.Post,
@@ -450,6 +368,7 @@ internal fun Thread.toRows(): List<ThreadRow> {
                     body = "",
                     depth = depths[post.id] ?: 0,
                     hasMedia = post.attachments.isNotEmpty(),
+                    mediaCount = post.attachments.size,
                     replies = counts[post.id] ?: 0,
                 ),
         )
@@ -462,18 +381,4 @@ private fun Thread.subtitleText(fromSavedCopy: Boolean): String {
     return if (fromSavedCopy) "$base  ·  saved copy" else base
 }
 
-private fun ThumbnailSize.threadGridColumns(): Int =
-    when (this) {
-        ThumbnailSize.COMPACT -> COMPACT_COLUMNS
-        ThumbnailSize.MEDIUM -> MEDIUM_COLUMNS
-        ThumbnailSize.LARGE -> LARGE_COLUMNS
-        ThumbnailSize.FILL -> FILL_COLUMNS
-    }
-
-private const val COMPACT_COLUMNS = 4
-private const val MEDIUM_COLUMNS = 3
-private const val LARGE_COLUMNS = 2
-private const val FILL_COLUMNS = 1
-private const val MIN_THREAD_MEDIA_ASPECT = 0.5625f
-private const val MAX_THREAD_MEDIA_ASPECT = 3f
 private const val SCROLL_TRACK_SETTLE_MS = 180L
