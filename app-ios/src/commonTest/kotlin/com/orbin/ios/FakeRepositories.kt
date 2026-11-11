@@ -141,6 +141,9 @@ class FakeSettings : SettingsRepository {
 
     override suspend fun setDeepMediaScan(enabled: Boolean) = settings.update { it.copy(deepMediaScan = enabled) }
 
+    override suspend fun setOpenThreadComments(enabled: Boolean) =
+        settings.update { it.copy(openThreadComments = enabled) }
+
     override suspend fun setColorTheme(theme: AppColorTheme) = settings.update { it.copy(colorTheme = theme) }
 
     override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }

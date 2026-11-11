@@ -27,6 +27,8 @@ interface SettingsRepository {
 
     suspend fun setDeepMediaScan(enabled: Boolean)
 
+    suspend fun setOpenThreadComments(enabled: Boolean)
+
     suspend fun setColorTheme(theme: AppColorTheme)
 
     suspend fun setThemeMode(mode: AppThemeMode)

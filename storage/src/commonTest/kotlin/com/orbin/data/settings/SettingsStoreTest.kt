@@ -125,6 +125,35 @@ class SettingsStoreTest {
         }
 
     @Test
+    fun existingStoresOpenThreadVideosUntilCommentsAreEnabled() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit { it[stringPreferencesKey("theme_mode")] = "DARK" }
+
+            val restored = SettingsStore(dataStore).settings.first()
+
+            assertEquals(false, restored.openThreadComments)
+            assertEquals(AppThemeMode.DARK, restored.themeMode)
+        }
+
+    @Test
+    fun chatButtonPreferencePersistsAcrossStoreWrapperRecreation() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            val store = SettingsStore(dataStore)
+            store.setHideNsfwBoards(true)
+            store.setOpenThreadComments(true)
+
+            val restored = SettingsStore(dataStore)
+            assertEquals(true, restored.settings.first().openThreadComments)
+            restored.setOpenThreadComments(false)
+
+            val reset = SettingsStore(dataStore).settings.first()
+            assertEquals(false, reset.openThreadComments)
+            assertTrue(reset.hideNsfwBoards)
+        }
+
+    @Test
     fun whatIsSetIsReadBack() =
         runTest {
             val store = SettingsStore(backgroundScope.dataStore())

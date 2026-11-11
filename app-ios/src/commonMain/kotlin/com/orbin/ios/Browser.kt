@@ -5,15 +5,12 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
-import com.orbin.core.model.FeedSort
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.DownloadDao
-import com.orbin.domain.feed.BoardFeed
-import com.orbin.domain.feed.SubscribedFeedLoader
 import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -29,6 +26,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,7 +41,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlin.time.Clock
 
@@ -106,6 +106,11 @@ sealed interface Route {
     ) : Route
 
     data class ThreadPage(
+        val key: ThreadKey,
+    ) : Route
+
+    /** Videos from every post in a thread, opened directly from Home's chat action. */
+    data class ThreadVideos(
         val key: ThreadKey,
     ) : Route
 
@@ -208,6 +213,16 @@ class Browser(
         loadFeed()
     }
 
+    val feedMode: StateFlow<HomeFeedMode> get() = homeFeed.mode
+    val feedLoadingMore: StateFlow<Boolean> get() = homeFeed.isLoadingMore
+    val feedCanLoadMore: StateFlow<Boolean> get() = homeFeed.canLoadMore
+    val feedDiscoveryProgress: StateFlow<Int> get() = homeFeed.completedDiscoveryCount
+    val feedContentPolicy: StateFlow<HomeFeedContentPolicy> get() = homeFeed.contentPolicy
+
+    fun selectFeedMode(mode: HomeFeedMode) = homeFeed.selectMode(mode)
+
+    fun loadMoreFeed() = homeFeed.loadMore()
+
     internal val collections = LocalThreadCollections(bookmarks, scope, now, onWatch)
     val savedThreads = bookmarks.observeBookmarks()
     val readingHistory = history.observeHistory()
@@ -231,6 +246,11 @@ class Browser(
     val boards: StateFlow<Load<List<SiteBoard>>> = _boards.asStateFlow()
 
     private val _unreachableSites = MutableStateFlow<List<String>>(emptyList())
+    private val feedDirectory =
+        MutableStateFlow(HomeFeedDirectory(loading = providers.mapTo(mutableSetOf()) { it.metadata.id }))
+    private var boardLoadJob: Job? = null
+    private var boardLoadGeneration = 0
+    private val boardPublication = Mutex()
 
     /**
      * The sites whose boards failed to load while others loaded, each with the reason, so the
@@ -260,8 +280,19 @@ class Browser(
             currentThread = { (_thread.value as? Load.Ready)?.value },
         )
 
-    private val _feed = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
-    val feed: StateFlow<Load<List<FeedThread>>> = _feed.asStateFlow()
+    private val homeFeed =
+        HomeFeed(
+            providers = providers,
+            preferences = boardPreferences,
+            settings = settings.settings,
+            followed = followed,
+            directory = feedDirectory,
+            source = feedSite,
+            firstRun = firstRun.state,
+            scope = scope,
+            isActive = { _backStack.value.last() == Route.Feed },
+        )
+    val feed: StateFlow<Load<List<FeedThread>>> = homeFeed.content
 
     private val _firstUnreadPostId = MutableStateFlow<String?>(null)
 
@@ -289,14 +320,6 @@ class Browser(
         scope.launch { boardPreferences.setFavoriteBoard(board.provider, board.board.id, favorite) }
     }
 
-    // What the feed holds: the followed boards, whether NSFW ones were hidden, and the violent-media cover.
-    private var feedFor: Triple<Set<FollowedBoard>, Boolean, Boolean>? = null
-    private var feedLoad: Job? = null
-    private val feedLoader = SubscribedFeedLoader()
-
-    /** Separate source caches keep a failure from replacing another site's threads. */
-    private val lastFeed = mutableMapOf<ProviderId, List<BoardFeed>>()
-
     private var pageLoad: Job? = null
 
     // What the catalog and thread states hold, so returning to them does not fetch them again.
@@ -305,20 +328,15 @@ class Browser(
 
     init {
         loadBoards()
-        // The feed follows the followed set: follow a board and its threads join the list.
-        scope.launch {
-            followed.collect { if (_backStack.value.last() == Route.Feed) loadFeed() }
-        }
         scope.launch {
             this@Browser
                 .settings.current
                 .distinctUntilChangedBy { it.hideNsfwBoards to it.coverViolentMedia }
                 .drop(1)
                 .collect {
-                    lastFeed.clear()
                     catalogShown = null
                     threadShown = null
-                    if (_backStack.value.last() == Route.Feed) loadFeed(force = true) else loadCurrent(force = true)
+                    if (_backStack.value.last() != Route.Feed) loadCurrent(force = true)
                 }
         }
         loadFeed()
@@ -397,6 +415,13 @@ class Browser(
         loadCurrent()
     }
 
+    /** Opens thread videos without inserting a comments page beneath the viewer. */
+    fun openThreadVideos(key: ThreadKey) {
+        mediaScroll.clear()
+        _backStack.update { it + Route.ThreadVideos(key) }
+        loadCurrent()
+    }
+
     /** Thread numbers on [board] the reader has opened, for the catalog's read state. */
     fun visitedThreads(board: SiteBoard): Flow<Set<Long>> =
         history.observeVisitedThreadIds(board.provider, board.board.id)
@@ -433,38 +458,88 @@ class Browser(
         if (firstRun.state.value.needed) return loadBoards()
         when (_backStack.value.last()) {
             Route.Boards -> loadBoards()
-            Route.Feed -> loadFeed(force = true)
+            Route.Feed -> {
+                loadBoards()
+                loadFeed(force = true)
+            }
             Route.Search -> search.run()
             else -> loadCurrent(force = true)
         }
     }
 
     private fun loadBoards() {
+        boardLoadJob?.cancel()
+        val generation = ++boardLoadGeneration
         _boards.value = Load.Loading
-        scope.launch {
-            // One site being down should not hide the others' boards.
-            val perSite =
+        feedDirectory.update {
+            it.copy(
+                loading = providers.mapTo(mutableSetOf()) { provider -> provider.metadata.id },
+                failures = emptyMap(),
+            )
+        }
+        boardLoadJob =
+            scope.launch {
                 providers
                     .map { provider ->
                         async {
-                            // A site answering with no boards at all (an error page that happens to
-                            // be JSON, say) is as unreachable as one that fails outright.
-                            runCatching { provider.siteBoards().ifEmpty { error("no boards returned") } }
+                            val result =
+                                try {
+                                    Result.success(provider.siteBoards())
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (
+                                    @Suppress("TooGenericExceptionCaught") error: Exception,
+                                ) {
+                                    Result.failure(error)
+                                }
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            boardPublication.withLock {
+                                if (generation != boardLoadGeneration) return@withLock
+                                publishBoardIndex(provider, result)
+                            }
                         }
                     }.awaitAll()
-            val loaded = perSite.mapNotNull { it.getOrNull() }.flatten()
-            // Each with why, so a blocked or broken site can be told from the screen alone.
-            _unreachableSites.value =
-                providers.zip(perSite).mapNotNull { (provider, result) ->
-                    result.exceptionOrNull()?.let { "${provider.metadata.displayName} (${it.readable()})" }
-                }
-            _boards.value =
-                if (loaded.isEmpty() && perSite.any { it.isFailure }) {
-                    Load.Failed(perSite.firstNotNullOf { it.exceptionOrNull() }.readable())
-                } else {
-                    Load.Ready(loaded)
-                }
+            }
+    }
+
+    private fun publishBoardIndex(
+        provider: ImageBoardProvider,
+        result: Result<List<SiteBoard>>,
+    ) {
+        val id = provider.metadata.id
+        feedDirectory.update { current ->
+            if (result.isSuccess) {
+                current.copy(
+                    boards = current.boards.filterNot { it.provider == id } + result.getOrThrow(),
+                    completed = current.completed + id,
+                    loading = current.loading - id,
+                    failures = current.failures - id,
+                )
+            } else {
+                current.copy(
+                    loading = current.loading - id,
+                    failures =
+                        current.failures + (id to result.exceptionOrNull()!!.readable()),
+                )
+            }
         }
+        val index = feedDirectory.value
+        _unreachableSites.value =
+            providers.mapNotNull { source ->
+                index.failures[source.metadata.id]?.let { "${source.metadata.displayName} ($it)" }
+            }
+        _boards.value =
+            when {
+                index.loading.isNotEmpty() -> Load.Loading
+                index.boards.isNotEmpty() ->
+                    Load.Ready(
+                        providers.flatMap { provider ->
+                            index.boards.filter { it.provider == provider.metadata.id }
+                        },
+                    )
+                index.failures.isNotEmpty() -> Load.Failed(index.failures.values.first())
+                else -> Load.Ready(emptyList())
+            }
     }
 
     private fun loadCurrent(force: Boolean = false) {
@@ -487,6 +562,11 @@ class Browser(
                 }
             }
             is Route.ThreadPage ->
+                if (force || threadShown != route.key || _thread.value !is Load.Ready) {
+                    threadShown = route.key
+                    load(_thread) { threadOf(route.key) }
+                }
+            is Route.ThreadVideos ->
                 if (force || threadShown != route.key || _thread.value !is Load.Ready) {
                     threadShown = route.key
                     load(_thread) { threadOf(route.key) }
@@ -515,87 +595,8 @@ class Browser(
             }
     }
 
-    /**
-     * Loads the feed unless it already holds the current followed set, which is how coming back to
-     * the feed tab shows it as it was, as Android's feed does.
-     */
-    private fun loadFeed(force: Boolean = false) {
-        val site = feedSite.value
-        val boards = followed.value.filterTo(mutableSetOf()) { site == null || it.provider == site }
-        val currentSettings = settings.current.value
-        val shown = Triple(boards, currentSettings.hideNsfwBoards, currentSettings.coverViolentMedia)
-        if (!force && shown == feedFor && _feed.value is Load.Ready) return
-        feedFor = shown
-        feedLoad?.cancel()
-        _feed.value = Load.Loading
-        feedLoad =
-            scope.launch {
-                _feed.value =
-                    try {
-                        feedOf(boards)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught") error: Exception,
-                    ) {
-                        Load.Failed(error.readable())
-                    }
-            }
-    }
-
-    /**
-     * The followed boards' newest threads, built by the same [SubscribedFeedLoader] as Android's
-     * feed. A board that fails keeps what it showed last time; only when every board fails with
-     * nothing to fall back on is the feed an error.
-     */
-    private suspend fun feedOf(boards: Set<FollowedBoard>): Load<List<FeedThread>> {
-        val currentSettings = settings.current.value
-        val known =
-            (_boards.value as? Load.Ready)
-                ?.value
-                .orEmpty()
-                .associateBy { FollowedBoard(it.provider, it.board.id) }
-        val perSite =
-            coroutineScope {
-                boards
-                    .groupBy { it.provider }
-                    .map { (site, followedBoards) ->
-                        async {
-                            val ids = followedBoards.mapTo(mutableSetOf()) { it.board }
-                            val candidates =
-                                followedBoards.map {
-                                    known[it]?.board
-                                        ?: Board(it.board, title = it.board.value)
-                                }
-                            val wanted = feedLoader.feedBoards(candidates, ids, currentSettings.hideNsfwBoards)
-                            val limits = boardPreferences.observeFeedThreadLimits(site, ids).first()
-                            var failure: Exception? = null
-                            val loaded =
-                                feedLoader.load(wanted, limits, onFailure = {
-                                    _,
-                                    error,
-                                    ->
-                                    failure = failure ?: error
-                                }) { id ->
-                                    provider(site).getCatalog(CatalogRequest(site, id))
-                                }
-                            val shown = SubscribedFeedLoader.withCachedFailures(loaded, lastFeed[site])
-                            if (loaded.any { !it.failed }) lastFeed[site] = shown
-                            Triple(site, shown, failure)
-                        }
-                    }.awaitAll()
-            }
-        val allBoards = perSite.flatMap { it.second }
-        if (allBoards.isNotEmpty() && allBoards.all { it.failed && it.threads.isEmpty() }) {
-            return Load.Failed(perSite.firstNotNullOfOrNull { it.third }?.readable() ?: "Couldn't load the feed")
-        }
-        return Load.Ready(
-            perSite
-                .flatMap { (site, feeds, _) ->
-                    feeds.flatMap { feed -> feed.threads.map { FeedThread(site, it) } }
-                }.sortedWith(compareBy(FeedSort.ACTIVITY.comparator()) { it.thread }),
-        )
-    }
+    /** Home owns its source/mode cache and publishes each bounded discovery batch incrementally. */
+    private fun loadFeed(force: Boolean = false) = homeFeed.load(force)
 
     /**
      * The followed boards a feed or search covers: [boards], less those the permanent filter
@@ -673,7 +674,12 @@ private const val MAX_CONCURRENT_BOARD_LOADS = 4
 
 // Filtering before adapting keeps both providers consistent with the Android directory.
 private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
-    ContentPolicy.visibleBoards(getBoards()).map { SiteBoard(metadata.id, metadata.displayName, it) }
+    ContentPolicy
+        .visibleBoards(
+            getBoards().ifEmpty {
+                error("no boards returned")
+            },
+        ).map { SiteBoard(metadata.id, metadata.displayName, it) }
 
 private suspend fun ImageBoardProvider.catalogOf(board: BoardId): List<CatalogThread> =
     ContentPolicy.visibleCatalog(getCatalog(CatalogRequest(metadata.id, board)))

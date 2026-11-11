@@ -17,6 +17,14 @@ internal fun playbackRows(
     val playback = preferences.forScope(scope)
     return buildList {
         add(
+            playbackToggle(
+                SettingIds.OPEN_THREAD_COMMENTS,
+                "Open comments from chat button",
+                settings.openThreadComments,
+                "Applies to every site. Off opens thread videos; on opens comments.",
+            ),
+        )
+        add(
             SettingItem(
                 id = "playbackScope",
                 label = "Scope",

@@ -74,6 +74,7 @@ class IosBackupTest {
             from.settings.setThemeMode(AppThemeMode.DARK)
             from.settings.setColorTheme(AppColorTheme.PURPLE)
             from.settings.setCoverViolentMedia(false)
+            from.settings.setOpenThreadComments(true)
             from.settings.setBiometricLockEnabled(true)
             val playbackScope = PlaybackScope(site.value, "g")
             val playback = PlaybackSettings(autoplay = false, startMuted = false, loopVideos = false)
@@ -95,6 +96,7 @@ class IosBackupTest {
             assertEquals(AppThemeMode.DARK, settings.themeMode)
             assertEquals(AppColorTheme.PURPLE, settings.colorTheme)
             assertFalse(settings.coverViolentMedia)
+            assertTrue(settings.openThreadComments)
             assertFalse(settings.biometricLockEnabled, "a backup must not change the app lock")
             assertEquals(playback, settings.playbackPreferences.forScope(playbackScope))
             assertFalse(settings.playbackPreferences.hasOverride(staleScope))
@@ -111,10 +113,12 @@ class IosBackupTest {
                 val stores = Stores()
                 stores.settings.setOnboardingCompleted(true)
                 stores.settings.setBiometricLockEnabled(true)
+                stores.settings.setOpenThreadComments(true)
                 backup(stores).importFromJson(json).getOrThrow()
                 val restored = stores.settings.settings.first()
                 assertTrue(restored.onboardingCompleted)
                 assertTrue(restored.biometricLockEnabled)
+                assertFalse(restored.openThreadComments, "older backups restore the video-first chat default")
             }
         }
 

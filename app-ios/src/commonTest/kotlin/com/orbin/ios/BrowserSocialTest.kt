@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
@@ -74,6 +75,13 @@ class BrowserSocialTest {
 
     private suspend fun <T> StateFlow<Load<T>>.settled(): Load<T> = first { it !is Load.Loading }
 
+    private suspend fun Browser.finishSetupIfNeeded() {
+        if (firstRun.state.first { it.initialized }.needed) {
+            firstRun.state.first { it.canStart }
+            completeFirstRun().join()
+        }
+    }
+
     private fun Load<List<FeedThread>>.boardIds(): List<String> =
         assertIs<Load.Ready<List<FeedThread>>>(this).value.map { it.thread.key.board.value }
 
@@ -82,7 +90,9 @@ class BrowserSocialTest {
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
             val boards = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             boards.forEach { browser.setFollowed(it, follow = true) }
+            browser.finishSetupIfNeeded()
 
             val first =
                 browser.feed.first {
@@ -170,7 +180,9 @@ class BrowserSocialTest {
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             val board = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first()
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             browser.setFavorite(board, true)
+            browser.finishSetupIfNeeded()
             val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             val row = assertIs<Load.Ready<List<FeedThread>>>(feed).value.first()
             browser.toggleFeedSaved(row)
@@ -194,7 +206,9 @@ class BrowserSocialTest {
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             val board = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first()
+            browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             browser.setFavorite(board, true)
+            browser.finishSetupIfNeeded()
             browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             assertTrue(FollowedBoard(board.provider, board.board.id) in browser.favorites.value)
             browser.setFollowed(board, true)
@@ -212,8 +226,10 @@ class BrowserSocialTest {
         val BOTH_SITES =
             mapOf(
                 "a.4cdn.org/boards.json" to """{"boards":[{"board":"g","title":"Technology"}]}""",
-                "a.4cdn.org/g/catalog.json" to """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1}]}]""",
-                "a.4cdn.org/g/thread/7.json" to """{"posts":[{"no":7,"sub":"Hi","time":1}]}""",
+                "a.4cdn.org/g/catalog.json" to
+                    """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"}]}]""",
+                "a.4cdn.org/g/thread/7.json" to
+                    """{"posts":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"}]}""",
                 LYNXCHAN_BOARDS to """{"status":"ok","data":{"boards":[{"boardUri":"b","boardName":"Random"}]}}""",
             )
     }

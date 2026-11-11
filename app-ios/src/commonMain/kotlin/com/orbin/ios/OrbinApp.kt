@@ -96,18 +96,30 @@ fun OrbinApp(
         val stateHolder = rememberSaveableStateHolder()
         val routeStates = remember { RouteStates() }
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
-        Box(Modifier.fillMaxSize()) {
-            if (!lockState.locked && !firstRun.initialized) {
-                NextLoading(Modifier.fillMaxSize())
-            } else if (!lockState.locked && firstRun.needed) {
-                OnboardingDestination(browser)
-            } else if (!lockState.locked) {
-                val route = backStack.last()
-                stateHolder.SaveableStateProvider(route.stateKey) {
-                    Destination(browser, lock, downloads, backup, formFactor, version, route, pages)
+        val readerContent: @Composable (Boolean) -> Unit = { covered ->
+            Box(Modifier.fillMaxSize()) {
+                if (!lockState.locked && !firstRun.initialized) {
+                    NextLoading(Modifier.fillMaxSize())
+                } else if (!lockState.locked && firstRun.needed) {
+                    OnboardingDestination(browser)
+                } else if (!lockState.locked) {
+                    val route = backStack.last()
+                    stateHolder.SaveableStateProvider(route.stateKey) {
+                        Destination(
+                            browser,
+                            lock,
+                            downloads,
+                            backup,
+                            formFactor,
+                            version,
+                            route,
+                            pages,
+                            playbackAllowed = !covered && !lockState.obscured,
+                        )
+                    }
                 }
+                LockCover(lock, lockState)
             }
-            LockCover(lock, lockState)
         }
         // This release's notes, once after an update, never over the lock.
         if (whatsNew != null) {
@@ -115,7 +127,10 @@ fun OrbinApp(
                 whatsNew.lastSeen,
                 whatsNew::markSeen,
                 visible = !lockState.locked && !lockState.obscured && readerReady,
+                content = readerContent,
             )
+        } else {
+            readerContent(false)
         }
     }
 }
@@ -178,9 +193,10 @@ private fun Destination(
     version: AppVersion,
     route: Route,
     pages: ThreadPages?,
+    playbackAllowed: Boolean = true,
 ) {
     when (route) {
-        Route.Feed -> FeedDestination(browser, formFactor)
+        Route.Feed -> FeedDestination(browser, formFactor, playbackAllowed)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)
@@ -204,6 +220,7 @@ private fun Destination(
             }
         }
         is Route.Media -> MediaDestination(browser, downloads, route)
+        is Route.ThreadVideos -> ThreadVideosDestination(browser, downloads, route)
     }
 }
 

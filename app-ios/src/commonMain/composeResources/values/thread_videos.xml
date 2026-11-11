@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ios_thread_videos_title">Thread videos</string>
+    <string name="ios_thread_videos_loading">Loading videos…</string>
+    <string name="ios_thread_videos_empty">No videos in this thread</string>
+</resources>

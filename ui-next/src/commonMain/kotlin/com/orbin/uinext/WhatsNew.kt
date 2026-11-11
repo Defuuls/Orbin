@@ -57,6 +57,7 @@ fun shouldShowWhatsNew(
 /**
  * Shows this build's [notes] once, the first time the app is [visible] after an update: [lastSeen]
  * is the version whose notes were last shown, and [onSeen] records that these have been.
+ * [content] always composes, with media covered while the stored version is pending or notes show.
  */
 @Composable
 fun WhatsNewOnUpdate(
@@ -64,13 +65,16 @@ fun WhatsNewOnUpdate(
     onSeen: suspend (String) -> Unit,
     visible: Boolean,
     notes: ReleaseNotes = CurrentReleaseNotes,
+    content: @Composable (covered: Boolean) -> Unit = {},
 ) {
-    // Nothing until the stored version has loaded, so an old value can't flash the dialog.
+    // Only the dialog waits for storage; content remains covered until its visibility is known.
     val seen by remember(lastSeen) { lastSeen.map { Loaded(it) } }.collectAsState(null)
     var dismissed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val loaded = seen ?: return
-    if (visible && !dismissed && shouldShowWhatsNew(notes, loaded.version)) {
+    val loaded = seen
+    val showNotes = loaded != null && !dismissed && shouldShowWhatsNew(notes, loaded.version)
+    content(visible && (loaded == null || showNotes))
+    if (visible && showNotes) {
         WhatsNewDialog(notes) {
             dismissed = true
             scope.launch { onSeen(notes.version) }

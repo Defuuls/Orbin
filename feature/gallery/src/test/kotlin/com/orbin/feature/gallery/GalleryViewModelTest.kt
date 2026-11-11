@@ -3,6 +3,7 @@ package com.orbin.feature.gallery
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
@@ -34,7 +35,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -164,7 +165,7 @@ class GalleryViewModelTest {
             viewModel.media.test {
                 var media = awaitItem()
                 while (media.isEmpty()) media = awaitItem()
-                assertThat(media.map { it.id }).containsExactly("jpg", "webm", "gif").inOrder()
+                assertThat(media.map { it.id }).containsExactly("jpg", "webm", "gif", "mp4", "ogg").inOrder()
             }
         }
 
@@ -193,10 +194,158 @@ class GalleryViewModelTest {
             }
         }
 
+    @Test
+    fun `thread videos contain OP and reply videos but exclude images gifs and audio`() =
+        runTest {
+            val viewModel = createViewModel(FakeSettingsRepository(), videosOnly = true)
+
+            viewModel.media.test {
+                var media = awaitItem()
+                while (media.isEmpty()) media = awaitItem()
+                assertThat(media.map { it.id }).containsExactly("webm", "mp4").inOrder()
+                assertThat(viewModel.threadMediaIndexAt(0)).isEqualTo(1)
+                assertThat(viewModel.threadMediaIndexAt(1)).isEqualTo(3)
+                assertThat(viewModel.threadMediaIndexAt(2)).isNull()
+            }
+        }
+
+    @Test
+    fun `video attachment identity wins over its former index in the complete thread`() =
+        runTest {
+            val viewModel = createViewModel(FakeSettingsRepository(), videosOnly = true, attachmentId = "mp4")
+
+            viewModel.media.test {
+                var media = awaitItem()
+                while (media.isEmpty()) media = awaitItem()
+                assertThat(viewModel.initialPageIn(media)).isEqualTo(1)
+                assertThat(viewModel.threadMediaIndexAt(1)).isEqualTo(3)
+            }
+        }
+
+    @Test
+    fun `a loaded thread without videos is a ready empty viewer rather than loading or comments`() =
+        runTest {
+            val photosOnly =
+                thread().copy(
+                    originalPost =
+                        thread().originalPost.copy(
+                            attachments = persistentListOf(attachment("photo", MediaType.IMAGE)),
+                        ),
+                    replies = persistentListOf(),
+                )
+            val viewModel =
+                createViewModel(
+                    FakeSettingsRepository(),
+                    videosOnly = true,
+                    repository = FakeThreadRepository(photosOnly),
+                )
+
+            assertThat(viewModel.content.value).isEqualTo(GalleryContentState.Loading)
+            viewModel.content.test {
+                var state = awaitItem()
+                while (state is GalleryContentState.Loading) state = awaitItem()
+                val loaded = state as GalleryContentState.Ready
+                assertThat(loaded.media).isEmpty()
+                assertThat(loaded.threadMedia.map { it.id }).containsExactly("photo")
+            }
+        }
+
+    @Test
+    fun `thread loading errors remain retryable and force a new request`() =
+        runTest {
+            val repository = FakeThreadRepository(thread()).apply { result = OrbinResult.Failure(DataError.Offline()) }
+            val viewModel = createViewModel(FakeSettingsRepository(), videosOnly = true, repository = repository)
+
+            viewModel.content.test {
+                var failed = awaitItem()
+                while (failed is GalleryContentState.Loading) failed = awaitItem()
+                assertThat((failed as GalleryContentState.Error).message).isEqualTo("No network connection")
+                repository.result = OrbinResult.Success(thread())
+                viewModel.retry()
+                var loaded = awaitItem()
+                while (loaded is GalleryContentState.Loading) loaded = awaitItem()
+                assertThat(
+                    (loaded as GalleryContentState.Ready).media.map { it.id },
+                ).containsExactly("webm", "mp4").inOrder()
+                assertThat(repository.refreshes).containsExactly(false, true).inOrder()
+            }
+        }
+
+    @Test
+    fun `video mode still excludes permanently filtered replies`() =
+        runTest {
+            val original = thread()
+            val filtered =
+                original.copy(
+                    replies = persistentListOf(original.replies.first().copy(subject = "gore")),
+                )
+            val viewModel =
+                createViewModel(
+                    FakeSettingsRepository(),
+                    videosOnly = true,
+                    repository = FakeThreadRepository(filtered),
+                )
+
+            viewModel.media.test {
+                var media = awaitItem()
+                while (media.isEmpty()) media = awaitItem()
+                assertThat(media.map { it.id }).containsExactly("webm")
+            }
+        }
+
+    @Test
+    fun `reused video ids keep separate pages and original reply positions in both gallery modes`() =
+        runTest {
+            val original = thread()
+            val repeatedVideo = attachment("same-video-url", MediaType.VIDEO)
+            val repeated =
+                original.copy(
+                    originalPost =
+                        original.originalPost.copy(
+                            attachments = persistentListOf(attachment("photo", MediaType.IMAGE), repeatedVideo),
+                        ),
+                    replies =
+                        persistentListOf(
+                            original.replies.first().copy(
+                                attachments = persistentListOf(attachment("between", MediaType.IMAGE), repeatedVideo),
+                            ),
+                        ),
+                )
+            for (videosOnly in listOf(false, true)) {
+                val viewModel =
+                    createViewModel(
+                        FakeSettingsRepository(),
+                        videosOnly = videosOnly,
+                        repository = FakeThreadRepository(repeated),
+                    )
+                viewModel.content.test {
+                    var state = awaitItem()
+                    while (state is GalleryContentState.Loading) state = awaitItem()
+                    val loaded = state as GalleryContentState.Ready
+                    val expectedIndices = if (videosOnly) listOf(1, 3) else listOf(0, 1, 2, 3)
+                    assertThat(loaded.threadMediaIndices).containsExactlyElementsIn(expectedIndices).inOrder()
+                    assertThat(
+                        loaded.media.indices
+                            .map(loaded::pageKey)
+                            .distinct(),
+                    ).hasSize(loaded.media.size)
+                    assertThat(viewModel.threadMediaIndexAt(loaded.media.lastIndex)).isEqualTo(3)
+                    if (videosOnly) {
+                        assertThat(
+                            loaded.media.map { it.id },
+                        ).containsExactly(repeatedVideo.id, repeatedVideo.id)
+                    }
+                }
+            }
+        }
+
     private fun createViewModel(
         settingsRepository: SettingsRepository,
         preloader: ImagePreloader = mockk(relaxed = true),
         video: VideoPreloader = mockk(relaxed = true),
+        videosOnly: Boolean = false,
+        attachmentId: String? = null,
+        repository: ThreadRepository = FakeThreadRepository(thread()),
     ) = GalleryViewModel(
         savedStateHandle =
             SavedStateHandle(
@@ -205,40 +354,17 @@ class GalleryViewModelTest {
                     "board" to BOARD,
                     "thread" to THREAD,
                     "startIndex" to 0,
+                    "videosOnly" to videosOnly,
+                    "attachmentId" to attachmentId,
                 ),
             ),
-        observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
+        observeThread = ObserveThreadUseCase(repository),
         downloadRepository = FakeDownloadRepository(),
         settingsRepository = settingsRepository,
         savedThreadRepository = FakeSavedThreadRepository(),
         imageClipboard = mockk(relaxed = true),
         imagePreloader = preloader,
         videoPreloader = video,
-    )
-
-    private fun createViewModel(
-        settingsRepository: FakeSettingsRepository,
-        attachmentId: String,
-    ) = GalleryViewModel(
-        savedStateHandle =
-            SavedStateHandle(
-                mapOf(
-                    "provider" to PROVIDER,
-                    "board" to BOARD,
-                    "thread" to THREAD,
-                    "startIndex" to 0,
-                    "attachmentId" to attachmentId,
-                ),
-            ),
-        observeThread = ObserveThreadUseCase(FakeThreadRepository(thread())),
-        downloadRepository = FakeDownloadRepository(),
-        settingsRepository = settingsRepository,
-        savedThreadRepository = FakeSavedThreadRepository(),
-        // Never exercised here — these tests are about which media the gallery pages through,
-        // not about copying one to the clipboard.
-        imageClipboard = mockk(relaxed = true),
-        imagePreloader = mockk(relaxed = true),
-        videoPreloader = mockk(relaxed = true),
     )
 
     private fun thread() =
@@ -263,7 +389,12 @@ class GalleryViewModelTest {
                         board = BoardId(BOARD),
                         threadId = ThreadId(THREAD),
                         isOriginalPost = false,
-                        attachments = persistentListOf(attachment("gif", MediaType.ANIMATED_IMAGE)),
+                        attachments =
+                            persistentListOf(
+                                attachment("gif", MediaType.ANIMATED_IMAGE),
+                                attachment("mp4", MediaType.VIDEO),
+                                attachment("ogg", MediaType.AUDIO),
+                            ),
                     ),
                 ),
             stats = ThreadStats(),
@@ -285,15 +416,22 @@ class GalleryViewModelTest {
 private class FakeThreadRepository(
     private val thread: Thread,
 ) : ThreadRepository {
+    var result: OrbinResult<Thread> = OrbinResult.Success(thread)
+    val refreshes = mutableListOf<Boolean>()
+
     override fun observeThread(
         key: ThreadKey,
         forceRefresh: Boolean,
-    ): Flow<OrbinResult<Thread>> = flowOf(OrbinResult.Success(thread))
+    ): Flow<OrbinResult<Thread>> =
+        flow {
+            refreshes += forceRefresh
+            emit(result)
+        }
 
     override suspend fun refreshThread(
         provider: ProviderId,
         board: BoardId,
         thread: ThreadId,
         forceRefresh: Boolean,
-    ): OrbinResult<Thread> = OrbinResult.Success(this.thread)
+    ): OrbinResult<Thread> = result
 }

@@ -16,7 +16,7 @@ final class StartupSmokeTests: XCTestCase {
         app.launch()
 
         let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         waitUntilExists([startBrowsing, done], description: "Onboarding or this release's notes")
         dismissReleaseNotesIfPresent()
         waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
@@ -47,7 +47,8 @@ final class StartupSmokeTests: XCTestCase {
 
         hasOpenedFeed = true
         startBrowsing.tap()
-        assertHomeAfterSetup()
+        assertHomeAfterSetup(expectsReleaseNotes: true)
+        assertFeedTabsChangeSelection()
 
         let tabs = ["Home", "Watched", "Boards", "Search", "Saved"].map(navigationControl)
         for (index, tab) in tabs.enumerated() {
@@ -87,27 +88,50 @@ final class StartupSmokeTests: XCTestCase {
         app = nil
     }
 
-    private func assertHomeAfterSetup() {
+    private func assertHomeAfterSetup(expectsReleaseNotes: Bool = false) {
+        // A fresh install presents this release's notes over Home. Resolve and dismiss that
+        // foreground modal before querying the covered navigation/accessibility tree.
+        if expectsReleaseNotes {
+            let done = releaseNotesDoneButton()
+            XCTAssertTrue(done.waitForExistence(timeout: 15), "This release's notes appear after setup")
+            waitUntilHittable([done], description: "The release notes dismissal action")
+            done.tap()
+        }
         let home = navigationControl("Home")
-        waitUntilHittable([home, labeled("Done")], description: "Home navigation or release notes")
-        dismissReleaseNotesIfPresent()
         waitUntilHittable([home], description: "Home after mandatory board setup")
         XCTAssertTrue(home.isSelected)
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch.exists)
 
-        // A live catalog can load, fail, or still be loading. All three must keep navigation
-        // usable; when content is ready its For You tab must expose the selected state.
+        // Catalog loading, empty results and failures must all retain the feed's tab controls.
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
-        if forYou.waitForExistence(timeout: 10) {
-            XCTAssertTrue(forYou.isSelected, "For You must announce its selected tab state")
-            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch.exists)
-        }
+        XCTAssertTrue(forYou.waitForExistence(timeout: 15), "Feed tabs must remain available in every loading state")
+        XCTAssertTrue(forYou.isSelected, "For You must announce its selected tab state")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch.exists)
+    }
+
+    private func assertFeedTabsChangeSelection() {
+        let following = app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch
+        let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
+        following.tap()
+        let followingSelected = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in following.isSelected && !forYou.isSelected },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [followingSelected], timeout: 15), .completed,
+                       "Following must select its board-following feed even while catalogs are unavailable")
+        forYou.tap()
+        let discoverySelected = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in forYou.isSelected && !following.isSelected },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [discoverySelected], timeout: 15), .completed,
+                       "For You must return to its independent discovery feed")
     }
 
     private func waitForBoardDirectory(_ board: XCUIElement) {
         let retry = labeled("Retry")
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         var retries = 0
         for _ in 0..<4 {
             waitUntilHittable([board, retry, done], description: "The SFW /3/ board or a directory retry action")
@@ -127,6 +151,10 @@ final class StartupSmokeTests: XCTestCase {
 
     private func labeled(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func releaseNotesDoneButton() -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Done")).firstMatch
     }
 
     private func navigationControl(_ label: String) -> XCUIElement {
@@ -154,7 +182,7 @@ final class StartupSmokeTests: XCTestCase {
     }
 
     private func dismissReleaseNotesIfPresent() {
-        let done = labeled("Done")
+        let done = releaseNotesDoneButton()
         if done.exists && done.isHittable {
             done.tap()
         }

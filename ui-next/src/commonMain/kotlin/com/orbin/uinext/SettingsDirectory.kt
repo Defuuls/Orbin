@@ -36,7 +36,7 @@ internal fun settingsPages(groups: List<Pair<String, List<SettingItem>>>): Map<S
             "clearActivity", "clearImageCache", "exportBackup", "importBackup" -> "storage"
             "checkUpdates", "updateOnLaunch", "version", "privacy", "contact" -> "about"
             "playbackScope", "autoplay", "startMuted", "loopVideos",
-            "preloadNextClip", "inheritPlayback", "resetPlayback",
+            "preloadNextClip", "inheritPlayback", "resetPlayback", "openThreadComments",
             -> "playback"
             else -> "other"
         }

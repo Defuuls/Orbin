@@ -10,8 +10,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
@@ -141,18 +143,98 @@ class TikTokFeedPagingTest {
     }
 
     @Test
-    fun `Following contains actual watched threads and keeps their source`() {
+    fun `Following uses the supplied board feed without requiring a watched thread`() {
         val owners = mutableListOf<String?>()
+        var following by mutableStateOf(false)
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan"), row("bbwchan").copy(watched = true)),
+                    rows = if (following) listOf(row("fourchan")) else listOf(row("bbwchan").copy(watched = true)),
+                    following = following,
+                    onFollowingChange = { following = it },
                     onActivePreviewChanged = { owners += it },
                 )
             }
         }
         composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).performClick()
-        composeRule.runOnIdle { assertEquals("bbwchan/g/7", owners.last()) }
+        composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).assertIsSelected()
+        composeRule.runOnIdle { assertEquals("fourchan/g/7", owners.last()) }
+    }
+
+    @Test
+    fun `tabs remain usable while loading and after a source error`() {
+        var following by mutableStateOf(false)
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = emptyList(),
+                    following = following,
+                    onFollowingChange = { following = it },
+                    isLoading = !following,
+                    errorMessage = if (following) "The source is temporarily unavailable" else null,
+                    onRetry = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText("Loading videos…").assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).performClick().assertIsSelected()
+        composeRule.onNodeWithText("The source is temporarily unavailable").assertIsDisplayed()
+        composeRule.onNodeWithTag(TikTokFeedTags.FOR_YOU).performClick().assertIsSelected()
+        composeRule.onNodeWithText("Loading videos…").assertIsDisplayed()
+    }
+
+    @Test
+    fun `returning to For You restores its page and releases the other tab owner`() {
+        var following by mutableStateOf(false)
+        val discovery = listOf(row("fourchan"), row("bbwchan"), row("third"))
+        val owners = mutableListOf<String?>()
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = if (following) listOf(row("followed")) else discovery,
+                    following = following,
+                    onFollowingChange = { following = it },
+                    onActivePreviewChanged = { owners += it },
+                )
+            }
+        }
+        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(2)
+        composeRule.runOnIdle { assertEquals("third/g/7", owners.last()) }
+        composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).performClick()
+        composeRule.runOnIdle { assertEquals("followed/g/7", owners.last()) }
+        composeRule.onNodeWithTag(TikTokFeedTags.FOR_YOU).performClick()
+        composeRule.runOnIdle { assertEquals("third/g/7", owners.last()) }
+    }
+
+    @Test
+    fun `completed cached batches request more even when their video row count does not change`() {
+        var completedBatch by mutableStateOf(8)
+        var calls = 0
+        val first = row("first")
+        val second = row("second")
+        val later = row("later")
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = if (completedBatch >= 24) listOf(first, second, later) else listOf(first, second),
+                    loadMoreKey = completedBatch,
+                    onLoadMore =
+                        if (completedBatch >= 24) {
+                            null
+                        } else {
+                            {
+                                calls++
+                                // The middle batch contains only cached images: no row-count or busy-state change.
+                                completedBatch += 8
+                            }
+                        },
+                )
+            }
+        }
+        composeRule.waitUntil { calls == 2 }
+        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(2)
+        composeRule.onNodeWithTag(TikTokFeedTags.page(later.id)).assertIsDisplayed()
+        composeRule.runOnIdle { assertEquals(24, completedBatch) }
     }
 
     @Test

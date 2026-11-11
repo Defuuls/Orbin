@@ -23,6 +23,7 @@ class BackupDocumentTest {
                 AppSettings(
                     themeMode = AppThemeMode.DARK,
                     activeProviderId = "vichan",
+                    openThreadComments = true,
                 ),
             subscribedBoards = listOf(BackupBoardRef("vichan", "g"), BackupBoardRef("lynxchan", "tech")),
             favoriteBoards = listOf(BackupBoardRef("vichan", "a")),
@@ -130,6 +131,16 @@ class BackupDocumentTest {
         assertThat(restored.settings).isEqualTo(AppSettings.Default)
         assertThat(restored.subscribedBoards).isEmpty()
         assertThat(restored.formatVersion).isEqualTo(BackupDocument.CURRENT_FORMAT_VERSION)
+    }
+
+    @Test
+    fun backupsBeforeTheChatButtonPreferenceDefaultToVideos() {
+        val older = """{ "settings": { "themeMode": "DARK" } }"""
+
+        val restored = json.decodeFromString(BackupDocument.serializer(), older).settings
+
+        assertThat(restored.openThreadComments).isFalse()
+        assertThat(restored.themeMode).isEqualTo(AppThemeMode.DARK)
     }
 
     @Test

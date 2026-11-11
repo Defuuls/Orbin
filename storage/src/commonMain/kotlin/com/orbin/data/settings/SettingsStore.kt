@@ -59,6 +59,10 @@ class SettingsStore(
         edit { it[Keys.deepMediaScan] = enabled }
     }
 
+    override suspend fun setOpenThreadComments(enabled: Boolean) {
+        edit { it[Keys.openThreadComments] = enabled }
+    }
+
     override suspend fun setColorTheme(theme: AppColorTheme) {
         edit { it[Keys.colorTheme] = theme.name }
     }
@@ -132,6 +136,7 @@ class SettingsStore(
             hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
             coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
+            openThreadComments = this[Keys.openThreadComments] ?: false,
             themeMode = AppThemeMode.entries.firstOrNull { it.name == this[Keys.themeMode] } ?: AppThemeMode.SYSTEM,
             colorTheme = AppColorTheme.entries.firstOrNull { it.name == this[Keys.colorTheme] } ?: AppColorTheme.ORBIN,
             amoled = this[Keys.amoled] ?: false,
@@ -162,6 +167,7 @@ class SettingsStore(
         val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
         val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
         val deepMediaScan = booleanPreferencesKey("deep_media_scan")
+        val openThreadComments = booleanPreferencesKey("open_thread_comments")
         val colorTheme = stringPreferencesKey("color_theme")
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")

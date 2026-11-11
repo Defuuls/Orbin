@@ -5,6 +5,8 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -68,6 +70,28 @@ class SettingsUserJourneyTest {
         toggle("Cover violent media") { coverViolentMedia }
         toggle("True black") { amoled }
         toggle("App lock") { biometricLockEnabled }
+    }
+
+    @Test
+    fun playbackPageCanEnableCommentsWithoutChangingPlaybackOverrides() {
+        launch()
+        val playback = settings.current.playbackPreferences
+
+        composeRule.onNodeWithText("Playback").performClick()
+        composeRule
+            .onNodeWithText("Open comments from chat button")
+            .assertIsOff()
+            .performClick()
+            .assertIsOn()
+        composeRule.runOnIdle {
+            assertThat(settings.current.openThreadComments).isTrue()
+            assertThat(settings.current.playbackPreferences).isEqualTo(playback)
+        }
+        composeRule
+            .onNodeWithText("Open comments from chat button")
+            .performClick()
+            .assertIsOff()
+        composeRule.runOnIdle { assertThat(settings.current.openThreadComments).isFalse() }
     }
 
     @Test
@@ -139,6 +163,7 @@ class SettingsUserJourneyTest {
         listOf(
             "Hide NSFW boards",
             "Cover violent media",
+            "Open comments from chat button",
             "Theme",
             "True black",
             "App lock",

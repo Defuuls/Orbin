@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -76,20 +77,22 @@ import com.orbin.uinext.resources.social_feed_share
 import com.orbin.uinext.resources.social_feed_unsave
 import com.orbin.uinext.resources.social_feed_unwatch
 import com.orbin.uinext.resources.social_feed_view_replies
+import com.orbin.uinext.resources.social_feed_view_videos
 import com.orbin.uinext.resources.social_feed_watch
 import com.orbin.uinext.resources.tiktok_feed_following
 import com.orbin.uinext.resources.tiktok_feed_following_empty
 import com.orbin.uinext.resources.tiktok_feed_following_hint
 import com.orbin.uinext.resources.tiktok_feed_for_you
 import com.orbin.uinext.resources.tiktok_feed_hidden
+import com.orbin.uinext.resources.tiktok_feed_loading
 import com.orbin.uinext.resources.tiktok_feed_menu
 import com.orbin.uinext.resources.tiktok_feed_open_board
+import com.orbin.uinext.resources.tiktok_feed_retry
 import com.orbin.uinext.resources.tiktok_feed_save_label
 import com.orbin.uinext.resources.tiktok_feed_saved_label
 import com.orbin.uinext.resources.tiktok_feed_share_label
 import com.orbin.uinext.resources.tiktok_feed_source
 import com.orbin.uinext.resources.tiktok_feed_thread_source
-import com.orbin.uinext.resources.tiktok_feed_view_watched
 import com.orbin.uinext.resources.tiktok_feed_watch_label
 import com.orbin.uinext.resources.tiktok_feed_watching_label
 import com.orbin.uinext.tokens.NextType
@@ -108,6 +111,8 @@ internal fun TikTokFeedPage(
     onToggleWatch: ((FeedRow) -> Unit)?,
     onToggleSaved: ((FeedRow) -> Unit)?,
     onShare: ((FeedRow) -> Unit)?,
+    onOpenReplies: () -> Unit = onOpen,
+    repliesOpenComments: Boolean = true,
 ) {
     BoxWithConstraints(
         Modifier
@@ -225,7 +230,8 @@ internal fun TikTokFeedPage(
         }
         TikTokFeedActions(
             row = row,
-            onOpen = onOpen,
+            onOpenReplies = onOpenReplies,
+            repliesOpenComments = repliesOpenComments,
             onOpenBoard = onOpenBoard,
             onToggleWatch = onToggleWatch,
             onToggleSaved = onToggleSaved,
@@ -255,7 +261,8 @@ private fun String.isVideoLabel(): Boolean =
 @Composable
 private fun TikTokFeedActions(
     row: FeedRow,
-    onOpen: () -> Unit,
+    onOpenReplies: () -> Unit,
+    repliesOpenComments: Boolean,
     onOpenBoard: (() -> Unit)?,
     onToggleWatch: ((FeedRow) -> Unit)?,
     onToggleSaved: ((FeedRow) -> Unit)?,
@@ -304,8 +311,16 @@ private fun TikTokFeedActions(
         TikTokRailAction(
             icon = ReaderIcons.ChatFilled,
             label = row.replies.toString(),
-            description = stringResource(Res.string.social_feed_view_replies, row.subject),
-            onClick = onOpen,
+            description =
+                stringResource(
+                    if (repliesOpenComments) {
+                        Res.string.social_feed_view_replies
+                    } else {
+                        Res.string.social_feed_view_videos
+                    },
+                    row.subject,
+                ),
+            onClick = onOpenReplies,
         )
         if (onToggleSaved != null) {
             TikTokRailAction(
@@ -643,30 +658,54 @@ private fun TikTokFeedMenu(
 internal fun TikTokFeedEmpty(
     following: Boolean,
     onOpenBoards: (() -> Unit)?,
-    onOpenWatched: (() -> Unit)?,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     Box(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 80.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(ReaderIcons.Heart, null, tint = TikTokDesign.White, modifier = Modifier.size(40.dp))
+            if (isLoading) {
+                CircularProgressIndicator(color = TikTokDesign.White, modifier = Modifier.size(32.dp))
+            } else {
+                Icon(ReaderIcons.Heart, null, tint = TikTokDesign.White, modifier = Modifier.size(40.dp))
+            }
             Text(
-                stringResource(
-                    if (following) Res.string.tiktok_feed_following_empty else Res.string.next_nothing_here_yet,
-                ),
+                when {
+                    isLoading -> stringResource(Res.string.tiktok_feed_loading)
+                    errorMessage != null -> errorMessage
+                    else ->
+                        stringResource(
+                            if (following) Res.string.tiktok_feed_following_empty else Res.string.next_nothing_here_yet,
+                        )
+                },
                 style = NextType.titleMedium,
                 color = TikTokDesign.White,
             )
-            if (following) {
+            if (following && !isLoading && errorMessage == null) {
                 Text(
                     stringResource(Res.string.tiktok_feed_following_hint),
                     style = NextType.body,
                     color = TikTokDesign.SecondaryWhite,
                 )
             }
-            val action = if (following) onOpenWatched else onOpenBoards
+            val action =
+                if (isLoading) {
+                    null
+                } else if (errorMessage != null) {
+                    onRetry
+                } else {
+                    onOpenBoards
+                }
             if (action != null) {
                 Text(
                     stringResource(
-                        if (following) Res.string.tiktok_feed_view_watched else Res.string.next_explore_boards,
+                        if (errorMessage !=
+                            null
+                        ) {
+                            Res.string.tiktok_feed_retry
+                        } else {
+                            Res.string.next_explore_boards
+                        },
                     ),
                     style = NextType.bodyMedium,
                     color = TikTokDesign.White,

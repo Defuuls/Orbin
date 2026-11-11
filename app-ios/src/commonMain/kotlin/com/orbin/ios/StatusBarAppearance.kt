@@ -8,4 +8,7 @@ internal fun lightStatusBarIcons(
     lockState: LockState,
 ): Boolean =
     darkTheme ||
-        (!firstRun && !lockState.locked && !lockState.obscured && (route == Route.Feed || route is Route.Media))
+        (!firstRun && !lockState.locked && !lockState.obscured && route.immersive)
+
+private val Route.immersive: Boolean
+    get() = this == Route.Feed || this is Route.Media || this is Route.ThreadVideos

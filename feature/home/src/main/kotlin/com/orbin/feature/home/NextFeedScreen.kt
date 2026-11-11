@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
+import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
@@ -35,8 +36,6 @@ import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.MessageScreen
-import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.sourceLabel
@@ -67,8 +66,11 @@ fun NextFeedScreen(
     selectedSource: Int = 0,
     onSelectSource: (Int) -> Unit = {},
     onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
+    onOpenThreadVideos: (provider: String, board: String, thread: Long, title: String) -> Unit = onOpenThread,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val mode by viewModel.feedMode.collectAsStateWithLifecycle()
+    LaunchedEffect(providerFilter) { viewModel.setProviderFilter(providerFilter) }
     val actionsViewModel: FeedActionsViewModel = hiltViewModel()
     val bookmarks by actionsViewModel.bookmarks.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -101,291 +103,249 @@ fun NextFeedScreen(
         }
     }
     var localQuery by rememberSaveable { mutableStateOf("") }
-    val effectiveFilter = localQuery
-    val nowMillis by
-        produceState(initialValue = System.currentTimeMillis()) {
-            while (true) {
-                delay(RELATIVE_TIME_TICK_MS)
-                value = System.currentTimeMillis()
-            }
+    val presentationScope =
+        FeedPresentationScope(mode, providerFilter, localQuery, settings.hideNsfwBoards, settings.coverViolentMedia)
+    val state =
+        (uiState as? SubscribedFeedUiState.Success)?.takeIf {
+            it.mode == mode &&
+                it.providerFilter == providerFilter &&
+                it.hideNsfwBoards == settings.hideNsfwBoards &&
+                it.coverViolentMedia == settings.coverViolentMedia
         }
-
-    // Match FeedScreen: a non-null settings action opts into DestinationPill chrome.
-    val onDestination: ((NextDestination) -> Unit) = { dest ->
-        when (dest) {
-            NextDestination.FEED -> Unit
-            NextDestination.BOARDS -> onOpenBoards?.invoke()
-            NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
-            NextDestination.SEARCH -> onOpenSearch?.invoke()
-            NextDestination.SAVED -> onOpenSaved?.invoke()
-            NextDestination.WATCHED -> onOpenWatched?.invoke()
-            NextDestination.SETTINGS -> onOpenSettings()
+    var mapped by remember { mutableStateOf<MappedFeed?>(null) }
+    LaunchedEffect(state?.boards, visited, presentationScope) {
+        val current = state ?: return@LaunchedEffect
+        val entries =
+            withContext(Dispatchers.Default) {
+                feedEntries(
+                    current.boards,
+                    visited,
+                    System.currentTimeMillis(),
+                    localQuery,
+                    FeedSort.ACTIVITY,
+                    videosOnly = true,
+                )
+            }
+        mapped = MappedFeed(presentationScope, current.boards, entries)
+    }
+    // Keep a settled clip alive while an incremental batch is mapped, but never keep rows from
+    // another tab/source or a newly excluded thread through a scope change.
+    val eligibleKeys =
+        remember(state?.boards) {
+            state
+                ?.boards
+                .orEmpty()
+                .flatMap { it.threads }
+                .mapTo(mutableSetOf()) { it.key }
+        }
+    val entries =
+        mapped
+            ?.takeIf { it.scope == presentationScope }
+            ?.entries
+            .orEmpty()
+            .filter { it.key in eligibleKeys }
+    val mappingCurrent = state != null && mapped?.scope == presentationScope && mapped?.boards === state.boards
+    LaunchedEffect(state, mappingCurrent, entries.isEmpty()) {
+        val successfulEmptyPage = mappingCurrent && entries.isEmpty()
+        val batchCanAdvance = state?.let { !it.isLoadingMore && it.errorMessage == null && it.canLoadMore } == true
+        if (mode == HomeFeedMode.FOR_YOU && successfulEmptyPage && batchCanAdvance) {
+            viewModel.loadMoreDiscovery()
         }
     }
-
+    var activePreviewId by remember { mutableStateOf<String?>(null) }
+    var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(entries, activePreviewId, upcomingPreviewId, settings.playbackPreferences, foreground) {
+        val current = entries.firstOrNull { it.row.id == activePreviewId }
+        val upcoming = entries.firstOrNull { it.row.id == upcomingPreviewId }
+        val currentPlayback = current?.let { settings.playbackPreferences.resolve(it.key.provider, it.key.board) }
+        val nextPlayback = upcoming?.let { settings.playbackPreferences.resolve(it.key.provider, it.key.board) }
+        if (!foreground || currentPlayback?.preloadNextClip != true || nextPlayback?.preloadNextClip == false) {
+            viewModel.clearFeedVideoPrefetch()
+        } else {
+            viewModel.prefetchFeedVideo(
+                upcoming?.attachment?.takeIf { !it.isSpoiler && it.sourceUrl.isNotBlank() }?.sourceUrl,
+            )
+        }
+    }
+    LaunchedEffect(entries, activePreviewId, foreground) {
+        if (!foreground || entries.isEmpty()) {
+            viewModel.clearFeedImagePrefetch()
+        } else {
+            val focus = entries.indexOfFirst { it.row.id == activePreviewId }.let { if (it < 0) 0 else it }
+            viewModel.prefetchFeedThumbs(
+                entries
+                    .subList((focus - 2).coerceAtLeast(0), (focus + 6).coerceAtMost(entries.size))
+                    .mapNotNull {
+                        it.attachment
+                            ?.takeUnless { attachment ->
+                                attachment.isSpoiler
+                            }?.thumbnailUrl
+                            ?.takeIf(String::isNotBlank)
+                    },
+            )
+        }
+    }
+    val nowMillis by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(RELATIVE_TIME_TICK_MS)
+            value = System.currentTimeMillis()
+        }
+    }
+    val byId = remember(entries) { entries.associateBy { it.row.id } }
+    val bookmarksByKey = remember(bookmarks) { bookmarks.associateBy { it.key } }
+    val rows =
+        remember(entries, bookmarksByKey) {
+            entries.map { entry ->
+                val bookmark = bookmarksByKey[entry.key]
+                entry.row.copy(bookmarked = bookmark != null, watched = bookmark?.isWatched == true)
+            }
+        }
+    val failedBoardCount = state?.boards?.count { it.failed } ?: 0
+    val baseSubtitle = feedSubtitle(entries.size, state?.boards?.size ?: 0)
+    val statusSubtitle =
+        when {
+            failedBoardCount > 0 -> "$baseSubtitle · ${pluralStringResource(
+                R.plurals.next_feed_failed_boards,
+                failedBoardCount,
+                failedBoardCount,
+            )}"
+            state?.stale == true -> stringResource(R.string.next_feed_stale_status, baseSubtitle)
+            else -> null
+        }
+    val loading =
+        when {
+            uiState is SubscribedFeedUiState.Error -> false
+            state == null -> true
+            entries.isEmpty() -> !mappingCurrent || state.isLoadingMore
+            else -> false
+        }
+    val emptyError = state?.errorMessage?.takeIf { mappingCurrent && entries.isEmpty() && !state.isLoadingMore }
     NextTheme {
-        when (val state = uiState) {
-            is SubscribedFeedUiState.Loading ->
-                MessageScreen(
-                    title = stringResource(R.string.next_feed_title),
-                    subtitle = stringResource(R.string.next_feed_loading),
-                    where = stringResource(R.string.next_feed_title).takeIf { !showRail },
-                    destination = NextDestination.FEED.takeIf { showRail },
-                    onDestination = onDestination.takeIf { showRail },
-                    modifier = modifier,
-                    skeleton = true,
-                )
-
-            is SubscribedFeedUiState.Error ->
-                MessageScreen(
-                    title = stringResource(R.string.next_feed_unavailable),
-                    subtitle = state.message,
-                    actionLabel = stringResource(R.string.next_feed_try_again),
-                    onAction = viewModel::refresh,
-                    where = stringResource(R.string.next_feed_title).takeIf { !showRail },
-                    destination = NextDestination.FEED.takeIf { showRail },
-                    onDestination = onDestination.takeIf { showRail },
-                    modifier = modifier,
-                )
-
-            is SubscribedFeedUiState.Success -> {
-                var entries by remember { mutableStateOf<List<FeedEntry>>(emptyList()) }
-                var presentationReady by remember { mutableStateOf(false) }
-                var activePreviewId by remember { mutableStateOf<String?>(null) }
-                var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
-                LaunchedEffect(
-                    entries,
-                    activePreviewId,
-                    upcomingPreviewId,
-                    settings.playbackPreferences,
-                    foreground,
-                    providerFilter,
-                ) {
-                    val current = entries.firstOrNull { it.row.id == activePreviewId }
-                    val upcoming = entries.firstOrNull { it.row.id == upcomingPreviewId }
-                    val currentPlayback =
-                        current?.let {
-                            settings.playbackPreferences.resolve(
-                                it.key.provider,
-                                it.key.board,
-                            )
-                        }
-                    val upcomingPlayback =
-                        upcoming?.let {
-                            settings.playbackPreferences.resolve(
-                                it.key.provider,
-                                it.key.board,
-                            )
-                        }
-                    val sourceMatches =
-                        if (providerFilter == null) {
-                            true
-                        } else {
-                            val currentMatches = current?.key?.provider?.value == providerFilter
-                            val upcomingMatches = upcoming == null || upcoming.key.provider.value == providerFilter
-                            currentMatches && upcomingMatches
-                        }
-                    val preloadingEnabled =
-                        currentPlayback?.preloadNextClip == true && upcomingPlayback?.preloadNextClip != false
-                    if (!foreground || !sourceMatches || !preloadingEnabled) {
-                        viewModel.clearFeedVideoPrefetch()
-                    } else {
-                        val nextVideo =
-                            upcoming?.attachment?.takeIf {
-                                it.type == MediaType.VIDEO && !it.isSpoiler && it.sourceUrl.isNotBlank()
+        NextPullToRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = modifier.fillMaxSize(),
+        ) {
+            FeedScreen(
+                rows = rows,
+                following = mode == HomeFeedMode.FOLLOWING,
+                onFollowingChange = { viewModel.setFeedMode(if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU) },
+                isLoading = loading,
+                errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
+                onRetry = viewModel::refresh,
+                onLoadMore =
+                    (viewModel::loadMoreDiscovery).takeIf {
+                        state?.canLoadMore == true &&
+                            !state.isLoadingMore &&
+                            mappingCurrent &&
+                            (state.errorMessage == null || entries.isNotEmpty())
+                    },
+                loadMoreKey = state?.discoveryLimit,
+                subtitle = baseSubtitle,
+                statusMessage = statusSubtitle,
+                showRail = showRail,
+                headerContent = headerContent,
+                sourceLabels = sourceLabels,
+                selectedSource = selectedSource,
+                onSelectSource = onSelectSource,
+                query = localQuery,
+                onQueryChange = { localQuery = it },
+                columns =
+                    feedColumns(
+                        formFactor,
+                        LocalConfiguration.current.screenWidthDp,
+                        LocalConfiguration.current.screenHeightDp,
+                        settings,
+                    ),
+                hideRailOnScroll = hideRailOnScroll,
+                onChromeVisibleChange = onChromeVisibleChange,
+                onCompactTitleVisibleChange = onCompactTitleVisibleChange,
+                onSettings = onOpenSettings,
+                onOpenBoards = onOpenBoards,
+                onOpenDownloads = onOpenDownloads,
+                onOpenSearch = onOpenSearch,
+                onOpenSaved = onOpenSaved,
+                onOpenWatched = onOpenWatched,
+                onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
+                onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
+                onShareRow = { row ->
+                    byId[row.id]?.let { entry ->
+                        val intent =
+                            Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, entry.title)
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    listOfNotNull(entry.title, actionsViewModel.shareUrl(entry.key)).joinToString("\n"),
+                                )
                             }
-                        viewModel.prefetchFeedVideo(nextVideo?.sourceUrl)
-                    }
-                }
-                LaunchedEffect(entries, activePreviewId, foreground, providerFilter) {
-                    if (!foreground || entries.isEmpty()) {
-                        viewModel.clearFeedImagePrefetch()
-                        return@LaunchedEffect
-                    }
-                    val focus = entries.indexOfFirst { it.row.id == activePreviewId }.let { if (it < 0) 0 else it }
-                    val urls =
-                        entries
-                            .subList(
-                                (focus - 2).coerceAtLeast(0),
-                                (focus + 6).coerceAtMost(entries.size),
-                            ).filter { providerFilter == null || it.key.provider.value == providerFilter }
-                            .mapNotNull { entry ->
-                                entry.attachment
-                                    ?.takeUnless { it.isSpoiler }
-                                    ?.thumbnailUrl
-                                    ?.takeIf(String::isNotBlank)
-                            }
-                    viewModel.prefetchFeedThumbs(urls)
-                }
-                LaunchedEffect(state.boards, visited, effectiveFilter, providerFilter) {
-                    entries =
-                        withContext(Dispatchers.Default) {
-                            feedEntries(
-                                feeds =
-                                    state.boards.filter {
-                                        providerFilter == null || it.providerId == providerFilter
-                                    },
-                                sort = FeedSort.ACTIVITY,
-                                visited = visited,
-                                nowMillis = System.currentTimeMillis(),
-                                filter = effectiveFilter,
-                            )
-                        }
-                    presentationReady = true
-                }
-
-                if (!presentationReady) {
-                    MessageScreen(
-                        title = stringResource(R.string.next_feed_title),
-                        subtitle = stringResource(R.string.next_feed_loading),
-                        where = stringResource(R.string.next_feed_title).takeIf { !showRail },
-                        destination = NextDestination.FEED.takeIf { showRail },
-                        onDestination = onDestination.takeIf { showRail },
-                        modifier = modifier,
-                    )
-                } else {
-                    val byId = remember(entries) { entries.associateBy { it.row.id } }
-                    val bookmarksByKey = remember(bookmarks) { bookmarks.associateBy { it.key } }
-                    val rows =
-                        remember(entries, bookmarksByKey) {
-                            entries.map { entry ->
-                                val bookmark = bookmarksByKey[entry.key]
-                                entry.row.copy(bookmarked = bookmark != null, watched = bookmark?.isWatched == true)
-                            }
-                        }
-                    val scopedBoards = state.boards.filter { providerFilter == null || it.providerId == providerFilter }
-                    val failedBoardCount = scopedBoards.count { it.failed }
-                    val baseSubtitle = feedSubtitle(entries.size, scopedBoards.size)
-                    val statusSubtitle =
-                        when {
-                            failedBoardCount > 0 ->
-                                "$baseSubtitle · ${pluralStringResource(
-                                    R.plurals.next_feed_failed_boards,
-                                    failedBoardCount,
-                                    failedBoardCount,
-                                )}"
-
-                            state.stale -> stringResource(R.string.next_feed_stale_status, baseSubtitle)
-                            else -> {
-                                val ageMinutes = ((nowMillis - state.loadedAtMillis) / RELATIVE_TIME_TICK_MS).toInt()
-                                if (ageMinutes > 0) {
-                                    stringResource(R.string.next_feed_updated_status, baseSubtitle, "${ageMinutes}m")
-                                } else {
-                                    baseSubtitle
-                                }
-                            }
-                        }
-                    NextPullToRefresh(
-                        isRefreshing = isRefreshing,
-                        onRefresh = viewModel::refresh,
-                        modifier = modifier.fillMaxSize(),
-                    ) {
-                        FeedScreen(
-                            rows = rows,
-                            subtitle = baseSubtitle,
-                            statusMessage = statusSubtitle.takeIf { state.stale || failedBoardCount > 0 },
-                            showRail = showRail,
-                            headerContent = headerContent,
-                            sourceLabels = sourceLabels,
-                            selectedSource = selectedSource,
-                            onSelectSource = onSelectSource,
-                            query = localQuery,
-                            onQueryChange = { localQuery = it },
-                            // Boards A–Z under their own headings, newest activity first within each.
-                            groupByBoard = false,
-                            // One column on a phone or folded; the reader's choice unfolded or on a tablet.
-                            columns =
-                                feedColumns(
-                                    formFactor,
-                                    LocalConfiguration.current.screenWidthDp,
-                                    LocalConfiguration.current.screenHeightDp,
-                                    settings,
-                                ),
-                            hideRailOnScroll = hideRailOnScroll,
-                            onChromeVisibleChange = onChromeVisibleChange,
-                            onCompactTitleVisibleChange = onCompactTitleVisibleChange,
-                            onSettings = onOpenSettings,
-                            onOpenBoards = onOpenBoards,
-                            onOpenDownloads = onOpenDownloads,
-                            onOpenSearch = onOpenSearch,
-                            onOpenSaved = onOpenSaved,
-                            onOpenWatched = onOpenWatched,
-                            onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
-                            onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
-                            onShareRow = { row ->
-                                byId[row.id]?.let { entry ->
-                                    val url = actionsViewModel.shareUrl(entry.key)
-                                    val intent =
-                                        Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(Intent.EXTRA_SUBJECT, entry.title)
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                listOfNotNull(entry.title, url).joinToString("\n"),
-                                            )
-                                        }
-                                    context.startActivity(
-                                        Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                                    )
-                                }
-                            },
-                            onActivePreviewChanged = { activePreviewId = it },
-                            onUpcomingPreviewChanged = { upcomingPreviewId = it },
-                            activityText = { row ->
-                                byId[row.id]
-                                    ?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
-                                    ?: row.activity
-                            },
-                            onOpenRow = { row ->
-                                byId[row.id]?.let { entry ->
-                                    onOpenThread(
-                                        entry.key.provider.value,
-                                        entry.key.board.value,
-                                        entry.key.thread.value,
-                                        entry.title,
-                                    )
-                                }
-                            },
-                            onOpenBoard =
-                                onOpenBoard?.let { open ->
-                                    { row ->
-                                        byId[row.id]?.let { entry ->
-                                            open(entry.key.provider.value, entry.key.board.value, row.boardTitle)
-                                        }
-                                    }
-                                },
-                            mediaContent = { row, mediaModifier, active ->
-                                byId[row.id]?.let { entry ->
-                                    FeedMedia(
-                                        entry = entry,
-                                        preferences = settings.playbackPreferences,
-                                        active =
-                                            active &&
-                                                foreground &&
-                                                (providerFilter == null || entry.key.provider.value == providerFilter),
-                                        modifier = mediaModifier,
-                                        onLike = { actionsViewModel.watch(entry) },
-                                    )
-                                }
-                            },
-                            thumbnail = { row, tileModifier ->
-                                byId[row.id]?.attachment?.let { attachment ->
-                                    MediaThumbnail(
-                                        attachment = attachment,
-                                        fullResolution = false,
-                                        contentScale = ContentScale.Fit,
-                                        // Offscreen pages retain inexpensive static thumbnails.
-                                        modifier = tileModifier,
-                                    )
-                                }
-                            },
+                        context.startActivity(
+                            Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                         )
                     }
-                }
-            }
+                },
+                onActivePreviewChanged = { activePreviewId = it },
+                onUpcomingPreviewChanged = { upcomingPreviewId = it },
+                activityText = { row ->
+                    byId[row.id]?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
+                        ?: row.activity
+                },
+                onOpenRow = { row ->
+                    byId[row.id]?.let {
+                        onOpenThread(
+                            it.key.provider.value,
+                            it.key.board.value,
+                            it.key.thread.value,
+                            it.title,
+                        )
+                    }
+                },
+                onOpenReplies = { row ->
+                    byId[row.id]?.let {
+                        val open = if (settings.openThreadComments) onOpenThread else onOpenThreadVideos
+                        open(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
+                    }
+                },
+                repliesOpenComments = settings.openThreadComments,
+                onOpenBoard =
+                    onOpenBoard?.let { open ->
+                        { row -> byId[row.id]?.let { open(it.key.provider.value, it.key.board.value, row.boardTitle) } }
+                    },
+                mediaContent = { row, mediaModifier, active ->
+                    byId[row.id]?.let { entry ->
+                        FeedMedia(entry, settings.playbackPreferences, active && foreground, mediaModifier, onLike = {
+                            actionsViewModel.watch(entry)
+                        })
+                    }
+                },
+                thumbnail = { row, tileModifier ->
+                    byId[row.id]?.attachment?.let { attachment ->
+                        MediaThumbnail(
+                            attachment,
+                            fullResolution = false,
+                            contentScale = ContentScale.Fit,
+                            modifier = tileModifier,
+                        )
+                    }
+                },
+            )
         }
     }
 }
+
+private data class FeedPresentationScope(
+    val mode: HomeFeedMode,
+    val source: String?,
+    val query: String,
+    val hideNsfw: Boolean,
+    val coverViolent: Boolean,
+)
+
+private data class MappedFeed(
+    val scope: FeedPresentationScope,
+    val boards: List<SubscribedBoardFeed>,
+    val entries: List<FeedEntry>,
+)
 
 internal data class FeedEntry(
     val key: ThreadKey,
@@ -401,13 +361,24 @@ internal fun feedEntries(
     nowMillis: Long,
     filter: String = "",
     sort: FeedSort = FeedSort.BOARD,
+    videosOnly: Boolean = false,
 ): List<FeedEntry> =
     feeds
         .flatMap { feed -> feed.threads }
         .filter { thread -> thread.matchesFeedFilter(filter) }
         .sortedWith(sort.comparator())
-        .map { thread ->
-            thread.toEntry(visited = visited, nowMillis = nowMillis)
+        .mapNotNull { thread ->
+            val preview =
+                thread.originalPost.attachments.firstOrNull {
+                    !videosOnly || it.type == MediaType.VIDEO && it.sourceUrl.isNotBlank()
+                }
+            if (videosOnly &&
+                preview == null
+            ) {
+                null
+            } else {
+                thread.toEntry(visited = visited, nowMillis = nowMillis, preview = preview)
+            }
         }
 
 internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
@@ -427,13 +398,14 @@ internal fun CatalogThread.matchesFeedFilter(filter: String): Boolean {
 private fun CatalogThread.toEntry(
     visited: Set<ThreadKey>,
     nowMillis: Long,
+    preview: MediaAttachment?,
 ): FeedEntry {
     val title = originalPost.subject ?: "No.${key.thread.value}"
     val activityMillis = activityMillis()
     return FeedEntry(
         key = key,
         title = title,
-        attachment = originalPost.attachments.firstOrNull(),
+        attachment = preview,
         activityMillis = activityMillis,
         row =
             FeedRow(
@@ -443,20 +415,19 @@ private fun CatalogThread.toEntry(
                 site = sourceLabel(key.provider.value),
                 poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
                 mediaLabel =
-                    originalPost.attachments
-                        .firstOrNull()
+                    preview
                         ?.extension
                         ?.uppercase()
                         .orEmpty(),
                 activity = formatRelativeTime(activityMillis, nowMillis).orEmpty(),
                 replies = stats.replyCount,
                 media = stats.imageCount,
-                hasPreview = originalPost.attachments.isNotEmpty(),
+                hasPreview = preview != null,
                 read = key in visited,
                 // The parsed comment, not the raw markup: entities decoded, line breaks kept.
                 excerpt = originalPost.comment.plainText(),
                 threadNumber = key.thread.value.toString(),
-                mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
+                mediaAspectRatio = preview?.previewAspectRatio ?: 0f,
             ),
     )
 }

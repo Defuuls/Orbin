@@ -55,6 +55,16 @@ sealed interface Route {
         val attachmentId: String? = null,
     ) : Route
 
+    /** Keeps Gallery's saved destination identity unchanged when chat opens a thread's videos. */
+    @Serializable
+    data class ThreadVideos(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        /** Required so the gallery ViewModel always receives this value in its saved arguments. */
+        val videosOnly: Boolean,
+    ) : Route
+
     /** Threads saved from every site. */
     @Serializable
     data object Saved : Route

@@ -11,6 +11,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
@@ -31,7 +32,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,6 +45,24 @@ data class GalleryDownloadUiState(
     val label: String? = null,
     val progressValue: Float = 0f,
 )
+
+/** Loading and unavailable threads must not look like successfully loaded, empty media lists. */
+sealed interface GalleryContentState {
+    data object Loading : GalleryContentState
+
+    data class Ready(
+        val media: ImmutableList<MediaAttachment>,
+        val threadMedia: ImmutableList<MediaAttachment>,
+        val threadMediaIndices: ImmutableList<Int>,
+    ) : GalleryContentState {
+        /** Engines can reuse an attachment id/URL on different posts in the same thread. */
+        fun pageKey(page: Int): String = "${threadMediaIndices[page]}:${media[page].id}"
+    }
+
+    data class Error(
+        val message: String,
+    ) : GalleryContentState
+}
 
 fun buildProgressMessage(
     current: Int,
@@ -57,7 +79,7 @@ class GalleryViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
-        observeThread: ObserveThreadUseCase,
+        private val observeThread: ObserveThreadUseCase,
         private val downloadRepository: DownloadRepository,
         settingsRepository: SettingsRepository,
         private val savedThreadRepository: SavedThreadRepository,
@@ -73,6 +95,7 @@ class GalleryViewModel
         suspend fun copyImage(imageUrl: String): ImageCopyResult = imageClipboard.copy(imageUrl)
 
         private val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
+        val videosOnly: Boolean = savedStateHandle.get<Boolean>("videosOnly") ?: false
 
         /**
          * The file to open at, when the caller knew which attachment it wanted but not where that
@@ -125,24 +148,61 @@ class GalleryViewModel
          * the permanent filter is applied here in the same two ways the thread view applies it:
          * whole posts it catches, then individual files it catches by name.
          */
+        private val reload = MutableStateFlow(0)
+
+        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+        val content: StateFlow<GalleryContentState> =
+            reload
+                .flatMapLatest { attempt ->
+                    observeThread(provider, board, threadId, forceRefresh = attempt > 0)
+                        .map(::contentFor)
+                        .onStart { emit(GalleryContentState.Loading) }
+                        .catch { emit(GalleryContentState.Error("Couldn't load the thread. Try again.")) }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), GalleryContentState.Loading)
+
         val media: StateFlow<ImmutableList<MediaAttachment>> =
-            observeThread(provider, board, threadId)
-                .map { result ->
-                    val thread =
-                        when (result) {
-                            is OrbinResult.Success -> result.data
-                            is OrbinResult.Failure -> savedThreadRepository.load(threadKey)
-                        }
-                    if (thread == null || thread.isPermanentlyFiltered()) {
-                        persistentListOf()
-                    } else {
-                        thread.allPosts
-                            .filterNot { it.isPermanentlyFiltered() }
-                            .flatMap { it.attachments }
-                            .filterNot { it.isPermanentlyFiltered() }
-                            .toImmutableList()
-                    }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+            content
+                .map { (it as? GalleryContentState.Ready)?.media ?: persistentListOf() }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+
+        private suspend fun contentFor(result: OrbinResult<Thread>): GalleryContentState {
+            val thread =
+                when (result) {
+                    is OrbinResult.Success -> result.data
+                    is OrbinResult.Failure -> savedThreadRepository.load(threadKey)
+                }
+            if (thread == null) {
+                return GalleryContentState.Error(
+                    (result as? OrbinResult.Failure)?.error?.message ?: "Couldn't load the thread. Try again.",
+                )
+            }
+            val allMedia =
+                if (thread.isPermanentlyFiltered()) {
+                    persistentListOf()
+                } else {
+                    thread.allPosts
+                        .filterNot { it.isPermanentlyFiltered() }
+                        .flatMap { it.attachments }
+                        .filterNot { it.isPermanentlyFiltered() }
+                        .toImmutableList()
+                }
+            val visibleIndices =
+                allMedia.indices
+                    .filter { index -> !videosOnly || allMedia[index].type == MediaType.VIDEO }
+                    .toImmutableList()
+            val visibleMedia = if (videosOnly) visibleIndices.map(allMedia::get).toImmutableList() else allMedia
+            return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices)
+        }
+
+        fun retry() {
+            reload.value++
+        }
+
+        /** A filtered video page still points back to the correct file in its original thread. */
+        fun threadMediaIndexAt(page: Int): Int? {
+            val loaded = content.value as? GalleryContentState.Ready ?: return null
+            return loaded.threadMediaIndices.getOrNull(page)
+        }
 
         private var prefetchJob: Job? = null
         private var videoPrefetchJob: Job? = null

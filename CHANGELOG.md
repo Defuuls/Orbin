@@ -6,6 +6,22 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [197-Okahijiki] - 2026-11-10
+
+### Fixed
+- Made Following show followed boards instead of filtering watched threads, and gave For You its own discovery feed across eligible boards on both sites.
+- Kept feed tabs and source selection available during loading, empty results, and errors, and scoped catalog caches, playback, and preloading to the selected feed and source.
+- Paused iOS feed playback and preloading while release notes or the privacy cover obscure the reader.
+- Moved catalog filtering and media-cover processing off the UI thread so navigation stays responsive while discovery loads.
+
+### Added
+- Bounded, incremental For You catalog loading so discovery can show videos before every board has loaded.
+- A thread-video destination for the Home chat button, including video attachments in replies, with explicit loading, retry, and empty states on Android and iOS.
+- A global Playback setting, Open comments from chat button, which defaults off and preserves the choice across relaunches and backups.
+
+### Testing
+- Added feed-mode, source, discovery-loading, persistence, reply-video filtering, thread routing, chat-action, and settings compatibility regressions across Android and iOS.
+
 ## [196-Kai-Lan] - 2026-11-10
 
 ### Fixed
@@ -2940,7 +2956,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...HEAD
+[197-Okahijiki]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...v197-Okahijiki
 [196-Kai-Lan]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...v196-Kai-Lan
 [195-Bitter-Melon]: https://github.com/Defuuls/Orbin/compare/v194-Malanga...v195-Bitter-Melon
 [194-Malanga]: https://github.com/Defuuls/Orbin/compare/v193-Purslane...v194-Malanga
