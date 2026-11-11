@@ -46,7 +46,9 @@ jobs:
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/playwright" "playwright@${PLAYWRIGHT_VERSION}"
-          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install --with-deps chromium
+          # Hosted Ubuntu supplies the native libraries. Renders embed repository fonts
+          # and reject system-font fallback, so no additional OS fonts are needed.
+          "$RUNNER_TEMP/playwright/node_modules/.bin/playwright" install chromium
 
       - name: Compare renders with baselines
         run: NODE_PATH="$RUNNER_TEMP/playwright/node_modules" node scripts/design_docs_visual.cjs

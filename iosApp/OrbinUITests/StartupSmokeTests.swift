@@ -114,19 +114,33 @@ final class StartupSmokeTests: XCTestCase {
         let following = app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
         following.tap()
-        let followingSelected = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in following.isSelected && !forYou.isSelected },
-            object: nil
+        assertFeedSelection(
+            selected: "tiktok_feed_following",
+            unselected: "tiktok_feed_for_you",
+            message: "Following must select its board-following feed even while catalogs are unavailable"
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [followingSelected], timeout: 15), .completed,
-                       "Following must select its board-following feed even while catalogs are unavailable")
         forYou.tap()
-        let discoverySelected = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in forYou.isSelected && !following.isSelected },
+        assertFeedSelection(
+            selected: "tiktok_feed_for_you",
+            unselected: "tiktok_feed_following",
+            message: "For You must return to its independent discovery feed"
+        )
+    }
+
+    private func assertFeedSelection(selected: String, unselected: String, message: String) {
+        // Read both traits in one snapshot: separate full-tree queries can each take seconds
+        // on a busy simulator even after the app has already switched feeds.
+        let matchingStates = app.buttons.matching(
+            NSPredicate(
+                format: "(identifier == %@ AND selected == true) OR (identifier == %@ AND selected == false)",
+                selected, unselected
+            )
+        )
+        let selection = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in matchingStates.count == 2 },
             object: nil
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [discoverySelected], timeout: 15), .completed,
-                       "For You must return to its independent discovery feed")
+        XCTAssertEqual(XCTWaiter.wait(for: [selection], timeout: 15), .completed, message)
     }
 
     private func waitForBoardDirectory(_ board: XCUIElement) {
