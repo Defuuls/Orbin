@@ -6,6 +6,17 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Speeding up the iOS simulator CI job: the simulator boots in the background during JDK and
+  Kotlin/Native setup, `~/.konan` is cached, the booted device is passed as an environment
+  variable so it does not bust the Gradle configuration cache, xcodebuild skips index stores
+  and inactive architectures, and pushes to main use the same path filters as pull requests.
+
+### Testing
+- Moved shared `:app-ios` logic tests from `commonTest` to `androidHostTest` so they run only
+  on the Android host already exercised by `./gradlew test` in CI, and left UIKit, AVKit, and
+  other native API tests in `iosTest` on the simulator.
+
 ## [198-Celtuce] - 2026-11-11
 
 ### Changed

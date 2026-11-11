@@ -11,18 +11,29 @@ design system and every `ui-next` screen. What is iOS-only is small:
 
 ## Simulator tests
 
-CI boots an available iPhone simulator, waits for its system services, and shares that device
-between the app and storage suites.
+CI starts booting an available iPhone simulator at the beginning of the job, waits for its
+system services just before the suites run, and shares that device between the app and storage
+suites. Shared `:app-ios` logic tests run on the Android host in the CI unit-test job; the
+simulator job keeps only tests that need UIKit, AVKit, or the real storage driver.
 
-On a Mac, boot a device in Simulator and run the suites with its UDID:
+On a Mac, boot a device in Simulator and run the suites with its UDID in
+`ORBIN_IOS_TEST_DEVICE` (preferred, and what CI uses) so the value is read when the test
+task runs and does not bust Gradle's configuration cache:
+
+```bash
+export ORBIN_IOS_TEST_DEVICE=YOUR_BOOTED_SIMULATOR_UDID
+./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
+```
+
+The `orbin.iosTestDevice` Gradle property still works for local runs:
 
 ```bash
 ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test \
   -Porbin.iosTestDevice=YOUR_BOOTED_SIMULATOR_UDID
 ```
 
-Find the UDID with `xcrun simctl list devices available`. The property selects that device and
-disables standalone mode; Gradle leaves its lifecycle to you. Ordinary tests without this property
+Find the UDID with `xcrun simctl list devices available`. Either form selects that device and
+disables standalone mode; Gradle leaves its lifecycle to you. Ordinary tests without an override
 retain Kotlin's default simulator management.
 
 ## What it does so far
@@ -130,8 +141,9 @@ The shared tests also run on the iOS simulator:
 
 ## CI
 
-- **iOS** (`.github/workflows/ios.yml`) runs on macOS for every PR that can change what the iOS
-  app compiles: the shared tests on the simulator, then an unsigned simulator build of the app.
+- **iOS** (`.github/workflows/ios.yml`) runs on macOS for every PR or push to main that can
+  change what the iOS app compiles: the native tests on the simulator, then an unsigned
+  simulator build of the app. Shared `:app-ios` logic tests run in the CI unit-test job.
 - **Shared code (iOS targets)** in `ci.yml` cross-compiles every multiplatform module for iOS on
   Linux, which catches JVM-only APIs in shared code quickly.
 - **TestFlight** (`.github/workflows/testflight.yml`) archives, signs and uploads a build. It runs
