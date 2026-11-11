@@ -1,16 +1,14 @@
 package com.orbin.ios
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
-import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -99,15 +97,13 @@ class ReaderSettings(
 
     fun setOpenThreadComments(enabled: Boolean): Job = scope.launch { repository.setOpenThreadComments(enabled) }
 
-    fun setColorTheme(theme: AppColorTheme): Job = scope.launch { repository.setColorTheme(theme) }
+    fun setCatalogMode(mode: CatalogMode): Job = scope.launch { repository.setCatalogMode(mode) }
 
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
 
     fun setActiveProviderId(site: ProviderId): Job = scope.launch { repository.setActiveProviderId(site) }
-
-    fun setTabletCatalogColumns(columns: Int): Job = scope.launch { repository.setTabletCatalogColumns(columns) }
 
     fun setFeedColumns(
         formFactor: FormFactor,
@@ -140,11 +136,10 @@ internal object SettingIds {
     const val CONTACT = "contact"
     const val COVER_VIOLENT = "coverViolent"
     const val OPEN_THREAD_COMMENTS = "openThreadComments"
-    const val COLOR_THEME = "colorTheme"
     const val THEME = "themeMode"
     const val AMOLED = "amoled"
     const val FEED_COLUMNS = "feedColumns"
-    const val CATALOG_COLUMNS = "catalogColumns"
+    const val CATALOG_MODE = "catalogMode"
     const val APP_LOCK = "biometric"
     const val SCREEN_PRIVACY = "screenPrivacy"
     const val DOH_PROVIDER = "dohProvider"
@@ -177,18 +172,14 @@ internal fun settingsGroups(
     clearArmed: Boolean,
     imageCacheCleared: Boolean,
     backup: BackupState = BackupState.Idle,
-    formFactor: FormFactor = FormFactor.PHONE,
     version: AppVersion = AppVersion(),
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
-        "" to appearanceAndPrivacyRows(settings, formFactor),
+        "" to appearanceAndPrivacyRows(settings),
         "" to storageAndAboutRows(clearArmed, imageCacheCleared, backup, version),
     ).let(::settingsSections)
 
-private fun appearanceAndPrivacyRows(
-    settings: AppSettings,
-    formFactor: FormFactor,
-): List<SettingItem> =
+private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
     listOfNotNull(
         toggle(SettingIds.HIDE_NSFW, "Hide NSFW boards", settings.hideNsfwBoards),
         toggle(SettingIds.COVER_VIOLENT, "Cover violent media", settings.coverViolentMedia),
@@ -200,9 +191,15 @@ private fun appearanceAndPrivacyRows(
             options = AppThemeMode.entries.map { it.label },
             selected = settings.themeMode.ordinal,
         ),
-        colorThemeChoice(settings.colorTheme),
-        toggle(SettingIds.AMOLED, "True black", settings.amoled),
-        catalogColumns(settings, formFactor),
+        toggle(SettingIds.AMOLED, "AMOLED black", settings.amoled),
+        SettingItem(
+            id = SettingIds.CATALOG_MODE,
+            label = "Catalog view",
+            value = settings.catalogMode.label,
+            kind = SettingKind.CHOICE,
+            options = CatalogMode.entries.map { it.label },
+            selected = settings.catalogMode.ordinal,
+        ),
         toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
         toggle(
             SettingIds.SCREEN_PRIVACY,
@@ -303,9 +300,8 @@ private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): Lis
     val appearanceIds =
         setOf(
             SettingIds.THEME,
-            SettingIds.COLOR_THEME,
             SettingIds.AMOLED,
-            SettingIds.CATALOG_COLUMNS,
+            SettingIds.CATALOG_MODE,
         )
     val privacyIds =
         setOf(
@@ -339,24 +335,6 @@ private fun versionRow(version: AppVersion): SettingItem? {
     )
 }
 
-/** An iPad's board catalog column count, as Android's tablet row. */
-private fun catalogColumns(
-    settings: AppSettings,
-    formFactor: FormFactor,
-): SettingItem? {
-    if (formFactor != FormFactor.TABLET) return null
-    val choices = (TABLET_MIN_CATALOG_COLUMNS..TABLET_MAX_CATALOG_COLUMNS).toList()
-    val columns = settings.tabletCatalogColumns.coerceIn(choices.first(), choices.last())
-    return SettingItem(
-        id = SettingIds.CATALOG_COLUMNS,
-        label = "Catalog columns",
-        value = columns.toString(),
-        kind = SettingKind.CHOICE,
-        options = choices.map { it.toString() },
-        selected = choices.indexOf(columns),
-    )
-}
-
 private fun toggle(
     id: String,
     label: String,
@@ -377,13 +355,3 @@ private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar
 /** The privacy policy and project information live in the project's own repository. */
 internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
 internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin"
-
-private fun colorThemeChoice(theme: AppColorTheme) =
-    SettingItem(
-        id = SettingIds.COLOR_THEME,
-        label = "Color theme",
-        value = theme.label,
-        kind = SettingKind.CHOICE,
-        options = AppColorTheme.entries.map { it.label },
-        selected = theme.ordinal,
-    )

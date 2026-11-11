@@ -7,6 +7,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HistoryEntry
@@ -26,6 +27,7 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.CatalogRepository
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -152,6 +154,26 @@ class BoardViewModelTest {
         }
 
     @Test
+    fun `catalog mode is shared across boards and survives view model recreation`() =
+        runTest {
+            val settings = FakeSettingsRepository()
+            val first = createViewModel(settingsRepository = settings)
+            first.setCatalogMode(CatalogMode.GRID)
+            assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.GRID)
+            val reopened =
+                createViewModel(
+                    settingsRepository = settings,
+                    savedStateHandle =
+                        SavedStateHandle(mapOf("provider" to PROVIDER, "board" to "v", "title" to "Video")),
+                )
+            assertThat(reopened.settings.first { it.catalogMode == CatalogMode.GRID }.catalogMode)
+                .isEqualTo(CatalogMode.GRID)
+            settings.setCatalogMode(CatalogMode.LIST)
+            assertThat(reopened.settings.first { it.catalogMode == CatalogMode.LIST }.catalogMode)
+                .isEqualTo(CatalogMode.LIST)
+        }
+
+    @Test
     fun `toggling subscription on an unwatched thread bookmarks and watches it`() =
         runTest {
             val bookmarks = FakeBookmarkRepository()
@@ -183,6 +205,7 @@ class BoardViewModelTest {
         bookmarkRepository: FakeBookmarkRepository = FakeBookmarkRepository(),
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
         catalogRepository: CatalogRepository = FakeCatalogRepository,
+        settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         savedStateHandle: SavedStateHandle =
             SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title")),
     ) = BoardViewModel(
@@ -190,7 +213,7 @@ class BoardViewModelTest {
         catalogRepository = catalogRepository,
         bookmarkRepository = bookmarkRepository,
         historyRepository = historyRepository,
-        settingsRepository = FakeSettingsRepository(),
+        settingsRepository = settingsRepository,
     )
 
     private fun presentation(

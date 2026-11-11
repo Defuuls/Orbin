@@ -326,7 +326,7 @@ A stored color theme or column count from an earlier version is ignored. A backu
 
 ![Themes](diagrams/themes.svg)
 
-Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for every ground so that an OLED screen turns those pixels off.
+Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for screen, row, post, card, app bar, sheet and dialog grounds so that an OLED screen turns those pixels off. Placeholder and selection fills keep the distinct `color.surfaceVariant` and `color.selected` values from the color table.
 
 ## States
 

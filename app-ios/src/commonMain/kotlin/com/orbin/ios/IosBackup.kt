@@ -11,6 +11,7 @@ import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.decodeBackupDocument
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -129,7 +130,7 @@ class IosBackup(
             require(backupJson.length <= MAX_BACKUP_JSON_CHARS) {
                 "Backup file is too large to import."
             }
-            val document = json.decodeFromString(BackupDocument.serializer(), backupJson)
+            val document = json.decodeBackupDocument(backupJson)
             require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                 "This backup was written by a newer version of Orbin (format ${document.formatVersion})."
             }
@@ -241,15 +242,13 @@ class IosBackup(
             requireAuthorization()
             setThemeMode(restored.themeMode)
             requireAuthorization()
-            setColorTheme(restored.colorTheme)
-            requireAuthorization()
             setAmoled(restored.amoled)
             requireAuthorization()
             setFeedColumns(FormFactor.FOLDABLE, restored.unfoldedFeedColumns)
             requireAuthorization()
             setFeedColumns(FormFactor.TABLET, restored.tabletFeedColumns)
             requireAuthorization()
-            setTabletCatalogColumns(restored.tabletCatalogColumns)
+            setCatalogMode(restored.catalogMode)
             requireAuthorization()
             if (restored.activeProviderId.isNotBlank()) setActiveProviderId(ProviderId(restored.activeProviderId))
             requireAuthorization()

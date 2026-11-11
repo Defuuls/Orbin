@@ -1,11 +1,11 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.DohProvider
@@ -199,10 +199,6 @@ class FakeSettingsRepository(
         update { copy(openThreadComments = enabled) }
     }
 
-    override suspend fun setColorTheme(theme: AppColorTheme) {
-        update { copy(colorTheme = theme) }
-    }
-
     override suspend fun setThemeMode(mode: AppThemeMode) {
         update { copy(themeMode = mode) }
     }
@@ -256,8 +252,8 @@ class FakeSettingsRepository(
         }
     }
 
-    override suspend fun setTabletCatalogColumns(columns: Int) {
-        update { copy(tabletCatalogColumns = columns) }
+    override suspend fun setCatalogMode(mode: CatalogMode) {
+        update { copy(catalogMode = mode) }
     }
 
     /** The settings as they stand now, for asserting that a screen wrote through. */

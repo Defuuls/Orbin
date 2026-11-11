@@ -1,7 +1,6 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.FormFactor
 import com.orbin.uinext.SettingKind
 import org.junit.Test
 
@@ -25,7 +24,7 @@ class SettingsIndexTest {
     fun `settings groups keep every preference editable in place`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf("themeMode", "colorTheme", "amoled"),
+                listOf("themeMode", "amoled", "catalogMode"),
                 listOf(
                     "hideNsfw",
                     "coverViolent",
@@ -62,28 +61,20 @@ class SettingsIndexTest {
         assertThat(duplicates).isEmpty()
     }
 
-    /** Home pages one thread at a time, so persisted legacy column preferences have no control. */
     @Test
-    fun `immersive feed never offers a column control`() {
-        fun columnsRow(formFactor: FormFactor) =
-            buildModel(formFactor).groups.flatMap { it.second }.firstOrNull { it.id == "feedColumns" }
-
-        FormFactor.entries.forEach { assertThat(columnsRow(it)).isNull() }
+    fun `appearance has only brightness AMOLED and catalog view`() {
+        val appearance = buildModel().groups.single { it.first == "Appearance" }.second
+        assertThat(appearance.map { it.label }).containsExactly("Theme", "AMOLED black", "Catalog view").inOrder()
+        assertThat(appearance.map { it.id }).containsExactly("themeMode", "amoled", "catalogMode").inOrder()
     }
 
-    /** A board catalog's column count is a tablet's alone: a foldable's catalog fits itself. */
     @Test
-    fun `catalog columns show only on tablets`() {
-        fun columnsRow(formFactor: FormFactor) =
-            buildModel(formFactor).groups.flatMap { it.second }.firstOrNull { it.id == "catalogColumns" }
-
-        assertThat(columnsRow(FormFactor.PHONE)).isNull()
-        assertThat(columnsRow(FormFactor.FOLDABLE)).isNull()
-        with(checkNotNull(columnsRow(FormFactor.TABLET))) {
-            assertThat(label).isEqualTo("Catalog columns")
-            assertThat(options).containsExactlyElementsIn((2..8).map { "$it columns" }).inOrder()
-            assertThat(value).isEqualTo("4 columns")
-        }
+    fun `catalog view defaults to list with a grid choice`() {
+        val catalog = allRows().single { it.id == "catalogMode" }
+        assertThat(catalog.kind).isEqualTo(SettingKind.CHOICE)
+        assertThat(catalog.options).containsExactly("List", "Grid").inOrder()
+        assertThat(catalog.value).isEqualTo("List")
+        assertThat(catalog.selected).isEqualTo(0)
     }
 
     /**
@@ -112,17 +103,14 @@ class SettingsIndexTest {
      * The registry only reads values off [com.orbin.core.model.AppSettings] and records the view
      * model's setters as closures it never calls here, so a relaxed mock is enough to build it.
      */
-    private fun buildModel(
-        formFactor: FormFactor = FormFactor.PHONE,
-        dns: DnsRowState = DnsRowState(),
-    ) = buildSettings(
-        settings =
-            com.orbin.core.model
-                .AppSettings(),
-        vm = io.mockk.mockk(relaxed = true),
-        updateState = "Up to date",
-        strings = ResourceFileStrings,
-        formFactor = formFactor,
-        dns = dns,
-    )
+    private fun buildModel(dns: DnsRowState = DnsRowState()) =
+        buildSettings(
+            settings =
+                com.orbin.core.model
+                    .AppSettings(),
+            vm = io.mockk.mockk(relaxed = true),
+            updateState = "Up to date",
+            strings = ResourceFileStrings,
+            dns = dns,
+        )
 }

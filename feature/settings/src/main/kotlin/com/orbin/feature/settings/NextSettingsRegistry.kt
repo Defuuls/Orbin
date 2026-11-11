@@ -1,12 +1,9 @@
 package com.orbin.feature.settings
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
-import com.orbin.core.model.FormFactor
-import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
-import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
@@ -26,13 +23,12 @@ internal fun buildSettings(
     imageCacheLabel: String = strings.get(R.string.settings_image_cache_empty),
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
-    formFactor: FormFactor = FormFactor.PHONE,
     dns: DnsRowState = DnsRowState(),
 ): SettingsModel {
     val rows = Rows(strings)
-    val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch, formFactor) + rows.strictDns(dns, vm)
+    val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch) + rows.strictDns(dns, vm)
     val data = rows.data(updateState, imageCacheLabel, clearArmed)
-    val appearanceIds = setOf("themeMode", "colorTheme", "catalogColumns", "amoled")
+    val appearanceIds = setOf("themeMode", "amoled", "catalogMode")
     val groups =
         listOf(
             strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
@@ -139,7 +135,6 @@ private class Rows(
         settings: AppSettings,
         vm: SettingsViewModel,
         checkUpdatesOnLaunch: Boolean,
-        formFactor: FormFactor,
     ) = listOfNotNull(
         toggle("hideNsfw", strings.get(R.string.settings_hide_nsfw), settings.hideNsfwBoards, vm::setHideNsfwBoards),
         toggle(
@@ -156,16 +151,15 @@ private class Rows(
             Enum<*>::titleCase,
             vm::setThemeMode,
         ),
-        choice(
-            "colorTheme",
-            strings.get(R.string.settings_color_theme),
-            AppColorTheme.entries,
-            settings.colorTheme,
-            AppColorTheme::label,
-            vm::setColorTheme,
-        ),
-        catalogColumns(settings, vm, formFactor),
         toggle("amoled", strings.get(R.string.settings_true_black), settings.amoled, vm::setAmoled),
+        choice(
+            "catalogMode",
+            strings.get(R.string.settings_catalog_view),
+            CatalogMode.entries,
+            settings.catalogMode,
+            CatalogMode::label,
+            vm::setCatalogMode,
+        ),
         toggle(
             "biometric",
             strings.get(R.string.settings_app_lock),
@@ -208,23 +202,6 @@ private class Rows(
             vm::setCheckUpdatesOnLaunch,
         ),
     )
-
-    /** A board catalog's columns: a tablet's choice; everywhere else the catalog fits its tiles. */
-    private fun catalogColumns(
-        settings: AppSettings,
-        vm: SettingsViewModel,
-        formFactor: FormFactor,
-    ): SettingItem? {
-        if (formFactor != FormFactor.TABLET) return null
-        return choice(
-            id = "catalogColumns",
-            label = strings.get(R.string.settings_catalog_columns),
-            values = (TABLET_MIN_CATALOG_COLUMNS..TABLET_MAX_CATALOG_COLUMNS).toList(),
-            selected = settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS),
-            text = { strings.get(R.string.settings_columns, it) },
-            onChange = vm::setTabletCatalogColumns,
-        )
-    }
 
     /** Only destructive actions carry a hint, and it says what goes. */
     fun data(

@@ -10,6 +10,7 @@ import androidx.paging.map
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaFilter
@@ -48,7 +49,7 @@ class BoardViewModel
         catalogRepository: CatalogRepository,
         private val bookmarkRepository: BookmarkRepository,
         historyRepository: HistoryRepository,
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
@@ -69,7 +70,7 @@ class BoardViewModel
                 ),
             )
 
-        /** For the catalog's column count on a tablet. */
+        /** Device-wide catalog presentation, shared by settings and the catalog overflow. */
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AppSettings.Default)
@@ -79,6 +80,10 @@ class BoardViewModel
 
         fun cycleCatalogSort() {
             savedStateHandle[CATALOG_SORT_KEY] = catalogSort.value.next()
+        }
+
+        fun setCatalogMode(mode: CatalogMode) {
+            viewModelScope.launch { settingsRepository.setCatalogMode(mode) }
         }
 
         val catalog: Flow<PagingData<CatalogThread>> =

@@ -33,6 +33,7 @@ import com.orbin.core.model.isWideWindow
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.uinext.BoardScreen
+import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextPullToRefresh
@@ -40,6 +41,7 @@ import com.orbin.uinext.next
 import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 // A board: its catalog, its media wall, the iPad split beside a thread, and catalog tiles.
 
@@ -85,6 +87,19 @@ internal fun CatalogDestination(
                     rowAt = { index -> rows.getOrNull(index) },
                     sortLabel = sort.label,
                     onSort = browser::cycleCatalogSort,
+                    mode =
+                        when (settings.catalogMode) {
+                            StoredCatalogMode.LIST -> CatalogMode.LIST
+                            StoredCatalogMode.GRID -> CatalogMode.GRID
+                        },
+                    onModeChange = { mode ->
+                        browser.settings.setCatalogMode(
+                            when (mode) {
+                                CatalogMode.LIST -> StoredCatalogMode.LIST
+                                CatalogMode.GRID -> StoredCatalogMode.GRID
+                            },
+                        )
+                    },
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
                     onOpenMedia = { browser.open(Route.BoardMedia(board)) },
                     thumbnail = { row, modifier ->

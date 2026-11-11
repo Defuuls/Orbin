@@ -2,10 +2,7 @@ package com.orbin.feature.board
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -27,6 +24,7 @@ import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.sourceLabel
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /**
  * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
@@ -48,8 +46,7 @@ fun NextBoardScreen(
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
-    // The reader's choice lasts while the catalog is open; the Appearance setting will own it.
-    var catalogMode by rememberSaveable { mutableStateOf(CatalogMode.LIST) }
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
 
     val board = "/${viewModel.boardId}/"
@@ -131,8 +128,19 @@ fun NextBoardScreen(
                         )
                     }
                 },
-                mode = catalogMode,
-                onModeChange = { catalogMode = it },
+                mode =
+                    when (settings.catalogMode) {
+                        StoredCatalogMode.LIST -> CatalogMode.LIST
+                        StoredCatalogMode.GRID -> CatalogMode.GRID
+                    },
+                onModeChange = { mode ->
+                    viewModel.setCatalogMode(
+                        when (mode) {
+                            CatalogMode.LIST -> StoredCatalogMode.LIST
+                            CatalogMode.GRID -> StoredCatalogMode.GRID
+                        },
+                    )
+                },
                 onReload = threads::refresh,
                 reloading = refreshState is LoadState.Loading,
                 wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),

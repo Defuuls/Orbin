@@ -29,7 +29,7 @@ internal val EXTERNAL_SETTINGS_DESTINATIONS = setOf("boards", "favorites", "watc
 internal fun settingsPages(groups: List<Pair<String, List<SettingItem>>>): Map<String, List<SettingItem>> =
     groups.flatMap { it.second }.groupBy { item ->
         when (item.id) {
-            "themeMode", "colorTheme", "feedColumns", "catalogColumns", "amoled" -> "appearance"
+            "themeMode", "amoled", "catalogMode" -> "appearance"
             "hideNsfw", "coverViolent" -> "hidden"
             "saveSearchHistory", "saveBrowsingHistory" -> "history"
             "biometric", "screenPrivacy", "dohProvider", "strictDns" -> "privacy"

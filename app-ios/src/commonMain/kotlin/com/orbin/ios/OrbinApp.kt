@@ -24,7 +24,6 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextColorTheme
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
@@ -33,7 +32,7 @@ import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
-import com.orbin.uinext.colorThemePalette
+import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.flow.map
 
@@ -82,7 +81,7 @@ fun OrbinApp(
             AppThemeMode.LIGHT -> false
             AppThemeMode.DARK -> true
         }
-    val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
+    val palette = canonicalNextPalette(dark, settings.amoled)
     val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun.needed, lockState)
     SideEffect { onStatusBarAppearance(lightIcons) }
     NextTheme(

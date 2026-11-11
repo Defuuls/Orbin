@@ -1,16 +1,18 @@
 package com.orbin.ios
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.FormFactor
+import com.orbin.core.model.CatalogMode
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingKind
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SettingsRowsTest {
     @Test
     fun sectionsKeepEverySettingReachableExactlyOnce() {
@@ -23,18 +25,34 @@ class SettingsRowsTest {
     }
 
     @Test
-    fun everyColorIsSelectableAndShowsItsSavedSelection() {
-        AppColorTheme.entries.forEach { theme ->
+    fun everyCatalogViewShowsItsSavedSelection() {
+        CatalogMode.entries.forEach { mode ->
             val row =
-                settingsGroups(AppSettings(colorTheme = theme), false, false)
+                settingsGroups(AppSettings(catalogMode = mode), false, false)
                     .flatMap { it.second }
-                    .single { it.id == SettingIds.COLOR_THEME }
+                    .single { it.id == SettingIds.CATALOG_MODE }
             assertEquals(SettingKind.CHOICE, row.kind)
-            assertEquals(AppColorTheme.entries.map { it.label }, row.options)
-            assertEquals(theme.label, row.value)
-            assertEquals(theme.ordinal, row.selected)
+            assertEquals(listOf("List", "Grid"), row.options)
+            assertEquals(if (mode == CatalogMode.LIST) "List" else "Grid", row.value)
+            assertEquals(mode.ordinal, row.selected)
         }
     }
+
+    @Test
+    fun catalogViewWritesThroughTheSharedRepositoryAndSurvivesReaderRecreation() =
+        runTest {
+            val repository = FakeSettings()
+            val reader = ReaderSettings(repository, FakeHistory(), backgroundScope)
+            runCurrent()
+            reader.setCatalogMode(CatalogMode.GRID).join()
+            runCurrent()
+            assertEquals(CatalogMode.GRID, reader.current.value.catalogMode)
+            assertEquals(CatalogMode.GRID, repository.settings.value.catalogMode)
+            val reopened = ReaderSettings(repository, FakeHistory(), backgroundScope)
+            runCurrent()
+            assertEquals(CatalogMode.GRID, reopened.current.value.catalogMode)
+            assertEquals(AppThemeMode.SYSTEM, reopened.current.value.themeMode)
+        }
 
     @Test
     fun theRowsShowTheCurrentSettings() {
@@ -69,25 +87,14 @@ class SettingsRowsTest {
     }
 
     @Test
-    fun onlyTheTabletCatalogOffersColumnsWhileImmersiveHomeDoesNot() {
-        fun rows(formFactor: FormFactor) =
-            settingsGroups(
-                AppSettings(tabletFeedColumns = 3),
-                clearArmed = false,
-                imageCacheCleared = false,
-                formFactor = formFactor,
-            ).flatMap { it.second }
-
-        FormFactor.entries.forEach { factor ->
-            assertTrue(rows(factor).none { it.id == SettingIds.FEED_COLUMNS })
-        }
-
-        val catalog = rows(FormFactor.TABLET).single { it.id == SettingIds.CATALOG_COLUMNS }
-        assertEquals((2..8).map { it.toString() }, catalog.options)
-        assertEquals("4", catalog.value)
-        assertEquals(2, catalog.selected)
-        assertTrue(rows(FormFactor.PHONE).none { it.id == SettingIds.CATALOG_COLUMNS })
-        assertTrue(rows(FormFactor.FOLDABLE).none { it.id == SettingIds.CATALOG_COLUMNS })
+    fun appearanceHasOnlyBrightnessAmoledAndDeviceWideCatalogView() {
+        val appearance = settingsGroups(AppSettings(), false, false).single { it.first == "Appearance" }.second
+        assertEquals(listOf(SettingIds.THEME, SettingIds.AMOLED, SettingIds.CATALOG_MODE), appearance.map { it.id })
+        assertEquals(listOf("Theme", "AMOLED black", "Catalog view"), appearance.map { it.label })
+        val catalog = appearance.single { it.id == SettingIds.CATALOG_MODE }
+        assertEquals(listOf("List", "Grid"), catalog.options)
+        assertEquals("List", catalog.value)
+        assertEquals(0, catalog.selected)
     }
 
     @Test

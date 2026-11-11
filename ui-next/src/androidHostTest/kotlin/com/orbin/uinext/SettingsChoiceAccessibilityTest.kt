@@ -29,7 +29,7 @@ class SettingsChoiceAccessibilityTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `theme choices expose selection and keep it after repeated selection`() {
+    fun `catalog view choices expose selection and keep it after repeated selection`() {
         composeRule.setContent {
             var selected by remember { mutableIntStateOf(0) }
             NextTheme {
@@ -39,16 +39,16 @@ class SettingsChoiceAccessibilityTest {
                             "" to
                                 listOf(
                                     SettingItem(
-                                        id = "colorTheme",
-                                        label = "Color theme",
-                                        value = listOf("Blue", "Teal")[selected],
+                                        id = "catalogMode",
+                                        label = "Catalog view",
+                                        value = listOf("List", "Grid")[selected],
                                         kind = SettingKind.CHOICE,
-                                        options = listOf("Blue", "Teal"),
+                                        options = listOf("List", "Grid"),
                                         selected = selected,
                                     ),
                                 ),
                         ),
-                    expandedId = "colorTheme",
+                    expandedId = "catalogMode",
                     showRail = false,
                     onSelectOption = { _, index -> selected = index },
                 )
@@ -56,17 +56,17 @@ class SettingsChoiceAccessibilityTest {
         }
 
         val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
-        composeRule.onNodeWithText("Blue").assert(radio).assertIsSelected()
+        composeRule.onNodeWithText("List").assert(radio).assertIsSelected()
         composeRule
-            .onNodeWithText("Teal")
+            .onNodeWithText("Grid")
             .assert(radio)
             .assertIsNotSelected()
             .performClick()
-        composeRule.onNodeWithText("Color theme").performClick()
-        composeRule.onNodeWithText("Teal").assertIsSelected().performClick()
-        composeRule.onNodeWithText("Color theme").performClick()
-        composeRule.onNodeWithText("Teal").assertIsSelected()
-        composeRule.onNodeWithText("Blue").assertIsNotSelected()
+        composeRule.onNodeWithText("Catalog view").performClick()
+        composeRule.onNodeWithText("Grid").assertIsSelected().performClick()
+        composeRule.onNodeWithText("Catalog view").performClick()
+        composeRule.onNodeWithText("Grid").assertIsSelected()
+        composeRule.onNodeWithText("List").assertIsNotSelected()
     }
 
     @Test

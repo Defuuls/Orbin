@@ -15,6 +15,7 @@ import com.orbin.core.model.SearchContentType
 import com.orbin.core.model.SearchFilters
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.decodeBackupDocument
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.SearchRepository
@@ -63,7 +64,7 @@ class BackupService
                 require(backupJson.length <= MAX_BACKUP_JSON_CHARS) {
                     "Backup file is too large to import."
                 }
-                val document = json.decodeFromString(BackupDocument.serializer(), backupJson)
+                val document = json.decodeBackupDocument(backupJson)
                 require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                     "This backup was written by a newer version of Orbin " +
                         "(format ${document.formatVersion})."
@@ -164,11 +165,10 @@ class BackupService
                 setPlaybackSettings(PlaybackScope(), settings.playbackPreferences.defaults)
                 settings.playbackPreferences.overrides.forEach { setPlaybackSettings(it.scope, it.settings) }
                 setThemeMode(settings.themeMode)
-                setColorTheme(settings.colorTheme)
                 setAmoled(settings.amoled)
                 setFeedColumns(FormFactor.FOLDABLE, settings.unfoldedFeedColumns)
                 setFeedColumns(FormFactor.TABLET, settings.tabletFeedColumns)
-                setTabletCatalogColumns(settings.tabletCatalogColumns)
+                setCatalogMode(settings.catalogMode)
                 if (settings.activeProviderId.isNotBlank()) {
                     setActiveProviderId(ProviderId(settings.activeProviderId))
                 }

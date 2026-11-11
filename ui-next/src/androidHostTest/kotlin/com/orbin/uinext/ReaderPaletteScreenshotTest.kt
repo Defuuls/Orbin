@@ -1,12 +1,11 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
@@ -20,8 +19,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class ColorThemeScreenshotTest(
-    private val colorName: String,
+class ReaderPaletteScreenshotTest(
     private val mode: String,
 ) {
     @get:Rule
@@ -68,14 +66,6 @@ class ColorThemeScreenshotTest(
                         "Appearance" to
                             listOf(
                                 SettingItem(
-                                    id = "colorTheme",
-                                    label = "Color theme",
-                                    value = colorName.lowercase().replaceFirstChar(Char::uppercase),
-                                    kind = SettingKind.CHOICE,
-                                    options = COLOR_LABELS,
-                                    selected = NextColorTheme.valueOf(colorName).ordinal,
-                                ),
-                                SettingItem(
                                     id = "themeMode",
                                     label = "Theme",
                                     value = if (mode == "light") "Light" else "Dark",
@@ -83,7 +73,15 @@ class ColorThemeScreenshotTest(
                                     options = listOf("System", "Light", "Dark"),
                                     selected = if (mode == "light") 1 else 2,
                                 ),
-                                SettingItem("amoled", "True black", if (mode == "amoled") "On" else "Off"),
+                                SettingItem("amoled", "AMOLED black", if (mode == "amoled") "On" else "Off"),
+                                SettingItem(
+                                    id = "catalogMode",
+                                    label = "Catalog view",
+                                    value = "List",
+                                    kind = SettingKind.CHOICE,
+                                    options = listOf("List", "Grid"),
+                                    selected = 0,
+                                ),
                             ),
                         "Data and storage" to
                             listOf(
@@ -97,7 +95,7 @@ class ColorThemeScreenshotTest(
                                 ),
                             ),
                     ),
-                expandedId = "colorTheme",
+                expandedId = "catalogMode",
             )
         }
 
@@ -105,36 +103,21 @@ class ColorThemeScreenshotTest(
         screen: String,
         content: @Composable () -> Unit,
     ) {
-        val palette = colorThemePalette(NextColorTheme.valueOf(colorName), mode != "light", mode == "amoled")
+        val palette = canonicalNextPalette(mode != "light", mode == "amoled")
         composeRule.setContent {
             NextTheme(darkTheme = palette.dark, amoled = palette.amoled, palette = palette) {
-                Surface(modifier = Modifier.size(411.dp, 891.dp), color = palette.background, content = content)
+                Surface(modifier = Modifier.fillMaxSize(), color = palette.background, content = content)
             }
         }
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage(
-            "src/androidHostTest/screenshots/theme_${colorName.lowercase()}_${mode}_$screen.png",
+            "src/androidHostTest/screenshots/reader_${mode}_$screen.png",
         )
     }
 
     companion object {
-        private val COLOR_LABELS =
-            listOf(
-                "Orbin",
-                "Blue",
-                "Red",
-                "White",
-                "Black",
-                "Purple",
-                "Orange",
-                "Teal",
-            )
-
         @JvmStatic
-        @Parameters(name = "{0}-{1}")
-        fun themes(): List<Array<String>> =
-            NextColorTheme.entries.flatMap { theme ->
-                listOf("light", "dark", "amoled").map { mode -> arrayOf(theme.name, mode) }
-            }
+        @Parameters(name = "{0}")
+        fun modes(): List<Array<String>> = listOf("light", "dark", "amoled").map { mode -> arrayOf(mode) }
     }
 }

@@ -11,6 +11,7 @@ All notable changes to Orbin are documented here. The format is based on
   Kotlin/Native setup, `~/.konan` is cached, the booted device is passed as an environment
   variable so it does not bust the Gradle configuration cache, xcodebuild skips index stores
   and inactive architectures, and pushes to main use the same path filters as pull requests.
+- Applied the reader's green palette in Light, Dark and AMOLED, replaced color themes and tablet column counts with a persistent List or Grid catalog view, and refused older color-theme backups before restoring any data.
 - Replaced the design-system documentation with a normative catalog and thread reader specification: independent color, type, spacing, and size tokens for light, dark, and AMOLED themes; phone list and grid layouts; two-pane rules; states; and a performance contract. The app does not implement this design yet.
 
 ### Testing

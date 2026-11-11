@@ -24,8 +24,7 @@ import com.orbin.uinext.tokens.rememberTikTokFontFamily
  * The palette the entire interface is drawn from.
  *
  * Shared semantic colors mapped consistently to Material color roles.
- * Flat, matte: no alpha fills, no frosted chrome, no gradient scrims. Surface hierarchy
- * is expressed through tonal fills (raised/elevated) rather than transparency or shadows.
+ * Every role is adapted from the normative reader color tokens in [canonicalNextPalette].
  *
  * Every color that carries text clears WCAG AA 4.5:1 against its paired background.
  * [accentContainer] / [onAccentContainer] are the M3 primaryContainer pair, used for
@@ -35,15 +34,15 @@ import com.orbin.uinext.tokens.rememberTikTokFontFamily
 data class NextPalette(
     /** Page background — M3 `background`. Flat, matte, no gradient. */
     val background: Color,
-    /** Card / list-item surface — M3 `surfaceContainerLow`. Subtle tonal lift. */
+    /** Card / list-item ground — M3 `surfaceContainerLow`. */
     val raised: Color,
-    /** Sheet / dialog surface — M3 `surfaceContainer`. One step above raised. */
+    /** Sheet / dialog ground — M3 `surfaceContainer`. */
     val elevated: Color,
     /** Primary text — M3 `onBackground`. */
     val ink: Color,
     /** Secondary text — M3 `onSurfaceVariant`. */
     val muted: Color,
-    /** Tertiary / hint text — `onSurfaceVariant` at reduced alpha. */
+    /** Hint text — the reader's same accessible muted ink. */
     val faint: Color,
     /** Separator line — M3 `outlineVariant`. Very soft, no hard border. */
     val hairline: Color,
@@ -61,6 +60,15 @@ data class NextPalette(
     val destructive: Color,
     /** Text/icons on solid [destructive] fill — WCAG AA compliant. */
     val onDestructive: Color,
+    /** App bar ground and foreground. */
+    val appBar: Color,
+    val onAppBar: Color,
+    /** Thumbnail placeholders, count pills and skeleton fills. */
+    val surfaceVariant: Color,
+    /** Quoted lines, author names and post references. */
+    val quote: Color,
+    val author: Color,
+    val quoteLink: Color,
     val dark: Boolean,
     val amoled: Boolean = false,
 )
@@ -82,7 +90,7 @@ val next: NextPalette
  * Installs the shared reader palette in [LocalNext] and [MaterialTheme].
  *
  * Platform controls adapt to native press feedback while retaining the same semantic colors.
- * The default palette is monochrome; callers can select an optional accent family.
+ * The reader's single green palette follows the requested brightness and AMOLED mode.
  *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits
@@ -111,32 +119,13 @@ fun NextTheme(
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale
 
-    val effectivePalette =
-        palette ?: inherited?.takeIf { it.dark == dark && it.amoled == (dark && black) }
-
-    val fallbackPalette =
-        effectivePalette ?: when {
-            dark && black -> AmoledPalette
-            dark -> DarkPalette
-            else -> LightPalette
-        }
-
-    // Every Material role comes from the one palette: roles left unset fell back to Material's
-    // baseline purple, which is where stray purple bars and buttons came from.
-    val m3Scheme = materialColorScheme(fallbackPalette, dark, black)
-
-    // Explicit palettes must use the same effective ground as Material components. Otherwise
-    // an AMOLED override blackens Material backgrounds but screens reading `next` ignore it.
     val resolvedPalette =
-        effectivePalette?.copy(
-            background = m3Scheme.background,
-            dark = dark,
-            amoled = dark && black,
-        ) ?: fallbackPalette.copy(
-            background = m3Scheme.background,
-            dark = dark,
-            amoled = dark && black,
-        )
+        (palette ?: inherited)?.takeIf { it.dark == dark && it.amoled == (dark && black) }
+            ?: canonicalNextPalette(dark, black)
+
+    // Every Material role comes from the reader palette, including error containers. Mode
+    // overrides resolve the complete palette so AMOLED blackens every ground together.
+    val m3Scheme = materialColorScheme(resolvedPalette, dark, black)
 
     val density = LocalDensity.current
     CompositionLocalProvider(
@@ -192,11 +181,13 @@ internal fun materialColorScheme(
         onTertiaryContainer = palette.onAccentContainer,
         error = palette.destructive,
         onError = palette.onDestructive,
+        errorContainer = palette.background,
+        onErrorContainer = palette.destructive,
         background = background,
         onBackground = palette.ink,
         surface = palette.raised,
         onSurface = palette.ink,
-        surfaceVariant = palette.elevated,
+        surfaceVariant = palette.surfaceVariant,
         onSurfaceVariant = palette.muted,
         surfaceTint = palette.accent,
         surfaceBright = palette.elevated,
