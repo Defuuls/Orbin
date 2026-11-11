@@ -267,7 +267,7 @@ Horizontal budget of a list row in the 399dp catalog pane:
 | Count pill | `size.pillMinWidth` | 48dp |
 | Gutter | `space.gutter` | 16dp |
 
-The two width conditions, the ratio and the cap match what `core/model/FeedLayout.kt` and `app/navigation/BoardDetailTwoPane.kt` do today. The divider there is 0.5dp.
+The width conditions and the pane-width calculation live in `core/model/FeedLayout.kt`. Both platforms use the shared `ui-next/ReaderTwoPane.kt` component for the panes, the 1dp divider and the empty detail message.
 
 ## Navigation
 

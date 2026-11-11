@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="reader_select_thread">Select a thread</string>
     <string name="reader_menu">Menu</string>
     <string name="reader_back">Back</string>
     <string name="reader_reload">Reload</string>

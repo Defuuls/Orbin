@@ -3,12 +3,10 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -16,29 +14,36 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.readerPaneWidths
+import com.orbin.core.model.showsTwoPanes
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.next
+import com.orbin.uinext.ReaderTwoPane
 import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 import kotlin.time.Clock
 
 // A board: its catalog, its media wall, the iPad split beside a thread, and catalog tiles.
@@ -49,6 +54,7 @@ internal fun CatalogDestination(
     board: SiteBoard,
     // True when the caller already knows the window is wide, as the two-pane split does.
     wideWindow: Boolean = false,
+    selectedThread: ThreadKey? = null,
 ) {
     val catalog by browser.catalog.collectAsState()
     val settings by browser.settings.current.collectAsState()
@@ -82,6 +88,7 @@ internal fun CatalogDestination(
                     board = "/${board.board.id.value}/",
                     description = board.board.title,
                     itemCount = rows.size,
+                    selectedRowId = selectedThread?.catalogRowId,
                     rowAt = { index -> rows.getOrNull(index) },
                     sortLabel = sort.label,
                     onSort = browser::cycleCatalogSort,
@@ -144,27 +151,113 @@ internal fun BoardMediaDestination(
     }
 }
 
+/** A board reader uses the catalog's identity while an adjacent thread opens or closes. */
+internal data class BoardReaderRoute(
+    val catalog: Route.Catalog,
+    val thread: Route.ThreadPage? = null,
+)
+
+/** A thread is adjacent only to the immediately preceding catalog from the same site and board. */
+internal fun boardReaderRoute(backStack: List<Route>): BoardReaderRoute? =
+    when (val route = backStack.lastOrNull()) {
+        is Route.Catalog -> BoardReaderRoute(route)
+        is Route.ThreadPage -> {
+            val catalog = backStack.getOrNull(backStack.lastIndex - 1) as? Route.Catalog
+            catalog
+                ?.takeIf { it.board.provider == route.key.provider && it.board.board.id == route.key.board }
+                ?.let { BoardReaderRoute(it, route) }
+        }
+        else -> null
+    }
+
+private val ThreadKey.catalogRowId: String get() = "${provider.value}/${board.value}/${thread.value}"
+
 /**
- * On iPad, keep the board catalog beside its selected thread. The browser stack still owns
- * navigation, so the system back gesture returns to the catalog as it does on Android.
+ * The same catalog state key owns both the empty and selected reader. Each thread keeps its own
+ * existing key, so resizing or returning from media restores its place without another catalog load.
  */
 @Composable
-internal fun ThreadSplitDestination(
+internal fun BoardReaderDestination(
     browser: Browser,
-    board: SiteBoard,
+    route: BoardReaderRoute,
     downloads: MediaDownloads,
     pages: ThreadPages?,
+    stateHolder: SaveableStateHolder,
 ) {
-    Row(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f).fillMaxSize()) {
-            // The split only exists in a wide window, though this pane alone is narrow.
-            CatalogDestination(browser, board, wideWindow = true)
+    BoardReaderFrame(
+        route = route,
+        stateHolder = stateHolder,
+        catalogContent = { board, wideWindow, selectedThread ->
+            CatalogDestination(browser, board, wideWindow, selectedThread)
+        },
+        threadContent = { ThreadDestination(browser, downloads, pages) },
+    )
+}
+
+/** The production reader frame, with data loading and platform actions supplied by its host. */
+@Composable
+internal fun BoardReaderFrame(
+    route: BoardReaderRoute,
+    stateHolder: SaveableStateHolder,
+    catalogContent: @Composable (SiteBoard, Boolean, ThreadKey?) -> Unit,
+    threadContent: @Composable (Route.ThreadPage) -> Unit,
+) {
+    // Move the provider together with its content. A new provider at another call site would
+    // initialize before the outgoing provider saves on disposal, losing the live reading state.
+    val catalogPane =
+        remember(stateHolder) {
+            movableContentOf<
+                BoardReaderRoute,
+                Boolean,
+                @Composable (SiteBoard, Boolean, ThreadKey?) -> Unit,
+            > { reader, wideWindow, content ->
+                stateHolder.SaveableStateProvider(reader.catalog.stateKey) {
+                    content(reader.catalog.board, wideWindow, reader.thread?.key)
+                }
+            }
         }
-        Box(Modifier.width(0.5.dp).fillMaxSize().background(next.hairline))
-        Box(Modifier.weight(1.4f).fillMaxSize()) {
-            ThreadDestination(browser, downloads, pages)
+    val threadPane =
+        remember(stateHolder) {
+            movableContentOf<Route.ThreadPage, @Composable (Route.ThreadPage) -> Unit> { thread, content ->
+                stateHolder.SaveableStateProvider(thread.stateKey) {
+                    content(thread)
+                }
+            }
+        }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val width = maxWidth.value.roundToInt()
+        val height = maxHeight.value.roundToInt()
+        val thread = route.thread
+        if (showsTwoPanes(width, height)) {
+            ThreadSplitDestination(
+                catalogWidth = readerPaneWidths(width).catalogDp.dp,
+                threadOpen = thread != null,
+                catalogContent = { catalogPane(route, true, catalogContent) },
+                threadContent = { thread?.let { threadPane(it, threadContent) } },
+            )
+        } else if (thread == null) {
+            catalogPane(route, false, catalogContent)
+        } else {
+            threadPane(thread, threadContent)
         }
     }
+}
+
+/** Both catalog routes use one shared split; the browser still owns loading and back navigation. */
+@Composable
+internal fun ThreadSplitDestination(
+    catalogWidth: Dp,
+    threadOpen: Boolean,
+    catalogContent: @Composable () -> Unit,
+    threadContent: @Composable () -> Unit,
+) {
+    ReaderTwoPane(
+        catalogWidth = catalogWidth,
+        threadOpen = threadOpen,
+        modifier = Modifier.fillMaxSize(),
+        listContent = catalogContent,
+        detailContent = threadContent,
+    )
 }
 
 @Composable

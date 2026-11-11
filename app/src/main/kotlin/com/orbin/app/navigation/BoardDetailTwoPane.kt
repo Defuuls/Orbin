@@ -1,18 +1,12 @@
 package com.orbin.app.navigation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -20,14 +14,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.orbin.app.R
 import com.orbin.core.model.ThreadPresentation
+import com.orbin.core.model.readerPaneWidths
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.thread.NextThreadScreen
-import com.orbin.uinext.MessageScreen
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.next
+import com.orbin.uinext.ReaderTwoPane
 import kotlinx.serialization.Serializable
+import kotlin.math.roundToInt
 
 @Composable
 fun BoardDetailTwoPane(
@@ -44,7 +37,10 @@ fun BoardDetailTwoPane(
     val detailEntry by detailNavController.currentBackStackEntryAsState()
     val threadOpen = detailEntry?.destination?.hasRoute(Route.Thread::class) == true
 
-    LaunchedEffect(selectedThread) {
+    LaunchedEffect(selectedThread, detailEntry) {
+        // A restored selection can arrive before BoxWithConstraints composes the detail graph.
+        // Its first entry confirms that the graph is installed before attempting navigation.
+        if (detailEntry == null) return@LaunchedEffect
         selectedThread?.let { thread ->
             val currentThread =
                 runCatching { detailNavController.currentBackStackEntry?.toRoute<Route.Thread>() }.getOrNull()
@@ -65,75 +61,55 @@ fun BoardDetailTwoPane(
         }
     }
 
-    Row(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier =
-                Modifier
-                    .widthIn(max = LIST_PANE_MAX_WIDTH)
-                    .weight(LIST_PANE_WEIGHT)
-                    .fillMaxHeight(),
-        ) {
-            NextBoardScreen(
-                onOpenThread = { provider, board, thread, title ->
-                    onThreadSelected(Route.Thread(provider, board, thread, title))
-                },
-                onOpenMedia = onOpenBoardMedia,
-                selectedThread = selectedThread?.thread,
-            )
-        }
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val widths = readerPaneWidths(maxWidth.value.roundToInt())
+        ReaderTwoPane(
+            catalogWidth = widths.catalogDp.dp,
+            threadOpen = threadOpen,
+            listContent = {
+                NextBoardScreen(
+                    onOpenThread = { provider, board, thread, title ->
+                        onThreadSelected(Route.Thread(provider, board, thread, title))
+                    },
+                    onOpenMedia = onOpenBoardMedia,
+                    selectedThread = selectedThread?.thread,
+                )
+            },
+            detailContent = {
+                // Soft Next push inside the detail pane (empty ↔ thread), not Material defaults.
+                val presentation = ThreadPresentation.PAGE
+                NavHost(
+                    navController = detailNavController,
+                    startDestination = DetailPaneEmpty,
+                    modifier = Modifier.fillMaxSize(),
+                    enterTransition = { nextEnter(presentation) },
+                    exitTransition = { nextExit(presentation) },
+                    popEnterTransition = { nextPopEnter(presentation) },
+                    popExitTransition = { nextPopExit(presentation) },
+                ) {
+                    // The shared component owns the empty state; keep this graph mounted so the
+                    // first selection can navigate after its initial empty destination is installed.
+                    composable<DetailPaneEmpty> {}
 
-        Box(
-            modifier =
-                Modifier
-                    .width(0.5.dp)
-                    .fillMaxHeight()
-                    .background(next.hairline),
-        )
-
-        Box(modifier = Modifier.weight(DETAIL_PANE_WEIGHT).fillMaxHeight()) {
-            // Soft Next push inside the detail pane (empty ↔ thread), not Material defaults.
-            val presentation = ThreadPresentation.PAGE
-            NavHost(
-                navController = detailNavController,
-                startDestination = DetailPaneEmpty,
-                modifier = Modifier.fillMaxSize(),
-                enterTransition = { nextEnter(presentation) },
-                exitTransition = { nextExit(presentation) },
-                popEnterTransition = { nextPopEnter(presentation) },
-                popExitTransition = { nextPopExit(presentation) },
-            ) {
-                composable<DetailPaneEmpty> {
-                    NextTheme {
-                        MessageScreen(
-                            title = "Thread",
-                            subtitle = stringResource(R.string.two_pane_pick_thread),
-                            modifier = Modifier.fillMaxSize(),
+                    composable<Route.Thread> { entry ->
+                        val route = entry.toRoute<Route.Thread>()
+                        NextThreadScreen(
+                            onBack = {
+                                onThreadSelected(null)
+                                detailNavController.popBackStack()
+                            },
+                            onOpenMedia = { index ->
+                                onOpenGallery(route.provider, route.board, route.thread, index)
+                            },
+                            mediaScrollIndex = mediaScrollIndex,
+                            onMediaScrollConsumed = onMediaScrollConsumed,
                         )
                     }
                 }
-
-                composable<Route.Thread> { entry ->
-                    val route = entry.toRoute<Route.Thread>()
-                    NextThreadScreen(
-                        onBack = {
-                            onThreadSelected(null)
-                            detailNavController.popBackStack()
-                        },
-                        onOpenMedia = { index ->
-                            onOpenGallery(route.provider, route.board, route.thread, index)
-                        },
-                        mediaScrollIndex = mediaScrollIndex,
-                        onMediaScrollConsumed = onMediaScrollConsumed,
-                    )
-                }
-            }
-        }
+            },
+        )
     }
 }
 
 @Serializable
 private data object DetailPaneEmpty
-
-private val LIST_PANE_MAX_WIDTH = 420.dp
-private const val LIST_PANE_WEIGHT = 1f
-private const val DETAIL_PANE_WEIGHT = 1.4f
