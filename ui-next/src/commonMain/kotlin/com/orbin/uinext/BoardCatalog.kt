@@ -283,8 +283,7 @@ private fun rowSummary(
 }
 
 @Composable
-private fun rowTitle(row: FeedRow): String =
-    if (row.muted) stringResource(Res.string.reader_muted) else row.subject
+private fun rowTitle(row: FeedRow): String = if (row.muted) stringResource(Res.string.reader_muted) else row.subject
 
 /**
  * A thread as a list row: the shared cell of docs/design-system plus the count pill.
